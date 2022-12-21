@@ -2,8 +2,6 @@
 
 namespace App\Core;
 
-use const App\VIEWS_PATH;
-
 class View
 {
     protected $view_file;
@@ -18,13 +16,13 @@ class View
     public function Render()
     {
         $this->view_file = strtolower($this->view_file);
-        if (file_exists(VIEWS_PATH . $this->view_file) . ".php"){
+        if (file_exists($_ENV['VIEWS_PATH'] . $this->view_file) . ".php"){
         extract($this->view_data);
         ob_start();
         ob_get_clean();
-        include_once(VIEWS_PATH . $this->view_file . ".php");
+        include_once($_ENV['VIEWS_PATH'] . $this->view_file . ".php");
     }else{
-        echo VIEWS_PATH . $this->view_file . ".php Dosyası bulunamadı";
+        echo $_ENV['VIEWS_PATH'] . $this->view_file . ".php Dosyası bulunamadı";
     }
     }
 }

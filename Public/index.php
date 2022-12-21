@@ -1,7 +1,9 @@
 <?php
 require "../vendor/autoload.php";
-require "../App/Globals.init.php";
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__."/../App");
+$dotenv->load();
+
 use App\Core\Application;
 
 new Application();
-

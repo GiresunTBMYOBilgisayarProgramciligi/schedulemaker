@@ -1,9 +1,0 @@
-<?php
-
-namespace App;
-
-const ROOT_PATH = __DIR__ . DIRECTORY_SEPARATOR;
-const MODELS_PATH = ROOT_PATH . "Models" . DIRECTORY_SEPARATOR;
-const VIEWS_PATH = ROOT_PATH . "Views";
-const CONTROLLERS_PATH = ROOT_PATH . "Controllers" . DIRECTORY_SEPARATOR;
-const CORE_PATH = ROOT_PATH . "Core" . DIRECTORY_SEPARATOR;
