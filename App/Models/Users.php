@@ -39,4 +39,11 @@ class Users extends Model
             $this->last_login =date('d-m-Y H:i:s', timestamp: $last_login);
         }
     }
+
+    public function save_new(){
+        /*
+         * todo insert class data to database
+         *  admin controller create_new_user metodu ile oluşturulan yeni user modeli ile alınan veriler veri tabanına kaydedilecek
+         */
+    }
 }

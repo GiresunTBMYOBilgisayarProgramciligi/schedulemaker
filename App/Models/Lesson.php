@@ -7,6 +7,7 @@ use App\Core\Model;
 class Lesson extends Model
 {
     public int $id;
+    public string $code;
     public string $name;
     public int $size;
     public Lecturer $lecturer;
@@ -26,6 +27,7 @@ class Lesson extends Model
             $data = $q->fetchAll();
             extract($data);
             $this->id = $id;
+            $this->code = $code;
             $this->name = $name;
             $this->size = $size;
             $this->lecturer = new Lecturer($lecturer_id);
