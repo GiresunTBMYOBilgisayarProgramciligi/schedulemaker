@@ -17,17 +17,19 @@ class Lesson extends Model
     /**
      * @param int $id
      */
-    public function __construct(int $id)
+    public function __construct(int $id = null)
     {
         parent::__construct(); # Connect to database
-        $q = $this->database->prepare("Select * From $this->table_name WHERE id=:id");
-        $q->execute(["id" => $id]);
-        $data = $q->fetchAll();
-        extract($data);
-        $this->id = $id;
-        $this->name = $name;
-        $this->size=$size;
-        $this->lecturer = new Lecturer($lecturer_id);
-        $this->department =new Department($department_id);
+        if (isset($id)) {
+            $q = $this->database->prepare("Select * From $this->table_name WHERE id=:id");
+            $q->execute(["id" => $id]);
+            $data = $q->fetchAll();
+            extract($data);
+            $this->id = $id;
+            $this->name = $name;
+            $this->size = $size;
+            $this->lecturer = new Lecturer($lecturer_id);
+            $this->department = new Department($department_id);
+        }
     }
 }

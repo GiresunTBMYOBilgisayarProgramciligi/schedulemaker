@@ -1,9 +1,14 @@
+<?php
+
+$l=new \App\Models\Lecturer();
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AdminLTE 3 | Dashboard</title>
+    <title>TMYO Ders Programı</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -50,7 +55,7 @@
         <!-- Brand Logo -->
         <a href="/admin" class="brand-link">
             <img src="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-            <span class="brand-text font-weight-light">TMYO</span>
+            <span class="brand-text font-weight-light">TMYO Ders Programı</span>
         </a>
 
         <!-- Sidebar -->
@@ -124,9 +129,9 @@
                         <!-- small box -->
                         <div class="small-box bg-info">
                             <div class="inner">
-                                <h3>50</h3>
+                                <h3><?=$l->_count();?></h3>
 
-                                <p>Öğretim Elemenı</p>
+                                <p>Öğretim Elemanı</p>
                             </div>
                             <div class="icon">
                                 <i class="fas fa-chalkboard-teacher"></i>
