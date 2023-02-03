@@ -19,6 +19,9 @@ class AdminController extends Controller
     public function RegisterAction(){
         $this->View("/admin/register");
     }
+    public function UsersAction(){
+        $this->View("/admin/users");
+    }
     public function create_new_user(){
         /*
             todo ajax kontrolü
