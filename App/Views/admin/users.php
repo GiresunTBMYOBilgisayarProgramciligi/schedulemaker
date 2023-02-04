@@ -123,7 +123,7 @@ $l=new \App\Models\Lecturer();
                                             <?php endforeach; ?></tbody>
                                         </table>
                                     </div>
-                                    <div class="tab-pane fade" id="custom-tabs-four-profile" role="tabpanel" aria-labelledby="custom-tabs-four-profile-tab">
+                                    <div class="tab-pane fade" id="user-action-add-tabContent" role="tabpanel" aria-labelledby="custom-tabs-four-profile-tab">
                                         <form action="/ajax/addNewUser" method="post" class="ajaxForm" >
 
                                             <input type="submit" value="Ekle">
