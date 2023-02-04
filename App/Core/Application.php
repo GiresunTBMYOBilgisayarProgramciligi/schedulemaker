@@ -21,7 +21,7 @@ class Application
             }
         } catch (\Throwable $exception) {
 
-            echo "Böyle Bir Controller Yok. -> ".$exception->getMessage();
+            echo "Böyle bir Controller yok yada bir hata oluştu. -> ".$exception->getMessage()." ".$exception->getFile()." ".$exception->getLine();
         }
 
     }
