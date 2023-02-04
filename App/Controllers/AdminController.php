@@ -20,7 +20,8 @@ class AdminController extends Controller
         $this->View("/admin/register");
     }
     public function UsersAction(){
-        $this->View("/admin/users");
+        $users = new Users();
+        $this->View("/admin/users",["user_list"=>$users->get_user_list()]);
     }
     public function create_new_user(){
         /*

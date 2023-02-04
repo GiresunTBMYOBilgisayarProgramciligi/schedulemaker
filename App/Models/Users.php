@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use PDO;
 
 class Users extends Model
 {
@@ -45,5 +46,10 @@ class Users extends Model
          * todo insert class data to database
          *  admin controller create_new_user metodu ile oluşturulan yeni user modeli ile alınan veriler veri tabanına kaydedilecek
          */
+    }
+    public function get_user_list(){
+        $q= $this->database->prepare("SELECT * FROM $this->table_name ");
+        $q->execute();
+        return $q->fetchAll(PDO::FETCH_OBJ);
     }
 }
