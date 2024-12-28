@@ -1,18 +1,41 @@
 <?php
+/**
+ * Aplication.php dosyasının açıklaması
+ */
 
 namespace App\Core;
 
+/**
+ * Uygulamanın temel çalıştırma mantığını içeren sınıf.
+ *
+ * Bu sınıf, gelen URL'yi parse ederek uygun kontrolcü (controller) ve olayları (action) çalıştırır.
+ */
 class Application
 {
+    /**
+     * Çalıştırılacak kontrolcüyü (Controller) saklar.
+     *
+     * @var string Kontrolcü sınıfının adı.
+     */
     protected $controller = "HomeController";
+    /**
+     * Kontrolcü içerisinde çalıştırılacak olayı (Action) saklar.
+     *
+     * @var string Metod adı.
+     */
     protected $action = "IndexAction";
+    /**
+     * Gelen istekteki parametreleri saklar.
+     *
+     * @var array İstemciden gelen parametreler.
+     */
     protected $parameters = array();
 
     public function __construct()
     {
         $this->ParseURL();
         try {
-            $this->controller =  "App\\Controllers\\".$this->controller;
+            $this->controller = "App\\Controllers\\" . $this->controller;
             $this->controller = new $this->controller;
             if (method_exists($this->controller, $this->action)) {
                 call_user_func_array([$this->controller, $this->action], $this->parameters);
@@ -21,27 +44,23 @@ class Application
             }
         } catch (\Throwable $exception) {
 
-            echo "Böyle bir Controller yok yada bir hata oluştu. -> ".$exception->getMessage()." ".$exception->getFile()." ".$exception->getLine();
+            echo "Böyle bir Controller yok yada bir hata oluştu. -> " . $exception->getMessage() . " " . $exception->getFile() . " " . $exception->getLine();
         }
 
     }
 
     /**
-     * ParseURL methodu genel mantığı ile şu işlemleri yapar;
+     * Gelen URL'yi parse ederek kontrolcü, action ve parametreleri ayıklar.
      *
-     * $_SERVER["REQUEST_URI"] yardımı ile istemci tarafından gönderilen URL yakalanır.
+     * @return void
      *
-     * trim() fonkisyonu ile URL sonunda bulunursa "/" karakteri temizlenir.
-     *
-     * explode() fonksiyonu ile URL "/" karakterine göre dizileştirilir.
-     *
-     * $url değişkeni bir dizi olur. [0] => Controller Adı, [1] => Action Adı, [2} ve Sonrası => Parametreler
-     *
-     * unset() fonksiyonu ile $url değişkeninde varsa [0] ve [1] indis numaralı elemenlar temizlenir.
-     * Geriye kalan değerler parametrelerdir.
+     * ### Genel Mantık:
+     * - `$_SERVER["REQUEST_URI"]` ile istemci tarafından gönderilen URL yakalanır.
+     * - `trim()` ile URL sonunda bulunan `/` karakteri temizlenir.
+     * - `explode()` ile URL `/` karakterine göre parçalara ayrılır.
+     * - Kontrolcü ve action değerleri diziden alınır, geri kalanlar parametre olarak saklanır.
      */
-
-    protected function ParseURL()
+    protected function ParseURL(): void
     {
         $request = trim($_SERVER["REQUEST_URI"], "/");
         if (!empty($request)) {
