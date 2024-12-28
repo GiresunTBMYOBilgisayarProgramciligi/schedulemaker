@@ -54,7 +54,6 @@
                                         <thead>
                                         <tr>
                                             <th>İd</th>
-                                            <th>Kullanıcı Adı</th>
                                             <th>e-Posta</th>
                                             <th>Adı</th>
                                             <th>Soyadı</th>
@@ -66,7 +65,6 @@
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="odd">
                                                 <td><?= $user->id ?></td>
-                                                <td><?= $user->user_name ?></td>
                                                 <td><?= $user->mail ?></td>
                                                 <td><?= $user->name ?></td>
                                                 <td><?= $user->last_name ?></td>

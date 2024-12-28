@@ -1,29 +1,18 @@
 create table if not exists users
 (
     id            int AUTO_INCREMENT,
-    user_name     varchar(50) NOT NULL,
     password      text,
-    mail          varchar(90),
+    mail          varchar(90) NOT NULL ,
     name          varchar(50),
     last_name     varchar(50),
+    role          varchar(20) default "user",
+    title         varchar(15),
+    department_id int,
+    $schedule     text,
     register_date timestamp default current_timestamp,
     last_login    timestamp,
     primary key (id),
-    unique (user_name)
-    ) ENGINE = INNODB;
-
-create table if not exists lecturers
-(
-    id            int AUTO_INCREMENT,
-    name          varchar(50),
-    last_name     varchar(50),
-    title         varchar(15),
-    department_id int,
-    user_id       int,
-    $schedule     text,
-    primary key (id),
-    unique (user_id),
-    foreign key (user_id) references users (id) on delete cascade on update cascade
+    unique (mail)
     ) ENGINE = INNODB;
 
 create table if not exists departments
@@ -33,11 +22,8 @@ create table if not exists departments
     chairperson_id int,
     schedule       text,
     primary key (id),
-    foreign key (chairperson_id) references lecturers (id) on delete set null on update cascade
+    foreign key (chairperson_id) references users (id) on delete set null on update cascade
     ) ENGINE = INNODB;
-
-ALTER TABLE lecturers
-    ADD foreign key (department_id) references departments (id) on delete set null on update cascade;
 
 create table if not exists classrooms
 (
@@ -60,10 +46,10 @@ create table if not exists lessons
     department_id int,
     primary key (id),
     unique (code),
-    foreign key (lecturer_id) references lecturers (id) on delete set null,
+    foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null
 
     ) ENGINE = INNODB;
 /* password is 123456 */
-insert into users(user_name, password, mail, name, last_name) values
-    ("admin","$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC","admin@admin.com","Admin","Admin");
+insert into users(password, mail, name, last_name) values
+    ("$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC","admin@admin.com","Admin","Admin");
