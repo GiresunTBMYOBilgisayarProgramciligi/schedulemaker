@@ -1,6 +1,6 @@
 <?php
 
-$l=new \App\Models\Lecturer();
+$lecturer=new \App\Models\Lecturer();
 
 ?>
 <!DOCTYPE html>
@@ -30,11 +30,6 @@ $l=new \App\Models\Lecturer();
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-    <!-- Preloader -->
-    <div class="preloader flex-column justify-content-center align-items-center">
-        <img class="animation__shake" src="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/img/AdminLTELogo.png" alt="AdminLTELogo" height="60" width="60">
-    </div>
-
     <!-- Navbar -->
     <nav class="main-header navbar navbar-expand navbar-white navbar-light">
         <!-- Left navbar links -->
@@ -51,7 +46,7 @@ $l=new \App\Models\Lecturer();
     <!-- /.navbar -->
 
     <!-- Main Sidebar Container -->
-    <?php include "sidebar.php"?>
+    <?php include "sidebar.php" ?>
 
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -82,7 +77,7 @@ $l=new \App\Models\Lecturer();
                         <!-- small box -->
                         <div class="small-box bg-info">
                             <div class="inner">
-                                <h3><?=$l->_count();?></h3>
+                                <h3><?=$lecturer->_count();?></h3>
 
                                 <p>Öğretim Elemanı</p>
                             </div>
@@ -147,7 +142,7 @@ $l=new \App\Models\Lecturer();
         <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
-    <?php include "footer.php"?>
+    <?php include "footer.php" ?>
 
     <!-- Control Sidebar -->
     <aside class="control-sidebar control-sidebar-dark">

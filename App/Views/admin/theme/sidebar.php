@@ -1,3 +1,4 @@
+<!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="/admin" class="brand-link">
@@ -24,8 +25,8 @@
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Add icons to the links using the .nav-icon class
                      with font-awesome or any other icon font library -->
-                <li class="nav-item menu-open">
-                    <a href="/admin" class="nav-link <?= str_ends_with($_SERVER["REQUEST_URI"], 'admin') ? "active" : "" ?>">
+                <li class="nav-item">
+                    <a href="/admin" class="nav-link ">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>
                             Başlangıç
@@ -34,7 +35,7 @@
 
                 </li>
                 <li class="nav-item">
-                    <a href="pages/calendar.html" class="nav-link <?= str_ends_with($_SERVER["REQUEST_URI"], 'calendar') ? "active" : "" ?>">
+                    <a href="pages/calendar.html" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'calendar') !== false) ? 'active' : ''; ?>">
                         <i class="nav-icon far fa-calendar-alt"></i>
                         <p>
                             Calendar
@@ -43,7 +44,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/admin/users" class="nav-link <?= str_ends_with($_SERVER["REQUEST_URI"], 'users') ? "active" : "" ?>">
+                    <a href="/admin/users" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'users') !== false) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-users"></i>
                         <p>
                             Kullanıcı İşlemleri
