@@ -8,6 +8,6 @@ class HomeController extends Controller
 {
     public function IndexAction()
     {
-        $this->View("/home/Index");
+        $this->callView("/home/Index");
     }
 }
