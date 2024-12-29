@@ -10,6 +10,38 @@ class UsersController extends Model
 {
     private $table_name = "users";
 
+    public function getUser($id)
+    {
+        if (!is_null($id)) {
+            try {
+                $u = $this->database->query("select * from users where id={$id}");
+                if ($u) {
+                    $u = $u->fetch(\PDO::FETCH_ASSOC);
+                    $user = new User();
+                    $user->fillUser($u);
+
+                    return $user;
+                }
+            } catch (\Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+    }
+
+    /**
+     *  Giriş Yapmış kullanıcıyı döner. Giriş yapılmamışsa false döner
+     * @return User|false
+     */
+    public function getCurrentUser()
+    {
+        $u = false;
+        if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
+            $u = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
+        } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
+            $u = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
+        }
+        return $u;
+    }
 
     /**
      * AjaxControllerdan gelen verilele yani kullanıcı oluşturur

@@ -39,7 +39,14 @@ class User extends Model
     public function fillUser($data = [])
     {
         foreach (get_class_vars(get_class($this)) as $k => $v) {
-           if (!is_null($data[$k])) $this->$k = $data[$k];
+            // Eğer tarih alanları ise string değeri DateTime nesnesine dönüştür
+            if ($k == 'register_date' || $k == 'last_login') {
+                $this->$k = new \DateTime($data[$k]);
+            } else {
+                if (!is_null($data[$k])) {
+                    $this->$k = $data[$k];
+                }
+            }
         }
     }
 
@@ -58,7 +65,7 @@ class User extends Model
      * @param $excludedProperties  array diziye eklenmesi istenmeyen özellikler
      * @return array
      */
-    public function getArray($excludedProperties = ['table_name','database'])
+    public function getArray($excludedProperties = ['table_name', 'database'])
     {
         $properties = get_object_vars($this);//sadece değeri olan alanları alıyor
         return array_filter($properties, function ($key) use ($excludedProperties) {
