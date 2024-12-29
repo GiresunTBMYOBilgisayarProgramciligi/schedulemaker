@@ -50,14 +50,45 @@ class User extends Model
         }
     }
 
+    /**
+     * Kullanıdı Adı ve Soyadını birleştirerek döner
+     * @return string
+     */
     public function getFullName()
     {
         return $this->name . " " . $this->last_name;
     }
 
+    /**
+     * Bölüm Adının döner
+     * @return void
+     */
+    public function getDepartmentName()
+    {
+        return "Bilgisayar Teknolojileri";
+    }
+
+    public function getProgramName()
+    {
+        return "Bilgisayar Programcılığı";
+    }
+
+    public function getRoleName()
+    {
+        $role_names = [
+            "user" => "Kullanıcı",
+            "lecturer" => "Akademisyen",
+            "admin" => "Yönetici",
+            "department_head" => "Bölüm Başkanı",
+            "manager" => "Müdür",
+            "submanager" => "Müdür Yardımcısı"
+        ];
+        return $role_names[$this->role];
+    }
+
     public function getGravatarURL($size = 50)
     {
-        $default = "/admin/dist/img/avatar.png";
+        $default = "";
         return "https://www.gravatar.com/avatar/" . md5(strtolower(trim($this->mail))) . "?d=" . urlencode($default) . "&s=" . $size;
     }
 

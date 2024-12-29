@@ -8,7 +8,7 @@ include "theme/head.php";
 
     <?php
     /** @var \App\Models\UsersController $usersController */
-    $user = $usersController->getCurrentUser();
+    $currentUser = $usersController->getCurrentUser();
     include "theme/navbar.php";
     include "theme/sidebar.php";
     include "pages/" . $this->view_page . ".php";

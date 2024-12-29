@@ -120,10 +120,17 @@ class UsersController extends Model
         return ["status" => "success"];
     }
 
-    public function get_user_list()
+    public function get_users_list()
     {
         $q = $this->database->prepare("SELECT * FROM $this->table_name ");
         $q->execute();
-        return $q->fetchAll(PDO::FETCH_OBJ);
+        $user_list= $q->fetchAll(PDO::FETCH_ASSOC);
+        $users=[];
+        foreach ($user_list as $user_data) {
+            $user = new User();
+            $user->fillUser($user_data);
+            $users[] = $user;
+        }
+        return $users;
     }
 }
