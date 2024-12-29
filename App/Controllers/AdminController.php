@@ -37,7 +37,7 @@ class AdminController extends Controller
 
     public function UsersAction()
     {
-        $users = (new UsersController())->get_user_list();
-        $this->callView("admin/users", ["user_list" => $users]);
+        $usersController = new UsersController();
+        $this->callView("admin/users", ["userController" => $usersController]);
     }
 }

@@ -63,7 +63,7 @@
                                         </thead>
                                         <tbody>
                                         <!-- todo liste ajax ile çelilecek -->
-                                        <?php foreach ($user_list as $user): ?>
+                                        <?php foreach ($userController->get_user_list() as $user): ?>
                                             <tr class="odd">
                                                 <td><?= $user->id ?></td>
                                                 <td><?= $user->mail ?></td>
