@@ -1,5 +1,6 @@
 <?php header('Content-Type: application/javascript');
 /**
+ * todo projede gettext desteği henüz sağlanmıyor.
  * Çoklu Dil desteği için gettext kullanımını javascript içerisinde kullanımı için.
  */
 ?>

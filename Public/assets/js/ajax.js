@@ -71,8 +71,8 @@ $(function () {
                     });
                     cevap += '</ul>';
                 } else cevap = returnData['msg'];
-
-                modalBody.addClass('bg-' + returnData['status'] + ' text-' + returnData['status']);
+                var statusClass = returnData['status'] === 'error' ? 'danger' : returnData['status'];
+                modalBody.addClass('bg-' + statusClass + ' text-' + statusClass);
                 modalBody.fadeOut(100, function () {
                     $(this).html(cevap).fadeIn('slow');
                 });
@@ -98,6 +98,9 @@ $(function () {
         return false;
     });
 
+    /**
+     * Bu satırdan aşağıdaki kodlar diğer projeden alındığı için burada işlevsizler örnek olması açısından silmiyorum
+     */
     /**
      * Şifre değiştirme formunu  çalıştırır
      */
