@@ -38,11 +38,6 @@
                                        href="#user-action-edit-tabContent" role="tab"
                                        aria-controls="custom-tabs-four-messages" aria-selected="false">Düzenle</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="custom-tabs-four-settings-tab" data-toggle="pill"
-                                       href="#custom-tabs-four-settings" role="tab"
-                                       aria-controls="custom-tabs-four-settings" aria-selected="false">Settings</a>
-                                </li>
                             </ul>
                         </div>
                         <div class="card-body">
@@ -122,7 +117,6 @@
                                         <button type="submit" class="btn btn-primary">Ekle</button>
                                     </form>
                                 </div>
-
                                 <div class="tab-pane fade" id="user-action-edit-tabContent" role="tabpanel"
                                      aria-labelledby="user-action-edit-tab">
                                     Morbi turpis dolor, vulputate vitae felis non, tincidunt congue mauris. Phasellus
@@ -134,16 +128,6 @@
                                     Nulla lacinia, ex vitae gravida fermentum, lectus ipsum gravida arcu, id fermentum
                                     metus arcu vel metus. Curabitur eget sem eu risus tincidunt eleifend ac ornare
                                     magna.
-                                </div>
-                                <div class="tab-pane fade" id="custom-tabs-four-settings" role="tabpanel"
-                                     aria-labelledby="custom-tabs-four-settings-tab">
-                                    Pellentesque vestibulum commodo nibh nec blandit. Maecenas neque magna, iaculis
-                                    tempus turpis ac, ornare sodales tellus. Mauris eget blandit dolor. Quisque
-                                    tincidunt venenatis vulputate. Morbi euismod molestie tristique. Vestibulum
-                                    consectetur dolor a vestibulum pharetra. Donec interdum placerat urna nec pharetra.
-                                    Etiam eget dapibus orci, eget aliquet urna. Nunc at consequat diam. Nunc et felis ut
-                                    nisl commodo dignissim. In hac habitasse platea dictumst. Praesent imperdiet
-                                    accumsan ex sit amet facilisis.
                                 </div>
                             </div>
                         </div>
