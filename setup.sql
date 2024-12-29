@@ -8,9 +8,10 @@ create table if not exists users
     role          varchar(20) default "user",
     title         varchar(15),
     department_id int,
-    $schedule     text,
+    schedule     text,
     register_date timestamp default current_timestamp,
     last_login    timestamp,
+    approved      BOOLEAN DEFAULT false, -- Onay alanı
     primary key (id),
     unique (mail)
     ) ENGINE = INNODB;
