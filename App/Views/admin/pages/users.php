@@ -62,6 +62,7 @@
                                         </tr>
                                         </thead>
                                         <tbody>
+                                        <!-- todo liste ajax ile çelilecek -->
                                         <?php foreach ($user_list as $user): ?>
                                             <tr class="odd">
                                                 <td><?= $user->id ?></td>
@@ -74,13 +75,54 @@
                                         <?php endforeach; ?></tbody>
                                     </table>
                                 </div>
-                                <div class="tab-pane fade" id="user-action-add-tabContent" role="tabpanel"
-                                     aria-labelledby="custom-tabs-four-profile-tab">
-                                    <form action="/ajax/addNewUser" method="post" class="ajaxForm">
+                                <div class="tab-pane fade" id="user-action-add-tabContent" role="tabpanel" aria-labelledby="custom-tabs-four-profile-tab">
+                                    <form action="/ajax/addNewUser" method="post" class="ajaxForm" title="Yeni Kullnıcı Ekle">
+                                        <div class="form-group">
+                                            <label for="name">Adı</label>
+                                            <input type="text" class="form-control" id="name" name="name" placeholder="Adı" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="last_name">Soyadı</label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Soyadı" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="mail">e-Posta</label>
+                                            <input type="email" class="form-control" id="mail" name="mail" placeholder="e-Posta" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="password">Şifre</label>
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Şifre" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="role">Rol</label>
+                                            <select class="form-control" id="role" name="role">
+                                                <option value="user" selected>Kullanıcı</option>
+                                                <option value="lecturer">Akademisyen</option>
+                                                <option value="admin">Yönetici</option>
+                                                <option value="department_head">Bölüm Başkanı</option>
+                                                <option value="manager">Müdür</option>
+                                                <option value="submanager">Müdür Yardımcısı</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="title">Ünvan</label>
+                                            <select class="form-control" id="title" name="title">
+                                                <option value="Öğr. Gör." selected>Öğr. Gör.</option>
+                                                <option value="Öğr. Gör. Dr.">Öğr. Gör. Dr.</option>
+                                                <option value="Dr. Öğretim Üyesi">Dr. Öğretim Üyesi</option>
+                                                <option value="Doç. Dr. ">Doç. Dr. </option>
+                                                <option value="Prof. Dr.">Prof. Dr. </option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="department_id">Departman ID</label>
+                                            <input type="number" class="form-control" id="department_id" name="department_id" placeholder="Departman ID">
+                                        </div>
 
-                                        <input type="submit" value="Ekle">
+                                        <button type="submit" class="btn btn-primary">Ekle</button>
                                     </form>
                                 </div>
+
                                 <div class="tab-pane fade" id="user-action-edit-tabContent" role="tabpanel"
                                      aria-labelledby="user-action-edit-tab">
                                     Morbi turpis dolor, vulputate vitae felis non, tincidunt congue mauris. Phasellus
