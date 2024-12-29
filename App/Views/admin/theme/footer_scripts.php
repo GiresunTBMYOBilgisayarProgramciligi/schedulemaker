@@ -10,7 +10,6 @@
 <script src="/assets/AdminLTE/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <!-- AdminLTE App -->
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/js/adminlte.min.js"></script>
-<!-- AdminLTE for demo purposes -->
 
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/js/pages/dashboard.min.js"></script>
+<script src="/assets/js/gettext.php"></script>
+<script src="/assets/js/ajax.js"></script>
