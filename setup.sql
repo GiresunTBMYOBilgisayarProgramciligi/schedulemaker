@@ -2,19 +2,19 @@ create table if not exists users
 (
     id            int AUTO_INCREMENT,
     password      text,
-    mail          varchar(90) NOT NULL ,
+    mail          varchar(90) NOT NULL,
     name          varchar(50),
     last_name     varchar(50),
     role          varchar(20) default "user",
     title         varchar(15),
     department_id int,
-    schedule     text,
-    register_date timestamp default current_timestamp,
+    schedule      text,
+    register_date timestamp   default current_timestamp,
     last_login    timestamp,
-    approved      BOOLEAN DEFAULT false, -- Onay alanı
+    approved      BOOLEAN     DEFAULT false, -- Onay alanı
     primary key (id),
     unique (mail)
-    ) ENGINE = INNODB;
+) ENGINE = INNODB;
 
 create table if not exists departments
 (
@@ -24,7 +24,7 @@ create table if not exists departments
     schedule       text,
     primary key (id),
     foreign key (chairperson_id) references users (id) on delete set null on update cascade
-    ) ENGINE = INNODB;
+) ENGINE = INNODB;
 
 create table if not exists classrooms
 (
@@ -35,7 +35,16 @@ create table if not exists classrooms
     schedule   text,
     primary key (id),
     unique (name)
-    ) ENGINE = INNODB;
+) ENGINE = INNODB;
+
+create table if not exists programs
+(
+    id            int AUTO_INCREMENT,
+    name          text not null ,
+    department_id int,
+    primary key (id),
+    foreign key (department_id) references departments (id) on delete set null
+) ENGINE = INNODB;
 
 create table if not exists lessons
 (
@@ -45,12 +54,19 @@ create table if not exists lessons
     size          int,
     lecturer_id   int,
     department_id int,
+    program_id    int,
     primary key (id),
     unique (code),
     foreign key (lecturer_id) references users (id) on delete set null,
-    foreign key (department_id) references departments (id) on delete set null
+    foreign key (department_id) references departments (id) on delete set null,
+    foreign key (program_id) references programs (id) on delete set null
 
-    ) ENGINE = INNODB;
+) ENGINE = INNODB;
+
+-- users tablosuna department_id için dış anahtar ekleme
+ALTER TABLE users
+    ADD CONSTRAINT fk_department_id FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE;
+
 /* password is 123456 */
-insert into users(password, mail, name, last_name) values
-    ("$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC","admin@admin.com","Admin","Admin");
+insert into users(password, mail, name, last_name, title, role, approved)
+values ("$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC", "admin@admin.com", "Admin", "Admin","Admin","admin",true);
