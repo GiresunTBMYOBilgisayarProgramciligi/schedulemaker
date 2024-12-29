@@ -27,7 +27,7 @@
                     <!-- small box -->
                     <div class="small-box bg-info">
                         <div class="inner">
-                            <h3><?= $usersController->getUserCount() ?></h3>
+                            <h3><?= $usersController->getCount() ?></h3>
 
                             <p>Öğretim Elemanı</p>
                         </div>

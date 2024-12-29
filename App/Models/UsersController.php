@@ -43,7 +43,7 @@ class UsersController extends Model
         return $u;
     }
 
-    public function getUserCount(){
+    public function getCount(){
         try {
             $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
