@@ -41,9 +41,16 @@ class User extends Model
         foreach (get_class_vars(get_class($this)) as $k => $v) {
             // Eğer tarih alanları ise string değeri DateTime nesnesine dönüştür
             if ($k == 'register_date' || $k == 'last_login') {
-                $this->$k = new \DateTime($data[$k]);
+                // Tarih değeri var mı kontrol et
+                if (isset($data[$k]) && $data[$k] !== null) {
+                    $this->$k = new \DateTime($data[$k]);
+                } else {
+                    // Eğer tarih yoksa, geçerli bir DateTime nesnesi oluştur
+                    $this->$k = new \DateTime();
+                }
             } else {
-                if (!is_null($data[$k])) {
+                // Diğer alanlarda null kontrolü
+                if (isset($data[$k]) && $data[$k] !== null) {
                     $this->$k = $data[$k];
                 }
             }
