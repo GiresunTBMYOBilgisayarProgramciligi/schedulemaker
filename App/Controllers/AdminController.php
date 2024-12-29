@@ -7,7 +7,6 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\UsersController;
-use App\Models\Lecturer;
 
 /**
  * AdminController Sınıfı
@@ -22,7 +21,7 @@ class AdminController extends Controller
     public function IndexAction(): void
     {
         //todo if not login redirct to login page
-        $this->callView("admin/index", ["lecturer" => new Lecturer()]);
+        $this->callView("admin/index", ["usersController" => new UsersController()]);
     }
 
     public function LoginAction()

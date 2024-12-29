@@ -43,6 +43,15 @@ class UsersController extends Model
         return $u;
     }
 
+    public function getUserCount(){
+        try {
+            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
+            return $count; // İlk sütun (COUNT(*) sonucu) döndür
+        }catch (\Exception $e){
+            var_dump($e);
+        }
+
+    }
     /**
      * AjaxControllerdan gelen verilele yani kullanıcı oluşturur
      * @param array $data
