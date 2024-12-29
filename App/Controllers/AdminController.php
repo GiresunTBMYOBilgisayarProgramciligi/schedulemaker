@@ -14,25 +14,34 @@ use App\Models\UsersController;
  */
 class AdminController extends Controller
 {
+    public function __construct()
+    {
+        // Her çağrıdan önce kullanıcı giriş durumunu kontrol et
+        $this->beforeAction();
+
+    }
+
+    /**
+     * Aksiyonlardan önce çalıştırılan kontrol mekanizması
+     */
+    private function beforeAction(): void
+    {
+        $usersController = new UsersController();
+        if (!$usersController->isLoggedIn()) {
+            $this->Redirect('/auth/login');
+        }
+    }
+
     /**
      *
      * @return void
      */
     public function IndexAction(): void
     {
-        //todo if not login redirct to login page
         $this->callView("admin/index", ["usersController" => new UsersController()]);
     }
 
-    public function LoginAction()
-    {
-        $this->callView("admin/login");
-    }
 
-    public function RegisterAction()
-    {
-        $this->callView("admin/register");
-    }
 
     public function UsersAction()
     {

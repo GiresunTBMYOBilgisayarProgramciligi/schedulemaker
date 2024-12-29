@@ -49,7 +49,45 @@ class UsersController extends Model
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
         }catch (\Exception $e){
             var_dump($e);
+            return false;
         }
+    }
+
+    public function isLoggedIn()
+    {
+        if (isset($_COOKIE[$_ENV["COOKIE_KEY"]]) || isset($_SESSION[$_ENV["SESSION_KEY"]])) return true; else
+            return false;
+    }
+
+    /**
+     * @param array $arr
+     * @return void
+     * @throws \Exception
+     */
+    public function login(array $arr): void
+    {
+        $arr = (object)$arr;
+        $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
+        $stmt->bindParam(':mail', $arr->mail, \PDO::PARAM_STR);
+        $stmt->execute();
+
+        if ($stmt) {
+            $user = $stmt->fetch(\PDO::FETCH_OBJ);
+            if ($user) {
+                if (password_verify($arr->password, $user->password)) {
+                    if (!$arr->remember_me){
+                        $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
+                    }else{
+                        setcookie($_ENV["COOKIE_KEY"], $user->id, [
+                            'expires' => time() + (86400 * 30),
+                            'path' => '/',
+                            'httponly' => true,     // JavaScript erişimini engeller
+                            'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
+                        ]);
+                    }
+                } else throw new \Exception("Şifre Yanlış");
+            } else throw new \Exception("Kullanıcı kayıtlı değil");
+        } else throw new \Exception("Hiçbir kullanıcı kayıtlı değil");
 
     }
     /**

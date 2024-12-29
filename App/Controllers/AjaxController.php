@@ -19,6 +19,7 @@ class AjaxController extends Controller
 
     /**
      * Gelen isteğin ajax isteği olup olmadığını kontrol eder
+     * todo checkAjax metodu her Ajax isteği öncesinde çağrıldığı için bir Middleware ya da base sınıfında tanımlanabilir.
      * @return bool
      */
     public function checkAjax()
@@ -58,5 +59,32 @@ class AjaxController extends Controller
             echo json_encode($this->response);
         }
 
+    }
+
+    public function loginAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $usersController = new UsersController();
+                $usersController->login([
+                    'mail' => $this->data['mail'],
+                    'password' => $this->data['password'],
+                    "remember_me" => isset($this->data['remember_me'])
+                ]);
+
+                $this->response = array(
+                    "msg" => "Kullanıcı başarıyla Girişyaptı.",
+                    "redirect" =>"/admin",
+                    "status" => "success"
+                );
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
     }
 }
