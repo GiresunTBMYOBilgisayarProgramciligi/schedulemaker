@@ -52,7 +52,7 @@ class User extends Model
 
     public function getFullName()
     {
-        return $this->name . " " . $this->lastname;
+        return $this->name . " " . $this->last_name;
     }
 
     public function getGravatarURL($size = 50)

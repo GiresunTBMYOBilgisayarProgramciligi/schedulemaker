@@ -46,6 +46,6 @@ class AdminController extends Controller
     public function UsersAction()
     {
         $usersController = new UsersController();
-        $this->callView("admin/users", ["userController" => $usersController]);
+        $this->callView("admin/users", ["usersController" => $usersController]);
     }
 }
