@@ -8,6 +8,6 @@
     <title>TMYO Ders-Sınav Programı Yapıcı</title>
 </head>
 <body>
-<h1>Çalışıyor</h1>
+<?php include "pages/" . $this->view_page . ".php";?>
 </body>
 </html>
