@@ -8,6 +8,7 @@ create table if not exists users
     role          varchar(20) default "user",
     title         varchar(15),
     department_id int,
+    program_id    int,
     schedule      text,
     register_date timestamp   default current_timestamp,
     last_login    timestamp,
@@ -65,7 +66,9 @@ create table if not exists lessons
 
 -- users tablosuna department_id için dış anahtar ekleme
 ALTER TABLE users
-    ADD CONSTRAINT fk_department_id FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE;
+    ADD  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE users
+    ADD  FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 /* password is 123456 */
 insert into users(password, mail, name, last_name, title, role, approved)
