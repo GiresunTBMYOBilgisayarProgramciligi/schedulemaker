@@ -51,6 +51,22 @@
                         </p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="/admin/lessons" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'lessons') !== false) ? 'active' : ''; ?>">
+                        <i class="nav-icon fas fa-book-open"></i>
+                        <p>
+                            Ders İşlemleri
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/classrooms" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'classrooms') !== false) ? 'active' : ''; ?>">
+                        <i class="nav-icon fas fa-chalkboard"></i>
+                        <p>
+                            Derslik İşlemleri
+                        </p>
+                    </a>
+                </li>
             </ul>
         </nav>
         <!-- /.sidebar-menu -->
