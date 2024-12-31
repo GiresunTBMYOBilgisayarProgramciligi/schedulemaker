@@ -21,12 +21,13 @@ class Department extends Model
         parent::__construct(); # Connect to database
         if (isset($id)) {
             $q = $this->database->prepare("Select * From $this->table_name WHERE id=:id");
-            $q->execute(["id" => $id]);
-            $data = $q->fetchAll();
+            $q->bindValue(":id", $id, PDO::PARAM_INT);
+            $q->execute();
+            $data = $q->fetch();
             extract($data);
             $this->id = $id;
             $this->name = $name;
-            $this->schedule = $schedule_id;
+            //$this->schedule = $schedule_id;
             $this->chairperson_id = $chairperson_id;
         }
     }

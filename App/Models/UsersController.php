@@ -14,7 +14,7 @@ class UsersController extends Model
     {
         if (!is_null($id)) {
             try {
-                $u = $this->database->prepare("select * from users where id=:id");
+                $u = $this->database->prepare("select * from $this->table_name where id=:id");
                 $u->bindValue(":id", $id, PDO::PARAM_INT);
                 $u->execute();
                 $u = $u->fetch(\PDO::FETCH_ASSOC);

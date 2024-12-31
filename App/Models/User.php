@@ -37,7 +37,7 @@ class User extends Model
      * @param $data array anahtarları users tablosunun alanları olan bir dizi
      * @return void
      */
-    public function fillUser($data = [])
+    public function fillUser($data = [])// todo bu metod model sınıfına taşınarak her modelde düzgün çelışacak şekilde ayarlanmalı
     {
         foreach (get_class_vars(get_class($this)) as $k => $v) {
             // Eğer tarih alanları ise string değeri DateTime nesnesine dönüştür
