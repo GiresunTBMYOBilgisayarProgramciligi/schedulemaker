@@ -6,6 +6,8 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Department;
+use App\Models\Program;
 use App\Models\UsersController;
 
 /**
@@ -48,18 +50,19 @@ class AdminController extends Controller
     {
         $view_data = [
             "usersController" => new UsersController(),
-            "page_title" => "Kullanıcı İşlemleri"];
+            "page_title" => "Kullanıcı İşlemleri",
+            "departments" => (new Department())->getDepartments(),
+            "programs" => (new Program())->getPrograms()];
         $this->callView("admin/users", $view_data);
     }
 
     public function ProfileAction($id = null)
     {
         $usersController = new UsersController();
-        if (is_null($id)){
-            $user= $usersController->getCurrentUser();
-        }
-        else{
-            $user= $usersController->getUser($id);
+        if (is_null($id)) {
+            $user = $usersController->getCurrentUser();
+        } else {
+            $user = $usersController->getUser($id);
         }
         $view_data = [
             "usersController" => $usersController,

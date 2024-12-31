@@ -3,18 +3,17 @@
 namespace App\Models;
 
 use App\Core\Model;
-use Cassandra\Function_;
 use PDO;
 use PDOException;
 
-class Department extends Model
+class Program extends Model
 {
     public int $id;
     public string $name;
-    public int $chairperson_id;
+    public int $department_id;
     public int $schedule_id;
 
-    private string $table_name = "departments";
+    private string $table_name = "programs";
 
     public function __construct(int $id = null)
     {
@@ -26,20 +25,20 @@ class Department extends Model
             extract($data);
             $this->id = $id;
             $this->name = $name;
-            $this->schedule = $schedule_id;
-            $this->chairperson_id = $chairperson_id;
+            $this->department_id = $department_id;
+            $this->schedule_id = $schedule_id;
         }
     }
 
     /**
-     * @return User Chair Person
+     * @return Department Programın bağlı olduğu Department sınıfı
      */
-    public function getChairperson():User
+    public function getDepartment():Department
     {
-        return (new UsersController())->getUser($this->chairperson_id);
+        return new Department($this->department_id);
     }
 
-    public function getDepartments()
+    public function getPrograms()
     {
         try {
             $q = $this->database->prepare("Select * From $this->table_name");
