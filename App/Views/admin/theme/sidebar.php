@@ -16,11 +16,11 @@
         <!-- Sidebar user panel (optional) -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
             <div class="image">
-                <img src="<?=$currentUser->getGravatarURL()?>"
+                <img src="<?= $currentUser->getGravatarURL() ?>"
                      class="img-circle elevation-2" alt="User Image">
             </div>
             <div class="info">
-                <a href="/admin/profile" class="d-block"><?= $currentUser->getFullName()?></a>
+                <a href="/admin/profile" class="d-block"><?= $currentUser->getFullName() ?></a>
             </div>
         </div>
 
@@ -36,27 +36,40 @@
                             Başlangıç
                         </p>
                     </a>
-
                 </li>
                 <li class="nav-item">
-                    <a href="pages/calendar.html" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'calendar') !== false) ? 'active' : ''; ?>">
-                        <i class="nav-icon far fa-calendar-alt"></i>
-                        <p>
-                            Calendar
-                            <span class="badge badge-info right">2</span>
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="/admin/users" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'users') !== false) ? 'active' : ''; ?>">
+                    <a href="/admin/users"
+                       class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'users') !== false) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-users"></i>
                         <p>
                             Kullanıcı İşlemleri
+                            <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="/admin/users"
+                               class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'users') !== false) ? 'active' : ''; ?>">
+                                <i class="nav-icon fas fa-address-book"></i>
+                                <p>
+                                    Liste
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/admin/adduser"
+                               class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'users') !== false) ? 'active' : ''; ?>">
+                                <i class="nav-icon fas fa-user-plus"></i>
+                                <p>
+                                    Ekle
+                                </p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
-                    <a href="/admin/lessons" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'lessons') !== false) ? 'active' : ''; ?>">
+                    <a href="/admin/lessons"
+                       class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'lessons') !== false) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-book-open"></i>
                         <p>
                             Ders İşlemleri
@@ -64,12 +77,86 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="/admin/classrooms" class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'classrooms') !== false) ? 'active' : ''; ?>">
+                    <a href="/admin/classrooms"
+                       class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'classrooms') !== false) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-chalkboard"></i>
                         <p>
                             Derslik İşlemleri
                         </p>
                     </a>
+                </li>
+                <li class="nav-item">
+
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/departments"
+                       class="nav-link <?= (strpos($_SERVER["REQUEST_URI"], 'departments') !== false) ? 'active' : ''; ?>">
+                        <i class="nav-icon fas fa-school"></i>
+                        <p>
+                            Akademik Birimler
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>
+                                    Bölüm İşlemleri
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview" style="display: none;">
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Liste</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Ekle</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Düzenle</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>
+                                    Program İşlemleri
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview" style="display: none;">
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Liste</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Ekle</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-dot-circle nav-icon"></i>
+                                        <p>Düzenle</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a href="/auth/logout" class="nav-link">

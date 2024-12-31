@@ -50,10 +50,19 @@ class AdminController extends Controller
     {
         $view_data = [
             "usersController" => new UsersController(),
-            "page_title" => "Kullanıcı İşlemleri",
+            "page_title" => "Kullanıcı Listesi",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
         $this->callView("admin/users", $view_data);
+    }
+    public function AddUserAction()
+    {
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Kullanıcı Ekle",
+            "departments" => (new Department())->getDepartments(),
+            "programs" => (new Program())->getPrograms()];
+        $this->callView("admin/adduser", $view_data);
     }
 
     public function ProfileAction($id = null)
@@ -67,9 +76,34 @@ class AdminController extends Controller
         $view_data = [
             "usersController" => $usersController,
             "user" => $user,
-            "page_title" => $user->getFullName()." Profil Sayfası",
+            "page_title" => $user->getFullName() . " Profil Sayfası",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
         $this->callView("admin/profile", $view_data);
+    }
+
+    public function lessonsAction()
+    {
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Ders İşlemleri"
+        ];
+        $this->callView("admin/lessons", $view_data);
+    }
+    public function classroomsAction()
+    {
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Derslik İşlemleri"
+        ];
+        $this->callView("admin/clasrooms", $view_data);
+    }
+    public function departmentsAction()
+    {
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Bölüm İşlemleri"
+        ];
+        $this->callView("admin/departments", $view_data);
     }
 }
