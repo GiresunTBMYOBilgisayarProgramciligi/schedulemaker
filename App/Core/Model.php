@@ -19,4 +19,19 @@ class Model
         }
 
     }
+
+    /**
+     * Modelin tüm özelliklerini döner ve istenmeyen alanları hariç tutar.
+     * @param array $excludedProperties Hariç tutulacak özellikler
+     * @return array
+     */
+    public function getArray($excludedProperties = ['table_name', 'database'])
+    {
+        // Modelin özelliklerini al
+        $properties = get_object_vars($this);
+        // Özellikleri filtrele
+        return array_filter($properties, function ($key) use ($excludedProperties) {
+            return !in_array($key, $excludedProperties);
+        }, ARRAY_FILTER_USE_KEY);
+    }
 }

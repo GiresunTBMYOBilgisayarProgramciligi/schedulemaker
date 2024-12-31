@@ -99,16 +99,4 @@ class User extends Model
         $default = "";
         return "https://www.gravatar.com/avatar/" . md5(strtolower(trim($this->mail))) . "?d=" . urlencode($default) . "&s=" . $size;
     }
-
-    /**
-     * @param $excludedProperties  array diziye eklenmesi istenmeyen özellikler
-     * @return array
-     */
-    public function getArray($excludedProperties = ['table_name', 'database'])
-    {
-        $properties = get_object_vars($this);//sadece değeri olan alanları alıyor
-        return array_filter($properties, function ($key) use ($excludedProperties) {
-            return !in_array($key, $excludedProperties);
-        }, ARRAY_FILTER_USE_KEY);
-    }
 }
