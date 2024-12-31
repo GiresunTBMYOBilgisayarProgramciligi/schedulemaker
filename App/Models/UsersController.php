@@ -14,15 +14,18 @@ class UsersController extends Model
     {
         if (!is_null($id)) {
             try {
-                $u = $this->database->query("select * from users where id={$id}");
+                $u = $this->database->prepare("select * from users where id=:id");
+                $u->bindValue(":id", $id, PDO::PARAM_INT);
+                $u->execute();
+                $u = $u->fetch(\PDO::FETCH_ASSOC);
                 if ($u) {
-                    $u = $u->fetch(\PDO::FETCH_ASSOC);
                     $user = new User();
                     $user->fillUser($u);
 
                     return $user;
-                }
+                }else throw new \Exception("User not found");
             } catch (\Exception $e) {
+                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
                 echo $e->getMessage();
             }
         }
@@ -101,17 +104,17 @@ class UsersController extends Model
         $new_user->fillUser($data);
         try {
             $q = $this->database->prepare(
-                "INSERT INTO users(password, mail, name, last_name, role,title, department_id) 
-            values  (:password, :mail, :name, :last_name, :role,:title, :department_id)");
+                "INSERT INTO users(password, mail, name, last_name, role,title, department_id, program_id) 
+            values  (:password, :mail, :name, :last_name, :role,:title, :department_id, :program_id)");
             if ($q) {
-                $new_user_arr = $new_user->getArray(['table_name', 'database', 'id']);
+                $new_user_arr = $new_user->getArray(['table_name', 'database', 'id',"register_date","last_login"]);
                 $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
                 $q->execute($new_user_arr);
             }
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz."];
+                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.".$e->getMessage()];
             } else {
                 return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
             }
