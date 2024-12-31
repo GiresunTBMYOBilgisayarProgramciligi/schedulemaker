@@ -1,4 +1,8 @@
-<!-- Main Sidebar Container -->
+<?php
+/**
+ * @var \App\Models\User $currentUser Oturum açmış kullanıcı
+ */
+?><!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="/admin" class="brand-link">
@@ -16,7 +20,7 @@
                      class="img-circle elevation-2" alt="User Image">
             </div>
             <div class="info">
-                <a href="#" class="d-block"><?= $currentUser->getFullName()?></a>
+                <a href="/admin/profile" class="d-block"><?= $currentUser->getFullName()?></a>
             </div>
         </div>
 
