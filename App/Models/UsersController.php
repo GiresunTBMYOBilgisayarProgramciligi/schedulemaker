@@ -23,7 +23,7 @@ class UsersController extends Model
                     $user->fillUser($u);
 
                     return $user;
-                }else throw new \Exception("User not found");
+                } else throw new \Exception("User not found");
             } catch (\Exception $e) {
                 // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
                 echo $e->getMessage();
@@ -46,11 +46,12 @@ class UsersController extends Model
         return $u;
     }
 
-    public function getCount(){
+    public function getCount()
+    {
         try {
             $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             var_dump($e);
             return false;
         }
@@ -78,9 +79,9 @@ class UsersController extends Model
             $user = $stmt->fetch(\PDO::FETCH_OBJ);
             if ($user) {
                 if (password_verify($arr->password, $user->password)) {
-                    if (!$arr->remember_me){
+                    if (!$arr->remember_me) {
                         $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
-                    }else{
+                    } else {
                         setcookie($_ENV["COOKIE_KEY"], $user->id, [
                             'expires' => time() + (86400 * 30),
                             'path' => '/',
@@ -93,28 +94,27 @@ class UsersController extends Model
         } else throw new \Exception("Hiçbir kullanıcı kayıtlı değil");
 
     }
+
     /**
      * AjaxControllerdan gelen verilele yani kullanıcı oluşturur
      * @param array $data
      * @return array
      */
-    public function save_new(array $data): array
+    public function saveNew(User $new_user): array
     {
-        $new_user = new User();
-        $new_user->fillUser($data);
         try {
             $q = $this->database->prepare(
                 "INSERT INTO users(password, mail, name, last_name, role,title, department_id, program_id) 
             values  (:password, :mail, :name, :last_name, :role,:title, :department_id, :program_id)");
             if ($q) {
-                $new_user_arr = $new_user->getArray(['table_name', 'database', 'id',"register_date","last_login"]);
+                $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
                 $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
                 $q->execute($new_user_arr);
             }
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.".$e->getMessage()];
+                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz." . $e->getMessage()];
             } else {
                 return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
             }
@@ -123,12 +123,52 @@ class UsersController extends Model
         return ["status" => "success"];
     }
 
-    public function get_users_list()
+    /**
+     * todo düzenlenecek
+     * @param User $user
+     * @return string[]
+     */
+    public function updateUser(User $user)
+    {
+        try {
+            if ($user->password == "") {
+                unset($user->password);
+            } else {
+                $user->password = password_hash($user->password, PASSWORD_DEFAULT);
+            }
+            $userData = $user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
+            $i = 0;
+            $query = "UPDATE $this->table_name SET ";
+            foreach ($userData as $k => $v) {
+                if (++$i === count($userData)) $query .= $k . "=:" . $k . " ";
+                else $query .= $k . "=:" . $k . ", ";
+            }
+            $query .= " WHERE id=:id";
+            $userData["id"] = $user->id;
+            $u = $this->database->prepare($query);
+            $u->execute($userData);
+
+
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+        return ["status" => "success"];
+    }
+
+    /**
+     * @return array
+     */
+    public function get_users_list(): array
     {
         $q = $this->database->prepare("SELECT * FROM $this->table_name ");
         $q->execute();
-        $user_list= $q->fetchAll(PDO::FETCH_ASSOC);
-        $users=[];
+        $user_list = $q->fetchAll(PDO::FETCH_ASSOC);
+        $users = [];
         foreach ($user_list as $user_data) {
             $user = new User();
             $user->fillUser($user_data);

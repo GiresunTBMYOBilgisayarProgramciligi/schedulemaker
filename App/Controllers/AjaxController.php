@@ -39,12 +39,43 @@ class AjaxController extends Controller
             try {
                 $usersController = new UsersController();
                 $userData = $this->data;
-                $respons = $usersController->save_new($userData);
+                $new_user = new User();
+                $new_user->fillUser($userData);
+                $respons = $usersController->saveNew($new_user);
                 if ($respons['status'] == 'error') {
                     throw new \Exception($respons['msg']);
                 } else {
                     $this->response = array(
                         "msg" => "Kullanıcı başarıyla eklendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+
+    }
+    public function updateUserAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $usersController = new UsersController();
+                $userData = $this->data;
+                $new_user = new User();
+                $new_user->fillUser($userData);
+                $respons = $usersController->updateUser($new_user);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Kullanıcı başarıyla Güncellendi.",
                         "status" => "success"
                     );
                 }
@@ -74,7 +105,7 @@ class AjaxController extends Controller
 
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Girişyaptı.",
-                    "redirect" =>"/admin",
+                    "redirect" => "/admin",
                     "status" => "success"
                 );
             } catch (\Exception $e) {

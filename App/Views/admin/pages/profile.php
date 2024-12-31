@@ -1,13 +1,13 @@
 <div class="content-wrapper" style="min-height: 1604.8px;">
-<?php
-/**
- * @var \App\Models\User $user
- * @var \App\Models\UsersController $usersController
- * @var array $programs \App\Models\Program->getPrograms())
- * @var array $departments \App\Models\Department->getDepartments())
- */
+    <?php
+    /**
+     * @var \App\Models\User $user
+     * @var \App\Models\UsersController $usersController
+     * @var array $programs \App\Models\Program->getPrograms())
+     * @var array $departments \App\Models\Department->getDepartments())
+     */
 
-?>
+    ?>
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
@@ -18,12 +18,13 @@
                     <div class="card card-primary card-outline">
                         <div class="card-body box-profile">
                             <div class="text-center">
-                                <img class="profile-user-img img-fluid img-circle" src="<?= $user->getGravatarURL(150)?>" alt="User profile picture">
+                                <img class="profile-user-img img-fluid img-circle"
+                                     src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
                             </div>
 
-                            <h3 class="profile-username text-center"><?=$user->getFullName()?></h3>
+                            <h3 class="profile-username text-center"><?= $user->getFullName() ?></h3>
 
-                            <p class="text-muted text-center"><?=$user->title?></p>
+                            <p class="text-muted text-center"><?= $user->title ?></p>
 
                             <ul class="list-group list-group-unbordered mb-3">
                                 <li class="list-group-item">
@@ -49,8 +50,9 @@
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <form action="/ajax/addNewUser" method="post" class="ajaxForm"
-                                  title="Yeni Kullnıcı Ekle">
+                            <form action="/ajax/updateUser" method="post" class="ajaxForm"
+                                  title="Bilgileri Güncelle">
+                                <input type="hidden" name="id" value="<?= $user->id ?>">
                                 <div class="form-group">
                                     <label for="name">Adı</label>
                                     <input type="text" class="form-control" id="name" name="name" placeholder="Adı"
@@ -74,29 +76,48 @@
                                 <div class="form-group">
                                     <label for="password">Şifre</label>
                                     <input type="password" class="form-control" id="password" name="password"
-                                           placeholder="Şifre" required>
+                                           placeholder="Şifre">
                                 </div>
                                 <div class="form-group">
                                     <label for="role">Rol</label>
-                                    <?php $user_role= htmlspecialchars($user->role ?? '');?>
+                                    <?php $user_role = htmlspecialchars($user->role ?? ''); ?>
                                     <select class="form-control" id="role" name="role">
-                                        <option value="user" <?= $user_role=="user"? 'selected' : ''?>>Kullanıcı</option>
-                                        <option value="lecturer" <?= $user_role=="lecturer"? 'selected' : ''?>>Akademisyen</option>
-                                        <option value="admin" <?= $user_role=="admin"? 'selected' : ''?>>Yönetici</option>
-                                        <option value="department_head" <?= $user_role=="department_head"? 'selected' : ''?>>Bölüm Başkanı</option>
-                                        <option value="manager" <?= $user_role=="manager"? 'selected' : ''?>>Müdür</option>
-                                        <option value="submanager" <?= $user_role=="submanager"? 'selected' : ''?>>Müdür Yardımcısı</option>
+                                        <option value="user" <?= $user_role == "user" ? 'selected' : '' ?>>Kullanıcı
+                                        </option>
+                                        <option value="lecturer" <?= $user_role == "lecturer" ? 'selected' : '' ?>>
+                                            Akademisyen
+                                        </option>
+                                        <option value="admin" <?= $user_role == "admin" ? 'selected' : '' ?>>Yönetici
+                                        </option>
+                                        <option value="department_head" <?= $user_role == "department_head" ? 'selected' : '' ?>>
+                                            Bölüm Başkanı
+                                        </option>
+                                        <option value="manager" <?= $user_role == "manager" ? 'selected' : '' ?>>Müdür
+                                        </option>
+                                        <option value="submanager" <?= $user_role == "submanager" ? 'selected' : '' ?>>
+                                            Müdür Yardımcısı
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="title">Ünvan</label>
                                     <?php $title = htmlspecialchars($user->title ?? ''); ?>
                                     <select class="form-control" id="title" name="title">
-                                        <option value="Öğr. Gör." <?= $title == "Öğr. Gör." ? 'selected' : '' ?>>Öğr. Gör.</option>
-                                        <option value="Öğr. Gör. Dr." <?= $title == "Öğr. Gör. Dr." ? 'selected' : '' ?>>Öğr. Gör. Dr.</option>
-                                        <option value="Dr. Öğretim Üyesi" <?= $title == "Dr. Öğretim Üyesi" ? 'selected' : '' ?>>Dr. Öğretim Üyesi</option>
-                                        <option value="Doç. Dr. " <?= $title == "Doç. Dr. " ? 'selected' : '' ?>>Doç. Dr.</option>
-                                        <option value="Prof. Dr." <?= $title == "Prof. Dr." ? 'selected' : '' ?>>Prof. Dr.</option>
+                                        <option value="Öğr. Gör." <?= $title == "Öğr. Gör." ? 'selected' : '' ?>>Öğr.
+                                            Gör.
+                                        </option>
+                                        <option value="Öğr. Gör. Dr." <?= $title == "Öğr. Gör. Dr." ? 'selected' : '' ?>>
+                                            Öğr. Gör. Dr.
+                                        </option>
+                                        <option value="Dr. Öğretim Üyesi" <?= $title == "Dr. Öğretim Üyesi" ? 'selected' : '' ?>>
+                                            Dr. Öğretim Üyesi
+                                        </option>
+                                        <option value="Doç. Dr. " <?= $title == "Doç. Dr. " ? 'selected' : '' ?>>Doç.
+                                            Dr.
+                                        </option>
+                                        <option value="Prof. Dr." <?= $title == "Prof. Dr." ? 'selected' : '' ?>>Prof.
+                                            Dr.
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -135,9 +156,12 @@
                     <div class="card">
                         <div class="card-header p-2">
                             <ul class="nav nav-pills">
-                                <li class="nav-item"><a class="nav-link active" href="#activity" data-toggle="tab">Activity</a></li>
-                                <li class="nav-item"><a class="nav-link" href="#timeline" data-toggle="tab">Timeline</a></li>
-                                <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab">Settings</a></li>
+                                <li class="nav-item"><a class="nav-link active" href="#activity" data-toggle="tab">Activity</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link" href="#timeline" data-toggle="tab">Timeline</a>
+                                </li>
+                                <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab">Settings</a>
+                                </li>
                             </ul>
                         </div><!-- /.card-header -->
                         <div class="card-body">
@@ -146,7 +170,8 @@
                                     <!-- Post -->
                                     <div class="post">
                                         <div class="user-block">
-                                            <img class="img-circle img-bordered-sm" src="../../dist/img/user1-128x128.jpg" alt="user image">
+                                            <img class="img-circle img-bordered-sm"
+                                                 src="../../dist/img/user1-128x128.jpg" alt="user image">
                                             <span class="username">
                           <a href="#">Jonathan Burke Jr.</a>
                           <a href="#" class="float-right btn-tool"><i class="fas fa-times"></i></a>
@@ -163,8 +188,10 @@
                                         </p>
 
                                         <p>
-                                            <a href="#" class="link-black text-sm mr-2"><i class="fas fa-share mr-1"></i> Share</a>
-                                            <a href="#" class="link-black text-sm"><i class="far fa-thumbs-up mr-1"></i> Like</a>
+                                            <a href="#" class="link-black text-sm mr-2"><i
+                                                        class="fas fa-share mr-1"></i> Share</a>
+                                            <a href="#" class="link-black text-sm"><i class="far fa-thumbs-up mr-1"></i>
+                                                Like</a>
                                             <span class="float-right">
                           <a href="#" class="link-black text-sm">
                             <i class="far fa-comments mr-1"></i> Comments (5)
@@ -172,14 +199,16 @@
                         </span>
                                         </p>
 
-                                        <input class="form-control form-control-sm" type="text" placeholder="Type a comment">
+                                        <input class="form-control form-control-sm" type="text"
+                                               placeholder="Type a comment">
                                     </div>
                                     <!-- /.post -->
 
                                     <!-- Post -->
                                     <div class="post clearfix">
                                         <div class="user-block">
-                                            <img class="img-circle img-bordered-sm" src="../../dist/img/user7-128x128.jpg" alt="User Image">
+                                            <img class="img-circle img-bordered-sm"
+                                                 src="../../dist/img/user7-128x128.jpg" alt="User Image">
                                             <span class="username">
                           <a href="#">Sarah Ross</a>
                           <a href="#" class="float-right btn-tool"><i class="fas fa-times"></i></a>
@@ -209,7 +238,8 @@
                                     <!-- Post -->
                                     <div class="post">
                                         <div class="user-block">
-                                            <img class="img-circle img-bordered-sm" src="../../dist/img/user6-128x128.jpg" alt="User Image">
+                                            <img class="img-circle img-bordered-sm"
+                                                 src="../../dist/img/user6-128x128.jpg" alt="User Image">
                                             <span class="username">
                           <a href="#">Adam Jones</a>
                           <a href="#" class="float-right btn-tool"><i class="fas fa-times"></i></a>
@@ -225,13 +255,17 @@
                                             <div class="col-sm-6">
                                                 <div class="row">
                                                     <div class="col-sm-6">
-                                                        <img class="img-fluid mb-3" src="../../dist/img/photo2.png" alt="Photo">
-                                                        <img class="img-fluid" src="../../dist/img/photo3.jpg" alt="Photo">
+                                                        <img class="img-fluid mb-3" src="../../dist/img/photo2.png"
+                                                             alt="Photo">
+                                                        <img class="img-fluid" src="../../dist/img/photo3.jpg"
+                                                             alt="Photo">
                                                     </div>
                                                     <!-- /.col -->
                                                     <div class="col-sm-6">
-                                                        <img class="img-fluid mb-3" src="../../dist/img/photo4.jpg" alt="Photo">
-                                                        <img class="img-fluid" src="../../dist/img/photo1.png" alt="Photo">
+                                                        <img class="img-fluid mb-3" src="../../dist/img/photo4.jpg"
+                                                             alt="Photo">
+                                                        <img class="img-fluid" src="../../dist/img/photo1.png"
+                                                             alt="Photo">
                                                     </div>
                                                     <!-- /.col -->
                                                 </div>
@@ -242,8 +276,10 @@
                                         <!-- /.row -->
 
                                         <p>
-                                            <a href="#" class="link-black text-sm mr-2"><i class="fas fa-share mr-1"></i> Share</a>
-                                            <a href="#" class="link-black text-sm"><i class="far fa-thumbs-up mr-1"></i> Like</a>
+                                            <a href="#" class="link-black text-sm mr-2"><i
+                                                        class="fas fa-share mr-1"></i> Share</a>
+                                            <a href="#" class="link-black text-sm"><i class="far fa-thumbs-up mr-1"></i>
+                                                Like</a>
                                             <span class="float-right">
                           <a href="#" class="link-black text-sm">
                             <i class="far fa-comments mr-1"></i> Comments (5)
@@ -251,7 +287,8 @@
                         </span>
                                         </p>
 
-                                        <input class="form-control form-control-sm" type="text" placeholder="Type a comment">
+                                        <input class="form-control form-control-sm" type="text"
+                                               placeholder="Type a comment">
                                     </div>
                                     <!-- /.post -->
                                 </div>
@@ -273,7 +310,8 @@
                                             <div class="timeline-item">
                                                 <span class="time"><i class="far fa-clock"></i> 12:05</span>
 
-                                                <h3 class="timeline-header"><a href="#">Support Team</a> sent you an email</h3>
+                                                <h3 class="timeline-header"><a href="#">Support Team</a> sent you an
+                                                    email</h3>
 
                                                 <div class="timeline-body">
                                                     Etsy doostang zoodles disqus groupon greplin oooj voxy zoodles,
@@ -295,7 +333,8 @@
                                             <div class="timeline-item">
                                                 <span class="time"><i class="far fa-clock"></i> 5 mins ago</span>
 
-                                                <h3 class="timeline-header border-0"><a href="#">Sarah Young</a> accepted your friend request
+                                                <h3 class="timeline-header border-0"><a href="#">Sarah Young</a>
+                                                    accepted your friend request
                                                 </h3>
                                             </div>
                                         </div>
@@ -307,7 +346,8 @@
                                             <div class="timeline-item">
                                                 <span class="time"><i class="far fa-clock"></i> 27 mins ago</span>
 
-                                                <h3 class="timeline-header"><a href="#">Jay White</a> commented on your post</h3>
+                                                <h3 class="timeline-header"><a href="#">Jay White</a> commented on your
+                                                    post</h3>
 
                                                 <div class="timeline-body">
                                                     Take me to your leader!
@@ -334,7 +374,8 @@
                                             <div class="timeline-item">
                                                 <span class="time"><i class="far fa-clock"></i> 2 days ago</span>
 
-                                                <h3 class="timeline-header"><a href="#">Mina Lee</a> uploaded new photos</h3>
+                                                <h3 class="timeline-header"><a href="#">Mina Lee</a> uploaded new photos
+                                                </h3>
 
                                                 <div class="timeline-body">
                                                     <img src="https://placehold.it/150x100" alt="...">
@@ -357,38 +398,45 @@
                                         <div class="form-group row">
                                             <label for="inputName" class="col-sm-2 col-form-label">Name</label>
                                             <div class="col-sm-10">
-                                                <input type="email" class="form-control" id="inputName" placeholder="Name">
+                                                <input type="email" class="form-control" id="inputName"
+                                                       placeholder="Name">
                                             </div>
                                         </div>
                                         <div class="form-group row">
                                             <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
                                             <div class="col-sm-10">
-                                                <input type="email" class="form-control" id="inputEmail" placeholder="Email">
+                                                <input type="email" class="form-control" id="inputEmail"
+                                                       placeholder="Email">
                                             </div>
                                         </div>
                                         <div class="form-group row">
                                             <label for="inputName2" class="col-sm-2 col-form-label">Name</label>
                                             <div class="col-sm-10">
-                                                <input type="text" class="form-control" id="inputName2" placeholder="Name">
+                                                <input type="text" class="form-control" id="inputName2"
+                                                       placeholder="Name">
                                             </div>
                                         </div>
                                         <div class="form-group row">
-                                            <label for="inputExperience" class="col-sm-2 col-form-label">Experience</label>
+                                            <label for="inputExperience"
+                                                   class="col-sm-2 col-form-label">Experience</label>
                                             <div class="col-sm-10">
-                                                <textarea class="form-control" id="inputExperience" placeholder="Experience"></textarea>
+                                                <textarea class="form-control" id="inputExperience"
+                                                          placeholder="Experience"></textarea>
                                             </div>
                                         </div>
                                         <div class="form-group row">
                                             <label for="inputSkills" class="col-sm-2 col-form-label">Skills</label>
                                             <div class="col-sm-10">
-                                                <input type="text" class="form-control" id="inputSkills" placeholder="Skills">
+                                                <input type="text" class="form-control" id="inputSkills"
+                                                       placeholder="Skills">
                                             </div>
                                         </div>
                                         <div class="form-group row">
                                             <div class="offset-sm-2 col-sm-10">
                                                 <div class="checkbox">
                                                     <label>
-                                                        <input type="checkbox"> I agree to the <a href="#">terms and conditions</a>
+                                                        <input type="checkbox"> I agree to the <a href="#">terms and
+                                                            conditions</a>
                                                     </label>
                                                 </div>
                                             </div>
