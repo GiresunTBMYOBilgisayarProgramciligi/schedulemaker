@@ -11,7 +11,7 @@ class Controller
     /**
      * Belirtilen view dosyasını render eder
      * @param string $view_path örn admin/index
-     * @param array $data
+     * @param array $data view'e aktarılan veriler
      * @return void
      */
     public function callView(string $view_path, array $data = []): void

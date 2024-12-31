@@ -38,14 +38,33 @@ class AdminController extends Controller
      */
     public function IndexAction(): void
     {
-        $this->callView("admin/index", ["usersController" => new UsersController()]);
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Anasayfa"];
+        $this->callView("admin/index", $view_data);
     }
-
-
 
     public function UsersAction()
     {
+        $view_data = [
+            "usersController" => new UsersController(),
+            "page_title" => "Kullanıcı İşlemleri"];
+        $this->callView("admin/users", $view_data);
+    }
+
+    public function ProfileAction($id = null)
+    {
         $usersController = new UsersController();
-        $this->callView("admin/users", ["usersController" => $usersController]);
+        if (is_null($id)){
+            $user= $usersController->getCurrentUser();
+        }
+        else{
+            $user= $usersController->getUser($id);
+        }
+        $view_data = [
+            "usersController" => $usersController,
+            "user" => $user,
+            "page_title" => "Profil"];
+        $this->callView("admin/profile", $view_data);
     }
 }
