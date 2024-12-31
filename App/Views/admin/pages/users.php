@@ -1,9 +1,9 @@
 <?php
 /**
- * @var array $departments \App\Models\Department->getDepartments())
- * @var \App\Models\UsersController $usersController
+  * @var \App\Models\UsersController $usersController
  * @var \App\Models\User $user
  * @var array $programs \App\Models\Program->getPrograms())
+ * @var array $departments \App\Models\Department->getDepartments())
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -146,7 +146,7 @@
                                                 <label for="department_id">Bölüm</label>
                                                 <select class="form-control" id="department_id" name="department_id">
                                                     <?php foreach ($departments as $department): ?>
-                                                        <option value="<?= $department['department_id'] ?>"><?= $department['name'] ?></option>
+                                                        <option value="<?= $department['id'] ?>"><?= $department['name'] ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
@@ -155,8 +155,8 @@
                                             <div class="form-group">
                                                 <label for="program_id">Program</label>
                                                 <select class="form-control" id="program_id" name="program_id">
-                                                    <?php foreach ($programs as $program): ?>
-                                                        <option value="<?= $program['department_id'] ?>"><?= $program['name'] ?></option>
+                                                    <?php foreach ($programs as $program): var_dump($programs);?>
+                                                        <option value="<?= $program['id'] ?>"><?= $program['name'] ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
