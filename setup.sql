@@ -73,3 +73,6 @@ ALTER TABLE users
 /* password is 123456 */
 insert into users(password, mail, name, last_name, title, role, approved)
 values ("$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC", "admin@admin.com", "Admin", "Admin","Admin","admin",true);
+
+insert into departments (name, chairperson_id) values ("Bilgisayar Teknolojileri",1);
+insert into programs ( name, department_id) values ("Bilgisayar Programcılığı",1)
