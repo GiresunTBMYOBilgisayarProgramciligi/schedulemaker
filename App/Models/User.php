@@ -19,7 +19,7 @@ class User extends Model
     public string $title;
     public int $department_id;
     public int $program_id;
-    public string $schedule;
+    public int $schedule_id;
     public \DateTime $register_date;
     public \DateTime $last_login;
 

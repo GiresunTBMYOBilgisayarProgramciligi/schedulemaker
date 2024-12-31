@@ -27,7 +27,7 @@ class Program extends Model
             $this->id = $id;
             $this->name = $name;
             $this->department_id = $department_id;
-            //$this->schedule_id = $schedule_id;
+            $this->schedule_id = $schedule_id;
         }
     }
 
