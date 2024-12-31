@@ -67,7 +67,9 @@ class AdminController extends Controller
         $view_data = [
             "usersController" => $usersController,
             "user" => $user,
-            "page_title" => "Profil"];
+            "page_title" => $user->getFullName()." Profil Sayfası",
+            "departments" => (new Department())->getDepartments(),
+            "programs" => (new Program())->getPrograms()];
         $this->callView("admin/profile", $view_data);
     }
 }
