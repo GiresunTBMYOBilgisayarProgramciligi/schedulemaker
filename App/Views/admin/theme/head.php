@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <!-- Tempusdominus Bootstrap 4 -->
     <link rel="stylesheet" href="/assets/node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <!-- Data table -->
+    <link rel="stylesheet" href="/assets/node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/css/adminlte.min.css">
 </head>

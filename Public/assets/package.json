@@ -7,7 +7,7 @@
     "@ttskch/select2-bootstrap4-theme": "^1.5.2",
     "bootstrap": "^4.6.2",
     "bootstrap-colorpicker": "^3.4.0",
-    "datatables.net-dt": "^1.13.2",
+    "datatables.net-dt": "^1.13.11",
     "icheck-bootstrap": "^3.0.1",
     "jquery": "^3.6.0",
     "jquery-ui-dist": "^1.13.1"
