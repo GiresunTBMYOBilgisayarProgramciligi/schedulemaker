@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--<html lang="<?php /*= $currentLanguage ?? 'tr' */?>"> todo bunu düzenleyip tüm theme sayfalarına eklemek lazım -->
 <html lang="tr">
 <?php
 include "theme/head.php";
