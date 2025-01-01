@@ -119,4 +119,4 @@ fabric.properties
 db
 .env
 build
-Public/assets/AdminLTE/node_modules
+Public/assets/node_modules
