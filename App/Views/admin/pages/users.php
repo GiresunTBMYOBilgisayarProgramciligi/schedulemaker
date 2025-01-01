@@ -55,8 +55,8 @@
                                     <td><?= $user->getDepartmentName() ?></td>
                                     <td><?= $user->getProgramName() ?></td>
                                     <td><?= $user->getRoleName() ?></td>
-                                    <td><?= $user->register_date->format('Y-m-d H:i:s') ?></td>
-                                    <td><?php $user->last_login->format('Y-m-d H:i:s') ?></td>
+                                    <td><?= $user->getRegisterDate() ?></td>
+                                    <td><?= $user->getLastLogin() ?></td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>

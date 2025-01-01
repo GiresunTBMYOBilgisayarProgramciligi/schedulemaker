@@ -21,7 +21,7 @@ class User extends Model
     public int $program_id;
     public int $schedule_id;
     public \DateTime $register_date;
-    public \DateTime $last_login;
+    public ?\DateTime $last_login;
 
     private string $table_name = "users";
 
@@ -47,7 +47,7 @@ class User extends Model
                     $this->$k = new \DateTime($data[$k]);
                 } else {
                     // Eğer tarih yoksa, geçerli bir DateTime nesnesi oluştur
-                    $this->$k = new \DateTime();
+                    $this->$k = null;
                 }
             } else {
                 // Diğer alanlarda null kontrolü
@@ -56,6 +56,16 @@ class User extends Model
                 }
             }
         }
+    }
+
+    public function getRegisterDate(): string
+    {
+        return !is_null($this->register_date) ? $this->register_date->format('Y-m-d H:i:s') : "";
+    }
+
+    public function getLastLogin(): string
+    {
+        return !is_null($this->last_login) ? $this->last_login->format('Y-m-d H:i:s') : "Hiç Giriş Yapılmadı";
     }
 
     /**

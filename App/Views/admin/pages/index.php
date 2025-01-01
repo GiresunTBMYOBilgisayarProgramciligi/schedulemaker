@@ -114,7 +114,7 @@
                                             <li class="small"><span class="fa-li"><i
                                                             class="fas fa-lg fa-business-time"></i></span>
                                                 Son
-                                                Giriş: <?= $user->last_login->format('Y-m-d H:i:s') ?>
+                                                Giriş: <?= $user->getLastLogin() ?>
                                             </li>
                                         </ul>
                                     </div>
