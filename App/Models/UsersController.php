@@ -92,7 +92,10 @@ class UsersController extends Model
                 } else throw new \Exception("Şifre Yanlış");
             } else throw new \Exception("Kullanıcı kayıtlı değil");
         } else throw new \Exception("Hiçbir kullanıcı kayıtlı değil");
-
+        // Update las login date
+        $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
+        $stmt = $this->database->prepare($sql);
+        $stmt->execute([$user->id]);
     }
 
     /**
