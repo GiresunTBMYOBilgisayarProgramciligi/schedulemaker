@@ -64,7 +64,7 @@ class User extends Model
      */
     public function getFullName()
     {
-        return $this->name . " " . $this->last_name;
+        return $this->title . " " . $this->name . " " . $this->last_name;
     }
 
     /**

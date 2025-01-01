@@ -37,9 +37,7 @@
                             <thead>
                             <tr>
                                 <th>İd</th>
-                                <th>Ünvan</th>
-                                <th>Adı</th>
-                                <th>Soyadı</th>
+                                <th>Ünvanı Adı Soyadı</th>
                                 <th>e-Posta</th>
                                 <th>Bölüm</th>
                                 <th>Program</th>
@@ -52,9 +50,7 @@
                             <?php foreach ($usersController->get_users_list() as $user): ?>
                                 <tr class="odd">
                                     <td><?= $user->id ?></td>
-                                    <td><?= $user->title ?></td>
-                                    <td><?= $user->name ?></td>
-                                    <td><?= $user->last_name ?></td>
+                                    <td><?= $user->getFullName() ?></td>
                                     <td><?= $user->mail ?></td>
                                     <td><?= $user->getDepartmentName() ?></td>
                                     <td><?= $user->getProgramName() ?></td>
