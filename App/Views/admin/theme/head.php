@@ -13,7 +13,7 @@
     <!-- Tempusdominus Bootstrap 4 -->
     <link rel="stylesheet" href="/assets/node_modules/bootstrap/dist/css/bootstrap.min.css">
     <!-- Data table -->
-    <link rel="stylesheet" href="/assets/node_modules/datatables.net-dt/css/jquery.dataTables.min.css">
+    <link href="https://cdn.datatables.net/v/bs4/dt-2.1.8/datatables.min.css" rel="stylesheet">
     <!-- Theme style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2.0/dist/css/adminlte.min.css">
 </head>

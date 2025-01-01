@@ -1,5 +1,7 @@
-import DataTable from '../node_modules/datatables.net-dt';
 
-let table = new DataTable('#user-list-table', {
+let table = new DataTable('.dataTable', {
     // config options...
+    language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json'
+    }
 });

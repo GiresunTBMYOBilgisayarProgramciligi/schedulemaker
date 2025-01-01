@@ -8,5 +8,5 @@
 <script src="/assets/js/gettext.php"></script>
 <script src="/assets/js/ajax.js"></script>
 <!-- Data table -->
-<script src="/assets/node_modules/datatables.net-dt/js/dataTables.dataTables.min.js"></script>
-<script src="/assets/js/custom.js"></script>
+<script src="https://cdn.datatables.net/v/bs4/dt-2.1.8/datatables.min.js"></script>
+<script type="module" src="/assets/js/custom.js"></script>
