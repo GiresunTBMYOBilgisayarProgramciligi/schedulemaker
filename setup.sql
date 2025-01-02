@@ -62,9 +62,10 @@ create table if not exists programs
 create table if not exists lessons
 (
     id            int AUTO_INCREMENT,
-    code          varchar(50),
-    name          text,
+    code          varchar(50) NOT NULL,
+    name          text NOT NULL,
     size          int,
+    hours         int NOT NULL DEFAULT 2,
     lecturer_id   int,
     department_id int,
     program_id    int,
