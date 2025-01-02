@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Routers;
 
-use App\Core\Controller;
+use App\Core\Router;
 use App\Models\User;
 use App\Models\UsersController;
 
-class AjaxController extends Controller
+class AjaxRouter extends Router
 {
     /**
      * @var array Ajax cevap verisi

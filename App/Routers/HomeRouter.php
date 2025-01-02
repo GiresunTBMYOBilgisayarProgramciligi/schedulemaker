@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Routers;
 
-use App\Core\Controller;
+use App\Core\Router;
 
-class HomeController extends Controller
+class HomeRouter extends Router
 {
     public function IndexAction()
     {

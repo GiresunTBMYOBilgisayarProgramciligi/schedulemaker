@@ -3,19 +3,19 @@
  * Admin paneli sayfalarını yöneten dosya
  */
 
-namespace App\Controllers;
+namespace App\Routers;
 
-use App\Core\Controller;
+use App\Core\Router;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\UsersController;
 
 /**
- * AdminController Sınıfı
+ * AdminRouter Sınıfı
  * /admin altında gelen istekleri yönetir.
  */
-class AdminController extends Controller
+class AdminRouter extends Router
 {
     public function __construct()
     {

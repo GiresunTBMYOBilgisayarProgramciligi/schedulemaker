@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Routers;
 
-use App\Core\Controller;
+use App\Core\Router;
 
-class AuthController extends Controller
+class AuthRouter extends Router
 {
     public function LoginAction()
     {

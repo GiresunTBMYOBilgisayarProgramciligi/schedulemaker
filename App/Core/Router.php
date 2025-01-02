@@ -4,7 +4,7 @@ namespace App\Core;
 
 use App\Core\View;
 
-class Controller
+class Router
 {
     protected $view;
 
