@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \App\Models\UsersController $usersController
+ * @var \App\Controllers\UsersController $usersController
  * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
  * @var array $lessons

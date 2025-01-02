@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \App\Models\UsersController $usersController
+ * @var \App\Controllers\UsersController $usersController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
@@ -47,7 +47,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <?php foreach ($usersController->get_users_list() as $user): ?>
+                            <?php foreach ($usersController->getUsersList() as $user): ?>
                                 <tr class="odd">
                                     <td><?= $user->id ?></td>
                                     <td><?= $user->getFullName() ?></td>

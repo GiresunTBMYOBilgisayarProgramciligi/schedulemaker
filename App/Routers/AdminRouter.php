@@ -5,11 +5,11 @@
 
 namespace App\Routers;
 
+use App\Controllers\UsersController;
 use App\Core\Router;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
-use App\Models\UsersController;
 
 /**
  * AdminRouter Sınıfı

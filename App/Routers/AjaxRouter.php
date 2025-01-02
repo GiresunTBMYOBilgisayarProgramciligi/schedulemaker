@@ -2,9 +2,9 @@
 
 namespace App\Routers;
 
+use App\Controllers\UsersController;
 use App\Core\Router;
 use App\Models\User;
-use App\Models\UsersController;
 
 class AjaxRouter extends Router
 {

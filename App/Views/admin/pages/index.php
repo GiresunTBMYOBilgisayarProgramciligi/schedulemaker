@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \App\Models\UsersController $usersController
+ * @var \App\Controllers\UsersController $usersController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  */
 ?>
@@ -89,7 +89,7 @@
             <!-- /.row -->
             <!-- Main row -->
             <div class="row"><!--todo Buradaki liste kullanıcıya göre güncellenenebilir. Sadece kendi bölümünün hocaları gözükür. filan-->
-                <?php foreach ($usersController->get_users_list() as $user): ?>
+                <?php foreach ($usersController->getUsersList() as $user): ?>
                     <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
                         <div class="card  d-flex flex-fill">
                             <div class="card-header text-muted border-bottom-0">

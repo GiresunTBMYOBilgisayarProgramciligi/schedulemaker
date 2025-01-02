@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Controllers\UsersController;
 use App\Core\Model;
 use PDO;
 use PDOException;

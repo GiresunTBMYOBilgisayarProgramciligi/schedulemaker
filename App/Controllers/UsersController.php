@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Models;
+namespace App\Controllers;
 
+use App\Core\Controller;
 use App\Core\Model;
+use App\Models\User;
 use PDO;
 use PDOException;
 
-class UsersController extends Model
+class UsersController extends Controller
 {
     private $table_name = "users";
 
@@ -127,7 +129,6 @@ class UsersController extends Model
     }
 
     /**
-     * todo düzenlenecek
      * @param User $user
      * @return string[]
      */
@@ -166,7 +167,7 @@ class UsersController extends Model
     /**
      * @return array
      */
-    public function get_users_list(): array
+    public function getUsersList(): array
     {
         $q = $this->database->prepare("SELECT * FROM $this->table_name ");
         $q->execute();
