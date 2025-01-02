@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use PDO;
+use PDOException;
 
 class DepartmentController extends Controller
 {

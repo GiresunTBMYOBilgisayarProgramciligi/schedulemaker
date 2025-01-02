@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Model;
 use App\Models\User;
 use PDO;
 use PDOException;
