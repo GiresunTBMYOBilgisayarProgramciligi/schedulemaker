@@ -136,7 +136,7 @@ class UserController extends Controller
     {
         try {
             if ($user->password == "") {
-                unset($user->password);
+                $user->password = null;
             } else {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
             }
@@ -144,6 +144,7 @@ class UserController extends Controller
             $i = 0;
             $query = "UPDATE $this->table_name SET ";
             foreach ($userData as $k => $v) {
+                if (is_null($v)) continue;
                 if (++$i === count($userData)) $query .= $k . "=:" . $k . " ";
                 else $query .= $k . "=:" . $k . ", ";
             }
