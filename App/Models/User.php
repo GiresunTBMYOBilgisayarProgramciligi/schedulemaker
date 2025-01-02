@@ -20,7 +20,7 @@ class User extends Model
     public int $department_id;
     public int $program_id;
     public int $schedule_id;
-    public \DateTime $register_date;
+    public ?\DateTime $register_date;
     public ?\DateTime $last_login;
 
     private string $table_name = "users";
