@@ -8,7 +8,7 @@ use App\Models\User;
 use PDO;
 use PDOException;
 
-class UsersController extends Controller
+class UserController extends Controller
 {
     private $table_name = "users";
 

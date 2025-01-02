@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Controllers\UsersController;
+use App\Controllers\UserController;
 use App\Core\Model;
 use PDO;
 use PDOException;
@@ -37,7 +37,7 @@ class Department extends Model
      */
     public function getChairperson():User
     {
-        return (new UsersController())->getUser($this->chairperson_id);
+        return (new UserController())->getUser($this->chairperson_id);
     }
 
     public function getDepartments()

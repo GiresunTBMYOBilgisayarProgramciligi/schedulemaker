@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \App\Models\User $user
- * @var \App\Controllers\UsersController $usersController
+ * @var \App\Controllers\UserController $usersController
  * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
  */

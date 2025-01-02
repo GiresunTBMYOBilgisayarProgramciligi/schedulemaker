@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Controllers\UsersController;
+use App\Controllers\UserController;
 use App\Core\Model;
 use PDO;
 use PDOException;
@@ -43,7 +43,7 @@ class Lesson extends Model
      */
     public function getLecturer():User
     {
-        return (new UsersController())->getUser($this->lecturer_id);
+        return (new UserController())->getUser($this->lecturer_id);
     }
 
     /**

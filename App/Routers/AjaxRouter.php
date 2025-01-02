@@ -2,7 +2,7 @@
 
 namespace App\Routers;
 
-use App\Controllers\UsersController;
+use App\Controllers\UserController;
 use App\Core\Router;
 use App\Models\User;
 
@@ -37,7 +37,7 @@ class AjaxRouter extends Router
     {
         if ($this->checkAjax()) {
             try {
-                $usersController = new UsersController();
+                $usersController = new UserController();
                 $userData = $this->data;
                 $new_user = new User();
                 $new_user->fillUser($userData);
@@ -66,7 +66,7 @@ class AjaxRouter extends Router
     {
         if ($this->checkAjax()) {
             try {
-                $usersController = new UsersController();
+                $usersController = new UserController();
                 $userData = $this->data;
                 $new_user = new User();
                 $new_user->fillUser($userData);
@@ -96,7 +96,7 @@ class AjaxRouter extends Router
     {
         if ($this->checkAjax()) {
             try {
-                $usersController = new UsersController();
+                $usersController = new UserController();
                 $usersController->login([
                     'mail' => $this->data['mail'],
                     'password' => $this->data['password'],

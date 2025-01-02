@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \App\Controllers\UsersController $usersController
+ * @var \App\Controllers\UserController $usersController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  */
 ?>
