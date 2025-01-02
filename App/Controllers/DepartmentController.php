@@ -3,13 +3,33 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Department;
 use PDO;
 use PDOException;
-
 class DepartmentController extends Controller
 {
     private string $table_name = "departments";
 
+    public function getDepartment($id)
+    {
+        if (!is_null($id)) {
+            try {
+                $smtt = $this->database->prepare("select * from $this->table_name where id=:id");
+                $smtt->bindValue(":id", $id, PDO::PARAM_INT);
+                $smtt->execute();
+                $department_data = $smtt->fetch(\PDO::FETCH_ASSOC);
+                if ($department_data) {
+                    $department = new Department();
+                    $department->fill($department_data);
+
+                    return $department;
+                } else throw new \Exception("Department not found");
+            } catch (\Exception $e) {
+                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
+                echo $e->getMessage();
+            }
+        }
+    }
     public function getDepartments()
     {
         try {
