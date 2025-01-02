@@ -31,11 +31,11 @@
                     </a>
                 </li>
                 <li class="nav-item <?=
-                (str_contains($_SERVER["REQUEST_URI"], 'users') or
+                (str_contains($_SERVER["REQUEST_URI"], 'user') or
                     str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
-                       (str_contains($_SERVER["REQUEST_URI"], 'users') or
+                       (str_contains($_SERVER["REQUEST_URI"], 'user') or
                            str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-users"></i>
                         <p>
@@ -45,8 +45,8 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/admin/users"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'users')) ? 'active' : ''; ?>">
+                            <a href="/admin/userslist"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'userslist')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-address-book"></i>
                                 <p>
                                     Liste
@@ -82,8 +82,8 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/admin/lessons"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lessons')) ? 'active' : ''; ?>">
+                            <a href="/admin/lessonslist"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lessonslist')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-list-alt"></i>
                                 <p>
                                     Liste

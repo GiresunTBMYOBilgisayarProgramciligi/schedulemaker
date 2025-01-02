@@ -7,6 +7,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\UsersController;
 
@@ -46,14 +47,14 @@ class AdminController extends Controller
         $this->callView("admin/index", $view_data);
     }
 
-    public function UsersAction()
+    public function UsersListAction()
     {
         $view_data = [
             "usersController" => new UsersController(),
             "page_title" => "Kullanıcı Listesi",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
-        $this->callView("admin/users", $view_data);
+        $this->callView("admin/users/userslist", $view_data);
     }
     public function AddUserAction()
     {
@@ -62,7 +63,7 @@ class AdminController extends Controller
             "page_title" => "Kullanıcı Ekle",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
-        $this->callView("admin/adduser", $view_data);
+        $this->callView("admin/users/adduser", $view_data);
     }
 
     public function ProfileAction($id = null)
@@ -82,13 +83,14 @@ class AdminController extends Controller
         $this->callView("admin/profile", $view_data);
     }
 
-    public function lessonsAction()
+    public function LessonsListAction()
     {
         $view_data = [
             "usersController" => new UsersController(),
-            "page_title" => "Ders İşlemleri"
+            "lessons" => (new Lesson())->getLessons(),
+            "page_title" => "Ders Listesi"
         ];
-        $this->callView("admin/lessons", $view_data);
+        $this->callView("admin/lessons/lessonslist", $view_data);
     }
     public function classroomsAction()
     {

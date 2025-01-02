@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Core\Model;
+use PDO;
+use PDOException;
 
 class Lesson extends Model
 {
@@ -10,8 +12,8 @@ class Lesson extends Model
     public string $code;
     public string $name;
     public int $size;
-    public Lecturer $lecturer;
-    public Department $department;
+    public int $lecturer_id;
+    public int $department_id;
 
     private string $table_name = "lessons";
 
@@ -30,8 +32,31 @@ class Lesson extends Model
             $this->code = $code;
             $this->name = $name;
             $this->size = $size;
-            $this->lecturer = new Lecturer($lecturer_id);
-            $this->department = new Department($department_id);
+            $this->lecturer_id = $lecturer_id;
+            $this->departmen_id = $department_id;
+        }
+    }
+
+    /**
+     * @return User Chair Person
+     */
+    public function getLecturer():User
+    {
+        return (new UsersController())->getUser($this->lecturer_id);
+    }
+
+    /**
+     * @return array
+     */
+    public function getLessons()
+    {
+        try {
+            $q = $this->database->prepare("Select * From $this->table_name");
+            $q->execute();
+            return $q->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo $e->getMessage();
+            return [];
         }
     }
 }

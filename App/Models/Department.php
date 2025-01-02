@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Core\Model;
-use Cassandra\Function_;
 use PDO;
 use PDOException;
 
