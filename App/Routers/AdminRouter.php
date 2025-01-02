@@ -5,6 +5,7 @@
 
 namespace App\Routers;
 
+use App\Controllers\LessonController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use App\Models\Department;
@@ -29,8 +30,8 @@ class AdminRouter extends Router
      */
     private function beforeAction(): void
     {
-        $usersController = new UserController();
-        if (!$usersController->isLoggedIn()) {
+        $userController = new UserController();
+        if (!$userController->isLoggedIn()) {
             $this->Redirect('/auth/login');
         }
     }
@@ -42,7 +43,7 @@ class AdminRouter extends Router
     public function IndexAction(): void
     {
         $view_data = [
-            "usersController" => new UserController(),
+            "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Anasayfa"];
         $this->callView("admin/index", $view_data);
     }
@@ -52,7 +53,7 @@ class AdminRouter extends Router
     public function UsersListAction()
     {
         $view_data = [
-            "usersController" => new UserController(),
+            "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Listesi",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
@@ -61,7 +62,7 @@ class AdminRouter extends Router
     public function AddUserAction()
     {
         $view_data = [
-            "usersController" => new UserController(),
+            "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Ekle",
             "departments" => (new Department())->getDepartments(),
             "programs" => (new Program())->getPrograms()];
@@ -69,14 +70,14 @@ class AdminRouter extends Router
     }
     public function ProfileAction($id = null)
     {
-        $usersController = new UserController();
+        $userController = new UserController();
         if (is_null($id)) {
-            $user = $usersController->getCurrentUser();
+            $user = $userController->getCurrentUser();
         } else {
-            $user = $usersController->getUser($id);
+            $user = $userController->getUser($id);
         }
         $view_data = [
-            "usersController" => $usersController,
+            "userController" => $userController, //her sayfada olmalı
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "departments" => (new Department())->getDepartments(),
@@ -89,11 +90,37 @@ class AdminRouter extends Router
     public function LessonsListAction()
     {
         $view_data = [
-            "usersController" => new UserController(),
-            "lessons" => (new Lesson())->getLessons(),
+            "userController" => new UserController(),//her sayfada olmalı
+            "lessonController" => new LessonController(),
             "page_title" => "Ders Listesi"
         ];
         $this->callView("admin/lessons/lessonslist", $view_data);
+    }
+    public function AddLessonAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "page_title" => "Ders Ekle",
+            "departments" => (new Department())->getDepartments(),
+            "programs" => (new Program())->getPrograms()];
+        $this->callView("admin/lessons/addlesson", $view_data);
+    }
+    public function editLessonAction($id = null)
+    {
+        $lessonController = new LessonController();
+        if (!is_null($id)) {
+            $lesson = $lessonController->getLesson($id);
+        } else {
+            $lesson = null;//todo ders yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        }
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "lessonController" => new LessonController(),
+            "lesson" => $lesson,
+            "page_title" => $lesson->getFullName() ,//todo ders olmayınca hata veriyor.
+            "departments" => (new Department())->getDepartments(),
+            "programs" => (new Program())->getPrograms()];
+        $this->callView("admin/lessons/lesson", $view_data);
     }
     /*
      * Classroom Routes
@@ -101,7 +128,7 @@ class AdminRouter extends Router
     public function classroomsAction()
     {
         $view_data = [
-            "usersController" => new UserController(),
+            "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Derslik İşlemleri"
         ];
         $this->callView("admin/clasrooms", $view_data);
@@ -112,7 +139,7 @@ class AdminRouter extends Router
     public function departmentsAction()
     {
         $view_data = [
-            "usersController" => new UserController(),
+            "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Bölüm İşlemleri"
         ];
         $this->callView("admin/departments", $view_data);

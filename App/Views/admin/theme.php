@@ -8,8 +8,8 @@ include "theme/head.php";
 <div class="wrapper">
 
     <?php
-    /** @var \App\Controllers\UserController $usersController */
-    $currentUser = $usersController->getCurrentUser();
+    /** @var \App\Controllers\UserController $userController */
+    $currentUser = $userController->getCurrentUser();
     include "theme/navbar.php";
     include "theme/sidebar.php";
     include "pages/" . $this->view_page . ".php";

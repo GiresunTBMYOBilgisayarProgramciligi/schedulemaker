@@ -1,6 +1,6 @@
 <?php
 /**
- * @var \App\Controllers\UserController $usersController
+ * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  */
 ?>
@@ -33,7 +33,7 @@
                     <!-- small box -->
                     <div class="small-box bg-info">
                         <div class="inner">
-                            <h3><?= $usersController->getCount() ?></h3>
+                            <h3><?= $userController->getCount() ?></h3>
 
                             <p>Öğretim Elemanı</p>
                         </div>
@@ -89,7 +89,7 @@
             <!-- /.row -->
             <!-- Main row -->
             <div class="row"><!--todo Buradaki liste kullanıcıya göre güncellenenebilir. Sadece kendi bölümünün hocaları gözükür. filan-->
-                <?php foreach ($usersController->getUsersList() as $user): ?>
+                <?php foreach ($userController->getUsersList() as $user): ?>
                     <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
                         <div class="card  d-flex flex-fill">
                             <div class="card-header text-muted border-bottom-0">
