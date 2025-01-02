@@ -1,13 +1,24 @@
-<div class="content-wrapper" style="min-height: 1604.8px;">
-    <?php
-    /**
-     * @var \App\Models\User $user
-     * @var \App\Models\UsersController $usersController
-     * @var array $programs \App\Models\Program->getPrograms())
-     * @var array $departments \App\Models\Department->getDepartments())
-     */
+<?php
+/**
+ * @var \App\Models\User $user
+ * @var \App\Models\UsersController $usersController
+ * @var array $programs \App\Models\Program->getPrograms())
+ * @var array $departments \App\Models\Department->getDepartments())
+ */
 
-    ?>
+?>
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><?= $page_title ?></h1>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
+    </section>
+    <!-- /.content-header -->
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
