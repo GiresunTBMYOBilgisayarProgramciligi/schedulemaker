@@ -52,7 +52,7 @@ class User extends Model
      * Kullanıdı Adı ve Soyadını birleştirerek döner
      * @return string
      */
-    public function getFullName()
+    public function getFullName(): string
     {
         return $this->title . " " . $this->name . " " . $this->last_name;
     }

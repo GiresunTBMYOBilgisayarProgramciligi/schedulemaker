@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Lesson;
 use PDO;
+use PDOException;
 
 class LessonController extends Controller
 {
@@ -33,15 +34,43 @@ class LessonController extends Controller
     /**
      * @return array
      */
-    public function getLessons()
+    public function getLessonsList()
+    {
+        $q = $this->database->prepare("SELECT * FROM $this->table_name ");
+        $q->execute();
+        $lessons_list = $q->fetchAll(PDO::FETCH_ASSOC);
+        $lessons = [];
+        foreach ($lessons_list as $lesson_data) {
+            $lesson = new Lesson();
+            $lesson->fill($lesson_data);
+            $lessons[] = $lesson;
+        }
+        return $lessons;
+    }
+    /**
+     * AjaxControllerdan gelen verilele yeni ders oluşturur
+     * @param array $data
+     * @return array
+     */
+    public function saveNew(Lesson $new_lesson): array
     {
         try {
-            $q = $this->database->prepare("Select * From $this->table_name");
-            $q->execute();
-            return $q->fetchAll(PDO::FETCH_ASSOC);
+            $q = $this->database->prepare(
+                "INSERT INTO $this->table_name(code, name, size, hours, lecturer_id, department_id, program_id) 
+            values  (:code, :name, :size, :hours, :lecturer_id, :department_id, :program_id)");
+            if ($q) {
+                $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id' ]);
+                $q->execute($new_lesson_arr);
+            }
         } catch (PDOException $e) {
-            echo $e->getMessage();
-            return [];
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
         }
+
+        return ["status" => "success"];
     }
 }

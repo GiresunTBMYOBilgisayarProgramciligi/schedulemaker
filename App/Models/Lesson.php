@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Controllers\DepartmentController;
+use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Model;
 use PDO;
@@ -14,8 +15,10 @@ class Lesson extends Model
     public ?string $code= null;
     public ?string $name= null;
     public ?int $size= null;
+    public ?int $hours=2;
     public ?int $lecturer_id= null;
     public ?int $department_id= null;
+    public ?int $program_id= null;
 
     private string $table_name = "lessons";
 
@@ -25,7 +28,6 @@ class Lesson extends Model
     public function __construct()
     {
         parent::__construct(); # Connect to database
-
     }
 
     /**
@@ -39,6 +41,10 @@ class Lesson extends Model
     public function getDepartment(): Department
     {
         return (new DepartmentController())->getDepartment($this->department_id);
+    }
+    public function getProgam(): Program
+    {
+        return (new ProgramController())->getProgram($this->department_id);
     }
     public function getFullName(): string
     {

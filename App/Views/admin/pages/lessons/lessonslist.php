@@ -3,7 +3,8 @@
  * @var \App\Controllers\UserController $userController
  * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
- * @var array $lessons
+ * @var \App\Controllers\LessonController $lessonController
+ * @var \App\Models\Lesson $lesson
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -40,22 +41,23 @@
                                 <th>Kodu</th>
                                 <th>Adı</th>
                                 <th>Mevcudu</th>
+                                <th>Saati</th>
                                 <th>Hocası</th>
                                 <th>Bölüm</th>
                                 <th>Program</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <?php foreach ($lessons as $lesson): ?>
+                            <?php foreach ($lessonController->getLessonsList() as $lesson): ?>
                                 <tr class="odd">
-                                    <td><?= $user->id ?></td>
-                                    <td><?= $user->getFullName() ?></td>
-                                    <td><?= $user->mail ?></td>
-                                    <td><?= $user->getDepartmentName() ?></td>
-                                    <td><?= $user->getProgramName() ?></td>
-                                    <td><?= $user->getRoleName() ?></td>
-                                    <td><?= $user->getRegisterDate() ?></td>
-                                    <td><?= $user->getLastLogin() ?></td>
+                                    <td><?= $lesson->id ?></td>
+                                    <td><?= $lesson->code ?></td>
+                                    <td><?= $lesson->name ?></td>
+                                    <td><?= $lesson->size ?></td>
+                                    <td><?= $lesson->hours ?></td>
+                                    <td><?= $lesson->getLecturer()->getFullName() ?></td>
+                                    <td><?= $lesson->getDepartment()->name ?></td>
+                                    <td><?= $lesson->getProgam()->name ?></td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>
