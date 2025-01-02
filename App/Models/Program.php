@@ -39,16 +39,4 @@ class Program extends Model
         return new Department($this->department_id);
     }
 
-    public function getPrograms()
-    {
-        try {
-            $q = $this->database->prepare("Select * From $this->table_name");
-            $q->execute();
-            return $q->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return [];
-        }
-    }
-
 }

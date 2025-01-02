@@ -40,16 +40,4 @@ class Department extends Model
         return (new UserController())->getUser($this->chairperson_id);
     }
 
-    public function getDepartments()
-    {
-        try {
-            $q = $this->database->prepare("Select * From $this->table_name");
-            $q->execute();
-            return $q->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return [];
-        }
-    }
-
 }

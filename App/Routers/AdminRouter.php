@@ -5,12 +5,11 @@
 
 namespace App\Routers;
 
+use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
+use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Router;
-use App\Models\Department;
-use App\Models\Lesson;
-use App\Models\Program;
 
 /**
  * AdminRouter Sınıfı
@@ -55,8 +54,8 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Listesi",
-            "departments" => (new Department())->getDepartments(),
-            "programs" => (new Program())->getPrograms()];
+            "departments" => (new DepartmentController())->getDepartments(),
+            "programs" => (new ProgramController())->getPrograms()];
         $this->callView("admin/users/userslist", $view_data);
     }
     public function AddUserAction()
@@ -64,8 +63,8 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Ekle",
-            "departments" => (new Department())->getDepartments(),
-            "programs" => (new Program())->getPrograms()];
+            "departments" => (new DepartmentController())->getDepartments(),
+            "programs" => (new ProgramController())->getPrograms()];
         $this->callView("admin/users/adduser", $view_data);
     }
     public function ProfileAction($id = null)
@@ -80,8 +79,8 @@ class AdminRouter extends Router
             "userController" => $userController, //her sayfada olmalı
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
-            "departments" => (new Department())->getDepartments(),
-            "programs" => (new Program())->getPrograms()];
+            "departments" => (new DepartmentController())->getDepartments(),
+            "programs" => (new ProgramController())->getPrograms()];
         $this->callView("admin/profile", $view_data);
     }
     /*
@@ -101,8 +100,8 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Ders Ekle",
-            "departments" => (new Department())->getDepartments(),
-            "programs" => (new Program())->getPrograms()];
+            "departments" => (new DepartmentController())->getDepartments(),
+            "programs" => (new ProgramController())->getPrograms()];
         $this->callView("admin/lessons/addlesson", $view_data);
     }
     public function editLessonAction($id = null)
@@ -118,8 +117,8 @@ class AdminRouter extends Router
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName() ,//todo ders olmayınca hata veriyor.
-            "departments" => (new Department())->getDepartments(),
-            "programs" => (new Program())->getPrograms()];
+            "departments" => (new DepartmentController())->getDepartments(),
+            "programs" => (new ProgramController())->getPrograms()];
         $this->callView("admin/lessons/lesson", $view_data);
     }
     /*
