@@ -19,9 +19,14 @@ class User extends Model
     public string $title;
     public int $department_id;
     public int $program_id;
-    public int $schedule_id;
+    public ?int $schedule_id=null;
     public ?\DateTime $register_date;
     public ?\DateTime $last_login;
+    /**
+     * Model sınıfındaki fill metodunda hangi alanların datetime olduğunu bellirtmek için kullanılır
+     * @var array|string[]
+     */
+    protected array $dateFields = ['register_date', 'last_login'];
 
     private string $table_name = "users";
 
@@ -31,31 +36,6 @@ class User extends Model
     public function __construct()
     {
         parent::__construct(); # Connect to database
-    }
-
-    /**
-     * @param $data array anahtarları users tablosunun alanları olan bir dizi
-     * @return void
-     */
-    public function fillUser($data = [])// todo bu metod model sınıfına taşınarak her modelde düzgün çelışacak şekilde ayarlanmalı
-    {
-        foreach (get_class_vars(get_class($this)) as $k => $v) {
-            // Eğer tarih alanları ise string değeri DateTime nesnesine dönüştür
-            if ($k == 'register_date' || $k == 'last_login') {
-                // Tarih değeri var mı kontrol et
-                if (isset($data[$k]) && $data[$k] !== null) {
-                    $this->$k = new \DateTime($data[$k]);
-                } else {
-                    // Eğer tarih yoksa, geçerli bir DateTime nesnesi oluştur
-                    $this->$k = null;
-                }
-            } else {
-                // Diğer alanlarda null kontrolü
-                if (isset($data[$k]) && $data[$k] !== null) {
-                    $this->$k = $data[$k];
-                }
-            }
-        }
     }
 
     public function getRegisterDate(): string

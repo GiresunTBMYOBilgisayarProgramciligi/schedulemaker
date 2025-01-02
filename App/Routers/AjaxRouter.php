@@ -40,7 +40,7 @@ class AjaxRouter extends Router
                 $usersController = new UserController();
                 $userData = $this->data;
                 $new_user = new User();
-                $new_user->fillUser($userData);
+                $new_user->fill($userData);
                 $respons = $usersController->saveNew($new_user);
                 if ($respons['status'] == 'error') {
                     throw new \Exception($respons['msg']);
@@ -69,7 +69,7 @@ class AjaxRouter extends Router
                 $usersController = new UserController();
                 $userData = $this->data;
                 $new_user = new User();
-                $new_user->fillUser($userData);
+                $new_user->fill($userData);
                 $respons = $usersController->updateUser($new_user);
                 if ($respons['status'] == 'error') {
                     throw new \Exception($respons['msg']);

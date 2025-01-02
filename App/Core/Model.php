@@ -20,6 +20,27 @@ class Model
 
     }
 
+    public function fill($data = [])// todo bu metod model sınıfına taşınarak her modelde düzgün çelışacak şekilde ayarlanmalı
+    {
+        // ReflectionClass ile alt sınıfın özelliklerini alın
+        $reflection = new \ReflectionClass($this);
+        $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
+
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+
+            // Tarih alanı kontrolü
+            if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
+                $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
+                    ? new \DateTime($data[$propertyName])
+                    : null;
+            } else {
+                // Diğer alanlarda null kontrolü
+                $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
+            }
+        }
+    }
+
     /**
      * Modelin tüm özelliklerini döner ve istenmeyen alanları hariç tutar.
      * @param array $excludedProperties Hariç tutulacak özellikler

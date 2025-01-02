@@ -22,7 +22,7 @@ class UserController extends Controller
                 $u = $u->fetch(\PDO::FETCH_ASSOC);
                 if ($u) {
                     $user = new User();
-                    $user->fillUser($u);
+                    $user->fill($u);
 
                     return $user;
                 } else throw new \Exception("User not found");
@@ -175,7 +175,7 @@ class UserController extends Controller
         $users = [];
         foreach ($user_list as $user_data) {
             $user = new User();
-            $user->fillUser($user_data);
+            $user->fill($user_data);
             $users[] = $user;
         }
         return $users;
