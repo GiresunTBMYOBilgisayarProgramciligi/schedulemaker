@@ -7,11 +7,11 @@ use App\Core\Model;
 class Classroom extends Model
 {
 
-    public int $id;
-    public string $name;
-    public object $schedule;
-    public int $class_size;
-    public int $exam_size;
+    public ?int $id= null;
+    public ?string $name= null;
+    public ?int $schedule_id= null;
+    public ?int $class_size= null;
+    public ?int $exam_size= null;
 
     private string $table_name = "classrooms";
 

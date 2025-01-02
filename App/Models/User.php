@@ -10,18 +10,18 @@ use PDO;
  */
 class User extends Model
 {
-    public int $id;
-    public string $password;
-    public string $mail;
-    public string $name;
-    public string $last_name;
-    public string $role;
-    public string $title;
-    public int $department_id;
-    public int $program_id;
-    public ?int $schedule_id=null;
-    public ?\DateTime $register_date;
-    public ?\DateTime $last_login;
+    public ?int $id = null;
+    public ?string $password= null;
+    public ?string $mail= null;
+    public ?string $name= null;
+    public ?string $last_name= null;
+    public ?string $role= null;
+    public ?string $title= null;
+    public ?int $department_id= null;
+    public ?int $program_id= null;
+    public ?int $schedule_id = null;
+    public ?\DateTime $register_date= null;
+    public ?\DateTime $last_login= null;
     /**
      * Model sınıfındaki fill metodunda hangi alanların datetime olduğunu bellirtmek için kullanılır
      * @var array|string[]
