@@ -73,12 +73,9 @@
                                     <div class="form-group">
                                         <label for="role">Rol</label>
                                         <select class="form-control" id="role" name="role">
-                                            <option value="user" selected>Kullanıcı</option>
-                                            <option value="lecturer">Akademisyen</option>
-                                            <option value="admin">Yönetici</option>
-                                            <option value="department_head">Bölüm Başkanı</option>
-                                            <option value="manager">Müdür</option>
-                                            <option value="submanager">Müdür Yardımcısı</option>
+                                            <?php foreach ($userController->getRoleList() as $role => $value): ?>
+                                                <option value="<?= $role ?>"><?= $value ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                 </div>
@@ -86,11 +83,9 @@
                                     <div class="form-group">
                                         <label for="title">Ünvan</label>
                                         <select class="form-control" id="title" name="title">
-                                            <option value="Öğr. Gör." selected>Öğr. Gör.</option>
-                                            <option value="Öğr. Gör. Dr.">Öğr. Gör. Dr.</option>
-                                            <option value="Dr. Öğretim Üyesi">Dr. Öğretim Üyesi</option>
-                                            <option value="Doç. Dr. ">Doç. Dr.</option>
-                                            <option value="Prof. Dr.">Prof. Dr.</option>
+                                            <?php foreach ($userController->getTitleList() as $title): ?>
+                                                <option value="<?= $title ?>"><?= $title ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
                                 </div>
