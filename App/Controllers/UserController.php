@@ -108,7 +108,7 @@ class UserController extends Controller
     {
         try {
             $q = $this->database->prepare(
-                "INSERT INTO users(password, mail, name, last_name, role,title, department_id, program_id) 
+                "INSERT INTO $this->table_name(password, mail, name, last_name, role,title, department_id, program_id) 
             values  (:password, :mail, :name, :last_name, :role,:title, :department_id, :program_id)");
             if ($q) {
                 $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
@@ -179,5 +179,46 @@ class UserController extends Controller
             $users[] = $user;
         }
         return $users;
+    }
+
+    /**
+     * Rolü kullanıcı dışında olan kullanıcıların listesi
+     * @return array
+     */
+    public function getLecturerList(): array
+    {
+        $q = $this->database->prepare("SELECT * FROM $this->table_name where not role='lesson'");
+        $q->execute();
+        $user_list = $q->fetchAll(PDO::FETCH_ASSOC);
+        $users = [];
+        foreach ($user_list as $user_data) {
+            $user = new User();
+            $user->fill($user_data);
+            $users[] = $user;
+        }
+        return $users;
+    }
+
+    public function getRoleList(): array
+    {
+        return [
+            "lesson" => "Kullanıcı",
+            "lecturer" => "Akademisyen",
+            "admin" => "Yönetici",
+            "department_head" => "Bölüm Başkanı",
+            "manager" => "Müdür",
+            "submanager" => "Müdür Yardımcısı"
+        ];
+    }
+
+    public function getTitleList(): array
+    {
+        return [
+            "Öğr. Gör.",
+            "Öğr. Gör. Dr.",
+            "Dr. Öğretim Üyesi",
+            "Doç. Dr.",
+            "Prof. Dr."
+        ];
     }
 }
