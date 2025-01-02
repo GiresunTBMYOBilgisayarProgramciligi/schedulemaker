@@ -42,17 +42,28 @@ class Model
     }
 
     /**
-     * Modelin tüm özelliklerini döner ve istenmeyen alanları hariç tutar.
+     * Modelin tüm public özelliklerini döner, null olanları ve istenmeyen alanları hariç tutar.
      * @param array $excludedProperties Hariç tutulacak özellikler
      * @return array
      */
     public function getArray($excludedProperties = ['table_name', 'database'])
     {
-        // Modelin özelliklerini al
-        $properties = get_object_vars($this);
+        // ReflectionClass kullanarak sadece public özellikleri alın
+        $reflection = new \ReflectionClass($this);
+        $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
+
         // Özellikleri filtrele
-        return array_filter($properties, function ($key) use ($excludedProperties) {
-            return !in_array($key, $excludedProperties);
-        }, ARRAY_FILTER_USE_KEY);
+        $result = [];
+        foreach ($properties as $property) {
+            $name = $property->getName();
+            $value = $this->$name;
+
+            // Özellik excluded listede yoksa ve değeri null değilse ekle
+            if (!in_array($name, $excludedProperties) && $value !== null) {
+                $result[$name] = $value;
+            }
+        }
+
+        return $result;
     }
 }
