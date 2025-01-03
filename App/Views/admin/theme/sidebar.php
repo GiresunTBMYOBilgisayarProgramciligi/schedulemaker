@@ -22,6 +22,7 @@
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Add icons to the links using the .nav-icon class
                      with font-awesome or any other icon font library -->
+                <!-- Başlangıç-->
                 <li class="nav-item">
                     <a href="/admin" class="nav-link ">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -30,9 +31,9 @@
                         </p>
                     </a>
                 </li>
-                <li class="nav-item <?=
-                (str_contains($_SERVER["REQUEST_URI"], 'user') or
-                    str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'menu-open' : ''; ?>">
+                <!-- /Başlangıç-->
+                <!-- Kullanıcı İşlemleri -->
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'user') or str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
                        (str_contains($_SERVER["REQUEST_URI"], 'user') or
@@ -64,10 +65,9 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item <?=
-                (str_contains($_SERVER["REQUEST_URI"], 'lessons') or
-                    str_contains($_SERVER["REQUEST_URI"], 'addlesson') or
-                    str_contains($_SERVER["REQUEST_URI"], 'editlesson')) ? 'menu-open' : ''; ?>">
+                <!-- /Kullanıcı İşlemleri -->
+                <!-- Ders İşlemleri -->
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'lessons') or str_contains($_SERVER["REQUEST_URI"], 'addlesson') or str_contains($_SERVER["REQUEST_URI"], 'editlesson')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
                        (str_contains($_SERVER["REQUEST_URI"], 'lessons') or
@@ -110,10 +110,9 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item <?=
-                (str_contains($_SERVER["REQUEST_URI"], 'classrooms') or
-                    str_contains($_SERVER["REQUEST_URI"], 'addclassroom') or
-                    str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'menu-open' : ''; ?>">
+                <!-- /Ders İşlemleri -->
+                <!-- Derslik İşlemleri -->
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'classrooms') or str_contains($_SERVER["REQUEST_URI"], 'addclassroom') or str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
                        (str_contains($_SERVER["REQUEST_URI"], 'classrooms') or
@@ -156,7 +155,8 @@
                         </li>
                     </ul>
                 </li>
-
+                <!-- /Derslik İşlemleri -->
+                <!-- Akademik Birimler -->
                 <li class="nav-item">
                     <a href="/admin/departments"
                        class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
@@ -227,6 +227,8 @@
                         </li>
                     </ul>
                 </li>
+                <!-- /Akademik Birimler -->
+                <!-- Çıkış -->
                 <li class="nav-item">
                     <a href="/auth/logout" class="nav-link">
                         <i class="nav-icon fas fa-sign-out-alt"></i>
@@ -235,6 +237,7 @@
                         </p>
                     </a>
                 </li>
+                <!-- /Çıkış -->
             </ul>
         </nav>
         <!-- /.sidebar-menu -->
