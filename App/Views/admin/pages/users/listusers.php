@@ -36,27 +36,45 @@
                         <table id="user-list-table" class="table table-bordered table-striped dataTable dtr-inline">
                             <thead>
                             <tr>
-                                <th>İd</th>
+                                <!--<th>İd</th>-->
                                 <th>Ünvanı Adı Soyadı</th>
                                 <th>e-Posta</th>
                                 <th>Bölüm</th>
                                 <th>Program</th>
                                 <th>Yetki</th>
-                                <th>Kayıt Tarihi</th>
+                                <!--<th>Kayıt Tarihi</th>-->
                                 <th>Son Giriş Tarihi</th>
+                                <th>İşlemler</th>
                             </tr>
                             </thead>
                             <tbody>
                             <?php foreach ($userController->getUsersList() as $user): ?>
-                                <tr class="odd">
-                                    <td><?= $user->id ?></td>
+                                <tr>
+                                    <!--<td><?php /*= $user->id */?></td>-->
                                     <td><?= $user->getFullName() ?></td>
                                     <td><?= $user->mail ?></td>
                                     <td><?= $user->getDepartmentName() ?></td>
                                     <td><?= $user->getProgramName() ?></td>
                                     <td><?= $user->getRoleName() ?></td>
-                                    <td><?= $user->getRegisterDate() ?></td>
+                                    <!--<td><?php /*= $user->getRegisterDate() */?></td>-->
                                     <td><?= $user->getLastLogin() ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary">İşlemler</button>
+                                            <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
+                                                <span class="sr-only">İşlemler listesi</span>
+                                            </button>
+                                            <div class="dropdown-menu" role="menu" style="">
+                                                <a class="dropdown-item" href="/admin/profile/<?=$user->id?>">Gör</a>
+                                                <a class="dropdown-item" href="#">Düzenle</a>
+                                                <div class="dropdown-divider"></div>
+                                                <form action="/admin/deleteuser/<?=$user->id?>" class="ajaxFormDelete" name="deleteUser-<?=$user->id?>" id="deleteUser-<?=$user->id?>" method="post">
+                                                    <input type="hidden" name="id" value="<?=$user->id?>">
+                                                    <button type="submit" form="deleteSlide-<?=$user->id?>" class="dropdown-item ">Sil</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>

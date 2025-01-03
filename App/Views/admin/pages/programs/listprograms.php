@@ -38,14 +38,32 @@
                                 <th>İd</th>
                                 <th>Adı</th>
                                 <th>Bölüm</th>
+                                <th>İşlemler</th>
                             </tr>
                             </thead>
                             <tbody>
                             <?php foreach ($programController->getProgramsList($department_id) as $program): ?>
-                                <tr class="odd">
+                                <tr>
                                     <td><?= $program->id ?></td>
                                     <td><?= $program->name ?></td>
                                     <td><?= $program->getDepartment()->name ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary">İşlemler</button>
+                                            <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
+                                                <span class="sr-only">İşlemler listesi</span>
+                                            </button>
+                                            <div class="dropdown-menu" role="menu" style="">
+                                                <a class="dropdown-item" href="#">Gör</a>
+                                                <a class="dropdown-item" href="/admin/editprogram/<?=$program->id?>">Düzenle</a>
+                                                <div class="dropdown-divider"></div>
+                                                <form action="/admin/deleteprogram/<?=$program->id?>" class="ajaxFormDelete" name="deleteUser-<?=$program->id?>" id="deleteUser-<?=$program->id?>" method="post">
+                                                    <input type="hidden" name="id" value="<?=$program->id?>">
+                                                    <button type="submit" form="deleteSlide-<?=$program->id?>" class="dropdown-item ">Sil</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>

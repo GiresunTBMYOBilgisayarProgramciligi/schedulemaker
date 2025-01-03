@@ -45,11 +45,12 @@
                                 <th>Hocası</th>
                                 <th>Bölüm</th>
                                 <th>Program</th>
+                                <th>İşlemler</th>
                             </tr>
                             </thead>
                             <tbody>
                             <?php foreach ($lessonController->getLessonsList() as $lesson): ?>
-                                <tr class="odd">
+                                <tr>
                                     <td><?= $lesson->id ?></td>
                                     <td><?= $lesson->code ?></td>
                                     <td><?= $lesson->name ?></td>
@@ -58,6 +59,23 @@
                                     <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                     <td><?= $lesson->getDepartment()->name ?></td>
                                     <td><?= $lesson->getProgam()->name ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary">İşlemler</button>
+                                            <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
+                                                <span class="sr-only">İşlemler listesi</span>
+                                            </button>
+                                            <div class="dropdown-menu" role="menu" style="">
+                                                <a class="dropdown-item" href="#">Gör</a>
+                                                <a class="dropdown-item" href="/admin/editlesson/<?=$lesson->id?>">Düzenle</a>
+                                                <div class="dropdown-divider"></div>
+                                                <form action="/admin/deletelesson/<?=$lesson->id?>" class="ajaxFormDelete" name="deleteUser-<?=$lesson->id?>" id="deleteUser-<?=$lesson->id?>" method="post">
+                                                    <input type="hidden" name="id" value="<?=$lesson->id?>">
+                                                    <button type="submit" form="deleteSlide-<?=$lesson->id?>" class="dropdown-item ">Sil</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>

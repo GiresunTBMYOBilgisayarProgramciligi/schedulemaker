@@ -38,15 +38,33 @@
                                 <th>Adı</th>
                                 <th>Ders Mevcudu</th>
                                 <th>Sınav Mevcudu</th>
+                                <th>İşlemler</th>
                             </tr>
                             </thead>
                             <tbody>
                             <?php foreach ($classroomController->getClassroomsList() as $classroom): ?>
-                                <tr class="odd">
+                                <tr>
                                     <td><?= $classroom->id ?></td>
                                     <td><?= $classroom->name ?></td>
                                     <td><?= $classroom->class_size ?></td>
                                     <td><?= $classroom->exam_size ?></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary">İşlemler</button>
+                                            <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
+                                                <span class="sr-only">İşlemler listesi</span>
+                                            </button>
+                                            <div class="dropdown-menu" role="menu" style="">
+                                                <a class="dropdown-item" href="#">Gör</a>
+                                                <a class="dropdown-item" href="/admin/editclassroom/<?=$classroom->id?>">Düzenle</a>
+                                                <div class="dropdown-divider"></div>
+                                                <form action="/admin/deleteclassroom/<?=$classroom->id?>" class="ajaxFormDelete" name="deleteUser-<?=$classroom->id?>" id="deleteUser-<?=$classroom->id?>" method="post">
+                                                    <input type="hidden" name="id" value="<?=$classroom->id?>">
+                                                    <button type="submit" form="deleteSlide-<?=$classroom->id?>" class="dropdown-item ">Sil</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>
