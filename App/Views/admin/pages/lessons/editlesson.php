@@ -1,7 +1,9 @@
 <?php
 /**
  * @var array $programs \App\Models\Program->getPrograms())
+ * @var \App\Models\Program $program
  * @var array $departments \App\Models\Department->getDepartments())
+ * @var \App\Models\Department $department
  * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $lecturer
  * @var \App\Models\Lesson $lesson
@@ -87,8 +89,8 @@
                                         <label for="department_id">Bölüm</label>
                                         <select class="form-control" id="department_id" name="department_id">
                                             <?php foreach ($departments as $department): ?>
-                                                <option value="<?= $department['id'] ?>"
-                                                    <?= $department['id'] == $lesson->department_id ? "selected" : "" ?>><?= $department['name'] ?></option>
+                                                <option value="<?= $department->id ?>"
+                                                    <?= $department->id == $lesson->department_id ? "selected" : "" ?>><?= $department->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -98,8 +100,8 @@
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
                                             <?php foreach ($programs as $program): var_dump($programs); ?>
-                                                <option value="<?= $program['id'] ?>"
-                                                    <?= $program['id'] == $lesson->program_id ? "selected" : "" ?>><?= $program['name'] ?></option>
+                                                <option value="<?= $program->id ?>"
+                                                    <?= $program->id == $lesson->program_id ? "selected" : "" ?>><?= $program->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>

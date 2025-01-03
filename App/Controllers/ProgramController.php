@@ -32,6 +32,10 @@ class ProgramController extends Controller
         }
     }
 
+    /**
+     * @param int | null $department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir
+     * @return array
+     */
     public function getProgramsList($department_id = null)
     {
         try {
@@ -74,6 +78,31 @@ class ProgramController extends Controller
             }
         }
 
+        return ["status" => "success"];
+    }
+    public function updateProgram(Program $program)
+    {
+        try {
+            $programData = $program->getArray(['table_name', 'database', 'id']);
+            $i = 0;
+            $query = "UPDATE $this->table_name SET ";
+            foreach ($programData as $k => $v) {
+                if (is_null($v)) continue;
+                if (++$i === count($programData)) $query .= $k . "=:" . $k . " ";
+                else $query .= $k . "=:" . $k . ", ";
+            }
+            $query .= " WHERE id=:id";
+            $programData["id"] = $program->id;
+            $u = $this->database->prepare($query);
+            $u->execute($programData);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
         return ["status" => "success"];
     }
 }

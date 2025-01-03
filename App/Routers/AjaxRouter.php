@@ -280,7 +280,34 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+    public function updateDepartmentAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $departmentController = new DepartmentController();
+                $departmentData = $this->data;
+                $department = new Department();
+                $department->fill($departmentData);
+                $respons = $departmentController->updateDepartment($department);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Bölüm başarıyla Güncellendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
 
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
     /*
      * Programs Ajax Actions
      */
@@ -307,6 +334,34 @@ class AjaxRouter extends Router
                     "status" => "error"
                 ];
             }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+    public function updateProgramAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $programController = new ProgramController();
+                $programData = $this->data;
+                $program = new Program();
+                $program->fill($programData);
+                $respons = $programController->updateProgram($program);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Program başarıyla Güncellendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }

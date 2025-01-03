@@ -56,7 +56,7 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Listesi",
-            "departments" => (new DepartmentController())->getDepartments(),
+            "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/users/listusers", $view_data);
     }
@@ -66,7 +66,7 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Ekle",
-            "departments" => (new DepartmentController())->getDepartments(),
+            "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/users/adduser", $view_data);
     }
@@ -83,7 +83,7 @@ class AdminRouter extends Router
             "userController" => $userController, //her sayfada olmalı
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
-            "departments" => (new DepartmentController())->getDepartments(),
+            "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/profile", $view_data);
     }
@@ -124,7 +124,7 @@ class AdminRouter extends Router
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName() . "Düzenle",//todo ders olmayınca hata veriyor.
-            "departments" => (new DepartmentController())->getDepartments(),
+            "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/lessons/editlesson", $view_data);
     }
@@ -202,7 +202,7 @@ class AdminRouter extends Router
             "userController" => new UserController(),//her sayfada olmalı
             "departmentController" => $departmentController,
             "department" => $department,
-            "page_title" => $department->name . "Düzenle",//todo ders olmayınca hata veriyor.
+            "page_title" => $department->name . " Düzenle",//todo ders olmayınca hata veriyor.
         ];
         $this->callView("admin/departments/editdepartment", $view_data);
     }
@@ -244,7 +244,8 @@ class AdminRouter extends Router
             "userController" => new UserController(),//her sayfada olmalı
             "programController" => $programController,
             "program" => $program,
-            "page_title" => $program->name . "Düzenle",//todo ders olmayınca hata veriyor.
+            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "page_title" => $program->name . " Düzenle",//todo ders olmayınca hata veriyor.
         ];
         $this->callView("admin/programs/editprogram", $view_data);
     }

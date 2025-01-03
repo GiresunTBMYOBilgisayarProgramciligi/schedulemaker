@@ -71,4 +71,29 @@ class DepartmentController extends Controller
 
         return ["status" => "success"];
     }
+    public function updateDepartment(Department $department)
+    {
+        try {
+            $departmentData = $department->getArray(['table_name', 'database', 'id']);
+            $i = 0;
+            $query = "UPDATE $this->table_name SET ";
+            foreach ($departmentData as $k => $v) {
+                if (is_null($v)) continue;
+                if (++$i === count($departmentData)) $query .= $k . "=:" . $k . " ";
+                else $query .= $k . "=:" . $k . ", ";
+            }
+            $query .= " WHERE id=:id";
+            $departmentData["id"] = $department->id;
+            $u = $this->database->prepare($query);
+            $u->execute($departmentData);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+        return ["status" => "success"];
+    }
 }

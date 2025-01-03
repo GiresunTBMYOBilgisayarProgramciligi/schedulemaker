@@ -1,6 +1,8 @@
 <?php
 /**
- * @var \App\Models\Classroom $classroom
+ * @var \App\Controllers\UserController $userController
+ * @var \App\Models\User $lecturer
+ * @var \App\Models\Department $department
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -15,8 +17,8 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
-                        <li class="breadcrumb-item">Derslik İşlemleri</li>
-                        <li class="breadcrumb-item active">Düzenle</li>
+                        <li class="breadcrumb-item">Bölüm İşlemleri</li>
+                        <li class="breadcrumb-item active">Ekle</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->
@@ -27,8 +29,8 @@
     <!-- Main content -->
     <section class="content ">
         <div class="card card-solid">
-            <form action="/ajax/updateClassroom" method="post" class="ajaxForm" title="Derslik Düzenle">
-                <input type="hidden" name="id" value="<?= $classroom->id ?>">
+            <form action="/ajax/updateDepartment" method="post" class="ajaxForm" title="Bölüm Düzenle">
+                <input type="hidden" name="id" value="<?= $department->id ?>">
                 <div class="card-body pb-0">
                     <div class="row">
                         <div class="col-md-12">
@@ -37,21 +39,18 @@
                                     <div class="form-group">
                                         <label for="name">Adı</label>
                                         <input type="text" class="form-control" id="name" name="name"
-                                               placeholder="Adı" value="<?=$classroom->name?>" required>
+                                               placeholder="Adı" value="<?=$department->name?>" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="class_size">Ders Mevcudu</label>
-                                        <input type="number" class="form-control" id="class_size" name="class_size"
-                                               placeholder="Ders Mevcudu" value="<?=$classroom->class_size?>" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label for="exam_size">Sınav Mevcudu</label>
-                                        <input type="number" class="form-control" id="exam_size" name="exam_size"
-                                               placeholder="Sınav Mevcudu" value="<?=$classroom->exam_size?>" required>
+                                        <label for="chairperson_id">Bölüm Başkanı</label>
+                                        <select class="form-control" id="chairperson_id" name="chairperson_id">
+                                            <?php foreach ($userController->getLecturerList() as $lecturer): ?>
+                                                <option value="<?= $lecturer->id ?>"
+                                                    <?= $lecturer->id == $department->chairperson_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -59,7 +58,7 @@
                     </div>
                 </div>
                 <div class="card-footer text-right">
-                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                    <button type="submit" class="btn btn-primary">Düzenle</button>
                 </div>
             </form>
         </div>
