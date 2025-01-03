@@ -161,13 +161,75 @@ class AdminRouter extends Router
     /*
      * Department Routes
      */
-    public function departmentsAction()
+    public function ListDepartmentsAction()
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "departmentController" => new DepartmentController(),
-            "page_title" => "Bölüm İşlemleri"
+            "page_title" => "Bölüm Listesi"
         ];
-        $this->callView("admin/departments", $view_data);
+        $this->callView("admin/departments/listdepartments", $view_data);
+    }
+    public function AddDepartmentAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "departmentController" => new DepartmentController(),
+            "page_title" => "Bölüm Ekle"
+        ];
+        $this->callView("admin/departments/adddepartment", $view_data);
+    }
+    public function editDepartmentAction($id = null)
+    {
+        $departmentController = new DepartmentController();
+        if (!is_null($id)) {
+            $department = $departmentController->getDepartment($id);
+        } else {
+            $department = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        }
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "departmentController" => $departmentController,
+            "department" => $department,
+            "page_title" => $department->name. "Düzenle" ,//todo ders olmayınca hata veriyor.
+        ];
+        $this->callView("admin/departments/editdepartment", $view_data);
+    }
+    /*
+     * Program Routes
+     */
+    public function ListProgramsAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "programController" => new ProgramController(),
+            "page_title" => "Program Listesi"
+        ];
+        $this->callView("admin/programs/listprograms", $view_data);
+    }
+    public function AddProgramAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "programController" => new ProgramController(),
+            "page_title" => "Program Ekle"
+        ];
+        $this->callView("admin/programs/addprogram", $view_data);
+    }
+    public function editProgramAction($id = null)
+    {
+        $programController = new ProgramController();
+        if (!is_null($id)) {
+            $program = $programController->getProgram($id);
+        } else {
+            $program = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        }
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "programController" => $programController,
+            "program" => $program,
+            "page_title" => $program->name. "Düzenle" ,//todo ders olmayınca hata veriyor.
+        ];
+        $this->callView("admin/programs/editprogram", $view_data);
     }
 }

@@ -158,7 +158,7 @@
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
                 <li class="nav-item">
-                    <a href="/admin/departments"
+                    <a href="#"
                        class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-school"></i>
                         <p>
@@ -177,54 +177,55 @@
                             </a>
                             <ul class="nav nav-treeview" style="display: none;">
                                 <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
+                                    <a href="/admin/listdepartments" class="nav-link">
+                                        <i class="nav-icon fas fa-list-alt"></i>
                                         <p>Liste</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
+                                    <a href="/admin/adddepartment" class="nav-link">
+                                        <i class="nav-icon fas fa-plus"></i>
                                         <p>Ekle</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
+                                    <a href="/admin/editdepartment" class="nav-link">
+                                        <i class="nav-icon fas fa-edit"></i>
                                         <p>Düzenle</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>
+                                            Program İşlemleri
+                                            <i class="right fas fa-angle-left"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview" style="display: none;">
+                                        <li class="nav-item">
+                                            <a href="/admin/listprograms" class="nav-link">
+                                                <i class="nav-icon fas fa-list-alt"></i>
+                                                <p>Liste</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="/admin/addprogram" class="nav-link">
+                                                <i class="nav-icon fas fa-plus"></i>
+                                                <p>Ekle</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="/admin/editprogram" class="nav-link">
+                                                <i class="nav-icon fas fa-edit"></i>
+                                                <p>Düzenle</p>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>
-                                    Program İşlemleri
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview" style="display: none;">
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Liste</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Ekle</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Düzenle</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+
                     </ul>
                 </li>
                 <!-- /Akademik Birimler -->
