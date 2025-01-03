@@ -50,14 +50,14 @@ class AdminRouter extends Router
     /*
      * User Routes
      */
-    public function UsersListAction()
+    public function ListUsersAction()
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Listesi",
             "departments" => (new DepartmentController())->getDepartments(),
             "programs" => (new ProgramController())->getPrograms()];
-        $this->callView("admin/users/userslist", $view_data);
+        $this->callView("admin/users/listusers", $view_data);
     }
     public function AddUserAction()
     {
@@ -87,14 +87,14 @@ class AdminRouter extends Router
     /*
      * Lesson Routes
      */
-    public function LessonsListAction()
+    public function ListLessonsAction()
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "lessonController" => new LessonController(),
             "page_title" => "Ders Listesi"
         ];
-        $this->callView("admin/lessons/lessonslist", $view_data);
+        $this->callView("admin/lessons/listlessons", $view_data);
     }
     public function AddLessonAction()
     {

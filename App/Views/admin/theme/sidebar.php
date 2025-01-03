@@ -33,11 +33,10 @@
                 </li>
                 <!-- /Başlangıç-->
                 <!-- Kullanıcı İşlemleri -->
-                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'user') or str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'menu-open' : ''; ?>">
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
-                       (str_contains($_SERVER["REQUEST_URI"], 'user') or
-                           str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'active' : ''; ?>">
+                       (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-users"></i>
                         <p>
                             Kullanıcı İşlemleri
@@ -46,8 +45,8 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/admin/userslist"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'userslist')) ? 'active' : ''; ?>">
+                            <a href="/admin/listusers"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listusers')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-address-book"></i>
                                 <p>
                                     Liste
@@ -67,13 +66,9 @@
                 </li>
                 <!-- /Kullanıcı İşlemleri -->
                 <!-- Ders İşlemleri -->
-                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'lessons') or str_contains($_SERVER["REQUEST_URI"], 'addlesson') or str_contains($_SERVER["REQUEST_URI"], 'editlesson')) ? 'menu-open' : ''; ?>">
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                     <a href="#"
-                       class="nav-link <?=
-                       (str_contains($_SERVER["REQUEST_URI"], 'lessons') or
-                           str_contains($_SERVER["REQUEST_URI"], 'addlesson') or
-                           str_contains($_SERVER["REQUEST_URI"], 'editlesson')
-                       ) ? 'active' : ''; ?>">
+                       class="nav-link <?=(str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-book-open"></i>
                         <p>
                             Ders İşlemleri
@@ -82,8 +77,8 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/admin/lessonslist"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lessonslist')) ? 'active' : ''; ?>">
+                            <a href="/admin/listlessons"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listlessons')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-list-alt"></i>
                                 <p>
                                     Liste
@@ -112,13 +107,9 @@
                 </li>
                 <!-- /Ders İşlemleri -->
                 <!-- Derslik İşlemleri -->
-                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'classrooms') or str_contains($_SERVER["REQUEST_URI"], 'addclassroom') or str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'menu-open' : ''; ?>">
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
                     <a href="#"
-                       class="nav-link <?=
-                       (str_contains($_SERVER["REQUEST_URI"], 'classrooms') or
-                           str_contains($_SERVER["REQUEST_URI"], 'addclassroom') or
-                           str_contains($_SERVER["REQUEST_URI"], 'editclassroom')
-                       ) ? 'active' : ''; ?>">
+                       class="nav-link <?=(str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-chalkboard"></i>
                         <p>
                             Derslik İşlemleri
@@ -157,7 +148,7 @@
                 </li>
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
-                <li class="nav-item">
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'program') or str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
                         <i class="nav-icon fas fa-school"></i>
@@ -167,7 +158,7 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item">
+                        <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'department') or str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                             <a href="#" class="nav-link">
                                 <i class="far fa-circle nav-icon"></i>
                                 <p>
@@ -175,26 +166,26 @@
                                     <i class="right fas fa-angle-left"></i>
                                 </p>
                             </a>
-                            <ul class="nav nav-treeview" style="display: none;">
+                            <ul class="nav nav-treeview" >
                                 <li class="nav-item">
-                                    <a href="/admin/listdepartments" class="nav-link">
+                                    <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listdepartments')) ? 'active' : ''; ?>">
                                         <i class="nav-icon fas fa-list-alt"></i>
                                         <p>Liste</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="/admin/adddepartment" class="nav-link">
+                                    <a href="/admin/adddepartment" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'adddepartment')) ? 'active' : ''; ?>">
                                         <i class="nav-icon fas fa-plus"></i>
                                         <p>Ekle</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="/admin/editdepartment" class="nav-link">
+                                    <a href="/admin/editdepartment" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editdepartment')) ? 'active' : ''; ?>">
                                         <i class="nav-icon fas fa-edit"></i>
                                         <p>Düzenle</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
+                                <li class="nav-item  <?=(str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                                     <a href="#" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>
@@ -202,21 +193,21 @@
                                             <i class="right fas fa-angle-left"></i>
                                         </p>
                                     </a>
-                                    <ul class="nav nav-treeview" style="display: none;">
+                                    <ul class="nav nav-treeview">
                                         <li class="nav-item">
-                                            <a href="/admin/listprograms" class="nav-link">
+                                            <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listprograms')) ? 'active' : ''; ?>">
                                                 <i class="nav-icon fas fa-list-alt"></i>
                                                 <p>Liste</p>
                                             </a>
                                         </li>
                                         <li class="nav-item">
-                                            <a href="/admin/addprogram" class="nav-link">
+                                            <a href="/admin/addprogram" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addprogram')) ? 'active' : ''; ?>">
                                                 <i class="nav-icon fas fa-plus"></i>
                                                 <p>Ekle</p>
                                             </a>
                                         </li>
                                         <li class="nav-item">
-                                            <a href="/admin/editprogram" class="nav-link">
+                                            <a href="/admin/editprogram" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editprogram')) ? 'active' : ''; ?>">
                                                 <i class="nav-icon fas fa-edit"></i>
                                                 <p>Düzenle</p>
                                             </a>
