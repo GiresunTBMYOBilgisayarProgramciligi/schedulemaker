@@ -92,6 +92,34 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
+    public function updateLessonAction(){
+        if ($this->checkAjax()) {
+            try {
+                $lessonController = new LessonController();
+                $lessonData = $this->data;
+                $lesson = new Lesson();
+                $lesson->fill($lessonData);
+                $respons = $lessonController->updateLesson($lesson);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Ders başarıyla Güncellendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
     public function updateUserAction()
     {
         if ($this->checkAjax()) {

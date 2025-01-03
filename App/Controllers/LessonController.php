@@ -73,4 +73,31 @@ class LessonController extends Controller
 
         return ["status" => "success"];
     }
+    public function updateLesson(Lesson $lesson)
+    {
+        try {
+            $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
+            $i = 0;
+            $query = "UPDATE $this->table_name SET ";
+            foreach ($lessonData as $k => $v) {
+                if (is_null($v)) continue;
+                if (++$i === count($lessonData)) $query .= $k . "=:" . $k . " ";
+                else $query .= $k . "=:" . $k . ", ";
+            }
+            $query .= " WHERE id=:id";
+            $lessonData["id"] = $lesson->id;
+            $u = $this->database->prepare($query);
+            $u->execute($lessonData);
+
+
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+        return ["status" => "success"];
+    }
 }

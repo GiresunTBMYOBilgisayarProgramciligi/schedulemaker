@@ -25,7 +25,7 @@ class DepartmentController extends Controller
                     return $department;
                 } else throw new \Exception("Department not found");
             } catch (\Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
+                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin. hata sınıfı oluşturarak ve session kullanarak mesajları gösterebilirim
                 echo $e->getMessage();
             }
         }

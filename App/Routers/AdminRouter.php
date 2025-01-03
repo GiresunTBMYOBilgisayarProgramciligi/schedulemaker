@@ -116,10 +116,10 @@ class AdminRouter extends Router
             "userController" => new UserController(),//her sayfada olmalı
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
-            "page_title" => $lesson->getFullName() ,//todo ders olmayınca hata veriyor.
+            "page_title" => $lesson->getFullName(). "Düzenle" ,//todo ders olmayınca hata veriyor.
             "departments" => (new DepartmentController())->getDepartments(),
             "programs" => (new ProgramController())->getPrograms()];
-        $this->callView("admin/lessons/lesson", $view_data);
+        $this->callView("admin/lessons/editlesson", $view_data);
     }
     /*
      * Classroom Routes
