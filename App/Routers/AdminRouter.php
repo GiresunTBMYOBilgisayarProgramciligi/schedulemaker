@@ -5,6 +5,7 @@
 
 namespace App\Routers;
 
+use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
@@ -124,13 +125,38 @@ class AdminRouter extends Router
     /*
      * Classroom Routes
      */
-    public function classroomsAction()
+    public function ListClassroomsAction()
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
-            "page_title" => "Derslik İşlemleri"
+            "classroomController" => new ClassroomController(),
+            "page_title" => "Derslik Listesi"
         ];
-        $this->callView("admin/clasrooms", $view_data);
+        $this->callView("admin/classrooms/listclassrooms", $view_data);
+    }
+    public function AddClassroomAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "page_title" => "Sınıf Ekle"
+            ];
+        $this->callView("admin/classrooms/addclasroom", $view_data);
+    }
+    public function editClassroomAction($id = null)
+    {
+        $classroomController = new ClassroomController();
+        if (!is_null($id)) {
+            $classroom = $classroomController->getClass($id);
+        } else {
+            $classroom = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        }
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "classroomController" => new ClassroomController(),
+            "classroom" => $classroom,
+            "page_title" => $classroom->name. "Düzenle" ,//todo ders olmayınca hata veriyor.
+            ];
+        $this->callView("admin/classrooms/editclassroom", $view_data);
     }
     /*
      * Department Routes
@@ -139,6 +165,7 @@ class AdminRouter extends Router
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
+            "departmentController" => new DepartmentController(),
             "page_title" => "Bölüm İşlemleri"
         ];
         $this->callView("admin/departments", $view_data);

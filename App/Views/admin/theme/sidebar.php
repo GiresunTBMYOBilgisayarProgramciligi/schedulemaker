@@ -112,7 +112,7 @@
                 </li>
                 <li class="nav-item <?=
                 (str_contains($_SERVER["REQUEST_URI"], 'classrooms') or
-                    str_contains($_SERVER["REQUEST_URI"], 'addclassrooms') or
+                    str_contains($_SERVER["REQUEST_URI"], 'addclassroom') or
                     str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
@@ -128,8 +128,8 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="/admin/lessons"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classrooms')) ? 'active' : ''; ?>">
+                            <a href="/admin/listclassrooms"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listclassrooms')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-list-alt"></i>
                                 <p>
                                     Liste
@@ -137,7 +137,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/admin/addlesson"
+                            <a href="/admin/addclassroom"
                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addclassroom')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-plus"></i>
                                 <p>
@@ -146,7 +146,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/admin/editlesson"
+                            <a href="/admin/editclassroom"
                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'active' : ''; ?>">
                                 <i class="nav-icon fas fa-edit"></i>
                                 <p>

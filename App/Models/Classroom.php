@@ -12,7 +12,11 @@ class Classroom extends Model
     public ?int $schedule_id= null;
     public ?int $class_size= null;
     public ?int $exam_size= null;
-
+    /*
+     * todo tür ve özellikler şeklinde iki alan eklenebilir.
+     * Tür lab sınıf amfi konferans salonu
+     * Özellikler beyaz tahta, akıllı tahta, projeksiyon var yok, kara tahta
+     */
     private string $table_name = "classrooms";
 
     public function __construct(int $id = null)
