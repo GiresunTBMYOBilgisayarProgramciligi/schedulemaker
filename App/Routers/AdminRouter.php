@@ -138,9 +138,9 @@ class AdminRouter extends Router
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
-            "page_title" => "Sınıf Ekle"
+            "page_title" => "Derslik Ekle"
             ];
-        $this->callView("admin/classrooms/addclasroom", $view_data);
+        $this->callView("admin/classrooms/addclassroom", $view_data);
     }
     public function editClassroomAction($id = null)
     {

@@ -8,7 +8,7 @@ use PDO;
 use PDOException;
 class ClassroomController extends Controller
 {
-    private string $table_name = "lessons";
+    private string $table_name = "classrooms";
 
     public function getClass($id)
     {
@@ -35,13 +35,35 @@ class ClassroomController extends Controller
     {
         $q = $this->database->prepare("SELECT * FROM $this->table_name ");
         $q->execute();
-        $classrooms = $q->fetchAll(PDO::FETCH_ASSOC);
+        $classrooms_list = $q->fetchAll(PDO::FETCH_ASSOC);
         $classrooms = [];
-        foreach ($classrooms as $classroom_data) {
+        foreach ($classrooms_list as $classroom_data) {
             $classroom = new Classroom();
             $classroom->fill($classroom_data);
             $classrooms[] = $classroom;
         }
         return $classrooms;
+    }
+
+    public function saveNew(Classroom $new_classroom): array
+    {
+        try {
+            $q = $this->database->prepare(
+                "INSERT INTO $this->table_name(name, class_size, exam_size) 
+            values  (:name, :class_size, :exam_size)");
+            if ($q) {
+                $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id' ]);
+                $q->execute($new_classroom_arr);
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+
+        return ["status" => "success"];
     }
 }

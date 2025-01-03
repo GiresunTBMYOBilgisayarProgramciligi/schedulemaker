@@ -2,9 +2,11 @@
 
 namespace App\Routers;
 
+use App\Controllers\ClassroomController;
 use App\Controllers\LessonController;
 use App\Controllers\UserController;
 use App\Core\Router;
+use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\User;
 
@@ -35,6 +37,9 @@ class AjaxRouter extends Router
             return false;
     }
 
+    /*
+     * User Ajax Actions
+     */
     public function addNewUserAction()
     {
         if ($this->checkAjax()) {
@@ -64,62 +69,7 @@ class AjaxRouter extends Router
         }
 
     }
-    public function addLessonAction()
-    {
-        if ($this->checkAjax()) {
-            try {
-                $lessonController = new LessonController();
-                $lessonData = $this->data;
-                $new_lesson = new Lesson();
-                $new_lesson->fill($lessonData);
-                $respons = $lessonController->saveNew($new_lesson);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
-                } else {
-                    $this->response = array(
-                        "msg" => "Kullanıcı başarıyla eklendi.",
-                        "status" => "success"
-                    );
-                }
-            } catch (\Exception $e) {
-                $this->response = [
-                    "msg" => $e->getMessage(),
-                    "status" => "error"
-                ];
-            }
 
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($this->response);
-        }
-    }
-
-    public function updateLessonAction(){
-        if ($this->checkAjax()) {
-            try {
-                $lessonController = new LessonController();
-                $lessonData = $this->data;
-                $lesson = new Lesson();
-                $lesson->fill($lessonData);
-                $respons = $lessonController->updateLesson($lesson);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
-                } else {
-                    $this->response = array(
-                        "msg" => "Ders başarıyla Güncellendi.",
-                        "status" => "success"
-                    );
-                }
-            } catch (\Exception $e) {
-                $this->response = [
-                    "msg" => $e->getMessage(),
-                    "status" => "error"
-                ];
-            }
-
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode($this->response);
-        }
-    }
     public function updateUserAction()
     {
         if ($this->checkAjax()) {
@@ -166,6 +116,98 @@ class AjaxRouter extends Router
                     "redirect" => "/admin",
                     "status" => "success"
                 );
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    /*
+     * Lessons Ajax Actions
+     */
+    public function addLessonAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $lessonController = new LessonController();
+                $lessonData = $this->data;
+                $new_lesson = new Lesson();
+                $new_lesson->fill($lessonData);
+                $respons = $lessonController->saveNew($new_lesson);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Kullanıcı başarıyla eklendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    public function updateLessonAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $lessonController = new LessonController();
+                $lessonData = $this->data;
+                $lesson = new Lesson();
+                $lesson->fill($lessonData);
+                $respons = $lessonController->updateLesson($lesson);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Ders başarıyla Güncellendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    /*
+     * Classrooms Ajax Actions
+     */
+    public function addClassroomAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $classroomController = new ClassroomController();
+                $classroomData = $this->data;
+                $new_classroom = new Classroom();
+                $new_classroom->fill($classroomData);
+                $respons = $classroomController->saveNew($new_classroom);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Derslik başarıyla eklendi.",
+                        "status" => "success"
+                    );
+                }
             } catch (\Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
