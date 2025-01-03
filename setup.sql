@@ -28,10 +28,11 @@ create table if not exists users
 create table if not exists departments
 (
     id             int AUTO_INCREMENT,
-    name           text,
+    name           varchar(100),
     chairperson_id int,
     schedule_id    int,
     primary key (id),
+    unique (name),
     foreign key (chairperson_id) references users (id) on delete set null on update cascade,
     foreign key (schedule_id) references schedule (id) on delete set null on update cascade
 ) ENGINE = INNODB;
@@ -51,10 +52,11 @@ create table if not exists classrooms
 create table if not exists programs
 (
     id            int AUTO_INCREMENT,
-    name          text not null,
+    name          varchar(100) not null,
     department_id int,
     schedule_id    int,
     primary key (id),
+    unique (name),
     foreign key (department_id) references departments (id) on delete set null,
     foreign key (schedule_id) references schedule (id) on delete set null on update cascade
 ) ENGINE = INNODB;
