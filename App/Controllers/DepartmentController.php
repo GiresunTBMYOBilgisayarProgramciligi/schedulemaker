@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Models\Department;
 use PDO;
 use PDOException;
+
 class DepartmentController extends Controller
 {
     private string $table_name = "departments";
@@ -30,15 +31,23 @@ class DepartmentController extends Controller
             }
         }
     }
-    public function getDepartments()
+
+    public function getDepartmentsList($department_id=null)
     {
         try {
             $q = $this->database->prepare("Select * From $this->table_name");
             $q->execute();
-            return $q->fetchAll(PDO::FETCH_ASSOC);
+            $department_list = $q->fetchAll(PDO::FETCH_ASSOC);
+            $departments = [];
+            foreach ($department_list as $departmentData) {
+                $deparment = new Department();
+                $deparment->fill($departmentData);
+                $departments[] = $deparment;
+            }
         } catch (PDOException $e) {
             echo $e->getMessage();
             return [];
         }
+        return $departments;
     }
 }

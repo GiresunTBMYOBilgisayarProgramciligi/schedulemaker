@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Models\Program;
 use PDO;
 use PDOException;
+
 class ProgramController extends Controller
 {
     private string $table_name = "programs";
@@ -30,15 +31,28 @@ class ProgramController extends Controller
             }
         }
     }
-    public function getPrograms()
+
+    public function getProgramsList($department_id = null)
     {
         try {
-            $q = $this->database->prepare("Select * From $this->table_name");
-            $q->execute();
-            return $q->fetchAll(PDO::FETCH_ASSOC);
+            if (!is_null($department_id)) {
+                $q = $this->database->prepare("Select * From $this->table_name WHERE department_id=:department_id");
+                $q->execute(["department_id"=>$department_id]);
+            } else {
+                $q = $this->database->prepare("Select * From $this->table_name");
+                $q->execute();
+            }
+            $programs_list = $q->fetchAll(PDO::FETCH_ASSOC);
+            $programs = [];
+            foreach ($programs_list as $programData) {
+                $program = new Program();
+                $program->fill($programData);
+                $programs[] = $program;
+            }
         } catch (PDOException $e) {
             echo $e->getMessage();
             return [];
         }
+        return $programs;
     }
 }

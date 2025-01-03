@@ -1,7 +1,7 @@
 <?php
 /**
- * @var \App\Controllers\ClassroomController $classroomController
- * @var \App\Models\Classroom $classroom
+ * @var \App\Controllers\DepartmentController $departmentController
+ * @var \App\Models\Department $department
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -36,17 +36,15 @@
                             <tr>
                                 <th>İd</th>
                                 <th>Adı</th>
-                                <th>Ders Mevcudu</th>
-                                <th>Sınav Mevcudu</th>
+                                <th>Bölüm Başkanı</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <?php foreach ($classroomController->getClassroomsList() as $classroom): ?>
+                            <?php foreach ($departmentController->getDepartmentsList() as $department): ?>
                                 <tr class="odd">
-                                    <td><?= $classroom->id ?></td>
-                                    <td><?= $classroom->name ?></td>
-                                    <td><?= $classroom->class_size ?></td>
-                                    <td><?= $classroom->exam_size ?></td>
+                                    <td><?= $department->id ?></td>
+                                    <td><?= $department->name ?></td>
+                                    <td><?= $department->getChairperson()->getFullName() ?></td>
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>
