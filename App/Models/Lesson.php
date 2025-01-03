@@ -11,14 +11,14 @@ use PDOException;
 
 class Lesson extends Model
 {
-    public ?int $id= null;
-    public ?string $code= null;
-    public ?string $name= null;
-    public ?int $size= null;
-    public ?int $hours=2;
-    public ?int $lecturer_id= null;
-    public ?int $department_id= null;
-    public ?int $program_id= null;
+    public ?int $id = null;
+    public ?string $code = null;
+    public ?string $name = null;
+    public ?int $size = null;
+    public ?int $hours = 2;
+    public ?int $lecturer_id = null;
+    public ?int $department_id = null;
+    public ?int $program_id = null;
 
     private string $table_name = "lessons";
 
@@ -33,19 +33,21 @@ class Lesson extends Model
     /**
      * @return User Chair Person
      */
-    public function getLecturer(): User
+    public function getLecturer(): User|null
     {
         return (new UserController())->getUser($this->lecturer_id);
     }
 
-    public function getDepartment(): Department
+    public function getDepartment(): Department|null
     {
         return (new DepartmentController())->getDepartment($this->department_id);
     }
-    public function getProgam(): Program
+
+    public function getProgam(): Program|null
     {
         return (new ProgramController())->getProgram($this->department_id);
     }
+
     public function getFullName(): string
     {
         return $this->name . " (" . $this->code . ")";
