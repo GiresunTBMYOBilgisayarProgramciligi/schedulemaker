@@ -94,15 +94,6 @@
                                 </p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="/admin/editlesson"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editlesson')) ? 'active' : ''; ?>">
-                                <i class="nav-icon fas fa-edit"></i>
-                                <p>
-                                    Düzenle
-                                </p>
-                            </a>
-                        </li>
                     </ul>
                 </li>
                 <!-- /Ders İşlemleri -->
@@ -132,15 +123,6 @@
                                 <i class="nav-icon fas fa-plus"></i>
                                 <p>
                                     Ekle
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/admin/editclassroom"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editclassroom')) ? 'active' : ''; ?>">
-                                <i class="nav-icon fas fa-edit"></i>
-                                <p>
-                                    Düzenle
                                 </p>
                             </a>
                         </li>
@@ -179,12 +161,6 @@
                                         <p>Ekle</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a href="/admin/editdepartment" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editdepartment')) ? 'active' : ''; ?>">
-                                        <i class="nav-icon fas fa-edit"></i>
-                                        <p>Düzenle</p>
-                                    </a>
-                                </li>
                                 <li class="nav-item  <?=(str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                                     <a href="#" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
@@ -204,12 +180,6 @@
                                             <a href="/admin/addprogram" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addprogram')) ? 'active' : ''; ?>">
                                                 <i class="nav-icon fas fa-plus"></i>
                                                 <p>Ekle</p>
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="/admin/editprogram" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editprogram')) ? 'active' : ''; ?>">
-                                                <i class="nav-icon fas fa-edit"></i>
-                                                <p>Düzenle</p>
                                             </a>
                                         </li>
                                     </ul>
