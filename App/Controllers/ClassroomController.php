@@ -66,4 +66,31 @@ class ClassroomController extends Controller
 
         return ["status" => "success"];
     }
+
+    public function updateClassroom(Classroom $classroom)
+    {
+        try {
+            $classroomData = $classroom->getArray(['table_name', 'database', 'id']);
+            $i = 0;
+            $query = "UPDATE $this->table_name SET ";
+            foreach ($classroomData as $k => $v) {
+                if (is_null($v)) continue;
+                if (++$i === count($classroomData)) $query .= $k . "=:" . $k . " ";
+                else $query .= $k . "=:" . $k . ", ";
+            }
+            $query .= " WHERE id=:id";
+            $classroomData["id"] = $classroom->id;
+            $u = $this->database->prepare($query);
+            $u->execute($classroomData);
+
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+        return ["status" => "success"];
+    }
 }
