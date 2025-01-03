@@ -3,11 +3,15 @@
 namespace App\Routers;
 
 use App\Controllers\ClassroomController;
+use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
+use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use App\Models\Classroom;
+use App\Models\Department;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\User;
 
 class AjaxRouter extends Router
@@ -242,6 +246,67 @@ class AjaxRouter extends Router
                 ];
             }
 
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+    /*
+     * Departments Ajax Actions
+     */
+    public function addDepartmentAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $departmentController = new DepartmentController();
+                $departmentData = $this->data;
+                $new_department = new Department();
+                $new_department->fill($departmentData);
+                $respons = $departmentController->saveNew($new_department);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Bölüm başarıyla eklendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    /*
+     * Programs Ajax Actions
+     */
+    public function addProgramAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $programController = new ProgramController();
+                $programData = $this->data;
+                $new_program = new Program();
+                $new_program->fill($programData);
+                $respons = $programController->saveNew($new_program);
+                if ($respons['status'] == 'error') {
+                    throw new \Exception($respons['msg']);
+                } else {
+                    $this->response = array(
+                        "msg" => "Program başarıyla eklendi.",
+                        "status" => "success"
+                    );
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }

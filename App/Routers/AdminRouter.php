@@ -106,7 +106,7 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Ders Ekle",
-            "departments" => (new DepartmentController())->getDepartments(),
+            "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/lessons/addlesson", $view_data);
     }
@@ -185,7 +185,6 @@ class AdminRouter extends Router
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
-            "departmentController" => new DepartmentController(),
             "page_title" => "Bölüm Ekle"
         ];
         $this->callView("admin/departments/adddepartment", $view_data);
@@ -222,12 +221,13 @@ class AdminRouter extends Router
         $this->callView("admin/programs/listprograms", $view_data);
     }
 
-    public function AddProgramAction()
+    public function AddProgramAction($department_id = null)
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
-            "programController" => new ProgramController(),
-            "page_title" => "Program Ekle"
+            "page_title" => "Program Ekle",
+            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "department_id" => $department_id
         ];
         $this->callView("admin/programs/addprogram", $view_data);
     }

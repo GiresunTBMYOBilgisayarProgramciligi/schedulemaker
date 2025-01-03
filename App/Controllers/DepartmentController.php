@@ -50,4 +50,25 @@ class DepartmentController extends Controller
         }
         return $departments;
     }
+    public function saveNew(Department $new_department): array
+    {
+        try {
+            $q = $this->database->prepare(
+                "INSERT INTO $this->table_name(name,  chairperson_id) 
+            values  (:name, :chairperson_id)");
+            if ($q) {
+                $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id' ]);
+                $q->execute($new_lesson_arr);
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+
+        return ["status" => "success"];
+    }
 }
