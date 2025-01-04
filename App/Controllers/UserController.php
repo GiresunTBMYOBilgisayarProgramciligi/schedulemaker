@@ -187,7 +187,7 @@ class UserController extends Controller
      */
     public function getLecturerList(): array
     {
-        $q = $this->database->prepare("SELECT * FROM $this->table_name where not role='lesson'");
+        $q = $this->database->prepare("SELECT * FROM $this->table_name where not role='user'");
         $q->execute();
         $user_list = $q->fetchAll(PDO::FETCH_ASSOC);
         $users = [];
@@ -202,7 +202,7 @@ class UserController extends Controller
     public function getRoleList(): array
     {
         return [
-            "lesson" => "Kullanıcı",
+            "user" => "Kullanıcı",
             "lecturer" => "Akademisyen",
             "admin" => "Yönetici",
             "department_head" => "Bölüm Başkanı",
