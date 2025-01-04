@@ -28,7 +28,6 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-md-3">
-
                     <!-- Profile Image -->
                     <div class="card card-primary card-outline">
                         <div class="card-body box-profile">
@@ -81,7 +80,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
                 <!-- /.col -->
                 <div class="col-md-9">

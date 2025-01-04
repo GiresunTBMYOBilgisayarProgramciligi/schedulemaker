@@ -66,7 +66,7 @@
                                             </button>
                                             <div class="dropdown-menu" role="menu" style="">
                                                 <a class="dropdown-item" href="/admin/profile/<?=$user->id?>">Gör</a>
-                                                <a class="dropdown-item" href="#">Düzenle</a>
+                                                <a class="dropdown-item" href="/admin/edituser/<?=$user->id?>">Düzenle</a>
                                                 <div class="dropdown-divider"></div>
                                                 <form action="/ajax/deleteuser/<?=$user->id?>" class="ajaxFormDelete" id="deleteUser-<?=$user->id?>" method="post">
                                                     <input type="hidden" name="id" value="<?=$user->id?>">

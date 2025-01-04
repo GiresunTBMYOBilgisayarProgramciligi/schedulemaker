@@ -87,6 +87,22 @@ class AdminRouter extends Router
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/profile", $view_data);
     }
+    public function EditUserAction($id = null)
+    {
+        $userController = new UserController();
+        if (is_null($id)) {
+            $user = $userController->getCurrentUser();
+        } else {
+            $user = $userController->getUser($id);
+        }
+        $view_data = [
+            "userController" => $userController, //her sayfada olmalı
+            "user" => $user,
+            "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
+            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "programs" => (new ProgramController())->getProgramsList()];
+        $this->callView("admin/users/edituser", $view_data);
+    }
 
     /*
      * Lesson Routes
