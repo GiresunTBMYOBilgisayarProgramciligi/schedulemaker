@@ -115,7 +115,8 @@ class AjaxRouter extends Router
             } else {
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Silindi.",
-                    "status" => "success"
+                    "status" => "success",
+                    "redirect" => "/admin/listusers",
                 );
             }
 
