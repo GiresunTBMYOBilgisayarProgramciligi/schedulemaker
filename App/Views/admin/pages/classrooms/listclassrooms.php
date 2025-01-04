@@ -58,7 +58,7 @@
                                                 <a class="dropdown-item" href="#">Gör</a>
                                                 <a class="dropdown-item" href="/admin/editclassroom/<?=$classroom->id?>">Düzenle</a>
                                                 <div class="dropdown-divider"></div>
-                                                <form action="/admin/deleteclassroom/<?=$classroom->id?>" class="ajaxFormDelete" id="deleteProgram-<?=$classroom->id?>" method="post">
+                                                <form action="/ajax/deleteclassroom/<?=$classroom->id?>" class="ajaxFormDelete" id="deleteProgram-<?=$classroom->id?>" method="post">
                                                     <input type="hidden" name="id" value="<?=$classroom->id?>">
                                                     <input type="submit" class="dropdown-item" value="Sil">
                                                 </form>
