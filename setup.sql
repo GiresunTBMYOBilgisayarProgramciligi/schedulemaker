@@ -13,7 +13,7 @@ create table if not exists users
     name          varchar(50),
     last_name     varchar(50),
     role          varchar(20) default "user",
-    title         varchar(15),
+    title         varchar(50),
     department_id int,
     program_id    int,
     schedule_id    int,
