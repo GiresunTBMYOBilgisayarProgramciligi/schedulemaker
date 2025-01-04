@@ -96,7 +96,8 @@
                                         <label for="department_id">Bölüm</label>
                                         <select class="form-control" id="department_id" name="department_id">
                                             <?php foreach ($departments as $department): ?>
-                                                <option value="<?= $department['id'] ?>"><?= $department['name'] ?></option>
+                                                <option value="<?= $department->id ?>"
+                                                    <?= $department->id == $user->department_id ? "selected" : "" ?>><?= $department->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -106,7 +107,8 @@
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
                                             <?php foreach ($programs as $program): var_dump($programs); ?>
-                                                <option value="<?= $program['id'] ?>"><?= $program['name'] ?></option>
+                                                <option value="<?= $program->id ?>"
+                                                    <?= $program->id == $user->program_id ? "selected" : "" ?>><?= $program->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
