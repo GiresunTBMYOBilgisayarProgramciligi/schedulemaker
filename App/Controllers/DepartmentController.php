@@ -32,7 +32,7 @@ class DepartmentController extends Controller
         }
     }
 
-    public function getDepartmentsList($department_id=null)
+    public function getDepartmentsList()
     {
         try {
             $q = $this->database->prepare("Select * From $this->table_name");

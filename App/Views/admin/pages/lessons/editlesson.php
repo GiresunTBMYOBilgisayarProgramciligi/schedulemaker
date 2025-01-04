@@ -111,7 +111,7 @@
                     </div>
                 </div>
                 <div class="card-footer text-right">
-                    <button type="submit" class="btn btn-primary">Ekle</button>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
                 </div>
             </form>
         </div>

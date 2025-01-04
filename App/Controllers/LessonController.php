@@ -10,6 +10,7 @@ use PDOException;
 class LessonController extends Controller
 {
     private string $table_name = "lessons";
+
     public function getLesson($id)
     {
         if (!is_null($id)) {
@@ -34,19 +35,35 @@ class LessonController extends Controller
     /**
      * @return array
      */
-    public function getLessonsList()
+    /**
+     * @param int $user_id Girildiğinde o kullanıcıya ait derslerin listesini döner
+     * @return array
+     */
+    public function getLessonsList($lecturer_id = null)
     {
-        $q = $this->database->prepare("SELECT * FROM $this->table_name ");
-        $q->execute();
-        $lessons_list = $q->fetchAll(PDO::FETCH_ASSOC);
-        $lessons = [];
-        foreach ($lessons_list as $lesson_data) {
-            $lesson = new Lesson();
-            $lesson->fill($lesson_data);
-            $lessons[] = $lesson;
+        try {
+            if (is_null($lecturer_id)) {
+                $stmt = $this->database->prepare("select * from $this->table_name");
+                $stmt->execute();
+            } else {
+                $stmt = $this->database->prepare("select * from $this->table_name where lecturer_id=:lecturer_id");
+                $stmt->bindValue(":lecturer_id", $lecturer_id, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+            $lessons_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $lessons = [];
+            foreach ($lessons_list as $lesson_data) {
+                $lesson = new Lesson();
+                $lesson->fill($lesson_data);
+                $lessons[] = $lesson;
+            }
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            return [];
         }
         return $lessons;
     }
+
     /**
      * AjaxControllerdan gelen verilele yeni ders oluşturur
      * @param array $data
@@ -59,7 +76,7 @@ class LessonController extends Controller
                 "INSERT INTO $this->table_name(code, name, size, hours, lecturer_id, department_id, program_id) 
             values  (:code, :name, :size, :hours, :lecturer_id, :department_id, :program_id)");
             if ($q) {
-                $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id' ]);
+                $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id']);
                 $q->execute($new_lesson_arr);
             }
         } catch (PDOException $e) {
@@ -73,6 +90,7 @@ class LessonController extends Controller
 
         return ["status" => "success"];
     }
+
     public function updateLesson(Lesson $lesson)
     {
         try {

@@ -3,7 +3,10 @@
  * @var \App\Models\User $user
  * @var \App\Controllers\UserController $userController
  * @var array $programs \App\Models\Program->getPrograms())
+ * @var \App\Models\Program $program
  * @var array $departments \App\Models\Department->getDepartments())
+ * @var \App\Models\Department $department
+ * @var \App\Models\Lesson $lesson Hocaya ait ders listesi oluşturulurken kullanılıyor
  * todo users klasörüne taşınabilir
  */
 
@@ -63,27 +66,19 @@
                             <!-- Burada dersler listelenecek -->
                             <div class="row">
                                 <ul class="list-group list-group-unbordered">
+                                    <?php foreach ($user->getLessonsList() as $lesson): ?>
                                     <li class="list-group-item">
-                                        <strong><i class="fas fa-book mr-1"></i> BİLP-101 Programlama Temelleri
+                                        <strong>
+                                            <i class="fas fa-book mr-1"></i>
+                                            <?= $lesson->code." ".$lesson->name?>
                                         </strong>
                                         <p class="text-muted">
-                                            Bilgisayar Teknolojileri - Bilgisayar Programcılığı
+                                            <?= $lesson->getDepartment()->name." - ".$lesson->getProgam()->name?>
                                         </p>
-
                                     </li>
-                                    <li class="list-group-item">
-                                        <strong><i class="fas fa-book mr-1"></i> BİLP-102 Programlama Temelleri 2
-                                        </strong>
-                                        <p class="text-muted">
-                                            Bilgisayar Teknolojileri - Bilgisayar Programcılığı
-                                        </p>
-
-                                    </li>
+                                    <?php endforeach; ?>
                                 </ul>
-
                             </div>
-
-
                         </div>
                     </div>
 
@@ -142,52 +137,22 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="role">Rol</label>
-                                            <?php $user_role = htmlspecialchars($user->role ?? ''); ?>
                                             <select class="form-control" id="role" name="role">
-                                                <option value="user" <?= $user_role == "user" ? 'selected' : '' ?>>
-                                                    Kullanıcı
-                                                </option>
-                                                <option value="lecturer" <?= $user_role == "lecturer" ? 'selected' : '' ?>>
-                                                    Akademisyen
-                                                </option>
-                                                <option value="admin" <?= $user_role == "admin" ? 'selected' : '' ?>>
-                                                    Yönetici
-                                                </option>
-                                                <option value="department_head" <?= $user_role == "department_head" ? 'selected' : '' ?>>
-                                                    Bölüm Başkanı
-                                                </option>
-                                                <option value="manager" <?= $user_role == "manager" ? 'selected' : '' ?>>
-                                                    Müdür
-                                                </option>
-                                                <option value="submanager" <?= $user_role == "submanager" ? 'selected' : '' ?>>
-                                                    Müdür Yardımcısı
-                                                </option>
+                                                <?php foreach ($userController->getRoleList() as $role => $value): ?>
+                                                    <option value="<?= $role ?>"
+                                                        <?= $role == $user->role ? "selected" : "" ?>><?= $value ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="title">Ünvan</label>
-                                            <?php $title = htmlspecialchars($user->title ?? ''); ?>
                                             <select class="form-control" id="title" name="title">
-                                                <option value="Öğr. Gör." <?= $title == "Öğr. Gör." ? 'selected' : '' ?>>
-                                                    Öğr.
-                                                    Gör.
-                                                </option>
-                                                <option value="Öğr. Gör. Dr." <?= $title == "Öğr. Gör. Dr." ? 'selected' : '' ?>>
-                                                    Öğr. Gör. Dr.
-                                                </option>
-                                                <option value="Dr. Öğretim Üyesi" <?= $title == "Dr. Öğretim Üyesi" ? 'selected' : '' ?>>
-                                                    Dr. Öğretim Üyesi
-                                                </option>
-                                                <option value="Doç. Dr. " <?= $title == "Doç. Dr. " ? 'selected' : '' ?>>
-                                                    Doç.
-                                                    Dr.
-                                                </option>
-                                                <option value="Prof. Dr." <?= $title == "Prof. Dr." ? 'selected' : '' ?>>
-                                                    Prof.
-                                                    Dr.
-                                                </option>
+                                                <?php foreach ($userController->getTitleList() as $title): ?>
+                                                    <option value="<?= $title ?>"
+                                                        <?= $title == $user->title ? "selected" : "" ?>><?= $title ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -196,12 +161,11 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="department_id">Bölüm</label>
-                                            <?php $department_id = htmlspecialchars($user->department_id ?? ''); ?>
                                             <select class="form-control" id="department_id" name="department_id">
                                                 <?php foreach ($departments as $department): ?>
-                                                    <option value="<?= $department['id'] ?>"
-                                                        <?= $department['id'] == $department_id ? 'selected' : '' ?>>
-                                                        <?= $department['name'] ?>
+                                                    <option value="<?= $department->id ?>"
+                                                        <?= $department->id == $user->department_id ? 'selected' : '' ?>>
+                                                        <?= $department->name ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -210,12 +174,11 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="program_id">Program</label>
-                                            <?php $program_id = htmlspecialchars($user->program_id ?? ''); ?>
                                             <select class="form-control" id="program_id" name="program_id">
                                                 <?php foreach ($programs as $program): ?>
-                                                    <option value="<?= $program['id'] ?>"
-                                                        <?= $program['id'] == $program_id ? 'selected' : '' ?>>
-                                                        <?= $program['name'] ?>
+                                                    <option value="<?= $program->id ?>"
+                                                        <?= $program->id == $user->program_id ? 'selected' : '' ?>>
+                                                        <?= $program->name ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>

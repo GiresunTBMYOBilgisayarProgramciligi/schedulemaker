@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Controllers\DepartmentController;
+use App\Controllers\LessonController;
+use App\Controllers\ProgramController;
 use App\Core\Model;
 use PDO;
 
@@ -11,17 +14,17 @@ use PDO;
 class User extends Model
 {
     public ?int $id = null;
-    public ?string $password= null;
-    public ?string $mail= null;
-    public ?string $name= null;
-    public ?string $last_name= null;
-    public ?string $role= null;
-    public ?string $title= null;
-    public ?int $department_id= null;
-    public ?int $program_id= null;
+    public ?string $password = null;
+    public ?string $mail = null;
+    public ?string $name = null;
+    public ?string $last_name = null;
+    public ?string $role = null;
+    public ?string $title = null;
+    public ?int $department_id = null;
+    public ?int $program_id = null;
     public ?int $schedule_id = null;
-    public ?\DateTime $register_date= null;
-    public ?\DateTime $last_login= null;
+    public ?\DateTime $register_date = null;
+    public ?\DateTime $last_login = null;
     /**
      * Model sınıfındaki fill metodunda hangi alanların datetime olduğunu bellirtmek için kullanılır
      * @var array|string[]
@@ -59,16 +62,16 @@ class User extends Model
 
     /**
      * Bölüm Adının döner
-     * @return void
+     * @return string
      */
     public function getDepartmentName()
     {
-        return "Bilgisayar Teknolojileri";
+        return (new DepartmentController())->getDepartment($this->department_id)->name;
     }
 
     public function getProgramName()
     {
-        return "Bilgisayar Programcılığı";
+        return (new ProgramController())->getProgram($this->program_id)->name;
     }
 
     public function getRoleName()
@@ -82,6 +85,10 @@ class User extends Model
             "submanager" => "Müdür Yardımcısı"
         ];
         return $role_names[$this->role];
+    }
+
+    public function getLessonsList(){
+        return (new LessonController())->getLessonsList($this->id);
     }
 
     public function getGravatarURL($size = 50)

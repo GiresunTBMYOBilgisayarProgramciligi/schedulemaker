@@ -41,7 +41,8 @@ class ProgramController extends Controller
         try {
             if (!is_null($department_id)) {
                 $q = $this->database->prepare("Select * From $this->table_name WHERE department_id=:department_id");
-                $q->execute(["department_id"=>$department_id]);
+                $q->bindValue(":department_id", $department_id, PDO::PARAM_INT);
+                $q->execute();
             } else {
                 $q = $this->database->prepare("Select * From $this->table_name");
                 $q->execute();
