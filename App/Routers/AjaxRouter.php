@@ -224,7 +224,8 @@ class AjaxRouter extends Router
             } else {
                 $this->response = array(
                     "msg" => "Ders Başarıyla Silindi.",
-                    "status" => "success"
+                    "status" => "success",
+                    "redirect" => "/admin/listlessons",
                 );
             }
 
@@ -292,6 +293,27 @@ class AjaxRouter extends Router
         }
     }
 
+    public function deleteClassroomAction()
+    {
+        if ($this->checkAjax()) {
+            $classroomController = new ClassroomController();
+            $response = $classroomController->delete($this->data['id']);
+
+            if ($response['status'] == 'error') {
+                throw new \Exception($response['msg']);
+            } else {
+                $this->response = array(
+                    "msg" => "Kullanıcı başarıyla Silindi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listclassrooms",
+                );
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
     /*
      * Departments Ajax Actions
      */
@@ -352,7 +374,7 @@ class AjaxRouter extends Router
         }
     }
 
-    public function deleteDepartmnetAction()
+    public function deleteDepartmentAction()
     {
         if ($this->checkAjax()) {
             $departmentController = new DepartmentController();
@@ -363,7 +385,8 @@ class AjaxRouter extends Router
             } else {
                 $this->response = array(
                     "msg" => "Ders Başarıyla Silindi.",
-                    "status" => "success"
+                    "status" => "success",
+                    "redirect" => "/admin/listdepartments",
                 );
             }
 
@@ -442,7 +465,8 @@ class AjaxRouter extends Router
             } else {
                 $this->response = array(
                     "msg" => "Ders Başarıyla Silindi.",
-                    "status" => "success"
+                    "status" => "success",
+                    "redirect" => "/admin/listprograms",
                 );
             }
 
