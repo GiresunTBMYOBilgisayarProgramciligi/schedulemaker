@@ -9,7 +9,7 @@ use PDOException;
 
 class ProgramController extends Controller
 {
-    private string $table_name = "programs";
+    protected string $table_name = "programs";
 
     public function getProgram($id)
     {

@@ -9,7 +9,7 @@ use PDOException;
 
 class UserController extends Controller
 {
-    private $table_name = "users";
+    protected string $table_name = "users";
 
     public function getUser($id)
     {

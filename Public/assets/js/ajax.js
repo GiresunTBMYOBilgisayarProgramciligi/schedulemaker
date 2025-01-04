@@ -1,3 +1,9 @@
+/**
+ * Schedule Maker projesi
+ * @link https://github.com/GiresunTBMYOBilgisayarProgramciligi/schedulemaker
+ * Kodların ilk yazımı LaravelCMS projemde
+ * https://github.com/sametatabasch/LaravelCMS/blob/master/public/assets/admin/js/ajax.js
+ */
 $(function () {
     var body = $('body');
     /*
@@ -80,7 +86,7 @@ $(function () {
                 modalFooterButton0.hide();
                 //modal  kapatıldığında yönlendirme varsa  yönlendir.
                 modal.on('hidden.bs.modal', function (e) {
-                    if (jQuery.type(returnData['redirect']) != 'undefined') {
+                    if (jQuery.type(returnData['redirect']) !== 'undefined') {
                         window.location.replace(returnData['redirect']);
                     } else {
                         $(modal, body).remove();
@@ -94,6 +100,61 @@ $(function () {
                 console.log("hata")
                 console.log(data)
             }
+        });
+        return false;
+    });
+
+    /**
+     * silme  işlemleri  için onay alınmasını ve formun çalışmasını sağlar
+     */
+    $('.ajaxFormDelete').on('submit', function () {
+        var form = $(this);
+        body.append(modal);
+        //modal  kapatıldığında sayfadan silinsin
+        modal.on('hidden.bs.modal', function (e) {
+            $(modal, body).remove();
+        });
+        //add Title
+        modalTitle.html(gettext.confirmDelete);
+        //add message
+        modalBody.html(gettext.deleteMessage);
+        // add yes and no  button
+        modalFooterButton0.html(gettext.no);
+        modalFooterButton1.html(gettext.yes);
+        modal.modal('show');
+        //if click Yes buton
+        modalFooterButton1.click(function (e) {
+            modalBody.html(waitingAnimationHtml);
+            $.ajax({
+                type: 'POST',
+                url: form.attr('action'),
+                data: form.serializeArray(),
+                success: function (returnData) {
+                    var cevap = '<ul>';
+                    if (jQuery.type(returnData['msg']) == "object") {
+                        $.each(returnData['msg'], function (key, value) {
+                            cevap += '<li>' + key + '-' + value + '</li>';
+                        });
+                        cevap += '</ul>';
+                    } else cevap = returnData['msg'];
+                    var statusClass = returnData['status'] === 'error' ? 'danger' : returnData['status'];
+                    modalBody.addClass('bg-' + statusClass + ' text-' + statusClass);
+                    modalBody.fadeOut(100, function () {
+                        $(this).html(cevap).fadeIn('slow');
+                    });
+                    // hide no Button
+                    modalFooterButton1.hide();
+                    modalFooterButton0.html(gettext.ok);
+                    //modal  kapatıldığında yönlendirme varsa  yönlendir.
+                    modal.on('hidden.bs.modal', function (e) {
+                        if (jQuery.type(returnData['redirect']) !== 'undefined') {
+                            window.location.replace(returnData['redirect']);
+                        } else {
+                            $(modal, body).remove();
+                        }
+                    });
+                }
+            });
         });
         return false;
     });
@@ -132,59 +193,6 @@ $(function () {
         return false;
     });
 
-    /**
-     * silme  işlemleri  için onay alınmasını ve formun çalışmasını sağlar
-     */
-    $('.ajaxFormDelete').on('submit', function () {
-        var form = $(this);
-        body.append(modal);
-        //modal  kapatıldığında sayfadan silinsin
-        modal.on('hidden.bs.modal', function (e) {
-            $(modal, body).remove();
-        });
-        //add Title
-        modalTitle.html(gettext.confirmDelete);
-        //add message
-        modalBody.html(gettext.deleteMessage);
-        // add yes and no  button
-        modalFooterButton0.html(gettext.no);
-        modalFooterButton1.html(gettext.yes);
-        //if click Ye buton
-        modal.modal('show');
-        modalFooterButton1.click(function (e) {
-            modalBody.html(waitingAnimationHtml);
-            $.ajax({
-                type: 'POST',
-                url: form.attr('action'),
-                data: form.serializeArray(),
-                success: function (returnData) {
-                    var cevap = '<ul>';
-                    if (jQuery.type(returnData['msg']) == "object") {
-                        $.each(returnData['msg'], function (key, value) {
-                            cevap += '<li>' + key + '-' + value + '</li>';
-                        });
-                        cevap += '</ul>';
-                    } else cevap = returnData['msg'];
-                    modalBody.addClass('bg-' + returnData['status'] + ' text-' + returnData['status']);
-                    modalBody.fadeOut(100, function () {
-                        $(this).html(cevap).fadeIn('slow');
-                    });
-                    // hide no Button
-                    modalFooterButton1.hide();
-                    modalFooterButton0.html(gettext.ok);
-                    //modal  kapatıldığında yönlendirme varsa  yönlendir.
-                    modal.on('hidden.bs.modal', function (e) {
-                        if (jQuery.type(returnData['redirect']) != 'undefined') {
-                            window.location.replace(returnData['redirect']);
-                        } else {
-                            $(modal, body).remove();
-                        }
-                    });
-                }
-            });
-        });
-        return false;
-    });
 
     /*
      * Tablolardaki  toplu  işlemler (Bulk Actions)

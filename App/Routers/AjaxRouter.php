@@ -104,6 +104,26 @@ class AjaxRouter extends Router
 
     }
 
+    public function deleteUserAction()
+    {
+        if ($this->checkAjax()) {
+            $usersController = new UserController();
+            $response = $usersController->delete($this->data['id']);
+
+            if ($response['status'] == 'error') {
+                throw new \Exception($response['msg']);
+            } else {
+                $this->response = array(
+                    "msg" => "Kullanıcı başarıyla Silindi.",
+                    "status" => "success"
+                );
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
     public function loginAction()
     {
         if ($this->checkAjax()) {
@@ -192,6 +212,25 @@ class AjaxRouter extends Router
         }
     }
 
+    public function deleteLessonAction()
+    {
+        if ($this->checkAjax()) {
+            $lessonController = new LessonController();
+            $response = $lessonController->delete($this->data['id']);
+
+            if ($response['status'] == 'error') {
+                throw new \Exception($response['msg']);
+            } else {
+                $this->response = array(
+                    "msg" => "Ders Başarıyla Silindi.",
+                    "status" => "success"
+                );
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
     /*
      * Classrooms Ajax Actions
      */
@@ -222,6 +261,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     public function updateClassroomAction()
     {
         if ($this->checkAjax()) {
@@ -250,6 +290,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     /*
      * Departments Ajax Actions
      */
@@ -280,6 +321,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     public function updateDepartmentAction()
     {
         if ($this->checkAjax()) {
@@ -302,6 +344,26 @@ class AjaxRouter extends Router
                     "msg" => $e->getMessage(),
                     "status" => "error"
                 ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    public function deleteDepartmnetAction()
+    {
+        if ($this->checkAjax()) {
+            $departmentController = new DepartmentController();
+            $response = $departmentController->delete($this->data['id']);
+
+            if ($response['status'] == 'error') {
+                throw new \Exception($response['msg']);
+            } else {
+                $this->response = array(
+                    "msg" => "Ders Başarıyla Silindi.",
+                    "status" => "success"
+                );
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -338,6 +400,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     public function updateProgramAction()
     {
         if ($this->checkAjax()) {
@@ -360,6 +423,26 @@ class AjaxRouter extends Router
                     "msg" => $e->getMessage(),
                     "status" => "error"
                 ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    public function deleteProgramAction()
+    {
+        if ($this->checkAjax()) {
+            $programController = new ProgramController();
+            $response = $programController->delete($this->data['id']);
+
+            if ($response['status'] == 'error') {
+                throw new \Exception($response['msg']);
+            } else {
+                $this->response = array(
+                    "msg" => "Ders Başarıyla Silindi.",
+                    "status" => "success"
+                );
             }
 
             header('Content-Type: application/json; charset=utf-8');

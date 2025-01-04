@@ -17,4 +17,26 @@ class Controller
         }
 
     }
+
+    public function delete($id = null)
+    {
+        try {
+            if (is_null($id)) {
+                return ['error' => 'Geçerli bir ID sağlanmadı.'];
+            }
+            // Alt sınıfta table_name tanımlı mı kontrol et
+            if (!property_exists($this, 'table_name')) {
+                throw new \Exception('Table name özelliği tanımlı değil.');
+            }
+
+            $stmt = $this->database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
+            $stmt->execute([":id" => $id]);
+
+            if (!$stmt->rowCount() > 0) {
+                throw new \Exception('Kayıt bulunamadı veya silinemedi.');
+            }
+        } catch (\Exception $e) {
+            return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+        }
+    }
 }

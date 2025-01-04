@@ -68,9 +68,9 @@
                                                 <a class="dropdown-item" href="/admin/profile/<?=$user->id?>">Gör</a>
                                                 <a class="dropdown-item" href="#">Düzenle</a>
                                                 <div class="dropdown-divider"></div>
-                                                <form action="/admin/deleteuser/<?=$user->id?>" class="ajaxFormDelete" name="deleteUser-<?=$user->id?>" id="deleteUser-<?=$user->id?>" method="post">
+                                                <form action="/ajax/deleteuser/<?=$user->id?>" class="ajaxFormDelete" id="deleteUser-<?=$user->id?>" method="post">
                                                     <input type="hidden" name="id" value="<?=$user->id?>">
-                                                    <button type="submit" form="deleteSlide-<?=$user->id?>" class="dropdown-item ">Sil</button>
+                                                    <input type="submit" class="dropdown-item" value="Sil">
                                                 </form>
                                             </div>
                                         </div>
@@ -78,6 +78,10 @@
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>
+                        <form action="/admin" class="" name="deleteUser-0" id="deleteUser-0" method="post">
+                            <input type="hidden" name="id" value="0">
+                            <input type="submit" form="deleteSlide-0" class="dropdown-item ajaxFormDelete" value="Sil">
+                        </form>
                     </div>
                 </div>
             </div>

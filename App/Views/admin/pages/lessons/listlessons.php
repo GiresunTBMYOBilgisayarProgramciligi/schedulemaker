@@ -69,9 +69,9 @@
                                                 <a class="dropdown-item" href="#">Gör</a>
                                                 <a class="dropdown-item" href="/admin/editlesson/<?=$lesson->id?>">Düzenle</a>
                                                 <div class="dropdown-divider"></div>
-                                                <form action="/admin/deletelesson/<?=$lesson->id?>" class="ajaxFormDelete" name="deleteUser-<?=$lesson->id?>" id="deleteUser-<?=$lesson->id?>" method="post">
+                                                <form action="/admin/deletelesson/<?=$lesson->id?>" class="ajaxFormDelete" id="deleteProgram-<?=$lesson->id?>" method="post">
                                                     <input type="hidden" name="id" value="<?=$lesson->id?>">
-                                                    <button type="submit" form="deleteSlide-<?=$lesson->id?>" class="dropdown-item ">Sil</button>
+                                                    <input type="submit" class="dropdown-item" value="Sil">
                                                 </form>
                                             </div>
                                         </div>

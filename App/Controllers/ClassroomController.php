@@ -8,7 +8,7 @@ use PDO;
 use PDOException;
 class ClassroomController extends Controller
 {
-    private string $table_name = "classrooms";
+    protected string $table_name = "classrooms";
 
     public function getClass($id)
     {
