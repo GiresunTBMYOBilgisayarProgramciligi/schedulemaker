@@ -107,14 +107,26 @@ class UserController extends Controller
     public function saveNew(User $new_user): array
     {
         try {
-            $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(password, mail, name, last_name, role,title, department_id, program_id) 
-            values  (:password, :mail, :name, :last_name, :role,:title, :department_id, :program_id)");
-            if ($q) {
-                $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
-                $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
-                $q->execute($new_user_arr);
-            }
+            // Yeni kullanıcı verilerini bir dizi olarak alın
+            $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
+            $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
+
+            // Dinamik sütunlar ve parametreler oluştur
+            $columns = array_keys($new_user_arr);
+            $placeholders = array_map(fn($col) => ":$col", $columns);
+
+            // Dinamik SQL sorgusu oluştur
+            $sql = sprintf(
+                "INSERT INTO %s (%s) VALUES (%s)",
+                $this->table_name,
+                implode(", ", $columns),
+                implode(", ", $placeholders)
+            );
+
+            // Hazırlama ve parametre bağlama
+            $q = $this->database->prepare($sql);
+            $q->execute($new_user_arr);
+
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -134,34 +146,51 @@ class UserController extends Controller
     public function updateUser(User $user)
     {
         try {
-            if ($user->password == "") {
+            // Şifre kontrolü ve hash işlemi
+            if (empty($user->password)) {
                 $user->password = null;
             } else {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
             }
-            $userData = $user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
-            $i = 0;
-            $query = "UPDATE $this->table_name SET ";
-            foreach ($userData as $k => $v) {
-                if (is_null($v)) continue;
-                if (++$i === count($userData)) $query .= $k . "=:" . $k . " ";
-                else $query .= $k . "=:" . $k . ", ";
-            }
-            $query .= " WHERE id=:id";
-            $userData["id"] = $user->id;
-            $u = $this->database->prepare($query);
-            $u->execute($userData);
 
+            // Kullanıcı verilerini filtrele
+            $userData = $user->getArray(['table_name', 'database', 'id', "register_date", "last_login"], true);
+
+            // Sorgu ve parametreler için ayarlamalar
+            $columns = [];
+            $parameters = [];
+
+            foreach ($userData as $key => $value) {
+                    $columns[] = "$key = :$key";
+                    $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
+            }
+
+            // WHERE koşulu için ID ekleniyor
+            $parameters["id"] = $user->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
 
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz." . $e->getMessage()];
             } else {
+                // Diğer PDO hataları
                 return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
             }
         }
+
         return ["status" => "success"];
+
     }
 
     /**

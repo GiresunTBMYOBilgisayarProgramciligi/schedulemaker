@@ -83,13 +83,25 @@ class LessonController extends Controller
     public function saveNew(Lesson $new_lesson): array
     {
         try {
-            $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(code, name, size, hours, type, season, lecturer_id, department_id, program_id) 
-            values  (:code, :name, :size, :hours, :type, :season, :lecturer_id, :department_id, :program_id)");
-            if ($q) {
-                $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id']);
-                $q->execute($new_lesson_arr);
-            }
+            // Yeni kullanıcı verilerini bir dizi olarak alın
+            $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
+
+            // Dinamik sütunlar ve parametreler oluştur
+            $columns = array_keys($new_lesson_arr);
+            $placeholders = array_map(fn($col) => ":$col", $columns);
+
+            // Dinamik SQL sorgusu oluştur
+            $sql = sprintf(
+                "INSERT INTO %s (%s) VALUES (%s)",
+                $this->table_name,
+                implode(", ", $columns),
+                implode(", ", $placeholders)
+            );
+
+            // Hazırlama ve parametre bağlama
+            $q = $this->database->prepare($sql);
+            $q->execute($new_lesson_arr);
+
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -105,19 +117,31 @@ class LessonController extends Controller
     public function updateLesson(Lesson $lesson)
     {
         try {
-            $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
-            $i = 0;
-            $query = "UPDATE $this->table_name SET ";
-            foreach ($lessonData as $k => $v) {
-                if (is_null($v)) continue;
-                if (++$i === count($lessonData)) $query .= $k . "=:" . $k . " ";
-                else $query .= $k . "=:" . $k . ", ";
-            }
-            $query .= " WHERE id=:id";
-            $lessonData["id"] = $lesson->id;
-            $u = $this->database->prepare($query);
-            $u->execute($lessonData);
+            // Lesson nesnesinden filtrelenmiş verileri al
+            $lessonData = $lesson->getArray(['table_name', 'database', 'id'], true);
 
+            // Sorgu ve placeholder'lar için başlangıç ayarları
+            $columns = [];
+            $parameters = [];
+
+            foreach ($lessonData as $key => $value) {
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil her değeri parametre olarak alıyoruz
+            }
+
+            // WHERE koşulu ekleniyor
+            $parameters["id"] = $lesson->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
 
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {

@@ -50,6 +50,15 @@ class AjaxRouter extends Router
             try {
                 $usersController = new UserController();
                 $userData = $this->data;
+                /*
+                 * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
+                 */
+                if (is_null($userData['department_id']) or $userData['department_id'] == '0') {
+                    unset($userData['department_id']);
+                }
+                if (is_null($userData['program_id']) or $userData['program_id'] == '0') {
+                    unset($userData['program_id']);
+                }
                 $new_user = new User();
                 $new_user->fill($userData);
                 $respons = $usersController->saveNew($new_user);
@@ -81,6 +90,15 @@ class AjaxRouter extends Router
             try {
                 $usersController = new UserController();
                 $userData = $this->data;
+                /*
+                 * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
+                 */
+                if ($userData['department_id'] == '0') {
+                    $userData['department_id'] = null;
+                }
+                if ($userData['program_id'] == '0') {
+                    $userData['program_id'] = null;
+                }
                 $new_user = new User();
                 $new_user->fill($userData);
                 $respons = $usersController->updateUser($new_user);
@@ -163,6 +181,15 @@ class AjaxRouter extends Router
             try {
                 $lessonController = new LessonController();
                 $lessonData = $this->data;
+                /*
+                 * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
+                 */
+                if (is_null($lessonData['department_id']) or $lessonData['department_id'] == '0') {
+                    unset($lessonData['department_id']);
+                }
+                if (is_null($lessonData['program_id']) or $lessonData['program_id'] == '0') {
+                    unset($lessonData['program_id']);
+                }
                 $new_lesson = new Lesson();
                 $new_lesson->fill($lessonData);
                 $respons = $lessonController->saveNew($new_lesson);
@@ -193,6 +220,15 @@ class AjaxRouter extends Router
             try {
                 $lessonController = new LessonController();
                 $lessonData = $this->data;
+                /*
+                 * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
+                 */
+                if ($lessonData['department_id'] == '0') {
+                    $lessonData['department_id'] = null;
+                }
+                if ($lessonData['program_id'] == '0') {
+                    $lessonData['program_id'] = null;
+                }
                 $lesson = new Lesson();
                 $lesson->fill($lessonData);
                 $respons = $lessonController->updateLesson($lesson);
@@ -237,6 +273,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     /*
      * Classrooms Ajax Actions
      */
@@ -402,6 +439,7 @@ class AjaxRouter extends Router
             echo json_encode($this->response);
         }
     }
+
     /*
      * Programs Ajax Actions
      */
@@ -483,5 +521,12 @@ class AjaxRouter extends Router
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }
+    }
+
+    public function getProgramsListAction($department_id)
+    {
+        $programController = new ProgramController();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($programController->getProgramsList($department_id));
     }
 }

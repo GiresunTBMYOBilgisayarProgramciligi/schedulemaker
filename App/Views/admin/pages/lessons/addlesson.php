@@ -105,7 +105,8 @@
                                     <div class="form-group">
                                         <label for="department_id">Bölüm</label>
                                         <select class="form-control" id="department_id" name="department_id">
-                                            <?php foreach ($departments as $department): ?>
+                                            <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                            foreach ($departments as $department): ?>
                                                 <option value="<?= $department->id ?>"><?= $department->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
@@ -115,9 +116,7 @@
                                     <div class="form-group">
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
-                                            <?php foreach ($programs as $program): ?>
-                                                <option value="<?= $program->id ?>"><?= $program->name ?></option>
-                                            <?php endforeach; ?>
+                                            <option value="0">Program Seçiniz</option>
                                         </select>
                                     </div>
                                 </div>

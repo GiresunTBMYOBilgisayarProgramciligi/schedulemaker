@@ -2,7 +2,6 @@
 /**
  * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
- * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
  */
 ?>
@@ -95,9 +94,9 @@
                                     <div class="form-group">
                                         <label for="department_id">Bölüm</label>
                                         <select class="form-control" id="department_id" name="department_id">
-                                            <?php foreach ($departments as $department): ?>
-                                                <option value="<?= $department->id ?>"
-                                                    <?= $department->id == $user->department_id ? "selected" : "" ?>><?= $department->name ?></option>
+                                            <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                            foreach ($departments as $department): ?>
+                                                <option value="<?= $department->id ?>"><?= $department->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -106,10 +105,7 @@
                                     <div class="form-group">
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
-                                            <?php foreach ($programs as $program): var_dump($programs); ?>
-                                                <option value="<?= $program->id ?>"
-                                                    <?= $program->id == $user->program_id ? "selected" : "" ?>><?= $program->name ?></option>
-                                            <?php endforeach; ?>
+                                            <option value="0">Program Seçiniz</option>
                                         </select>
                                     </div>
                                 </div>

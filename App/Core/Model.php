@@ -46,7 +46,7 @@ class Model
      * @param array $excludedProperties Hariç tutulacak özellikler
      * @return array
      */
-    public function getArray($excludedProperties = ['table_name', 'database'])
+    public function getArray($excludedProperties = ['table_name', 'database'], $acceptNull = false)
     {
         // ReflectionClass kullanarak sadece public özellikleri alın
         $reflection = new \ReflectionClass($this);
@@ -59,8 +59,15 @@ class Model
             $value = $this->$name;
 
             // Özellik excluded listede yoksa ve değeri null değilse ekle
-            if (!in_array($name, $excludedProperties) && $value !== null) {
-                $result[$name] = $value;
+            if (!in_array($name, $excludedProperties)) {
+                if ($acceptNull) {
+                    $result[$name] = $value;
+                } else {
+                    if ($value !== null) {
+                        $result[$name] = $value;
+                    }
+                }
+
             }
         }
 
