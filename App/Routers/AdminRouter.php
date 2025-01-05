@@ -127,7 +127,8 @@ class AdminRouter extends Router
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Ders Ekle",
             "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programs" => (new ProgramController())->getProgramsList()];
+            "programs" => (new ProgramController())->getProgramsList(),
+            "lessonController" => new LessonController()];
         $this->callView("admin/lessons/addlesson", $view_data);
     }
 

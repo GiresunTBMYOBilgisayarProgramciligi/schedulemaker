@@ -32,14 +32,25 @@ class LessonController extends Controller
         }
     }
 
+    public function getTypeList()
+    {
+        return [
+            "Zorunlu",
+            "Seçmeli",
+            "Üniversite Seçmeli"
+        ];
+    }
+
+    public function getSeasonList()
+    {
+        return ["Güz", "Bahar", "Yaz"];
+    }
+
     /**
+     * @param ?int $lecturer_id Girildiğinde o kullanıcıya ait derslerin listesini döner
      * @return array
      */
-    /**
-     * @param int $user_id Girildiğinde o kullanıcıya ait derslerin listesini döner
-     * @return array
-     */
-    public function getLessonsList($lecturer_id = null)
+    public function getLessonsList(?int $lecturer_id = null)
     {
         try {
             if (is_null($lecturer_id)) {
@@ -73,8 +84,8 @@ class LessonController extends Controller
     {
         try {
             $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(code, name, size, hours, lecturer_id, department_id, program_id) 
-            values  (:code, :name, :size, :hours, :lecturer_id, :department_id, :program_id)");
+                "INSERT INTO $this->table_name(code, name, size, hours, type, season lecturer_id, department_id, program_id) 
+            values  (:code, :name, :size, :hours, :type, :season, :lecturer_id, :department_id, :program_id)");
             if ($q) {
                 $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id']);
                 $q->execute($new_lesson_arr);

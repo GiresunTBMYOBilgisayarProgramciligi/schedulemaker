@@ -7,6 +7,7 @@
  * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $lecturer
  * @var \App\Models\Lesson $lesson
+ * @var \App\Controllers\LessonController $lessonController
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -39,13 +40,36 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="code">Kodu</label>
                                         <input type="text" class="form-control" id="code" name="code"
                                                placeholder="Kodu"
                                                value="<?= $lesson->code ?>"
-                                        required>
+                                               required>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="type">Türü</label>
+                                        <select class="form-control" id="type" name="type">
+                                            <?php foreach ($lessonController->getTypeList() as $type): ?>
+                                                <option value="<?= $type ?>"
+                                                    <?= $type == $lesson->type ? "selected" : "" ?>><?= $type ?></option>
+                                            <?php endforeach ?>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="season">Dönemi</label>
+                                        <select class="form-control" id="season" name="season">
+                                            <?php foreach ($lessonController->getSeasonList() as $season): ?>
+                                                <option value="<?= $season ?>"
+                                                    <?= $season == $lesson->season ? "selected" : "" ?>><?= $season ?></option>
+                                            <?php endforeach ?>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

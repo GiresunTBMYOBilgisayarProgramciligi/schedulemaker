@@ -16,6 +16,8 @@ class Lesson extends Model
     public ?string $name = null;
     public ?int $size = null;
     public ?int $hours = 2;
+    public ?string $type = null;
+    public ?string $season = null;
     public ?int $lecturer_id = null;
     public ?int $department_id = null;
     public ?int $program_id = null;

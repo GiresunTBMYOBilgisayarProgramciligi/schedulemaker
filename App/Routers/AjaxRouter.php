@@ -169,7 +169,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Ders başarıyla eklendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/addlesson", /* todo form temizlemek yerine sayfa yeniden yükleniyor. Modal footer a bir chackbox eklenerek form temizleme işlemi yapılabilir.*/
                     );
                 }
             } catch (\Exception $e) {

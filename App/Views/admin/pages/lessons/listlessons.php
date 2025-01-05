@@ -40,8 +40,10 @@
                                 <th>İd</th>
                                 <th>Kodu</th>
                                 <th>Adı</th>
+                                <th>Türü</th>
                                 <th>Mevcudu</th>
                                 <th>Saati</th>
+                                <th>Dönemi</th>
                                 <th>Hocası</th>
                                 <th>Bölüm</th>
                                 <th>Program</th>
@@ -54,8 +56,10 @@
                                     <td><?= $lesson->id ?></td>
                                     <td><?= $lesson->code ?></td>
                                     <td><?= $lesson->name ?></td>
+                                    <td><?= $lesson->type ?></td>
                                     <td><?= $lesson->size ?></td>
                                     <td><?= $lesson->hours ?></td>
+                                    <td><?= $lesson->season ?></td>
                                     <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                     <td><?= $lesson->getDepartment()->name ?></td>
                                     <td><?= $lesson->getProgam()->name ?></td>
