@@ -79,6 +79,14 @@ class Department extends Model
         }
         return $lecturers_list;
     }
+    public function getLecturerCount()
+    {
+        $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
+    }
 
     public function getLessons(){
         $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
@@ -92,5 +100,12 @@ class Department extends Model
             $lessons_list[] = $lesson;
         }
         return $lessons_list;
+    }
+    public function getLessonCount(){
+        $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
     }
 }
