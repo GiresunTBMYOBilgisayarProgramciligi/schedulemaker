@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Model;
 use PDO;
@@ -9,10 +10,10 @@ use PDOException;
 
 class Department extends Model
 {
-    public ?int $id= null;
-    public ?string $name= null;
-    public ?int $chairperson_id= null;
-    public ?int $schedule_id= null;
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?int $chairperson_id = null;
+    public ?int $schedule_id = null;
 
     private string $table_name = "departments";
 
@@ -35,9 +36,61 @@ class Department extends Model
     /**
      * @return User Chair Person
      */
-    public function getChairperson():User
+    public function getChairperson(): User
     {
         return (new UserController())->getUser($this->chairperson_id);
     }
 
+    public function getProgramCount()
+    {
+        $stmt = $this->database->prepare("Select count(*) as count from programs where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
+    }
+
+    public function getPrograms()
+    {
+        $stmt = $this->database->prepare("Select * From programs where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $programs = $stmt->fetchAll();
+        $programs_list = array();
+        foreach ($programs as $programData) {
+            $program = new Program();
+            $program->fill($programData);
+            $programs_list[] = $program;
+        }
+        return $programs_list;
+    }
+
+    public function getLecturers()
+    {
+        $stmt = $this->database->prepare("Select * From users where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lecturers = $stmt->fetchAll();
+        $lecturers_list = array();
+        foreach ($lecturers as $lecturerData) {
+            $lecturer = new User();
+            $lecturer->fill($lecturerData);
+            $lecturers_list[] = $lecturer;
+        }
+        return $lecturers_list;
+    }
+
+    public function getLessons(){
+        $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lessons = $stmt->fetchAll();
+        $lessons_list = array();
+        foreach ($lessons as $lessonData) {
+            $lesson = new Lesson();
+            $lesson->fill($lessonData);
+            $lessons_list[] = $lesson;
+        }
+        return $lessons_list;
+    }
 }

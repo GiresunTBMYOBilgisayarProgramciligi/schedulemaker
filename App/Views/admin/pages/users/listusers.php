@@ -78,10 +78,6 @@
                                 </tr>
                             <?php endforeach; ?></tbody>
                         </table>
-                        <form action="/admin" class="" name="deleteUser-0" id="deleteUser-0" method="post">
-                            <input type="hidden" name="id" value="0">
-                            <input type="submit" form="deleteSlide-0" class="dropdown-item ajaxFormDelete" value="Sil">
-                        </form>
                     </div>
                 </div>
             </div>
