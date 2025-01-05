@@ -44,6 +44,10 @@ class AdminRouter extends Router
     {
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
+            "departmentController" => new DepartmentController(),
+            "classroomController" => new ClassroomController(),
+            "lessonController" => new LessonController(),
+            "programController" => new ProgramController(),
             "page_title" => "Anasayfa"];
         $this->callView("admin/index", $view_data);
     }

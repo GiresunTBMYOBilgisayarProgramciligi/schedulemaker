@@ -18,6 +18,21 @@ class Controller
 
     }
 
+    public function getCount()
+    {
+        try {
+            // Alt sınıfta table_name tanımlı mı kontrol et
+            if (!property_exists($this, 'table_name')) {
+                throw new \Exception('Table name özelliği tanımlı değil.');
+            }
+            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
+            return $count; // İlk sütun (COUNT(*) sonucu) döndür
+        } catch (\Exception $e) {
+            var_dump($e);
+            return false;
+        }
+    }
+
     public function delete($id = null)
     {
         try {

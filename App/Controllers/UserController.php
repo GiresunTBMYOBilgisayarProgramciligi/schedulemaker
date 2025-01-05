@@ -47,10 +47,10 @@ class UserController extends Controller
         return $u;
     }
 
-    public function getCount()
+    public function getAcademicCount()
     {
         try {
-            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
+            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name ." WHERE role not in ('user','admin')")->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
         } catch (\Exception $e) {
             var_dump($e);
