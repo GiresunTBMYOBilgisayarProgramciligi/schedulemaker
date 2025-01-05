@@ -12,7 +12,7 @@ create table if not exists users
     mail          varchar(90) NOT NULL,
     name          varchar(50),
     last_name     varchar(50),
-    role          varchar(20) default "user",
+    role          varchar(20) default 'user',
     title         varchar(50),
     department_id int,
     program_id    int,
@@ -68,6 +68,7 @@ create table if not exists lessons
     name          text NOT NULL,
     size          int,
     hours         int NOT NULL DEFAULT 2,
+    type          varchar(50) default 'zorunlu',
     lecturer_id   int,
     department_id int,
     program_id    int,
@@ -87,10 +88,10 @@ ALTER TABLE users
 
 /* password is 123456 */
 insert into users(password, mail, name, last_name, title, role, approved)
-values ("$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC", "admin@admin.com", "Admin", "Admin", "Admin",
-        "admin", true);
+values ('$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC', 'admin@admin.com', 'Admin', 'Admin', 'Admin',
+        'admin', true);
 
 insert into departments (name, chairperson_id)
-values ("Bilgisayar Teknolojileri", 1);
+values ('Bilgisayar Teknolojileri', 1);
 insert into programs (name, department_id)
-values ("Bilgisayar Programcılığı", 1)
+values ('Bilgisayar Programcılığı', 1)
