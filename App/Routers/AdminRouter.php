@@ -144,7 +144,7 @@ class AdminRouter extends Router
             "userController" => new UserController(),//her sayfada olmalı
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
-            "page_title" => $lesson->getFullName() . "Düzenle",//todo ders olmayınca hata veriyor.
+            "page_title" => $lesson->getFullName() . " Düzenle",//todo ders olmayınca hata veriyor.
             "departments" => (new DepartmentController())->getDepartmentsList(),
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/lessons/editlesson", $view_data);
