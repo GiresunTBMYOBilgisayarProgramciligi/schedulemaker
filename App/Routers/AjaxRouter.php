@@ -58,7 +58,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Kullanıcı başarıyla eklendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/adduser",
                     );
                 }
             } catch (\Exception $e) {
@@ -88,7 +89,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Kullanıcı başarıyla Güncellendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/listusers",
                     );
                 }
             } catch (\Exception $e) {
@@ -199,7 +201,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Ders başarıyla Güncellendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/listlessons",
                     );
                 }
             } catch (\Exception $e) {
@@ -251,7 +254,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla eklendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/addclassroom",
                     );
                 }
             } catch (\Exception $e) {
@@ -279,7 +283,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla Güncellendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/listclassrooms",
                     );
                 }
             } catch (\Exception $e) {
@@ -332,7 +337,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Bölüm başarıyla eklendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/adddepartment",
                     );
                 }
             } catch (\Exception $e) {
@@ -360,7 +366,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Bölüm başarıyla Güncellendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/listdepartments",
                     );
                 }
             } catch (\Exception $e) {
@@ -412,7 +419,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Program başarıyla eklendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/addprogram",
                     );
                 }
             } catch (\Exception $e) {
@@ -440,7 +448,8 @@ class AjaxRouter extends Router
                 } else {
                     $this->response = array(
                         "msg" => "Program Başarıyla Güncellendi.",
-                        "status" => "success"
+                        "status" => "success",
+                        "redirect" => "/admin/listprograms",
                     );
                 }
             } catch (\Exception $e) {
