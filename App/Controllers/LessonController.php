@@ -84,7 +84,7 @@ class LessonController extends Controller
     {
         try {
             $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(code, name, size, hours, type, season lecturer_id, department_id, program_id) 
+                "INSERT INTO $this->table_name(code, name, size, hours, type, season, lecturer_id, department_id, program_id) 
             values  (:code, :name, :size, :hours, :type, :season, :lecturer_id, :department_id, :program_id)");
             if ($q) {
                 $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id']);
