@@ -137,7 +137,7 @@ class AjaxRouter extends Router
                 ]);
 
                 $this->response = array(
-                    "msg" => "Kullanıcı başarıyla Girişyaptı.",
+                    "msg" => "Kullanıcı başarıyla Giriş yaptı.",
                     "redirect" => "/admin",
                     "status" => "success"
                 );
@@ -168,7 +168,7 @@ class AjaxRouter extends Router
                     throw new \Exception($respons['msg']);
                 } else {
                     $this->response = array(
-                        "msg" => "Kullanıcı başarıyla eklendi.",
+                        "msg" => "Ders başarıyla eklendi.",
                         "status" => "success"
                     );
                 }
@@ -303,7 +303,7 @@ class AjaxRouter extends Router
                 throw new \Exception($response['msg']);
             } else {
                 $this->response = array(
-                    "msg" => "Kullanıcı başarıyla Silindi.",
+                    "msg" => "Derslik başarıyla silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listclassrooms",
                 );
@@ -384,7 +384,7 @@ class AjaxRouter extends Router
                 throw new \Exception($response['msg']);
             } else {
                 $this->response = array(
-                    "msg" => "Ders Başarıyla Silindi.",
+                    "msg" => "Bölüm Başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listdepartments",
                 );
@@ -438,7 +438,7 @@ class AjaxRouter extends Router
                     throw new \Exception($respons['msg']);
                 } else {
                     $this->response = array(
-                        "msg" => "Program başarıyla Güncellendi.",
+                        "msg" => "Program Başarıyla Güncellendi.",
                         "status" => "success"
                     );
                 }
@@ -464,7 +464,7 @@ class AjaxRouter extends Router
                 throw new \Exception($response['msg']);
             } else {
                 $this->response = array(
-                    "msg" => "Ders Başarıyla Silindi.",
+                    "msg" => "Program Başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listprograms",
                 );
