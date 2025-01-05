@@ -16,9 +16,9 @@
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Bölüm İşlemleri</li>
-                        <li class="breadcrumb-item active">Ekle</li>
+                        <li class="breadcrumb-item active">Düzenle</li>
                     </ol>
                 </div><!-- /.col -->
             </div><!-- /.row -->

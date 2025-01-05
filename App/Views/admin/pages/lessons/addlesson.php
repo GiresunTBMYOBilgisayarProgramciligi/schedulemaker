@@ -19,7 +19,7 @@
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Ders İşlemleri</li>
                         <li class="breadcrumb-item active">Ekle</li>
                     </ol>
