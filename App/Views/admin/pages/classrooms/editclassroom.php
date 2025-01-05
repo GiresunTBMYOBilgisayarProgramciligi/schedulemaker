@@ -27,7 +27,7 @@
     <!-- Main content -->
     <section class="content ">
         <div class="card card-solid">
-            <form action="/ajax/updateClassroom" method="post" class="ajaxForm" title="Derslik Düzenle">
+            <form action="/ajax/updateClassroom" method="post" class="ajaxForm" title="Derslik Bilgilerini Güncelle">
                 <input type="hidden" name="id" value="<?= $classroom->id ?>">
                 <div class="card-body pb-0">
                     <div class="row">

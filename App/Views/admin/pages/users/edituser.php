@@ -30,7 +30,7 @@
     <!-- Main content -->
     <section class="content ">
         <div class="card card-solid">
-            <form action="/ajax/updateUser" method="post" class="ajaxForm" title="Bilgileri Güncelle">
+            <form action="/ajax/updateUser" method="post" class="ajaxForm" title="Kullanıcı Bilgilerini Güncelle">
                 <div class="card-body pb-0">
                     <div class="row">
                         <div class="col-md-12">

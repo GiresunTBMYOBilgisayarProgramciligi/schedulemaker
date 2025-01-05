@@ -8,7 +8,9 @@ include "theme/head.php";
 <div class="wrapper">
 
     <?php
-    /** @var \App\Controllers\UserController $userController */
+    /** @var \App\Controllers\UserController $userController
+     * @var \App\Models\User | false $currentUser Oturum açmış kullanıcı modeli. Oturum açılmamışsa false
+     * */
     $currentUser = $userController->getCurrentUser();
     include "theme/navbar.php";
     include "theme/sidebar.php";

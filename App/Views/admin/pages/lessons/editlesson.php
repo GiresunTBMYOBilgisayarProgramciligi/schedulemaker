@@ -33,7 +33,7 @@
     <!-- Main content -->
     <section class="content ">
         <div class="card card-solid">
-            <form action="/ajax/updateLesson" method="post" class="ajaxForm" title="Ders Düzenle">
+            <form action="/ajax/updateLesson" method="post" class="ajaxForm" title="Ders Bilgilerini Güncelle">
                 <input type="hidden" name="id" value="<?= $lesson->id ?>">
                 <div class="card-body pb-0">
                     <div class="row">

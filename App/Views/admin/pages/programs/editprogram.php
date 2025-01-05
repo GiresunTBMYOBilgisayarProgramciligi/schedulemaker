@@ -29,7 +29,7 @@
     <!-- Main content -->
     <section class="content ">
         <div class="card card-solid">
-            <form action="/ajax/updateprogram" method="post" class="ajaxForm" title="Program Düzenle">
+            <form action="/ajax/updateprogram" method="post" class="ajaxForm" title="Program Bilgilerini Güncelle">
                 <input type="hidden" name="id" value="<?= $program->id ?>">
                 <div class="card-body pb-0">
                     <div class="row">
