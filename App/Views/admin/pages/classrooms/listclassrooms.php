@@ -55,7 +55,7 @@
                                                 <span class="sr-only">İşlemler listesi</span>
                                             </button>
                                             <div class="dropdown-menu" role="menu" style="">
-                                                <a class="dropdown-item" href="#">Gör</a>
+                                                <a class="dropdown-item" href="/admin/classroom/<?=$classroom->id?>">Gör</a>
                                                 <a class="dropdown-item" href="/admin/editclassroom/<?=$classroom->id?>">Düzenle</a>
                                                 <div class="dropdown-divider"></div>
                                                 <form action="/ajax/deleteclassroom/<?=$classroom->id?>" class="ajaxFormDelete" id="deleteProgram-<?=$classroom->id?>" method="post">

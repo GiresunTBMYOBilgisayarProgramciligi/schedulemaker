@@ -10,7 +10,7 @@ class ClassroomController extends Controller
 {
     protected string $table_name = "classrooms";
 
-    public function getClass($id)
+    public function getClassroom($id)
     {
         if (!is_null($id)) {
             try {

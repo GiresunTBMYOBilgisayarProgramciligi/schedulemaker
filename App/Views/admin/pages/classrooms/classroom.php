@@ -1,9 +1,10 @@
 <?php
 /**
- * @var \App\Controllers\DepartmentController $departmentController
- * @var \App\Models\Department $department
+ * @var \App\Controllers\ClassroomController $classroomController
+ * @var \App\Models\Classroom $classroom
  */
 ?>
+<!-- Burada classroom ile ilgili diğer HTML ve PHP kodlarını ekleyebilirsiniz -->
 <!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper">
     <!-- Content Header (Page header) -->
@@ -12,24 +13,27 @@
             <div class="row mb-2">
                 <div class="col-sm-6">
                     <h1 class="m-0"><?= $page_title ?></h1>
-                </div>
+                </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
-                        <li class="breadcrumb-item">Bölüm İşlemleri</li>
-                        <li class="breadcrumb-item active">Bölüm</li>
+                        <li class="breadcrumb-item">Derslik İşlemleri</li>
+                        <li class="breadcrumb-item active">Derslik</li>
                     </ol>
-                </div>
-            </div>
-        </div>
+                </div><!-- /.col -->
+            </div><!-- /.row -->
+        </div><!-- /.container-fluid -->
     </section>
+    <!-- /.content-header -->
 
     <!-- Main content -->
-    <section class="content">
+    <section class="content ">
         <?php
         echo "<pre>";
-        var_dump($department);
+        var_dump($classroom);
         echo "/<pre>";
         ?>
     </section>
+    <!-- /.content -->
 </div>
+<!-- /.content-wrapper -->

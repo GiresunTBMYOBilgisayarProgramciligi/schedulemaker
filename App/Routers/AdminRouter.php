@@ -111,6 +111,18 @@ class AdminRouter extends Router
     /*
      * Lesson Routes
      */
+    public function lessonAction($id = null)
+    {
+        $lessonController = new LessonController();
+        if (!is_null($id)) {
+            $lesson =$lessonController->getLesson($id);
+        } //todo else durumu ?
+        $view_data = [
+            "userController" => new UserController(), //her sayfada olmalı
+            "lesson" => $lesson,
+            "page_title" => $lesson->name . " Sayfası"];
+        $this->callView("admin/lessons/lesson", $view_data);
+    }
     public function ListLessonsAction()
     {
         $view_data = [
@@ -153,6 +165,19 @@ class AdminRouter extends Router
     /*
      * Classroom Routes
      */
+    public function classroomAction($id = null)
+    {
+        $classroomController = new ClassroomController();
+        if (!is_null($id)) {
+            $classroom = $classroomController->getClassroom($id);
+        } // todo else durumu ?
+        $view_data = [
+            "userController" => new UserController(), // Her sayfada olmalı
+            "classroom" => $classroom,
+            "page_title" => $classroom->name . " Sayfası"
+        ];
+        $this->callView("admin/classrooms/classroom", $view_data);
+    }
     public function ListClassroomsAction()
     {
         $view_data = [
@@ -176,7 +201,7 @@ class AdminRouter extends Router
     {
         $classroomController = new ClassroomController();
         if (!is_null($id)) {
-            $classroom = $classroomController->getClass($id);
+            $classroom = $classroomController->getClassroom($id);
         } else {
             $classroom = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
         }
@@ -192,6 +217,19 @@ class AdminRouter extends Router
     /*
      * Department Routes
      */
+    public function departmentAction($id = null)
+    {
+        $departmentController = new DepartmentController();
+        if (!is_null($id)) {
+            $department = $departmentController->getDepartment($id);
+        } // todo else durumu ?
+        $view_data = [
+            "userController" => new UserController(), // Her sayfada olmalı
+            "department" => $department,
+            "page_title" => $department->name . " Sayfası"
+        ];
+        $this->callView("admin/departments/department", $view_data);
+    }
     public function ListDepartmentsAction()
     {
         $view_data = [
@@ -231,6 +269,19 @@ class AdminRouter extends Router
     /*
      * Program Routes
      */
+    public function programAction($id = null)
+    {
+        $programController = new ProgramController();
+        if (!is_null($id)) {
+            $program = $programController->getProgram($id);
+        } // todo else durumu ?
+        $view_data = [
+            "userController" => new UserController(), // Her sayfada olmalı
+            "program" => $program,
+            "page_title" => $program->name . " Sayfası"
+        ];
+        $this->callView("admin/programs/program", $view_data);
+    }
     public function ListProgramsAction($department_id = null)
     {
         $view_data = [
