@@ -43,7 +43,11 @@ class LessonController extends Controller
 
     public function getSeasonList()
     {
-        return ["Güz", "Bahar", "Yaz"];
+        $list = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $list[] = "$i. Yarıyıl";
+        }
+        return $list;
     }
 
     /**

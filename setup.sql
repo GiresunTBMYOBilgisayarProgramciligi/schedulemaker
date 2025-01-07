@@ -69,7 +69,7 @@ create table if not exists lessons
     size          int,
     hours         int NOT NULL DEFAULT 2,
     type          varchar(50) default 'Zorunlu',
-    season        varchar(50) default 'Güz',
+    season        varchar(50) default '1. Yarıyıl',
     lecturer_id   int,
     department_id int,
     program_id    int,
