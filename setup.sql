@@ -74,7 +74,7 @@ create table if not exists lessons
     department_id int,
     program_id    int,
     primary key (id),
-    unique (code),
+    unique (code,program_id),
     foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null,
     foreign key (program_id) references programs (id) on delete set null
