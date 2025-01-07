@@ -27,29 +27,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Programları alırken bir hata oluştu:", error);
             });
     });
-});
 
-/**
- * Formlarda name ve last_name
- *
- */
-document.addEventListener("DOMContentLoaded", () => {
     /**
-     * Her kelimenin ilk harfini büyük yapma fonksiyonu
-     * @param value
-     * @returns {*}
+     * Formlarda name ve last_name
+     *
      */
-    function capitalizeWords(value) {
-        return value.replace(/\b\w/g, (char) => char.toUpperCase());
-    }
 
     /**
-     * Tüm harfleri büyük yapma fonksiyonu
+     * Her kelimenin ilk harfini büyük yapma fonksiyonu (Türkçe destekli)
      * @param value
      * @returns {string}
      */
-    function toUpperCase(value) {
-        return value.toUpperCase();
+    function capitalizeWordsTR(value) {
+        let words = String(value).split(" ");
+
+        // Map ile her kelimeyi düzenle
+        words = words.map((word) => {
+            return String(word).charAt(0).toLocaleUpperCase('tr-TR') + String(word).slice(1).toLocaleLowerCase('tr-TR');
+        });
+
+        return words.join(" ");
+    }
+
+    /**
+     * Tüm harfleri büyük yapma fonksiyonu (Türkçe destekli)
+     * @param value
+     * @returns {string}
+     */
+    function toUpperCaseTR(value) {
+        return value.toLocaleUpperCase('tr-TR');
     }
 
     const nameInput = document.getElementById("name");
@@ -59,16 +65,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Name alanını her kelimenin ilk harfi büyük olacak şekilde düzenle
     if (nameInput) {
         nameInput.addEventListener("input", (event) => {
-            event.target.value = capitalizeWords(event.target.value);
+            event.target.value = capitalizeWordsTR(event.target.value);
         });
     }
 
     // Last Name ve Code alanlarını tamamen büyük harflere dönüştür
-    const upperCaseInputs = [lastNameInput, codeInput];
-    upperCaseInputs.forEach((input) => {
+    [lastNameInput, codeInput].forEach((input) => {
         if (input) {
             input.addEventListener("input", (event) => {
-                event.target.value = toUpperCase(event.target.value);
+                event.target.value = toUpperCaseTR(event.target.value);
             });
         }
     });
