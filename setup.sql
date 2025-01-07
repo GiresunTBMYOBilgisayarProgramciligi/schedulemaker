@@ -1,3 +1,10 @@
+CREATE DATABASE if not exists schedule CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+/* .env dosyasında belirttiğiniz kullanıcı adı ve şifreyi ilgili alanlara yazdıktan sonra çalıştırın*/
+CREATE USER if not exists 'kullanici_adi'@'localhost' IDENTIFIED BY 'parola';
+GRANT ALL PRIVILEGES ON schedule.* TO 'kullanici_adi'@'localhost';
+/*Eğer kullanıcı uzak bağlantı yapacaksa: */
+#GRANT ALL PRIVILEGES ON schedule.* TO 'kullanici_adi'@'%';
+FLUSH PRIVILEGES;
 create table if not exists schedule
 (
     id   int AUTO_INCREMENT,
