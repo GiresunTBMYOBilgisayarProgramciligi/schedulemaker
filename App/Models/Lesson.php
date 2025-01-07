@@ -47,7 +47,7 @@ class Lesson extends Model
 
     public function getProgam(): Program|null
     {
-        return (new ProgramController())->getProgram($this->department_id);
+        return (new ProgramController())->getProgram($this->program_id);
     }
 
     public function getFullName(): string
