@@ -96,14 +96,14 @@
                                     <div class="form-group">
                                         <label for="size">Mevcut</label>
                                         <input type="number" class="form-control" id="size" name="size"
-                                               placeholder="Mevcut" value="<?=$lesson->size?>" required>
+                                               placeholder="Mevcut" value="<?= $lesson->size ?>" required>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label for="hours">Ders Saati</label>
                                         <input type="number" class="form-control" id="hours" name="hours"
-                                               placeholder="Ders Saati" value="<?=$lesson->hours?>" required>
+                                               placeholder="Ders Saati" value="<?= $lesson->hours ?>" required>
                                     </div>
                                 </div>
                             </div>
@@ -126,9 +126,9 @@
                                     <div class="form-group">
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
-                                            <?php foreach ($programController->getProgramsList($user->department_id) as $program): ?>
+                                            <?php foreach ($lesson->getDepartmentProgramsList() as $program): ?>
                                                 <option value="<?= $program->id ?>"
-                                                    <?= $program->id == $user->program_id ? 'selected' : '' ?>>
+                                                    <?= $program->id == $lesson->program_id ? 'selected' : '' ?>>
                                                     <?= $program->name ?>
                                                 </option>
                                             <?php endforeach; ?>

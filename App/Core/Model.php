@@ -4,6 +4,7 @@ namespace App\Core;
 
 
 use PDO;
+use App\Controllers\ProgramController;
 
 class Model
 {
@@ -39,6 +40,26 @@ class Model
                 $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
             }
         }
+    }
+
+    /**
+     * Ekleme ve düzenleme sayfalarında oluşturulacak program listesini oluşturur.
+     * Bölümü tanımlanmamış bir ders ise sadece program seçiniz verisi olur.
+     * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
+     * @return object[]
+     */
+    public function getDepartmentProgramsList(): array
+    {
+        if (property_exists($this, 'department_id')) {
+            if (is_null($this->department_id)) {
+                $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
+            } else {
+                $list = (new ProgramController())->getProgramsList($this->department_id);
+                array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
+            }
+        } else $list = [];
+
+        return $list;
     }
 
     /**

@@ -118,7 +118,7 @@
                                     <div class="form-group">
                                         <label for="program_id">Program</label>
                                         <select class="form-control" id="program_id" name="program_id">
-                                            <?php foreach ($programController->getProgramsList($user->department_id) as $program): ?>
+                                            <?php foreach ($user->getDepartmentProgramsList() as $program): ?>
                                                 <option value="<?= $program->id ?>"
                                                     <?= $program->id == $user->program_id ? 'selected' : '' ?>>
                                                     <?= $program->name ?>
