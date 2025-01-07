@@ -10,3 +10,4 @@
 <!-- Data table -->
 <script src="https://cdn.datatables.net/v/bs4/dt-2.1.8/datatables.min.js"></script>
 <script type="module" src="/assets/js/custom.js"></script>
+<script type="module" src="/assets/js/formEvents.js"></script>
