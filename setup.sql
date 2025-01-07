@@ -5,6 +5,7 @@ GRANT ALL PRIVILEGES ON schedule.* TO 'kullanici_adi'@'localhost';
 /*Eğer kullanıcı uzak bağlantı yapacaksa: */
 #GRANT ALL PRIVILEGES ON schedule.* TO 'kullanici_adi'@'%';
 FLUSH PRIVILEGES;
+use schedule;
 create table if not exists schedule
 (
     id   int AUTO_INCREMENT,
