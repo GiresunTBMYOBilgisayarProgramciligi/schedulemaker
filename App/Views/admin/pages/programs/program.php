@@ -31,7 +31,7 @@
             <div class="row">
                 <div class="col-5">
                     <!-- Program Bilgileri -->
-                    <div class="card card-outline card-primary">
+                    <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Program Bilgileri</h3>
 
@@ -81,7 +81,7 @@
                 </div>
                 <div class="col-7">
                     <!-- İlişkili Akademisyenler-->
-                    <div class="card card-outline card-primary">
+                    <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Akademisyenler</h3>
                             <div class="card-tools">
@@ -137,7 +137,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- İlişkili Dersler -->
-                    <div class="card card-outline card-primary">
+                    <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Dersler</h3>
                             <div class="card-tools">
@@ -200,6 +200,27 @@
                             </table>
                         </div>
                         <!-- /.card-body -->
+                    </div>
+                </div>
+            </div>
+            <!-- Program Satırı-->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card  card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Program</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+
+                        </div>
+                        <div class="card-footer">
+
+                        </div>
                     </div>
                 </div>
             </div>

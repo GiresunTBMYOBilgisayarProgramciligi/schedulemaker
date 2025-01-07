@@ -203,6 +203,11 @@
                     <div class="card card-primary">
                         <div class="card-header ">
                             <h3 class="card-title">Program</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
                         </div><!-- /.card-header -->
                         <div class="card-body">
                             Ders Programı Haftalık takvim

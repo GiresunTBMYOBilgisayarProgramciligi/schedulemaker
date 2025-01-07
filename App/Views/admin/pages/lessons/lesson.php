@@ -31,7 +31,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- Ders Bilgileri -->
-                    <div class="card card-outline card-primary">
+                    <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Ders Bilgileri</h3>
                             <div class="card-tools">
@@ -67,9 +67,10 @@
                     </div>
                 </div>
             </div>
+            <!-- Program Satırı-->
             <div class="row">
                 <div class="col-12">
-                    <div class="card card-outline card-primary">
+                    <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Program</h3>
                             <div class="card-tools">
