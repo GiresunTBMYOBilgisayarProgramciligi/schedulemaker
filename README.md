@@ -13,7 +13,7 @@ Composer ve nmp paketleri yüklenmeli
 ```bash
 
 composer install
-cd Public/assets/AdminLTE/
+cd Public/assets/
 npm install
 ```
 .env dosyası oluşturulup düzenlenmeli 
