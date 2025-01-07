@@ -65,7 +65,7 @@ class AdminRouter extends Router
         $this->callView("admin/users/listusers", $view_data);
     }
 
-    public function AddUserAction(int $department_id, int $program_id)
+    public function AddUserAction(int $department_id = null, int $program_id = null)
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $view_data = [
@@ -92,6 +92,7 @@ class AdminRouter extends Router
             "programs" => (new ProgramController())->getProgramsList()];
         $this->callView("admin/profile", $view_data);
     }
+
     public function EditUserAction($id = null)
     {
         $userController = new UserController();
@@ -116,7 +117,7 @@ class AdminRouter extends Router
     {
         $lessonController = new LessonController();
         if (!is_null($id)) {
-            $lesson =$lessonController->getLesson($id);
+            $lesson = $lessonController->getLesson($id);
         } //todo else durumu ?
         $view_data = [
             "userController" => new UserController(), //her sayfada olmalı
@@ -124,6 +125,7 @@ class AdminRouter extends Router
             "page_title" => $lesson->name . " Sayfası"];
         $this->callView("admin/lessons/lesson", $view_data);
     }
+
     public function ListLessonsAction()
     {
         $view_data = [
@@ -178,6 +180,7 @@ class AdminRouter extends Router
         ];
         $this->callView("admin/classrooms/classroom", $view_data);
     }
+
     public function ListClassroomsAction()
     {
         $view_data = [
@@ -230,6 +233,7 @@ class AdminRouter extends Router
         ];
         $this->callView("admin/departments/department", $view_data);
     }
+
     public function ListDepartmentsAction()
     {
         $view_data = [
@@ -282,6 +286,7 @@ class AdminRouter extends Router
         ];
         $this->callView("admin/programs/program", $view_data);
     }
+
     public function ListProgramsAction($department_id = null)
     {
         $view_data = [
