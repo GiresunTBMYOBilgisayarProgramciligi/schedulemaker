@@ -120,12 +120,31 @@
                                         <br>
 
                                         <ul class="ml-4 mb-0 fa-ul text-muted">
-                                            <li class="small"><span class="fa-li"><i
-                                                            class="fas fa-lg fa-user-graduate"></i></span>
-                                                Bölüm Başkan: <?= $program->getDepartment()->getChairperson()->getFullName() ?></li>
+                                            <li class="small">
+                                                <span class="fa-li">
+                                                    <i class="fas fa-lg fa-user-graduate"></i>
+                                                </span>
+                                                <strong>Bölüm Başkan:</strong>
+                                                <a href="/admin/profile/<?= $program->getDepartment()->getChairperson()->id ?>">
+                                                    <?= $program->getDepartment()->getChairperson()->getFullName() ?>
+                                                </a>
+                                            </li>
+                                            <li class="small">
+                                                <span class="fa-li">
+                                                    <i class="fas fa-lg fa-user"></i>
+                                                </span>
+                                                <strong>Akademisyen Sayısı:</strong>
+                                                <?= $program->getLecturerCount() ?>
+                                            </li>
+                                            <li class="small">
+                                                <span class="fa-li">
+                                                    <i class="fas fa-lg fa-book-open"></i>
+                                                </span>
+                                                <strong>Ders Sayısı:</strong>
+                                                <?= $program->getLessonCount() ?>
+                                            </li>
                                         </ul>
                                     </div>
-
                                 </div>
                             </div>
                             <div class="card-footer">

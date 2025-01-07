@@ -245,7 +245,7 @@ class UserController extends Controller
         return [
             "Öğr. Gör.",
             "Öğr. Gör. Dr.",
-            "Dr. Öğretim Üyesi",
+            "Dr. Öğr. Üyesi",
             "Doç. Dr.",
             "Prof. Dr."
         ];
