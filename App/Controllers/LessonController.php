@@ -90,22 +90,11 @@ class LessonController extends Controller
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
 
-            // Dinamik sütunlar ve parametreler oluştur
-            $columns = array_keys($new_lesson_arr);
-            $placeholders = array_map(fn($col) => ":$col", $columns);
-
             // Dinamik SQL sorgusu oluştur
-            $sql = sprintf(
-                "INSERT INTO %s (%s) VALUES (%s)",
-                $this->table_name,
-                implode(", ", $columns),
-                implode(", ", $placeholders)
-            );
-
+            $sql = $this->createInsertSQL($new_lesson_arr);
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_lesson_arr);
-
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

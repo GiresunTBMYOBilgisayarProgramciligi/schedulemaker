@@ -60,16 +60,16 @@ class ProgramController extends Controller
         }
         return $programs;
     }
+
     public function saveNew(Program $new_program): array
     {
         try {
-            $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(name,  department_id) 
-            values  (:name, :department_id)");
-            if ($q) {
-                $new_program_arr = $new_program->getArray(['table_name', 'database', 'id' ]);
-                $q->execute($new_program_arr);
-            }
+            $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
+            // Dinamik SQL sorgusu oluştur
+            $sql = $this->createInsertSQL($new_program_arr);
+            // Hazırlama ve parametre bağlama
+            $q = $this->database->prepare($sql);
+            $q->execute($new_program_arr);
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -81,6 +81,7 @@ class ProgramController extends Controller
 
         return ["status" => "success"];
     }
+
     public function updateProgram(Program $program)
     {
         try {

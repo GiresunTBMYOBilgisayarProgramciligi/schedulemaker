@@ -50,16 +50,17 @@ class DepartmentController extends Controller
         }
         return $departments;
     }
+
     public function saveNew(Department $new_department): array
     {
         try {
-            $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(name,  chairperson_id) 
-            values  (:name, :chairperson_id)");
-            if ($q) {
-                $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id' ]);
-                $q->execute($new_lesson_arr);
-            }
+            $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id']);
+
+            // Dinamik SQL sorgusu oluştur
+            $sql = $this->createInsertSQL($new_lesson_arr);
+            // Hazırlama ve parametre bağlama
+            $q = $this->database->prepare($sql);
+            $q->execute($new_lesson_arr);
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -71,6 +72,7 @@ class DepartmentController extends Controller
 
         return ["status" => "success"];
     }
+
     public function updateDepartment(Department $department)
     {
         try {

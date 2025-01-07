@@ -50,7 +50,7 @@ class UserController extends Controller
     public function getAcademicCount()
     {
         try {
-            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name ." WHERE role not in ('user','admin')")->fetchColumn();
+            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name . " WHERE role not in ('user','admin')")->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
         } catch (\Exception $e) {
             var_dump($e);
@@ -111,18 +111,8 @@ class UserController extends Controller
             $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
             $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
 
-            // Dinamik sütunlar ve parametreler oluştur
-            $columns = array_keys($new_user_arr);
-            $placeholders = array_map(fn($col) => ":$col", $columns);
-
             // Dinamik SQL sorgusu oluştur
-            $sql = sprintf(
-                "INSERT INTO %s (%s) VALUES (%s)",
-                $this->table_name,
-                implode(", ", $columns),
-                implode(", ", $placeholders)
-            );
-
+            $sql = $this->createInsertSQL($new_user_arr);
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_user_arr);
@@ -161,8 +151,8 @@ class UserController extends Controller
             $parameters = [];
 
             foreach ($userData as $key => $value) {
-                    $columns[] = "$key = :$key";
-                    $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
             }
 
             // WHERE koşulu için ID ekleniyor

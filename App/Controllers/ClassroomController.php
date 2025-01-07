@@ -48,13 +48,12 @@ class ClassroomController extends Controller
     public function saveNew(Classroom $new_classroom): array
     {
         try {
-            $q = $this->database->prepare(
-                "INSERT INTO $this->table_name(name, class_size, exam_size) 
-            values  (:name, :class_size, :exam_size)");
-            if ($q) {
-                $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id' ]);
-                $q->execute($new_classroom_arr);
-            }
+            $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id' ]);
+
+            // Dinamik SQL sorgusu oluştur
+            $sql = $this->createInsertSQL($new_classroom_arr);
+            $q = $this->database->prepare($sql);
+            $q->execute($new_classroom_arr);
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

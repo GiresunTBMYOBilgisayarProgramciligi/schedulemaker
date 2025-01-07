@@ -18,6 +18,21 @@ class Controller
 
     }
 
+    public function createInsertSQL($data): string
+    {
+        // Dinamik sütunlar ve parametreler oluştur
+        $columns = array_keys($data);
+        $placeholders = array_map(fn($col) => ":$col", $columns);
+
+        // Dinamik SQL sorgusu oluştur
+        return sprintf(
+            "INSERT INTO %s (%s) VALUES (%s)",
+            $this->table_name,//sorguyu çalıştıran sınıftan alınır.
+            implode(", ", $columns),
+            implode(", ", $placeholders)
+        );
+    }
+
     public function getCount()
     {
         try {
