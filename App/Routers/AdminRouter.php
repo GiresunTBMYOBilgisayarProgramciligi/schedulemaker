@@ -65,8 +65,9 @@ class AdminRouter extends Router
         $this->callView("admin/users/listusers", $view_data);
     }
 
-    public function AddUserAction()
+    public function AddUserAction(int $department_id, int $program_id)
     {
+        // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı
             "page_title" => "Kullanıcı Ekle",

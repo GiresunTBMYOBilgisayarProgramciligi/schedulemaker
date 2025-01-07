@@ -8,10 +8,10 @@ use PDOException;
 
 class Program extends Model
 {
-    public ?int $id= null;
-    public ?string $name= null;
-    public ?int $department_id= null;
-    public ?int $schedule_id= null;
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?int $department_id = null;
+    public ?int $schedule_id = null;
 
     private string $table_name = "programs";
 
@@ -34,9 +34,61 @@ class Program extends Model
     /**
      * @return Department Programın bağlı olduğu Department sınıfı
      */
-    public function getDepartment():Department
+    public function getDepartment(): Department
     {
         return new Department($this->department_id);
     }
+    public function getLecturers()
+    {
+        $stmt = $this->database->prepare("Select * From users where program_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lecturers = $stmt->fetchAll();
+        $lecturers_list = array();
+        foreach ($lecturers as $lecturerData) {
+            $lecturer = new User();
+            $lecturer->fill($lecturerData);
+            $lecturers_list[] = $lecturer;
+        }
+        return $lecturers_list;
+    }
+    public function getLecturerCount()
+    {
+        $stmt = $this->database->prepare("Select count(*) as count from users where program_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
+    }
 
+    public function getLessonCount()
+    {
+        $stmt = $this->database->prepare("Select count(*) as count from lessons where program_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
+    }
+    public function getLessons(){
+        $stmt = $this->database->prepare("Select * From lessons where program_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lessons = $stmt->fetchAll();
+        $lessons_list = array();
+        foreach ($lessons as $lessonData) {
+            $lesson = new Lesson();
+            $lesson->fill($lessonData);
+            $lessons_list[] = $lesson;
+        }
+        return $lessons_list;
+    }
+
+    public function getStudentCount(){
+        $stmt = $this->database->prepare("Select sum(size) as sum from lessons where program_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['sum'];
+
+    }
 }

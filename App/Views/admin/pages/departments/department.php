@@ -29,7 +29,7 @@
     <section class="content">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-4">
+                <div class="col-5">
                     <!-- Bölüm Bilgileri -->
                     <div class="card card-outline card-primary">
                         <div class="card-header">
@@ -48,7 +48,8 @@
                                 <dt class="col-sm-4">Bölüm Adı</dt>
                                 <dd class="col-sm-8"><?= $department->name ?></dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
-                                <dd class="col-sm-8"><?= $department->getChairperson()->getFullName() ?></dd>
+                                <dd class="col-sm-8">
+                                    <a href="/admin/profile/<?=$department->getChairperson()->id?>"><?= $department->getChairperson()->getFullName() ?></a></dd>
                                 <dt class="col-sm-4">Program Sayısı</dt>
                                 <dd class="col-sm-8"><?= $department->getProgramCount() ?></dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>
@@ -62,6 +63,7 @@
                             <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-primary">Bölümü
                                 Düzenle</a>
                             <a href="/admin/addprogram/<?= $department->id ?>" class="btn btn-success">Program Ekle</a>
+                            <a href="/admin/adduser/<?= $department->id ?>" class="btn btn-success">Hoca Ekle</a>
                             <form action="/ajax/deletedepartment/<?= $department->id ?>" class="ajaxFormDelete d-inline"
                                   id="deleteProgram-<?= $department->id ?>" method="post">
                                 <input type="hidden" name="id" value="<?= $department->id ?>">
@@ -71,7 +73,7 @@
                         <!-- /.card-footer -->
                     </div>
                 </div>
-                <div class="col-8">
+                <div class="col-7">
                     <!-- İlişkili Programlar -->
                     <div class="card card-outline card-primary">
                         <div class="card-header">
@@ -131,7 +133,8 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-6">
+                <div class="col-12">
+                    <!-- İlişkili Akademisyenler-->
                     <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Akademisyenler</h3>
@@ -186,7 +189,7 @@
                         <!-- /.card-body -->
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-12">
                     <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Dersler</h3>
