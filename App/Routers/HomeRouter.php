@@ -8,6 +8,7 @@ class HomeRouter extends Router
 {
     public function IndexAction()
     {
-        $this->callView("home/index");
+        //$this->callView("home/index");
+        $this->Redirect('/admin/');
     }
 }
