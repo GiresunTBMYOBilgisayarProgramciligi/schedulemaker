@@ -108,7 +108,7 @@
             <!-- Main row -->
             <div class="row">
                 <?php foreach ($programController->getProgramsList() as $program): ?>
-                    <div class="col-12 col-sm-6 col-md-3 d-flex align-items-stretch flex-column">
+                    <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
                         <div class="card  d-flex flex-fill">
                             <div class="card-header text-muted border-bottom-0">
                                 <?= $program->getDepartment()->name ?>
