@@ -240,4 +240,19 @@ class UserController extends Controller
             "Prof. Dr."
         ];
     }
+
+    public static function canUserDoAction(string $actionLevel): bool
+    {
+        $user = (new UserController)->getCurrentUser();
+        $roleLevels = [
+            "admin" => 10,
+            "manager" => 9,
+            "submanager" => 8,
+            "department_head" => 7,
+            "lecturer" => 6,
+            "user" => 5
+        ];
+
+        return $roleLevels[$user->role] >= $actionLevel;
+    }
 }

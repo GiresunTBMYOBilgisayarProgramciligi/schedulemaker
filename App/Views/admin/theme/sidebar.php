@@ -1,6 +1,7 @@
 <?php
 /**
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
+ * @var \App\Controllers\UserController $userController
  */
 ?><!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -33,6 +34,7 @@
                 </li>
                 <!-- /Başlangıç-->
                 <!-- Kullanıcı İşlemleri -->
+                <?php if( $userController->canUserDoAction(8)):?>
                 <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
@@ -64,6 +66,7 @@
                         </li>
                     </ul>
                 </li>
+                <?php endif;?>
                 <!-- /Kullanıcı İşlemleri -->
                 <!-- Ders İşlemleri -->
                 <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
