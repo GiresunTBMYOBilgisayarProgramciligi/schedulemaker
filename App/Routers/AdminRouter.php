@@ -9,6 +9,7 @@ use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
+use App\Controllers\ScheduleController;
 use App\Controllers\UserController;
 use App\Core\Router;
 
@@ -89,7 +90,7 @@ class AdminRouter extends Router
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programs" => (new ProgramController())->getProgramsList()];
+            "scheduleController" => new ScheduleController()];
         $this->callView("admin/profile", $view_data);
     }
 
@@ -122,7 +123,8 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(), //her sayfada olmalı
             "lesson" => $lesson,
-            "page_title" => $lesson->name . " Sayfası"];
+            "page_title" => $lesson->name . " Sayfası",
+            "scheduleController" => new ScheduleController()];
         $this->callView("admin/lessons/lesson", $view_data);
     }
 
@@ -282,7 +284,8 @@ class AdminRouter extends Router
         $view_data = [
             "userController" => new UserController(), // Her sayfada olmalı
             "program" => $program,
-            "page_title" => $program->name . " Sayfası"
+            "page_title" => $program->name . " Sayfası",
+            "scheduleController" => new ScheduleController()
         ];
         $this->callView("admin/programs/program", $view_data);
     }

@@ -2,6 +2,7 @@
 /**
  * @var \App\Controllers\ProgramController $programController
  * @var \App\Models\Program $program
+ * @var \App\Controllers\ScheduleController $scheduleController
  */
 ?>
 <!-- Content Wrapper. Contains page content -->
@@ -48,7 +49,8 @@
                                 <dt class="col-sm-4">Program Adı</dt>
                                 <dd class="col-sm-8"><?= $program->name ?></dd>
                                 <dt class="col-sm-4">Bölüm</dt>
-                                <dd class="col-sm-8"><a
+                                <dd class="col-sm-8">
+                                    <a
                                             href="/admin/department/<?= $program->department_id ?>"> <?= $program->getDepartment()->name ?></a>
                                 </dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
@@ -208,7 +210,7 @@
                 <div class="col-12">
                     <div class="card  card-primary">
                         <div class="card-header">
-                            <h3 class="card-title">Program</h3>
+                            <h3 class="card-title">1. Sınıf Program</h3>
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
@@ -216,7 +218,25 @@
                             </div>
                         </div>
                         <div class="card-body">
+                            <?=$scheduleController->createScheduleTable("program", $program->id,"1.Yarıyıl")?>
+                        </div>
+                        <div class="card-footer">
 
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card  card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">2. Sınıf Program</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <?=$scheduleController->createScheduleTable("program", $program->id,"3.Yarıyıl")?>
                         </div>
                         <div class="card-footer">
 

@@ -2,11 +2,9 @@
 /**
  * @var \App\Models\User $user
  * @var \App\Controllers\UserController $userController
- * @var array $programs \App\Models\Program->getPrograms())
- * @var \App\Models\Program $program
- * @var array $departments \App\Models\Department->getDepartments())
- * @var \App\Models\Department $department
  * @var \App\Models\Lesson $lesson Hocaya ait ders listesi oluşturulurken kullanılıyor
+ * @var \App\Controllers\ScheduleController $scheduleController
+ * @var array $departments
  * todo users klasörüne taşınabilir
  */
 
@@ -63,30 +61,6 @@
                         <!-- /.card-body -->
                     </div>
                     <!-- /.card -->
-                    <div class="card card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Derslerim</h3>
-                        </div>
-                        <!-- /.card-header -->
-                        <div class="card-body">
-                            <!-- Burada dersler listelenecek -->
-                            <div class="row">
-                                <ul class="list-group list-group-unbordered">
-                                    <?php foreach ($user->getLessonsList() as $lesson): ?>
-                                    <li class="list-group-item">
-                                        <strong>
-                                            <i class="fas fa-book mr-1"></i>
-                                            <?= $lesson->code." ".$lesson->name?>
-                                        </strong>
-                                        <p class="text-muted">
-                                            <?= $lesson->getDepartment()->name." - ".$lesson->getProgam()->name?>
-                                        </p>
-                                    </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <!-- /.col -->
                 <div class="col-md-9">
@@ -94,6 +68,11 @@
                     <div class="card card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Bilgilerim</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
@@ -167,7 +146,8 @@
                                         <div class="form-group">
                                             <label for="department_id">Bölüm</label>
                                             <select class="form-control" id="department_id" name="department_id">
-                                                <?php foreach ($departments as $department): ?>
+                                                <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                                foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
                                                         <?= $department->id == $user->department_id ? 'selected' : '' ?>>
                                                         <?= $department->name ?>
@@ -180,7 +160,7 @@
                                         <div class="form-group">
                                             <label for="program_id">Program</label>
                                             <select class="form-control" id="program_id" name="program_id">
-                                                <?php foreach ($programs as $program): ?>
+                                                <?php foreach ($user->getDepartmentProgramsList() as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $user->program_id ? 'selected' : '' ?>>
                                                         <?= $program->name ?>
@@ -200,6 +180,44 @@
                         </form>
                     </div>
                     <!-- /.card -->
+                </div>
+                <!-- /.col -->
+                <div class="col-md-12">
+                    <!-- card Derslerim -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Derslerim</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- /.card-header -->
+                        <div class="card-body">
+                            <!-- Burada dersler listelenecek -->
+                            <div class="row">
+                                <?php foreach ($user->getLessonsList() as $lesson): ?>
+                                    <div class="col-md-4">
+                                        <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark">
+                                            <div class="callout callout-info">
+                                                <h5><?= $lesson->code ?></h5>
+                                                <p><?= $lesson->name ?></p>
+                                                <p><?= $lesson->getDepartment()->name . " - " . $lesson->getProgam()->name ?></p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.card -->
+                </div>
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-12">
                     <div class="card card-primary">
                         <div class="card-header ">
                             <h3 class="card-title">Program</h3>
@@ -210,8 +228,7 @@
                             </div>
                         </div><!-- /.card-header -->
                         <div class="card-body">
-                            Ders Programı Haftalık takvim
-
+                            <?=$scheduleController->createScheduleTable("user", $user->id)?>
                         </div><!-- /.card-body -->
                     </div>
                     <!-- /.card -->

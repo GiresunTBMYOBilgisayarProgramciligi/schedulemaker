@@ -21,7 +21,31 @@ class Model
 
     }
 
-    public function fill($data = [])// todo bu metod model sınıfına taşınarak her modelde düzgün çelışacak şekilde ayarlanmalı
+    public function is_data_serialized($data)
+    {
+        // Boş bir string serileştirilmiş kabul edilmez
+        if (!is_string($data) || trim($data) === '') {
+            return false;
+        }
+
+        // Serileştirilmiş format kontrolü
+        $data = trim($data);
+        if (preg_match('/^([adObis]):/', $data, $matches)) {
+            switch ($matches[1]) {
+                case 'a': // array
+                case 'O': // object
+                case 's': // string
+                case 'b': // boolean
+                case 'i': // integer
+                case 'd': // double
+                    return @unserialize($data) !== false || $data === 'b:0;'; // "b:0;" özel durum
+            }
+        }
+
+        return false;
+    }
+
+    public function fill($data = [])
     {
         // ReflectionClass ile alt sınıfın özelliklerini alın
         $reflection = new \ReflectionClass($this);
@@ -37,6 +61,7 @@ class Model
                     : null;
             } else {
                 // Diğer alanlarda null kontrolü
+                $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
                 $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
             }
         }

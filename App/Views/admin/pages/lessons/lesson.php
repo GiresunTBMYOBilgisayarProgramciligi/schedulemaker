@@ -2,6 +2,7 @@
 /**
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Models\Lesson $lesson
+ * @var \App\Controllers\ScheduleController $scheduleController
  */
 ?>
 
@@ -80,7 +81,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-
+                            <?=$scheduleController->createScheduleTable("lesson", $lesson->id)?>
                         </div>
                         <div class="card-footer">
 
