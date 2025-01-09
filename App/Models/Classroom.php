@@ -9,7 +9,6 @@ class Classroom extends Model
 
     public ?int $id= null;
     public ?string $name= null;
-    public ?int $schedule_id= null;
     public ?int $class_size= null;
     public ?int $exam_size= null;
     /*

@@ -11,7 +11,6 @@ class Program extends Model
     public ?int $id = null;
     public ?string $name = null;
     public ?int $department_id = null;
-    public ?int $schedule_id = null;
 
     private string $table_name = "programs";
 

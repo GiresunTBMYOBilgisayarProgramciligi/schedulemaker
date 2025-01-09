@@ -22,7 +22,6 @@ class User extends Model
     public ?string $title = null;
     public ?int $department_id = null;
     public ?int $program_id = null;
-    public ?int $schedule_id = null;
     public ?\DateTime $register_date = null;
     public ?\DateTime $last_login = null;
     /**
