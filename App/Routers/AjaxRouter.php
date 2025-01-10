@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * todo ajax işlemi sonrası hangi sayfadan gelindiyse o sayfaya yönlendirme yapılabilir.
+ * todo Program sayfasından ders düzenleme işlemine girildiğinde geri program sayfasına dönmeli
+ */
 namespace App\Routers;
 
 use App\Controllers\ClassroomController;
