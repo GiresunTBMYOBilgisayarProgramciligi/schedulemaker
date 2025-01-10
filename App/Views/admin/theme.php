@@ -4,8 +4,10 @@
 <?php
 include "theme/head.php";
 ?>
-<body class="hold-transition sidebar-mini layout-fixed">
-<div class="wrapper">
+<!--begin::Body-->
+<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
+<!--begin::App Wrapper-->
+<div class="app-wrapper">
 
     <?php
     /** @var \App\Controllers\UserController $userController
@@ -18,7 +20,7 @@ include "theme/head.php";
     include "theme/footer.php" ?>
 
 </div>
-<!-- ./wrapper -->
+<!--end::App Wrapper-->
 
 <?php
 include "theme/footer_scripts.php";
