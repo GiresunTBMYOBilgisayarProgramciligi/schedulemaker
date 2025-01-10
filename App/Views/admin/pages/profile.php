@@ -133,7 +133,9 @@
                                         <div class="form-group">
                                             <label for="title">Ünvan</label>
                                             <select class="form-control" id="title" name="title">
-                                                <?php foreach ($userController->getTitleList() as $title): ?>
+                                                <?php $titleList =$userController->getTitleList();
+                                                array_unshift($titleList,"");
+                                                foreach ($titleList as $title): ?>
                                                     <option value="<?= $title ?>"
                                                         <?= $title == $user->title ? "selected" : "" ?>><?= $title ?></option>
                                                 <?php endforeach; ?>
@@ -230,6 +232,10 @@
                         <div class="card-body">
                             <?= $scheduleController->createScheduleTable(["owner_type" => "user", "owner_id" => $user->id]) ?>
                         </div><!-- /.card-body -->
+
+                        <div class="card-footer text-right">
+                            <button class="btn btn-primary">Düzenle</button>
+                        </div>
                     </div>
                     <!-- /.card -->
                 </div>
