@@ -68,6 +68,7 @@ class UserController extends Controller
      * @param array $arr
      * @return void
      * @throws \Exception
+     * @see AjaxRouter->loginAction()
      */
     public function login(array $arr): void
     {
@@ -100,9 +101,10 @@ class UserController extends Controller
     }
 
     /**
-     * AjaxControllerdan gelen verilele yani kullanıcı oluşturur
+     * User modeli ile gelen verilele yani kullanıcı oluşturur
      * @param array $data
      * @return array
+     * @see AjaxRouter->addUserAction
      */
     public function saveNew(User $new_user): array
     {
@@ -130,10 +132,12 @@ class UserController extends Controller
     }
 
     /**
+     * User modeli ile gele kullanıcı bilgilerini günceller
      * @param User $user
      * @return string[]
+     * @see AjaxRouter->updateUserAction
      */
-    public function updateUser(User $user)
+    public function updateUser(User $user): array
     {
         try {
             // Şifre kontrolü ve hash işlemi
@@ -184,6 +188,7 @@ class UserController extends Controller
     }
 
     /**
+     * tüm kullanıcıların User Modeli şeklinde oluşturulmuş listesini döner
      * @return array
      */
     public function getUsersList(): array
@@ -218,6 +223,10 @@ class UserController extends Controller
         return $users;
     }
 
+    /**
+     * Formlarda listelenecek Rol, yetki listesi
+     * @return string[]
+     */
     public function getRoleList(): array
     {
         return [
@@ -230,6 +239,10 @@ class UserController extends Controller
         ];
     }
 
+    /**
+     * Formlarda listelenecek Ünvan verileri
+     * @return string[]
+     */
     public function getTitleList(): array
     {
         return [
@@ -241,8 +254,15 @@ class UserController extends Controller
         ];
     }
 
-    public static function canUserDoAction(string $actionLevel): bool
+    /**
+     * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
+     * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
+     * @param int $actionLevel
+     * @return bool
+     */
+    public static function canUserDoAction(int $actionLevel): bool
     {
+        //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
         $user = (new UserController)->getCurrentUser();
         $roleLevels = [
             "admin" => 10,
