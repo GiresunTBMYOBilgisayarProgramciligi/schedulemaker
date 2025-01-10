@@ -55,12 +55,14 @@
                                 <dd class="col-sm-8"><?= htmlspecialchars($lesson->season, ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt class="col-sm-4">Hocası</dt>
                                 <dd class="col-sm-8"><a href="/admin/profile/<?= $lesson->getLecturer()->id ?>">
-                                        <?= htmlspecialchars($lesson->getLecturer()->getFullName(), ENT_QUOTES, 'UTF-8') ?></a></dd>
+                                        <?= htmlspecialchars($lesson->getLecturer()->getFullName(), ENT_QUOTES, 'UTF-8') ?></a>
+                                </dd>
                             </dl>
                         </div>
                         <div class="card-footer">
                             <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
-                            <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline" method="post">
+                            <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline"
+                                  method="post">
                                 <input type="hidden" name="id" value="<?= $lesson->id ?>">
                                 <input type="submit" class="btn btn-danger" value="Sil">
                             </form>
@@ -81,7 +83,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?=$scheduleController->createScheduleTable("lesson", $lesson->id)?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "lesson", "owner_id" => $lesson->id]) ?>
                         </div>
                         <div class="card-footer">
 

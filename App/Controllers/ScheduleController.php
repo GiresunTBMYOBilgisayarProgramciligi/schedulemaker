@@ -10,6 +10,10 @@ class ScheduleController extends Controller
 {
 
     protected string $table_name = 'schedule';
+    /**
+     * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır. True değeri o gün program düzelemeye uygun anlamına gelir.
+     * @var true[]
+     */
     private $emptyWeek = array(
         "day0" => true,//Pazartesi
         "day1" => true,//Salı
@@ -19,6 +23,11 @@ class ScheduleController extends Controller
         "day5" => true //Cumartesi
     );
 
+    /**
+     * Veri tabanından verileri alıp Schedule Modeli ile oluşturulan bir veri döndürür
+     * @param int|null $id
+     * @return Schedule|void
+     */
     public function getSchedule(?int $id = null)
     {
         if (!is_null($id)) {
@@ -41,42 +50,66 @@ class ScheduleController extends Controller
     }
 
     /**
-     * @param string|null $owner_type
-     * @param int|null $owner_id
-     * @return array|void Schedule Modellerinden oluşan bir array
+     * filter ile belirtrilen alanlara uyan Schedule modellerini döner
+     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
+     * @return array Schedule Modellerinden oluşan bir array
      */
-    public function getSchedules(?string $owner_type = null, ?int $owner_id = null)
+    public function getSchedules(array $filters = [])
     {
-        if (!is_null($owner_type) && !is_null($owner_id)) {
-            try {
-                $stmt = $this->database->prepare("select * from $this->table_name where owner_type=:owner_type and owner_id=:owner_id");
-                $stmt->bindValue(":owner_type", $owner_type, PDO::PARAM_STR);
-                $stmt->bindValue(":owner_id", $owner_id, PDO::PARAM_INT);
-                $stmt->execute();
-                $stmt = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-                if ($stmt) {
-                    $schedules = [];
-                    foreach ($stmt as $schedule_data) {
-                        $schedule = new Schedule();
-                        $schedule->fill($schedule_data);
-                        $schedules[] = $schedule;
-                    }
-                }
-                return $schedules;
-            } catch (\Exception $e) {
-                echo $e->getMessage();
+        try {
+            // Koşullar ve parametreler
+            $conditions = [];
+            $parameters = [];
+
+            // Parametrelerden WHERE koşullarını oluştur
+            foreach ($filters as $column => $value) {
+                $conditions[] = "$column = :$column";
+                $parameters[":$column"] = $value;
             }
+
+            // WHERE ifadesini oluştur
+            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // Sorguyu hazırla
+            $sql = "SELECT * FROM $this->table_name $whereClause";
+            $stmt = $this->database->prepare($sql);
+
+            // Parametreleri bağla
+            foreach ($parameters as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            $stmt->execute();
+
+            // Verileri işle
+            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $schedules = [];
+
+            if ($result) {
+                foreach ($result as $schedule_data) {
+                    $schedule = new Schedule();
+                    $schedule->fill($schedule_data);
+                    $schedules[] = $schedule;
+                }
+            }
+
+            return $schedules;
+
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            return [];
         }
     }
 
+
     /**
-     * @param string|null $owner_type
-     * @param int|null $owner_id
+     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
+     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
      * @return string
      */
-    public function createScheduleTable(?string $owner_type = null, ?int $owner_id = null, ?string $season = null): string
+    public function createScheduleTable(array $filters = []): string
     {
-        $schedules = $this->getSchedules($owner_type, $owner_id);
+        $schedules = $this->getSchedules($filters);
 
         $tableRows = [
             "08.00-08.50" => (object)$this->emptyWeek,

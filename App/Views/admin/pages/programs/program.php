@@ -111,7 +111,8 @@
                                         <td>
                                             <div class="btn-group">
                                                 <button type="button" class="btn btn-primary">İşlemler</button>
-                                                <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon"
+                                                <button type="button"
+                                                        class="btn btn-primary dropdown-toggle dropdown-icon"
                                                         data-toggle="dropdown" aria-expanded="false">
                                                     <span class="sr-only">İşlemler listesi</span>
                                                 </button>
@@ -120,7 +121,8 @@
                                                     <a class="dropdown-item"
                                                        href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
                                                     <div class="dropdown-divider"></div>
-                                                    <form action="/ajax/deleteuser/<?= $lecturer->id ?>" class="ajaxFormDelete"
+                                                    <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
+                                                          class="ajaxFormDelete"
                                                           id="deleteUser-<?= $lecturer->id ?>" method="post">
                                                         <input type="hidden" name="id" value="<?= $lecturer->id ?>">
                                                         <input type="submit" class="dropdown-item" value="Sil">
@@ -218,7 +220,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?=$scheduleController->createScheduleTable("program", $program->id,"1.Yarıyıl")?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "season" => "1.Yarıyıl"]) ?>
                         </div>
                         <div class="card-footer">
 
@@ -236,7 +238,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?=$scheduleController->createScheduleTable("program", $program->id,"3.Yarıyıl")?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "season" => "3.Yarıyıl"]) ?>
                         </div>
                         <div class="card-footer">
 

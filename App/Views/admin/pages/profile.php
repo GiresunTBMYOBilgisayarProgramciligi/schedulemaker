@@ -228,7 +228,7 @@
                             </div>
                         </div><!-- /.card-header -->
                         <div class="card-body">
-                            <?=$scheduleController->createScheduleTable("user", $user->id)?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "user", "owner_id" => $user->id]) ?>
                         </div><!-- /.card-body -->
                     </div>
                     <!-- /.card -->

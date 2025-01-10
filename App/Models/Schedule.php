@@ -10,11 +10,12 @@ class Schedule extends Model
 
     public ?int $id = null;
     /**
-     * @var string|null Program türü lesson, exam, observer (Ders, sınav, gözetmen)
+     * Final sınavları iki haftalık olduğu için exam ve exam-2 türü ile kontrol edilecek
+     * @var string|null Program türü lesson, exam,exam-2 observer (Ders, sınav, gözetmen)
      */
     public ?string $type = null;
     /**
-     * @var string|null Programın sahibinin türü user,lesson,classroom
+     * @var string|null Programın sahibinin türü user,lesson,classroom, program
      */
     public ?string $owner_type = null;
     /**
@@ -25,42 +26,47 @@ class Schedule extends Model
      * "08.00-08.50", "09.00-09.50", "10.00-10.50",
      * "11.00-11.50", "12.00-12.50", "13.00-13.50",
      * "14.00-14.50", "15.00-15.50", "16.00-16.50",
+     * sınav saatleri de yarımsaatlik aralıklarla oluşturulabilir.
      * @var string|null Program saati
      */
     public ?string $time = null;
+    /**
+     * Sınıf ayrımı yapmak için kullanılır
+     * @var string|null $season 1. Yarıyıl, 2. Yarıyıl ...
+     */
     public ?string $season = null;
     /**
-     * Pazartesi günü için program bilgileri
+     * Pazartesi günü için time alanında belirlenen saatteki program bilgileri
      *  array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public ?array $day0 = null;
     /**
-     * Salı günü için program bilgileri
+     * Salı günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public ?array $day1 = null;
     /**
-     * Çarşamba günü için program bilgileri
+     * Çarşamba günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public ?array $day2 = null;
     /**
-     * Perşembe günü için program bilgileri
+     * Perşembe günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public ?array $day3 = null;
     /**
-     * Cuma günü için program bilgileri
+     * Cuma günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public ?array $day4 = null;
     /**
-     * Cumartesi günü için program bilgileri
+     * Cumartesi günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
@@ -75,6 +81,10 @@ class Schedule extends Model
 
     }
 
+    /**
+     * Tablo oluştururken günler döngüye sokulurken kullanılır
+     * @return array
+     */
     public function getWeek(){
         return [
             $this->day0,
