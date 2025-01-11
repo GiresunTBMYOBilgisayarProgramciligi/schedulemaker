@@ -35,61 +35,57 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
-                    <div class="card card-solid">
-                        <div class="card-body">
-                            <table id="user-list-table" class="table table-bordered table-striped dataTable">
-                                <thead>
-                                <tr>
-                                    <th scope="col">İd</th>
-                                    <th scope="col">Adı</th>
-                                    <th scope="col">Ders Mevcudu</th>
-                                    <th scope="col">Sınav Mevcudu</th>
-                                    <th scope="col" class="">İşlemler</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($classroomController->getClassroomsList() as $classroom): ?>
-                                    <tr>
-                                        <td><?= $classroom->id ?></td>
-                                        <td><?= $classroom->name ?></td>
-                                        <td><?= $classroom->class_size ?></td>
-                                        <td><?= $classroom->exam_size ?></td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <button type="button" class="btn btn-primary dropdown-toggle"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                    İşlemler
-                                                </button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/admin/classroom/<?= $classroom->id ?>">Gör</a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item"
-                                                           href="/admin/editclassroom/<?= $classroom->id ?>">Düzenle</a>
-                                                    </li>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li>
-                                                        <form action="/ajax/deleteclassroom/<?= $classroom->id ?>"
-                                                              class="ajaxFormDelete"
-                                                              id="deleteProgram-<?= $classroom->id ?>"
-                                                              method="post">
-                                                            <input type="hidden" name="id"
-                                                                   value="<?= $classroom->id ?>">
-                                                            <input type="submit" class="dropdown-item" value="Sil">
-                                                        </form>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <table class="table table-bordered table-striped dataTable">
+                        <thead>
+                        <tr>
+                            <th scope="col">İd</th>
+                            <th scope="col">Adı</th>
+                            <th scope="col">Ders Mevcudu</th>
+                            <th scope="col">Sınav Mevcudu</th>
+                            <th scope="col" class="text-center">İşlemler</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($classroomController->getClassroomsList() as $classroom): ?>
+                            <tr>
+                                <td><?= $classroom->id ?></td>
+                                <td><?= $classroom->name ?></td>
+                                <td><?= $classroom->class_size ?></td>
+                                <td><?= $classroom->exam_size ?></td>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button type="button" class="btn btn-primary dropdown-toggle"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                            İşlemler
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="/admin/classroom/<?= $classroom->id ?>">Gör</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="/admin/editclassroom/<?= $classroom->id ?>">Düzenle</a>
+                                            </li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li>
+                                                <form action="/ajax/deleteclassroom/<?= $classroom->id ?>"
+                                                      class="ajaxFormDelete"
+                                                      id="deleteClassroom-<?= $classroom->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id"
+                                                           value="<?= $classroom->id ?>">
+                                                    <input type="submit" class="dropdown-item" value="Sil">
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?></tbody>
+                    </table>
                 </div>
             </div>
             <!--end::Row-->

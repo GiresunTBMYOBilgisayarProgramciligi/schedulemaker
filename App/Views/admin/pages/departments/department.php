@@ -2,42 +2,47 @@
 /**
  * @var \App\Controllers\DepartmentController $departmentController
  * @var \App\Models\Department $department
+ * @var string $page_title
  */
 ?>
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
+<!--begin::App Main-->
+<main class="app-main">
+    <!--begin::App Content Header-->
+    <div class="app-content-header">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row mb-2">
+            <!--begin::Row-->
+            <div class="row">
+                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
                 <div class="col-sm-6">
-                    <h1 class="m-0"><?= $page_title ?></h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Bölüm İşlemleri</li>
                         <li class="breadcrumb-item active">Bölüm</li>
                     </ol>
-                </div><!-- /.col -->
-            </div><!-- /.row -->
-        </div><!-- /.container-fluid -->
-    </section>
-    <!-- /.content-header -->
-
-    <!-- Main content -->
-    <section class="content">
+                </div>
+            </div>
+            <!--end::Row-->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::App Content Header-->
+    <!--begin::App Content-->
+    <div class="app-content">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row">
+            <!--begin::Row-->
+            <div class="row mb-3">
                 <div class="col-5">
                     <!-- Bölüm Bilgileri -->
-                    <div class="card card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Bölüm Bilgileri</h3>
 
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
                                 </button>
                             </div>
                             <!-- /.card-tools -->
@@ -49,7 +54,8 @@
                                 <dd class="col-sm-8"><?= $department->name ?></dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
                                 <dd class="col-sm-8">
-                                    <a href="/admin/profile/<?=$department->getChairperson()->id?>"><?= $department->getChairperson()->getFullName() ?></a></dd>
+                                    <a href="/admin/profile/<?= $department->getChairperson()->id ?>"><?= $department->getChairperson()->getFullName() ?></a>
+                                </dd>
                                 <dt class="col-sm-4">Program Sayısı</dt>
                                 <dd class="col-sm-8"><?= $department->getProgramCount() ?></dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>
@@ -75,25 +81,26 @@
                 </div>
                 <div class="col-7">
                     <!-- İlişkili Programlar -->
-                    <div class="card card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Programlar</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
                                 </button>
                             </div>
                             <!-- /.card-tools -->
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <table id="user-list-table" class="table table-bordered table-striped dataTable dtr-inline">
+                            <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
-                                    <th>İd</th>
-                                    <th>Adı</th>
-                                    <th>Bölüm</th>
-                                    <th>İşlemler</th>
+                                    <th scope="col">İd</th>
+                                    <th scope="col">Adı</th>
+                                    <th scope="col">Bölüm</th>
+                                    <th scope="col">İşlemler</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -103,51 +110,64 @@
                                         <td><?= $program->name ?></td>
                                         <td><?= $program->getDepartment()->name ?></td>
                                         <td>
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-primary">İşlemler</button>
-                                                <button type="button"
-                                                        class="btn btn-primary dropdown-toggle dropdown-icon"
-                                                        data-toggle="dropdown" aria-expanded="false">
-                                                    <span class="sr-only">İşlemler listesi</span>
+                                            <div class="dropdown">
+                                                <button type="button" class="btn btn-primary dropdown-toggle"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    İşlemler
                                                 </button>
-                                                <div class="dropdown-menu" role="menu" style="">
-                                                    <a class="dropdown-item" href="/admin/program/<?= $program->id ?>">Gör</a>
-                                                    <a class="dropdown-item"
-                                                       href="/admin/editprogram/<?= $program->id ?>">Düzenle</a>
-                                                    <div class="dropdown-divider"></div>
-                                                    <form action="/ajax/deleteprogram/<?= $program->id ?>"
-                                                          class="ajaxFormDelete" id="deleteProgram-<?= $program->id ?>"
-                                                          method="post">
-                                                        <input type="hidden" name="id" value="<?= $program->id ?>">
-                                                        <input type="submit" class="dropdown-item" value="Sil">
-                                                    </form>
-                                                </div>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/program/<?= $program->id ?>">Gör</a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/editprogram/<?= $program->id ?>">Düzenle</a>
+                                                    </li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li>
+                                                        <form action="/ajax/deleteprogram/<?= $program->id ?>"
+                                                              class="ajaxFormDelete"
+                                                              id="deleteProgram-<?= $program->id ?>"
+                                                              method="post">
+                                                            <input type="hidden" name="id"
+                                                                   value="<?= $program->id ?>">
+                                                            <input type="submit" class="dropdown-item" value="Sil">
+                                                        </form>
+                                                    </li>
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?></tbody>
+                                <?php endforeach; ?>
+                                </tbody>
                             </table>
                         </div>
                         <!-- /.card-body -->
                     </div>
                 </div>
             </div>
-            <div class="row">
+            <!--end::Row-->
+            <!--begin::Row-->
+            <div class="row mb-3">
                 <div class="col-12">
                     <!-- İlişkili Akademisyenler-->
-                    <div class="card card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Akademisyenler</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
                                 </button>
                             </div>
                             <!-- /.card-tools -->
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <table id="user-list-table" class="table table-bordered table-striped dataTable dtr-inline">
+                            <table id="user-list-table" class="table table-bordered table-striped dataTable ">
                                 <thead>
                                 <tr>
                                     <th>Ünvanı Adı Soyadı</th>
@@ -163,56 +183,71 @@
                                         <td><?= $lecturer->mail ?></td>
                                         <td><?= $lecturer->getProgramName() ?></td>
                                         <td>
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-primary">İşlemler</button>
-                                                <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon"
-                                                        data-toggle="dropdown" aria-expanded="false">
-                                                    <span class="sr-only">İşlemler listesi</span>
+                                            <div class="dropdown">
+                                                <button type="button" class="btn btn-primary dropdown-toggle"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    İşlemler
                                                 </button>
-                                                <div class="dropdown-menu" role="menu" style="">
-                                                    <a class="dropdown-item" href="/admin/profile/<?= $lecturer->id ?>">Gör</a>
-                                                    <a class="dropdown-item"
-                                                       href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
-                                                    <div class="dropdown-divider"></div>
-                                                    <form action="/ajax/deleteuser/<?= $lecturer->id ?>" class="ajaxFormDelete"
-                                                          id="deleteUser-<?= $lecturer->id ?>" method="post">
-                                                        <input type="hidden" name="id" value="<?= $lecturer->id ?>">
-                                                        <input type="submit" class="dropdown-item" value="Sil">
-                                                    </form>
-                                                </div>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/profile/<?= $lecturer->id ?>">Gör</a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
+                                                    </li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li>
+                                                        <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
+                                                              class="ajaxFormDelete"
+                                                              id="deleteUser-<?= $lecturer->id ?>"
+                                                              method="post">
+                                                            <input type="hidden" name="id"
+                                                                   value="<?= $lecturer->id ?>">
+                                                            <input type="submit" class="dropdown-item" value="Sil">
+                                                        </form>
+                                                    </li>
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?></tbody>
+                                <?php endforeach; ?>
+                                </tbody>
                             </table>
                         </div>
                         <!-- /.card-body -->
                     </div>
                 </div>
+            </div>
+            <div class="row mb-3">
                 <div class="col-12">
                     <div class="card  card-primary">
                         <div class="card-header">
                             <h3 class="card-title">İlişkili Dersler</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
                                 </button>
                             </div>
                             <!-- /.card-tools -->
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <table id="user-list-table" class="table table-bordered table-striped dataTable dtr-inline">
+                            <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
-                                    <th>Kodu</th>
-                                    <th>Adı</th>
-                                    <th>Türü</th>
-                                    <th>Saati</th>
-                                    <th>Dönemi</th>
-                                    <th>Hocası</th>
-                                    <th>Program</th>
-                                    <th>İşlemler</th>
+                                    <th scope="col">Kodu</th>
+                                    <th scope="col">Adı</th>
+                                    <th scope="col">Türü</th>
+                                    <th scope="col">Saati</th>
+                                    <th scope="col">Dönemi</th>
+                                    <th scope="col">Hocası</th>
+                                    <th scope="col">Program</th>
+                                    <th scope="col">İşlemler</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -226,42 +261,60 @@
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                         <td><?= $lesson->getProgam()->name ?></td>
                                         <td>
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-primary">İşlemler</button>
-                                                <button type="button" class="btn btn-primary dropdown-toggle dropdown-icon"
-                                                        data-toggle="dropdown" aria-expanded="false">
-                                                    <span class="sr-only">İşlemler listesi</span>
+                                            <div class="dropdown">
+                                                <button type="button" class="btn btn-primary dropdown-toggle"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    İşlemler
                                                 </button>
-                                                <div class="dropdown-menu" role="menu" style="">
-                                                    <a class="dropdown-item" href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
-                                                    <a class="dropdown-item"
-                                                       href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
-                                                    <div class="dropdown-divider"></div>
-                                                    <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete"
-                                                          id="deleteProgram-<?= $lesson->id ?>" method="post">
-                                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                                        <input type="submit" class="dropdown-item" value="Sil">
-                                                    </form>
-                                                </div>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                           href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
+                                                    </li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
+                                                    <li>
+                                                        <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                                              class="ajaxFormDelete"
+                                                              id="deleteLesson-<?= $lesson->id ?>"
+                                                              method="post">
+                                                            <input type="hidden" name="id"
+                                                                   value="<?= $lesson->id ?>">
+                                                            <input type="submit" class="dropdown-item" value="Sil">
+                                                        </form>
+                                                    </li>
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?></tbody>
+                                <?php endforeach; ?>
+                                </tbody>
                             </table>
                         </div>
                         <!-- /.card-body -->
                     </div>
                 </div>
             </div>
-            <!-- Program Satırı-->
+            <!--end::Row-->
+            <!--begin::Row Program Satırı-->
             <div class="row">
                 <div class="col-12">
-                    <div class="card  card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Program</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                                </button>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
+                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
+                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
                                 </button>
                             </div>
                         </div>
@@ -274,6 +327,10 @@
                     </div>
                 </div>
             </div>
+            <!--end::Row-->
         </div>
-    </section>
-</div>
+        <!--end::Container-->
+    </div>
+    <!--end::App Content-->
+</main>
+<!--end::App Main-->
