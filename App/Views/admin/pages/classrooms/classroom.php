@@ -2,42 +2,44 @@
 /**
  * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Models\Classroom $classroom
+ * @var string $page_title
  */
 ?>
-
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
+<!--begin::App Main-->
+<main class="app-main">
+    <!--begin::App Content Header-->
+    <div class="app-content-header">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row mb-2">
+            <!--begin::Row-->
+            <div class="row">
+                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
                 <div class="col-sm-6">
-                    <h1 class="m-0"><?= $page_title ?></h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
-                        <li class="breadcrumb-item">Ders İşlemleri</li>
-                        <li class="breadcrumb-item active">Ders</li>
+                        <li class="breadcrumb-item">Derslik İşlemleri</li>
+                        <li class="breadcrumb-item active">Derslik</li>
                     </ol>
                 </div>
             </div>
+            <!--end::Row-->
         </div>
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
+        <!--end::Container-->
+    </div>
+    <!--end::App Content Header-->
+    <!--begin::App Content-->
+    <div class="app-content">
+        <!--begin::Container-->
         <div class="container-fluid">
+            <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
                     <!-- Ders Bilgileri -->
-                    <div class="card  card-primary">
+                    <div class="card mb-4">
                         <div class="card-header">
-                            <h3 class="card-title">Derslik Bilgileri</h3>
+                            <h5 class="card-title">Derslik Bilgileri</h5>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
-                                </button>
+
                             </div>
                         </div>
                         <div class="card-body">
@@ -60,27 +62,30 @@
                     </div>
                 </div>
             </div>
-            <!-- Program Satırı-->
+            <!--end::Row-->
+            <!--begin::Row Program-->
             <div class="row">
                 <div class="col-12">
-                    <div class="card  card-primary">
+                    <div class="card card-outline card-primary mb-4">
                         <div class="card-header">
                             <h3 class="card-title">Program</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
+                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
+                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="card-body">
 
                         </div>
-                        <div class="card-footer">
-
-                        </div>
                     </div>
                 </div>
             </div>
+            <!--begin::Row Program-->
         </div>
-    </section>
-</div>
+        <!--end::Container-->
+    </div>
+    <!--end::App Content-->
+</main>
+<!--end::App Main-->
