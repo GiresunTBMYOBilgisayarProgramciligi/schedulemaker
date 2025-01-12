@@ -8,96 +8,98 @@
  * @var \App\Controllers\ProgramController $programController
  */
 ?>
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <div class="content-header">
+<!--begin::App Main-->
+<main class="app-main">
+    <!--begin::App Content Header-->
+    <div class="app-content-header">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row mb-2">
+            <!--begin::Row-->
+            <div class="row">
+                <div class="col-sm-6"><h3 class="mb-0">Başlangıç</h3></div>
                 <div class="col-sm-6">
-                    <h1 class="m-0">Başlangıç</h1>
-                </div><!-- /.col -->
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
-                        <li class="breadcrumb-item active">Başlangıç</li>
+                    <ol class="breadcrumb float-sm-end">
+                        <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Başlangıç</li>
                     </ol>
-                </div><!-- /.col -->
-            </div><!-- /.row -->
-        </div><!-- /.container-fluid -->
+                </div>
+            </div>
+            <!--end::Row-->
+        </div>
+        <!--end::Container-->
     </div>
-    <!-- /.content-header -->
-
-    <!-- Main content -->
-    <section class="content">
+    <!--end::App Content Header-->
+    <!--begin::App Content-->
+    <div class="app-content">
+        <!--begin::Container-->
         <div class="container-fluid">
             <!-- Small boxes (Stat box) -->
-            <div class="row justify-content-center">
-                <div class="col-lg-2 col-6">
+            <div class="row">
+                <div class="col">
                     <!-- small box -->
-                    <div class="small-box bg-info">
+                    <div class="small-box text-bg-primary">
                         <div class="inner">
                             <h3><?= $userController->getAcademicCount() ?></h3>
 
                             <p>Öğretim Elemanı</p>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-chalkboard-teacher"></i>
+                        <div class="small-box-icon">
+                            <i class="bi bi-person-video3"></i>
                         </div>
                     </div>
                 </div>
                 <!-- ./col -->
-                <div class="col-lg-2 col-6">
+                <div class="col">
                     <!-- small box -->
-                    <div class="small-box bg-success">
+                    <div class="small-box text-bg-success">
                         <div class="inner">
                             <h3><?= $classroomController->getCount() ?></h3>
 
                             <p>Derslik</p>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-chalkboard"></i>
+                        <div class="small-box-icon">
+                            <i class="bi bi-door-open"></i>
                         </div>
                     </div>
                 </div>
                 <!-- ./col -->
-                <div class="col-lg-2 col-6">
+                <div class="col">
                     <!-- small box -->
-                    <div class="small-box bg-warning">
+                    <div class="small-box text-bg-warning">
                         <div class="inner">
                             <h3><?= $lessonController->getCount() ?></h3>
 
                             <p>Ders</p>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-book-open"></i>
+                        <div class="small-box-icon">
+                            <i class="bi bi-book"></i>
                         </div>
                     </div>
                 </div>
                 <!-- ./col -->
-                <div class="col-lg-2 col-6">
+                <div class="col">
                     <!-- small box -->
-                    <div class="small-box bg-danger">
+                    <div class="small-box text-bg-danger">
                         <div class="inner">
                             <h3><?= $departmentController->getCount() ?></h3>
 
                             <p>Bölüm</p>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-school"></i>
+                        <div class="small-box-icon">
+                            <i class="bi bi-buildings"></i>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-2 col-6">
+                <div class="col">
                     <!-- small box -->
-                    <div class="small-box bg-danger">
+                    <div class="small-box text-bg-info">
                         <div class="inner">
                             <h3><?= $programController->getCount() ?></h3>
 
                             <p>Program</p>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-building"></i>
+                        <div class="small-box-icon">
+                            <i class="bi bi-building"></i>
                         </div>
                     </div>
                 </div>
@@ -109,7 +111,7 @@
             <div class="row">
                 <?php foreach ($programController->getProgramsList() as $program): ?>
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
-                        <div class="card  d-flex flex-fill">
+                        <div class="card d-flex flex-fill mb-3">
                             <div class="card-header text-muted border-bottom-0">
                                 <?= $program->getDepartment()->name ?>
                             </div>
@@ -117,28 +119,27 @@
                                 <div class="row">
                                     <div class="col-12">
                                         <h2 class="lead"><b><?= $program->name ?></b></h2>
-                                        <br>
 
-                                        <ul class="ml-4 mb-0 fa-ul text-muted">
-                                            <li class="small">
-                                                <span class="fa-li">
-                                                    <i class="fas fa-lg fa-user-graduate"></i>
+                                        <ul class="list-group list-group-flush text-muted mt-2">
+                                            <li class="list-group-item small">
+                                                <span class="">
+                                                    <i class="bi bi-mortarboard"></i>
                                                 </span>
                                                 <strong>Bölüm Başkan:</strong>
                                                 <a href="/admin/profile/<?= $program->getDepartment()->getChairperson()->id ?>">
                                                     <?= $program->getDepartment()->getChairperson()->getFullName() ?>
                                                 </a>
                                             </li>
-                                            <li class="small">
-                                                <span class="fa-li">
-                                                    <i class="fas fa-lg fa-user"></i>
+                                            <li class="list-group-item small">
+                                                <span class="">
+                                                    <i class="bi bi-person-vcard"></i>
                                                 </span>
                                                 <strong>Akademisyen Sayısı:</strong>
                                                 <?= $program->getLecturerCount() ?>
                                             </li>
-                                            <li class="small">
-                                                <span class="fa-li">
-                                                    <i class="fas fa-lg fa-book-open"></i>
+                                            <li class="list-group-item small">
+                                                <span class="">
+                                                    <i class="bi bi-book"></i>
                                                 </span>
                                                 <strong>Ders Sayısı:</strong>
                                                 <?= $program->getLessonCount() ?>
@@ -148,7 +149,7 @@
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <div class="text-right">
+                                <div class="text-end">
                                     <a href="/admin/department/<?= $program->getDepartment()->id ?>"
                                        class="btn btn-sm btn-primary">
                                         Bölüm Detayları
@@ -164,8 +165,9 @@
                 <?php endforeach; ?>
             </div>
             <!-- /.row (main row) -->
-        </div><!-- /.container-fluid -->
-    </section>
-    <!-- /.content -->
-</div>
-<!-- /.content-wrapper -->
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::App Content-->
+</main>
+<!--end::App Main-->
