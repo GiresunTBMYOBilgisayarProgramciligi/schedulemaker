@@ -73,19 +73,19 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item"
-                                                   href="/admin/department/<?=$lesson->id?>">Gör</a>
+                                                   href="/admin/lesson/<?=$lesson->id?>">Gör</a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
-                                                   href="/admin/editdepartment/<?=$lesson->id?>">Düzenle</a>
+                                                   href="/admin/editlesson/<?=$lesson->id?>">Düzenle</a>
                                             </li>
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
                                             <li>
-                                                <form action="/ajax/deletedepartment/<?=$lesson->id?>"
+                                                <form action="/ajax/deletelesson/<?=$lesson->id?>"
                                                       class="ajaxFormDelete"
-                                                      id="deleteProgram-<?=$lesson->id?>"
+                                                      id="deleteLesson-<?=$lesson->id?>"
                                                       method="post">
                                                     <input type="hidden" name="id"
                                                            value="<?=$lesson->id?>">
