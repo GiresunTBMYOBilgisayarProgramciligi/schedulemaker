@@ -95,4 +95,30 @@ class User extends Model
         $default = "";
         return "https://www.gravatar.com/avatar/" . md5(strtolower(trim($this->mail))) . "?d=" . urlencode($default) . "&s=" . $size;
     }
+
+    public function getLessonCount()
+    {
+        $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
+        $stmt->bindParam(":id", $this->id);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
+    }
+
+    /**
+     * todo
+     * @return int
+     */
+    public function getTotalStudentCount(){
+        return 100;
+    }
+
+    public function getTotalLessonHours(){
+        $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
+        $stmt->bindParam(":id", $this->id);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['total'];
+
+    }
 }

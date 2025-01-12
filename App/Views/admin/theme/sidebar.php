@@ -9,7 +9,7 @@
     <!--begin::Sidebar Brand-->
     <div class="sidebar-brand">
         <!--begin::Brand Link-->
-        <a href="/admin" class="brand-link">
+        <a href="/admin" class="brand-link text-white">
             <!--begin::Brand Image-->
             <!--<img
                     src="../../../dist/assets/img/AdminLTELogo.png"
