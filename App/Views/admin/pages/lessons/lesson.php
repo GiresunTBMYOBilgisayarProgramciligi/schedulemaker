@@ -3,41 +3,46 @@
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Models\Lesson $lesson
  * @var \App\Controllers\ScheduleController $scheduleController
+ * @var string $page_title
  */
 ?>
-
-<!-- Content Wrapper. Contains page content -->
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
+<!--begin::App Main-->
+<main class="app-main">
+    <!--begin::App Content Header-->
+    <div class="app-content-header">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row mb-2">
+            <!--begin::Row-->
+            <div class="row">
+                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
                 <div class="col-sm-6">
-                    <h1 class="m-0"><?= $page_title ?></h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
+                    <ol class="breadcrumb float-sm-end">
+                        li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Ders İşlemleri</li>
                         <li class="breadcrumb-item active">Ders</li>
                     </ol>
                 </div>
             </div>
+            <!--end::Row-->
         </div>
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
+        <!--end::Container-->
+    </div>
+    <!--end::App Content Header-->
+    <!--begin::App Content-->
+    <div class="app-content">
+        <!--begin::Container-->
         <div class="container-fluid">
-            <div class="row">
+            <!--begin::Row-->
+            <div class="row mb-3">
                 <div class="col-12">
                     <!-- Ders Bilgileri -->
-                    <div class="card  card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Ders Bilgileri</h3>
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
                                 </button>
                             </div>
                         </div>
@@ -59,7 +64,7 @@
                                 </dd>
                             </dl>
                         </div>
-                        <div class="card-footer">
+                        <div class="card-footer text-end">
                             <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
                             <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline"
                                   method="post">
@@ -70,15 +75,22 @@
                     </div>
                 </div>
             </div>
-            <!-- Program Satırı-->
-            <div class="row">
+            <!--end::Row-->
+            <!--begin::Row-->
+            <div class="row mb-3">
                 <div class="col-12">
-                    <div class="card  card-primary">
+                    <div class="card card-outline card-primary">
                         <div class="card-header">
                             <h3 class="card-title">Program</h3>
+                            <!-- todo Bir ders birden fazla bölümde varsa ders programı için bölüm seçme listesi olmalı -->
                             <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                                </button>
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
+                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
+                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
                                 </button>
                             </div>
                         </div>
@@ -91,6 +103,10 @@
                     </div>
                 </div>
             </div>
+            <!--end::Row-->
         </div>
-    </section>
-</div>
+        <!--end::Container-->
+    </div>
+    <!--end::App Content-->
+</main>
+<!--end::App Main-->
