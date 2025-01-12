@@ -32,4 +32,5 @@
             crossorigin="anonymous"
     />
     <!--end::Required Plugin(AdminLTE)-->
+    <link rel="stylesheet" type="text/css" href="/assets/css/adminlte3to4.css" />
 </head>
