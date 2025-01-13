@@ -11,6 +11,7 @@ var gettext= {
 'ok'            : "<?= _('Tamam') ?>",
 'confirmDelete' : "<?= _('Silme onayı') ?>",
 'deleteMessage' : "<?= _('Bu işlem geri  alınamaz. Devam etmek istiyormusunuz?') ?>",
+'delete'        : "<?= _('Sil') ?>",
 'trashMessage'  : "<?= _('Bu içeriği çöpe göndermek istediğinize emin misiniz?') ?>",
 'subject'       : "<?= _('Konu') ?>",
 'submit'        : "<?= _('Gönder') ?>",
