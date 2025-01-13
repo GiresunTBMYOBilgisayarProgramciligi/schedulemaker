@@ -24,7 +24,7 @@
     <!--end::Third Party Plugin(Bootstrap Icons)-->
 
     <!-- Data table -->
-    <link href="https://cdn.datatables.net/v/bs4/dt-2.1.8/datatables.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css" rel="stylesheet">
     <!--begin::Required Plugin(AdminLTE)-->
     <link
             rel="stylesheet"
