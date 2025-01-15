@@ -58,7 +58,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const scheduleTableElements = document.querySelectorAll(".schedule-table");
     const availableItemElements = document.querySelectorAll(".available-schedule-items");
-    console.log(scheduleTableElements)
     programSelect.addEventListener("change", programChangeHandle);
 
     function programChangeHandle() {
@@ -66,7 +65,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let modal = new Modal();
         let bootstrapModal = new bootstrap.Modal(modal.modal);
         var data = new FormData();
-        document.getElementById("schedule-title").innerHTML = programSelect.selectedOptions[0].innerText + " Programı"
         if (scheduleTableElements.length < 1) {
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
