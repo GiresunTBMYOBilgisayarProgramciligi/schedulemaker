@@ -257,7 +257,12 @@ class UserController extends Controller
     /**
      * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
      * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
-     * @param int $actionLevel
+     * @param int $actionLevel "admin" => 10,
+     * "manager" => 9,
+     * "submanager" => 8,
+     * "department_head" => 7,
+     * "lecturer" => 6,
+     * "user" => 5
      * @return bool
      */
     public static function canUserDoAction(int $actionLevel): bool
