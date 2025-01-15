@@ -52,7 +52,7 @@
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label"  for="type">Türü</label>
-                                            <select class="form-control" id="type" name="type">
+                                            <select class="form-select" id="type" name="type">
                                                 <?php foreach ($lessonController->getTypeList() as $type): ?>
                                                     <option value="<?= $type ?>"><?= $type ?></option>
                                                 <?php endforeach ?>
@@ -62,7 +62,7 @@
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label"  for="season">Dönemi</label>
-                                            <select class="form-control" id="season" name="season">
+                                            <select class="form-select" id="season" name="season">
                                                 <?php foreach ($lessonController->getSeasonList() as $season): ?>
                                                     <option value="<?= $season ?>"><?= $season ?></option>
                                                 <?php endforeach ?>
@@ -81,7 +81,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label"  for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-control" id="lecturer_id" name="lecturer_id">
+                                            <select class="form-select" id="lecturer_id" name="lecturer_id">
                                                 <?php foreach ($userController->getLecturerList() as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                                 <?php endforeach; ?>
@@ -107,7 +107,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label"  for="department_id">Bölüm</label>
-                                            <select class="form-control" id="department_id" name="department_id">
+                                            <select class="form-select" id="department_id" name="department_id">
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"><?= $department->name ?></option>
@@ -118,7 +118,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label"  for="program_id">Program</label>
-                                            <select class="form-control" id="program_id" name="program_id">
+                                            <select class="form-select" id="program_id" name="program_id">
                                                 <option value="0">Program Seçiniz</option>
                                             </select>
                                         </div>

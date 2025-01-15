@@ -76,7 +76,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="role">Rol</label>
-                                            <select class="form-control" id="role" name="role">
+                                            <select class="form-select" id="role" name="role">
                                                 <?php foreach ($userController->getRoleList() as $role => $value): ?>
                                                     <option value="<?= $role ?>"><?= $value ?></option>
                                                 <?php endforeach; ?>
@@ -86,7 +86,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
-                                            <select class="form-control" id="title" name="title">
+                                            <select class="form-select" id="title" name="title">
                                                 <?php $titleList = $userController->getTitleList();
                                                 array_unshift($titleList, "");
                                                 foreach ($titleList as $title): ?>
@@ -100,7 +100,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-control" id="department_id" name="department_id">
+                                            <select class="form-select" id="department_id" name="department_id">
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"><?= $department->name ?></option>
@@ -111,7 +111,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
-                                            <select class="form-control" id="program_id" name="program_id">
+                                            <select class="form-select" id="program_id" name="program_id">
                                                 <option value="0">Program Seçiniz</option>
                                             </select>
                                         </div>
