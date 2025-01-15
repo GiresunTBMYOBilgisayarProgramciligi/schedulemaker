@@ -23,7 +23,7 @@ class AdminRouter extends Router
     {
         // Her çağrıdan önce kullanıcı giriş durumunu kontrol et
         $this->beforeAction();
-
+        //todo yetki kontrolü
     }
 
     /**
@@ -148,7 +148,7 @@ class AdminRouter extends Router
         $this->callView("admin/lessons/addlesson", $view_data);
     }
 
-    public function editLessonAction($id = null)
+    public function EditLessonAction($id = null)
     {
         $lessonController = new LessonController();
         if (!is_null($id)) {
@@ -328,5 +328,41 @@ class AdminRouter extends Router
             "page_title" => $program->name . " Düzenle",//todo ders olmayınca hata veriyor.
         ];
         $this->callView("admin/programs/editprogram", $view_data);
+    }
+
+    /*
+     * Takvim işlemleri
+     */
+    public function ShowscheduleAction()
+    {
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "page_title" => "Takvim ",
+        ];
+        $this->callView("admin/schedules/showschedule", $view_data);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function EditScheduleAction($department_id = null)
+    {
+        $userController = new UserController();
+        $currentUser = $userController->getCurrentUser();
+        $departmentController = new DepartmentController();
+        if ($userController->canUserDoAction(8)) {
+            $departments = $departmentController->getDepartmentsList();
+        } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
+            $departments = [$departmentController->getDepartment($currentUser->department_id)];
+        } else {
+            throw new \Exception("Bu işlem için yetkiniz yok");
+        }
+        $view_data = [
+            "userController" => new UserController(),//her sayfada olmalı
+            "scheduleController" => new ScheduleController(),
+            "departments" => $departments,
+            "page_title" => "Takvim Düzenle",
+        ];
+        $this->callView("admin/schedules/editschedule", $view_data);
     }
 }

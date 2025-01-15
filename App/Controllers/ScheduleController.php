@@ -154,14 +154,14 @@ class ScheduleController extends Controller
                 $out .= '<td>';
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
-                    $out .= '<div class="schedule-item bg-success p-1">
-                                    <div class="schedule-lesson"><i class="fas fa-book-open"></i> ' .
+                    $out .= '<div class="schedule-item text-bg-success p-1">
+                                    <div class="schedule-lesson"><i class="bi bi-book"></i> ' .
                         (new LessonController())->getLesson($tableColumn->lesson_id)->name . '
                                     </div>
-                                    <div class="schedule-lecturer"><i class="fas fa-user"></i> ' .
+                                    <div class="schedule-lecturer"><i class="bi bi-person-vcard"></i> ' .
                         (new UserController())->getUser($tableColumn->lecturer_id)->getFullName()
                         . '</div>
-                                    <div class="schedule-classroom"><i class="fas fa-chalkboard"></i> ' .
+                                    <div class="schedule-classroom"><i class="bi bi-door-open"></i> ' .
                         (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name
                         . '</div>
                                 </div>';
@@ -173,5 +173,87 @@ class ScheduleController extends Controller
         $out .= '</tbody>
                </table>';
         return $out;
+    }
+
+    /**
+     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
+     * @param array $filters
+     * @return array
+     */
+    public function availableLessons(array $filters = [])
+    {
+        $program_table_name = "";
+        $available_lessons = [];
+        if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
+            $program_table_name = $filters['owner_type'] . "s";
+            if ($filters['owner_type'] == "program") {
+                $lessonFilters = [];
+                if (array_key_exists("season", $filters)) {
+                    $lessonFilters['season'] = $filters['season'];
+                }
+                $lessonFilters['program_id'] = $filters['owner_id'];
+                $lessonsList = (new LessonController())->getLessonsListByFilters($lessonFilters);
+                foreach ($lessonsList as $lesson) {
+                    $this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
+                    $lesson->lecturer_name = $lesson->getLecturer()->getFullName();
+                    $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
+                    $available_lessons[] = $lesson;
+                }
+            }
+        }
+        return $available_lessons;
+    }
+
+    public function checkIsScheduleComplete(array $filters = [])
+    {
+        if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
+            //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+            if ($filters['owner_type'] == "lesson") {
+                $schedules = $this->getSchedules($filters);
+                $lessonController = new LessonController();
+                $lesson = $lessonController->getLesson($filters['owner_id']);
+                if (count($schedules) < $lesson->hours) {
+                    return false;
+                } else return true;
+            }
+        }
+    }
+
+    public function getCount(array $filters = [])
+    {
+        try {
+            // Koşullar ve parametreler
+            $conditions = [];
+            $parameters = [];
+
+            // Parametrelerden WHERE koşullarını oluştur
+            foreach ($filters as $column => $value) {
+                $conditions[] = "$column = :$column";
+                $parameters[":$column"] = $value;
+            }
+
+            // WHERE ifadesini oluştur
+            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // Sorguyu hazırla
+            $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
+            $stmt = $this->database->prepare($sql);
+
+            // Parametreleri bağla
+            foreach ($parameters as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            $stmt->execute();
+
+            // Verileri işle
+            $result = $stmt->fetchColumn();
+
+            return $result;
+
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            return 0;
+        }
     }
 }

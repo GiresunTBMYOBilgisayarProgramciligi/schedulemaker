@@ -9,6 +9,7 @@ use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
+use App\Controllers\ScheduleController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use App\Models\Classroom;
@@ -531,5 +532,26 @@ class AjaxRouter extends Router
         $programController = new ProgramController();
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($programController->getProgramsList($department_id));
+    }
+
+    public function getScheduleTableAction()
+    {
+
+        if ($this->checkAjax()) {
+            $scheduleController = new ScheduleController();
+            $table = $scheduleController->createScheduleTable($this->data);
+        };
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($table);
+    }
+
+    public function getAvailableLessonsForScheduleAction()
+    {
+        if ($this->checkAjax()) {
+            $scheduleController = new ScheduleController();
+            $lessons = $scheduleController->availableLessons($this->data);
+        };
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($lessons);
     }
 }

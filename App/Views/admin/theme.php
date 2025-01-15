@@ -25,5 +25,6 @@ include "theme/head.php";
 <?php
 include "theme/footer_scripts.php";
 ?>
+<!-- todo buraya eğer sessionda hata tenımlanmışsa toast ile hataları göstermek için bir şeyler eklenmeli -->
 </body>
 </html>

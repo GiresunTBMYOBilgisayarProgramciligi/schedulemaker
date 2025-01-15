@@ -82,6 +82,7 @@
                 <?php endif;?>
                 <!-- /Kullanıcı İşlemleri -->
                 <!-- Ders İşlemleri -->
+                <?php if( $userController->canUserDoAction(8)):?>
                 <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=(str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
@@ -112,8 +113,10 @@
                         </li>
                     </ul>
                 </li>
+                <?php endif;?>
                 <!-- /Ders İşlemleri -->
                 <!-- Derslik İşlemleri -->
+                <?php if( $userController->canUserDoAction(8)):?>
                 <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=(str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
@@ -144,8 +147,10 @@
                         </li>
                     </ul>
                 </li>
+                <?php endif;?>
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
+                <?php if( $userController->canUserDoAction(7)):?>
                 <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'program') or str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
@@ -205,7 +210,41 @@
 
                     </ul>
                 </li>
+                <?php endif;?>
                 <!-- /Akademik Birimler -->
+                <!-- Takvim todo -->
+                <li class="nav-item <?=(str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
+                    <a href="#"
+                       class="nav-link <?=
+                       (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'active' : ''; ?>">
+                        <i class="nav-icon bi bi-calendar"></i>
+                        <p>
+                            Takvim İşlemleri
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="/admin/editschedule"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listusers')) ? 'active' : ''; ?>">
+                                <i class="nav-icon bi bi-person-lines-fill"></i>
+                                <p>
+                                    Ders Programını Düzenle
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'active' : ''; ?>">
+                                <i class="nav-icon bi bi-person-plus-fill"></i>
+                                <p>
+                                    Sınav Programını Düzenle
+                                </p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- /Takvim -->
             </ul>
             <!--end::Sidebar Menu-->
         </nav>

@@ -22,6 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         option.textContent = program.name;
                         programSelect.appendChild(option);
                     });
+                    // Select elementinin change olayını tetikle
+                    programSelect.dispatchEvent(new Event("change"));
                 })
                 .catch(error => {
                     console.error("Programları alırken bir hata oluştu:", error);
