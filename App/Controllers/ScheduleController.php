@@ -151,24 +151,49 @@ class ScheduleController extends Controller
                     ' . $times[$i] . '
                     </td>';
             foreach ($tableRow as $tableColumn) {
-                $out .= '<td>';
+                /*
+                 * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
+                 */
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
-                    $out .= '<div class="schedule-item text-bg-success p-1">
+                    $out .= '
+                            <td>
+                                <div class="schedule-item text-bg-success p-1">
                                     <div class="schedule-lesson"><i class="bi bi-book"></i> ' .
                         (new LessonController())->getLesson($tableColumn->lesson_id)->name . '
                                     </div>
                                     <div class="schedule-lecturer"><i class="bi bi-person-vcard"></i> ' .
-                        (new UserController())->getUser($tableColumn->lecturer_id)->getFullName()
-                        . '</div>
+                        (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '
+                                    </div>
                                     <div class="schedule-classroom"><i class="bi bi-door-open"></i> ' .
-                        (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name
-                        . '</div>
-                                </div>';
+                        (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name . '
+                                    </div>
+                                </div>
+                            </td>';
+                } else {
+                    /*
+                     * tableColumn bir boolean verisi tutar bu da program eklemeye uygun olup olmadığını gösterir
+                     */
+                    /*
+                     * eğer true ise dropzone sınıflı bir sütun eklenir
+                     */
+                    if ($tableColumn) {
+                        $out .= '
+                        <td class="drop-zone">
+                        
+                        </td>';
+                    } else {
+                        /*
+                         * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
+                         */
+                        $out .= '
+                        <td class="bg-danger">
+                        
+                        </td>';
+                    }
                 }
-                $out .= '</td>';
+
             }
-            $out .= '</tr>';
         }
         $out .= '</tbody>
                </table>';
