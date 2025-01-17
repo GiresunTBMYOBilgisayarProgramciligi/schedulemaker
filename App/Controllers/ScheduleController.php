@@ -154,20 +154,21 @@ class ScheduleController extends Controller
                 /*
                  * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
+                /**
+                 * javascript tarafında hangi saat aralığında işlem yapıldığını tespit etmek için data-time özniteliğinden iletilecek veri.
+                 * ders saatleri 08.00-08.50 ile başladığı için i değerine 8 ekleniyor
+                 */
+                $data_time = $i + 8;
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
                     $out .= '
-                            <td>
-                                <div class="schedule-item text-bg-success p-1">
-                                    <div class="schedule-lesson"><i class="bi bi-book"></i> ' .
-                        (new LessonController())->getLesson($tableColumn->lesson_id)->name . '
+                            <td data-time="' . $data_time . '">
+                                <div id="lesson-' . $tableColumn->lesson_id . '" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
+                                    <div class="ms-2 me-auto">
+                                        <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . (new LessonController())->getLesson($tableColumn->lesson_id)->getFullName() . '</div>
+                                        <div id="classroom-' . $tableColumn->classroom_id . '">' . (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '</div>
                                     </div>
-                                    <div class="schedule-lecturer"><i class="bi bi-person-vcard"></i> ' .
-                        (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '
-                                    </div>
-                                    <div class="schedule-classroom"><i class="bi bi-door-open"></i> ' .
-                        (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name . '
-                                    </div>
+                                    <span class="badge bg-info rounded-pill"><i class="bi bi-door-open"></i>' . (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name . '</span>
                                 </div>
                             </td>';
                 } else {
@@ -179,7 +180,7 @@ class ScheduleController extends Controller
                      */
                     if ($tableColumn) {
                         $out .= '
-                        <td class="drop-zone">
+                        <td class="drop-zone"  data-time="' . $data_time . '">
                         
                         </td>';
                     } else {
@@ -187,7 +188,7 @@ class ScheduleController extends Controller
                          * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
                          */
                         $out .= '
-                        <td class="bg-danger">
+                        <td class="bg-danger"  data-time="' . $data_time . '">
                         
                         </td>';
                     }
