@@ -38,7 +38,7 @@ function fetchAvailableLessons(data = new FormData(), lessonsElement) {
             var out = ``;
             data.forEach((lesson) => {
                 out += `
-                  <div id="lesson-${lesson.id}" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
+                  <div data-id="lesson-${lesson.id}" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
                     <div class="ms-2 me-auto">
                       <div class="fw-bold"><i class="bi bi-book"></i> ${lesson.code} ${lesson.name}</div>
                       ${lesson.lecturer_name}
@@ -55,6 +55,7 @@ function fetchAvailableLessons(data = new FormData(), lessonsElement) {
         });
 
 }
+
 /**
  *
  * @param element bırakma işleminin yapıldığı element
@@ -62,11 +63,58 @@ function fetchAvailableLessons(data = new FormData(), lessonsElement) {
  */
 function dropHandler(element, event) {
     event.preventDefault();
-    console.log(element, "bırakıldı")
-    const data = event.dataTransfer.getData("id");
-    console.log(event);
-    element.appendChild(document.getElementById(data));
+    const dragElementId = event.dataTransfer.getData("id");
+    let dragedElement = document.querySelector('[data-id="' + dragElementId + '"');
+    console.log(dragedElement)
+    let scheduleModal = new Modal();
+    let bootstrapScheduleModal = new bootstrap.Modal(scheduleModal.modal);
+    let timeNumber = element.getAttribute("data-time");
+    let schedule_time = timeNumber.padStart(2, "0") + ".00-" + timeNumber.padStart(2, "0") + ".50";
+    console.log(schedule_time)
+    let lesson_id = dragedElement.getAttribute("data-id").match(/\d+$/)[0]; // Sondaki sayıyı bul
+    console.log(lesson_id)
+    let lesson_hours = dragedElement.querySelector("span.badge").innerText
+    console.log(lesson_hours);
+    let modalContentHTML = `
+    <div class="form-floating mb-3">
+        <input class="form-control" id="selected_hours" type="number" value="${lesson_hours}" min=1 max=${lesson_hours}>
+        <label for="selected_hours" >Eklenecek Ders Saati</label>
+    </div>
+    <div class="mb-3">
+        <select id="classroom" class="form-select">
+          <option selected>Bir Sınıf Seçin</option>
+          <option value="D1">D1</option>
+          <option value="D2">D2</option>
+          <option value="D3">D3</option>
+        </select>
+    </div>
+    `;
+
+    scheduleModal.prepareModal("Sınıf Seçimi", "");
+    bootstrapScheduleModal.show();
+    scheduleModal.addSpinner();
+    scheduleModal.prepareModal("Uygun Sınıfı", modalContentHTML);
+    scheduleModal.cancelButton.textContent = gettext.ok
+    scheduleModal.cancelButton.addEventListener("click", event => {
+        let selectedClassroom = scheduleModal.body.querySelector("#classroom").value
+        let selectedHours = scheduleModal.body.querySelector("#selected_hours").value
+        let scheduleTable = element.closest("table")
+        let droppedRowIndex = element.closest("tr").rowIndex
+        let droppedCellIndex = element.cellIndex
+
+        for (let i = 0; i < selectedHours; i++) {
+            let row = scheduleTable.rows[droppedRowIndex + i];
+            let cell = row.cells[droppedCellIndex];
+            let lesson = dragedElement.cloneNode(true)
+            lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
+            cell.appendChild(lesson);
+        }
+        //todo eğet tüm saatler eklendiyse dragedElemet i sil yoksa saatini düzenle
+
+    })
+
 }
+
 /**
  *
  * @param element dürükleme işleminin başlatıldığı element
@@ -77,7 +125,7 @@ function dragStartHandler(element, event) {
     console.log(`Dragging started for element:`, element);
     console.log("drag event:", event);
     // Ekstra işlemleri burada yapabilirsiniz
-    event.dataTransfer.setData("id", event.target.id);//format kısmına genelde text/plain, text/html gibi terimler yasılıyor. Ama anladığım kadarıyla buraya ne yazdıysak get Data kısmına da aynısını yazmamız yeterli
+    event.dataTransfer.setData("id", event.target.getAttribute("data-id"));//format kısmına genelde text/plain, text/html gibi terimler yasılıyor. Ama anladığım kadarıyla buraya ne yazdıysak get Data kısmına da aynısını yazmamız yeterli
 }
 
 /**
@@ -89,6 +137,7 @@ function dragOverHandler(element, event) {
     event.preventDefault();
     event.dataTransfer.effectAllowed = "move";
 }
+
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const scheduleTableElements = document.querySelectorAll(".schedule-table");

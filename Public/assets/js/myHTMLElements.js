@@ -96,8 +96,8 @@ class Modal {
     }
 
     prepareModal(title = "", content = "", confirmButton = false) {
-        this.title.textContent = title.trim();
-        this.body.textContent = content.trim()
+        this.title.innerHTML = title.trim();
+        this.body.innerHTML = content.trim()
         this.cancelButton.textContent = gettext.close;
         if (!confirmButton) {
             this.confirmButton.remove();
