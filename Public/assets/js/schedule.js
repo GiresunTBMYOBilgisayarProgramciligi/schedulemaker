@@ -55,7 +55,40 @@ function fetchAvailableLessons(data = new FormData(), lessonsElement) {
         });
 
 }
+/**
+ *
+ * @param element bırakma işleminin yapıldığı element
+ * @param event bırakma olayı
+ */
+function dropHandler(element, event) {
+    event.preventDefault();
+    console.log(element, "bırakıldı")
+    const data = event.dataTransfer.getData("id");
+    console.log(event);
+    element.appendChild(document.getElementById(data));
+}
+/**
+ *
+ * @param element dürükleme işleminin başlatıldığı element
+ * @param event sürükleme olayı
+ */
+function dragStartHandler(element, event) {
+    event.dataTransfer.effectAllowed = "move";
+    console.log(`Dragging started for element:`, element);
+    console.log("drag event:", event);
+    // Ekstra işlemleri burada yapabilirsiniz
+    event.dataTransfer.setData("id", event.target.id);//format kısmına genelde text/plain, text/html gibi terimler yasılıyor. Ama anladığım kadarıyla buraya ne yazdıysak get Data kısmına da aynısını yazmamız yeterli
+}
 
+/**
+ *
+ * @param element
+ * @param event
+ */
+function dragOverHandler(element, event) {
+    event.preventDefault();
+    event.dataTransfer.effectAllowed = "move";
+}
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const scheduleTableElements = document.querySelectorAll(".schedule-table");
@@ -102,31 +135,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function afterAllTasksComplete() {
         console.log("Artık işlemler sonrası bir şey yapabilirsiniz!");
         // draggable="true" olan tüm elementleri seç
-        const draggableElements = document.querySelectorAll('[draggable="true"]');
+        const dragableElements = document.querySelectorAll('[draggable="true"]');
         const dropZones = document.querySelectorAll('.drop-zone');
         // Her bir draggable öğeye event listener ekle
-        draggableElements.forEach(element => {
-            element.addEventListener('dragstart', (event) => {
-                event.dataTransfer.effectAllowed = "move";
-                console.log(`Dragging started for element:`, element);
-                console.log("drag event:", event);
-                // Ekstra işlemleri burada yapabilirsiniz
-                console.log(event.target.innerHTML)
-               event.dataTransfer.setData("text/html", event.target.id);
-            });
+        dragableElements.forEach(element => {
+            element.addEventListener('dragstart', dragStartHandler.bind(this, element));
         });
-        dropZones.forEach(element =>{
-           element.addEventListener("drop",(event=>{
-               event.preventDefault();
-               console.log(element,"bırakıldı")
-               const data = event.dataTransfer.getData("text/html");
-               console.log(data);
-               event.target.appendChild(document.getElementById(data));
-           }));
-           element.addEventListener("dragover",(event=>{
-               event.preventDefault();
-               event.dataTransfer.effectAllowed = "move";
-           }))
+        dropZones.forEach(element => {
+            element.addEventListener("drop", dropHandler.bind(this, element));
+            element.addEventListener("dragover", dragOverHandler.bind(this, element)) // bu olmadan çalışmıyor
         });
     }
 
