@@ -78,9 +78,6 @@ function dropHandler(element, event) {
         let dragedElement = document.querySelector('[data-id="' + dragElementId + '"');//todo document yerine uygun bir element seçilmeli. data-id document içerinde birden fazla olabilir.
         let scheduleModal = new Modal();
         let bootstrapScheduleModal = new bootstrap.Modal(scheduleModal.modal);
-        let timeNumber = element.getAttribute("data-time");
-        let schedule_time = timeNumber.padStart(2, "0") + ".00-" + timeNumber.padStart(2, "0") + ".50";
-        let lesson_id = dragedElement.getAttribute("data-id").match(/\d+$/)[0]; // Sondaki sayıyı bul
         let lesson_hours = dragedElement.querySelector("span.badge").innerText
         let modalContentHTML = `
             <div class="form-floating mb-3">

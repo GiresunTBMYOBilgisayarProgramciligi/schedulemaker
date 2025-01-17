@@ -154,15 +154,10 @@ class ScheduleController extends Controller
                 /*
                  * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
-                /**
-                 * javascript tarafında hangi saat aralığında işlem yapıldığını tespit etmek için data-time özniteliğinden iletilecek veri.
-                 * ders saatleri 08.00-08.50 ile başladığı için i değerine 8 ekleniyor
-                 */
-                $data_time = $i + 8;
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
                     $out .= '
-                            <td data-time="' . $data_time . '">
+                            <td>
                                 <div id="lesson-' . $tableColumn->lesson_id . '" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . (new LessonController())->getLesson($tableColumn->lesson_id)->getFullName() . '</div>
@@ -180,7 +175,7 @@ class ScheduleController extends Controller
                      */
                     if ($tableColumn) {
                         $out .= '
-                        <td class="drop-zone"  data-time="' . $data_time . '">
+                        <td class="drop-zone">
                         
                         </td>';
                     } else {
@@ -188,7 +183,7 @@ class ScheduleController extends Controller
                          * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
                          */
                         $out .= '
-                        <td class="bg-danger"  data-time="' . $data_time . '">
+                        <td class="bg-danger">
                         
                         </td>';
                     }
@@ -281,5 +276,28 @@ class ScheduleController extends Controller
             echo $e->getMessage();
             return 0;
         }
+    }
+
+    public function saveSchedule(Schedule $new_schedule): array
+    {//todo düzenlenmesi gerekebilir.
+        try {
+            // Yeni kullanıcı verilerini bir dizi olarak alın
+            $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
+
+            // Dinamik SQL sorgusu oluştur
+            $sql = $this->createInsertSQL($new_schedule_arr);
+            // Hazırlama ve parametre bağlama
+            $q = $this->database->prepare($sql);
+            $q->execute($new_schedule_arr);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Benzersizlik hatası." . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
+
+        return ["status" => "success"];
     }
 }
