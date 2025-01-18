@@ -75,9 +75,9 @@ function dropHandler(element, event) {
          */
         console.log(element)
         console.log(event)
-        if(element.querySelector("[data-id]")){
-            let toast =new Toast();
-            toast.prepareToast("Hata","Bu alana ders ekleyemezsiniz","danger");
+        if (element.querySelector("[data-id]")) {
+            let toast = new Toast();
+            toast.prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
             return;
         }
         const dragElementId = event.dataTransfer.getData("id");
@@ -85,27 +85,41 @@ function dropHandler(element, event) {
         let scheduleModal = new Modal();
         let lesson_hours = dragedElement.querySelector("span.badge").innerText
         let modalContentHTML = `
-            <div class="form-floating mb-3">
-                <input class="form-control" id="selected_hours" type="number" value="${lesson_hours}" min=1 max=${lesson_hours}>
-                <label for="selected_hours" >Eklenecek Ders Saati</label>
-            </div>
-            <div class="mb-3">
-                <select id="classroom" class="form-select">
-                  <option selected>Bir Sınıf Seçin</option>
-                  <option value="D1">D1</option>
-                  <option value="D2">D2</option>
-                  <option value="D3">D3</option>
-                </select>
-            </div>
+            <form>
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="selected_hours" type="number" value="${lesson_hours}" min=1 max=${lesson_hours}>
+                    <label for="selected_hours" >Eklenecek Ders Saati</label>
+                </div>
+                <div class="mb-3">
+                    <select id="classroom" class="form-select" required>
+                      <option value=""> Bir Sınıf Seçin</option>
+                      <option value="D1">D1</option>
+                      <option value="D2">D2</option>
+                      <option value="D3">D3</option>
+                    </select>
+                </div>
+            </form>
             `;
 
-        scheduleModal.prepareModal("Sınıf Seçimi", "");
+        scheduleModal.prepareModal("Sınıf ve Saat seçimi", "", true, false);
         scheduleModal.showModal();
         scheduleModal.addSpinner();
-        scheduleModal.prepareModal("Uygun Sınıfı", modalContentHTML);
-        scheduleModal.cancelButton.textContent = gettext.ok
-        scheduleModal.cancelButton.addEventListener("click", event => {
+        //todo Uygun sınıf listesini al modalContentHTML a ekle
+        scheduleModal.prepareModal("Sınıf ve Saat seçimi", modalContentHTML, true, false);
+        let classroomSelectForm=scheduleModal.body.querySelector("form");
+        scheduleModal.confirmButton.addEventListener("click", () => {
+            classroomSelectForm.dispatchEvent(new Event("submit"));
+        })
+        classroomSelectForm.addEventListener("submit", function() {
+            event.preventDefault();
+            /**
+             * Modal içerisinden seçilmiş derslik verizini al
+             */
             let selectedClassroom = scheduleModal.body.querySelector("#classroom").value
+            if (selectedClassroom === "") {
+                new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
+                return;
+            }
             let selectedHours = scheduleModal.body.querySelector("#selected_hours").value
             let scheduleTable = element.closest("table")
             let droppedRowIndex = element.closest("tr").rowIndex
@@ -124,6 +138,7 @@ function dropHandler(element, event) {
                 //saatlerin tamamı bittiyse listeden sil
                 dragedElement.remove();
             }
+            scheduleModal.closeModal();
         })
     }
 }

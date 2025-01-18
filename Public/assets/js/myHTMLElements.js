@@ -32,7 +32,7 @@ class Modal {
         this.modal.setAttribute("aria-hidden", "true");
 
         this.dialog = document.createElement("div");
-        this.dialog.classList.add("modal-dialog",sizes[size]);
+        this.dialog.classList.add("modal-dialog", sizes[size]);
 
         this.content = document.createElement("div");
         this.content.classList.add("modal-content");
@@ -96,14 +96,19 @@ class Modal {
         this.spinner.remove();
     }
 
-    prepareModal(title = "", content = "", confirmButton = false) {
+    prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true) {
         this.title.innerHTML = title.trim();
         this.body.innerHTML = content.trim()
-        this.cancelButton.textContent = gettext.close;
-        if (!confirmButton) {
+
+        if (!showConfirmButton) {
             this.confirmButton.remove();
         } else {
             this.confirmButton.textContent = gettext.ok;
+        }
+        if (!showCancelButton) {
+            this.cancelButton.remove()
+        } else {
+            this.cancelButton.textContent = gettext.close;
         }
         //Kapatıldığında modal sayfadan silinecek
         this.cancelButton.addEventListener("click", () => {
@@ -111,6 +116,7 @@ class Modal {
             this.modal.remove()
         })
     }
+
     showModal() {
         if (this.isOpen) {
             console.warn("Modal zaten açık.");
@@ -124,6 +130,7 @@ class Modal {
             this.modal.remove();
         });
     }
+
     closeModal() {
         // Bootstrap modal kapatma işlemi
         const bootstrapModal = bootstrap.Modal.getInstance(this.modal);
@@ -137,6 +144,7 @@ class Modal {
         });
     }
 }
+
 class Toast {
     constructor() {
         this.toast = null;
