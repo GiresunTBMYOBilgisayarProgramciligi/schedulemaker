@@ -13,11 +13,12 @@ document.addEventListener("DOMContentLoaded", function () {
         form.addEventListener("submit", handleAjaxDelete);
     });
 
-
+    /**
+     *
+     * @type {Modal}
+     * @see /assets/js/myHTMLElements.js
+     */
     const modal = new Modal();
-    body.appendChild(modal.modal);
-
-    var bootstrapModal = new bootstrap.Modal(modal.modal);
 
     function handleAjaxForm(event) {
         event.preventDefault();
@@ -26,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modal.prepareModal(form.getAttribute("title"));
         modal.addSpinner();
-        bootstrapModal.show();
+        modal.showModal();
 
         fetch(form.action, {
             method: form.method || "POST",
@@ -68,7 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modal.prepareModal(gettext.confirmDelete, gettext.deleteMessage, true)
         modal.confirmButton.textContent=gettext.delete
-        bootstrapModal.show()
+        modal.showModal()
         modal.confirmButton.addEventListener("click", () => {
 
             modal.addSpinner();

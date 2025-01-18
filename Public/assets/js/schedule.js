@@ -73,11 +73,16 @@ function dropHandler(element, event) {
         /*
          * Tabloya bırakma işlemleri
          */
+        console.log(element)
+        console.log(event)
+        if(element.querySelector("[data-id]")){
+            let toast =new Toast();
+            toast.prepareToast("Hata","Bu alana ders ekleyemezsiniz","danger");
+            return;
+        }
         const dragElementId = event.dataTransfer.getData("id");
-        console.log(dragElementId);
         let dragedElement = document.querySelector('[data-id="' + dragElementId + '"');//todo document yerine uygun bir element seçilmeli. data-id document içerinde birden fazla olabilir.
         let scheduleModal = new Modal();
-        let bootstrapScheduleModal = new bootstrap.Modal(scheduleModal.modal);
         let lesson_hours = dragedElement.querySelector("span.badge").innerText
         let modalContentHTML = `
             <div class="form-floating mb-3">
@@ -95,7 +100,7 @@ function dropHandler(element, event) {
             `;
 
         scheduleModal.prepareModal("Sınıf Seçimi", "");
-        bootstrapScheduleModal.show();
+        scheduleModal.showModal();
         scheduleModal.addSpinner();
         scheduleModal.prepareModal("Uygun Sınıfı", modalContentHTML);
         scheduleModal.cancelButton.textContent = gettext.ok
@@ -153,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function programChangeHandle() {
         // todo program body içerisine spinner ekle
         let modal = new Modal();
-        let bootstrapModal = new bootstrap.Modal(modal.modal);
 
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         var data = new FormData();
