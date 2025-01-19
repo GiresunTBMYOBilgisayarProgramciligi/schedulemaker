@@ -136,52 +136,54 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
+     * bırakılan alanda başka ders olup olmadığını ve grup işlemlerini kontrol eder
      * Bırakılan alandaki ders ile bırakılan derslerin gruplarının olup olmadığını varsa farklı olup olmadığını kontrol eder
      * @param dropZone
      * @param draggedElement
      */
-    function checkLessonGroup(dropZone, draggedElement) {
-        let existLesson = dropZone.querySelector('[id^=\"scheduleTable-\"]')
-        let existCode = existLesson.getAttribute("data-lesson-code")
-        let currentCode = draggedElement.getAttribute("data-lesson-code")
-        let existMatch = existCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
-        let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
-
-        if (existMatch && currentMatch) {
-            if (existMatch[1] === currentMatch[1]) {
-                // eğer iki ders aynı ise
-                new Toast().prepareToast("Hata", "Lütfen farklı bir ders seçin", "danger");
+    function checkLessonCrash(dropZone, draggedElement) {
+        //todo bu fonksiyona tablo parametresi ve saat de girilecek. sonraki saatler için de çalışma kontrolü yapılacak. sonrasında ekleme yapılacka
+        if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
+            //eğer zeten iki grup eklenmişse
+            if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
+                console.log("Zaten iki ders var")
+                new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
                 return false;
-            }
-            let existGroup = existMatch[2]; // Noktadan sonraki sayı
+            } else {
+                let existLesson = dropZone.querySelector('[id^=\"scheduleTable-\"]')
+                let existCode = existLesson.getAttribute("data-lesson-code")
+                let currentCode = draggedElement.getAttribute("data-lesson-code")
+                let existMatch = existCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
+                let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
 
-            let currentGroup = currentMatch[2]; // Noktadan sonraki sayı
-            if (existGroup === currentGroup) {
-                new Toast().prepareToast("Hata", "Gruplar aynı olamaz", "danger");
-                return false;
+                if (existMatch && currentMatch) {
+                    if (existMatch[1] === currentMatch[1]) {
+                        // eğer iki ders aynı ise
+                        console.log("İki ders aynı")
+                        new Toast().prepareToast("Hata", "Lütfen farklı bir ders seçin", "danger");
+                        return false;
+                    }
+                    let existGroup = existMatch[2]; // Noktadan sonraki sayı
+
+                    let currentGroup = currentMatch[2]; // Noktadan sonraki sayı
+                    if (existGroup === currentGroup) {
+                        console.log("Gruplar aynı")
+                        new Toast().prepareToast("Hata", "Gruplar aynı olamaz", "danger");
+                        return false;
+                    }
+                } else {
+                    console.log("burada bir ders var ve gruplu değil, yada eklenen ders gruplu değil")
+                    new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
+                    return false;
+                }
             }
-        } else {
-            new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
-            return false;
         }
-
-        return true
+        return true;
     }
 
     function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table")
         if (!checkSeason(table.dataset['season'], draggedElement.dataset['season'])) return;
-        /**
-         * Bırakılan alanda başka bir dersin varlığı kontrol ediliyor.
-         * todo eğer ders kodu aynı ise hata ver
-         */
-        if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
-            //eğer zeten iki grup eklenmişse
-            if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
-                new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
-                return false;
-            } else if (!checkLessonGroup(dropZone, draggedElement)) return;
-        }
 
         let scheduleModal = new Modal();
         let lesson_hours = draggedElement.querySelector("span.badge").innerText
@@ -207,10 +209,12 @@ document.addEventListener("DOMContentLoaded", function () {
         scheduleModal.addSpinner();
         //todo Uygun sınıf listesini al modalContentHTML a ekle
         scheduleModal.prepareModal("Sınıf ve Saat seçimi", modalContentHTML, true, false);
+
         let classroomSelectForm = scheduleModal.body.querySelector("form");
         scheduleModal.confirmButton.addEventListener("click", () => {
             classroomSelectForm.dispatchEvent(new Event("submit"));
         })
+
         classroomSelectForm.addEventListener("submit", function (event) {
             event.preventDefault();
             /**
@@ -221,19 +225,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                 return;
             }
+
             let selectedHours = scheduleModal.body.querySelector("#selected_hours").value
             //dersin bırakıldığı satırın tablo içindeki index numarası
             let droppedRowIndex = dropZone.closest("tr").rowIndex
             //dersin bırakıldığı sütunun satır içerisindeki index numarası
             let droppedCellIndex = dropZone.cellIndex
+
+            // çakışmaları kontrol et
+            for (let i = 0; i < selectedHours; i++) {
+                let row = table.rows[droppedRowIndex + i];
+                let cell = row.cells[droppedCellIndex];
+                if (!checkLessonCrash(cell,draggedElement)){
+                    new Toast().prepareToast("Çakışma",(i+1)+". satte çakışma var")
+                    return;
+                }
+            }
+
             /**
              * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
              */
             for (let i = 0; i < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
+
                 let lesson = draggedElement.cloneNode(true)
                 lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
+                //todo sonraki alanların dolu olup olmadığı kontrol edilmeli
                 cell.appendChild(lesson);
                 //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
                 lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (i + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
