@@ -128,7 +128,7 @@ class ScheduleController extends Controller
         }
         $out =
             '
-            <table class="table table-bordered table-sm">
+            <table class="table table-bordered table-sm" ' . $season . '>
                                 <thead>
                                 <tr>
                                     <th>#</th>
@@ -147,7 +147,7 @@ class ScheduleController extends Controller
             $out .=
                 '
                 <tr>
-                    <td ' . $season . '>
+                    <td>
                     ' . $times[$i] . '
                     </td>';
             foreach ($tableRow as $tableColumn) {
@@ -156,11 +156,17 @@ class ScheduleController extends Controller
                  */
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
+                    $lesson =(new LessonController())->getLesson($tableColumn->lesson_id);
                     $out .= '
-                            <td ' . $season . '>
-                                <div id="lesson-' . $tableColumn->lesson_id . '" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
+                            <td>
+                                <div 
+                                id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
+                                draggable="true" 
+                                class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
+                                data-id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
+                                data-lesson-code="'.$lesson->code.'">
                                     <div class="ms-2 me-auto">
-                                        <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . (new LessonController())->getLesson($tableColumn->lesson_id)->getFullName() . '</div>
+                                        <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . $lesson->getFullName() . '</div>
                                         <div id="classroom-' . $tableColumn->classroom_id . '">' . (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '</div>
                                     </div>
                                     <span class="badge bg-info rounded-pill"><i class="bi bi-door-open"></i>' . (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name . '</span>
@@ -175,7 +181,7 @@ class ScheduleController extends Controller
                      */
                     if ($tableColumn) {
                         $out .= '
-                        <td class="drop-zone"  ' . $season . '>
+                        <td class="drop-zone">
                         
                         </td>';
                     } else {
@@ -183,7 +189,7 @@ class ScheduleController extends Controller
                          * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
                          */
                         $out .= '
-                        <td class="bg-danger"  ' . $season . '>
+                        <td class="bg-danger">
                         
                         </td>';
                     }
