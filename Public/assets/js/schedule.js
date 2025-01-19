@@ -144,12 +144,18 @@ document.addEventListener("DOMContentLoaded", function () {
         let existLesson = dropZone.querySelector('[id^=\"scheduleTable-\"]')
         let existCode = existLesson.getAttribute("data-lesson-code")
         let currentCode = draggedElement.getAttribute("data-lesson-code")
-        let existMatch = existCode.match(/\.(\d+)$/);
-        let currentMatch = currentCode.match(/\.(\d+)$/);
+        let existMatch = existCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
+        let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
 
         if (existMatch && currentMatch) {
-            let existGroup = existMatch[1]; // Noktadan sonraki sayı
-            let currentGroup = currentMatch[1]; // Noktadan sonraki sayı
+            if (existMatch[1] === currentMatch[1]) {
+                // eğer iki ders aynı ise
+                new Toast().prepareToast("Hata", "Lütfen farklı bir ders seçin", "danger");
+                return false;
+            }
+            let existGroup = existMatch[2]; // Noktadan sonraki sayı
+
+            let currentGroup = currentMatch[2]; // Noktadan sonraki sayı
             if (existGroup === currentGroup) {
                 new Toast().prepareToast("Hata", "Gruplar aynı olamaz", "danger");
                 return false;
