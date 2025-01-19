@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 var out = ``;
                 data.forEach((lesson) => {
                     out += `
-                  <div id="available-lesson-${lesson.id}" data-id="available-lesson-${lesson.id}" draggable="true" 
+                  <div id="available-lesson-${lesson.id}" draggable="true" 
                   class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                   data-season="${lesson.season}"
                   data-lesson-code="${lesson.code}">
@@ -167,6 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!checkSeason(table.dataset['season'], draggedElement.dataset['season'])) return;
         /**
          * Bırakılan alanda başka bir dersin varlığı kontrol ediliyor.
+         * todo eğer ders kodu aynı ise hata ver
          */
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
@@ -230,7 +231,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 cell.appendChild(lesson);
                 //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
                 lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (i + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
-                lesson.setAttribute("data-id", lesson.id)
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                 lesson.addEventListener('dragstart', dragStartHandler);
             }
@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {
          * Sürüklenen ve bırakılacak olan element
          * @type {Element}
          */
-        const draggedElement = document.getElementById(transferredData.id)
+        const draggedElement = document.getElementById(event.dataTransfer.getData("id"))
 
         // bırakma alanının sınıf bilgisine göre neresi olduğunu tespit ediyoruz.
         if (droppedZone.classList.contains("available-schedule-items")) {
@@ -306,7 +306,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function dragStartHandler(event) {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.dropEffect = "move";
-        // Ekstra işlemleri burada yapabilirsiniz
+        // id bilgisi aktarılyor
+        event.dataTransfer.setData("id", event.target.id)
+        //tüm data bilgileri aktarılıyor
         for (let data in event.target.dataset) {
             //format kısmına genelde text/plain, text/html gibi terimler yasılıyor. Ama anladığım kadarıyla buraya ne yazdıysak get Data kısmına da aynısını yazmamız yeterli
             event.dataTransfer.setData(data, event.target.dataset[data])
