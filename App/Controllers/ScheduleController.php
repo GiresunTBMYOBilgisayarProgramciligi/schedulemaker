@@ -111,7 +111,7 @@ class ScheduleController extends Controller
     public function createScheduleTable(array $filters = []): string
     {
         $schedules = $this->getSchedules($filters);
-
+        $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
         $tableRows = [
             "08.00-08.50" => (object)$this->emptyWeek,
             "09.00-08.50" => (object)$this->emptyWeek,
@@ -147,7 +147,7 @@ class ScheduleController extends Controller
             $out .=
                 '
                 <tr>
-                    <td>
+                    <td ' . $season . '>
                     ' . $times[$i] . '
                     </td>';
             foreach ($tableRow as $tableColumn) {
@@ -157,7 +157,7 @@ class ScheduleController extends Controller
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
                     $out .= '
-                            <td>
+                            <td ' . $season . '>
                                 <div id="lesson-' . $tableColumn->lesson_id . '" draggable="true" class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . (new LessonController())->getLesson($tableColumn->lesson_id)->getFullName() . '</div>
@@ -175,7 +175,7 @@ class ScheduleController extends Controller
                      */
                     if ($tableColumn) {
                         $out .= '
-                        <td class="drop-zone">
+                        <td class="drop-zone"  ' . $season . '>
                         
                         </td>';
                     } else {
@@ -183,7 +183,7 @@ class ScheduleController extends Controller
                          * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
                          */
                         $out .= '
-                        <td class="bg-danger">
+                        <td class="bg-danger"  ' . $season . '>
                         
                         </td>';
                     }
