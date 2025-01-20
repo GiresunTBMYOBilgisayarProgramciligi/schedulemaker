@@ -236,8 +236,8 @@ document.addEventListener("DOMContentLoaded", function () {
             for (let i = 0; i < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
-                if (!checkLessonCrash(cell,draggedElement)){
-                    new Toast().prepareToast("Çakışma",(i+1)+". satte çakışma var")
+                if (!checkLessonCrash(cell, draggedElement)) {
+                    new Toast().prepareToast("Çakışma", (i + 1) + ". satte çakışma var")
                     return;
                 }
             }
@@ -248,10 +248,8 @@ document.addEventListener("DOMContentLoaded", function () {
             for (let i = 0; i < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
-
                 let lesson = draggedElement.cloneNode(true)
                 lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
-                //todo sonraki alanların dolu olup olmadığı kontrol edilmeli
                 cell.appendChild(lesson);
                 //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
                 lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (i + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
@@ -269,13 +267,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function dropTableToList(tableElement, draggedElement, dropZone) {
-        console.log("Table to List")
         if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
-        console.log("tableElement:", tableElement)
-        console.log("draggedElement:", draggedElement)
-        console.log("dropZone:", dropZone)
         //listede taşınan dersin varlığını kontrol et
-        console.log("draggedElement.id:", draggedElement.id)
+        let draggedElementIdInList = draggedElement.id.replace("scheduleTable", "available"); // bırakılan dersin liste id numarası
+        draggedElementIdInList = draggedElementIdInList.replace(/-\d+$/, ""); // Sondaki "-X" (ör. -1, -2, -3) kısmını kaldırır
+        if (dropZone.querySelector("#" + draggedElementIdInList)) {
+            // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
+            let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
+            let hoursInList = lessonInlist.querySelector("span.badge").innerText
+            lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
+            draggedElement.remove()
+
+        } else {
+            //eğer listede yoksa o ders listeye eklenir
+            draggedElement.id = draggedElementIdInList
+            dropZone.appendChild(draggedElement)
+            draggedElement.querySelector("span.badge").innerText = 1
+        }
+
 
     }
 
