@@ -140,9 +140,9 @@ document.addEventListener("DOMContentLoaded", function () {
      * Bırakılan alandaki ders ile bırakılan derslerin gruplarının olup olmadığını varsa farklı olup olmadığını kontrol eder
      * @param dropZone
      * @param draggedElement
+     * todo öğle arasına ders konulması engellenebilir
      */
     function checkLessonCrash(dropZone, draggedElement) {
-        //todo bu fonksiyona tablo parametresi ve saat de girilecek. sonraki saatler için de çalışma kontrolü yapılacak. sonrasında ekleme yapılacka
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
             if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
@@ -232,22 +232,34 @@ document.addEventListener("DOMContentLoaded", function () {
             //dersin bırakıldığı sütunun satır içerisindeki index numarası
             let droppedCellIndex = dropZone.cellIndex
 
+            let checkedHours = 0; //drop-zone olmayan alanlar atlanacağından Kontrol edilen saatlerin sayısını takip ediyoruz
             // çakışmaları kontrol et
-            for (let i = 0; i < selectedHours; i++) {
+            for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
+                // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla
+                if (!cell.classList.contains("drop-zone")) {
+                    continue;
+                }
                 if (!checkLessonCrash(cell, draggedElement)) {
                     new Toast().prepareToast("Çakışma", (i + 1) + ". satte çakışma var")
                     return;
                 }
+                checkedHours++
             }
-
+            let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
             /**
              * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
              */
-            for (let i = 0; i < selectedHours; i++) {
+            for (let i = 0; addedHours < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
+
+                // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla
+                if (!cell.classList.contains("drop-zone")) {
+                    continue;
+                }
+
                 let lesson = draggedElement.cloneNode(true)
                 lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
                 cell.appendChild(lesson);
@@ -255,6 +267,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (i + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                 lesson.addEventListener('dragstart', dragStartHandler);
+                addedHours++;
             }
             if (lesson_hours !== selectedHours) {
                 draggedElement.querySelector("span.badge").innerHTML = lesson_hours - selectedHours;

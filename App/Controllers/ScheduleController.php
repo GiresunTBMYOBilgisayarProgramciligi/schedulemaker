@@ -156,14 +156,14 @@ class ScheduleController extends Controller
                  */
                 if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
                     $tableColumn = (object)$tableColumn;
-                    $lesson =(new LessonController())->getLesson($tableColumn->lesson_id);
+                    $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
                     $out .= '
                             <td>
                                 <div 
                                 id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
                                 draggable="true" 
                                 class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                                data-lesson-code="'.$lesson->code.'">
+                                data-lesson-code="' . $lesson->code . '">
                                     <div class="ms-2 me-auto">
                                         <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . $lesson->getFullName() . '</div>
                                         <div id="classroom-' . $tableColumn->classroom_id . '">' . (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '</div>
@@ -178,7 +178,7 @@ class ScheduleController extends Controller
                     /*
                      * eğer true ise dropzone sınıflı bir sütun eklenir
                      */
-                    if ($tableColumn) {
+                    if ($tableColumn and $times[$i] !== "12.00-12.50") {
                         $out .= '
                         <td class="drop-zone">
                         
