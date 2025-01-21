@@ -301,8 +301,58 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-    function dropTableToTable(startTableElement, draggedElement, finishTableElement) {
+    function dropTableToTable(table, draggedElement, dropZone) {
+        //dersin bırakıldığı satırın tablo içindeki index numarası
+        let droppedRowIndex = dropZone.closest("tr").rowIndex
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        let droppedCellIndex = dropZone.cellIndex
+        let row = table.rows[droppedRowIndex];
+        let cell = row.cells[droppedCellIndex];
+        if (!checkLessonCrash(cell, draggedElement)) return;
+        cell.appendChild(draggedElement);
 
+        /* dersleri toplu halde taşıma işlemi için aşağıdaki kodları yazdım. ama çok sorun çıkartıyor tek tek taşıyacağım
+        let draggedLessonOrder = draggedElement.id.match(/-(\d+)$/)[1];
+        let lessonID = draggedElement.id.replace(/-\d+$/, "");
+        let lessonsInTable = table.querySelectorAll('[id^="' + lessonID + '"]');
+        lessonsInTable.forEach((lesson) => {
+            lesson.remove()
+        })
+        //dersin bırakıldığı satırın tablo içindeki index numarası
+        let droppedRowIndex = dropZone.closest("tr").rowIndex
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        let droppedCellIndex = dropZone.cellIndex
+
+        function checkTable(rowIndex) {
+            // tablo sınırlarına dışına çıkarsa 0. satır başlık satırı
+            if (rowIndex < 1 || rowIndex > table.rows.length - 1) {
+                new Toast().prepareToast("Hata", "Ders belirtilen alana sığmadı", "danger")
+                return false;
+            }
+            return true;
+        }
+
+        let luchtimePassed = false;
+        for (let i = 0; i < lessonsInTable.length; i++) {
+            let lesson = lessonsInTable[i];
+            let lessonOrder = lesson.id.match(/-(\d+)$/)[1];
+            let shift = parseInt(draggedLessonOrder) - parseInt(lessonOrder);//dersin sürüklenen derse göre konumunu belirlemek için kullaılır
+            let newRowIndex = parseInt(droppedRowIndex) - shift
+            if (luchtimePassed) newRowIndex += 1;
+            if (!checkTable(newRowIndex)) return;
+            let row = table.rows[newRowIndex];
+            let cell = row.cells[droppedCellIndex];
+            if (!checkTable(cell, newRowIndex)) return;
+            if (!checkLessonCrash(cell, lesson)) return;
+            // Eğer hücre "drop-zone" sınıfına sahip değilse satırı bir arttır. Öğle arası kontrolü
+            if (!cell.classList.contains("drop-zone")) {
+                newRowIndex += 1;
+                luchtimePassed = true;
+                let row = table.rows[newRowIndex];
+                cell = row.cells[droppedCellIndex];
+            }
+            cell.appendChild(lesson);
+        }*/
     }
 
     /**
@@ -320,10 +370,13 @@ document.addEventListener("DOMContentLoaded", function () {
          * Bırakma eyleminin yapıldığı elementin çocuklarından birisi. üzerine bırakılan element
          */
         const droppedTargetElement = event.target
+        /**
+         * alanlar snake case olmalı
+         * @type {{}}
+         */
         let transferredData = {};
         /**
          * Sürükleme olayı ile gönderilen veriler transferredData objesine aktarılıyor.
-         * todo sanki id den başkası burada kullanılmıyor. diğerlerine fonksiyon içerisinde ihtiyaç duyulabilir
          */
         for (let data_index in event.dataTransfer.types) {
             transferredData[event.dataTransfer.types[data_index]] = event.dataTransfer.getData(event.dataTransfer.types[data_index])
@@ -333,15 +386,28 @@ document.addEventListener("DOMContentLoaded", function () {
          * @type {Element}
          */
         const draggedElement = document.getElementById(event.dataTransfer.getData("id"))
-
-        // bırakma alanının sınıf bilgisine göre neresi olduğunu tespit ediyoruz.
-        if (droppedZone.classList.contains("available-schedule-items")) {
-            let table = draggedElement.closest("table");
-            dropTableToList(table, draggedElement, droppedZone)
-        } else {
-            // Tabloya bırakma işlemleri
-            let list = draggedElement.closest(".available-schedule-items");
-            dropListToTable(list, draggedElement, droppedZone)
+        switch (transferredData.start_element) {
+            case "list":
+                if (droppedZone.classList.contains("available-schedule-items")) {
+                    // Listeden Listeye
+                    return;
+                } else {
+                    // Listeden Tabloya bırakma işlemleri
+                    let list = draggedElement.closest(".available-schedule-items");
+                    dropListToTable(list, draggedElement, droppedZone)
+                }
+                break;
+            case "table":
+                if (droppedZone.classList.contains("available-schedule-items")) {
+                    //Tablodan Listeye
+                    let table = draggedElement.closest("table");
+                    dropTableToList(table, draggedElement, droppedZone)
+                } else {
+                    //Tablodan Tabloya
+                    let table = draggedElement.closest("table");
+                    dropTableToTable(table, draggedElement, droppedZone)
+                }
+                break;
         }
     }
 
@@ -359,6 +425,12 @@ document.addEventListener("DOMContentLoaded", function () {
             //format kısmına genelde text/plain, text/html gibi terimler yasılıyor. Ama anladığım kadarıyla buraya ne yazdıysak get Data kısmına da aynısını yazmamız yeterli
             event.dataTransfer.setData(data, event.target.dataset[data])
         }
+        if (event.target.closest("table")) {
+            event.dataTransfer.setData("start_element", "table")
+        } else if (event.target.closest(".available-schedule-items")) {
+            event.dataTransfer.setData("start_element", "list")
+        }
+
     }
 
     /**
