@@ -263,8 +263,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 let lesson = draggedElement.cloneNode(true)
                 lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
                 cell.appendChild(lesson);
+                let existLesosnInTableCount = table.querySelectorAll('[id^=\"scheduleTable-\"]').length
                 //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
-                lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (i + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
+                lesson.id = lesson.id.replace("available", "scheduleTable") + '-' + (existLesosnInTableCount + 1) // i+1 kısmı ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                 lesson.addEventListener('dragstart', dragStartHandler);
                 addedHours++;
