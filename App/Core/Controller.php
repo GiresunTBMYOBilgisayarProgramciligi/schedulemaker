@@ -69,4 +69,57 @@ class Controller
             return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
         }
     }
+
+    /**
+     * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir
+     * @param array $filters
+     * @return array
+     */
+    public function getListByFilters(array $filters)
+    {
+        try {
+            // Koşullar ve parametreler
+            $conditions = [];
+            $parameters = [];
+
+            // Parametrelerden WHERE koşullarını oluştur
+            foreach ($filters as $column => $value) {
+                $conditions[] = "$column = :$column";
+                $parameters[":$column"] = $value;
+            }
+            // WHERE ifadesini oluştur
+            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // Sorguyu hazırla
+            $sql = "SELECT * FROM $this->table_name $whereClause";
+            $stmt = $this->database->prepare($sql);
+            // Parametreleri bağla
+            foreach ($parameters as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            $stmt->execute();
+
+            // Verileri işle
+            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $models = [];
+
+            if ($result) {
+                // Alt sınıfta table_name tanımlı mı kontrol et
+                if (!property_exists($this, 'modelName')) {
+                    throw new \Exception('Model Adı özelliği tanımlı değil.');
+                }
+                foreach ($result as $data) {
+                    $model = new $this->modelName();
+                    $model->fill($data);
+                    $models[] = $model;
+                }
+            }
+            return $models;
+
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+            return [];
+        }
+    }
 }

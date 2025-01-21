@@ -10,6 +10,7 @@ use PDOException;
 class DepartmentController extends Controller
 {
     protected string $table_name = "departments";
+    protected string $modelName ="App\Models\Department";
 
     public function getDepartment($id)
     {

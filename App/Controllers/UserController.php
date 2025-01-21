@@ -10,6 +10,7 @@ use PDOException;
 class UserController extends Controller
 {
     protected string $table_name = "users";
+    protected string $modelName ="App\Models\User";
 
     public function getUser($id)
     {

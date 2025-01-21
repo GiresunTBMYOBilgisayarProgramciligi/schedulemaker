@@ -10,6 +10,7 @@ class ScheduleController extends Controller
 {
 
     protected string $table_name = 'schedule';
+    protected string $modelName ="App\Models\Schedule";
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır. True değeri o gün program düzelemeye uygun anlamına gelir.
      * @var true[]
@@ -218,12 +219,14 @@ class ScheduleController extends Controller
                     $lessonFilters['season'] = $filters['season'];
                 }
                 $lessonFilters['program_id'] = $filters['owner_id'];
-                $lessonsList = (new LessonController())->getLessonsListByFilters($lessonFilters);
+                $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
                 foreach ($lessonsList as $lesson) {
-                    $this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
-                    $lesson->lecturer_name = $lesson->getLecturer()->getFullName();
-                    $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
-                    $available_lessons[] = $lesson;
+                    if (!$this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id])) {
+                        $lesson->lecturer_name = $lesson->getLecturer()->getFullName();
+                        $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
+                        $available_lessons[] = $lesson;
+                    }
+
                 }
             }
         }
@@ -241,10 +244,15 @@ class ScheduleController extends Controller
                 if (count($schedules) < $lesson->hours) {
                     return false;
                 } else return true;
-            }
+            }//todo diğer türler için işlemler
         }
     }
 
+    /**
+     * belirtilen filtreye uyan schedule satırlarının sayısını döner
+     * @param array $filters
+     * @return false|int|mixed
+     */
     public function getCount(array $filters = [])
     {
         try {

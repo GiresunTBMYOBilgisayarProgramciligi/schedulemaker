@@ -10,6 +10,7 @@ use PDOException;
 class ProgramController extends Controller
 {
     protected string $table_name = "programs";
+    protected string $modelName ="App\Models\Program";
 
     public function getProgram($id)
     {

@@ -11,6 +11,8 @@ class LessonController extends Controller
 {
     protected string $table_name = "lessons";
 
+    protected string $modelName ="App\Models\Lesson";
+
     public function getLesson($id)
     {
         if (!is_null($id)) {
@@ -77,56 +79,6 @@ class LessonController extends Controller
             return [];
         }
         return $lessons;
-    }
-
-    /**
-     * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir
-     * todo her Controller a eklenebilir. ana sınıfa da eklenebilir.
-     * @param array $filters
-     * @return array
-     */
-    public function getLessonsListByFilters(array $filters)
-    {
-        try {
-            // Koşullar ve parametreler
-            $conditions = [];
-            $parameters = [];
-
-            // Parametrelerden WHERE koşullarını oluştur
-            foreach ($filters as $column => $value) {
-                $conditions[] = "$column = :$column";
-                $parameters[":$column"] = $value;
-            }
-            // WHERE ifadesini oluştur
-            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
-
-            // Sorguyu hazırla
-            $sql = "SELECT * FROM $this->table_name $whereClause";
-            $stmt = $this->database->prepare($sql);
-            // Parametreleri bağla
-            foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            $stmt->execute();
-
-            // Verileri işle
-            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $lessons = [];
-
-            if ($result) {
-                foreach ($result as $lesson_data) {
-                    $lesson = new Lesson();
-                    $lesson->fill($lesson_data);
-                    $lessons[] = $lesson;
-                }
-            }
-            return $lessons;
-
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
     }
 
     /**
