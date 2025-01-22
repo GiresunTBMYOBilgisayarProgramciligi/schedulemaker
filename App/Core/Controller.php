@@ -84,15 +84,41 @@ class Controller
 
             // Parametrelerden WHERE koşullarını oluştur
             foreach ($filters as $column => $value) {
-                $conditions[] = "$column = :$column";
-                $parameters[":$column"] = $value;
+                $isNotCondition = false;
+
+                // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
+                if (str_starts_with($column, '!')) {
+                    $isNotCondition = true;
+                    $column = ltrim($column, '!'); // '!' işaretini kaldır
+                }
+
+                if (is_array($value) and count($value)>0) {
+                    // Eğer değer bir array ise, IN ifadesi oluştur
+                    $placeholders = [];
+                    foreach ($value as $index => $item) {
+                        $placeholder = ":{$column}_{$index}";
+                        $placeholders[] = $placeholder;
+                        $parameters[$placeholder] = $item;
+                    }
+                    $conditions[] = $isNotCondition
+                        ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
+                        : "$column IN (" . implode(", ", $placeholders) . ")";
+                } else {
+                    // Normal eşitlik kontrolü
+                    $conditions[] = $isNotCondition
+                        ? "$column != :$column"
+                        : "$column = :$column";
+                    $parameters[":$column"] = $value;
+                }
             }
+
             // WHERE ifadesini oluştur
             $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
 
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";
             $stmt = $this->database->prepare($sql);
+
             // Parametreleri bağla
             foreach ($parameters as $key => $value) {
                 $stmt->bindValue($key, $value);
@@ -118,8 +144,9 @@ class Controller
             return $models;
 
         } catch (\Exception $e) {
-            echo $e->getMessage();
-            return [];
+            throw new \Exception($e->getMessage());
+            //todo hata yönetimi üzerine çalışırken eğer başka bir try içerisinde çalıştırılan bir metod ise yakalanan hataların yeniden
+            // throw ile fırlatılması gerekiyor. Bunun tüm kodlarda analiz edip düzenlemek lazım
         }
     }
 }

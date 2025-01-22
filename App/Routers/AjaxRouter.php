@@ -554,4 +554,14 @@ class AjaxRouter extends Router
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($lessons);
     }
+
+    public function getAvailableClassroomForScheduleAction()
+    {
+        if ($this->checkAjax()) {
+            $scheduleController = new ScheduleController();
+            $classrooms = $scheduleController->availableClassrooms($this->data);
+        };
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($classrooms);
+    }
 }

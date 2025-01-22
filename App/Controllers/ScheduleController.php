@@ -10,7 +10,7 @@ class ScheduleController extends Controller
 {
 
     protected string $table_name = 'schedule';
-    protected string $modelName ="App\Models\Schedule";
+    protected string $modelName = "App\Models\Schedule";
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır. True değeri o gün program düzelemeye uygun anlamına gelir.
      * @var true[]
@@ -54,6 +54,7 @@ class ScheduleController extends Controller
      * filter ile belirtrilen alanlara uyan Schedule modellerini döner
      * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
      * @return array Schedule Modellerinden oluşan bir array
+     * todo bu metodun işini getListByFilter metoru yapıyor. kontroller yapılıp kaldırılmalı
      */
     public function getSchedules(array $filters = [])
     {
@@ -114,15 +115,15 @@ class ScheduleController extends Controller
         $schedules = $this->getSchedules($filters);
         $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
         $tableRows = [
-            "08.00-08.50" => (object)$this->emptyWeek,
-            "09.00-08.50" => (object)$this->emptyWeek,
-            "10.00-10.50" => (object)$this->emptyWeek,
-            "11.00-11.50" => (object)$this->emptyWeek,
-            "12.00-12.50" => (object)$this->emptyWeek,
-            "13.00-13.50" => (object)$this->emptyWeek,
-            "14.00-14.50" => (object)$this->emptyWeek,
-            "15.00-15.50" => (object)$this->emptyWeek,
-            "16.00-16.50" => (object)$this->emptyWeek
+            "08.00 - 08.50" => (object)$this->emptyWeek,
+            "09.00 - 08.50" => (object)$this->emptyWeek,
+            "10.00 - 10.50" => (object)$this->emptyWeek,
+            "11.00 - 11.50" => (object)$this->emptyWeek,
+            "12.00 - 12.50" => (object)$this->emptyWeek,
+            "13.00 - 13.50" => (object)$this->emptyWeek,
+            "14.00 - 14.50" => (object)$this->emptyWeek,
+            "15.00 - 15.50" => (object)$this->emptyWeek,
+            "16.00 - 16.50" => (object)$this->emptyWeek
         ];
         foreach ($schedules as $schedule) {
             $tableRows[$schedule->time] = $schedule->getWeek();
@@ -179,7 +180,7 @@ class ScheduleController extends Controller
                     /*
                      * eğer true ise dropzone sınıflı bir sütun eklenir
                      */
-                    if ($tableColumn and $times[$i] !== "12.00-12.50") {
+                    if ($tableColumn and $times[$i] !== "12.00 - 12.50") {
                         $out .= '
                         <td class="drop-zone">
                         
@@ -207,12 +208,10 @@ class ScheduleController extends Controller
      * @param array $filters
      * @return array
      */
-    public function availableLessons(array $filters = [])
+    public function availableLessons(array $filters = []): array
     {
-        $program_table_name = "";
         $available_lessons = [];
         if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
-            $program_table_name = $filters['owner_type'] . "s";
             if ($filters['owner_type'] == "program") {
                 $lessonFilters = [];
                 if (array_key_exists("season", $filters)) {
@@ -233,6 +232,69 @@ class ScheduleController extends Controller
         return $available_lessons;
     }
 
+    public function availableClassrooms(array $filters = [])
+    {
+        function generateScheduleFromText($startTimeRange, $hours)
+        {
+            $schedule = [];
+
+            // Başlangıç ve bitiş saatlerini ayır
+            [$start, $end] = explode(" - ", $startTimeRange);
+            $startHour = (int)explode(".", $start)[0]; // Saat kısmını al
+
+            for ($i = 0; $i < $hours; $i++) {
+                // Eğer saat 12'ye geldiyse öğle arası için atla
+                if ($startHour == 12) {
+                    $startHour = 13;
+                }
+
+                // Yeni başlangıç ve bitiş saatlerini oluştur
+                $newStart = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".00";
+                $newEnd = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".50";
+
+                // Listeye ekle
+                $schedule[] = "$newStart - $newEnd";
+
+                // Saat bilgisi bir sonraki saat için güncellenir
+                $startHour++;
+            }
+
+            return $schedule;
+        }
+        try {
+            $times = generateScheduleFromText($filters["time"], $filters["hours"]);
+            $available_classrooms = [];
+            $unavailable_classroom_ids = [];
+            if (array_key_exists('owner_type', $filters)) {
+                if ($filters['owner_type'] == "classroom") {
+                    $classroomSchedules = $this->getListByFilters(
+                        [
+                            "time" => $times,
+                            "owner_type" => $filters['owner_type'],
+
+                        ]
+                    );
+                    foreach ($classroomSchedules as $classroomSchedule) {
+                        if (!is_null($classroomSchedule->{$filters["day"]})){
+                            $unavailable_classroom_ids[] = $classroomSchedule->owner_id;
+                        }
+                    }
+                    $available_classrooms = (new ClassroomController())->getListByFilters(["!id" => $unavailable_classroom_ids]);
+                }
+            }
+        }
+        catch (\Exception $e) {
+            return ["status" => "error", "msg" => $e->getMessage()];//todo ajax respose kalıbı her yerde aynı olmalı bunu sağlamak için bir şeyler yapılabilir.
+        }
+
+        return ["status" => "success", "classrooms" => $available_classrooms];
+    }
+
+    /**
+     * Gelen owner_type a göre belirlenen koşulların sağlanıp sağlanmadığını kontrol ederek Takvimin tamamlanıp tamamlanmadığını döner
+     * @param array $filters kontrol edilecek Modelin bilgilerini içerir lesson, lecturer,program,department
+     * @return bool|void
+     */
     public function checkIsScheduleComplete(array $filters = [])
     {
         if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {

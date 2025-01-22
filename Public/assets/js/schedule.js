@@ -18,11 +18,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (scheduleTableElements.length < 1) {
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
+            data.append("type","lesson")
             promises.push(fetchAvailableLessons(data, availableItemElements[0]));
             promises.push(fetchScheduleTable(data, scheduleTableElements[0]));
         } else {
             for (var i = 0; i < scheduleTableElements.length; i++) {
                 data = new FormData(); // eski verileri silmek için yenile
+                data.append("type","lesson")
                 data.append("owner_type", "program");
                 data.append("owner_id", programSelect.value);
                 data.append("season", scheduleTableElements[i].getAttribute("data-season"));
@@ -181,12 +183,62 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
+    /**
+     *
+     * @param scheduleTime eklenecek dersin ilk saati
+     */
+    function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, event) {
+        console.log("Dersler alınıyor")
+        let data = new FormData();
+        data.append("hours", event.target.value);
+        data.append("time", scheduleTime)
+        data.append("day", "day" + dayIndex)
+        data.append("type","lesson")
+        data.append("owner_type","classroom")
+        //clear classroomSelect
+        classroomSelect.innerHTML=`<option value=""> Bir Sınıf Seçin</option>`;
+        fetch("/ajax/getAvailableClassroomForSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status==="error"){
+                    new Toast().prepareToast("Hata","Uygun ders listesi alınırken hata oluştu","danger");
+                    console.error(data.msg)
+                }else{
+                    data.classrooms.forEach((classroom) => {
+                        let option = document.createElement("option")
+                        option.value=classroom.name
+                        option.innerText=classroom.name
+                        classroomSelect.appendChild(option)
+                    })
+                }
+
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata","Uygun ders listesi alınırken hata oluştu","danger");
+                console.error(error);
+            });
+
+    }
+
     function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table")
         if (!checkSeason(table.dataset['season'], draggedElement.dataset['season'])) return;
 
         let scheduleModal = new Modal();
+
         let lesson_hours = draggedElement.querySelector("span.badge").innerText
+        //dersin bırakıldığı satırın tablo içindeki index numarası
+        let droppedRowIndex = dropZone.closest("tr").rowIndex
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        let droppedCellIndex = dropZone.cellIndex
+        // dersin bırakıldığı saat örn. 08.00-08.50
+        let scheduleTime = table.rows[droppedRowIndex].cells[0].innerText;
         let modalContentHTML = `
             <form>
                 <div class="form-floating mb-3">
@@ -195,10 +247,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
                 <div class="mb-3">
                     <select id="classroom" class="form-select" required>
-                      <option value=""> Bir Sınıf Seçin</option>
-                      <option value="D1">D1</option>
-                      <option value="D2">D2</option>
-                      <option value="D3">D3</option>
                     </select>
                 </div>
             </form>
@@ -206,9 +254,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         scheduleModal.prepareModal("Sınıf ve Saat seçimi", "", true, false);
         scheduleModal.showModal();
-        scheduleModal.addSpinner();
-        //todo Uygun sınıf listesini al modalContentHTML a ekle
         scheduleModal.prepareModal("Sınıf ve Saat seçimi", modalContentHTML, true, false);
+
+        let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours")
+        let classroomSelect = scheduleModal.body.querySelector("#classroom")
+        // ders saati değişince ders listesi çekilecek
+        selectedHoursInput.addEventListener("change", fetchAvailableClassrooms.bind(this, scheduleTime, droppedCellIndex - 1, classroomSelect))
+        selectedHoursInput.dispatchEvent(new Event("change"))
 
         let classroomSelectForm = scheduleModal.body.querySelector("form");
         scheduleModal.confirmButton.addEventListener("click", () => {
@@ -220,17 +272,13 @@ document.addEventListener("DOMContentLoaded", function () {
             /**
              * Modal içerisinden seçilmiş derslik verisini al
              */
-            let selectedClassroom = scheduleModal.body.querySelector("#classroom").value
+            let selectedClassroom = classroomSelect.value
             if (selectedClassroom === "") {
                 new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                 return;
             }
 
-            let selectedHours = scheduleModal.body.querySelector("#selected_hours").value
-            //dersin bırakıldığı satırın tablo içindeki index numarası
-            let droppedRowIndex = dropZone.closest("tr").rowIndex
-            //dersin bırakıldığı sütunun satır içerisindeki index numarası
-            let droppedCellIndex = dropZone.cellIndex
+            let selectedHours = selectedHoursInput.value
 
             let checkedHours = 0; //drop-zone olmayan alanlar atlanacağından Kontrol edilen saatlerin sayısını takip ediyoruz
             // çakışmaları kontrol et
@@ -247,10 +295,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 checkedHours++
             }
-            let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
+
             /**
              * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
              */
+            let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
             for (let i = 0; addedHours < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
                 let cell = row.cells[droppedCellIndex];
@@ -266,12 +315,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
                 lesson.id = lesson.id.replace("available", "scheduleTable")
-                console.log(lesson.id)
                 let existLessonInTableCount = table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
-                console.log('[id^=\"' + lesson.id + '\"]')
-                console.log("existLessonInTableCount:",existLessonInTableCount)
                 lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
-                console.log(lesson.id)
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                 lesson.addEventListener('dragstart', dragStartHandler);
                 addedHours++;
