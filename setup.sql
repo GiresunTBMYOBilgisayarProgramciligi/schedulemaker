@@ -10,7 +10,7 @@ use schedule_maker;
 create table if not exists schedule
 (
     id   int AUTO_INCREMENT,
-    type varchar(20),
+    type varchar(20), /* exam, lesson*/
     owner_type varchar(20),
     owner_id int,
     time varchar(20),
