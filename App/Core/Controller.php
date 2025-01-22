@@ -75,45 +75,48 @@ class Controller
      * @param array $filters
      * @return array
      */
-    public function getListByFilters(array $filters)
+    public function getListByFilters(array $filters = null)
     {
         try {
-            // Koşullar ve parametreler
-            $conditions = [];
-            $parameters = [];
+            if (!is_null($filters)) {
+                // Koşullar ve parametreler
+                $conditions = [];
+                $parameters = [];
 
-            // Parametrelerden WHERE koşullarını oluştur
-            foreach ($filters as $column => $value) {
-                $isNotCondition = false;
+                // Parametrelerden WHERE koşullarını oluştur
+                foreach ($filters as $column => $value) {
+                    $isNotCondition = false;
 
-                // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
-                if (str_starts_with($column, '!')) {
-                    $isNotCondition = true;
-                    $column = ltrim($column, '!'); // '!' işaretini kaldır
-                }
-
-                if (is_array($value) and count($value)>0) {
-                    // Eğer değer bir array ise, IN ifadesi oluştur
-                    $placeholders = [];
-                    foreach ($value as $index => $item) {
-                        $placeholder = ":{$column}_{$index}";
-                        $placeholders[] = $placeholder;
-                        $parameters[$placeholder] = $item;
+                    // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
+                    if (str_starts_with($column, '!')) {
+                        $isNotCondition = true;
+                        $column = ltrim($column, '!'); // '!' işaretini kaldır
                     }
-                    $conditions[] = $isNotCondition
-                        ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
-                        : "$column IN (" . implode(", ", $placeholders) . ")";
-                } else {
-                    // Normal eşitlik kontrolü
-                    $conditions[] = $isNotCondition
-                        ? "$column != :$column"
-                        : "$column = :$column";
-                    $parameters[":$column"] = $value;
-                }
-            }
 
-            // WHERE ifadesini oluştur
-            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+                    if (is_array($value) and count($value) > 0) {
+                        // Eğer değer bir array ise, IN ifadesi oluştur
+                        $placeholders = [];
+                        foreach ($value as $index => $item) {
+                            $placeholder = ":{$column}_{$index}";
+                            $placeholders[] = $placeholder;
+                            $parameters[$placeholder] = $item;
+                        }
+                        $conditions[] = $isNotCondition
+                            ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
+                            : "$column IN (" . implode(", ", $placeholders) . ")";
+                    } else {
+                        // Normal eşitlik kontrolü
+                        $conditions[] = $isNotCondition
+                            ? "$column != :$column"
+                            : "$column = :$column";
+                        $parameters[":$column"] = $value;
+                    }
+                }
+
+                // WHERE ifadesini oluştur
+                $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+            } else $whereClause = "";
+
 
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";
