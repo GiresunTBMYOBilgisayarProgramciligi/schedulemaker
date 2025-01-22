@@ -38,39 +38,39 @@ class Schedule extends Model
     /**
      * Pazartesi günü için time alanında belirlenen saatteki program bilgileri
      *  array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
+     * @var array|bool|null
      */
-    public ?array $day0 = null;
+    public array|bool|null $day0 = null;
     /**
      * Salı günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
-    public ?array $day1 = null;
+    public array|bool|null $day1 = null;
     /**
      * Çarşamba günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
-    public ?array $day2 = null;
+    public array|bool|null $day2 = null;
     /**
      * Perşembe günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
-    public ?array $day3 = null;
+    public array|bool|null $day3 = null;
     /**
      * Cuma günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
-    public ?array $day4 = null;
+    public array|bool|null $day4 = null;
     /**
      * Cumartesi günü için time alanında belirlenen saatteki program bilgileri
      *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
-    public ?array $day5 = null;
+    public array|bool|null $day5 = null;
 
     /**
      *
@@ -85,7 +85,8 @@ class Schedule extends Model
      * Tablo oluştururken günler döngüye sokulurken kullanılır
      * @return array
      */
-    public function getWeek(){
+    public function getWeek()
+    {
         return [
             $this->day0,
             $this->day1,
