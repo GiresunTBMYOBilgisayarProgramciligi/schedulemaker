@@ -187,11 +187,11 @@ class ScheduleController extends Controller
     }
 
     /**
-     * @param $startTimeRange
+     * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
      * @param int $hours
      * @return array
      */
-    private function generateTimesArrayFromText($startTimeRange, int $hours): array
+    public function generateTimesArrayFromText(string $startTimeRange, int $hours): array
     {
         $schedule = [];
 
@@ -356,11 +356,16 @@ class ScheduleController extends Controller
     }
 
     public function saveNew(Schedule $new_schedule): array
-    {//todo düzenlenmesi gerekebilir.
+    {
         try {
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
-
+            //dizi türündeki veriler serialize ediliyor
+            array_walk($new_schedule_arr, function (&$value) {
+                if (is_array($value)) {
+                    $value = serialize($value);
+                }
+            });
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_schedule_arr);
             // Hazırlama ve parametre bağlama

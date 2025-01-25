@@ -17,6 +17,7 @@ use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
+use App\Models\Schedule;
 use App\Models\User;
 
 class AjaxRouter extends Router
@@ -572,10 +573,10 @@ class AjaxRouter extends Router
             try {
                 $lessonController = new LessonController();
                 $scheduleController = new ScheduleController();
+                $classroomController = new ClassroomController();
                 if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
-                    //var_dump("saveScheduleAction this->data:",$this->data);
                     $crashFilters = ["owner_type" => "user",
                         "owner_id" => $lecturer->id,
                         "type" => "lesson",
@@ -583,7 +584,57 @@ class AjaxRouter extends Router
                         "day" => "day" . $this->data['day'],
                         "lesson_hours" => $this->data['lesson_hours'],];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {
-                        // todo saveSchedule
+                        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time_start'], $this->data['lesson_hours']);
+                        $classroom = $classroomController->getListByFilters(["name" => $this->data['classroom_name']])[0];
+                        foreach ($timeArray as $time) {
+                            // ders için
+                            $schedule = new Schedule();
+                            $day = [
+                                "lesson_id" => $this->data['lesson_id'],
+                                "classroom_id" => $classroom->id,
+                                "lecturer_id" => $lecturer->id,
+                            ];
+                            $schedule->fill([
+                                "type" => "lesson",
+                                "owner_type" => "lesson",
+                                "owner_id" => $lesson->id,
+                                "day" . $this->data['day'] => $day,
+                                "time" => $time,
+                                "season" => $this->data['season'],
+                            ]);
+                            $scheduleController->saveNew($schedule);
+                            // hoca için
+                            $schedule->fill([
+                                "type" => "lesson",
+                                "owner_type" => "user",
+                                "owner_id" => $lecturer->id,
+                                "day" . $this->data['day'] => $day,
+                                "time" => $time,
+                                "season" => $this->data['season'],
+                            ]);
+                            $scheduleController->saveNew($schedule);
+                            // sınıf için
+                            $schedule->fill([
+                                "type" => "lesson",
+                                "owner_type" => "classroom",
+                                "owner_id" => $classroom->id,
+                                "day" . $this->data['day'] => $day,
+                                "time" => $time,
+                                "season" => $this->data['season'],
+                            ]);
+                            $scheduleController->saveNew($schedule);
+                            //progam için
+                            $schedule->fill([
+                                "type" => "lesson",
+                                "owner_type" => "program",
+                                "owner_id" => $lesson->program_id,
+                                "day" . $this->data['day'] => $day,
+                                "time" => $time,
+                                "season" => $this->data['season'],
+                            ]);
+                            $scheduleController->saveNew($schedule);
+                        }
+
                         $this->response = array("status" => "success", "msg" => "Bilgiler Kaydedildi");
                     } else {
                         $this->response = [

@@ -229,12 +229,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-    function saveSchedule(lessonId, scheduleTime, lessonHours, day) {
+    async function saveSchedule(scheduleData) {
         let data = new FormData();
-        data.append("lesson_id", lessonId);
-        data.append("time_start", scheduleTime);
-        data.append("lesson_hours", lessonHours);
-        data.append("day", day)
+        data.append("lesson_id", scheduleData.lessonId);
+        data.append("time_start", scheduleData.scheduleTime);
+        data.append("lesson_hours", scheduleData.lessonHours);
+        data.append("day", scheduleData.day);
+        data.append("classroom_name", scheduleData.selectedClassroom);
+        data.append("season", scheduleData.season)
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -366,22 +368,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkedHours++
             }
 
-            /**
-             * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
-             */
-            let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
-            for (let i = 0; addedHours < selectedHours; i++) {
-                let row = table.rows[droppedRowIndex + i];
-                let cell = row.cells[droppedCellIndex];
+            let lessonId = draggedElement.id.match(/\d+$/)[0];//sondaki sayı aılınıyor
+            let result = await saveSchedule(
+                {
+                    "lessonId": lessonId,
+                    "scheduleTime": scheduleTime,
+                    "lessonHours": lessonHours,
+                    "day": droppedCellIndex - 1,
+                    "selectedClassroom": selectedClassroom,
+                    "season": draggedElement.dataset['season']
+                });
+            if (result) {
+                /**
+                 * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
+                 */
+                let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
+                for (let i = 0; addedHours < selectedHours; i++) {
+                    let row = table.rows[droppedRowIndex + i];
+                    let cell = row.cells[droppedCellIndex];
 
-                // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
-                if (!cell.classList.contains("drop-zone")) {
-                    continue;
-                }
+                    // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
+                    if (!cell.classList.contains("drop-zone")) {
+                        continue;
+                    }
 
-                let lessonId = draggedElement.id.match(/\d+$/)[0];//sondaki sayı aılınıyor
-                let result = await saveSchedule(lessonId, scheduleTime, lessonHours, droppedCellIndex - 1);
-                if (result) {
                     let lesson = draggedElement.cloneNode(true)
                     lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
                     cell.appendChild(lesson);
@@ -393,10 +403,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                     lesson.addEventListener('dragstart', dragStartHandler);
                     addedHours++;
-                } else {
-                    scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
-                    scheduleModal.body.classList.add("text-bg-danger");
                 }
+            } else {
+                scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
+                scheduleModal.body.classList.add("text-bg-danger");
             }
 
             /*
