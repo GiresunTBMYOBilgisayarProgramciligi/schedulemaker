@@ -1,4 +1,8 @@
 /**
+ * Uygyn dersler listesinden ders sürüklenmeye başladığında aynı sezondaki tablo içerisinde uygun olmayan hücrelerin listesi
+ */
+let unavailableCell;
+/**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
@@ -244,7 +248,40 @@ document.addEventListener("DOMContentLoaded", function () {
                     console.error(data.msg);
                     return false;
                 } else {
-                    console.log(data);
+                    return true;
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                return false;
+            });
+    }
+
+    function highlightUnavailableCells(lessonId, table) {
+        let data = new FormData()
+        data.append("lesson_id", lessonId);
+        return fetch("/ajax/checkLecturerSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data.msg);
+                    return false;
+                } else {
+                    //todo tabloya yükleniyor efekti
+                    unavailableCell = data.unavailableCells
+                    if (unavailableCell) {
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in unavailableCell[i]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-danger")
+                            }
+                        }
+                    }
                     return true;
                 }
             })
@@ -357,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     lesson.addEventListener('dragstart', dragStartHandler);
                     addedHours++;
                 } else {
-                    scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false,true)
+                    scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
                     scheduleModal.body.classList.add("text-bg-danger");
                 }
             }
@@ -372,7 +409,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 draggedElement.remove();
             }
             scheduleModal.closeModal();
+            clearCells(table);
         })
+    }
+    function clearCells(table){
+        if (unavailableCell) {
+            for (let i = 0; i <= 9; i++) {
+                for (let cell in unavailableCell[i]) {
+                    table.rows[i].cells[cell].classList.remove("text-bg-danger")
+                }
+            }
+        }
+        unavailableCell = null;
     }
 
     function dropTableToList(tableElement, draggedElement, dropZone) {
@@ -508,7 +556,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * todo Ders sürüklenmeye başladığında hoca programı kontrol edilerek uygun olmayan alanlar kırmızı olarak vurgulanacak
      * @param event sürükleme olayı
      */
     function dragStartHandler(event) {
@@ -523,9 +570,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (event.target.closest("table")) {
             event.dataTransfer.setData("start_element", "table")
+
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
+            let table = document.querySelector('table[data-season="' + event.dataTransfer.getData("season") + '"]')
+            let lessonID = event.target.id.match(/\d+$/)[0];//sondaki sayı aılınıyor
+            clearCells(table);
+            let result = highlightUnavailableCells(lessonID, table);
         }
+
 
     }
 

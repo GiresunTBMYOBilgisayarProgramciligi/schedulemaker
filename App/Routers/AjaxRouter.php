@@ -576,7 +576,7 @@ class AjaxRouter extends Router
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
                     //var_dump("saveScheduleAction this->data:",$this->data);
-                    $crashFilters=["owner_type" => "user",
+                    $crashFilters = ["owner_type" => "user",
                         "owner_id" => $lecturer->id,
                         "type" => "lesson",
                         "time_start" => $this->data['time_start'],
@@ -589,6 +589,66 @@ class AjaxRouter extends Router
                         $this->response = [
                             "msg" => "Hoca ders programı boş değil",
                             "status" => "error"
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    public function checkLecturerScheduleAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $lessonController = new LessonController();
+                $scheduleController = new ScheduleController();
+                if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
+                    $lesson = $lessonController->getLesson($this->data['lesson_id']);
+                    $lecturer = $lesson->getLecturer();
+                    //var_dump("saveScheduleAction this->data:",$this->data);
+                    $filters = [
+                        "owner_type" => "user",
+                        "owner_id" => $lecturer->id,
+                        "type" => "lesson",
+                    ];
+                    $lessonSchedules = $scheduleController->getListByFilters($filters);
+                    if (count($lessonSchedules) > 0) {
+                        $unavailableCells = [];
+                        $tableRows = [
+                            "08.00 - 08.50",
+                            "09.00 - 08.50",
+                            "10.00 - 10.50",
+                            "11.00 - 11.50",
+                            "12.00 - 12.50",
+                            "13.00 - 13.50",
+                            "14.00 - 14.50",
+                            "15.00 - 15.50",
+                            "16.00 - 16.50"
+                        ];
+                        foreach ($lessonSchedules as $lessonSchedule) {
+                            $row = array_search($lessonSchedule->time, $tableRows);
+                            $cells = [];
+                            for ($i = 0; $i < 6; $i++) {
+                                if (!is_null($lessonSchedule->{"day" . $i}) or $lessonSchedule->{"day" . $i} === false) {
+                                    $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
+                                }
+                            }
+                            $unavailableCells[$row + 1] = $cells; //ilk satır günler olduğu için +1
+                        }
+
+                        $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
+                    } else {
+                        $this->response = [
+                            "msg" => "Hocanın tüm saatleri müsait",
+                            "status" => "success"
                         ];
                     }
                 }
