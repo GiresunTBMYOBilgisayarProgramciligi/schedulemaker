@@ -9,19 +9,20 @@ FLUSH PRIVILEGES;
 use schedule_maker;
 create table if not exists schedule
 (
-    id   int AUTO_INCREMENT,
-    type varchar(20), /* exam, lesson*/
+    id         int AUTO_INCREMENT,
+    type       varchar(20), /* exam, lesson*/
     owner_type varchar(20),
-    owner_id int,
-    time varchar(20),
-    season varchar(20),
-    day0 text,
-    day1 text,
-    day2 text,
-    day3 text,
-    day4 text,
-    day5 text,
-    primary key (id)
+    owner_id   int,
+    time       varchar(20),
+    season     varchar(20),
+    day0       text,
+    day1       text,
+    day2       text,
+    day3       text,
+    day4       text,
+    day5       text,
+    primary key (id),
+    unique (owner_type, owner_id, time)
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -56,7 +57,7 @@ create table if not exists classrooms
 (
     id         int AUTO_INCREMENT,
     name       varchar(20),
-    plan        text, # oturma planı
+    plan       text, # oturma planı
     class_size int default 0,
     exam_size  int default 0,
     primary key (id),
@@ -77,16 +78,16 @@ create table if not exists lessons
 (
     id            int AUTO_INCREMENT,
     code          varchar(50) NOT NULL,
-    name          text NOT NULL,
+    name          text        NOT NULL,
     size          int,
-    hours         int NOT NULL DEFAULT 2,
-    type          varchar(50) default 'Zorunlu',
-    season        varchar(50) default '1. Yarıyıl',
+    hours         int         NOT NULL DEFAULT 2,
+    type          varchar(50)          default 'Zorunlu',
+    season        varchar(50)          default '1. Yarıyıl',
     lecturer_id   int,
     department_id int,
     program_id    int,
     primary key (id),
-    unique (code,program_id),
+    unique (code, program_id),
     foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null,
     foreign key (program_id) references programs (id) on delete set null

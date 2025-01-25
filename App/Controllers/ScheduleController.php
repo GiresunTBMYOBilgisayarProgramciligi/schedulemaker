@@ -374,12 +374,65 @@ class ScheduleController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Benzersizlik hatası." . $e->getMessage()];
+                try {
+                    $updatingSchedule = $this->getListByFilters($new_schedule->getArray(
+                        ['table_name', 'database', 'id','day0','day1','day2','day3','day4','day5']))[0];
+                    for($i=0;$i<6;$i++){
+                        if (!is_null($new_schedule->{"day".$i})) {
+                            $updatingSchedule->{"day".$i} = $new_schedule->{"day".$i};
+                        }
+                    }
+                    $this->updateSchedule($updatingSchedule);
+                }catch (Exception $e){
+                    return ["status" => "error", "msg" => "Program Güncellenirken hata oluştu" . $e->getMessage()];
+                }
             } else {
                 return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
             }
         }
 
+        return ["status" => "success"];
+    }
+    public function updateSchedule(Schedule $schedule)
+    {
+        try {
+            $scheduleData = $schedule->getArray(['table_name', 'database', 'id']);
+            //dizi türündeki veriler serialize ediliyor
+            array_walk($scheduleData, function (&$value) {
+                if (is_array($value)) {
+                    $value = serialize($value);
+                }
+            });
+            // Sorgu ve parametreler için ayarlamalar
+            $columns = [];
+            $parameters = [];
+
+            foreach ($scheduleData as $key => $value) {
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
+            }
+
+            // WHERE koşulu için ID ekleniyor
+            $parameters["id"] = $schedule->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                return ["status" => "error", "msg" => "Unique Çakışması" . $e->getMessage()];
+            } else {
+                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            }
+        }
         return ["status" => "success"];
     }
 }

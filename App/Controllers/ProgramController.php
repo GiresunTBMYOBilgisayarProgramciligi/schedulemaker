@@ -83,6 +83,11 @@ class ProgramController extends Controller
         return ["status" => "success"];
     }
 
+    /**
+     * @param Program $program
+     * @return string[]
+     * todo userController daki gibi güncelle
+     */
     public function updateProgram(Program $program)
     {
         try {

@@ -25,7 +25,7 @@ class AjaxRouter extends Router
     /**
      * @var array Ajax cevap verisi
      */
-    public array $response = [];
+    public array $response = []; //todo bu kullanılırken =array şeklinde değil. push yada [] şeklindekullanılmalı. kontrol edilip düzeltilmeli
     /**
      * @var array Ajax isteği verileri
      */
@@ -602,7 +602,7 @@ class AjaxRouter extends Router
                                 "time" => $time,
                                 "season" => $this->data['season'],
                             ]);
-                            $scheduleController->saveNew($schedule);
+                            $this->response["lesson_result"] = $scheduleController->saveNew($schedule);
                             // hoca için
                             $schedule->fill([
                                 "type" => "lesson",
@@ -612,7 +612,7 @@ class AjaxRouter extends Router
                                 "time" => $time,
                                 "season" => $this->data['season'],
                             ]);
-                            $scheduleController->saveNew($schedule);
+                            $this->response["lecturer_result"] = $scheduleController->saveNew($schedule);
                             // sınıf için
                             $schedule->fill([
                                 "type" => "lesson",
@@ -622,7 +622,7 @@ class AjaxRouter extends Router
                                 "time" => $time,
                                 "season" => $this->data['season'],
                             ]);
-                            $scheduleController->saveNew($schedule);
+                            $this->response["classroom_result"] = $scheduleController->saveNew($schedule);
                             //progam için
                             $schedule->fill([
                                 "type" => "lesson",
@@ -632,10 +632,10 @@ class AjaxRouter extends Router
                                 "time" => $time,
                                 "season" => $this->data['season'],
                             ]);
-                            $scheduleController->saveNew($schedule);
+                            $this->response["program_result"] = $scheduleController->saveNew($schedule);
                         }
 
-                        $this->response = array("status" => "success", "msg" => "Bilgiler Kaydedildi");
+                        $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
                     } else {
                         $this->response = [
                             "msg" => "Hoca ders programı boş değil",
