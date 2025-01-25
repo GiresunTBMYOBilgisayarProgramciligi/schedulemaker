@@ -15,8 +15,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function programChangeHandle() {
         // todo program body içerisine spinner ekle
-        let modal = new Modal();
-
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         var data = new FormData();
         if (scheduleTableElements.length < 1) {
@@ -49,7 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Bir hata oluştu:", error);
             });
     }
-
 
     /**
      * Program tablosu ve uygun deers listesi tablosu alınma işlemi bittikten sonra çalıştırılan işlemler
@@ -601,6 +598,4 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
         event.dataTransfer.effectAllowed = "move";
     }
-
-
 });

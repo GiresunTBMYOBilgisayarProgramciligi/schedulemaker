@@ -70,7 +70,7 @@ class ScheduleController extends Controller
         $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
         $tableRows = [
             "08.00 - 08.50" => (object)$this->emptyWeek,
-            "09.00 - 08.50" => (object)$this->emptyWeek,
+            "09.00 - 09.50" => (object)$this->emptyWeek,
             "10.00 - 10.50" => (object)$this->emptyWeek,
             "11.00 - 11.50" => (object)$this->emptyWeek,
             "12.00 - 12.50" => (object)$this->emptyWeek,
