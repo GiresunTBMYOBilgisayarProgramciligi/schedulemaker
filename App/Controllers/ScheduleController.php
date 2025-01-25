@@ -53,68 +53,20 @@ class ScheduleController extends Controller
     }
 
     /**
-     * filter ile belirtrilen alanlara uyan Schedule modellerini döner
-     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
-     * @return array Schedule Modellerinden oluşan bir array
-     * todo bu metodun işini getListByFilter metoru yapıyor. kontroller yapılıp kaldırılmalı
-     */
-    public function getSchedules(array $filters = [])
-    {
-        try {
-            // Koşullar ve parametreler
-            $conditions = [];
-            $parameters = [];
-
-            // Parametrelerden WHERE koşullarını oluştur
-            foreach ($filters as $column => $value) {
-                $conditions[] = "$column = :$column";
-                $parameters[":$column"] = $value;
-            }
-
-            // WHERE ifadesini oluştur
-            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
-
-            // Sorguyu hazırla
-            $sql = "SELECT * FROM $this->table_name $whereClause";
-            $stmt = $this->database->prepare($sql);
-
-            // Parametreleri bağla
-            foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            $stmt->execute();
-
-            // Verileri işle
-            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $schedules = [];
-
-            if ($result) {
-                foreach ($result as $schedule_data) {
-                    $schedule = new Schedule();
-                    $schedule->fill($schedule_data);
-                    $schedules[] = $schedule;
-                }
-            }
-
-            return $schedules;
-
-        } catch (Exception $e) {
-            echo $e->getMessage();
-            return [];
-        }
-    }
-
-
-    /**
      * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
      * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
      * @return string
      * todo bu metod Modellerde kullanılarak AdminRouter da ve program gösterilen sayfalarda ScheduleController kullanımı kaldırılabilir.
+     * @throws Exception
      */
     public function createScheduleTable(array $filters = []): string
     {
-        $schedules = $this->getSchedules($filters);
+        try {
+            $schedules = $this->getListByFilters($filters);
+        }catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
         $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
         $tableRows = [
             "08.00 - 08.50" => (object)$this->emptyWeek,
@@ -270,7 +222,7 @@ class ScheduleController extends Controller
     public function availableClassrooms(array $filters = [])
     {
         try {
-            if(!key_exists("hours", $filters) or !key_exists("time", $filters)) {
+            if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
                 throw new \Exception("Missing hours and time");
             }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
@@ -308,7 +260,7 @@ class ScheduleController extends Controller
     {
         try {
             //var_dump("checkScheduleCrash filter:",$filters);
-            if(!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
+            if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
                 throw new \Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
@@ -342,17 +294,22 @@ class ScheduleController extends Controller
      */
     public function checkIsScheduleComplete(array $filters = [])
     {
-        if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
-            //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
-            if ($filters['owner_type'] == "lesson") {
-                $schedules = $this->getSchedules($filters);
-                $lessonController = new LessonController();
-                $lesson = $lessonController->getLesson($filters['owner_id']);
-                if (count($schedules) < $lesson->hours) {
-                    return false;
-                } else return true;
-            }//todo diğer türler için işlemler
+        try {
+            if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
+                //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+                if ($filters['owner_type'] == "lesson") {
+                    $schedules = $this->getListByFilters($filters);
+                    $lessonController = new LessonController();
+                    $lesson = $lessonController->getLesson($filters['owner_id']);
+                    if (count($schedules) < $lesson->hours) {
+                        return false;
+                    } else return true;
+                }//todo diğer türler için işlemler
+            }
+        }catch (Exception $e){
+            throw new Exception($e->getMessage());
         }
+
     }
 
     /**
