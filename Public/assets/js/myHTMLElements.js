@@ -21,7 +21,7 @@ class Modal {
      *
      * @param size sm,lg,xl modal size
      */
-    initializeModal(size = "sm") {
+    initializeModal(size = "sm") {//todo arkaplan rengi için de sını f seçimi ekle Tosastta olduğu gibi
         let sizes = {"sm": "modal-sm", "lg": "modal-lg", "xl": "modal-xl"}
 
         this.modal = document.createElement("div");
@@ -103,11 +103,13 @@ class Modal {
         if (!showConfirmButton) {
             this.confirmButton.remove();
         } else {
+            this.footer.appendChild(this.confirmButton);
             this.confirmButton.textContent = gettext.ok;
         }
         if (!showCancelButton) {
             this.cancelButton.remove()
         } else {
+            this.footer.appendChild(this.cancelButton);
             this.cancelButton.textContent = gettext.close;
         }
         //Kapatıldığında modal sayfadan silinecek
