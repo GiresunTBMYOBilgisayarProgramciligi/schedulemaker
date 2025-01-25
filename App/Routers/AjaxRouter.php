@@ -3,6 +3,7 @@
  * todo ajax işlemi sonrası hangi sayfadan gelindiyse o sayfaya yönlendirme yapılabilir.
  * todo Program sayfasından ders düzenleme işlemine girildiğinde geri program sayfasına dönmeli
  */
+
 namespace App\Routers;
 
 use App\Controllers\ClassroomController;
@@ -563,5 +564,43 @@ class AjaxRouter extends Router
         };
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($classrooms);
+    }
+
+    public function saveScheduleAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $lessonController = new LessonController();
+                $scheduleController = new ScheduleController();
+                if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
+                    $lesson = $lessonController->getLesson($this->data['lesson_id']);
+                    $lecturer = $lesson->getLecturer();
+                    //var_dump("saveScheduleAction this->data:",$this->data);
+                    $crashFilters=["owner_type" => "user",
+                        "owner_id" => $lecturer->id,
+                        "type" => "lesson",
+                        "time_start" => $this->data['time_start'],
+                        "day" => "day" . $this->data['day'],
+                        "lesson_hours" => $this->data['lesson_hours'],];
+                    if ($scheduleController->checkScheduleCrash($crashFilters)) {
+                        // todo saveSchedule
+                        $this->response = array("status" => "success", "msg" => "Bilgiler Kaydedildi");
+                    } else {
+                        $this->response = [
+                            "msg" => "Hoca ders programı boş değil",
+                            "status" => "error"
+                        ];
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
     }
 }

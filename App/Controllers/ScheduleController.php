@@ -4,7 +4,9 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Schedule;
+use Exception;
 use PDO;
+use PDOException;
 
 class ScheduleController extends Controller
 {
@@ -42,8 +44,8 @@ class ScheduleController extends Controller
                     $schedule->fill($stmt);
 
                     return $schedule;
-                } else throw new \Exception("Schedule not found");
-            } catch (\Exception $e) {
+                } else throw new Exception("Schedule not found");
+            } catch (Exception $e) {
                 // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
                 echo $e->getMessage();
             }
@@ -97,7 +99,7 @@ class ScheduleController extends Controller
 
             return $schedules;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             echo $e->getMessage();
             return [];
         }
@@ -232,37 +234,46 @@ class ScheduleController extends Controller
         return $available_lessons;
     }
 
-    public function availableClassrooms(array $filters = [])
+    /**
+     * @param $startTimeRange
+     * @param int $hours
+     * @return array
+     */
+    private function generateTimesArrayFromText($startTimeRange, int $hours): array
     {
-        function generateScheduleFromText($startTimeRange, $hours)
-        {
-            $schedule = [];
+        $schedule = [];
 
-            // Başlangıç ve bitiş saatlerini ayır
-            [$start, $end] = explode(" - ", $startTimeRange);
-            $startHour = (int)explode(".", $start)[0]; // Saat kısmını al
+        // Başlangıç ve bitiş saatlerini ayır
+        [$start, $end] = explode(" - ", $startTimeRange);
+        $startHour = (int)explode(".", $start)[0]; // Saat kısmını al
 
-            for ($i = 0; $i < $hours; $i++) {
-                // Eğer saat 12'ye geldiyse öğle arası için atla
-                if ($startHour == 12) {
-                    $startHour = 13;
-                }
-
-                // Yeni başlangıç ve bitiş saatlerini oluştur
-                $newStart = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".00";
-                $newEnd = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".50";
-
-                // Listeye ekle
-                $schedule[] = "$newStart - $newEnd";
-
-                // Saat bilgisi bir sonraki saat için güncellenir
-                $startHour++;
+        for ($i = 0; $i < $hours; $i++) {
+            // Eğer saat 12'ye geldiyse öğle arası için atla
+            if ($startHour == 12) {
+                $startHour = 13;
             }
 
-            return $schedule;
+            // Yeni başlangıç ve bitiş saatlerini oluştur
+            $newStart = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".00";
+            $newEnd = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".50";
+
+            // Listeye ekle
+            $schedule[] = "$newStart - $newEnd";
+
+            // Saat bilgisi bir sonraki saat için güncellenir
+            $startHour++;
         }
+
+        return $schedule;
+    }
+
+    public function availableClassrooms(array $filters = [])
+    {
         try {
-            $times = generateScheduleFromText($filters["time"], $filters["hours"]);
+            if(!key_exists("hours", $filters) or !key_exists("time", $filters)) {
+                throw new \Exception("Missing hours and time");
+            }
+            $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
             $available_classrooms = [];
             $unavailable_classroom_ids = [];
             if (array_key_exists('owner_type', $filters)) {
@@ -271,23 +282,57 @@ class ScheduleController extends Controller
                         [
                             "time" => $times,
                             "owner_type" => $filters['owner_type'],
-
                         ]
                     );
                     foreach ($classroomSchedules as $classroomSchedule) {
-                        if (!is_null($classroomSchedule->{$filters["day"]})){
+                        if (!is_null($classroomSchedule->{$filters["day"]})) {
                             $unavailable_classroom_ids[] = $classroomSchedule->owner_id;
                         }
                     }
                     $available_classrooms = (new ClassroomController())->getListByFilters(["!id" => $unavailable_classroom_ids]);
                 }
             }
-        }
-        catch (\Exception $e) {
+        } catch (Exception $e) {
             return ["status" => "error", "msg" => $e->getMessage()];//todo ajax respose kalıbı her yerde aynı olmalı bunu sağlamak için bir şeyler yapılabilir.
         }
 
         return ["status" => "success", "classrooms" => $available_classrooms];
+    }
+
+    /**
+     * @param array $filters
+     * @return bool
+     * @throws Exception
+     */
+    public function checkScheduleCrash(array $filters = []): bool
+    {
+        try {
+            //var_dump("checkScheduleCrash filter:",$filters);
+            if(!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
+                throw new \Exception("Ders saati yada program saati yok | CheckScheduleCrash");
+            }
+            $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
+
+            if (array_key_exists('owner_type', $filters)) {
+                $schedules = $this->getListByFilters(
+                    [
+                        "time" => $times,
+                        "owner_type" => $filters['owner_type'],
+                        "owner_id" => $filters['owner_id'],
+                        "type" => $filters['type'],
+                    ]
+                );
+                //var_dump("checkScheduleCrash schedules:",$schedules);
+                foreach ($schedules as $schedule) {
+                    if (!is_null($schedule->{$filters["day"]}) or $schedule->{$filters["day"]} === false) {
+                        return false;
+                    }
+                }
+            } else throw new Exception("Owner_type girilmemiş");
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        return true;
     }
 
     /**
@@ -347,13 +392,13 @@ class ScheduleController extends Controller
 
             return $result;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             echo $e->getMessage();
             return 0;
         }
     }
 
-    public function saveSchedule(Schedule $new_schedule): array
+    public function saveNew(Schedule $new_schedule): array
     {//todo düzenlenmesi gerekebilir.
         try {
             // Yeni kullanıcı verilerini bir dizi olarak alın
