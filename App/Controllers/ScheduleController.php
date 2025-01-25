@@ -63,7 +63,7 @@ class ScheduleController extends Controller
     {
         try {
             $schedules = $this->getListByFilters($filters);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
 
@@ -110,44 +110,39 @@ class ScheduleController extends Controller
                 /*
                  * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
-                if (gettype($tableColumn) !== "boolean" && !is_null($tableColumn)) {
-                    $tableColumn = (object)$tableColumn;
+                if (is_array($tableColumn)) {
+                    // Eğer tableColumn bir array ise bilgileri yazdır
+                    $tableColumn = (object)$tableColumn; // Array'i objeye dönüştür
                     $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
+                    $lecturerName = $lesson->getLecturer()->getFullName();
+                    $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
+
                     $out .= '
-                            <td>
-                                <div 
-                                id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
-                                draggable="true" 
-                                class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                                data-lesson-code="' . $lesson->code . '">
-                                    <div class="ms-2 me-auto">
-                                        <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '"><i class="bi bi-book"></i>' . $lesson->getFullName() . '</div>
-                                        <div id="classroom-' . $tableColumn->classroom_id . '">' . (new UserController())->getUser($tableColumn->lecturer_id)->getFullName() . '</div>
+                        <td>
+                            <div 
+                            id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
+                            draggable="true" 
+                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
+                            data-lesson-code="' . $lesson->code . '">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '">
+                                        <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
                                     </div>
-                                    <span class="badge bg-info rounded-pill"><i class="bi bi-door-open"></i>' . (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name . '</span>
+                                    <div id="classroom-' . $tableColumn->classroom_id . '">' . $lecturerName . '</div>
                                 </div>
-                            </td>';
+                                <span class="badge bg-info rounded-pill">
+                                    <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                </span>
+                            </div>
+                        </td>';
+                } elseif (is_null($tableColumn) || $tableColumn === true) {
+                    // Eğer null veya true ise boş dropzone ekle
+                    $out .= ($tableColumn === true && $times[$i] === "12.00 - 12.50")
+                        ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
+                        : '<td class="drop-zone"></td>';
                 } else {
-                    /*
-                     * tableColumn bir boolean verisi tutar bu da program eklemeye uygun olup olmadığını gösterir
-                     */
-                    /*
-                     * eğer true ise dropzone sınıflı bir sütun eklenir
-                     */
-                    if ($tableColumn and $times[$i] !== "12.00 - 12.50") {
-                        $out .= '
-                        <td class="drop-zone">
-                        
-                        </td>';
-                    } else {
-                        /*
-                         * Eğer false ise drop-zone sınıfı eklenmez ve kırmızı ile vurgulanır
-                         */
-                        $out .= '
-                        <td class="bg-danger">
-                        
-                        </td>';
-                    }
+                    // Eğer false ise kırmızı vurgulu hücre ekle
+                    $out .= '<td class="bg-danger"></td>';
                 }
 
             }
@@ -306,7 +301,7 @@ class ScheduleController extends Controller
                     } else return true;
                 }//todo diğer türler için işlemler
             }
-        }catch (Exception $e){
+        } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
 
@@ -376,14 +371,14 @@ class ScheduleController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 try {
                     $updatingSchedule = $this->getListByFilters($new_schedule->getArray(
-                        ['table_name', 'database', 'id','day0','day1','day2','day3','day4','day5']))[0];
-                    for($i=0;$i<6;$i++){
-                        if (!is_null($new_schedule->{"day".$i})) {
-                            $updatingSchedule->{"day".$i} = $new_schedule->{"day".$i};
+                        ['table_name', 'database', 'id', 'day0', 'day1', 'day2', 'day3', 'day4', 'day5']))[0];
+                    for ($i = 0; $i < 6; $i++) {
+                        if (!is_null($new_schedule->{"day" . $i})) {
+                            $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
                         }
                     }
                     $this->updateSchedule($updatingSchedule);
-                }catch (Exception $e){
+                } catch (Exception $e) {
                     return ["status" => "error", "msg" => "Program Güncellenirken hata oluştu" . $e->getMessage()];
                 }
             } else {
@@ -393,6 +388,7 @@ class ScheduleController extends Controller
 
         return ["status" => "success"];
     }
+
     public function updateSchedule(Schedule $schedule)
     {
         try {
