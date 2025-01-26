@@ -111,15 +111,41 @@ class ScheduleController extends Controller
                  * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
                 if (is_array($tableColumn)) {
-                    // Eğer tableColumn bir array ise bilgileri yazdır
-                    $tableColumn = (object)$tableColumn; // Array'i objeye dönüştür
-                    $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
-                    $lecturerName = $lesson->getLecturer()->getFullName();
-                    $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
-                    //Ders gruplu ise drop zone ekle
-                    $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
-                    $out .= '
-                        <td class="'.$drop_zone.'">
+                    if (is_array($tableColumn[0])) {
+                        $out .= '<td>';
+                        foreach ($tableColumn as $column) {
+                            $column = (object)$column; // Array'i objeye dönüştür
+                            $lesson = (new LessonController())->getLesson($column->lesson_id);
+                            $lecturerName = $lesson->getLecturer()->getFullName();
+                            $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
+                            $out .= '
+                            <div 
+                            id="scheduleTable-lesson-' . $column->lesson_id . '"
+                            draggable="true" 
+                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
+                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
+                                        <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
+                                    </div>
+                                    <div id="classroom-' . $column->classroom_id . '">' . $lecturerName . '</div>
+                                </div>
+                                <span class="badge bg-info rounded-pill">
+                                    <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                </span>
+                            </div>';
+                        }
+                        $out .= '</td>';
+                    } else {
+                        // Eğer tableColumn bir array ise bilgileri yazdır
+                        $tableColumn = (object)$tableColumn; // Array'i objeye dönüştür
+                        $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
+                        $lecturerName = $lesson->getLecturer()->getFullName();
+                        $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
+                        //Ders gruplu ise drop zone ekle
+                        $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
+                        $out .= '
+                        <td class="' . $drop_zone . '">
                             <div 
                             id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
                             draggable="true" 
@@ -136,6 +162,7 @@ class ScheduleController extends Controller
                                 </span>
                             </div>
                         </td>';
+                    }
                 } elseif (is_null($tableColumn) || $tableColumn === true) {
                     // Eğer null veya true ise boş dropzone ekle
                     $out .= ($tableColumn === true && $times[$i] === "12.00 - 12.50")
@@ -255,7 +282,7 @@ class ScheduleController extends Controller
     public function checkScheduleCrash(array $filters = []): bool
     {
         try {
-            //var_dump("checkScheduleCrash filter:",$filters);
+            $result = true;
             if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
                 throw new \Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
@@ -272,10 +299,17 @@ class ScheduleController extends Controller
                             "season" => $filters['season']
                         ]
                     );
-                    //var_dump("checkScheduleCrash schedules:",$schedules);
                     foreach ($schedules as $schedule) {
-                        if (!is_null($schedule->{$filters["day"]}) or $schedule->{$filters["day"]} === false) {
-                            return false;
+                        if ($schedule->{$filters["day"]}) {
+                            if (is_array($schedule->{$filters["day"]}) and in_array($schedule->owner_type, ["lesson", "program"])) {
+                                $lessonCode = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id'])->code;
+                                $newLessonCode = (new LessonController())->getLesson($filters['owners']['lesson'])->code;
+                                if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
+                                    return false;
+                                }
+                            } else {
+                                return false;
+                            }
                         }
                     }
                 }
@@ -284,7 +318,7 @@ class ScheduleController extends Controller
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-        return true;
+        return $result;
     }
 
     /**
@@ -379,7 +413,26 @@ class ScheduleController extends Controller
                         ['table_name', 'database', 'id', 'day0', 'day1', 'day2', 'day3', 'day4', 'day5']))[0];
                     for ($i = 0; $i < 6; $i++) {
                         if (!is_null($new_schedule->{"day" . $i})) {
-                            $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
+                            //yeni eklenecek dersin boş günlerini geçiyoruz. sadece dolu olanlar kaydedilecek
+                            if (in_array($updatingSchedule->owner_type, ["lesson", "program"])) {
+                                if (is_array($updatingSchedule->{"day" . $i})) {
+                                    // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
+                                    $lessonCode = (new LessonController())->getLesson($updatingSchedule->{"day" . $i}['lesson_id'])->code;
+                                    $newLessonCode = (new LessonController())->getLesson($new_schedule->{"day" . $i}['lesson_id'])->code;
+                                    if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {
+                                        $dayData = [];
+                                        $dayData[] = $updatingSchedule->{"day" . $i};
+                                        $dayData[] = $new_schedule->{"day" . $i};
+
+                                        $updatingSchedule->{"day" . $i} = $dayData;
+                                    } else {
+                                        throw new Exception("Dersler gruplı değil bu şekilde kaydedilemez");
+                                    }
+                                }
+                            } else {
+                                // ders yada program değil normal güncellemem işi yapılacak
+                                $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
+                            }
                         }
                     }
                     $this->updateSchedule($updatingSchedule);

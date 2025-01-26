@@ -72,10 +72,11 @@ class Controller
 
     /**
      * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir
-     * @param array $filters
+     * @param array|null $filters
      * @return array
+     * @throws \Exception
      */
-    public function getListByFilters(array $filters = null)
+    public function getListByFilters(array $filters = null): array
     {
         try {
             if (!is_null($filters)) {
