@@ -16,12 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function programChangeHandle() {
         // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
-        var data = new FormData();
-        data.append("owner_type", "program");
-        data.append("owner_id", programSelect.value);
-        data.append("type", "lesson")
-        promises.push(fetchAvailableLessons(data, availableItemElements[0]));
-        promises.push(fetchScheduleTable(data, scheduleTableElements[0]));
+        let data =new FormData();
         for (var i = 0; i < scheduleTableElements.length; i++) {
             data = new FormData(); // eski verileri silmek için yenile
             data.append("type", "lesson")
