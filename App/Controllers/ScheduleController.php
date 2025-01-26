@@ -421,20 +421,18 @@ class ScheduleController extends Controller
                     for ($i = 0; $i < 6; $i++) {
                         if (!is_null($new_schedule->{"day" . $i})) {
                             //yeni eklenecek dersin boş günlerini geçiyoruz. sadece dolu olanlar kaydedilecek
-                            if (in_array($updatingSchedule->owner_type, ["lesson", "program"])) {
-                                if (is_array($updatingSchedule->{"day" . $i})) {
-                                    // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
-                                    $lessonCode = (new LessonController())->getLesson($updatingSchedule->{"day" . $i}['lesson_id'])->code;
-                                    $newLessonCode = (new LessonController())->getLesson($new_schedule->{"day" . $i}['lesson_id'])->code;
-                                    if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {
-                                        $dayData = [];
-                                        $dayData[] = $updatingSchedule->{"day" . $i};
-                                        $dayData[] = $new_schedule->{"day" . $i};
+                            if (is_array($updatingSchedule->{"day" . $i})) {
+                                // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
+                                $lessonCode = (new LessonController())->getLesson($updatingSchedule->{"day" . $i}['lesson_id'])->code;
+                                $newLessonCode = (new LessonController())->getLesson($new_schedule->{"day" . $i}['lesson_id'])->code;
+                                if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {
+                                    $dayData = [];
+                                    $dayData[] = $updatingSchedule->{"day" . $i};
+                                    $dayData[] = $new_schedule->{"day" . $i};
 
-                                        $updatingSchedule->{"day" . $i} = $dayData;
-                                    } else {
-                                        throw new Exception("Dersler gruplı değil bu şekilde kaydedilemez");
-                                    }
+                                    $updatingSchedule->{"day" . $i} = $dayData;
+                                } else {
+                                    throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
                                 }
                             } else {
                                 // ders yada program değil normal güncellemem işi yapılacak
