@@ -116,9 +116,10 @@ class ScheduleController extends Controller
                     $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
                     $lecturerName = $lesson->getLecturer()->getFullName();
                     $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
-                    //todo eğer ders gruolu ise drop-zone ekle
+                    //Ders gruplu ise drop zone ekle
+                    $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
                     $out .= '
-                        <td>
+                        <td class="'.$drop_zone.'">
                             <div 
                             id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
                             draggable="true" 
