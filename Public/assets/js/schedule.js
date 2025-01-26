@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function checkSeason(droppedSeason, transferredSeason) {
         if (droppedSeason !== transferredSeason) {
             new Toast().prepareToast("Dikkat", "Bu işlem yapılamaz", "danger");
+            console.error("Sezonlar Uyumsuz")
             return false;
         } else return true;
     }

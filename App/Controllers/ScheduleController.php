@@ -123,7 +123,7 @@ class ScheduleController extends Controller
                             id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '">
+                            data-lesson-code="' . $lesson->code . '" data-season="'.$lesson->season.'">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '

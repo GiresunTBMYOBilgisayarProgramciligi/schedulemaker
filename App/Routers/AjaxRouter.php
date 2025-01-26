@@ -675,7 +675,7 @@ class AjaxRouter extends Router
                         $unavailableCells = [];
                         $tableRows = [
                             "08.00 - 08.50",
-                            "09.00 - 08.50",
+                            "09.00 - 09.50",
                             "10.00 - 10.50",
                             "11.00 - 11.50",
                             "12.00 - 12.50",
