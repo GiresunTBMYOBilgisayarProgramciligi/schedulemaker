@@ -68,6 +68,9 @@ class ScheduleController extends Controller
         }
 
         $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
+        /**
+         * Boş tablo oluşturmak için tablo satır verileri
+         */
         $tableRows = [
             "08.00 - 08.50" => (object)$this->emptyWeek,
             "09.00 - 09.50" => (object)$this->emptyWeek,
@@ -79,9 +82,13 @@ class ScheduleController extends Controller
             "15.00 - 15.50" => (object)$this->emptyWeek,
             "16.00 - 16.50" => (object)$this->emptyWeek
         ];
+        /*
+         * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
+         */
         foreach ($schedules as $schedule) {
             $tableRows[$schedule->time] = $schedule->getWeek();
         }
+
         $out =
             '
             <table class="table table-bordered table-sm" ' . $season . '>

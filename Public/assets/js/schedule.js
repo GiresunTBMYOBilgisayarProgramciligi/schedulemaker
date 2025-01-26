@@ -17,25 +17,21 @@ document.addEventListener("DOMContentLoaded", function () {
         // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         var data = new FormData();
-        if (scheduleTableElements.length < 1) {
+        data.append("owner_type", "program");
+        data.append("owner_id", programSelect.value);
+        data.append("type", "lesson")
+        promises.push(fetchAvailableLessons(data, availableItemElements[0]));
+        promises.push(fetchScheduleTable(data, scheduleTableElements[0]));
+        for (var i = 0; i < scheduleTableElements.length; i++) {
+            data = new FormData(); // eski verileri silmek için yenile
+            data.append("type", "lesson")
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
-            data.append("type", "lesson")
-            promises.push(fetchAvailableLessons(data, availableItemElements[0]));
-            promises.push(fetchScheduleTable(data, scheduleTableElements[0]));
-        } else {
-            for (var i = 0; i < scheduleTableElements.length; i++) {
-                data = new FormData(); // eski verileri silmek için yenile
-                data.append("type", "lesson")
-                data.append("owner_type", "program");
-                data.append("owner_id", programSelect.value);
-                data.append("season", scheduleTableElements[i].getAttribute("data-season"));
+            data.append("season", scheduleTableElements[i].getAttribute("data-season"));
 
-                promises.push(fetchAvailableLessons(data, availableItemElements[i]));
-                promises.push(fetchScheduleTable(data, scheduleTableElements[i]));
-            }
+            promises.push(fetchAvailableLessons(data, availableItemElements[i]));
+            promises.push(fetchScheduleTable(data, scheduleTableElements[i]));
         }
-
         // Tüm işlemlerin tamamlanmasını bekle
         Promise.all(promises)
             .then(() => {
