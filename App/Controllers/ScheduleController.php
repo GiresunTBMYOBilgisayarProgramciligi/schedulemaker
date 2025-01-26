@@ -91,7 +91,7 @@ class ScheduleController extends Controller
 
         $out =
             '
-            <table class="table table-bordered table-sm" ' . $season . '>
+            <table class="table table-bordered table-sm small" ' . $season . '>
                                 <thead>
                                 <tr>
                                     <th>#</th>
