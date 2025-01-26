@@ -116,14 +116,14 @@ class ScheduleController extends Controller
                     $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
                     $lecturerName = $lesson->getLecturer()->getFullName();
                     $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
-
+                    //todo eğer ders gruolu ise drop-zone ekle
                     $out .= '
                         <td>
                             <div 
                             id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '" data-season="'.$lesson->season.'">
+                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
@@ -260,22 +260,26 @@ class ScheduleController extends Controller
             }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
 
-            if (array_key_exists('owner_type', $filters)) {
-                $schedules = $this->getListByFilters(
-                    [
-                        "time" => $times,
-                        "owner_type" => $filters['owner_type'],
-                        "owner_id" => $filters['owner_id'],
-                        "type" => $filters['type'],
-                    ]
-                );
-                //var_dump("checkScheduleCrash schedules:",$schedules);
-                foreach ($schedules as $schedule) {
-                    if (!is_null($schedule->{$filters["day"]}) or $schedule->{$filters["day"]} === false) {
-                        return false;
+            if (array_key_exists('owners', $filters)) {
+                foreach ($filters["owners"] as $owner_type => $owner_id) {
+                    $schedules = $this->getListByFilters(
+                        [
+                            "time" => $times,
+                            "owner_type" => $owner_type,
+                            "owner_id" => $owner_id,
+                            "type" => $filters['type'],
+                            "season" => $filters['season']
+                        ]
+                    );
+                    //var_dump("checkScheduleCrash schedules:",$schedules);
+                    foreach ($schedules as $schedule) {
+                        if (!is_null($schedule->{$filters["day"]}) or $schedule->{$filters["day"]} === false) {
+                            return false;
+                        }
                     }
                 }
-            } else throw new Exception("Owner_type girilmemiş");
+
+            } else throw new Exception("Owners bilgileri girilmemiş");
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }

@@ -246,8 +246,10 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((data) => {
                 if (data.status === "error") {
                     console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
+                    console.log(data)
                     return true;
                 }
             })
@@ -420,7 +422,8 @@ document.addEventListener("DOMContentLoaded", function () {
             clearCells(table);
         })
     }
-    function clearCells(table){
+
+    function clearCells(table) {
         if (unavailableCell) {
             for (let i = 0; i <= 9; i++) {
                 for (let cell in unavailableCell[i]) {

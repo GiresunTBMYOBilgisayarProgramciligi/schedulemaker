@@ -577,68 +577,41 @@ class AjaxRouter extends Router
                 if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
-                    $crashFilters = ["owner_type" => "user",
-                        "owner_id" => $lecturer->id,
+                    $classroom = $classroomController->getListByFilters(["name" => $this->data['classroom_name']])[0];
+                    $crashFilters = [
+                        "owners" => ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id],
                         "type" => "lesson",
                         "time_start" => $this->data['time_start'],
                         "day" => "day" . $this->data['day'],
-                        "lesson_hours" => $this->data['lesson_hours'],];
+                        "lesson_hours" => $this->data['lesson_hours'],
+                        "season" => $this->data['season'],];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {
                         $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time_start'], $this->data['lesson_hours']);
-                        $classroom = $classroomController->getListByFilters(["name" => $this->data['classroom_name']])[0];
                         foreach ($timeArray as $time) {
-                            // ders için
-                            $schedule = new Schedule();
                             $day = [
                                 "lesson_id" => $this->data['lesson_id'],
                                 "classroom_id" => $classroom->id,
                                 "lecturer_id" => $lecturer->id,
                             ];
-                            $schedule->fill([
-                                "type" => "lesson",
-                                "owner_type" => "lesson",
-                                "owner_id" => $lesson->id,
-                                "day" . $this->data['day'] => $day,
-                                "time" => $time,
-                                "season" => $this->data['season'],
-                            ]);
-                            $this->response["lesson_result"] = $scheduleController->saveNew($schedule);
-                            // hoca için
-                            $schedule->fill([
-                                "type" => "lesson",
-                                "owner_type" => "user",
-                                "owner_id" => $lecturer->id,
-                                "day" . $this->data['day'] => $day,
-                                "time" => $time,
-                                "season" => $this->data['season'],
-                            ]);
-                            $this->response["lecturer_result"] = $scheduleController->saveNew($schedule);
-                            // sınıf için
-                            $schedule->fill([
-                                "type" => "lesson",
-                                "owner_type" => "classroom",
-                                "owner_id" => $classroom->id,
-                                "day" . $this->data['day'] => $day,
-                                "time" => $time,
-                                "season" => $this->data['season'],
-                            ]);
-                            $this->response["classroom_result"] = $scheduleController->saveNew($schedule);
-                            //progam için
-                            $schedule->fill([
-                                "type" => "lesson",
-                                "owner_type" => "program",
-                                "owner_id" => $lesson->program_id,
-                                "day" . $this->data['day'] => $day,
-                                "time" => $time,
-                                "season" => $this->data['season'],
-                            ]);
-                            $this->response["program_result"] = $scheduleController->saveNew($schedule);
+
+                            $schedule = new Schedule();
+                            foreach ($crashFilters['owners'] as $owner_type => $owner_id) {
+                                $schedule->fill([
+                                    "type" => "lesson",
+                                    "owner_type" => $owner_type,
+                                    "owner_id" => $owner_id,
+                                    "day" . $this->data['day'] => $day,
+                                    "time" => $time,
+                                    "season" => $this->data['season'],
+                                ]);
+                                $this->response[$owner_type . "_result"] = $scheduleController->saveNew($schedule);
+                            }
                         }
 
                         $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
                     } else {
                         $this->response = [
-                            "msg" => "Hoca ders programı boş değil",
+                            "msg" => "Programda Çakışma var",
                             "status" => "error"
                         ];
                     }
