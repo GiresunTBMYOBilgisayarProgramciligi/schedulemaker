@@ -404,22 +404,23 @@ document.addEventListener("DOMContentLoaded", function () {
                     lesson.addEventListener('dragstart', dragStartHandler);
                     addedHours++;
                 }
+                /*
+            Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
+             */
+                if (lessonHours !== selectedHours) {
+                    draggedElement.querySelector("span.badge").innerHTML = lessonHours - selectedHours;
+                } else {
+                    //saatlerin tamamı bittiyse listeden sil
+                    draggedElement.remove();
+                }
+                scheduleModal.closeModal();
+                clearCells(table);
             } else {
                 scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
                 scheduleModal.body.classList.add("text-bg-danger");
             }
 
-            /*
-            Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
-             */
-            if (lessonHours !== selectedHours) {
-                draggedElement.querySelector("span.badge").innerHTML = lessonHours - selectedHours;
-            } else {
-                //saatlerin tamamı bittiyse listeden sil
-                draggedElement.remove();
-            }
-            scheduleModal.closeModal();
-            clearCells(table);
+
         })
     }
 
