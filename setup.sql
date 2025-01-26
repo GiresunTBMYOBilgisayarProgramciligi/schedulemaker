@@ -22,7 +22,7 @@ create table if not exists schedule
     day4       text,
     day5       text,
     primary key (id),
-    unique (owner_type, owner_id, time)
+    unique (owner_type, owner_id, time,season)
 ) ENGINE = INNODB;
 
 create table if not exists users
