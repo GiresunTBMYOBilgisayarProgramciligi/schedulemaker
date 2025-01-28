@@ -82,6 +82,7 @@ class ScheduleController extends Controller
             "15.00 - 15.50" => (object)$this->emptyWeek,
             "16.00 - 16.50" => (object)$this->emptyWeek
         ];
+        $lessonHourCount = [];
         /*
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
@@ -124,11 +125,12 @@ class ScheduleController extends Controller
                         foreach ($day as $column) {
                             $column = (object)$column; // Array'i objeye dönüştür
                             $lesson = (new LessonController())->getLesson($column->lesson_id);
+                            $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
                             $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
                             $out .= '
                             <div 
-                            id="scheduleTable-lesson-' . $column->lesson_id . '"
+                            id="scheduleTable-lesson-' . $column->lesson_id .'-'. $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
@@ -150,6 +152,7 @@ class ScheduleController extends Controller
                         // Eğer day bir array ise bilgileri yazdır
                         $day = (object)$day; // Array'i objeye dönüştür
                         $lesson = (new LessonController())->getLesson($day->lesson_id);
+                        $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturerName = $lesson->getLecturer()->getFullName();
                         $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
                         //Ders gruplu ise drop zone ekle
@@ -157,7 +160,7 @@ class ScheduleController extends Controller
                         $out .= '
                         <td class="' . $drop_zone . '">
                             <div 
-                            id="scheduleTable-lesson-' . $day->lesson_id . '"
+                            id="scheduleTable-lesson-' . $day->lesson_id .'-'. $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
