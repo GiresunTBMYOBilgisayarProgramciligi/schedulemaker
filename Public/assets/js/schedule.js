@@ -99,7 +99,8 @@ document.addEventListener("DOMContentLoaded", function () {
                   <div id="available-lesson-${lesson.id}" draggable="true" 
                   class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                   data-season="${lesson.season}"
-                  data-lesson-code="${lesson.code}">
+                  data-lesson-code="${lesson.code}"
+                  data-lesson-id="${lesson.id}">
                     <div class="ms-2 me-auto">
                       <div class="fw-bold"><i class="bi bi-book"></i> ${lesson.code} ${lesson.name}</div>
                       ${lesson.lecturer_name}
@@ -205,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
-                        option.value = classroom.name
+                        option.value = classroom.name//todo value yerine id nasıl olur?
                         option.innerText = classroom.name
                         classroomSelect.appendChild(option)
                     })
@@ -216,7 +217,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast("Hata", "Uygun ders listesi alınırken hata oluştu", "danger");
                 console.error(error);
             });
-
     }
 
     async function saveSchedule(scheduleData) {
@@ -251,6 +251,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
+    /**
+     * Belirtilen tabloda dersin hocasının dolu günleri vurgulanır
+     * @param lessonId
+     * @param table
+     * @returns {Promise<boolean>}
+     */
     function highlightUnavailableCells(lessonId, table) {
         let data = new FormData()
         data.append("lesson_id", lessonId);
@@ -360,7 +366,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkedHours++
             }
 
-            let lessonId = draggedElement.id.match(/\d+$/)[0];//sondaki sayı aılınıyor
+            let lessonId = draggedElement.dataset['lessonId'];
             let result = await saveSchedule(
                 {
                     "lessonId": lessonId,
@@ -411,8 +417,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
                 scheduleModal.body.classList.add("text-bg-danger");
             }
-
-
         })
     }
 
@@ -434,7 +438,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dropTableToList(tableElement, draggedElement, dropZone) {
         if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
-
         /*
         Tabloda scheduleTable ile başlayan id listede kullanılan available ile başlayan id ye dönüştürülüyor
          */
@@ -457,8 +460,6 @@ document.addEventListener("DOMContentLoaded", function () {
             dropZone.appendChild(draggedElement)
             draggedElement.querySelector("span.badge").innerText = 1
         }
-
-
     }
 
     function dropTableToTable(table, draggedElement, dropZone) {
@@ -590,12 +591,10 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table[data-season="' + event.dataTransfer.getData("season") + '"]')
-            let lessonID = event.target.id.match(/\d+$/)[0];//sondaki sayı aılınıyor
+            let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
             let result = highlightUnavailableCells(lessonID, table);
         }
-
-
     }
 
     /**
