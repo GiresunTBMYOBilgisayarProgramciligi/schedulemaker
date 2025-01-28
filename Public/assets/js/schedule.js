@@ -1,5 +1,6 @@
 /**
  * Uygyn dersler listesinden ders sürüklenmeye başladığında aynı sezondaki tablo içerisinde uygun olmayan hücrelerin listesi
+ * todo Bu yapı özel bulutta matematik web-dev dalında olduğu gibi tamamiyle olaylar üzerinden çalıştırılabilir.
  */
 let unavailableCell;
 /**
@@ -16,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function programChangeHandle() {
         // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
-        let data =new FormData();
+        let data = new FormData();
         for (var i = 0; i < scheduleTableElements.length; i++) {
             data = new FormData(); // eski verileri silmek için yenile
             data.append("type", "lesson")
@@ -415,6 +416,11 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 
+    /**
+     * Ders sürükleme işlemi başlatıldığında tablo üzerinde hocanın uygun olmayan saatleri kırmızı ile vurgulanıyor.
+     * Bu fonksiyon o vurguları siler
+     * @param table
+     */
     function clearCells(table) {
         if (unavailableCell) {
             for (let i = 0; i <= 9; i++) {
@@ -428,9 +434,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dropTableToList(tableElement, draggedElement, dropZone) {
         if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
-        //listede taşınan dersin varlığını kontrol et
+
+        /*
+        Tabloda scheduleTable ile başlayan id listede kullanılan available ile başlayan id ye dönüştürülüyor
+         */
         let draggedElementIdInList = draggedElement.id.replace("scheduleTable", "available"); // bırakılan dersin liste id numarası
+        /*
+        Tabloda birden fazla ders elementi olduğu için numaralandırılıyor. Burada o numara kaldırılıyor.
+         */
         draggedElementIdInList = draggedElementIdInList.replace(/-\d+$/, ""); // Sondaki "-X" (ör. -1, -2, -3) kısmını kaldırır
+        //listede taşınan dersin varlığını kontrol et
         if (dropZone.querySelector("#" + draggedElementIdInList)) {
             // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
             let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
