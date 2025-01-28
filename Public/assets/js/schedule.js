@@ -391,6 +391,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     let lesson = draggedElement.cloneNode(true)
+                    lesson.dataset['scheduleDay'] = droppedCellIndex - 1;
+                    lesson.dataset['scheduleTime'] = row.cells[0].innerText;
                     lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
                     cell.appendChild(lesson);
 
@@ -459,6 +461,8 @@ document.addEventListener("DOMContentLoaded", function () {
             draggedElement.id = draggedElementIdInList
             dropZone.appendChild(draggedElement)
             draggedElement.querySelector("span.badge").innerText = 1
+            delete draggedElement.dataset.scheduleTime
+            delete draggedElement.dataset.scheduleDay
         }
     }
 

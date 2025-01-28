@@ -113,14 +113,15 @@ class ScheduleController extends Controller
                     <td>
                     ' . $times[$i] . '
                     </td>';
-            foreach ($tableRow as $tableColumn) {
+            $dayIndex = 0;
+            foreach ($tableRow as $day) {
                 /*
-                 * Eğer bir ders kaydedilmişse tableColumn true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
+                 * Eğer bir ders kaydedilmişse day true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
-                if (is_array($tableColumn)) {
-                    if (is_array($tableColumn[0])) {
+                if (is_array($day)) {
+                    if (is_array($day[0])) {
                         $out .= '<td>';
-                        foreach ($tableColumn as $column) {
+                        foreach ($day as $column) {
                             $column = (object)$column; // Array'i objeye dönüştür
                             $lesson = (new LessonController())->getLesson($column->lesson_id);
                             $lecturerName = $lesson->getLecturer()->getFullName();
@@ -130,7 +131,9 @@ class ScheduleController extends Controller
                             id="scheduleTable-lesson-' . $column->lesson_id . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '">
+                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
+                            data-schedule-time="' . $times[$i] . '"
+                            data-schedule-day="' . $dayIndex . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
@@ -144,25 +147,27 @@ class ScheduleController extends Controller
                         }
                         $out .= '</td>';
                     } else {
-                        // Eğer tableColumn bir array ise bilgileri yazdır
-                        $tableColumn = (object)$tableColumn; // Array'i objeye dönüştür
-                        $lesson = (new LessonController())->getLesson($tableColumn->lesson_id);
+                        // Eğer day bir array ise bilgileri yazdır
+                        $day = (object)$day; // Array'i objeye dönüştür
+                        $lesson = (new LessonController())->getLesson($day->lesson_id);
                         $lecturerName = $lesson->getLecturer()->getFullName();
-                        $classroomName = (new ClassroomController())->getClassroom($tableColumn->classroom_id)->name;
+                        $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
                         //Ders gruplu ise drop zone ekle
                         $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
                         $out .= '
                         <td class="' . $drop_zone . '">
                             <div 
-                            id="scheduleTable-lesson-' . $tableColumn->lesson_id . '"
+                            id="scheduleTable-lesson-' . $day->lesson_id . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '">
+                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
+                            data-schedule-time="' . $times[$i] . '"
+                            data-schedule-day="' . $dayIndex . '">
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $tableColumn->lecturer_id . '">
+                                    <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
                                     </div>
-                                    <div id="classroom-' . $tableColumn->classroom_id . '">' . $lecturerName . '</div>
+                                    <div id="classroom-' . $day->classroom_id . '">' . $lecturerName . '</div>
                                 </div>
                                 <span class="badge bg-info rounded-pill">
                                     <i class="bi bi-door-open"></i> ' . $classroomName . '
@@ -170,16 +175,16 @@ class ScheduleController extends Controller
                             </div>
                         </td>';
                     }
-                } elseif (is_null($tableColumn) || $tableColumn === true) {
+                } elseif (is_null($day) || $day === true) {
                     // Eğer null veya true ise boş dropzone ekle
-                    $out .= ($tableColumn === true && $times[$i] === "12.00 - 12.50")
+                    $out .= ($day === true && $times[$i] === "12.00 - 12.50")
                         ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
                         : '<td class="drop-zone"></td>';
                 } else {
                     // Eğer false ise kırmızı vurgulu hücre ekle
                     $out .= '<td class="bg-danger"></td>';
                 }
-
+                $dayIndex++;
             }
         }
         $out .= '</tbody>
