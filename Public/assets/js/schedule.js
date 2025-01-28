@@ -508,7 +508,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-    function dropTableToTable(table, draggedElement, dropZone) {
+    async function dropTableToTable(table, draggedElement, dropZone) {
         //dersin bırakıldığı satırın tablo içindeki index numarası
         let droppedRowIndex = dropZone.closest("tr").rowIndex
         //dersin bırakıldığı sütunun satır içerisindeki index numarası
@@ -516,7 +516,34 @@ document.addEventListener("DOMContentLoaded", function () {
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
         if (!checkLessonCrash(cell, draggedElement)) return;
-        cell.appendChild(draggedElement);
+        let deleteResult = await deleteSchedule(
+            {
+                "lesson_id": draggedElement.dataset.lessonId,
+                "schedule_time": draggedElement.dataset.scheduleTime,
+                "day_index": draggedElement.dataset.scheduleDay,
+                "season": draggedElement.dataset.season,
+                "classroom_name": draggedElement.querySelector("span.badge").innerText
+            });
+        if (deleteResult) {
+            console.log("Eski ders Silindi");
+        } else console.log("Eski ders Silinemedi");
+
+        let saveResult = await saveSchedule(
+            {
+                "lessonId": draggedElement.dataset.lessonId,
+                "scheduleTime": table.rows[droppedRowIndex].cells[0].innerText,
+                "lessonHours": 1,
+                "day": droppedCellIndex - 1,
+                "selectedClassroom": draggedElement.querySelector("span.badge").innerText,
+                "season": draggedElement.dataset['season']
+            });
+        if (saveResult) {
+            console.log("Yeni ders eklendi");
+
+
+            cell.appendChild(draggedElement);
+        } else console.error("Yeni ders Eklenemedi")
+
 
         /* dersleri toplu halde taşıma işlemi için aşağıdaki kodları yazdım. ama çok sorun çıkartıyor tek tek taşıyacağım
         let draggedLessonOrder = draggedElement.id.match(/-(\d+)$/)[1];
