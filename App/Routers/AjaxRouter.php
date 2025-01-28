@@ -577,7 +577,7 @@ class AjaxRouter extends Router
                 if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
-                    $classroom = $classroomController->getListByFilters(["name" => $this->data['classroom_name']])[0];
+                    $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
                     $crashFilters = [
                         "owners" => ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id],
                         "type" => "lesson",
@@ -686,5 +686,44 @@ class AjaxRouter extends Router
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }
+    }
+
+    public function deleteScheduleAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $scheduleController = new ScheduleController();
+                $lessonController = new LessonController();
+                $classroomController = new ClassroomController();
+                $lesson = $lessonController->getLesson($this->data['lesson_id']);
+                $lecturer = $lesson->getLecturer();
+                $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+                $owners= ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id];
+                $day=[
+                    "lesson_id" => $lesson->id,
+                    "classroom_id" => $classroom->id,
+                    "lecturer_id" => $lecturer->id,
+                ];
+                foreach ($owners as $owner_type => $owner_id) {
+                    $filters = [
+                        "owner_type" => $owner_type,
+                        "owner_id" => $owner_id,
+                        "day_index" => $this->data['day_index'],
+                        "day" => $day,
+                        "type" => "lesson",
+                        "time"=>$this->data['time'],
+                        "season" => $this->data['season'],
+                    ];
+                    $this->response[$owner_type . "_result"] = $scheduleController->deleteSchedule($filters);
+                }
+            } catch (\Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($this->response);
     }
 }

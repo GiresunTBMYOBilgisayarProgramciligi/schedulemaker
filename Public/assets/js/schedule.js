@@ -438,32 +438,74 @@ document.addEventListener("DOMContentLoaded", function () {
         unavailableCell = null;
     }
 
-    function dropTableToList(tableElement, draggedElement, dropZone) {
-        if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
-        /*
-        Tabloda scheduleTable ile başlayan id listede kullanılan available ile başlayan id ye dönüştürülüyor
-         */
-        let draggedElementIdInList = draggedElement.id.replace("scheduleTable", "available"); // bırakılan dersin liste id numarası
-        /*
-        Tabloda birden fazla ders elementi olduğu için numaralandırılıyor. Burada o numara kaldırılıyor.
-         */
-        draggedElementIdInList = draggedElementIdInList.replace(/-\d+$/, ""); // Sondaki "-X" (ör. -1, -2, -3) kısmını kaldırır
-        //listede taşınan dersin varlığını kontrol et
-        if (dropZone.querySelector("#" + draggedElementIdInList)) {
-            // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
-            let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
-            let hoursInList = lessonInlist.querySelector("span.badge").innerText
-            lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
-            draggedElement.remove()
+    async function deleteSchedule(scheduleData) {
+        let data = new FormData();
+        data.append("lesson_id", scheduleData.lesson_id);
+        data.append("time", scheduleData.schedule_time);
+        data.append("day_index", scheduleData.day_index);
+        data.append("season", scheduleData.season);
+        data.append("classroom_name", scheduleData.classroom_name);
+        return fetch("/ajax/deleteSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                return false;
+            });
+    }
 
-        } else {
-            //eğer listede yoksa o ders listeye eklenir
-            draggedElement.id = draggedElementIdInList
-            dropZone.appendChild(draggedElement)
-            draggedElement.querySelector("span.badge").innerText = 1
-            delete draggedElement.dataset.scheduleTime
-            delete draggedElement.dataset.scheduleDay
+    /**
+     * Tablodan alınarak listeye geri bırakılan dersler için yapılan işlemler
+     * @param tableElement
+     * @param draggedElement
+     * @param dropZone
+     * @returns {Promise<void>}
+     */
+    async function dropTableToList(tableElement, draggedElement, dropZone) {
+        if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
+        let result = await deleteSchedule(
+            {
+                "lesson_id": draggedElement.dataset['lessonId'],
+                "schedule_time": draggedElement.dataset.scheduleTime,
+                "day_index": draggedElement.dataset.scheduleDay,
+                "season": draggedElement.dataset.season,
+                "classroom_name": draggedElement.querySelector("span.badge").innerText
+            });
+        if (result) {
+            let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
+            //listede taşınan dersin varlığını kontrol et
+            if (dropZone.querySelector("#" + draggedElementIdInList)) {
+                // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
+                let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
+                let hoursInList = lessonInlist.querySelector("span.badge").innerText
+                lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
+                draggedElement.remove()
+
+            } else {
+                //eğer listede yoksa o ders listeye eklenir
+                draggedElement.id = draggedElementIdInList
+                dropZone.appendChild(draggedElement)
+                draggedElement.querySelector("span.badge").innerText = 1
+                delete draggedElement.dataset.scheduleTime
+                delete draggedElement.dataset.scheduleDay
+            }
         }
+
     }
 
     function dropTableToTable(table, draggedElement, dropZone) {

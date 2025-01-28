@@ -460,7 +460,7 @@ class ScheduleController extends Controller
     public function updateSchedule(Schedule $schedule)
     {
         try {
-            $scheduleData = $schedule->getArray(['table_name', 'database', 'id']);
+            $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
             //dizi türündeki veriler serialize ediliyor
             array_walk($scheduleData, function (&$value) {
                 if (is_array($value)) {
@@ -498,5 +498,48 @@ class ScheduleController extends Controller
             }
         }
         return ["status" => "success"];
+    }
+
+    public function deleteSchedule($filters)
+    {
+        try {
+            $scheduleData = array_diff_key($filters, array_flip(["day", "day_index"]));// day ve day_index alanları çıkartılıyor
+            $schedule = $this->getListByFilters($scheduleData)[0];
+            if (array_key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
+                if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
+                    $schedule->{"day" . $filters["day_index"]} = null;
+                    $weekEmpty = true;
+                    for ($i = 0; $i < 6; $i++) { //günler tek tek kontrol edilecek
+                        if (!is_null($schedule->{"day" . $i})) {
+                            $weekEmpty = false;
+                        }
+                    }
+                    if ($weekEmpty)
+                        return $this->delete($schedule->id);
+                    else
+                        return $this->updateSchedule($schedule);
+                }
+            } else {
+                // Bu durumda günde iki ders var
+                for ($i = 0; $i < 2; $i++) {
+                    if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
+                        unset($schedule->{"day" . $filters["day_index"]}[$i]);
+                    }
+                }
+                $weekEmpty = true;
+                for ($i = 0; $i < 6; $i++) { //günler tek tek kontrol edilecek
+                    if (!is_null($schedule->{"day" . $i})) {
+                        $weekEmpty = false;
+                    }
+                }
+                if ($weekEmpty)
+                    return $this->delete($schedule->id);
+                else
+                    return $this->updateSchedule($schedule);
+            }
+
+        } catch (Exception $e) {
+            return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+        }
     }
 }
