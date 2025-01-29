@@ -221,11 +221,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function saveSchedule(scheduleData) {
         let data = new FormData();
-        data.append("lesson_id", scheduleData.lessonId);
-        data.append("time_start", scheduleData.scheduleTime);
-        data.append("lesson_hours", scheduleData.lessonHours);
+        data.append("lesson_id", scheduleData.lesson_id);
+        data.append("time_start", scheduleData.schedule_time);
+        data.append("lesson_hours", scheduleData.lesson_hours);
         data.append("day", scheduleData.day);
-        data.append("classroom_name", scheduleData.selectedClassroom);
+        data.append("classroom_name", scheduleData.selected_classroom);
         data.append("season", scheduleData.season)
         return fetch("/ajax/saveSchedule", {
             method: "POST",
@@ -369,11 +369,11 @@ document.addEventListener("DOMContentLoaded", function () {
             let lessonId = draggedElement.dataset['lessonId'];
             let result = await saveSchedule(
                 {
-                    "lessonId": lessonId,
-                    "scheduleTime": scheduleTime,
-                    "lessonHours": lessonHours,
+                    "lesson_id": lessonId,
+                    "schedule_time": scheduleTime,
+                    "lesson_hours": lessonHours,
                     "day": droppedCellIndex - 1,
-                    "selectedClassroom": selectedClassroom,
+                    "selected_classroom": selectedClassroom,
                     "season": draggedElement.dataset['season']
                 });
             if (result) {
@@ -530,11 +530,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let saveResult = await saveSchedule(
             {
-                "lessonId": draggedElement.dataset.lessonId,
-                "scheduleTime": table.rows[droppedRowIndex].cells[0].innerText,
-                "lessonHours": 1,
+                "lesson_id": draggedElement.dataset.lessonId,
+                "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
+                "lesson_hours": 1,
                 "day": droppedCellIndex - 1,
-                "selectedClassroom": draggedElement.querySelector("span.badge").innerText,
+                "selected_classroom": draggedElement.querySelector("span.badge").innerText,
                 "season": draggedElement.dataset['season']
             });
         if (saveResult) {
@@ -660,7 +660,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (event.target.closest("table")) {
             event.dataTransfer.setData("start_element", "table")
-
+            let table = event.target.closest("table")
+            let lessonID = event.target.dataset['lessonId'];
+            clearCells(table);
+            let result = highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table[data-season="' + event.dataTransfer.getData("season") + '"]')
