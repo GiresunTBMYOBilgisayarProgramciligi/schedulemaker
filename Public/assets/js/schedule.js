@@ -224,7 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time_start", scheduleData.schedule_time);
         data.append("lesson_hours", scheduleData.lesson_hours);
-        data.append("day", scheduleData.day);
+        data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.selected_classroom);
         data.append("season", scheduleData.season)
         return fetch("/ajax/saveSchedule", {
@@ -372,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "lesson_id": lessonId,
                     "schedule_time": scheduleTime,
                     "lesson_hours": lessonHours,
-                    "day": droppedCellIndex - 1,
+                    "day_index": droppedCellIndex - 1,
                     "selected_classroom": selectedClassroom,
                     "season": draggedElement.dataset['season']
                 });
@@ -533,7 +533,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_id": draggedElement.dataset.lessonId,
                 "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
                 "lesson_hours": 1,
-                "day": droppedCellIndex - 1,
+                "day_index": droppedCellIndex - 1,
                 "selected_classroom": draggedElement.querySelector("span.badge").innerText,
                 "season": draggedElement.dataset['season']
             });
