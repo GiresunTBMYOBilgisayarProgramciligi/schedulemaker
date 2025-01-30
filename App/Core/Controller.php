@@ -48,11 +48,16 @@ class Controller
         }
     }
 
-    public function delete($id = null)
+    /**
+     * @param $id
+     * @return void
+     * @throws \Exception
+     */
+    public function delete($id = null): void
     {
         try {
             if (is_null($id)) {
-                return ['error' => 'Geçerli bir ID sağlanmadı.'];
+                throw new \Exception('Geçerli bir ID sağlanmadı.');
             }
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
@@ -66,7 +71,7 @@ class Controller
                 throw new \Exception('Kayıt bulunamadı veya silinemedi.');
             }
         } catch (\Exception $e) {
-            return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            throw new \Exception("Dilme işlemi yapılırken hata oluştu:" . $e->getMessage());
         }
     }
 

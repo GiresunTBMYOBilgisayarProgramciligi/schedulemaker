@@ -30,6 +30,7 @@ class ScheduleController extends Controller
      * Veri tabanından verileri alıp Schedule Modeli ile oluşturulan bir veri döndürür
      * @param int|null $id
      * @return Schedule|void
+     * @throws Exception
      */
     public function getSchedule(?int $id = null)
     {
@@ -46,8 +47,7 @@ class ScheduleController extends Controller
                     return $schedule;
                 } else throw new Exception("Schedule not found");
             } catch (Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
-                echo $e->getMessage();
+                throw new Exception($e->getMessage());
             }
         }
     }
@@ -130,7 +130,7 @@ class ScheduleController extends Controller
                             $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
                             $out .= '
                             <div 
-                            id="scheduleTable-lesson-' . $column->lesson_id .'-'. $lessonHourCount[$lesson->id] . '"
+                            id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
@@ -160,7 +160,7 @@ class ScheduleController extends Controller
                         $out .= '
                         <td class="' . $drop_zone . '">
                             <div 
-                            id="scheduleTable-lesson-' . $day->lesson_id .'-'. $lessonHourCount[$lesson->id] . '"
+                            id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
@@ -199,32 +199,41 @@ class ScheduleController extends Controller
      * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
      * @param array $filters
      * @return array
+     * @throws Exception
      */
     public function availableLessons(array $filters = []): array
     {
-        $available_lessons = [];
-        if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
-            if ($filters['owner_type'] == "program") {
-                $lessonFilters = [];
-                if (array_key_exists("season", $filters)) {
-                    $lessonFilters['season'] = $filters['season'];
-                }
-                $lessonFilters['program_id'] = $filters['owner_id'];
-                $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
-                foreach ($lessonsList as $lesson) {
-                    if (!$this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id])) {
-                        $lesson->lecturer_name = $lesson->getLecturer()->getFullName();
-                        $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);
-                        $available_lessons[] = $lesson;
+        try {
+            $available_lessons = [];
+            if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
+                if ($filters['owner_type'] == "program") {
+                    $lessonFilters = [];
+                    if (array_key_exists("season", $filters)) {
+                        $lessonFilters['season'] = $filters['season'];
+                    } else throw new Exception("Sezon/Yarıyıl bilgisi yok");
+                    $lessonFilters['program_id'] = $filters['owner_id'];
+                    $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
+                    /*
+                     * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+                     */
+                    foreach ($lessonsList as $lesson) {
+                        if (!$this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id])) {
+                            //Ders Programı tamamlanmamışsa
+                            $lesson->lecturer_name = $lesson->getLecturer()->getFullName(); // ders sınıfına Hoca adı ekleniyor
+                            $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);// programa eklenmiş olan saatlar çıkartılıyor.
+                            $available_lessons[] = $lesson;
+                        }
                     }
-
                 }
             }
+            return $available_lessons;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
-        return $available_lessons;
     }
 
     /**
+     * Başlangıç saatine ve ders saat miktarına göre saat dizisi oluşturur
      * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
      * @param int $hours
      * @return array
@@ -257,14 +266,19 @@ class ScheduleController extends Controller
         return $schedule;
     }
 
-    public function availableClassrooms(array $filters = [])
+    /**
+     * Belirtilen filtrelere uygun dersliklerin listesini döndürür
+     * @param array $filters
+     * @return array
+     * @throws Exception
+     */
+    public function availableClassrooms(array $filters = []): array
     {
         try {
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
                 throw new \Exception("Missing hours and time");
             }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
-            $available_classrooms = [];
             $unavailable_classroom_ids = [];
             if (array_key_exists('owner_type', $filters)) {
                 if ($filters['owner_type'] == "classroom") {
@@ -275,18 +289,18 @@ class ScheduleController extends Controller
                         ]
                     );
                     foreach ($classroomSchedules as $classroomSchedule) {
-                        if (!is_null($classroomSchedule->{$filters["day"]})) {
+                        if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtiken gün boş değilse derslik uygun değildir
                             $unavailable_classroom_ids[] = $classroomSchedule->owner_id;
                         }
                     }
                     $available_classrooms = (new ClassroomController())->getListByFilters(["!id" => $unavailable_classroom_ids]);
-                }
-            }
+                } else throw new Exception("owner_type classroom değil");
+            } else throw new Exception("owner_type belirtilmemiş");
         } catch (Exception $e) {
-            return ["status" => "error", "msg" => $e->getMessage()];//todo ajax respose kalıbı her yerde aynı olmalı bunu sağlamak için bir şeyler yapılabilir.
+            throw new Exception($e->getMessage());
         }
 
-        return ["status" => "success", "classrooms" => $available_classrooms];
+        return $available_classrooms;
     }
 
     /**
@@ -314,20 +328,25 @@ class ScheduleController extends Controller
                             "season" => $filters['season']
                         ]
                     );
-                    var_dump($schedules);
                     foreach ($schedules as $schedule) {
-                        if ($schedule->{$filters["day"]}) {
-                            if (is_array($schedule->{$filters["day"]}) and in_array($schedule->owner_type, ["lesson", "program"])) {
+                        if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
+                            if (is_array($schedule->{$filters["day"]})) {
+                                // belirtilen gün içerisinde bir veri varsa
+                                /**
+                                 * var olan dersin kodu
+                                 */
                                 $lessonCode = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id'])->code;
+                                /**
+                                 * yeni eklenmek istenen dersin kodu
+                                 */
                                 $newLessonCode = (new LessonController())->getLesson($filters['owners']['lesson'])->code;
                                 /*
-                                 * todo açıklama ekle
+                                 * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                                  */
                                 if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
-                                    return false;
+                                    //derslerden en az biri gruplu değil çakışma var
+                                    $result = false;
                                 }
-                            } else {
-                                return false;
                             }
                         }
                     }
@@ -343,11 +362,13 @@ class ScheduleController extends Controller
     /**
      * Gelen owner_type a göre belirlenen koşulların sağlanıp sağlanmadığını kontrol ederek Takvimin tamamlanıp tamamlanmadığını döner
      * @param array $filters kontrol edilecek Modelin bilgilerini içerir lesson, lecturer,program,department
-     * @return bool|void
+     * @return bool
+     * @throws Exception
      */
-    public function checkIsScheduleComplete(array $filters = [])
+    public function checkIsScheduleComplete(array $filters = []): bool
     {
         try {
+            $result = true;
             if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
                 //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
                 if ($filters['owner_type'] == "lesson") {
@@ -355,20 +376,22 @@ class ScheduleController extends Controller
                     $lessonController = new LessonController();
                     $lesson = $lessonController->getLesson($filters['owner_id']);
                     if (count($schedules) < $lesson->hours) {
-                        return false;
-                    } else return true;
+                        $result = false;
+                    } else $result = true;
                 }//todo diğer türler için işlemler
-            }
+            } else
+                throw new Exception("owner_type ve/veya owner_id belirtilmemiş");
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-
+        return $result;
     }
 
     /**
-     * belirtilen filtreye uyan schedule satırlarının sayısını döner
+     * belirtilen filitreye uyan schedule satırlarının sayısını döner
      * @param array $filters
-     * @return false|int|mixed
+     * @return int
+     * @throws Exception
      */
     public function getCount(array $filters = [])
     {
@@ -398,22 +421,20 @@ class ScheduleController extends Controller
             $stmt->execute();
 
             // Verileri işle
-            $result = $stmt->fetchColumn();
-
-            return $result;
+            return $stmt->fetchColumn();
 
         } catch (Exception $e) {
-            echo $e->getMessage();
-            return 0;
+            throw new Exception($e->getMessage());
         }
     }
 
     /**
      * Schedule tablosuna yeni kayıt ekler
      * @param Schedule $new_schedule
-     * @return string[] todo string dizi dönmek yerine kaydedilen verinin id numarası dönmeli. hata durumunda hata fırlatmalı
+     * @return int Son eklenen verinin id numarasını döner
+     * @throws Exception
      */
-    public function saveNew(Schedule $new_schedule): array
+    public function saveNew(Schedule $new_schedule): int
     {
         try {
             // Yeni kullanıcı verilerini bir dizi olarak alın
@@ -429,19 +450,29 @@ class ScheduleController extends Controller
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_schedule_arr);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası) program var gün güncellenecek
                 try {
                     $updatingSchedule = $this->getListByFilters($new_schedule->getArray(
                         ['table_name', 'database', 'id', 'day0', 'day1', 'day2', 'day3', 'day4', 'day5']))[0];
+                    // Yeni eklenecek gün bilgisinin hangi gün olduğunu bilmediğimden tüm günler için döngü oluşturulyor
                     for ($i = 0; $i < 6; $i++) {
+                        //yeni eklenecek dersin boş günlerini geçiyoruz. sadece dolu olanlar kaydedilecek
                         if (!is_null($new_schedule->{"day" . $i})) {
-                            //yeni eklenecek dersin boş günlerini geçiyoruz. sadece dolu olanlar kaydedilecek
+                            // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
                             if (is_array($updatingSchedule->{"day" . $i})) {
-                                // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
+                                /**
+                                 * Var olan dersin kodu
+                                 */
                                 $lessonCode = (new LessonController())->getLesson($updatingSchedule->{"day" . $i}['lesson_id'])->code;
+                                /**
+                                 * Yeni eklenecek dersin kodu
+                                 */
                                 $newLessonCode = (new LessonController())->getLesson($new_schedule->{"day" . $i}['lesson_id'])->code;
+                                // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
+                                // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
                                 if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {
                                     $dayData = [];
                                     $dayData[] = $updatingSchedule->{"day" . $i};
@@ -452,28 +483,32 @@ class ScheduleController extends Controller
                                     throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
                                 }
                             } else {
-                                // ders yada program değil normal güncellemem işi yapılacak
-                                $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
+                                // Gün verisi dizi değilse null, true yada false olabilir.
+                                if ($updatingSchedule->{"day" . $i} === false) {
+                                    throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
+                                } else {
+                                    // ders normal şekilde güncellenecek
+                                    $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
+                                }
                             }
                         }
                     }
                     return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
-                    return ["status" => "error", "msg" => "Program Güncellenirken hata oluştu" . $e->getMessage()];
+                    throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage());
                 }
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage());
             }
         }
-
-        return ["status" => "success"];
     }
 
     /**
      * @param Schedule $schedule
-     * @return string[] todo string dizi dönmek yerine güncellenen verinin id numarası dönmeli. hata durumunda hata fırlatmalı
+     * @return int
+     * @throws Exception
      */
-    public function updateSchedule(Schedule $schedule)
+    public function updateSchedule(Schedule $schedule): int
     {
         try {
             $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
@@ -505,58 +540,67 @@ class ScheduleController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                //todo throw
-                return ["status" => "error", "msg" => "Unique Çakışması" . $e->getMessage()];
+                throw new Exception("Schedule Çakışması var" . $e->getMessage());
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception("Schedule güncellenirken Hata oluştu" . $e->getMessage());
             }
         }
-        return ["status" => "success"];
     }
 
-    public function deleteSchedule($filters)
+    /**
+     * @param $filters
+     * @return void
+     * @throws Exception
+     */
+    public function deleteSchedule($filters): void
     {
         try {
             $scheduleData = array_diff_key($filters, array_flip(["day", "day_index"]));// day ve day_index alanları çıkartılıyor
             $schedule = $this->getListByFilters($scheduleData)[0];
+            //belirtilen günde bir ders var ise
             if (array_key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
                 if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
+                    //var olan gün ilebelirtilen gün bilgisi aynı ise
                     $schedule->{"day" . $filters["day_index"]} = null;
-                    $weekEmpty = true;
-                    for ($i = 0; $i < 6; $i++) { //günler tek tek kontrol edilecek
-                        if (!is_null($schedule->{"day" . $i})) {
-                            $weekEmpty = false;
-                        }
-                    }
-                    if ($weekEmpty)
-                        return $this->delete($schedule->id);
+                    if ($this->isScheduleEmpty($schedule))
+                        $this->delete($schedule->id);
                     else
-                        return $this->updateSchedule($schedule);
+                        $this->updateSchedule($schedule);
                 }
             } else {
-                // Bu durumda günde iki ders var
+                // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
                 for ($i = 0; $i < 2; $i++) {
                     if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
                         unset($schedule->{"day" . $filters["day_index"]}[$i]);
                     }
                 }
-                $weekEmpty = true;
-                for ($i = 0; $i < 6; $i++) { //günler tek tek kontrol edilecek
-                    if (!is_null($schedule->{"day" . $i})) {
-                        $weekEmpty = false;
-                    }
-                }
-                if ($weekEmpty)
-                    return $this->delete($schedule->id);
+                if ($this->isScheduleEmpty($schedule))
+                    $this->delete($schedule->id);
                 else
-                    return $this->updateSchedule($schedule);
+                    $this->updateSchedule($schedule);
             }
-
         } catch (Exception $e) {
-            return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+            throw new Exception("Program silinirken bir hata oluştu" . $e->getMessage());
         }
+    }
+
+    /**
+     * Parametre olarak verilen programın günlerinin boş olup olmadığını döner
+     * @param Schedule $schedule
+     * @return bool
+     */
+    private function isScheduleEmpty(Schedule $schedule): bool
+    {
+        $weekEmpty = true;
+        for ($i = 0; $i < 6; $i++) { //günler tek tek kontrol edilecek
+            if (!is_null($schedule->{"day" . $i})) {
+                $weekEmpty = false;
+            }
+        }
+        return $weekEmpty;
     }
 }

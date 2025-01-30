@@ -536,35 +536,58 @@ class AjaxRouter extends Router
         echo json_encode($programController->getProgramsList($department_id));
     }
 
+    /**
+     * @throws \Exception
+     */
     public function getScheduleTableAction()
     {
-
         if ($this->checkAjax()) {
-            $scheduleController = new ScheduleController();
-            $table = $scheduleController->createScheduleTable($this->data);
+            try {
+                $scheduleController = new ScheduleController();
+                $table = $scheduleController->createScheduleTable($this->data);
+                $this->response['status'] = "success";
+                $this->response['table'] = $table;
+            } catch (\Exception $e) {
+                $this->response['status'] = 'error';
+                $this->response['msg'] = $e->getMessage();
+            }
         };
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($table);
+        echo json_encode($this->response);
     }
 
     public function getAvailableLessonsForScheduleAction()
     {
         if ($this->checkAjax()) {
-            $scheduleController = new ScheduleController();
-            $lessons = $scheduleController->availableLessons($this->data);
+            try {
+                $scheduleController = new ScheduleController();
+                $lessons = $scheduleController->availableLessons($this->data);
+                $this->response['status'] = "success";
+                $this->response['lessons'] = $lessons;
+            } catch (\Exception $e) {
+                $this->response['status'] = 'error';
+                $this->response['msg'] = $e->getMessage();
+            }
         };
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($lessons);
+        echo json_encode($this->response);
     }
 
     public function getAvailableClassroomForScheduleAction()
     {
         if ($this->checkAjax()) {
-            $scheduleController = new ScheduleController();
-            $classrooms = $scheduleController->availableClassrooms($this->data);
+            try {
+                $scheduleController = new ScheduleController();
+                $classrooms = $scheduleController->availableClassrooms($this->data);
+                $this->response['status'] = "success";
+                $this->response['classrooms'] = $classrooms;
+            } catch (\Exception $exception) {
+                $this->response['status'] = "error";
+                $this->response['msg'] = $exception->getMessage();
+            }
         };
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($classrooms);
+        echo json_encode($this->response);
     }
 
     /**
@@ -728,8 +751,8 @@ class AjaxRouter extends Router
                 $lesson = $lessonController->getLesson($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
-                $owners= ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id];
-                $day=[
+                $owners = ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id];
+                $day = [
                     "lesson_id" => $lesson->id,
                     "classroom_id" => $classroom->id,
                     "lecturer_id" => $lecturer->id,
@@ -741,10 +764,10 @@ class AjaxRouter extends Router
                         "day_index" => $this->data['day_index'],
                         "day" => $day,
                         "type" => "lesson",
-                        "time"=>$this->data['time'],
+                        "time" => $this->data['time'],
                         "season" => $this->data['season'],
                     ];
-                    $this->response[$owner_type . "_result"] = $scheduleController->deleteSchedule($filters);
+                    $scheduleController->deleteSchedule($filters);
                 }
             } catch (\Exception $e) {
                 $this->response = [
