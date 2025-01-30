@@ -567,6 +567,17 @@ class AjaxRouter extends Router
         echo json_encode($classrooms);
     }
 
+    /**
+     * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
+     * "lesson_id" Programa eklenen dersin id numarası
+     * "time_start" programa eklenen dersin başlangıç saati
+     * "lesson_hours" programa eklenen dersin kaç saat eklendiği
+     * "day_index", programa eklenecek dersin eklendiği günün index numarası
+     * "classroom_name"
+     * "season"
+     *
+     * @return void
+     */
     public function saveScheduleAction()
     {
         if ($this->checkAjax()) {
@@ -574,20 +585,35 @@ class AjaxRouter extends Router
                 $lessonController = new LessonController();
                 $scheduleController = new ScheduleController();
                 $classroomController = new ClassroomController();
-                if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
+                if (key_exists("lesson_id", $this->data)) {
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
                     $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+                    /*
+                     * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+                     */
                     $crashFilters = [
+                        //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                         "owners" => ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id],
+                        // Programın türü lesson yada exam
                         "type" => "lesson",
                         "time_start" => $this->data['time_start'],
-                        "day" => "day" . $this->data['day'],
+                        "day" => "day" . $this->data['day_index'],
                         "lesson_hours" => $this->data['lesson_hours'],
                         "season" => $this->data['season'],];
-                    if ($scheduleController->checkScheduleCrash($crashFilters)) {
+                    if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
+                        /**
+                         * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
+                         *
+                         */
                         $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time_start'], $this->data['lesson_hours']);
+                        /*
+                         * her bir saat için ayrı ekleme yapılacak
+                         */
                         foreach ($timeArray as $time) {
+                            /**
+                             * veri tabanına eklenecek gün verisi
+                             */
                             $day = [
                                 "lesson_id" => $this->data['lesson_id'],
                                 "classroom_id" => $classroom->id,
@@ -595,6 +621,10 @@ class AjaxRouter extends Router
                             ];
 
                             $schedule = new Schedule();
+                            /*
+                             * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
+                             * Bu değerler için döngü oluşturuluyor
+                             */
                             foreach ($crashFilters['owners'] as $owner_type => $owner_id) {
                                 $schedule->fill([
                                     "type" => "lesson",

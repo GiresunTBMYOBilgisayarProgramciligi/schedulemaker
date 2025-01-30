@@ -314,11 +314,15 @@ class ScheduleController extends Controller
                             "season" => $filters['season']
                         ]
                     );
+                    var_dump($schedules);
                     foreach ($schedules as $schedule) {
                         if ($schedule->{$filters["day"]}) {
                             if (is_array($schedule->{$filters["day"]}) and in_array($schedule->owner_type, ["lesson", "program"])) {
                                 $lessonCode = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id'])->code;
                                 $newLessonCode = (new LessonController())->getLesson($filters['owners']['lesson'])->code;
+                                /*
+                                 * todo açıklama ekle
+                                 */
                                 if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
                                     return false;
                                 }
@@ -404,6 +408,11 @@ class ScheduleController extends Controller
         }
     }
 
+    /**
+     * Schedule tablosuna yeni kayıt ekler
+     * @param Schedule $new_schedule
+     * @return string[] todo string dizi dönmek yerine kaydedilen verinin id numarası dönmeli. hata durumunda hata fırlatmalı
+     */
     public function saveNew(Schedule $new_schedule): array
     {
         try {
@@ -448,7 +457,7 @@ class ScheduleController extends Controller
                             }
                         }
                     }
-                    $this->updateSchedule($updatingSchedule);
+                    return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
                     return ["status" => "error", "msg" => "Program Güncellenirken hata oluştu" . $e->getMessage()];
                 }
@@ -460,6 +469,10 @@ class ScheduleController extends Controller
         return ["status" => "success"];
     }
 
+    /**
+     * @param Schedule $schedule
+     * @return string[] todo string dizi dönmek yerine güncellenen verinin id numarası dönmeli. hata durumunda hata fırlatmalı
+     */
     public function updateSchedule(Schedule $schedule)
     {
         try {
@@ -495,6 +508,7 @@ class ScheduleController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                //todo throw
                 return ["status" => "error", "msg" => "Unique Çakışması" . $e->getMessage()];
             } else {
                 return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
