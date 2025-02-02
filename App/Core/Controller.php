@@ -43,7 +43,7 @@ class Controller
             $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
         } catch (\Exception $e) {
-            var_dump($e);
+            //var_dump($e);
             return false;
         }
     }
@@ -123,20 +123,27 @@ class Controller
                 $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
             } else $whereClause = "";
 
-
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";
-            $stmt = $this->database->prepare($sql);
-
-            // Parametreleri bağla
             foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
+                $value = is_integer($value) ? $value : "'" . $value . "'";
+                $sql = str_replace("$key", $value, $sql);
             }
+            error_log("SQL: " . $sql." | Dosya: " . __FILE__ . " Satır: " . __LINE__);
+            //var_dump("sql: " . $sql);
+            $stmt = $this->database->prepare($sql);
+//            // Parametreleri bağla
+//            foreach ($parameters as $key => $value) {
+////                var_dump("key:", $key);
+//  //              var_dump("value:", $value);
+//                $stmt->bindValue($key, $value);
+//            }
 
-            $stmt->execute();
-
+            if (!$stmt->execute())
+                throw new \Exception("Komut çalıştırılamadı");
             // Verileri işle
             $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            //var_dump("result:", $result);
             $models = [];
 
             if ($result) {
@@ -146,8 +153,10 @@ class Controller
                 }
                 foreach ($result as $data) {
                     $model = new $this->modelName();
+                    //var_dump("fillData:",$data);
                     $model->fill($data);
                     $models[] = $model;
+                    //var_dump("models:",$models);
                 }
             }
             return $models;

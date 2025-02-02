@@ -623,7 +623,7 @@ class AjaxRouter extends Router
                         "time_start" => $this->data['time_start'],
                         "day" => "day" . $this->data['day_index'],
                         "lesson_hours" => $this->data['lesson_hours'],
-                        "season" => $this->data['season'],];
+                        "season" => trim($this->data['season']),];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
                         /**
                          * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
@@ -653,11 +653,16 @@ class AjaxRouter extends Router
                                     "type" => "lesson",
                                     "owner_type" => $owner_type,
                                     "owner_id" => $owner_id,
-                                    "day" . $this->data['day'] => $day,
+                                    "day" . $this->data['day_index'] => $day,
                                     "time" => $time,
-                                    "season" => $this->data['season'],
+                                    "season" => trim($this->data['season']),
                                 ]);
-                                $this->response[$owner_type . "_result"] = $scheduleController->saveNew($schedule);
+                                $savedId = $scheduleController->saveNew($schedule);
+                                if ($savedId == 0) {
+                                    $this->response['status'] = "error";
+                                    $this->response['msg'] = $owner_type . " kaydı yapılırken hata oluştu";
+                                } else
+                                    $this->response[$owner_type . "_result"] = $savedId;
                             }
                         }
 
@@ -668,7 +673,7 @@ class AjaxRouter extends Router
                             "status" => "error"
                         ];
                     }
-                }
+                } else throw new \Exception("Kaydedilecek ders id numarası yok ");
             } catch (\Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -690,7 +695,6 @@ class AjaxRouter extends Router
                 if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
-                    //var_dump("saveScheduleAction this->data:",$this->data);
                     $filters = [
                         "owner_type" => "user",
                         "owner_id" => $lecturer->id,

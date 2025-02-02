@@ -73,9 +73,10 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
-                tableElement.innerHTML = data
+                tableElement.innerHTML = data['table'];
             })
             .catch((error) => {
+                new Toast().prepareToast("Hata","Tablo oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
                 console.error(error);
             });
     }
@@ -93,8 +94,8 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
-                var out = ``;
-                data.forEach((lesson) => {
+                let out = ``;
+                data['lessons'].forEach((lesson) => {
                     out += `
                   <div id="available-lesson-${lesson.id}" draggable="true" 
                   class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
@@ -113,6 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             })
             .catch((error) => {
+                new Toast().prepareToast("Hata","Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
                 console.error(error);
             });
 
@@ -139,6 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      */
     function checkLessonCrash(dropZone, draggedElement) {
+        //todo backend ile de kontrol eklenebilir
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
             if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
@@ -241,11 +244,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
+                    console.log('Program Kaydedildi')
                     console.log(data)
                     return true;
                 }
             })
             .catch((error) => {
+                new Toast().prepareToast("Hata","Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
                 console.error(error);
                 return false;
             });
@@ -286,6 +291,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .catch((error) => {
+                new Toast().prepareToast("Hata","Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
                 console.error(error);
                 return false;
             });
@@ -459,11 +465,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
+                    console.log("Program Silindi")
                     console.log(data)
                     return true;
                 }
             })
             .catch((error) => {
+                new Toast().prepareToast("Hata","Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
                 console.error(error);
                 return false;
             });

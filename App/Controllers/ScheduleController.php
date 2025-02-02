@@ -273,6 +273,7 @@ class ScheduleController extends Controller
      * @throws Exception
      */
     public function availableClassrooms(array $filters = []): array
+    //todo SQL: SELECT * FROM classrooms WHERE id NOT IN (2, 2), şeklinde bir sorgu oluşturuyor. Uygun olmayan tek sınıf 2. sınıf. Galiba iki saatlik ders olduğu için
     {
         try {
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
@@ -316,7 +317,6 @@ class ScheduleController extends Controller
                 throw new \Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
-
             if (array_key_exists('owners', $filters)) {
                 foreach ($filters["owners"] as $owner_type => $owner_id) {
                     $schedules = $this->getListByFilters(
@@ -328,9 +328,17 @@ class ScheduleController extends Controller
                             "season" => $filters['season']
                         ]
                     );
+                    /*
+                    todo Bazı durumlarda uygun schedule dönmüyor. ama dönmesi lazım. herhangi bir hata da vermiyor. anlayamadım
+                    */
+                    //var_dump("Filtreye uyan Programlar:", $schedules);
                     foreach ($schedules as $schedule) {
+                        //var_dump("İncelenen Program:", $schedule);
+                        //var_dump("Program Günü", $schedule->{$filters["day"]});
                         if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
+                            //var_dump("Program Günü true değerini vardi");
                             if (is_array($schedule->{$filters["day"]})) {
+                                //var_dump("Program günü bir dizi ");
                                 // belirtilen gün içerisinde bir veri varsa
                                 /**
                                  * var olan dersin kodu
@@ -344,10 +352,21 @@ class ScheduleController extends Controller
                                  * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                                  */
                                 if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
+                                    //var_dump("Program Günündeki dersler gruplu değil");
+                                    //var_dump("Var olan ders Kodu:", $lessonCode);
+                                    //var_dump("Yeni ders Kodu:", $newLessonCode);
                                     //derslerden en az biri gruplu değil çakışma var
                                     $result = false;
+                                } else {
+                                    //var_dump("Program Günündeki dersler gruplu");
+                                    //var_dump("Var olan ders Kodu:", $lessonCode);
+                                    //var_dump("Yeni ders Kodu:", $newLessonCode);
                                 }
+                            } else {
+                                //var_dump("Program günü Dizi Değil");
                             }
+                        } else {
+                            //var_dump("Program günü False döndü");
                         }
                     }
                 }
@@ -559,7 +578,7 @@ class ScheduleController extends Controller
     public function deleteSchedule($filters): void
     {
         try {
-            $scheduleData = array_diff_key($filters, array_flip(["day", "day_index"]));// day ve day_index alanları çıkartılıyor
+            $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
             $schedule = $this->getListByFilters($scheduleData)[0];
             //belirtilen günde bir ders var ise
             if (array_key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
