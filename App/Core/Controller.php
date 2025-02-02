@@ -131,7 +131,7 @@ class Controller
             $stmt = $this->database->prepare($sql);
             // Parametreleri bağla
             foreach ($parameters as $key => $value) {
-                $stmt->bindParam($key, $value);
+                $stmt->bindValue($key, $value);
             }
             if (!$stmt->execute())
                 throw new \Exception("Komut çalıştırılamadı");
