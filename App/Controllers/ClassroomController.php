@@ -6,12 +6,22 @@ use App\Core\Controller;
 use App\Models\Classroom;
 use PDO;
 use PDOException;
+use Exception;
+
+/**
+ * Controller sınıfından türetilmiştir. Derslikler ile ilgili işlemleri yönetir.
+ */
 class ClassroomController extends Controller
 {
     protected string $table_name = "classrooms";
-    protected string $modelName ="App\Models\Classroom";
+    protected string $modelName = "App\Models\Classroom";
 
-    public function getClassroom($id)
+    /**
+     * @param $id
+     * @return Classroom
+     * @throws Exception
+     */
+    public function getClassroom($id): Classroom
     {
         if (!is_null($id)) {
             try {
@@ -24,73 +34,96 @@ class ClassroomController extends Controller
                     $classroom->fill($stmt);
 
                     return $classroom;
-                } else throw new \Exception("Classroom not found");
-            } catch (\Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
-                echo $e->getMessage();
+                } else throw new Exception("Classroom not found");
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage(), $e->getCode());
             }
-        }
+        } else throw new Exception("id belirtilmelidir");
     }
 
-    public function getClassroomsList()
-    {
-        $q = $this->database->prepare("SELECT * FROM $this->table_name ");
-        $q->execute();
-        $classrooms_list = $q->fetchAll(PDO::FETCH_ASSOC);
-        $classrooms = [];
-        foreach ($classrooms_list as $classroom_data) {
-            $classroom = new Classroom();
-            $classroom->fill($classroom_data);
-            $classrooms[] = $classroom;
-        }
-        return $classrooms;
-    }
-
-    public function saveNew(Classroom $new_classroom): array
+    /**
+     * Tüm dersliklerin listesini döner
+     * @return array
+     * @throws Exception
+     */
+    public function getClassroomsList(): array
     {
         try {
-            $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id' ]);
+            return $this->getListByFilters();
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
+    }
+
+    /**
+     * Veri tabanında yeni bir derslik oluşturur
+     * @param Classroom $new_classroom
+     * @return int eklenen derslikid numarası
+     * @throws Exception
+     */
+    public function saveNew(Classroom $new_classroom): int
+    {
+        try {
+            $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id']);
 
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_classroom_arr);
             $q = $this->database->prepare($sql);
             $q->execute($new_classroom_arr);
-        } catch (PDOException $e) {
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                error_log($e->getMessage());
+                throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         }
 
-        return ["status" => "success"];
     }
 
-    public function updateClassroom(Classroom $classroom)
+    /**
+     * Belirtilen verilere göre veri tabanında derslik bilgilerini günceller
+     * @param Classroom $classroom
+     * @return int Güncellenen derslik idsi
+     * @throws Exception
+     */
+    public function updateClassroom(Classroom $classroom): int
     {
         try {
             $classroomData = $classroom->getArray(['table_name', 'database', 'id']);
-            $i = 0;
-            $query = "UPDATE $this->table_name SET ";
-            foreach ($classroomData as $k => $v) {
-                if (is_null($v)) continue;
-                if (++$i === count($classroomData)) $query .= $k . "=:" . $k . " ";
-                else $query .= $k . "=:" . $k . ", ";
-            }
-            $query .= " WHERE id=:id";
-            $classroomData["id"] = $classroom->id;
-            $u = $this->database->prepare($query);
-            $u->execute($classroomData);
+            // Sorgu ve parametreler için ayarlamalar
+            $columns = [];
+            $parameters = [];
 
+            foreach ($classroomData as $key => $value) {
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
+            }
+
+            // WHERE koşulu için ID ekleniyor
+            $parameters["id"] = $classroom->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
+            error_log($e->getMessage());
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         }
-        return ["status" => "success"];
     }
 }

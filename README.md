@@ -28,3 +28,5 @@ Create database schedule CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 CREATE USER 'kullanici_adi'@'localhost' IDENTIFIED BY 'parola';
 GRANT ALL PRIVILEGES ON schedule.* TO 'kullanici_adi'@'localhost';
 ```
+## Notlar
+Hata mesajları Router sınıflarında toplanır. Daha alt katmanlarda hata mesajı gösterilmez. 

@@ -3,6 +3,7 @@
  * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
+ * @var array $classrooms
  */
 ?>
 
@@ -46,7 +47,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($classroomController->getClassroomsList() as $classroom): ?>
+                        <?php foreach ($classrooms as $classroom): ?>
                             <tr>
                                 <td><?= $classroom->id ?></td>
                                 <td><?= $classroom->name ?></td>

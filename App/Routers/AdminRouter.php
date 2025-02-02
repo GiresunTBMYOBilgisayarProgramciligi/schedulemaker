@@ -12,6 +12,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\UserController;
 use App\Core\Router;
+use Exception;
 
 /**
  * AdminRouter Sınıfı
@@ -171,25 +172,37 @@ class AdminRouter extends Router
      */
     public function classroomAction($id = null)
     {
-        $classroomController = new ClassroomController();
-        if (!is_null($id)) {
-            $classroom = $classroomController->getClassroom($id);
-        } // todo else durumu ?
-        $view_data = [
-            "userController" => new UserController(), // Her sayfada olmalı
-            "classroom" => $classroom,
-            "page_title" => $classroom->name . " Sayfası"
-        ];
+        try {
+            $classroomController = new ClassroomController();
+            if (!is_null($id)) {
+                $classroom = $classroomController->getClassroom($id);
+            } else throw new Exception("Derslik id Numarası belirtilmemiş");
+            $view_data = [
+                "userController" => new UserController(), // Her sayfada olmalı
+                "classroom" => $classroom,
+                "page_title" => $classroom->name . " Sayfası"
+            ];
+        } catch (Exception $exception) {
+            $view_data['errors'] = [$exception->getMessage()];
+        }
+
         $this->callView("admin/classrooms/classroom", $view_data);
     }
 
     public function ListClassroomsAction()
     {
-        $view_data = [
-            "userController" => new UserController(),//her sayfada olmalı
-            "classroomController" => new ClassroomController(),
-            "page_title" => "Derslik Listesi"
-        ];
+        try {
+            $classroomController = new ClassroomController();
+            $view_data = [
+                "userController" => new UserController(),//her sayfada olmalı
+                "classroomController" => $classroomController,
+                "classrooms" => $classroomController->getClassroomsList(),
+                "page_title" => "Derslik Listesi"
+            ];
+        }catch (Exception $exception){
+            $view_data['errors'] = [$exception->getMessage()];
+        }
+
         $this->callView("admin/classrooms/listclassrooms", $view_data);
     }
 
@@ -204,18 +217,23 @@ class AdminRouter extends Router
 
     public function editClassroomAction($id = null)
     {
-        $classroomController = new ClassroomController();
-        if (!is_null($id)) {
-            $classroom = $classroomController->getClassroom($id);
-        } else {
-            $classroom = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        try {
+            $classroomController = new ClassroomController();
+            if (!is_null($id)) {
+                $classroom = $classroomController->getClassroom($id);
+            } else {
+                $classroom = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+            }
+            $view_data = [
+                "userController" => new UserController(),//her sayfada olmalı
+                "classroomController" => new ClassroomController(),
+                "classroom" => $classroom,
+                "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
+            ];
+        }catch (Exception $exception) {
+            $view_data['errors'] = [$exception->getMessage()];
         }
-        $view_data = [
-            "userController" => new UserController(),//her sayfada olmalı
-            "classroomController" => new ClassroomController(),
-            "classroom" => $classroom,
-            "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
-        ];
+
         $this->callView("admin/classrooms/editclassroom", $view_data);
     }
 
@@ -343,7 +361,7 @@ class AdminRouter extends Router
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function EditScheduleAction($department_id = null)
     {
@@ -355,7 +373,7 @@ class AdminRouter extends Router
         } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
             $departments = [$departmentController->getDepartment($currentUser->department_id)];
         } else {
-            throw new \Exception("Bu işlem için yetkiniz yok");
+            throw new Exception("Bu işlem için yetkiniz yok");
         }
         $view_data = [
             "userController" => new UserController(),//her sayfada olmalı

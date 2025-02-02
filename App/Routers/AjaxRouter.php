@@ -291,9 +291,9 @@ class AjaxRouter extends Router
                 $classroomData = $this->data;
                 $new_classroom = new Classroom();
                 $new_classroom->fill($classroomData);
-                $respons = $classroomController->saveNew($new_classroom);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                $classroom = $classroomController->saveNew($new_classroom);
+                if (!$classroom) {
+                    throw new \Exception("Derslik oluşturulamadı");
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla eklendi.",
@@ -320,9 +320,9 @@ class AjaxRouter extends Router
                 $classroomData = $this->data;
                 $classroom = new Classroom();
                 $classroom->fill($classroomData);
-                $respons = $classroomController->updateClassroom($classroom);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                $classroom = $classroomController->updateClassroom($classroom);
+                if (!$classroom) {
+                    throw new \Exception("Derslik Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla Güncellendi.",
@@ -536,6 +536,9 @@ class AjaxRouter extends Router
         echo json_encode($programController->getProgramsList($department_id));
     }
 
+    /*
+     * Schedules Ajax Actions
+     */
     /**
      * @throws \Exception
      */

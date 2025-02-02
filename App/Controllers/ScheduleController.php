@@ -63,35 +63,31 @@ class ScheduleController extends Controller
     {
         try {
             $schedules = $this->getListByFilters($filters);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
+            $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
+            /**
+             * Boş tablo oluşturmak için tablo satır verileri
+             */
+            $tableRows = [
+                "08.00 - 08.50" => (object)$this->emptyWeek,
+                "09.00 - 09.50" => (object)$this->emptyWeek,
+                "10.00 - 10.50" => (object)$this->emptyWeek,
+                "11.00 - 11.50" => (object)$this->emptyWeek,
+                "12.00 - 12.50" => (object)$this->emptyWeek,
+                "13.00 - 13.50" => (object)$this->emptyWeek,
+                "14.00 - 14.50" => (object)$this->emptyWeek,
+                "15.00 - 15.50" => (object)$this->emptyWeek,
+                "16.00 - 16.50" => (object)$this->emptyWeek
+            ];
+            $lessonHourCount = [];
+            /*
+             * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
+             */
+            foreach ($schedules as $schedule) {
+                $tableRows[$schedule->time] = $schedule->getWeek();
+            }
 
-        $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
-        /**
-         * Boş tablo oluşturmak için tablo satır verileri
-         */
-        $tableRows = [
-            "08.00 - 08.50" => (object)$this->emptyWeek,
-            "09.00 - 09.50" => (object)$this->emptyWeek,
-            "10.00 - 10.50" => (object)$this->emptyWeek,
-            "11.00 - 11.50" => (object)$this->emptyWeek,
-            "12.00 - 12.50" => (object)$this->emptyWeek,
-            "13.00 - 13.50" => (object)$this->emptyWeek,
-            "14.00 - 14.50" => (object)$this->emptyWeek,
-            "15.00 - 15.50" => (object)$this->emptyWeek,
-            "16.00 - 16.50" => (object)$this->emptyWeek
-        ];
-        $lessonHourCount = [];
-        /*
-         * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
-         */
-        foreach ($schedules as $schedule) {
-            $tableRows[$schedule->time] = $schedule->getWeek();
-        }
-
-        $out =
-            '
+            $out =
+                '
             <table class="table table-bordered table-sm small" ' . $season . '>
                                 <thead>
                                 <tr>
@@ -105,30 +101,30 @@ class ScheduleController extends Controller
                                 </tr>
                                 </thead>
                                 <tbody>';
-        $times = array_keys($tableRows);
-        for ($i = 0; $i < count($times); $i++) {
-            $tableRow = $tableRows[$times[$i]];
-            $out .=
-                '
+            $times = array_keys($tableRows);
+            for ($i = 0; $i < count($times); $i++) {
+                $tableRow = $tableRows[$times[$i]];
+                $out .=
+                    '
                 <tr>
                     <td>
                     ' . $times[$i] . '
                     </td>';
-            $dayIndex = 0;
-            foreach ($tableRow as $day) {
-                /*
-                 * Eğer bir ders kaydedilmişse day true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
-                 */
-                if (is_array($day)) {
-                    if (is_array($day[0])) {
-                        $out .= '<td>';
-                        foreach ($day as $column) {
-                            $column = (object)$column; // Array'i objeye dönüştür
-                            $lesson = (new LessonController())->getLesson($column->lesson_id);
-                            $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                            $lecturerName = $lesson->getLecturer()->getFullName();
-                            $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
-                            $out .= '
+                $dayIndex = 0;
+                foreach ($tableRow as $day) {
+                    /*
+                     * Eğer bir ders kaydedilmişse day true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
+                     */
+                    if (is_array($day)) {
+                        if (is_array($day[0])) {
+                            $out .= '<td>';
+                            foreach ($day as $column) {
+                                $column = (object)$column; // Array'i objeye dönüştür
+                                $lesson = (new LessonController())->getLesson($column->lesson_id);
+                                $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
+                                $lecturerName = $lesson->getLecturer()->getFullName();
+                                $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
+                                $out .= '
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
@@ -146,18 +142,18 @@ class ScheduleController extends Controller
                                     <i class="bi bi-door-open"></i> ' . $classroomName . '
                                 </span>
                             </div>';
-                        }
-                        $out .= '</td>';
-                    } else {
-                        // Eğer day bir array ise bilgileri yazdır
-                        $day = (object)$day; // Array'i objeye dönüştür
-                        $lesson = (new LessonController())->getLesson($day->lesson_id);
-                        $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                        $lecturerName = $lesson->getLecturer()->getFullName();
-                        $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
-                        //Ders gruplu ise drop zone ekle
-                        $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
-                        $out .= '
+                            }
+                            $out .= '</td>';
+                        } else {
+                            // Eğer day bir array ise bilgileri yazdır
+                            $day = (object)$day; // Array'i objeye dönüştür
+                            $lesson = (new LessonController())->getLesson($day->lesson_id);
+                            $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
+                            $lecturerName = $lesson->getLecturer()->getFullName();
+                            $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
+                            //Ders gruplu ise drop zone ekle
+                            $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
+                            $out .= '
                         <td class="' . $drop_zone . '">
                             <div 
                             id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
@@ -177,21 +173,25 @@ class ScheduleController extends Controller
                                 </span>
                             </div>
                         </td>';
+                        }
+                    } elseif (is_null($day) || $day === true) {
+                        // Eğer null veya true ise boş dropzone ekle
+                        $out .= ($day === true && $times[$i] === "12.00 - 12.50")
+                            ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
+                            : '<td class="drop-zone"></td>';
+                    } else {
+                        // Eğer false ise kırmızı vurgulu hücre ekle
+                        $out .= '<td class="bg-danger"></td>';
                     }
-                } elseif (is_null($day) || $day === true) {
-                    // Eğer null veya true ise boş dropzone ekle
-                    $out .= ($day === true && $times[$i] === "12.00 - 12.50")
-                        ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
-                        : '<td class="drop-zone"></td>';
-                } else {
-                    // Eğer false ise kırmızı vurgulu hücre ekle
-                    $out .= '<td class="bg-danger"></td>';
+                    $dayIndex++;
                 }
-                $dayIndex++;
             }
-        }
-        $out .= '</tbody>
+            $out .= '</tbody>
                </table>';
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+
         return $out;
     }
 
@@ -273,7 +273,7 @@ class ScheduleController extends Controller
      * @throws Exception
      */
     public function availableClassrooms(array $filters = []): array
-    //todo SQL: SELECT * FROM classrooms WHERE id NOT IN (2, 2), şeklinde bir sorgu oluşturuyor. Uygun olmayan tek sınıf 2. sınıf. Galiba iki saatlik ders olduğu için
+        //todo SQL: SELECT * FROM classrooms WHERE id NOT IN (2, 2), şeklinde bir sorgu oluşturuyor. Uygun olmayan tek sınıf 2. sınıf. Galiba iki saatlik ders olduğu için
     {
         try {
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
