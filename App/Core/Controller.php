@@ -11,7 +11,9 @@ class Controller
     public function __construct()
     {
         try {
-            $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
+            $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+            ]);
         } catch (\PDOException $exception) {
             echo $exception->getMessage();
         }
@@ -125,25 +127,17 @@ class Controller
 
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";
-            foreach ($parameters as $key => $value) {
-                $value = is_integer($value) ? $value : "'" . $value . "'";
-                $sql = str_replace("$key", $value, $sql);
-            }
-            error_log("SQL: " . $sql." | Dosya: " . __FILE__ . " Satır: " . __LINE__);
-            //var_dump("sql: " . $sql);
-            $stmt = $this->database->prepare($sql);
-//            // Parametreleri bağla
-//            foreach ($parameters as $key => $value) {
-////                var_dump("key:", $key);
-//  //              var_dump("value:", $value);
-//                $stmt->bindValue($key, $value);
-//            }
 
+            $stmt = $this->database->prepare($sql);
+            // Parametreleri bağla
+            foreach ($parameters as $key => $value) {
+                $stmt->bindParam($key, $value);
+            }
             if (!$stmt->execute())
                 throw new \Exception("Komut çalıştırılamadı");
+
             // Verileri işle
             $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            //var_dump("result:", $result);
             $models = [];
 
             if ($result) {
@@ -153,10 +147,8 @@ class Controller
                 }
                 foreach ($result as $data) {
                     $model = new $this->modelName();
-                    //var_dump("fillData:",$data);
                     $model->fill($data);
                     $models[] = $model;
-                    //var_dump("models:",$models);
                 }
             }
             return $models;
