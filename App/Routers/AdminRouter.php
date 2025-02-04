@@ -61,53 +61,76 @@ class AdminRouter extends Router
      */
     public function ListUsersAction()
     {
-        $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Kullanıcı Listesi",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programs" => (new ProgramController())->getProgramsList()]);
-        $this->callView("admin/users/listusers", $this->view_data);
+        try {
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => "Kullanıcı Listesi",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "programs" => (new ProgramController())->getProgramsList()]);
+            $this->callView("admin/users/listusers", $this->view_data);
+        } catch (Exception $e) {
+            $_SESSION["errors"][] = $e->getMessage();
+        }
+
     }
 
     public function AddUserAction(int $department_id = null, int $program_id = null)
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
-        $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Kullanıcı Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-        ]);
-        $this->callView("admin/users/adduser", $this->view_data);
+        try {
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => "Kullanıcı Ekle",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+            ]);
+            $this->callView("admin/users/adduser", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listusers");
+        }
+
     }
 
     public function ProfileAction($id = null)
     {
-        $userController = new UserController();
-        if (is_null($id)) {
-            $user = $userController->getCurrentUser();
-        } else {
-            $user = $userController->getUser($id);
+        try {
+            $userController = new UserController();
+            if (is_null($id)) {
+                $user = $userController->getCurrentUser();
+            } else {
+                $user = $userController->getUser($id);
+            }
+            $this->view_data = array_merge($this->view_data, [
+                "user" => $user,
+                "page_title" => $user->getFullName() . " Profil Sayfası",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "scheduleController" => new ScheduleController()]);
+            $this->callView("admin/profile", $this->view_data);
+        } catch (Exception $e) {
+            $_SESSION["errors"][] = $e->getMessage();
+            $this->Redirect("/admin/listusers");
         }
-        $this->view_data = array_merge($this->view_data, [
-            "user" => $user,
-            "page_title" => $user->getFullName() . " Profil Sayfası",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "scheduleController" => new ScheduleController()]);
-        $this->callView("admin/profile", $this->view_data);
+
     }
 
     public function EditUserAction($id = null)
     {
-        $userController = new UserController();
-        if (is_null($id)) {
-            $user = $userController->getCurrentUser();
-        } else {
-            $user = $userController->getUser($id);
+        try {
+            $userController = new UserController();
+            if (is_null($id)) {
+                $user = $userController->getCurrentUser();
+            } else {
+                $user = $userController->getUser($id);
+            }
+            $this->view_data = array_merge($this->view_data, [
+                "user" => $user,
+                "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "programController" => new ProgramController()]);
+            $this->callView("admin/users/edituser", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listusers");
         }
-        $this->view_data = array_merge($this->view_data, [
-            "user" => $user,
-            "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programController" => new ProgramController()]);
-        $this->callView("admin/users/edituser", $this->view_data);
+
     }
 
     /*
@@ -137,28 +160,38 @@ class AdminRouter extends Router
 
     public function AddLessonAction()
     {
-        $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Ders Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "lessonController" => new LessonController()]);
-        $this->callView("admin/lessons/addlesson", $this->view_data);
+        try {
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => "Ders Ekle",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "lessonController" => new LessonController()]);
+            $this->callView("admin/lessons/addlesson", $this->view_data);
+        } catch (Exception $e) {
+            $_SESSION["errors"][] = $e->getMessage();
+            $this->Redirect("/admin/lessons");
+        }
     }
 
     public function EditLessonAction($id = null)
     {
-        $lessonController = new LessonController();
-        if (!is_null($id)) {
-            $lesson = $lessonController->getLesson($id);
-        } else {
-            $lesson = null;//todo ders yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        try {
+            $lessonController = new LessonController();
+            if (!is_null($id)) {
+                $lesson = $lessonController->getLesson($id);
+            } else {
+                throw new Exception("Belirtilen ders bulunamadı");
+            }
+            $this->view_data = array_merge($this->view_data, [
+                "lessonController" => new LessonController(),
+                "lesson" => $lesson,
+                "page_title" => $lesson->getFullName() . " Düzenle",//todo ders olmayınca hata veriyor.
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "programController" => new ProgramController()]);
+            $this->callView("admin/lessons/editlesson", $this->view_data);
+        } catch (Exception $e) {
+            $_SESSION["errors"][] = $e->getMessage();
         }
-        $this->view_data = array_merge($this->view_data, [
-            "lessonController" => new LessonController(),
-            "lesson" => $lesson,
-            "page_title" => $lesson->getFullName() . " Düzenle",//todo ders olmayınca hata veriyor.
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programController" => new ProgramController()]);
-        $this->callView("admin/lessons/editlesson", $this->view_data);
+
     }
 
     /*
@@ -176,8 +209,8 @@ class AdminRouter extends Router
                 "page_title" => $classroom->name . " Sayfası"
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
         $this->callView("admin/classrooms/classroom", $this->view_data);
     }
@@ -192,8 +225,8 @@ class AdminRouter extends Router
                 "page_title" => "Derslik Listesi"
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
         $this->callView("admin/classrooms/listclassrooms", $this->view_data);
     }
@@ -221,8 +254,8 @@ class AdminRouter extends Router
                 "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
         $this->callView("admin/classrooms/editclassroom", $this->view_data);
     }
@@ -242,19 +275,27 @@ class AdminRouter extends Router
                 "page_title" => $department->name . " Sayfası"
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
         $this->callView("admin/departments/department", $this->view_data);
     }
 
     public function ListDepartmentsAction()
     {
-        $this->view_data = array_merge($this->view_data, [
-            "departmentController" => new DepartmentController(),
-            "page_title" => "Bölüm Listesi"
-        ]);
-        $this->callView("admin/departments/listdepartments", $this->view_data);
+        try {
+            $departmentController = new DepartmentController();
+            $this->view_data = array_merge($this->view_data, [
+                "departmentController" => $departmentController,
+                "departments" => $departmentController->getDepartmentsList(),
+                "page_title" => "Bölüm Listesi"
+            ]);
+            $this->callView("admin/departments/listdepartments", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listdepartments");
+        }
+
     }
 
     public function AddDepartmentAction()
@@ -280,8 +321,8 @@ class AdminRouter extends Router
                 "page_title" => $department->name . " Düzenle",//todo ders olmayınca hata veriyor.
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
         $this->callView("admin/departments/editdepartment", $this->view_data);
     }
@@ -315,29 +356,41 @@ class AdminRouter extends Router
 
     public function AddProgramAction($department_id = null)
     {
-        $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Program Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "department_id" => $department_id
-        ]);
-        $this->callView("admin/programs/addprogram", $this->view_data);
+        try {
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => "Program Ekle",
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "department_id" => $department_id
+            ]);
+            $this->callView("admin/programs/addprogram", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listprograms");
+        }
+
     }
 
     public function editProgramAction($id = null)
     {
-        $programController = new ProgramController();
-        if (!is_null($id)) {
-            $program = $programController->getProgram($id);
-        } else {
-            $program = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+        try {
+            $programController = new ProgramController();
+            if (!is_null($id)) {
+                $program = $programController->getProgram($id);
+            } else {
+                throw new Exception("Belirtilen Program bulunamadı");
+            }
+            $this->view_data = array_merge($this->view_data, [
+                "programController" => $programController,
+                "program" => $program,
+                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "page_title" => $program->name . " Düzenle",//todo ders olmayınca hata veriyor.
+            ]);
+            $this->callView("admin/programs/editprogram", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listprograms");
         }
-        $this->view_data = array_merge($this->view_data, [
-            "programController" => $programController,
-            "program" => $program,
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "page_title" => $program->name . " Düzenle",//todo ders olmayınca hata veriyor.
-        ]);
-        $this->callView("admin/programs/editprogram", $this->view_data);
+
     }
 
     /*
@@ -374,19 +427,9 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"] = [$exception->getMessage()];
-            $this->redirectToBack();
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
         }
 
-    }
-
-    /**
-     * @return void
-     */
-    public function redirectToBack(): void
-    {
-        $redirect_url = $_SERVER['HTTP_REFERER'] ?? "/admin";
-        header("location: " . $redirect_url);
-        exit;
     }
 }

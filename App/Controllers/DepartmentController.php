@@ -40,7 +40,11 @@ class DepartmentController extends Controller
         return false;
     }
 
-    public function getDepartmentsList()
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function getDepartmentsList(): array
     {
         try {
             $q = $this->database->prepare("Select * From $this->table_name");
@@ -52,11 +56,10 @@ class DepartmentController extends Controller
                 $deparment->fill($departmentData);
                 $departments[] = $deparment;
             }
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return [];
+            return $departments;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
         }
-        return $departments;
     }
 
     public function saveNew(Department $new_department): array

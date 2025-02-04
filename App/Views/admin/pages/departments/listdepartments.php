@@ -3,6 +3,7 @@
  * @var \App\Controllers\DepartmentController $departmentController
  * @var \App\Models\Department $department
  * @var string $page_title
+ * @var array $departments
  */
 ?>
 <!--begin::App Main-->
@@ -44,7 +45,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($departmentController->getDepartmentsList() as $department): ?>
+                        <?php foreach ($departments as $department): ?>
                             <tr>
                                 <td><?= $department->id ?></td>
                                 <td><?= $department->name ?></td>
