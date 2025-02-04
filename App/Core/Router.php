@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Core\View;
+use JetBrains\PhpStorm\NoReturn;
 
 class Router
 {
@@ -35,9 +36,16 @@ class Router
      * @param $path
      * @return void
      */
-    public function Redirect($path)
+    #[NoReturn] public function Redirect($path = null, $goBack = true): void
     {
-        header("Location: {$path}");
-        exit();
+        $path = is_null($path) ? "/admin" : $path;
+        if ($goBack) {
+            $redirect_url = $_SERVER['HTTP_REFERER'] ?? $path;
+            header("location: " . $redirect_url);
+            exit;
+        } else {
+            header("Location: {$path}");
+            exit();
+        }
     }
 }
