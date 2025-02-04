@@ -6,6 +6,7 @@ use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Core\Model;
+use Exception;
 use PDO;
 
 /**
@@ -62,10 +63,15 @@ class User extends Model
     /**
      * Bölüm Adının döner
      * @return string
+     * @throws Exception
      */
-    public function getDepartmentName()
+    public function getDepartmentName(): string
     {
-        return (new DepartmentController())->getDepartment($this->department_id)->name;
+        try {
+            return (new DepartmentController())->getDepartment($this->department_id)->name ?? "";
+        } catch (Exception $exception) {
+            throw new Exception($exception);
+        }
     }
 
     public function getProgramName()
@@ -86,7 +92,8 @@ class User extends Model
         return $role_names[$this->role];
     }
 
-    public function getLessonsList(){
+    public function getLessonsList()
+    {
         return (new LessonController())->getLessonsList($this->id);
     }
 
@@ -109,11 +116,13 @@ class User extends Model
      * todo
      * @return int
      */
-    public function getTotalStudentCount(){
+    public function getTotalStudentCount()
+    {
         return 100;
     }
 
-    public function getTotalLessonHours(){
+    public function getTotalLessonHours()
+    {
         $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
         $stmt->bindParam(":id", $this->id);
         $stmt->execute();

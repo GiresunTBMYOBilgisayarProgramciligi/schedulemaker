@@ -4,15 +4,22 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use Exception;
 use PDO;
 use PDOException;
 
 class DepartmentController extends Controller
 {
     protected string $table_name = "departments";
-    protected string $modelName ="App\Models\Department";
+    protected string $modelName = "App\Models\Department";
 
-    public function getDepartment($id)
+    /**
+     * Belirtilen id değerine sahip Bölüm/Department Sınıfını döner. İd blirtilmemişse false döner
+     * @param $id
+     * @return Department|bool
+     * @throws Exception
+     */
+    public function getDepartment($id): Department|bool
     {
         if (!is_null($id)) {
             try {
@@ -25,12 +32,12 @@ class DepartmentController extends Controller
                     $department->fill($department_data);
 
                     return $department;
-                } else throw new \Exception("Department not found");
-            } catch (\Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin. hata sınıfı oluşturarak ve session kullanarak mesajları gösterebilirim
-                echo $e->getMessage();
+                } else throw new Exception("Department not found");
+            } catch (Exception $e) {
+                throw new $e;
             }
         }
+        return false;
     }
 
     public function getDepartmentsList()

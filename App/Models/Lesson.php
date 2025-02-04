@@ -6,6 +6,7 @@ use App\Controllers\DepartmentController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Model;
+use Exception;
 use PDO;
 use PDOException;
 
@@ -40,9 +41,18 @@ class Lesson extends Model
         return (new UserController())->getUser($this->lecturer_id);
     }
 
+    /**
+     * Dersin ait olduğu Bölüm/Department sınıfını döndürür
+     * @return Department|null
+     * @throws Exception
+     */
     public function getDepartment(): Department|null
     {
-        return (new DepartmentController())->getDepartment($this->department_id);
+        try {
+            return (new DepartmentController())->getDepartment($this->department_id);
+        }catch (Exception $e){
+            throw new Exception($e);
+        }
     }
 
     public function getProgam(): Program|null
