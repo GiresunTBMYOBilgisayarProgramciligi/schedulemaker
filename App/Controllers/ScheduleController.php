@@ -325,20 +325,11 @@ class ScheduleController extends Controller
                             "owner_type" => $owner_type,
                             "owner_id" => $owner_id,
                             "type" => $filters['type'],
-                            "season" => $filters['season']
                         ]
                     );
-                    /*
-                    todo Bazı durumlarda uygun schedule dönmüyor. ama dönmesi lazım. herhangi bir hata da vermiyor. anlayamadım
-                    */
-                    //var_dump("Filtreye uyan Programlar:", $schedules);
                     foreach ($schedules as $schedule) {
-                        //var_dump("İncelenen Program:", $schedule);
-                        //var_dump("Program Günü", $schedule->{$filters["day"]});
                         if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
-                            //var_dump("Program Günü true değerini vardi");
                             if (is_array($schedule->{$filters["day"]})) {
-                                //var_dump("Program günü bir dizi ");
                                 // belirtilen gün içerisinde bir veri varsa
                                 /**
                                  * var olan dersin kodu
@@ -352,21 +343,10 @@ class ScheduleController extends Controller
                                  * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                                  */
                                 if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
-                                    //var_dump("Program Günündeki dersler gruplu değil");
-                                    //var_dump("Var olan ders Kodu:", $lessonCode);
-                                    //var_dump("Yeni ders Kodu:", $newLessonCode);
                                     //derslerden en az biri gruplu değil çakışma var
                                     $result = false;
-                                } else {
-                                    //var_dump("Program Günündeki dersler gruplu");
-                                    //var_dump("Var olan ders Kodu:", $lessonCode);
-                                    //var_dump("Yeni ders Kodu:", $newLessonCode);
                                 }
-                            } else {
-                                //var_dump("Program günü Dizi Değil");
                             }
-                        } else {
-                            //var_dump("Program günü False döndü");
                         }
                     }
                 }
