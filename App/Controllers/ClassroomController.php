@@ -28,10 +28,10 @@ class ClassroomController extends Controller
                 $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
                 $stmt->bindValue(":id", $id, PDO::PARAM_INT);
                 $stmt->execute();
-                $stmt = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($stmt) {
+                $classroomData = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($classroomData) {
                     $classroom = new Classroom();
-                    $classroom->fill($stmt);
+                    $classroom->fill($classroomData);
 
                     return $classroom;
                 } else throw new Exception("Classroom not found");

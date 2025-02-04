@@ -3,6 +3,7 @@
  * @var \App\Controllers\UserController $userController
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Models\Lesson $lesson
+ * @var array $lessons
  * @var string $page_title
  */
 ?>
@@ -52,7 +53,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($lessonController->getLessonsList() as $lesson): ?>
+                        <?php foreach ($lessons as $lesson): ?>
                             <tr>
                                 <td><?= $lesson->id ?></td>
                                 <td><?= $lesson->code ?></td>

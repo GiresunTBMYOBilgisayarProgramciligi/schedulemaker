@@ -19,6 +19,7 @@ use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\User;
+use Exception;
 
 class AjaxRouter extends Router
 {
@@ -69,7 +70,7 @@ class AjaxRouter extends Router
                 $new_user->fill($userData);
                 $respons = $usersController->saveNew($new_user);
                 if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                    throw new Exception($respons['msg']);
                 } else {
                     $this->response = array(
                         "msg" => "Kullanıcı başarıyla eklendi.",
@@ -77,7 +78,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/adduser",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -109,7 +110,7 @@ class AjaxRouter extends Router
                 $new_user->fill($userData);
                 $respons = $usersController->updateUser($new_user);
                 if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                    throw new Exception($respons['msg']);
                 } else {
                     $this->response = array(
                         "msg" => "Kullanıcı başarıyla Güncellendi.",
@@ -117,7 +118,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/listusers",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -137,7 +138,7 @@ class AjaxRouter extends Router
             $response = $usersController->delete($this->data['id']);
 
             if ($response['status'] == 'error') {
-                throw new \Exception($response['msg']);
+                throw new Exception($response['msg']);
             } else {
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Silindi.",
@@ -167,7 +168,7 @@ class AjaxRouter extends Router
                     "redirect" => "/admin",
                     "status" => "success"
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -198,9 +199,9 @@ class AjaxRouter extends Router
                 }
                 $new_lesson = new Lesson();
                 $new_lesson->fill($lessonData);
-                $respons = $lessonController->saveNew($new_lesson);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                $user = $lessonController->saveNew($new_lesson);
+                if (!$user) {
+                    throw new Exception("Kullanıcı eklenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Ders başarıyla eklendi.",
@@ -208,7 +209,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/addlesson", /* todo form temizlemek yerine sayfa yeniden yükleniyor. Modal footer a bir chackbox eklenerek form temizleme işlemi yapılabilir.*/
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -237,9 +238,9 @@ class AjaxRouter extends Router
                 }
                 $lesson = new Lesson();
                 $lesson->fill($lessonData);
-                $respons = $lessonController->updateLesson($lesson);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                $lesson = $lessonController->updateLesson($lesson);
+                if (!$lesson) {
+                    throw new Exception("Ders Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Ders başarıyla Güncellendi.",
@@ -247,7 +248,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/listlessons",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -266,7 +267,7 @@ class AjaxRouter extends Router
             $response = $lessonController->delete($this->data['id']);
 
             if ($response['status'] == 'error') {
-                throw new \Exception($response['msg']);
+                throw new Exception($response['msg']);
             } else {
                 $this->response = array(
                     "msg" => "Ders Başarıyla Silindi.",
@@ -293,7 +294,7 @@ class AjaxRouter extends Router
                 $new_classroom->fill($classroomData);
                 $classroom = $classroomController->saveNew($new_classroom);
                 if (!$classroom) {
-                    throw new \Exception("Derslik oluşturulamadı");
+                    throw new Exception("Derslik oluşturulamadı");
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla eklendi.",
@@ -301,7 +302,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/addclassroom",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -322,7 +323,7 @@ class AjaxRouter extends Router
                 $classroom->fill($classroomData);
                 $classroom = $classroomController->updateClassroom($classroom);
                 if (!$classroom) {
-                    throw new \Exception("Derslik Güncellenemedi");
+                    throw new Exception("Derslik Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Derslik başarıyla Güncellendi.",
@@ -330,7 +331,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/listclassrooms",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -349,7 +350,7 @@ class AjaxRouter extends Router
             $response = $classroomController->delete($this->data['id']);
 
             if ($response['status'] == 'error') {
-                throw new \Exception($response['msg']);
+                throw new Exception($response['msg']);
             } else {
                 $this->response = array(
                     "msg" => "Derslik başarıyla silindi.",
@@ -376,7 +377,7 @@ class AjaxRouter extends Router
                 $new_department->fill($departmentData);
                 $department = $departmentController->saveNew($new_department);
                 if (!$department) {
-                    throw new \Exception("Bölüm Eklenemedi");
+                    throw new Exception("Bölüm Eklenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Bölüm başarıyla eklendi.",
@@ -384,7 +385,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/adddepartment",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -405,7 +406,7 @@ class AjaxRouter extends Router
                 $department->fill($departmentData);
                 $department = $departmentController->updateDepartment($department);
                 if (!$department) {
-                    throw new \Exception("Bölüm Güncellenemedi");
+                    throw new Exception("Bölüm Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Bölüm başarıyla Güncellendi.",
@@ -413,7 +414,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/listdepartments",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -431,7 +432,7 @@ class AjaxRouter extends Router
             $response = $departmentController->delete($this->data['id']);
 
             if ($response['status'] == 'error') {
-                throw new \Exception($response['msg']);
+                throw new Exception($response['msg']);
             } else {
                 $this->response = array(
                     "msg" => "Bölüm Başarıyla Silindi.",
@@ -458,7 +459,7 @@ class AjaxRouter extends Router
                 $new_program->fill($programData);
                 $respons = $programController->saveNew($new_program);
                 if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                    throw new Exception($respons['msg']);
                 } else {
                     $this->response = array(
                         "msg" => "Program başarıyla eklendi.",
@@ -466,7 +467,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/addprogram",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -487,7 +488,7 @@ class AjaxRouter extends Router
                 $program->fill($programData);
                 $respons = $programController->updateProgram($program);
                 if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                    throw new Exception($respons['msg']);
                 } else {
                     $this->response = array(
                         "msg" => "Program Başarıyla Güncellendi.",
@@ -495,7 +496,7 @@ class AjaxRouter extends Router
                         "redirect" => "/admin/listprograms",
                     );
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -514,7 +515,7 @@ class AjaxRouter extends Router
             $response = $programController->delete($this->data['id']);
 
             if ($response['status'] == 'error') {
-                throw new \Exception($response['msg']);
+                throw new Exception($response['msg']);
             } else {
                 $this->response = array(
                     "msg" => "Program Başarıyla Silindi.",
@@ -539,7 +540,7 @@ class AjaxRouter extends Router
      * Schedules Ajax Actions
      */
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function getScheduleTableAction()
     {
@@ -549,7 +550,7 @@ class AjaxRouter extends Router
                 $table = $scheduleController->createScheduleTable($this->data);
                 $this->response['status'] = "success";
                 $this->response['table'] = $table;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response['status'] = 'error';
                 $this->response['msg'] = $e->getMessage();
             }
@@ -566,7 +567,7 @@ class AjaxRouter extends Router
                 $lessons = $scheduleController->availableLessons($this->data);
                 $this->response['status'] = "success";
                 $this->response['lessons'] = $lessons;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response['status'] = 'error';
                 $this->response['msg'] = $e->getMessage();
             }
@@ -583,7 +584,7 @@ class AjaxRouter extends Router
                 $classrooms = $scheduleController->availableClassrooms($this->data);
                 $this->response['status'] = "success";
                 $this->response['classrooms'] = $classrooms;
-            } catch (\Exception $exception) {
+            } catch (Exception $exception) {
                 $this->response['status'] = "error";
                 $this->response['msg'] = $exception->getMessage();
             }
@@ -675,8 +676,8 @@ class AjaxRouter extends Router
                             "status" => "error"
                         ];
                     }
-                } else throw new \Exception("Kaydedilecek ders id numarası yok ");
-            } catch (\Exception $e) {
+                } else throw new Exception("Kaydedilecek ders id numarası yok ");
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -735,7 +736,7 @@ class AjaxRouter extends Router
                         ];
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"
@@ -775,7 +776,7 @@ class AjaxRouter extends Router
                     ];
                     $scheduleController->deleteSchedule($filters);
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
                     "status" => "error"

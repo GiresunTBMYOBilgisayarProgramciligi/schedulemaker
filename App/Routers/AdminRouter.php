@@ -138,24 +138,38 @@ class AdminRouter extends Router
      */
     public function lessonAction($id = null)
     {
-        $lessonController = new LessonController();
-        if (!is_null($id)) {
-            $lesson = $lessonController->getLesson($id);
-        } //todo else durumu ?
-        $this->view_data = array_merge($this->view_data, [
-            "lesson" => $lesson,
-            "page_title" => $lesson->name . " Sayfası",
-            "scheduleController" => new ScheduleController()]);
-        $this->callView("admin/lessons/lesson", $this->view_data);
+        try {
+            $lessonController = new LessonController();
+            if (!is_null($id)) {
+                $lesson = $lessonController->getLesson($id);
+            } else throw new Exception("Ders İd numarası belirtilmelidir");
+            $this->view_data = array_merge($this->view_data, [
+                "lesson" => $lesson,
+                "page_title" => $lesson->name . " Sayfası",
+                "scheduleController" => new ScheduleController()]);
+            $this->callView("admin/lessons/lesson", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listlessons");
+        }
+
     }
 
     public function ListLessonsAction()
     {
-        $this->view_data = array_merge($this->view_data, [
-            "lessonController" => new LessonController(),
-            "page_title" => "Ders Listesi"
-        ]);
-        $this->callView("admin/lessons/listlessons", $this->view_data);
+        try {
+            $lessonController = new LessonController();
+            $this->view_data = array_merge($this->view_data, [
+                "lessonController" => $lessonController,
+                "lessons" => $lessonController->getLessonsList(),
+                "page_title" => "Ders Listesi"
+            ]);
+            $this->callView("admin/lessons/listlessons", $this->view_data);
+        }catch (Exception $e){
+            $_SESSION["errors"][] = $e->getMessage();
+            $this->Redirect("/admin/listlessons");
+        }
+
     }
 
     public function AddLessonAction()
@@ -190,6 +204,7 @@ class AdminRouter extends Router
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
+            $this->Redirect("/admin/listlessons");
         }
 
     }

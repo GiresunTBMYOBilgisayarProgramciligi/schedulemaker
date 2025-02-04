@@ -70,7 +70,7 @@ class User extends Model
         try {
             return (new DepartmentController())->getDepartment($this->department_id)->name ?? "";
         } catch (Exception $exception) {
-            throw new Exception($exception);
+            throw new Exception($exception->getMessage(), $exception->getCode());
         }
     }
 
@@ -92,9 +92,18 @@ class User extends Model
         return $role_names[$this->role];
     }
 
-    public function getLessonsList()
+    /**
+     * Kullanıcıya ait derslerin listesini döner
+     * @return array
+     * @throws Exception
+     */
+    public function getLessonsList(): array
     {
-        return (new LessonController())->getLessonsList($this->id);
+        try {
+            return (new LessonController())->getLessonsList($this->id) ?? [];
+        } catch (Exception $exception) {
+            throw new Exception($exception->getMessage(), $exception->getCode());
+        }
     }
 
     public function getGravatarURL($size = 50)

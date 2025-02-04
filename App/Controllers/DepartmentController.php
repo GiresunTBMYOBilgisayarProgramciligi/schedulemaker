@@ -26,10 +26,10 @@ class DepartmentController extends Controller
                 $smtt = $this->database->prepare("select * from $this->table_name where id=:id");
                 $smtt->bindValue(":id", $id, PDO::PARAM_INT);
                 $smtt->execute();
-                $department_data = $smtt->fetch(\PDO::FETCH_ASSOC);
-                if ($department_data) {
+                $departmentData = $smtt->fetch(\PDO::FETCH_ASSOC);
+                if ($departmentData) {
                     $department = new Department();
-                    $department->fill($department_data);
+                    $department->fill($departmentData);
 
                     return $department;
                 } else throw new Exception("Department not found");

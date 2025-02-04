@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Lesson;
+use Exception;
 use PDO;
 use PDOException;
 
@@ -11,30 +12,40 @@ class LessonController extends Controller
 {
     protected string $table_name = "lessons";
 
-    protected string $modelName ="App\Models\Lesson";
+    protected string $modelName = "App\Models\Lesson";
 
-    public function getLesson($id)
+    /**
+     * Belirtilen id numarasına sahip ders Modeli döndürülür
+     * @param $id
+     * @return Lesson
+     * @throws Exception
+     */
+    public function getLesson($id): Lesson
     {
         if (!is_null($id)) {
             try {
-                $u = $this->database->prepare("select * from $this->table_name where id=:id");
-                $u->bindValue(":id", $id, PDO::PARAM_INT);
-                $u->execute();
-                $u = $u->fetch(\PDO::FETCH_ASSOC);
-                if ($u) {
+                $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+                $stmt->execute();
+                $lessonData = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ($lessonData) {
                     $lesson = new Lesson();
-                    $lesson->fill($u);
+                    $lesson->fill($lessonData);
 
                     return $lesson;
-                } else throw new \Exception("Lesson not found");
-            } catch (\Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
-                echo $e->getMessage();
+                } else throw new Exception("Lesson not found");
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage(), $e->getCode());
             }
-        }
+        } else throw new Exception("Ders id numarası belirtilmelidir");
     }
 
-    public function getTypeList()
+    /**
+     * todo Sayısal değer olarak kullanılabilir.
+     * Dersin türünü seçmek için kullanılacak diziyi döner
+     * @return string[]
+     */
+    public function getTypeList(): array
     {
         return [
             "Zorunlu",
@@ -43,7 +54,12 @@ class LessonController extends Controller
         ];
     }
 
-    public function getSeasonList()
+    /**
+     * todo sayısal olarak tutulabilir
+     * Yarıyıl seçiöi yaparken kıllanılacak verileri dizi olarak döner
+     * @return array
+     */
+    public function getSeasonList(): array
     {
         $list = [];
         for ($i = 1; $i <= 12; $i++) {
@@ -55,38 +71,26 @@ class LessonController extends Controller
     /**
      * @param ?int $lecturer_id Girildiğinde o kullanıcıya ait derslerin listesini döner
      * @return array
+     * @throws Exception
      */
-    public function getLessonsList(?int $lecturer_id = null)
+    public function getLessonsList(?int $lecturer_id = null): array
     {
         try {
-            if (is_null($lecturer_id)) {
-                $stmt = $this->database->prepare("select * from $this->table_name");
-                $stmt->execute();
-            } else {
-                $stmt = $this->database->prepare("select * from $this->table_name where lecturer_id=:lecturer_id");
-                $stmt->bindValue(":lecturer_id", $lecturer_id, PDO::PARAM_INT);
-                $stmt->execute();
-            }
-            $lessons_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $lessons = [];
-            foreach ($lessons_list as $lesson_data) {
-                $lesson = new Lesson();
-                $lesson->fill($lesson_data);
-                $lessons[] = $lesson;
-            }
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-            return [];
+            $filters = [];
+            if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
+            return $this->getListByFilters($filters);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
         }
-        return $lessons;
     }
 
     /**
      * AjaxControllerdan gelen verilele yeni ders oluşturur
-     * @param array $data
-     * @return array
+     * @param Lesson $new_lesson
+     * @return int
+     * @throws Exception
      */
-    public function saveNew(Lesson $new_lesson): array
+    public function saveNew(Lesson $new_lesson): int
     {
         try {
             // Yeni kullanıcı verilerini bir dizi olarak alın
@@ -97,19 +101,23 @@ class LessonController extends Controller
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_lesson_arr);
-        } catch (PDOException $e) {
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz." . $e->getMessage()];
+                throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.", $e->getCode());
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw $e;
             }
         }
-
-        return ["status" => "success"];
     }
 
-    public function updateLesson(Lesson $lesson)
+    /**
+     * @param Lesson $lesson
+     * @return int
+     * @throws Exception
+     */
+    public function updateLesson(Lesson $lesson): int
     {
         try {
             // Lesson nesnesinden filtrelenmiş verileri al
@@ -137,15 +145,14 @@ class LessonController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-
-        } catch (PDOException $e) {
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz." . $e->getMessage()];
+                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.", $e->getCode());
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw $e;
             }
         }
-        return ["status" => "success"];
     }
 }
