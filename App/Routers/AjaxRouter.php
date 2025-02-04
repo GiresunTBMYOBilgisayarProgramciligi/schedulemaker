@@ -374,12 +374,16 @@ class AjaxRouter extends Router
                 $departmentData = $this->data;
                 $new_department = new Department();
                 $new_department->fill($departmentData);
-                $respons = $departmentController->saveNew($new_department);
-                $this->response = array(
-                    "msg" => "Bölüm başarıyla eklendi.",
-                    "status" => "success",
-                    "redirect" => "/admin/adddepartment",
-                );
+                $department = $departmentController->saveNew($new_department);
+                if (!$department) {
+                    throw new \Exception("Bölüm Eklenemedi");
+                } else {
+                    $this->response = array(
+                        "msg" => "Bölüm başarıyla eklendi.",
+                        "status" => "success",
+                        "redirect" => "/admin/adddepartment",
+                    );
+                }
             } catch (\Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -399,9 +403,9 @@ class AjaxRouter extends Router
                 $departmentData = $this->data;
                 $department = new Department();
                 $department->fill($departmentData);
-                $respons = $departmentController->updateDepartment($department);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
+                $department = $departmentController->updateDepartment($department);
+                if (!$department) {
+                    throw new \Exception("Bölüm Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Bölüm başarıyla Güncellendi.",
@@ -415,7 +419,6 @@ class AjaxRouter extends Router
                     "status" => "error"
                 ];
             }
-
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }

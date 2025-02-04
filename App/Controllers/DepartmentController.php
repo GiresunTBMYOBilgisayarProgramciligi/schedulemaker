@@ -89,29 +89,45 @@ class DepartmentController extends Controller
         }
     }
 
-    public function updateDepartment(Department $department)
+    /**
+     * @param Department $department
+     * @return int
+     * @throws Exception
+     */
+    public function updateDepartment(Department $department):int
     {
         try {
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
-            $i = 0;
-            $query = "UPDATE $this->table_name SET ";
-            foreach ($departmentData as $k => $v) {
-                if (is_null($v)) continue;
-                if (++$i === count($departmentData)) $query .= $k . "=:" . $k . " ";
-                else $query .= $k . "=:" . $k . ", ";
+            // Sorgu ve parametreler için ayarlamalar
+            $columns = [];
+            $parameters = [];
+
+            foreach ($departmentData as $key => $value) {
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
             }
-            $query .= " WHERE id=:id";
-            $departmentData["id"] = $department->id;
-            $u = $this->database->prepare($query);
-            $u->execute($departmentData);
+
+            // WHERE koşulu için ID ekleniyor
+            $parameters["id"] = $department->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw $e;
             }
         }
-        return ["status" => "success"];
     }
 }
