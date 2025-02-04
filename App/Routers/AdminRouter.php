@@ -220,11 +220,11 @@ class AdminRouter extends Router
                 "classroom" => $classroom,
                 "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
             ]);
+            $this->callView("admin/classrooms/editclassroom", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
             $this->redirectToBack();
         }
-        $this->callView("admin/classrooms/editclassroom", $this->view_data);
     }
 
     /*

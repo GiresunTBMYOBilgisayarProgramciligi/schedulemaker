@@ -189,7 +189,7 @@ class ScheduleController extends Controller
             $out .= '</tbody>
                </table>';
         } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception("Program tablosu oluşturulurken bir hata oluştu", 0,$e);
         }
 
         return $out;
