@@ -229,7 +229,7 @@
                                                     <span class="info-box-number"> <?= $lesson->name ?></span>
                                                     <!--<span class=""> <?php /*= $lesson->getDepartment()->name ." - ". $lesson->getProgam()->name*/?> </span>-->
                                                     <span class=""><?= $lesson->getDepartment()->name?? "-"?> </span>
-                                                    <span class=""><?= $lesson->getProgam()->name?? "-" ?> </span>
+                                                    <span class=""><?= $lesson->getProgram()->name?? "-" ?> </span>
                                                 </div>
                                                 <!-- /.info-box-content -->
                                             </div>

@@ -165,7 +165,7 @@ class AdminRouter extends Router
                 "page_title" => "Ders Listesi"
             ]);
             $this->callView("admin/lessons/listlessons", $this->view_data);
-        }catch (Exception $e){
+        } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
             $this->Redirect("/admin/listlessons");
         }
@@ -347,16 +347,25 @@ class AdminRouter extends Router
      */
     public function programAction($id = null)
     {
-        $programController = new ProgramController();
-        if (!is_null($id)) {
-            $program = $programController->getProgram($id);
-        } // todo else durumu ?
-        $this->view_data = array_merge($this->view_data, [
-            "program" => $program,
-            "page_title" => $program->name . " Sayfası",
-            "scheduleController" => new ScheduleController()
-        ]);
-        $this->callView("admin/programs/program", $this->view_data);
+        try {
+            $programController = new ProgramController();
+            if (!is_null($id)) {
+                $program = $programController->getProgram($id);
+                if (!$program) {
+                    throw new Exception("Belirtilen Program bulunamadı");
+                }
+            } else throw new Exception("Program id değeri belirtilmelidir");
+            $this->view_data = array_merge($this->view_data, [
+                "program" => $program,
+                "page_title" => $program->name . " Sayfası",
+                "scheduleController" => new ScheduleController()
+            ]);
+            $this->callView("admin/programs/program", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin/listprograms");
+        }
+
     }
 
     public function ListProgramsAction($department_id = null)
@@ -391,8 +400,11 @@ class AdminRouter extends Router
             $programController = new ProgramController();
             if (!is_null($id)) {
                 $program = $programController->getProgram($id);
+                if (!$program) {
+                    throw new Exception("Belirtilen Program bulunamadı");
+                }
             } else {
-                throw new Exception("Belirtilen Program bulunamadı");
+                throw new Exception("Program id numarası belirtilmelidir");
             }
             $this->view_data = array_merge($this->view_data, [
                 "programController" => $programController,

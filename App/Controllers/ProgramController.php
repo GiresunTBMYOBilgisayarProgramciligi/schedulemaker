@@ -4,15 +4,22 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Program;
+use Exception;
 use PDO;
 use PDOException;
 
 class ProgramController extends Controller
 {
     protected string $table_name = "programs";
-    protected string $modelName ="App\Models\Program";
+    protected string $modelName = "App\Models\Program";
 
-    public function getProgram($id)
+    /**
+     * id numarası verilen program modelini döndürür
+     * @param $id
+     * @return Program|bool
+     * @throws Exception
+     */
+    public function getProgram($id): Program|bool
     {
         if (!is_null($id)) {
             try {
@@ -25,12 +32,12 @@ class ProgramController extends Controller
                     $program->fill($program_data);
 
                     return $program;
-                } else throw new \Exception("Department not found");
-            } catch (\Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
-                echo $e->getMessage();
+                } else throw new Exception("Department not found");
+            } catch (Exception $e) {
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         }
+        return false;
     }
 
     /**

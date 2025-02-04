@@ -64,7 +64,7 @@
                                 <td><?= $lesson->season ?></td>
                                 <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                 <td><?= $lesson->getDepartment()->name ?></td>
-                                <td><?= $lesson->getProgam()->name ?></td>
+                                <td><?= $lesson->getProgram()->name ?></td>
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"

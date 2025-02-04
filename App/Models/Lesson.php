@@ -50,14 +50,23 @@ class Lesson extends Model
     {
         try {
             return (new DepartmentController())->getDepartment($this->department_id);
-        }catch (Exception $e){
-            throw new Exception($e);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
         }
     }
 
-    public function getProgam(): Program|null
+    /**
+     * Dersin ait olduğu program modelini döndürür
+     * @return Program|null
+     * @throws Exception
+     */
+    public function getProgram(): Program|null
     {
-        return (new ProgramController())->getProgram($this->program_id);
+        try {
+            return (new ProgramController())->getProgram($this->program_id);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
     }
 
     public function getFullName(): string

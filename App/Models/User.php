@@ -74,9 +74,18 @@ class User extends Model
         }
     }
 
-    public function getProgramName()
+    /**
+     * @return string|false
+     * @throws Exception
+     */
+    public function getProgramName(): string|false
     {
-        return (new ProgramController())->getProgram($this->program_id)->name;
+        try {
+            return (new ProgramController())->getProgram($this->program_id)->name;
+        }catch (Exception $exception){
+            throw new Exception($exception->getMessage(), $exception->getCode());
+        }
+
     }
 
     public function getRoleName()
