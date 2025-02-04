@@ -177,6 +177,7 @@ class AdminRouter extends Router
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
+            $this->redirectToBack();
         }
         $this->callView("admin/classrooms/classroom", $this->view_data);
     }
@@ -192,6 +193,7 @@ class AdminRouter extends Router
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
+            $this->redirectToBack();
         }
         $this->callView("admin/classrooms/listclassrooms", $this->view_data);
     }
@@ -220,6 +222,7 @@ class AdminRouter extends Router
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
+            $this->redirectToBack();
         }
         $this->callView("admin/classrooms/editclassroom", $this->view_data);
     }
@@ -240,6 +243,7 @@ class AdminRouter extends Router
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
+            $this->redirectToBack();
         }
         $this->callView("admin/departments/department", $this->view_data);
     }
@@ -277,6 +281,7 @@ class AdminRouter extends Router
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
+            $this->redirectToBack();
         }
         $this->callView("admin/departments/editdepartment", $this->view_data);
     }
@@ -370,8 +375,18 @@ class AdminRouter extends Router
             $this->callView("admin/schedules/editschedule", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"] = [$exception->getMessage()];
-            header("location: /admin");
+            $this->redirectToBack();
         }
 
+    }
+
+    /**
+     * @return void
+     */
+    public function redirectToBack(): void
+    {
+        $redirect_url = $_SERVER['HTTP_REFERER'] ?? "/admin";
+        header("location: " . $redirect_url);
+        exit;
     }
 }
