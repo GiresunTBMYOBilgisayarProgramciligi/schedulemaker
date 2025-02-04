@@ -62,7 +62,13 @@ class DepartmentController extends Controller
         }
     }
 
-    public function saveNew(Department $new_department): array
+    /**
+     * Parametre olarak verilen modeli veri tabanına kaydeder
+     * @param Department $new_department
+     * @return int Veri tabanına eklenen Department id numarası
+     * @throws Exception
+     */
+    public function saveNew(Department $new_department): int
     {
         try {
             $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id']);
@@ -72,16 +78,15 @@ class DepartmentController extends Controller
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_lesson_arr);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.", $e->getCode());
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw $e;
             }
         }
-
-        return ["status" => "success"];
     }
 
     public function updateDepartment(Department $department)

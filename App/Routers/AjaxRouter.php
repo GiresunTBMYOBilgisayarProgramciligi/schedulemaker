@@ -375,15 +375,11 @@ class AjaxRouter extends Router
                 $new_department = new Department();
                 $new_department->fill($departmentData);
                 $respons = $departmentController->saveNew($new_department);
-                if ($respons['status'] == 'error') {
-                    throw new \Exception($respons['msg']);
-                } else {
-                    $this->response = array(
-                        "msg" => "Bölüm başarıyla eklendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/adddepartment",
-                    );
-                }
+                $this->response = array(
+                    "msg" => "Bölüm başarıyla eklendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/adddepartment",
+                );
             } catch (\Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
