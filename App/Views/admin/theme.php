@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!--<html lang="<?php /*= $currentLanguage ?? 'tr' */?>"> todo bunu düzenleyip tüm theme sayfalarına eklemek lazım -->
+<!--<html lang="<?php /*= $currentLanguage ?? 'tr' */ ?>"> todo bunu düzenleyip tüm theme sayfalarına eklemek lazım -->
 <html lang="tr">
 <?php
 include "theme/head.php";
@@ -24,6 +24,16 @@ include "theme/head.php";
 
 <?php
 include "theme/footer_scripts.php";
+if (isset($_SESSION['errors'])) {
+    foreach ($_SESSION['errors'] as $error) {
+        echo '<script>
+            document.addEventListener("DOMContentLoaded", function () {
+            alert("'.$error.'");
+            });
+            </script>';
+    }
+    unset($_SESSION['errors']);
+}
 ?>
 <!-- todo buraya eğer sessionda hata tenımlanmışsa toast ile hataları göstermek için bir şeyler eklenmeli -->
 </body>
