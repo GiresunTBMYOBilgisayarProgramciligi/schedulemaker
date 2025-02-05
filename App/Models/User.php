@@ -75,13 +75,13 @@ class User extends Model
     }
 
     /**
-     * @return string|false
+     * @return string
      * @throws Exception
      */
-    public function getProgramName(): string|false
+    public function getProgramName(): string
     {
         try {
-            return (new ProgramController())->getProgram($this->program_id)->name;
+            return (new ProgramController())->getProgram($this->program_id)->name ?? "";
         }catch (Exception $exception){
             throw new Exception($exception->getMessage(), $exception->getCode());
         }

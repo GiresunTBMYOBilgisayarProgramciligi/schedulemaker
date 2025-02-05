@@ -16,10 +16,10 @@ class ProgramController extends Controller
     /**
      * id numarası verilen program modelini döndürür
      * @param $id
-     * @return Program|bool
+     * @return Program|null
      * @throws Exception
      */
-    public function getProgram($id): Program|bool
+    public function getProgram($id): Program|null
     {
         if (!is_null($id)) {
             try {
@@ -37,7 +37,7 @@ class ProgramController extends Controller
                 throw new Exception($e->getMessage(), $e->getCode());
             }
         }
-        return false;
+        return null;
     }
 
     /**
