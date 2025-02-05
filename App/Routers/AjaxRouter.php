@@ -457,9 +457,9 @@ class AjaxRouter extends Router
                 $programData = $this->data;
                 $new_program = new Program();
                 $new_program->fill($programData);
-                $respons = $programController->saveNew($new_program);
-                if ($respons['status'] == 'error') {
-                    throw new Exception($respons['msg']);
+                $program = $programController->saveNew($new_program);
+                if (!$program) {
+                    throw new Exception("Program kaydedilemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Program başarıyla eklendi.",
@@ -487,8 +487,8 @@ class AjaxRouter extends Router
                 $program = new Program();
                 $program->fill($programData);
                 $respons = $programController->updateProgram($program);
-                if ($respons['status'] == 'error') {
-                    throw new Exception($respons['msg']);
+                if (!$respons) {
+                    throw new Exception("Program Güncellenemedi");
                 } else {
                     $this->response = array(
                         "msg" => "Program Başarıyla Güncellendi.",

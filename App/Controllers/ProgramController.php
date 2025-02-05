@@ -56,7 +56,12 @@ class ProgramController extends Controller
         }
     }
 
-    public function saveNew(Program $new_program): array
+    /**
+     * @param Program $new_program
+     * @return int
+     * @throws Exception
+     */
+    public function saveNew(Program $new_program): int
     {
         try {
             $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
@@ -65,46 +70,56 @@ class ProgramController extends Controller
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_program_arr);
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.", $e->getCode(), $e);
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         }
-
-        return ["status" => "success"];
     }
 
     /**
      * @param Program $program
-     * @return string[]
-     * todo userController daki gibi güncelle
+     * @return int
+     * @throws Exception
      */
-    public function updateProgram(Program $program)
+    public function updateProgram(Program $program):int
     {
         try {
             $programData = $program->getArray(['table_name', 'database', 'id']);
-            $i = 0;
-            $query = "UPDATE $this->table_name SET ";
-            foreach ($programData as $k => $v) {
-                if (is_null($v)) continue;
-                if (++$i === count($programData)) $query .= $k . "=:" . $k . " ";
-                else $query .= $k . "=:" . $k . ", ";
+            // Sorgu ve parametreler için ayarlamalar
+            $columns = [];
+            $parameters = [];
+
+            foreach ($programData as $key => $value) {
+                $columns[] = "$key = :$key";
+                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
             }
-            $query .= " WHERE id=:id";
-            $programData["id"] = $program->id;
-            $u = $this->database->prepare($query);
-            $u->execute($programData);
-        } catch (PDOException $e) {
+
+            // WHERE koşulu için ID ekleniyor
+            $parameters["id"] = $program->id;
+
+            // Dinamik SQL sorgusu oluştur
+            $query = sprintf(
+                "UPDATE %s SET %s WHERE id = :id",
+                $this->table_name,
+                implode(", ", $columns)
+            );
+
+            // Sorguyu hazırla ve çalıştır
+            $stmt = $this->database->prepare($query);
+            $stmt->execute($parameters);
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz." . $e->getMessage()];
+                throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.",$e->getCode(), $e);
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         }
-        return ["status" => "success"];
     }
 }
