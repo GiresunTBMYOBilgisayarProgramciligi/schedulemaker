@@ -4,13 +4,14 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\User;
+use Exception;
 use PDO;
 use PDOException;
 
 class UserController extends Controller
 {
     protected string $table_name = "users";
-    protected string $modelName ="App\Models\User";
+    protected string $modelName = "App\Models\User";
 
     public function getUser($id)
     {
@@ -25,8 +26,8 @@ class UserController extends Controller
                     $user->fill($u);
 
                     return $user;
-                } else throw new \Exception("User not found");
-            } catch (\Exception $e) {
+                } else throw new Exception("User not found");
+            } catch (Exception $e) {
                 // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
                 echo $e->getMessage();
             }
@@ -36,24 +37,33 @@ class UserController extends Controller
     /**
      *  Giriş Yapmış kullanıcıyı döner. Giriş yapılmamışsa false döner
      * @return User|false
+     * @throws Exception
      */
-    public function getCurrentUser()
+    public function getCurrentUser(): User|false
     {
-        $u = false;
-        if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
-            $u = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
-        } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-            $u = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
+        try {
+            $user = false;
+            if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
+                $user = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
+            } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
+                $user = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
+            }
+            return $user;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
-        return $u;
+
     }
 
+    /**
+     * Sadece akademisyen olan kullanıcıların sayısını döner
+     * @return false|int
+     */
     public function getAcademicCount()
     {
         try {
-            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name . " WHERE role not in ('user','admin')")->fetchColumn();
-            return $count; // İlk sütun (COUNT(*) sonucu) döndür
-        } catch (\Exception $e) {
+            return $this->getCount(["!role"=>["user","admin"]]);
+        } catch (Exception $e) {
             var_dump($e);
             return false;
         }
@@ -68,7 +78,7 @@ class UserController extends Controller
     /**
      * @param array $arr
      * @return void
-     * @throws \Exception
+     * @throws Exception
      * @see AjaxRouter->loginAction()
      */
     public function login(array $arr): void
@@ -92,9 +102,9 @@ class UserController extends Controller
                             'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
                         ]);
                     }
-                } else throw new \Exception("Şifre Yanlış");
-            } else throw new \Exception("Kullanıcı kayıtlı değil");
-        } else throw new \Exception("Hiçbir kullanıcı kayıtlı değil");
+                } else throw new Exception("Şifre Yanlış");
+            } else throw new Exception("Kullanıcı kayıtlı değil");
+        } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
         // Update las login date
         $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
         $stmt = $this->database->prepare($sql);
@@ -265,20 +275,26 @@ class UserController extends Controller
      * "lecturer" => 6,
      * "user" => 5
      * @return bool
+     * @throws Exception
      */
     public static function canUserDoAction(int $actionLevel): bool
     {
-        //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
-        $user = (new UserController)->getCurrentUser();
-        $roleLevels = [
-            "admin" => 10,
-            "manager" => 9,
-            "submanager" => 8,
-            "department_head" => 7,
-            "lecturer" => 6,
-            "user" => 5
-        ];
+        try {
+            //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
+            $user = (new UserController)->getCurrentUser();
+            $roleLevels = [
+                "admin" => 10,
+                "manager" => 9,
+                "submanager" => 8,
+                "department_head" => 7,
+                "lecturer" => 6,
+                "user" => 5
+            ];
 
-        return $roleLevels[$user->role] >= $actionLevel;
+            return $roleLevels[$user->role] >= $actionLevel;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
+        }
+
     }
 }

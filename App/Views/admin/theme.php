@@ -13,7 +13,11 @@ include "theme/head.php";
     /** @var \App\Controllers\UserController $userController
      * @var \App\Models\User | false $currentUser Oturum açmış kullanıcı modeli. Oturum açılmamışsa false
      * */
-    $currentUser = $userController->getCurrentUser();
+    try {
+        $currentUser = $userController->getCurrentUser();
+    } catch (Exception $e) {
+        $_SESSION["errors"][] = $e->getMessage();
+    }
     include "theme/navbar.php";
     include "theme/sidebar.php";
     include "pages/" . $this->view_page . ".php";
@@ -28,7 +32,7 @@ if (isset($_SESSION['errors'])) {
     foreach ($_SESSION['errors'] as $error) {
         echo '<script>
             document.addEventListener("DOMContentLoaded", function () {
-            alert("'.$error.'");
+            alert("' . $error . '");
             });
             </script>';
     }
