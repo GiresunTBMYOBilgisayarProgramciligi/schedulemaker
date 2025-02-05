@@ -92,7 +92,7 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            $classroomData = $classroom->getArray(['table_name', 'database', 'id']);
+            $classroomData = $classroom->getArray(['table_name', 'database', 'id'],true);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
             $parameters = [];
