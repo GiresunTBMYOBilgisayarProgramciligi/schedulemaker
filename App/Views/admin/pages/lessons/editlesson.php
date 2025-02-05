@@ -8,6 +8,7 @@
  * @var \App\Models\Lesson $lesson
  * @var \App\Controllers\LessonController $lessonController
  * @var string $page_title
+ * @var array $lecturers
  */
 ?>
 <!--begin::App Main-->
@@ -90,7 +91,7 @@
                                         <div class="mb-3">
                                             <label class="form-label"  for="password">Dersin Hocası</label>
                                             <select class="form-select" id="lecturer_id" name="lecturer_id">
-                                                <?php foreach ($userController->getLecturerList() as $lecturer): ?>
+                                                <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
                                                         <?= $lecturer->id == $lesson->lecturer_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
                                                 <?php endforeach; ?>

@@ -6,6 +6,7 @@
  * @var \App\Models\User $lecturer
  * @var \App\Controllers\LessonController $lessonController
  * @var string $page_title
+ * @var array $lecturers
  */
 ?>
 <!--begin::App Main-->
@@ -82,7 +83,7 @@
                                         <div class="mb-3">
                                             <label class="form-label"  for="lecturer_id">Dersin Hocası</label>
                                             <select class="form-select" id="lecturer_id" name="lecturer_id">
-                                                <?php foreach ($userController->getLecturerList() as $lecturer): ?>
+                                                <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                                 <?php endforeach; ?>
                                             </select>

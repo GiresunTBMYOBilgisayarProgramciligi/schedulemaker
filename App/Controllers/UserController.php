@@ -62,62 +62,70 @@ class UserController extends Controller
     public function getAcademicCount()
     {
         try {
-            return $this->getCount(["!role"=>["user","admin"]]);
+            return $this->getCount(["!role" => ["user", "admin"]]);
         } catch (Exception $e) {
             var_dump($e);
             return false;
         }
     }
 
-    public function isLoggedIn()
+    /**
+     * @return bool
+     */
+    public function isLoggedIn(): bool
     {
         if (isset($_COOKIE[$_ENV["COOKIE_KEY"]]) || isset($_SESSION[$_ENV["SESSION_KEY"]])) return true; else
             return false;
     }
 
     /**
-     * @param array $arr
+     * @param array $loginData
      * @return void
      * @throws Exception
      * @see AjaxRouter->loginAction()
      */
-    public function login(array $arr): void
+    public function login(array $loginData): void
     {
-        $arr = (object)$arr;
-        $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
-        $stmt->bindParam(':mail', $arr->mail, \PDO::PARAM_STR);
-        $stmt->execute();
+        try {
+            $loginData = (object)$loginData;
+            $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
+            $stmt->bindParam(':mail', $loginData->mail);
+            $stmt->execute();
 
-        if ($stmt) {
-            $user = $stmt->fetch(\PDO::FETCH_OBJ);
-            if ($user) {
-                if (password_verify($arr->password, $user->password)) {
-                    if (!$arr->remember_me) {
-                        $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
-                    } else {
-                        setcookie($_ENV["COOKIE_KEY"], $user->id, [
-                            'expires' => time() + (86400 * 30),
-                            'path' => '/',
-                            'httponly' => true,     // JavaScript erişimini engeller
-                            'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
-                        ]);
-                    }
-                } else throw new Exception("Şifre Yanlış");
-            } else throw new Exception("Kullanıcı kayıtlı değil");
-        } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
-        // Update las login date
-        $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
-        $stmt = $this->database->prepare($sql);
-        $stmt->execute([$user->id]);
+            if ($stmt) {
+                $user = $stmt->fetch(\PDO::FETCH_OBJ);
+                if ($user) {
+                    if (password_verify($loginData->password, $user->password)) {
+                        if (!$loginData->remember_me) {
+                            $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
+                        } else {
+                            setcookie($_ENV["COOKIE_KEY"], $user->id, [
+                                'expires' => time() + (86400 * 30),
+                                'path' => '/',
+                                'httponly' => true,     // JavaScript erişimini engeller
+                                'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
+                            ]);
+                        }
+                    } else throw new Exception("Şifre Yanlış");
+                } else throw new Exception("Kullanıcı kayıtlı değil");
+            } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
+            // Update las login date
+            $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
+            $stmt = $this->database->prepare($sql);
+            $stmt->execute([$user->id]);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
+        }
     }
 
     /**
      * User modeli ile gelen verilele yani kullanıcı oluşturur
-     * @param array $data
-     * @return array
+     * @param User $new_user
+     * @return int
+     * @throws Exception
      * @see AjaxRouter->addUserAction
      */
-    public function saveNew(User $new_user): array
+    public function saveNew(User $new_user): int
     {
         try {
             // Yeni kullanıcı verilerini bir dizi olarak alın
@@ -129,26 +137,25 @@ class UserController extends Controller
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
             $q->execute($new_user_arr);
-
+            return $this->database->lastInsertId();
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz." . $e->getMessage()];
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", $e->getCode(), $e);
             } else {
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
         }
-
-        return ["status" => "success"];
     }
 
     /**
      * User modeli ile gele kullanıcı bilgilerini günceller
      * @param User $user
-     * @return string[]
+     * @return int
+     * @throws Exception,
      * @see AjaxRouter->updateUserAction
      */
-    public function updateUser(User $user): array
+    public function updateUser(User $user): int
     {
         try {
             // Şifre kontrolü ve hash işlemi
@@ -183,55 +190,43 @@ class UserController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-
-        } catch (PDOException $e) {
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                return ["status" => "error", "msg" => "Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz." . $e->getMessage()];
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", $e->getCode(), $e);
             } else {
-                // Diğer PDO hataları
-                return ["status" => "error", "msg" => $e->getMessage() . $e->getLine()];
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
         }
-
-        return ["status" => "success"];
-
     }
 
     /**
      * tüm kullanıcıların User Modeli şeklinde oluşturulmuş listesini döner
      * @return array
+     * @throws Exception
      */
     public function getUsersList(): array
     {
-        $q = $this->database->prepare("SELECT * FROM $this->table_name ");
-        $q->execute();
-        $user_list = $q->fetchAll(PDO::FETCH_ASSOC);
-        $users = [];
-        foreach ($user_list as $user_data) {
-            $user = new User();
-            $user->fill($user_data);
-            $users[] = $user;
+        try {
+            return $this->getListByFilters();
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
-        return $users;
     }
 
     /**
      * Rolü kullanıcı dışında olan kullanıcıların listesi
      * @return array
+     * @throws Exception
      */
     public function getLecturerList(): array
     {
-        $q = $this->database->prepare("SELECT * FROM $this->table_name where not role='user'");
-        $q->execute();
-        $user_list = $q->fetchAll(PDO::FETCH_ASSOC);
-        $users = [];
-        foreach ($user_list as $user_data) {
-            $user = new User();
-            $user->fill($user_data);
-            $users[] = $user;
+        try {
+            return $this->getListByFilters(["!role" => ["user", "admin"]]);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
-        return $users;
     }
 
     /**
@@ -279,22 +274,22 @@ class UserController extends Controller
      */
     public static function canUserDoAction(int $actionLevel): bool
     {
+        //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
         try {
-            //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
             $user = (new UserController)->getCurrentUser();
-            $roleLevels = [
-                "admin" => 10,
-                "manager" => 9,
-                "submanager" => 8,
-                "department_head" => 7,
-                "lecturer" => 6,
-                "user" => 5
-            ];
-
-            return $roleLevels[$user->role] >= $actionLevel;
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            error_log($e->getMessage());
+            return false;
         }
 
+        $roleLevels = [
+            "admin" => 10,
+            "manager" => 9,
+            "submanager" => 8,
+            "department_head" => 7,
+            "lecturer" => 6,
+            "user" => 5
+        ];
+        return $roleLevels[$user->role] >= $actionLevel;
     }
 }

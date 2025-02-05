@@ -2,9 +2,9 @@
 /**
  * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
- * @var array $programs \App\Models\Program->getPrograms())
  * @var array $departments \App\Models\Department->getDepartments())
  * @var string $page_title
+ * @var array $users
  */
 ?>
 <!--begin::App Main-->
@@ -51,7 +51,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($userController->getUsersList() as $user): ?>
+                        <?php foreach ($users as $user): ?>
                             <tr>
                                 <!--<td><?php /*= $user->id */?></td>-->
                                 <td><?= $user->getFullName() ?></td>

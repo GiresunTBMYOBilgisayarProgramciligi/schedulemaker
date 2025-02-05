@@ -67,7 +67,7 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Kullanıcı Listesi",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
-                "programs" => (new ProgramController())->getProgramsList()]);
+                "users" => (new UserController())->getUsersList()]);
             $this->callView("admin/users/listusers", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
@@ -180,7 +180,9 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ders Ekle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
-                "lessonController" => new LessonController()]);
+                "lessonController" => new LessonController(),
+                "lecturers" => $this->view_data["userController"]->getLecturerList()
+            ]);
             $this->callView("admin/lessons/addlesson", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
@@ -202,7 +204,9 @@ class AdminRouter extends Router
                 "lesson" => $lesson,
                 "page_title" => $lesson->getFullName() . " Düzenle",//todo ders olmayınca hata veriyor.
                 "departments" => (new DepartmentController())->getDepartmentsList(),
-                "programController" => new ProgramController()]);
+                "programController" => new ProgramController(),
+                "lecturers" => $this->view_data["userController"]->getLecturerList()
+            ]);
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
@@ -318,7 +322,8 @@ class AdminRouter extends Router
     public function AddDepartmentAction()
     {
         $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Bölüm Ekle"
+            "page_title" => "Bölüm Ekle",
+            "lecturers" => $this->view_data["userController"]->getLecturerList(),
         ]);
         $this->callView("admin/departments/adddepartment", $this->view_data);
     }
@@ -336,6 +341,7 @@ class AdminRouter extends Router
                 "departmentController" => $departmentController,
                 "department" => $department,
                 "page_title" => $department->name . " Düzenle",//todo ders olmayınca hata veriyor.
+                "lecturers" => $this->view_data["userController"]->getLecturerList(),
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();

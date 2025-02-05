@@ -4,6 +4,7 @@
  * @var \App\Models\User $lecturer
  * @var \App\Models\Department $department
  * @var string $page_title
+ * @var array $lecturers
  */
 ?>
 <!--begin::App Main-->
@@ -52,7 +53,7 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="chairperson_id">Bölüm Başkanı</label>
                                             <select class="form-select" id="chairperson_id" name="chairperson_id">
-                                                <?php foreach ($userController->getLecturerList() as $lecturer): ?>
+                                                <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
                                                         <?= $lecturer->id == $department->chairperson_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
                                                 <?php endforeach; ?>
