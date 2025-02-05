@@ -9,12 +9,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const departmentId = this.value;
 
             // AJAX isteği gönder
-            fetch(`/ajax/getProgramsList/${departmentId}`)
+            fetch(`/ajax/getProgramsList/${departmentId}`, {
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     // Program select kutusunu temizle
                     programSelect.innerHTML = "";
-
+                    console.log(data)
                     // Gelen programları ekle
                     data['programs'].forEach(program => {
                         const option = document.createElement("option");
