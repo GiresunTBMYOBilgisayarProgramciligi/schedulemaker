@@ -17,7 +17,7 @@ class ScheduleController extends Controller
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır. True değeri o gün program düzelemeye uygun anlamına gelir.
      * @var true[]
      */
-    private $emptyWeek = array(
+    private array $emptyWeek = array(
         "day0" => true,//Pazartesi
         "day1" => true,//Salı
         "day2" => true,//Çarşamba
@@ -49,7 +49,7 @@ class ScheduleController extends Controller
             } catch (Exception $e) {
                 throw new Exception($e->getMessage());
             }
-        }
+        } else throw new Exception("Id belirtilmelidir");
     }
 
     /**
@@ -277,7 +277,7 @@ class ScheduleController extends Controller
     {
         try {
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
-                throw new \Exception("Missing hours and time");
+                throw new Exception("Missing hours and time");
             }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
             $unavailable_classroom_ids = [];
@@ -314,7 +314,7 @@ class ScheduleController extends Controller
         try {
             $result = true;
             if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
-                throw new \Exception("Ders saati yada program saati yok | CheckScheduleCrash");
+                throw new Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
             if (array_key_exists('owners', $filters)) {
@@ -392,21 +392,12 @@ class ScheduleController extends Controller
      * @return int
      * @throws Exception
      */
-    public function getCount(array $filters = [])
+    public function getCount(array $filters = []): int
     {
         try {
-            // Koşullar ve parametreler
-            $conditions = [];
             $parameters = [];
-
-            // Parametrelerden WHERE koşullarını oluştur
-            foreach ($filters as $column => $value) {
-                $conditions[] = "$column = :$column";
-                $parameters[":$column"] = $value;
-            }
-
-            // WHERE ifadesini oluştur
-            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+            $whereClause="";
+            $this->prepareWhereClause($filters, $whereClause, $parameters);
 
             // Sorguyu hazırla
             $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";

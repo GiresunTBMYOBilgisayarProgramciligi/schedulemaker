@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use Exception;
 use PDO;
 
 class Controller
@@ -40,11 +41,11 @@ class Controller
         try {
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
-                throw new \Exception('Table name özelliği tanımlı değil.');
+                throw new Exception('Table name özelliği tanımlı değil.');
             }
             $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
             return $count; // İlk sütun (COUNT(*) sonucu) döndür
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             //var_dump($e);
             return false;
         }
@@ -53,27 +54,27 @@ class Controller
     /**
      * @param $id
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function delete($id = null): void
     {
         try {
             if (is_null($id)) {
-                throw new \Exception('Geçerli bir ID sağlanmadı.');
+                throw new Exception('Geçerli bir ID sağlanmadı.');
             }
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
-                throw new \Exception('Table name özelliği tanımlı değil.');
+                throw new Exception('Table name özelliği tanımlı değil.');
             }
 
             $stmt = $this->database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
             $stmt->execute([":id" => $id]);
 
             if (!$stmt->rowCount() > 0) {
-                throw new \Exception('Kayıt bulunamadı veya silinemedi.');
+                throw new Exception('Kayıt bulunamadı veya silinemedi.');
             }
-        } catch (\Exception $e) {
-            throw new \Exception("Dilme işlemi yapılırken hata oluştu:" . $e->getMessage());
+        } catch (Exception $e) {
+            throw new Exception("Dilme işlemi yapılırken hata oluştu:" . $e->getMessage());
         }
     }
 
@@ -81,49 +82,14 @@ class Controller
      * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir
      * @param array|null $filters
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getListByFilters(array $filters = null): array
     {
         try {
-            if (!is_null($filters)) {
-                // Koşullar ve parametreler
-                $conditions = [];
-                $parameters = [];
-
-                // Parametrelerden WHERE koşullarını oluştur
-                foreach ($filters as $column => $value) {
-                    $isNotCondition = false;
-
-                    // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
-                    if (str_starts_with($column, '!')) {
-                        $isNotCondition = true;
-                        $column = ltrim($column, '!'); // '!' işaretini kaldır
-                    }
-
-                    if (is_array($value) and count($value) > 0) {
-                        // Eğer değer bir array ise, IN ifadesi oluştur
-                        $placeholders = [];
-                        foreach ($value as $index => $item) {
-                            $placeholder = ":{$column}_{$index}";
-                            $placeholders[] = $placeholder;
-                            $parameters[$placeholder] = $item;
-                        }
-                        $conditions[] = $isNotCondition
-                            ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
-                            : "$column IN (" . implode(", ", $placeholders) . ")";
-                    } else {
-                        // Normal eşitlik kontrolü
-                        $conditions[] = $isNotCondition
-                            ? "$column != :$column"
-                            : "$column = :$column";
-                        $parameters[":$column"] = $value;
-                    }
-                }
-
-                // WHERE ifadesini oluştur
-                $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
-            } else $whereClause = "";
+            $whereClause ="";
+            $parameters=[];
+            $this->prepareWhereClause($filters,$whereClause,$parameters);
 
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";
@@ -134,7 +100,7 @@ class Controller
                 $stmt->bindValue($key, $value);
             }
             if (!$stmt->execute())
-                throw new \Exception("Komut çalıştırılamadı");
+                throw new Exception("Komut çalıştırılamadı");
 
             // Verileri işle
             $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -143,7 +109,7 @@ class Controller
             if ($result) {
                 // Alt sınıfta table_name tanımlı mı kontrol et
                 if (!property_exists($this, 'modelName')) {
-                    throw new \Exception('Model Adı özelliği tanımlı değil.');
+                    throw new Exception('Model Adı özelliği tanımlı değil.');
                 }
                 foreach ($result as $data) {
                     $model = new $this->modelName();
@@ -153,10 +119,61 @@ class Controller
             }
             return $models;
 
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-            //todo hata yönetimi üzerine çalışırken eğer başka bir try içerisinde çalıştırılan bir metod ise yakalanan hataların yeniden
-            // throw ile fırlatılması gerekiyor. Bunun tüm kodlarda analiz edip düzenlemek lazım
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
+    }
+
+    /**
+     * Bu fonksiyondan önce whereClause ve parameters değişkenlerinin tanımlanmış olması gerekmektedir.
+     * velilen filtreye göre sql sorgusunun where kısmını oluşturur.
+     * ! işareti != yada not olarak işlenir
+     * dizi olan değerler in () içerisinde işlenir
+     *
+     * @param $filters
+     * @param $whereClause
+     * @param $parameters
+     * @return void whereClasuse ve parameters değişkeninin günceller.
+     */
+    public function prepareWhereClause($filters, &$whereClause, &$parameters): void
+    {
+        if (!is_null($filters)) {
+            // Koşullar ve parametreler
+            $conditions = [];
+            $parameters = [];
+
+            // Parametrelerden WHERE koşullarını oluştur
+            foreach ($filters as $column => $value) {
+                $isNotCondition = false;
+
+                // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
+                if (str_starts_with($column, '!')) {
+                    $isNotCondition = true;
+                    $column = ltrim($column, '!'); // '!' işaretini kaldır
+                }
+
+                if (is_array($value) and count($value) > 0) {
+                    // Eğer değer bir array ise, IN ifadesi oluştur
+                    $placeholders = [];
+                    foreach ($value as $index => $item) {
+                        $placeholder = ":{$column}_{$index}";
+                        $placeholders[] = $placeholder;
+                        $parameters[$placeholder] = $item;
+                    }
+                    $conditions[] = $isNotCondition
+                        ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
+                        : "$column IN (" . implode(", ", $placeholders) . ")";
+                } else {
+                    // Normal eşitlik kontrolü
+                    $conditions[] = $isNotCondition
+                        ? "$column != :$column"
+                        : "$column = :$column";
+                    $parameters[":$column"] = $value;
+                }
+            }
+            // WHERE ifadesini oluştur
+            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
+        } else $whereClause = "";
+
     }
 }
