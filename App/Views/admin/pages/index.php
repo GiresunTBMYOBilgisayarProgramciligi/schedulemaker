@@ -6,6 +6,7 @@
  * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Controllers\ProgramController $programController
+ * @var array $programs
  */
 ?>
 <!--begin::App Main-->
@@ -109,7 +110,7 @@
             <h4>Programlar</h4>
             <!-- Main row -->
             <div class="row">
-                <?php foreach ($programController->getProgramsList() as $program): ?>
+                <?php foreach ($programs as $program): ?>
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
                         <div class="card d-flex flex-fill mb-3">
                             <div class="card-header text-muted border-bottom-0">

@@ -47,11 +47,13 @@ class AdminRouter extends Router
      */
     public function IndexAction(): void
     {
+        $programController = new ProgramController();
         $this->view_data = array_merge($this->view_data, [
             "departmentController" => new DepartmentController(),
             "classroomController" => new ClassroomController(),
             "lessonController" => new LessonController(),
-            "programController" => new ProgramController(),
+            "programController" => $programController,
+            "programs" => $programController->getProgramsList(),
             "page_title" => "Anasayfa"]);
         $this->callView("admin/index", $this->view_data);
     }
@@ -368,14 +370,25 @@ class AdminRouter extends Router
 
     }
 
-    public function ListProgramsAction($department_id = null)
+    /**
+     * @param $department_id
+     * @return void
+     */
+    public function ListProgramsAction($department_id = null): void
     {
-        $this->view_data = array_merge($this->view_data, [
-            "programController" => new ProgramController(),
-            "page_title" => "Program Listesi",
-            "department_id" => $department_id
-        ]);
-        $this->callView("admin/programs/listprograms", $this->view_data);
+        try {
+            $programController = new ProgramController();
+            $this->view_data = array_merge($this->view_data, [
+                "programController" => $programController,
+                "programs" => $programController->getProgramsList($department_id),
+                "page_title" => "Program Listesi",
+            ]);
+            $this->callView("admin/programs/listprograms", $this->view_data);
+        } catch (Exception $exception) {
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect("/admin");
+        }
+
     }
 
     public function AddProgramAction($department_id = null)

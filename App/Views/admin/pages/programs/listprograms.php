@@ -2,8 +2,8 @@
 /**
  * @var \App\Controllers\ProgramController $programController
  * @var \App\Models\Program $program
- * @var int $department_id
  * @var string $page_title
+ * @var array $programs
  */
 ?>
 <!--begin::App Main-->
@@ -45,7 +45,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <?php foreach ($programController->getProgramsList($department_id) as $program): ?>
+                        <?php foreach ($programs as $program): ?>
                             <tr>
                                 <td><?= $program->id ?></td>
                                 <td><?= $program->name ?></td>

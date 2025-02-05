@@ -43,30 +43,17 @@ class ProgramController extends Controller
     /**
      * @param int | null $department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir
      * @return array
+     * @throws Exception
      */
-    public function getProgramsList($department_id = null)
+    public function getProgramsList(?int $department_id = null): array
     {
         try {
-            if (!is_null($department_id)) {
-                $q = $this->database->prepare("Select * From $this->table_name WHERE department_id=:department_id");
-                $q->bindValue(":department_id", $department_id, PDO::PARAM_INT);
-                $q->execute();
-            } else {
-                $q = $this->database->prepare("Select * From $this->table_name");
-                $q->execute();
-            }
-            $programs_list = $q->fetchAll(PDO::FETCH_ASSOC);
-            $programs = [];
-            foreach ($programs_list as $programData) {
-                $program = new Program();
-                $program->fill($programData);
-                $programs[] = $program;
-            }
-        } catch (PDOException $e) {
-            echo $e->getMessage();
-            return [];
+            $filters = [];
+            if (!is_null($department_id)) $filters["department_id"] = $department_id;
+            return $this->getListByFilters($filters);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
         }
-        return $programs;
     }
 
     public function saveNew(Program $new_program): array

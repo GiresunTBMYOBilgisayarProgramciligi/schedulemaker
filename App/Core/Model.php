@@ -3,6 +3,7 @@
 namespace App\Core;
 
 
+use Exception;
 use PDO;
 use App\Controllers\ProgramController;
 
@@ -72,19 +73,23 @@ class Model
      * Bölümü tanımlanmamış bir ders ise sadece program seçiniz verisi olur.
      * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
      * @return object[]
+     * @throws Exception
      */
     public function getDepartmentProgramsList(): array
     {
-        if (property_exists($this, 'department_id')) {
-            if (is_null($this->department_id)) {
-                $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
-            } else {
-                $list = (new ProgramController())->getProgramsList($this->department_id);
-                array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
-            }
-        } else $list = [];
-
-        return $list;
+        try {
+            if (property_exists($this, 'department_id')) {
+                if (is_null($this->department_id)) {
+                    $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
+                } else {
+                    $list = (new ProgramController())->getProgramsList($this->department_id);
+                    array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
+                }
+            } else $list = [];
+            return $list;
+        }catch (Exception $exception){
+            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 
     /**

@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     programSelect.innerHTML = "";
 
                     // Gelen programları ekle
-                    data.forEach(program => {
+                    data['programs'].forEach(program => {
                         const option = document.createElement("option");
                         option.value = program.id;
                         option.textContent = program.name;

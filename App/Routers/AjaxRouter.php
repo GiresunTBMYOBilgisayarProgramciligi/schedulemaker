@@ -531,9 +531,20 @@ class AjaxRouter extends Router
 
     public function getProgramsListAction($department_id)
     {
-        $programController = new ProgramController();
+        if ($this->checkAjax()) {
+            try {
+                $programController = new ProgramController();
+                $programs = $programController->getProgramsList($department_id);
+                $this->response['status'] = "success";
+                $this->response['programs'] = $programs;
+            } catch (Exception $e) {
+                $this->response['status'] = 'error';
+                $this->response['msg'] = $e->getMessage();
+            }
+
+        }
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($programController->getProgramsList($department_id));
+        echo json_encode($this->response);
     }
 
     /*

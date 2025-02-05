@@ -47,16 +47,7 @@ class DepartmentController extends Controller
     public function getDepartmentsList(): array
     {
         try {
-            $q = $this->database->prepare("Select * From $this->table_name");
-            $q->execute();
-            $department_list = $q->fetchAll(PDO::FETCH_ASSOC);
-            $departments = [];
-            foreach ($department_list as $departmentData) {
-                $deparment = new Department();
-                $deparment->fill($departmentData);
-                $departments[] = $deparment;
-            }
-            return $departments;
+            return $this->getListByFilters();
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode());
         }
@@ -94,7 +85,7 @@ class DepartmentController extends Controller
      * @return int
      * @throws Exception
      */
-    public function updateDepartment(Department $department):int
+    public function updateDepartment(Department $department): int
     {
         try {
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
