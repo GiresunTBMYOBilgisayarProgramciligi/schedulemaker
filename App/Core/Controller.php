@@ -36,18 +36,39 @@ class Controller
         );
     }
 
-    public function getCount()
+    /**
+     * filtre ile belirtilen koşullara uyan veri sayısını döner
+     * @param array|null $filters
+     * @return int
+     * @throws Exception
+     */
+    public function getCount(?array $filters = []): int
     {
         try {
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
                 throw new Exception('Table name özelliği tanımlı değil.');
             }
-            $count = $this->database->query("SELECT COUNT(*) FROM " . $this->table_name)->fetchColumn();
-            return $count; // İlk sütun (COUNT(*) sonucu) döndür
+            $parameters = [];
+            $whereClause="";
+            $this->prepareWhereClause($filters, $whereClause, $parameters);
+
+            // Sorguyu hazırla
+            $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
+            $stmt = $this->database->prepare($sql);
+
+            // Parametreleri bağla
+            foreach ($parameters as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            $stmt->execute();
+
+            // Verileri işle
+            return $stmt->fetchColumn();
+
         } catch (Exception $e) {
-            //var_dump($e);
-            return false;
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -87,9 +108,9 @@ class Controller
     public function getListByFilters(array $filters = null): array
     {
         try {
-            $whereClause ="";
-            $parameters=[];
-            $this->prepareWhereClause($filters,$whereClause,$parameters);
+            $whereClause = "";
+            $parameters = [];
+            $this->prepareWhereClause($filters, $whereClause, $parameters);
 
             // Sorguyu hazırla
             $sql = "SELECT * FROM $this->table_name $whereClause";

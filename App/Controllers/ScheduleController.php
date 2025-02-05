@@ -387,38 +387,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * belirtilen filitreye uyan schedule satırlarının sayısını döner
-     * @param array $filters
-     * @return int
-     * @throws Exception
-     */
-    public function getCount(array $filters = []): int
-    {
-        try {
-            $parameters = [];
-            $whereClause="";
-            $this->prepareWhereClause($filters, $whereClause, $parameters);
-
-            // Sorguyu hazırla
-            $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
-            $stmt = $this->database->prepare($sql);
-
-            // Parametreleri bağla
-            foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            $stmt->execute();
-
-            // Verileri işle
-            return $stmt->fetchColumn();
-
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
-        }
-    }
-
-    /**
      * Schedule tablosuna yeni kayıt ekler
      * @param Schedule $new_schedule
      * @return int Son eklenen verinin id numarasını döner
