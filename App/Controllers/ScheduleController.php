@@ -117,7 +117,7 @@ class ScheduleController extends Controller
                      */
                     if (is_array($day)) {
                         if (is_array($day[0])) {
-                            $out .= '<td>';
+                            $out .= '<td class="drop-zone">';
                             foreach ($day as $column) {
                                 $column = (object)$column; // Array'i objeye dönüştür
                                 $lesson = (new LessonController())->getLesson($column->lesson_id);
@@ -151,10 +151,8 @@ class ScheduleController extends Controller
                             $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
                             $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
-                            //Ders gruplu ise drop zone ekle
-                            $drop_zone = preg_match('/\.\d+$/', $lesson->code) === 1 ? "drop-zone" : "";
                             $out .= '
-                        <td class="' . $drop_zone . '">
+                        <td class="drop-zone">
                             <div 
                             id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
