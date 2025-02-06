@@ -183,6 +183,9 @@ document.addEventListener("DOMContentLoaded", function () {
     /**
      *
      * @param scheduleTime eklenecek dersin ilk saati
+     * @param dayIndex
+     * @param classroomSelect
+     * @param event
      */
     function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, event) {
         console.log("Dersler alınıyor")
@@ -434,13 +437,18 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param table
      */
     function clearCells(table) {
-        if (unavailableCell) {
-            for (let i = 0; i <= 9; i++) {
-                for (let cell in unavailableCell[i]) {
-                    table.rows[i].cells[cell].classList.remove("text-bg-danger")
-                }
+        for (let i = 0; i < table.rows.length; i++) {
+            for (let j = 0; j < table.rows[i].cells.length; j++) {
+                /*
+                Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
+                 */
+                table.rows[i].cells[j].classList.remove("text-bg-danger")
             }
         }
+        /**
+         * Veri Tabanından alınan Uygun olmayan hücreler bilgisi temizleniyor
+         * @type {null}
+         */
         unavailableCell = null;
     }
 
