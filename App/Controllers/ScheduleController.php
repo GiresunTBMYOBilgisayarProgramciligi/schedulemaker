@@ -189,7 +189,7 @@ class ScheduleController extends Controller
             $out .= '</tbody>
                </table>';
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(),$e->getCode());
+            throw new Exception($e->getMessage(), $e->getCode());
         }
 
         return $out;
@@ -312,21 +312,22 @@ class ScheduleController extends Controller
     public function checkScheduleCrash(array $filters = []): bool
     {
         try {
-            $result = true;
             if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
                 throw new Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
             if (array_key_exists('owners', $filters)) {
                 foreach ($filters["owners"] as $owner_type => $owner_id) {
-                    $schedules = $this->getListByFilters(
-                        [
-                            "time" => $times,
-                            "owner_type" => $owner_type,
-                            "owner_id" => $owner_id,
-                            "type" => $filters['type'],
-                        ]
-                    );
+                    $ownerFilter = [
+                        "time" => $times,
+                        "owner_type" => $owner_type,
+                        "owner_id" => $owner_id,
+                        "type" => $filters['type'],
+                    ];
+                    if ($owner_type == "program") {
+                        $ownerFilter["season"] = $filters["season"];
+                    }
+                    $schedules = $this->getListByFilters($ownerFilter);
                     foreach ($schedules as $schedule) {
                         if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
                             if (is_array($schedule->{$filters["day"]})) {
@@ -344,7 +345,7 @@ class ScheduleController extends Controller
                                  */
                                 if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
                                     //derslerden en az biri gruplu değil çakışma var
-                                    $result = false;
+                                    throw new Exception($schedule->getOwnerTypeScreenName() . " programında " . $schedule->getdayName($filters["day"]) . " gününde " . $schedule->time . " saatinde çakışma var");
                                 }
                             }
                         }
@@ -355,7 +356,7 @@ class ScheduleController extends Controller
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-        return $result;
+        return true;
     }
 
     /**

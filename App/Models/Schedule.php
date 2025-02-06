@@ -96,4 +96,28 @@ class Schedule extends Model
             $this->day5,
         ];
     }
+
+    public function getdayName($dayString)
+    {
+        $days = [
+            "day0" => "Pazartesi",
+            "day1" => "Salı",
+            "day2" => "Çarşamba",
+            "day3" => "Perşembe",
+            "day4" => "Cuma",
+            "day5" => "Cumartesi",
+        ];
+        return $days[$dayString];
+    }
+
+    public function getOwnerTypeScreenName()
+    {
+        $names = [
+            "user" => "Hoca",
+            "lesson" => "Ders",
+            "program" => "Program",
+            "classroom" => "Derslik",
+        ];
+        return $names[$this->owner_type];
+    }
 }
