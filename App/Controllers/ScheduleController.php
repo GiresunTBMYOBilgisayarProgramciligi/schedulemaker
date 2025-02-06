@@ -331,21 +331,27 @@ class ScheduleController extends Controller
                     foreach ($schedules as $schedule) {
                         if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
                             if (is_array($schedule->{$filters["day"]})) {
+                                if ($owner_type == "user") {
+                                    throw new Exception("Hoca Programı uygun değil");
+                                }
                                 // belirtilen gün içerisinde bir veri varsa
                                 /**
                                  * var olan dersin kodu
                                  */
-                                $lessonCode = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id'])->code;
+                                $lesson = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id']);
                                 /**
                                  * yeni eklenmek istenen dersin kodu
                                  */
-                                $newLessonCode = (new LessonController())->getLesson($filters['owners']['lesson'])->code;
+                                $newLesson = (new LessonController())->getLesson($filters['owners']['lesson']);
                                 /*
                                  * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                                  */
-                                if (preg_match('/\.\d+$/', $lessonCode) !== 1 and preg_match('/\.\d+$/', $newLessonCode) !== 1) {
-                                    //derslerden en az biri gruplu değil çakışma var
+                                if (preg_match('/\.\d+$/', $lesson->code) !== 1 and preg_match('/\.\d+$/', $newLesson->code) !== 1) {
+                                    // Dersler gruplu değil çakışma var
                                     throw new Exception($schedule->getOwnerTypeScreenName() . " programında " . $schedule->getdayName($filters["day"]) . " gününde " . $schedule->time . " saatinde çakışma var");
+                                } else {
+                                    //derslerden sadece bir tanesi gruplu
+                                    throw new Exception($lesson->name . "(" . $lesson->code . ") dersinin yanına sadece grupu bir ders ekleyebilirsiniz");
                                 }
                             }
                         }
@@ -520,6 +526,9 @@ class ScheduleController extends Controller
         try {
             $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
             $schedule = $this->getListByFilters($scheduleData)[0];
+            if (!$schedule) {
+                throw new Exception("Silinecek Ders bulunamadı" . var_export($scheduleData, true));
+            }
             //belirtilen günde bir ders var ise
             if (array_key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
                 if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
