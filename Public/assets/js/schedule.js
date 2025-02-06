@@ -363,6 +363,10 @@ document.addEventListener("DOMContentLoaded", function () {
             // çakışmaları kontrol et
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
+                if (!row){
+                    new Toast().prepareToast("Hata", "Eklelen ders saatleri programın dışına taşıyor.","danger")
+                    return;
+                }
                 let cell = row.cells[droppedCellIndex];
                 // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
                 if (!cell.classList.contains("drop-zone")) {
