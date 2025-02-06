@@ -111,7 +111,9 @@ class DepartmentController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            return $this->database->lastInsertId();
+            if ($stmt->rowCount() > 0) {
+                return $department->id;
+            } else throw new Exception("Bölüm Güncellenemedi");
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

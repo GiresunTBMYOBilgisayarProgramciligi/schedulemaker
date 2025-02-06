@@ -108,16 +108,13 @@ class AjaxRouter extends Router
                 }
                 $new_user = new User();
                 $new_user->fill($userData);
-                $user = $usersController->updateUser($new_user);
-                if (!$user) {
-                    throw new Exception("Kullanıcı Güncellenemedi");
-                } else {
-                    $this->response = array(
-                        "msg" => "Kullanıcı başarıyla Güncellendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/listusers",
-                    );
-                }
+                $userId = $usersController->updateUser($new_user);
+
+                $this->response = array(
+                    "msg" => "Kullanıcı başarıyla Güncellendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listusers",
+                );
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -239,15 +236,11 @@ class AjaxRouter extends Router
                 $lesson = new Lesson();
                 $lesson->fill($lessonData);
                 $lesson = $lessonController->updateLesson($lesson);
-                if (!$lesson) {
-                    throw new Exception("Ders Güncellenemedi");
-                } else {
-                    $this->response = array(
-                        "msg" => "Ders başarıyla Güncellendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/listlessons",
-                    );
-                }
+                $this->response = array(
+                    "msg" => "Ders başarıyla Güncellendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listlessons",
+                );
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -322,15 +315,11 @@ class AjaxRouter extends Router
                 $classroom = new Classroom();
                 $classroom->fill($classroomData);
                 $classroom = $classroomController->updateClassroom($classroom);
-                if (!$classroom) {
-                    throw new Exception("Derslik Güncellenemedi");
-                } else {
-                    $this->response = array(
-                        "msg" => "Derslik başarıyla Güncellendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/listclassrooms",
-                    );
-                }
+                $this->response = array(
+                    "msg" => "Derslik başarıyla Güncellendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listclassrooms",
+                );
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -405,15 +394,12 @@ class AjaxRouter extends Router
                 $department = new Department();
                 $department->fill($departmentData);
                 $department = $departmentController->updateDepartment($department);
-                if (!$department) {
-                    throw new Exception("Bölüm Güncellenemedi");
-                } else {
-                    $this->response = array(
-                        "msg" => "Bölüm başarıyla Güncellendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/listdepartments",
-                    );
-                }
+
+                $this->response = array(
+                    "msg" => "Bölüm başarıyla Güncellendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listdepartments",
+                );
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
@@ -486,16 +472,13 @@ class AjaxRouter extends Router
                 $programData = $this->data;
                 $program = new Program();
                 $program->fill($programData);
-                $respons = $programController->updateProgram($program);
-                if (!$respons) {
-                    throw new Exception("Program Güncellenemedi");
-                } else {
-                    $this->response = array(
-                        "msg" => "Program Başarıyla Güncellendi.",
-                        "status" => "success",
-                        "redirect" => "/admin/listprograms",
-                    );
-                }
+                $programId = $programController->updateProgram($program);
+
+                $this->response = array(
+                    "msg" => "Program Başarıyla Güncellendi.",
+                    "status" => "success",
+                    "redirect" => "/admin/listprograms",
+                );
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),

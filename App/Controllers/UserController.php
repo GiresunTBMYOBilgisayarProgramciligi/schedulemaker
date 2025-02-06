@@ -190,7 +190,9 @@ class UserController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            return $this->database->lastInsertId();
+            if ($stmt->rowCount() > 0) {
+                return $user->id;
+            } else throw new Exception("Kullanıcı Güncellenemedi");
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

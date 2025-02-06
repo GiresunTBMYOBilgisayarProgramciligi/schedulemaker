@@ -92,7 +92,7 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            $classroomData = $classroom->getArray(['table_name', 'database', 'id'],true);
+            $classroomData = $classroom->getArray(['table_name', 'database', 'id'], true);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
             $parameters = [];
@@ -115,7 +115,9 @@ class ClassroomController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            return $this->database->lastInsertId();
+            if ($stmt->rowCount() > 0) {
+                return $classroom->id;
+            } else throw new Exception("Derslik Güncellenemedi");
         } catch (PDOException $e) {
             error_log($e->getMessage());
             if ($e->getCode() == '23000') {
