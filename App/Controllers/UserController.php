@@ -276,6 +276,7 @@ class UserController extends Controller
      */
     public static function canUserDoAction(int $actionLevel): bool
     {
+
         //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
         try {
             $user = (new UserController)->getCurrentUser();

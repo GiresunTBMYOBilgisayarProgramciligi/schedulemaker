@@ -11,6 +11,7 @@ use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
+use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use App\Models\Classroom;
@@ -18,6 +19,7 @@ use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
+use App\Models\Setting;
 use App\Models\User;
 use Exception;
 
@@ -780,4 +782,34 @@ class AjaxRouter extends Router
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->response);
     }
+
+    /*
+     * Setting Actions
+     */
+
+    public function saveSettingsAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $settingsController = new SettingsController();
+
+                foreach ($this->data['settings'] as $key => $data) {
+                    $settingData = array_merge(["key" => $key], $data);
+                    $setting = new Setting();
+                    $setting->fill($settingData);
+                    $settingsController->saveNew($setting);
+                }
+                $this->response['status'] = "success";
+                $this->response['msg'] = "Ayarlar kaydedildi";
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "status" => "error"
+                ];
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
 }

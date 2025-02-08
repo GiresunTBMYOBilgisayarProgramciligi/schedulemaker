@@ -10,6 +10,7 @@ use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
+use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use Exception;
@@ -477,5 +478,19 @@ class AdminRouter extends Router
             $this->Redirect();
         }
 
+    }
+
+    public function SettingsAction()
+    {
+        try {
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => "Ayarlar",
+            ]);
+            $this->callView("admin/settings/settings", $this->view_data);
+
+        }catch (Exception $exception){
+            $_SESSION["errors"][] = $exception->getMessage();
+            $this->Redirect();
+        }
     }
 }

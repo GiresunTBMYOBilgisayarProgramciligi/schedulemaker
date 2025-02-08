@@ -22,7 +22,7 @@ create table if not exists schedule
     day4       text,
     day5       text,
     primary key (id),
-    unique (owner_type, owner_id, time,season)
+    unique (owner_type, owner_id, time, season)
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -93,6 +93,19 @@ create table if not exists lessons
     foreign key (program_id) references programs (id) on delete set null
 
 ) ENGINE = INNODB;
+
+create table if not exists settings
+(
+    id           int AUTO_INCREMENT,
+    `key`        varchar(255)                                           NOT NULL,                                              -- Ayarın benzersiz anahtarı
+    `value`      text                                                   NOT NULL,                                              -- Ayarın değeri
+    `type`       enum ('string', 'integer', 'boolean', 'json', 'array')          NOT NULL DEFAULT 'string',                             -- Veri türü
+    `group`      VARCHAR(100)                                           DEFAULT 'general',                                          -- Ayarın hangi gruba ait olduğu
+    `created_at` TIMESTAMP                                              DEFAULT CURRENT_TIMESTAMP,                             -- Oluşturulma tarihi
+    `updated_at` TIMESTAMP                                              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Güncellenme tarihi
+    primary key (id),
+    unique (`key`,`group`)
+);
 
 -- users tablosuna department_id için dış anahtar ekleme
 ALTER TABLE users

@@ -27,10 +27,13 @@ class Controller
         $columns = array_keys($data);
         $placeholders = array_map(fn($col) => ":$col", $columns);
 
+        // Sütun isimlerini ` backtick içine al
+        $columns = array_map(fn($col) => "`$col`", $columns);
+
         // Dinamik SQL sorgusu oluştur
         return sprintf(
             "INSERT INTO %s (%s) VALUES (%s)",
-            $this->table_name,//sorguyu çalıştıran sınıftan alınır.
+            $this->table_name, // Sorguyu çalıştıran sınıftan alınır.
             implode(", ", $columns),
             implode(", ", $placeholders)
         );
@@ -187,8 +190,8 @@ class Controller
                 } else {
                     // Normal eşitlik kontrolü
                     $conditions[] = $isNotCondition
-                        ? "$column != :$column"
-                        : "$column = :$column";
+                        ? "`$column` != :$column"
+                        : "`$column` = :$column";
                     $parameters[":$column"] = $value;
                 }
             }
