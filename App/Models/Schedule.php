@@ -32,9 +32,9 @@ class Schedule extends Model
     public ?string $time = null;
     /**
      * Sınıf ayrımı yapmak için kullanılır
-     * @var string|null $season 1. Yarıyıl, 2. Yarıyıl ...
+     * @var int|null $semester_no 1,2 ...
      */
-    public ?string $season = null;
+    public ?int $semester_no = null;
     /**
      * Pazartesi günü için time alanında belirlenen saatteki program bilgileri
      *  array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)

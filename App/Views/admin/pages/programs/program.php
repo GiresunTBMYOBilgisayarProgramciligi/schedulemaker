@@ -187,7 +187,7 @@
                                         <td><?= $lesson->name ?></td>
                                         <td><?= $lesson->type ?></td>
                                         <td><?= $lesson->hours ?></td>
-                                        <td><?= $lesson->season ?></td>
+                                        <td><?= $lesson->semester_no ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                         <td class="text-center">
                                             <div class="dropdown">
@@ -247,7 +247,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "season" => "1.Yarıyıl"]) ?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "semester_no" => "1"]) ?>
                         </div>
                         <div class="card-footer">
 
@@ -270,7 +270,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "season" => "3.Yarıyıl"]) ?>
+                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "semester_no" => "3"]) ?>
                         </div>
                         <div class="card-footer">
 

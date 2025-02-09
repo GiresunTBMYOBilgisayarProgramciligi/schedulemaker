@@ -18,23 +18,20 @@ class Lesson extends Model
     public ?int $size = null;
     public ?int $hours = 2;
     public ?string $type = null;
-    public ?string $season = null;
+    public ?int $semester_no = null;
     public ?int $lecturer_id = null;
     public ?int $department_id = null;
     public ?int $program_id = null;
 
     private string $table_name = "lessons";
 
-    /**
-     * @param int $id
-     */
     public function __construct()
     {
         parent::__construct(); # Connect to database
     }
 
     /**
-     * @return User Chair Person
+     * @return User|null
      */
     public function getLecturer(): User|null
     {

@@ -61,7 +61,7 @@
                                 <td><?= $lesson->type ?></td>
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
-                                <td><?= $lesson->season ?></td>
+                                <td><?= $lesson->semester_no ?></td>
                                 <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                 <td><?= $lesson->getDepartment()->name ?></td>
                                 <td><?= $lesson->getProgram()->name ?></td>

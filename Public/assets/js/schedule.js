@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", "lesson")
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
-            data.append("season", scheduleTableElements[i].getAttribute("data-season"));
+            data.append("semester_no", scheduleTableElements[i].getAttribute("data-semester_no"));
 
             promises.push(fetchAvailableLessons(data, availableItemElements[i]));
             promises.push(fetchScheduleTable(data, scheduleTableElements[i]));
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     out += `
                   <div id="available-lesson-${lesson.id}" draggable="true" 
                   class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                  data-season="${lesson.season}"
+                  data-semester_no="${lesson.semester_no}"
                   data-lesson-code="${lesson.code}"
                   data-lesson-id="${lesson.id}">
                     <div class="ms-2 me-auto">
@@ -122,14 +122,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /**
      * Bırakılan dersin doğru dönem dersine ait olup olmadığını belirler
-     * @param droppedSeason
-     * @param transferredSeason
+     * @param droppedSemesterNo
+     * @param transferredSemesterNo
      * @returns {boolean}
      */
-    function checkSeason(droppedSeason, transferredSeason) {
-        if (droppedSeason !== transferredSeason) {
+    function checkSemester(droppedSemesterNo, transferredSemesterNo) {
+        if (droppedSemesterNo !== transferredSemesterNo) {
             new Toast().prepareToast("Dikkat", "Bu işlem yapılamaz", "danger");
-            console.error("Sezonlar Uyumsuz")
+            console.error("Dönemler Uyumsuz")
             return false;
         } else return true;
     }
@@ -232,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_hours", scheduleData.lesson_hours);
         data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.selected_classroom);
-        data.append("season", scheduleData.season)
+        data.append("semester_no", scheduleData.semester_no)
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
         /*
          Dönem kontrolü yapılıyor.
          */
-        if (!checkSeason(table.dataset['season'], draggedElement.dataset['season'])) return;
+        if (!checkSemester(table.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
         /*
          Saat ve sınıf seçimi için Modal hazırlanıyor.
          */
@@ -387,7 +387,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "lesson_hours": lessonHours,
                     "day_index": droppedCellIndex - 1,
                     "selected_classroom": selectedClassroom,
-                    "season": draggedElement.dataset['season']
+                    "semester_no": draggedElement.dataset['semester_no']
                 });
             if (result) {
                 /**
@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time", scheduleData.schedule_time);
         data.append("day_index", scheduleData.day_index);
-        data.append("season", scheduleData.season);
+        data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
@@ -497,13 +497,13 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<void>}
      */
     async function dropTableToList(tableElement, draggedElement, dropZone) {
-        if (!checkSeason(dropZone.dataset['season'], draggedElement.dataset['season'])) return;
+        if (!checkSemester(dropZone.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
         let result = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset['lessonId'],
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
-                "season": draggedElement.dataset.season,
+                "semester_no": draggedElement.dataset.semester_no,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText
             });
         if (result) {
@@ -541,7 +541,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_id": draggedElement.dataset.lessonId,
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
-                "season": draggedElement.dataset.season,
+                "semester_no": draggedElement.dataset.semester_no,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText
             });
         if (deleteResult) {
@@ -555,7 +555,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_hours": 1,
                 "day_index": droppedCellIndex - 1,
                 "selected_classroom": draggedElement.querySelector("span.badge").innerText,
-                "season": draggedElement.dataset['season']
+                "semester_no": draggedElement.dataset['semester_no']
             });
         if (saveResult) {
             console.log("Yeni ders eklendi");
@@ -686,7 +686,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let result = highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
-            let table = document.querySelector('table[data-season="' + event.dataTransfer.getData("season") + '"]')
+            let table = document.querySelector('table[data-semester_no="' + event.dataTransfer.getData("semester_no") + '"]')
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
             let result = highlightUnavailableCells(lessonID, table);

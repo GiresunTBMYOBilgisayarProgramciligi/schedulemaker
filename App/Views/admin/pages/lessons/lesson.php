@@ -57,7 +57,7 @@
                                 <dt class="col-sm-4">Saat</dt>
                                 <dd class="col-sm-8"><?= $lesson->hours ?></dd>
                                 <dt class="col-sm-4">Dönemi</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->season, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->semester_no, ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt class="col-sm-4">Hocası</dt>
                                 <dd class="col-sm-8"><a href="/admin/profile/<?= $lesson->getLecturer()->id ?>">
                                         <?= htmlspecialchars($lesson->getLecturer()->getFullName(), ENT_QUOTES, 'UTF-8') ?></a>

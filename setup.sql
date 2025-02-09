@@ -9,20 +9,20 @@ FLUSH PRIVILEGES;
 use schedule_maker;
 create table if not exists schedule
 (
-    id         int AUTO_INCREMENT,
-    type       varchar(20), /* exam, lesson*/
-    owner_type varchar(20),
-    owner_id   int,
-    time       varchar(20),
-    season     varchar(20),
-    day0       text,
-    day1       text,
-    day2       text,
-    day3       text,
-    day4       text,
-    day5       text,
+    id          int AUTO_INCREMENT,
+    type        varchar(20), /* exam, lesson*/
+    owner_type  varchar(20),
+    owner_id    int,
+    time        varchar(20),
+    semester_no int,
+    day0        text,
+    day1        text,
+    day2        text,
+    day3        text,
+    day4        text,
+    day5        text,
     primary key (id),
-    unique (owner_type, owner_id, time, season)
+    unique (owner_type, owner_id, time, semester_no)
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -82,7 +82,7 @@ create table if not exists lessons
     size          int,
     hours         int         NOT NULL DEFAULT 2,
     type          varchar(50)          default 'Zorunlu',
-    season        varchar(50)          default '1. Yarıyıl',
+    semester_no   int,
     lecturer_id   int,
     department_id int,
     program_id    int,
@@ -97,14 +97,14 @@ create table if not exists lessons
 create table if not exists settings
 (
     id           int AUTO_INCREMENT,
-    `key`        varchar(255)                                           NOT NULL,                                              -- Ayarın benzersiz anahtarı
-    `value`      text                                                   NOT NULL,                                              -- Ayarın değeri
-    `type`       enum ('string', 'integer', 'boolean', 'json', 'array')          NOT NULL DEFAULT 'string',                             -- Veri türü
-    `group`      VARCHAR(100)                                           DEFAULT 'general',                                          -- Ayarın hangi gruba ait olduğu
-    `created_at` TIMESTAMP                                              DEFAULT CURRENT_TIMESTAMP,                             -- Oluşturulma tarihi
-    `updated_at` TIMESTAMP                                              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Güncellenme tarihi
+    `key`        varchar(255)                                           NOT NULL,                                                       -- Ayarın benzersiz anahtarı
+    `value`      text                                                   NOT NULL,                                                       -- Ayarın değeri
+    `type`       enum ('string', 'integer', 'boolean', 'json', 'array') NOT NULL DEFAULT 'string',                                      -- Veri türü
+    `group`      VARCHAR(100)                                                    DEFAULT 'general',                                     -- Ayarın hangi gruba ait olduğu
+    `created_at` TIMESTAMP                                                       DEFAULT CURRENT_TIMESTAMP,                             -- Oluşturulma tarihi
+    `updated_at` TIMESTAMP                                                       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Güncellenme tarihi
     primary key (id),
-    unique (`key`,`group`)
+    unique (`key`, `group`)
 );
 
 -- users tablosuna department_id için dış anahtar ekleme

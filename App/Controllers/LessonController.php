@@ -59,11 +59,11 @@ class LessonController extends Controller
      * Yarıyıl seçiöi yaparken kıllanılacak verileri dizi olarak döner
      * @return array
      */
-    public function getSeasonList(): array
+    public function getSemesterNoList(): array
     {
         $list = [];
         for ($i = 1; $i <= 12; $i++) {
-            $list[] = "$i. Yarıyıl";
+            $list[$i] = "$i. Yarıyıl";
         }
         return $list;
     }

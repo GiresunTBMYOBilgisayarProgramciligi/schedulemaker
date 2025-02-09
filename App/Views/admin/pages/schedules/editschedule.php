@@ -99,10 +99,10 @@
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-season="1. Yarıyıl">
+                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="1">
 
                                 </div>
-                                <div class="schedule-table col-md-9" data-season="1. Yarıyıl">
+                                <div class="schedule-table col-md-9" data-semester_no="1">
 
                                 </div>
                             </div>
@@ -132,10 +132,10 @@
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-season="3. Yarıyıl">
+                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="3">
 
                                 </div>
-                                <div class="schedule-table col-md-9" data-season="3. Yarıyıl">
+                                <div class="schedule-table col-md-9" data-semester_no="3">
 
                                 </div>
                             </div>

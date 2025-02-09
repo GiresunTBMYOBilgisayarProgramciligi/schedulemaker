@@ -87,7 +87,8 @@ class Department extends Model
         return $data['count'];
     }
 
-    public function getLessons(){
+    public function getLessons(): array
+    {
         $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
         $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
         $stmt->execute();

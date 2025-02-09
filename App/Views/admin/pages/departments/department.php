@@ -257,9 +257,9 @@
                                         <td><?= $lesson->name ?></td>
                                         <td><?= $lesson->type ?></td>
                                         <td><?= $lesson->hours ?></td>
-                                        <td><?= $lesson->season ?></td>
+                                        <td><?= $lesson->semester_no ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
-                                        <td><?= $lesson->getProgam()->name ?></td>
+                                        <td><?= $lesson->getProgram()->name ?></td>
                                         <td>
                                             <div class="dropdown">
                                                 <button type="button" class="btn btn-primary dropdown-toggle"

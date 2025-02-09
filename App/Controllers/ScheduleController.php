@@ -63,7 +63,7 @@ class ScheduleController extends Controller
     {
         try {
             $schedules = $this->getListByFilters($filters);
-            $season = isset($filters['season']) ? 'data-season="' . $filters['season'] . '"' : "";
+            $semester_no = isset($filters['semester_no']) ? 'data-semester_no="' . $filters['semester_no'] . '"' : "";
             /**
              * Boş tablo oluşturmak için tablo satır verileri
              */
@@ -88,7 +88,7 @@ class ScheduleController extends Controller
 
             $out =
                 '
-            <table class="table table-bordered table-sm small" ' . $season . '>
+            <table class="table table-bordered table-sm small" ' . $semester_no . '>
                                 <thead>
                                 <tr>
                                     <th>#</th>
@@ -129,7 +129,7 @@ class ScheduleController extends Controller
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
+                            data-lesson-code="' . $lesson->code . '" data-semester_no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '">
                                 <div class="ms-2 me-auto">
@@ -157,7 +157,7 @@ class ScheduleController extends Controller
                             id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="true" 
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                            data-lesson-code="' . $lesson->code . '" data-season="' . $lesson->season . '" data-lesson-id="' . $lesson->id . '"
+                            data-lesson-code="' . $lesson->code . '" data-semester_no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '">
                                 <div class="ms-2 me-auto">
@@ -206,9 +206,9 @@ class ScheduleController extends Controller
             if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
                 if ($filters['owner_type'] == "program") {
                     $lessonFilters = [];
-                    if (array_key_exists("season", $filters)) {
-                        $lessonFilters['season'] = $filters['season'];
-                    } else throw new Exception("Sezon/Yarıyıl bilgisi yok");
+                    if (array_key_exists("semester_no", $filters)) {
+                        $lessonFilters['semester_no'] = $filters['semester_no'];
+                    } else throw new Exception("Semester/Yarıyıl bilgisi yok");
                     $lessonFilters['program_id'] = $filters['owner_id'];
                     $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
                     /*
@@ -323,7 +323,7 @@ class ScheduleController extends Controller
                         "type" => $filters['type'],
                     ];
                     if ($owner_type == "program") {
-                        $ownerFilter["season"] = $filters["season"];
+                        $ownerFilter["semester_no"] = $filters["semester_no"];
                     }
                     $schedules = $this->getListByFilters($ownerFilter);
                     foreach ($schedules as $schedule) {

@@ -69,11 +69,11 @@
 
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="season">Dönemi</label>
-                                            <select class="form-select" id="season" name="season">
-                                                <?php foreach ($lessonController->getSeasonList() as $season): ?>
-                                                    <option value="<?= $season ?>"
-                                                        <?= $season == $lesson->season ? "selected" : "" ?>><?= $season ?></option>
+                                            <label class="form-label"  for="semester_no">Dönemi</label>
+                                            <select class="form-select" id="semester_no" name="semester_no">
+                                                <?php foreach ($lessonController->getSemesterNoList() as $key=>$value): ?>
+                                                    <option value="<?= $key ?>"
+                                                        <?= $key == $lesson->semester_no ? "selected" : "" ?>><?= $value ?></option>
                                                 <?php endforeach ?>
                                             </select>
                                         </div>

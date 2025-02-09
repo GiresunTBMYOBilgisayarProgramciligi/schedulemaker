@@ -596,7 +596,7 @@ class AjaxRouter extends Router
      * "lesson_hours" programa eklenen dersin kaç saat eklendiği
      * "day_index", programa eklenecek dersin eklendiği günün index numarası
      * "classroom_name"
-     * "season"
+     * "semester_no"
      *
      * @return void
      */
@@ -622,7 +622,7 @@ class AjaxRouter extends Router
                         "time_start" => $this->data['time_start'],
                         "day" => "day" . $this->data['day_index'],
                         "lesson_hours" => $this->data['lesson_hours'],
-                        "season" => trim($this->data['season']),];
+                        "semester_no" => trim($this->data['semester_no']),];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
                         /**
                          * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
@@ -654,7 +654,7 @@ class AjaxRouter extends Router
                                     "owner_id" => $owner_id,
                                     "day" . $this->data['day_index'] => $day,
                                     "time" => $time,
-                                    "season" => trim($this->data['season']),
+                                    "semester_no" => trim($this->data['semester_no']),
                                 ]);
                                 $savedId = $scheduleController->saveNew($schedule);
                                 if ($savedId == 0) {
@@ -768,7 +768,7 @@ class AjaxRouter extends Router
                         "day" => $day,
                         "type" => "lesson",
                         "time" => $this->data['time'],
-                        "season" => $this->data['season'],
+                        "semester_no" => $this->data['semester_no'],
                     ];
                     $scheduleController->deleteSchedule($filters);
                 }
