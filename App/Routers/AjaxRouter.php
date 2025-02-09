@@ -792,12 +792,16 @@ class AjaxRouter extends Router
         if ($this->checkAjax()) {
             try {
                 $settingsController = new SettingsController();
+                foreach ($this->data['settings'] as $group => $settings) {
+                    $settingData['group'] = $group;
+                    foreach ($settings as $key => $data) {
+                        $data['key'] = $key;
+                        $settingData = array_merge($settingData, $data);
+                        $setting = new Setting();
+                        $setting->fill($settingData);
+                        $settingsController->saveNew($setting);
+                    }
 
-                foreach ($this->data['settings'] as $key => $data) {
-                    $settingData = array_merge(["key" => $key], $data);
-                    $setting = new Setting();
-                    $setting->fill($settingData);
-                    $settingsController->saveNew($setting);
                 }
                 $this->response['status'] = "success";
                 $this->response['msg'] = "Ayarlar kaydedildi";

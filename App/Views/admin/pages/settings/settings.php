@@ -1,7 +1,11 @@
 <?php
 /**
  * @var string $page_title
+ * @var array $settings
  */
+
+use function App\Helpers\getSetting;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -38,22 +42,25 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="col-form-label" for="settings[academic_year]">Dönem</label>
-                                            <input type="hidden" name="settings[academic_year][type]" id="settings[academic_year][type]" value="string">
-                                            <input type="hidden" name="settings[academic_year][group]" id="settings[academic_year][group]" value="general">
+                                            <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
+                                            <input type="hidden" name="settings[general][academic_year][type]"
+                                                   id="settings[general][academic_year][type]" value="string">
                                             <div class="input-group ">
-                                                <select class="form-select" id="settings[academic_year][value]" name="settings[academic_year][value]">
-                                                    <option value="2023 - 2024">2023 - 2024</option>
-                                                    <option value="2024 - 2025">2024 - 2025</option>
-                                                    <option value="2025 - 2026">2025 - 2026</option>
+                                                <select class="form-select" id="settings[general][academic_year][value]"
+                                                        name="settings[general][academic_year][value]">
+                                                    <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $settings['general']['academic_year'] == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                            <?= $year . ' - ' . $year + 1 ?>
+                                                        </option>
+                                                    <?php endfor; ?>
                                                 </select>
                                                 <span class="input-group-text"> - </span>
-                                                <input type="hidden" name="settings[semester][type]" id="settings[semester][type]" value="string">
-                                                <input type="hidden" name="settings[semester][group]" id="settings[semester][group]" value="general">
-                                                <select class="form-select" id="settings[semester][value]" name="settings[semester][value]">
-                                                    <option value="Güz">Güz</option>
-                                                    <option value="Bahar">Bahar</option>
-                                                    <option value="Yaz">Yaz</option>
+                                                <input type="hidden" name="settings[general][semester][type]" id="settings[general][semester][type]" value="string">
+                                                <select class="form-select" id="settings[general][semester][value]"
+                                                        name="settings[general][semester][value]">
+                                                    <option value="Güz" <?= $settings['general']['semester'] == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                    <option value="Bahar" <?= $settings['general']['semester'] == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                    <option value="Yaz" <?= $settings['general']['semester'] == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                                 </select>
                                             </div>
 

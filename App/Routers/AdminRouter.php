@@ -483,8 +483,10 @@ class AdminRouter extends Router
     public function SettingsAction()
     {
         try {
+            $settingsController = new SettingsController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ayarlar",
+                "settings"=>$settingsController->getSettings()
             ]);
             $this->callView("admin/settings/settings", $this->view_data);
 
