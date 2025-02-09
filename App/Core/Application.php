@@ -4,7 +4,6 @@
  */
 
 namespace App\Core;
-use Dotenv\Dotenv;
 
 /**
  * Uygulamanın temel çalıştırma mantığını içeren sınıf.
@@ -34,8 +33,7 @@ class Application
 
     public function __construct()
     {
-        $dotenv = Dotenv::createImmutable(__DIR__."/..");
-        $dotenv->load();
+
 
         $this->ParseURL();
         try {
