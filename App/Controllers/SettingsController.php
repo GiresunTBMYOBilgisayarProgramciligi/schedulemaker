@@ -105,4 +105,27 @@ class SettingsController extends Controller
             }
         }
     }
+
+    /**
+     * Tüm ayarları [group][key]= value şeklinde dizi oarak döndürür
+     * @return array
+     * @throws Exception
+     */
+    public function getSettings():array{
+        try {
+            $settingModels = $this->getListByFilters();
+            $settings = [];
+            foreach ($settingModels as $setting) {
+                $settings[$setting->group][$setting->key] = match ($setting->type) {
+                    'integer' => (int)$setting->value,
+                    'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
+                    'json' => json_decode($setting->value, true),
+                    default => $setting->value
+                };
+            }
+            return $settings;
+        }catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
+        }
+    }
 }
