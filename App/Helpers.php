@@ -9,7 +9,7 @@ function getSetting($key = null, $group = "general")
 {
     try {
         $settingsController = new SettingsController();
-        $setting = $settingsController->getSetting($group, $key);
+        $setting = $settingsController->getSetting($key,$group);
         return match ($setting->type) {
             'integer' => (int)$setting->value,
             'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
@@ -17,6 +17,8 @@ function getSetting($key = null, $group = "general")
             default => $setting->value
         };
     } catch (Exception $e) {
-        throw new Exception($e->getMessage(), $e->getCode(), $e);
+        $_SESSION['errors'][] = "getSetting hatası";
+        $_SESSION['errors'][] = $e->getMessage();
+        return false;
     }
 }
