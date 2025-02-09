@@ -21,6 +21,7 @@ create table if not exists schedule
     day3        text,
     day4        text,
     day5        text,
+    semester    varchar(20),
     primary key (id),
     unique (owner_type, owner_id, time, semester_no)
 ) ENGINE = INNODB;
