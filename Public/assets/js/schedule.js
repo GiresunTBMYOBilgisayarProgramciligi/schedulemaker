@@ -14,9 +14,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     programSelect.addEventListener("change", programChangeHandle);
 
+    // todo chage olayı ile değil de Seç butonu ile bu işi yapsam daha iyi olur.
+
     function programChangeHandle() {
         // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
+        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         for (var i = 0; i < scheduleTableElements.length; i++) {
             data = new FormData(); // eski verileri silmek için yenile
@@ -24,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
             data.append("semester_no", scheduleTableElements[i].getAttribute("data-semester_no"));
-
+            data.append("semester", semester)
             promises.push(fetchAvailableLessons(data, availableItemElements[i]));
             promises.push(fetchScheduleTable(data, scheduleTableElements[i]));
         }
@@ -76,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 tableElement.innerHTML = data['table'];
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata","Tablo oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
+                new Toast().prepareToast("Hata", "Tablo oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
             });
     }
@@ -114,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata","Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
+                new Toast().prepareToast("Hata", "Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
             });
 
@@ -126,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param transferredSemesterNo
      * @returns {boolean}
      */
-    function checkSemester(droppedSemesterNo, transferredSemesterNo) {
+    function checkSemesters(droppedSemesterNo, transferredSemesterNo) {
         if (droppedSemesterNo !== transferredSemesterNo) {
             new Toast().prepareToast("Dikkat", "Bu işlem yapılamaz", "danger");
             console.error("Dönemler Uyumsuz")
@@ -141,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      */
     function checkLessonCrash(dropZone, draggedElement) {
-        //todo backend ile de kontrol eklenebilir
+        //todo backend ile de kontrol eklenebilir. backend de semester kontrolü de olur
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
             if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
@@ -189,12 +192,15 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, event) {
         console.log("Dersler alınıyor")
+        //todo bunu global bir değişken olarak ayarlasam iyi olur
+        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         data.append("hours", event.target.value);
         data.append("time", scheduleTime)
         data.append("day", "day" + dayIndex)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
+        data.append("semester", semester);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
         fetch("/ajax/getAvailableClassroomForSchedule", {
@@ -226,6 +232,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function saveSchedule(scheduleData) {
+        //todo bunu global bir değişken olarak ayarlasam iyi olur
+        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time_start", scheduleData.schedule_time);
@@ -233,6 +241,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.selected_classroom);
         data.append("semester_no", scheduleData.semester_no)
+        data.append("semester", semester);
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -253,7 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata","Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
+                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
                 return false;
             });
@@ -266,8 +275,11 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<boolean>}
      */
     function highlightUnavailableCells(lessonId, table) {
+        //todo bunu global bir değişken olarak ayarlasam iyi olur
+        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData()
         data.append("lesson_id", lessonId);
+        data.append("semester", semester);
         return fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
             headers: {
@@ -294,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata","Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
+                new Toast().prepareToast("Hata", "Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
                 return false;
             });
@@ -305,7 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
         /*
          Dönem kontrolü yapılıyor.
          */
-        if (!checkSemester(table.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
+        if (!checkSemesters(table.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
         /*
          Saat ve sınıf seçimi için Modal hazırlanıyor.
          */
@@ -363,8 +375,8 @@ document.addEventListener("DOMContentLoaded", function () {
             // çakışmaları kontrol et
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = table.rows[droppedRowIndex + i];
-                if (!row){
-                    new Toast().prepareToast("Hata", "Eklelen ders saatleri programın dışına taşıyor.","danger")
+                if (!row) {
+                    new Toast().prepareToast("Hata", "Eklelen ders saatleri programın dışına taşıyor.", "danger")
                     return;
                 }
                 let cell = row.cells[droppedCellIndex];
@@ -457,12 +469,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function deleteSchedule(scheduleData) {
+        //todo bunu global bir değişken olarak ayarlasam iyi olur
+        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time", scheduleData.schedule_time);
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
+        data.append("semester", semester);
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
             headers: {
@@ -483,7 +498,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata","Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın","danger");
+                new Toast().prepareToast("Hata", "Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
                 return false;
             });
@@ -497,7 +512,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<void>}
      */
     async function dropTableToList(tableElement, draggedElement, dropZone) {
-        if (!checkSemester(dropZone.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
+        if (!checkSemesters(dropZone.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
         let result = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset['lessonId'],

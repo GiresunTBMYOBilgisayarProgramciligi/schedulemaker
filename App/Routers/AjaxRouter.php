@@ -22,6 +22,7 @@ use App\Models\Schedule;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
+use function App\Helpers\getCurrentSemester;
 
 class AjaxRouter extends Router
 {
@@ -622,7 +623,8 @@ class AjaxRouter extends Router
                         "time_start" => $this->data['time_start'],
                         "day" => "day" . $this->data['day_index'],
                         "lesson_hours" => $this->data['lesson_hours'],
-                        "semester_no" => trim($this->data['semester_no']),];
+                        "semester_no" => trim($this->data['semester_no']),
+                        "semester" => $this->data['semester'],];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
                         /**
                          * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
@@ -655,6 +657,7 @@ class AjaxRouter extends Router
                                     "day" . $this->data['day_index'] => $day,
                                     "time" => $time,
                                     "semester_no" => trim($this->data['semester_no']),
+                                    "semester" => $this->data['semester'],
                                 ]);
                                 $savedId = $scheduleController->saveNew($schedule);
                                 if ($savedId == 0) {
@@ -691,13 +694,17 @@ class AjaxRouter extends Router
             try {
                 $lessonController = new LessonController();
                 $scheduleController = new ScheduleController();
-                if (key_exists("lesson_id", $this->data)) {//todo key bilgilerinin yazımı için bir standart lazım
+                if (!key_exists("semester", $this->data)) {
+                    $filters["semester"] = getCurrentSemester();
+                }
+                if (key_exists("lesson_id", $this->data)) {
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
                     $filters = [
                         "owner_type" => "user",
                         "owner_id" => $lecturer->id,
                         "type" => "lesson",
+                        "semester" => $this->data['semester']
                     ];
                     $lessonSchedules = $scheduleController->getListByFilters($filters);
                     if (count($lessonSchedules) > 0) {
@@ -754,6 +761,9 @@ class AjaxRouter extends Router
                 $lesson = $lessonController->getLesson($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+                if (!key_exists("semester", $this->data)) {
+                    $this->data["semester"] = getCurrentSemester();
+                }
                 $owners = ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id];
                 $day = [
                     "lesson_id" => $lesson->id,
@@ -769,6 +779,7 @@ class AjaxRouter extends Router
                         "type" => "lesson",
                         "time" => $this->data['time'],
                         "semester_no" => $this->data['semester_no'],
+                        "semester" => $this->data["semester"],
                     ];
                     $scheduleController->deleteSchedule($filters);
                 }

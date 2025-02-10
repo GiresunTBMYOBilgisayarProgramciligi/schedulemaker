@@ -7,6 +7,7 @@ use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
+use function App\Helpers\getCurrentSemester;
 
 class ScheduleController extends Controller
 {
@@ -29,10 +30,10 @@ class ScheduleController extends Controller
     /**
      * Veri tabanından verileri alıp Schedule Modeli ile oluşturulan bir veri döndürür
      * @param int|null $id
-     * @return Schedule|void
+     * @return Schedule
      * @throws Exception
      */
-    public function getSchedule(?int $id = null)
+    public function getSchedule(?int $id = null): Schedule
     {
         if (!is_null($id)) {
             try {
@@ -64,6 +65,7 @@ class ScheduleController extends Controller
         try {
             $schedules = $this->getListByFilters($filters);
             $semester_no = isset($filters['semester_no']) ? 'data-semester_no="' . $filters['semester_no'] . '"' : "";
+            $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
             /**
              * Boş tablo oluşturmak için tablo satır verileri
              */
@@ -88,7 +90,7 @@ class ScheduleController extends Controller
 
             $out =
                 '
-            <table class="table table-bordered table-sm small" ' . $semester_no . '>
+            <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
                                 <thead>
                                 <tr>
                                     <th>#</th>
@@ -131,7 +133,8 @@ class ScheduleController extends Controller
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-semester_no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
-                            data-schedule-day="' . $dayIndex . '">
+                            data-schedule-day="' . $dayIndex . '"
+                            data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
@@ -159,7 +162,8 @@ class ScheduleController extends Controller
                             class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
                             data-lesson-code="' . $lesson->code . '" data-semester_no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
-                            data-schedule-day="' . $dayIndex . '">
+                            data-schedule-day="' . $dayIndex . '"
+                            data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
                                         <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
@@ -203,27 +207,36 @@ class ScheduleController extends Controller
     {
         try {
             $available_lessons = [];
-            if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
+            if (key_exists('owner_type', $filters) and key_exists('owner_id', $filters)) {
+                if (!key_exists("semester", $filters)) {
+                    $filters['semester'] = getCurrentSemester();
+                }
                 if ($filters['owner_type'] == "program") {
                     $lessonFilters = [];
                     if (array_key_exists("semester_no", $filters)) {
                         $lessonFilters['semester_no'] = $filters['semester_no'];
-                    } else throw new Exception("Semester/Yarıyıl bilgisi yok");
+                    } else throw new Exception("Yarıyıl bilgisi yok");
                     $lessonFilters['program_id'] = $filters['owner_id'];
                     $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
                     /*
                      * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
                      */
                     foreach ($lessonsList as $lesson) {
-                        if (!$this->checkIsScheduleComplete(['owner_type' => 'lesson', 'owner_id' => $lesson->id])) {
+                        if (!$this->checkIsScheduleComplete(
+                            [
+                                'owner_type' => 'lesson',
+                                'owner_id' => $lesson->id,
+                                "semester" => $filters['semester'],
+                                "semester_no" => $filters['semester_no'],
+                            ])) {
                             //Ders Programı tamamlanmamışsa
                             $lesson->lecturer_name = $lesson->getLecturer()->getFullName(); // ders sınıfına Hoca adı ekleniyor
-                            $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id]);// programa eklenmiş olan saatlar çıkartılıyor.
+                            $lesson->hours -= $this->getCount(['owner_type' => 'lesson', 'owner_id' => $lesson->id,"semester"=>$filters['semester']]);// programa eklenmiş olan saatlar çıkartılıyor.
                             $available_lessons[] = $lesson;
                         }
                     }
                 }
-            }
+            } else throw new Exception("Owner_type ve/veya owner id yok");
             return $available_lessons;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
@@ -277,6 +290,9 @@ class ScheduleController extends Controller
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
                 throw new Exception("Missing hours and time");
             }
+            if (!key_exists("semester", $filters)) {
+                $filters['semester'] = getCurrentSemester();
+            }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
             $unavailable_classroom_ids = [];
             if (array_key_exists('owner_type', $filters)) {
@@ -285,6 +301,7 @@ class ScheduleController extends Controller
                         [
                             "time" => $times,
                             "owner_type" => $filters['owner_type'],
+                            "semester" => $filters['semester'],
                         ]
                     );
                     foreach ($classroomSchedules as $classroomSchedule) {
@@ -313,6 +330,9 @@ class ScheduleController extends Controller
             if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
                 throw new Exception("Ders saati yada program saati yok | CheckScheduleCrash");
             }
+            if (!key_exists("semester", $filters)) {
+                $filters['semester'] = getCurrentSemester();
+            }
             $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
             if (array_key_exists('owners', $filters)) {
                 foreach ($filters["owners"] as $owner_type => $owner_id) {
@@ -321,6 +341,7 @@ class ScheduleController extends Controller
                         "owner_type" => $owner_type,
                         "owner_id" => $owner_id,
                         "type" => $filters['type'],
+                        "semester" => $filters['semester'],
                     ];
                     if ($owner_type == "program") {
                         $ownerFilter["semester_no"] = $filters["semester_no"];
@@ -374,14 +395,17 @@ class ScheduleController extends Controller
         try {
             $result = true;
             if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
-                //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+                if (!key_exists("semester", $filters)) {
+                    $filters['semester'] = getCurrentSemester();
+                }
                 if ($filters['owner_type'] == "lesson") {
+                    //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
                     $schedules = $this->getListByFilters($filters);
                     $lessonController = new LessonController();
                     $lesson = $lessonController->getLesson($filters['owner_id']);
                     if (count($schedules) < $lesson->hours) {
                         $result = false;
-                    } else $result = true;
+                    }
                 }//todo diğer türler için işlemler
             } else
                 throw new Exception("owner_type ve/veya owner_id belirtilmemiş");
@@ -524,6 +548,9 @@ class ScheduleController extends Controller
     public function deleteSchedule($filters): void
     {
         try {
+            if (!key_exists("semester", $filters)) {
+                $filters["semester"] = getCurrentSemester();
+            }
             $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
             $schedule = $this->getListByFilters($scheduleData)[0];
             if (!$schedule) {

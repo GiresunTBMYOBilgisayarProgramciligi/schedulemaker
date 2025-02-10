@@ -2,6 +2,7 @@
 /**
  * @var string $page_title
  * @var array $departments
+ * @var array $settings
  */
 ?>
 <!--begin::App Main-->
@@ -50,7 +51,7 @@
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label"  for="department_id">Bölüm</label>
                                         <select class="form-select" id="department_id" name="department_id">
@@ -63,12 +64,32 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label"  for="program_id">Program</label>
                                         <select class="form-select" id="program_id" name="program_id">
                                             <option value=""></option>
                                         </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="academic_year]">Dönem</label>
+                                        <div class="input-group ">
+                                            <select class="form-select" id="academic_year" name="academic_year">
+                                                <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
+                                                    <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $settings['general']['academic_year'] == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <?= $year . ' - ' . $year + 1 ?>
+                                                    </option>
+                                                <?php endfor; ?>
+                                            </select>
+                                            <span class="input-group-text"> - </span>
+                                            <select class="form-select" id="semester" name="semester">
+                                                <option value="Güz" <?= $settings['general']['semester'] == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                <option value="Bahar" <?= $settings['general']['semester'] == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                <option value="Yaz" <?= $settings['general']['semester'] == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

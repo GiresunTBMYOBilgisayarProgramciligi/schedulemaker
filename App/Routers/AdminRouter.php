@@ -460,6 +460,7 @@ class AdminRouter extends Router
             $userController = new UserController();
             $currentUser = $userController->getCurrentUser();
             $departmentController = new DepartmentController();
+            $settingsController = new SettingsController();
             if ($userController->canUserDoAction(8)) {
                 $departments = $departmentController->getDepartmentsList();
             } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
@@ -470,6 +471,7 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "scheduleController" => new ScheduleController(),
                 "departments" => $departments,
+                "settings"=>$settingsController->getSettings(),
                 "page_title" => "Takvim Düzenle",
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
@@ -480,6 +482,9 @@ class AdminRouter extends Router
 
     }
 
+    /*
+     * Ayarlar
+     */
     public function SettingsAction()
     {
         try {

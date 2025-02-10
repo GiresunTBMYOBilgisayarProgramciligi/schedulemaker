@@ -22,3 +22,15 @@ function getSetting($key = null, $group = "general")
         return false;
     }
 }
+
+/**
+ * @return string
+ */
+function getCurrentSemester(){
+    try {
+        return getSetting('academic_year')." ".getSetting('semester');
+    }catch (Exception $e) {
+        $_SESSION['errors'][] = "Semester/Dönem Bilgisi oluşturulurken hata oluştu";
+        return false;
+    }
+}
