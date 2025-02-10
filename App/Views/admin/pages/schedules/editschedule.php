@@ -53,7 +53,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label"  for="department_id">Bölüm</label>
+                                        <label class="form-label" for="department_id">Bölüm</label>
                                         <select class="form-select" id="department_id" name="department_id">
                                             <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                             foreach ($departments as $department): ?>
@@ -66,7 +66,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label"  for="program_id">Program</label>
+                                        <label class="form-label" for="program_id">Program</label>
                                         <select class="form-select" id="program_id" name="program_id">
                                             <option value=""></option>
                                         </select>
@@ -85,16 +85,30 @@
                                             </select>
                                             <span class="input-group-text"> - </span>
                                             <select class="form-select" id="semester" name="semester">
-                                                <option value="Güz" <?= $settings['general']['semester'] == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                <option value="Bahar" <?= $settings['general']['semester'] == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                <option value="Yaz" <?= $settings['general']['semester'] == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                <option value="Güz" <?= $settings['general']['semester'] == 'Güz' ? 'selected' : '' ?>>
+                                                    Güz
+                                                </option>
+                                                <option value="Bahar" <?= $settings['general']['semester'] == 'Bahar' ? 'selected' : '' ?>>
+                                                    Bahar
+                                                </option>
+                                                <option value="Yaz" <?= $settings['general']['semester'] == 'Yaz' ? 'selected' : '' ?>>
+                                                    Yaz
+                                                </option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <!--end::Row-->
-
+                        </div>
+                        <!--end::card-body-->
+                        <div class="card-footer card-primary">
+                            <div class="row">
+                                <div class="text-end">
+                                    <input class="btn btn-primary" type="button" name="programSelect" id="programSelect"
+                                           value="Seç">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -120,7 +134,7 @@
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="1">
+                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="1" style="max-height: 90vh;overflow: auto;">
 
                                 </div>
                                 <div class="schedule-table col-md-9" data-semester_no="1">
@@ -153,7 +167,7 @@
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="3">
+                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="3" style="max-height: 90vh;overflow: auto;">
 
                                 </div>
                                 <div class="schedule-table col-md-9" data-semester_no="3">

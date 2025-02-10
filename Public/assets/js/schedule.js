@@ -11,12 +11,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const scheduleTableElements = document.querySelectorAll(".schedule-table");
     const availableItemElements = document.querySelectorAll(".available-schedule-items");
+    const programSelectButton = document.getElementById("programSelect");
 
-    programSelect.addEventListener("change", programChangeHandle);
-
-    // todo chage olayı ile değil de Seç butonu ile bu işi yapsam daha iyi olur.
-
-    function programChangeHandle() {
+    programSelectButton.addEventListener("click", function () {
         // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
@@ -41,7 +38,8 @@ document.addEventListener("DOMContentLoaded", function () {
             .catch((error) => {
                 console.error("Bir hata oluştu:", error);
             });
-    }
+    })
+
 
     /**
      * Program tablosu ve uygun deers listesi tablosu alınma işlemi bittikten sonra çalıştırılan işlemler
@@ -120,7 +118,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast("Hata", "Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
             });
-
     }
 
     /**
