@@ -14,6 +14,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\Router;
 use Exception;
+use function App\Helpers\getCurrentSemester;
 
 /**
  * AdminRouter Sınıfı
@@ -473,6 +474,7 @@ class AdminRouter extends Router
                 "departments" => $departments,
                 "settings"=>$settingsController->getSettings(),
                 "page_title" => "Takvim Düzenle",
+                "current_semesters"=>getCurrentSemester()
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
         } catch (Exception $exception) {

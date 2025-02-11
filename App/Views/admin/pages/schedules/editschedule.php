@@ -3,7 +3,9 @@
  * @var string $page_title
  * @var array $departments
  * @var array $settings
+ * @var array $current_semesters
  */
+use function App\Helpers\getSemesterNumbers;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -114,73 +116,9 @@
                 </div>
             </div>
             <!--end::Row-->
-            <!--begin::Row Program Satırı-->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">1. Yarıyıl Programı</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <!--begin::Row-->
-                            <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="1" style="max-height: 90vh;overflow: auto;">
-
-                                </div>
-                                <div class="schedule-table col-md-9" data-semester_no="1">
-
-                                </div>
-                            </div>
-                            <!--end::Row-->
-                        </div>
-                    </div>
-                </div>
+            <div id="schedule_container">
+                <!-- Programlar buraya yüklenecek -->
             </div>
-            <!--end::Row-->
-            <!--begin::Row Program Satırı-->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">3. Yarıyıl Programı</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <!--begin::Row-->
-                            <div class="row">
-                                <div class="available-schedule-items col-md-3 drop-zone small" data-semester_no="3" style="max-height: 90vh;overflow: auto;">
-
-                                </div>
-                                <div class="schedule-table col-md-9" data-semester_no="3">
-
-                                </div>
-                            </div>
-                            <!--end::Row-->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--end::Row-->
-
         </div>
         <!--end::Container-->
     </div>

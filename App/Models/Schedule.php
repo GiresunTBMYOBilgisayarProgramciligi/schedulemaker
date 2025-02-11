@@ -72,7 +72,8 @@ class Schedule extends Model
      */
     public array|bool|null $day5 = null;
 
-    public ?string $semester= null;
+    public ?string $semester = null;
+    public ?string $academic_year = null;
 
     /**
      *

@@ -55,8 +55,7 @@ class LessonController extends Controller
     }
 
     /**
-     * todo sayısal olarak tutulabilir
-     * Yarıyıl seçiöi yaparken kıllanılacak verileri dizi olarak döner
+     * Yarıyıl seçimi yaparken kıllanılacak verileri dizi olarak döner
      * @return array
      */
     public function getSemesterNoList(): array
@@ -155,6 +154,20 @@ class LessonController extends Controller
             } else {
                 throw $e;
             }
+        }
+    }
+
+    /**
+     * En yüksek dönem numarasını verir.
+     * @return int
+     * @throws Exception
+     */
+    public function getSemesterCount(): int
+    {
+        try {
+            return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
     }
 }

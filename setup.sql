@@ -9,21 +9,22 @@ FLUSH PRIVILEGES;
 use schedule_maker;
 create table if not exists schedule
 (
-    id          int AUTO_INCREMENT,
-    type        varchar(20), /* exam, lesson*/
-    owner_type  varchar(20),
-    owner_id    int,
-    time        varchar(20),
-    semester_no int,
-    day0        text,
-    day1        text,
-    day2        text,
-    day3        text,
-    day4        text,
-    day5        text,
-    semester    varchar(20),
+    id            int AUTO_INCREMENT,
+    type          varchar(20), /* exam, lesson*/
+    owner_type    varchar(20),
+    owner_id      int,
+    time          varchar(20),
+    semester_no   int,
+    day0          text,
+    day1          text,
+    day2          text,
+    day3          text,
+    day4          text,
+    day5          text,
+    semester      varchar(20),
+    academic_year varchar(12),
     primary key (id),
-    unique (owner_type, owner_id, time, semester_no,semester)
+    unique (owner_type, owner_id, time, semester_no, semester,academic_year)
 ) ENGINE = INNODB;
 
 create table if not exists users

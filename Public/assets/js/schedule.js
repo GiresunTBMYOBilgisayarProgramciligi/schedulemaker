@@ -9,25 +9,18 @@ let unavailableCell;
  */
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
-    const scheduleTableElements = document.querySelectorAll(".schedule-table");
-    const availableItemElements = document.querySelectorAll(".available-schedule-items");
     const programSelectButton = document.getElementById("programSelect");
 
     programSelectButton.addEventListener("click", function () {
-        // todo program body içerisine spinner ekle
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
-        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
-        for (var i = 0; i < scheduleTableElements.length; i++) {
-            data = new FormData(); // eski verileri silmek için yenile
-            data.append("type", "lesson")
-            data.append("owner_type", "program");
-            data.append("owner_id", programSelect.value);
-            data.append("semester_no", scheduleTableElements[i].getAttribute("data-semester_no"));
-            data.append("semester", semester)
-            promises.push(fetchAvailableLessons(data, availableItemElements[i]));
-            promises.push(fetchScheduleTable(data, scheduleTableElements[i]));
-        }
+        data.append("type", "lesson")
+        data.append("owner_type", "program");
+        data.append("owner_id", programSelect.value);
+        data.append("semester", document.getElementById("semester").value)
+        data.append("academic_year", document.getElementById("academic_year").value);
+        promises.push(getSchedulesHTML(data));
+
         // Tüm işlemlerin tamamlanmasını bekle
         Promise.all(promises)
             .then(() => {
@@ -39,6 +32,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error("Bir hata oluştu:", error);
             });
     })
+
+    function getSchedulesHTML(scheduleData =new FormData()) {
+        return fetch("/ajax/getScheduleHTML", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: scheduleData,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data['status'] !== 'error') {
+                    const container = document.getElementById('schedule_container');
+                    container.innerHTML = data['HTML'];
+                } else {
+                    new Toast().prepareToast("Hata", data['msg'], "danger");
+                    console.error(data['msg']);
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+            });
+    }
 
 
     /**
@@ -62,65 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Program tablosunu alır ve tableElement ile berlirtilen elemente yazar
-     */
-    function fetchScheduleTable(tableData = new FormData(), tableElement) {
-        return fetch("/ajax/getScheduleTable", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: tableData,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                tableElement.innerHTML = data['table'];
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Tablo oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-            });
-    }
-
-    /**
-     * Uygun ders listesini alır ve lessonsElement ile belirtilen elemente yazar
-     */
-    function fetchAvailableLessons(data = new FormData(), lessonsElement) {
-        return fetch("/ajax/getAvailableLessonsForSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                let out = ``;
-                data['lessons'].forEach((lesson) => {
-                    out += `
-                  <div id="available-lesson-${lesson.id}" draggable="true" 
-                  class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
-                  data-semester_no="${lesson.semester_no}"
-                  data-lesson-code="${lesson.code}"
-                  data-lesson-id="${lesson.id}">
-                    <div class="ms-2 me-auto">
-                      <div class="fw-bold"><i class="bi bi-book"></i> ${lesson.code} ${lesson.name}</div>
-                      ${lesson.lecturer_name}
-                    </div>
-                    <span class="badge bg-info rounded-pill">${lesson.hours}</span>
-                  </div>`;
-                })
-                out += ``;
-                lessonsElement.innerHTML = (out);
-
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-            });
-    }
-
-    /**
      * Bırakılan dersin doğru dönem dersine ait olup olmadığını belirler
      * @param droppedSemesterNo
      * @param transferredSemesterNo
@@ -141,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      */
     function checkLessonCrash(dropZone, draggedElement) {
-        //todo backend ile de kontrol eklenebilir. backend de semester kontrolü de olur
+        //todo backend ile de kontrol eklenebilir.
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
             if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
@@ -188,16 +146,15 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param event
      */
     function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, event) {
-        console.log("Dersler alınıyor")
-        //todo bunu global bir değişken olarak ayarlasam iyi olur
-        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
+        console.log("Derslikler alınıyor")
         let data = new FormData();
         data.append("hours", event.target.value);
         data.append("time", scheduleTime)
         data.append("day", "day" + dayIndex)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
-        data.append("semester", semester);
+        data.append("semester", document.getElementById("semester").value)
+        data.append("academic_year", document.getElementById("academic_year").value);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
         fetch("/ajax/getAvailableClassroomForSchedule", {
@@ -229,8 +186,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function saveSchedule(scheduleData) {
-        //todo bunu global bir değişken olarak ayarlasam iyi olur
-        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time_start", scheduleData.schedule_time);
@@ -238,7 +193,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.selected_classroom);
         data.append("semester_no", scheduleData.semester_no)
-        data.append("semester", semester);
+        data.append("semester", document.getElementById("semester").value)
+        data.append("academic_year", document.getElementById("academic_year").value);
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -272,11 +228,10 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<boolean>}
      */
     function highlightUnavailableCells(lessonId, table) {
-        //todo bunu global bir değişken olarak ayarlasam iyi olur
-        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData()
         data.append("lesson_id", lessonId);
-        data.append("semester", semester);
+        data.append("semester", document.getElementById("semester").value)
+        data.append("academic_year", document.getElementById("academic_year").value);
         return fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
             headers: {
@@ -314,7 +269,7 @@ document.addEventListener("DOMContentLoaded", function () {
         /*
          Dönem kontrolü yapılıyor.
          */
-        if (!checkSemesters(table.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
+        if (!checkSemesters(table.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
         /*
          Saat ve sınıf seçimi için Modal hazırlanıyor.
          */
@@ -396,7 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "lesson_hours": lessonHours,
                     "day_index": droppedCellIndex - 1,
                     "selected_classroom": selectedClassroom,
-                    "semester_no": draggedElement.dataset['semester_no']
+                    "semester_no": draggedElement.dataset.semesterNo
                 });
             if (result) {
                 /**
@@ -427,8 +382,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     addedHours++;
                 }
                 /*
-            Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
-             */
+                    Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
+                */
                 if (lessonHours !== selectedHours) {
                     draggedElement.querySelector("span.badge").innerHTML = lessonHours - selectedHours;
                 } else {
@@ -466,15 +421,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function deleteSchedule(scheduleData) {
-        //todo bunu global bir değişken olarak ayarlasam iyi olur
-        let semester = document.getElementById("academic_year").value + " " + document.getElementById("semester").value;
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("time", scheduleData.schedule_time);
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester", semester);
+        data.append("semester", document.getElementById("semester").value)
+        data.append("academic_year", document.getElementById("academic_year").value);
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
             headers: {
@@ -509,13 +463,16 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<void>}
      */
     async function dropTableToList(tableElement, draggedElement, dropZone) {
-        if (!checkSemesters(dropZone.dataset['semester_no'], draggedElement.dataset['semester_no'])) return;
+        console.log(draggedElement.dataset);
+        console.log(dropZone.dataset.semesterNo);
+
+        if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
         let result = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset['lessonId'],
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
-                "semester_no": draggedElement.dataset.semester_no,
+                "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText
             });
         if (result) {
@@ -553,7 +510,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_id": draggedElement.dataset.lessonId,
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
-                "semester_no": draggedElement.dataset.semester_no,
+                "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText
             });
         if (deleteResult) {
@@ -567,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_hours": 1,
                 "day_index": droppedCellIndex - 1,
                 "selected_classroom": draggedElement.querySelector("span.badge").innerText,
-                "semester_no": draggedElement.dataset['semester_no']
+                "semester_no": draggedElement.dataset.semesterNo
             });
         if (saveResult) {
             console.log("Yeni ders eklendi");
@@ -698,7 +655,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let result = highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
-            let table = document.querySelector('table[data-semester_no="' + event.dataTransfer.getData("semester_no") + '"]')
+            let table = document.querySelector('table[data-semester-no="' + event.dataTransfer.getData("semesterNo") + '"]')
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
             let result = highlightUnavailableCells(lessonID, table);

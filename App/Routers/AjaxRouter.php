@@ -84,6 +84,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -121,6 +122,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -134,17 +136,22 @@ class AjaxRouter extends Router
     public function deleteUserAction()
     {
         if ($this->checkAjax()) {
-            $usersController = new UserController();
-            $response = $usersController->delete($this->data['id']);
+            try {
+                $usersController = new UserController();
+                $usersController->delete($this->data['id']);
 
-            if ($response['status'] == 'error') {
-                throw new Exception($response['msg']);
-            } else {
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listusers",
                 );
+
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -171,6 +178,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -212,6 +220,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -247,6 +256,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -259,17 +269,21 @@ class AjaxRouter extends Router
     public function deleteLessonAction()
     {
         if ($this->checkAjax()) {
-            $lessonController = new LessonController();
-            $response = $lessonController->delete($this->data['id']);
+            try {
+                $lessonController = new LessonController();
+                $lessonController->delete($this->data['id']);
 
-            if ($response['status'] == 'error') {
-                throw new Exception($response['msg']);
-            } else {
                 $this->response = array(
                     "msg" => "Ders Başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listlessons",
                 );
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -301,6 +315,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -326,6 +341,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -338,17 +354,21 @@ class AjaxRouter extends Router
     public function deleteClassroomAction()
     {
         if ($this->checkAjax()) {
-            $classroomController = new ClassroomController();
-            $response = $classroomController->delete($this->data['id']);
+            try {
+                $classroomController = new ClassroomController();
+                $classroomController->delete($this->data['id']);
 
-            if ($response['status'] == 'error') {
-                throw new Exception($response['msg']);
-            } else {
                 $this->response = array(
                     "msg" => "Derslik başarıyla silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listclassrooms",
                 );
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -380,6 +400,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -406,6 +427,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -417,17 +439,21 @@ class AjaxRouter extends Router
     public function deleteDepartmentAction()
     {
         if ($this->checkAjax()) {
-            $departmentController = new DepartmentController();
-            $response = $departmentController->delete($this->data['id']);
+            try {
+                $departmentController = new DepartmentController();
+                $departmentController->delete($this->data['id']);
 
-            if ($response['status'] == 'error') {
-                throw new Exception($response['msg']);
-            } else {
                 $this->response = array(
                     "msg" => "Bölüm Başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listdepartments",
                 );
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -459,6 +485,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -485,6 +512,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -497,17 +525,21 @@ class AjaxRouter extends Router
     public function deleteProgramAction()
     {
         if ($this->checkAjax()) {
-            $programController = new ProgramController();
-            $response = $programController->delete($this->data['id']);
+            try {
+                $programController = new ProgramController();
+                $programController->delete($this->data['id']);
 
-            if ($response['status'] == 'error') {
-                throw new Exception($response['msg']);
-            } else {
                 $this->response = array(
                     "msg" => "Program Başarıyla Silindi.",
                     "status" => "success",
                     "redirect" => "/admin/listprograms",
                 );
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
             header('Content-Type: application/json; charset=utf-8');
@@ -524,8 +556,11 @@ class AjaxRouter extends Router
                 $this->response['status'] = "success";
                 $this->response['programs'] = $programs;
             } catch (Exception $e) {
-                $this->response['status'] = 'error';
-                $this->response['msg'] = $e->getMessage();
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
 
         }
@@ -536,37 +571,21 @@ class AjaxRouter extends Router
     /*
      * Schedules Ajax Actions
      */
-    /**
-     * @throws Exception
-     */
-    public function getScheduleTableAction()
-    {
-        if ($this->checkAjax()) {
-            try {
-                $scheduleController = new ScheduleController();
-                $table = $scheduleController->createScheduleTable($this->data);
-                $this->response['status'] = "success";
-                $this->response['table'] = $table;
-            } catch (Exception $e) {
-                $this->response['status'] = 'error';
-                $this->response['msg'] = $e->getMessage();
-            }
-        };
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
-    }
 
-    public function getAvailableLessonsForScheduleAction()
+    public function getScheduleHTMLAction()
     {
         if ($this->checkAjax()) {
             try {
                 $scheduleController = new ScheduleController();
-                $lessons = $scheduleController->availableLessons($this->data);
+                $schedulesHTML = $scheduleController->getSchedulesHTML($this->data);
                 $this->response['status'] = "success";
-                $this->response['lessons'] = $lessons;
+                $this->response['HTML'] = $schedulesHTML;
             } catch (Exception $e) {
-                $this->response['status'] = 'error';
-                $this->response['msg'] = $e->getMessage();
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
         };
         header('Content-Type: application/json; charset=utf-8');
@@ -581,9 +600,12 @@ class AjaxRouter extends Router
                 $classrooms = $scheduleController->availableClassrooms($this->data);
                 $this->response['status'] = "success";
                 $this->response['classrooms'] = $classrooms;
-            } catch (Exception $exception) {
-                $this->response['status'] = "error";
-                $this->response['msg'] = $exception->getMessage();
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
             }
         };
         header('Content-Type: application/json; charset=utf-8');
@@ -624,7 +646,8 @@ class AjaxRouter extends Router
                         "day" => "day" . $this->data['day_index'],
                         "lesson_hours" => $this->data['lesson_hours'],
                         "semester_no" => trim($this->data['semester_no']),
-                        "semester" => $this->data['semester'],];
+                        "semester" => $this->data['semester'],
+                        "academic_year" => $this->data['academic_year'],];
                     if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
                         /**
                          * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
@@ -658,6 +681,7 @@ class AjaxRouter extends Router
                                     "time" => $time,
                                     "semester_no" => trim($this->data['semester_no']),
                                     "semester" => $this->data['semester'],
+                                    "academic_year" => $this->data['academic_year'],
                                 ]);
                                 $savedId = $scheduleController->saveNew($schedule);
                                 if ($savedId == 0) {
@@ -679,6 +703,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -704,7 +729,8 @@ class AjaxRouter extends Router
                         "owner_type" => "user",
                         "owner_id" => $lecturer->id,
                         "type" => "lesson",
-                        "semester" => $this->data['semester']
+                        "semester" => $this->data['semester'],
+                        "academic_year" => $this->data['academic_year'],
                     ];
                     $lessonSchedules = $scheduleController->getListByFilters($filters);
                     if (count($lessonSchedules) > 0) {
@@ -742,6 +768,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -780,12 +807,14 @@ class AjaxRouter extends Router
                         "time" => $this->data['time'],
                         "semester_no" => $this->data['semester_no'],
                         "semester" => $this->data["semester"],
+                        "academic_year" => $this->data['academic_year'],
                     ];
                     $scheduleController->deleteSchedule($filters);
                 }
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
@@ -819,6 +848,7 @@ class AjaxRouter extends Router
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
                     "status" => "error"
                 ];
             }
