@@ -52,8 +52,8 @@
                     <!--end::User Image-->
                     <!--begin::Menu Footer-->
                     <li class="user-footer">
-                        <a href="/admin/profile" class="btn btn-light btn-flat">Profile</a>
-                        <a href="/auth/logout" class="btn btn-light btn-flat float-end">Sign out</a>
+                        <a href="/admin/profile" class="btn btn-light btn-flat">Profil</a>
+                        <a href="/auth/logout" class="btn btn-light btn-flat float-end">Çıkış Yap</a>
                     </li>
                     <!--end::Menu Footer-->
                 </ul>
