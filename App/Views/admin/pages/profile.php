@@ -6,6 +6,7 @@
  * @var \App\Controllers\ScheduleController $scheduleController
  * @var array $departments
  * @var string $page_title
+ * @var string $scheduleHTML
  * todo users klasörüne taşınabilir
  */
 ?>
@@ -242,37 +243,7 @@
                     <!-- /.card -->
                 </div>
             </div>
-            <!--end::Row-->
-            <!--begin::Row-->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header ">
-                            <h3 class="card-title">Program</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div><!-- /.card-header -->
-                        <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "user", "owner_id" => $user->id]) ?>
-                        </div><!-- /.card-body -->
-
-                        <div class="card-footer text-end">
-                            <button class="btn btn-primary">Düzenle</button>
-                        </div>
-                    </div>
-                    <!-- /.card -->
-                </div>
-                <!-- /.col -->
-            </div>
-            <!--end::Row-->
+            <?= $scheduleHTML ?>
         </div>
         <!--end::Container-->
     </div>

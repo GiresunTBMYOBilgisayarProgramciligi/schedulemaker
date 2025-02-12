@@ -106,7 +106,8 @@ class AdminRouter extends Router
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Profil Sayfası",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
-                "scheduleController" => new ScheduleController()]);
+                "scheduleHTML" =>(new ScheduleController())->getSchedulesHTML(['owner_type'=>'user', 'owner_id' => $user->id,'type'=>'lesson'],true),
+            ]);
             $this->callView("admin/profile", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
@@ -150,7 +151,8 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "lesson" => $lesson,
                 "page_title" => $lesson->name . " Sayfası",
-                "scheduleController" => new ScheduleController()]);
+                "scheduleHTML" =>(new ScheduleController())->getSchedulesHTML(['owner_type'=>'lesson', 'owner_id' => $lesson->id,'type'=>'lesson'],true),
+            ]);
             $this->callView("admin/lessons/lesson", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();
@@ -229,7 +231,8 @@ class AdminRouter extends Router
             } else throw new Exception("Derslik id Numarası belirtilmemiş");
             $this->view_data = array_merge($this->view_data, [
                 "classroom" => $classroom,
-                "page_title" => $classroom->name . " Sayfası"
+                "page_title" => $classroom->name . " Sayfası",
+                "scheduleHTML" =>(new ScheduleController())->getSchedulesHTML(['owner_type'=>'classroom', 'owner_id' => $classroom->id,'type'=>'lesson'],true),
             ]);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();
@@ -368,7 +371,7 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "program" => $program,
                 "page_title" => $program->name . " Sayfası",
-                "scheduleController" => new ScheduleController()
+                "scheduleHTML" =>(new ScheduleController())->getSchedulesHTML(['owner_type'=>'program', 'owner_id' => $program->id,'type'=>'lesson'],true),
             ]);
             $this->callView("admin/programs/program", $this->view_data);
         } catch (Exception $exception) {
@@ -444,13 +447,6 @@ class AdminRouter extends Router
     /*
      * Takvim işlemleri
      */
-    public function ShowscheduleAction()
-    {
-        $this->view_data = array_merge($this->view_data, [
-            "page_title" => "Takvim ",
-        ]);
-        $this->callView("admin/schedules/showschedule", $this->view_data);
-    }
 
     /**
      * @throws Exception

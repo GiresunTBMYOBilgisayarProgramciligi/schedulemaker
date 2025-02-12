@@ -4,6 +4,7 @@
  * @var \App\Models\Lesson $lesson
  * @var \App\Controllers\ScheduleController $scheduleController
  * @var string $page_title
+ * @var string $scheduleHTML
  */
 ?>
 <!--begin::App Main-->
@@ -17,7 +18,7 @@
                 <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
-                        li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Ders İşlemleri</li>
                         <li class="breadcrumb-item active">Ders</li>
                     </ol>
@@ -34,7 +35,7 @@
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row mb-3">
-                <div class="col-12">
+                <div class="col-9">
                     <!-- Ders Bilgileri -->
                     <div class="card card-outline card-primary">
                         <div class="card-header">
@@ -58,10 +59,10 @@
                                 <dd class="col-sm-8"><?= $lesson->hours ?></dd>
                                 <dt class="col-sm-4">Dönemi</dt>
                                 <dd class="col-sm-8"><?= htmlspecialchars($lesson->semester_no, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Hocası</dt>
-                                <dd class="col-sm-8"><a href="/admin/profile/<?= $lesson->getLecturer()->id ?>">
-                                        <?= htmlspecialchars($lesson->getLecturer()->getFullName(), ENT_QUOTES, 'UTF-8') ?></a>
-                                </dd>
+                                <dt class="col-sm-4">Bölüm</dt>
+                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getDepartment()->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-4">Program</dt>
+                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?></dd>
                             </dl>
                         </div>
                         <div class="card-footer text-end">
@@ -74,36 +75,51 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <!--end::Row-->
-            <!--begin::Row-->
-            <div class="row mb-3">
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Program</h3>
-                            <!-- todo Bir ders birden fazla bölümde varsa ders programı için bölüm seçme listesi olmalı -->
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
+                <div class="col-3">
+                    <?php $user = $lesson->getLecturer()?>
+                    <!-- Profile Image -->
+                    <div class="card card-primary card-outline">
+                        <div class="card-body box-profile">
+                            <div class="text-center">
+                                <img class="profile-user-img img-fluid img-circle"
+                                     src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "lesson", "owner_id" => $lesson->id]) ?>
-                        </div>
-                        <div class="card-footer">
 
+                            <h3 class="profile-username text-center"><?= $user->getFullName() ?></h3>
+
+                            <p class="text-muted text-center"><?= $user->title ?></p>
+
+                            <ul class="list-group list-group-flush mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-3 me-auto">
+                                        <b>Ders</b>
+                                    </div>
+                                    <span class="badge text-bg-primary "><?= $user->getLessonCount() ?></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-3 me-auto">
+                                        <b>Öğrenci sayısı</b>
+                                    </div>
+                                    <span class="badge text-bg-primary "><?= $user->getTotalStudentCount() ?></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-3 me-auto">
+                                        <b>Ders Saati</b>
+                                    </div>
+                                    <span class="badge text-bg-primary "><?= $user->getTotalLessonHours() ?></span>
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- /.card-body -->
+                        <div class="card-footer text-end">
+                            <a href="/admin/profile/<?= $user->id ?>" class="btn btn-primary">Profile git</a>
                         </div>
                     </div>
+                    <!-- /.card -->
                 </div>
             </div>
             <!--end::Row-->
+            <?= $scheduleHTML ?>
         </div>
         <!--end::Container-->
     </div>

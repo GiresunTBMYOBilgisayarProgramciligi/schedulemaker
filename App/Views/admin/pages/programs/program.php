@@ -4,6 +4,7 @@
  * @var \App\Models\Program $program
  * @var \App\Controllers\ScheduleController $scheduleController
  * @var string $page_title
+ * @var string $scheduleHTML
  */
 ?>
 <!--begin::App Main-->
@@ -229,56 +230,7 @@
                 </div>
             </div>
             <!--end::Row-->
-            <!--begin::Row Program Satırı-->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">1. Sınıf Program</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "semester_no" => "1"]) ?>
-                        </div>
-                        <div class="card-footer">
-
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">2. Sınıf Program</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <?= $scheduleController->createScheduleTable(["owner_type" => "program", "owner_id" => $program->id, "semester_no" => "3"]) ?>
-                        </div>
-                        <div class="card-footer">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--end::Row-->
+            <?= $scheduleHTML ?>
         </div>
         <!--end::Container-->
     </div>

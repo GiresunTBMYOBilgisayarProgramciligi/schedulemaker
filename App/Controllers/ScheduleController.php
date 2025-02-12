@@ -95,7 +95,7 @@ class ScheduleController extends Controller
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
                                 <thead>
                                 <tr>
-                                    <th>#</th>
+                                    <th style="width: 7%;">#</th>
                                     <th>Pazartesi</th>
                                     <th>Salı</th>
                                     <th>Çarşamba</th>
@@ -251,6 +251,36 @@ class ScheduleController extends Controller
             return $available_lessons;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
+        }
+    }
+
+    public function createAvailableLessonsHTML(array $filters = []): string
+    {
+        try {
+            if (!key_exists('semester_no', $filters)) throw new Exception("Dönem numarası belirtilmelidir");
+            $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
+                                         data-semester-no="' . $filters['semester_no'] . '"
+                                         style="max-height: 90vh;overflow: auto;">';
+            $availableLessons = $this->availableLessons($filters);
+            foreach ($availableLessons as $lesson) {
+                $HTMLOut .= "
+                    <div id=\"available-lesson-$lesson->id\" draggable=\"true\" 
+                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary\"
+                  data-semester-no=\"$lesson->semester_no\"
+                  data-lesson-code=\"$lesson->code\"
+                  data-lesson-id=\"$lesson->id\">
+                    <div class=\"ms-2 me-auto\">
+                      <div class=\"fw-bold\"><i class=\"bi bi-book\"></i> $lesson->code $lesson->name</div>
+                      $lesson->lecturer_name
+                    </div>
+                    <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
+                  </div>
+                    ";
+            }
+            $HTMLOut .= '</div>';
+            return $HTMLOut;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -440,7 +470,7 @@ class ScheduleController extends Controller
      * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = []): string
+    public function getSchedulesHTML(array $filters = [], $only_table = false): string
     {
         try {
             if (!key_exists("semester", $filters)) {
@@ -450,6 +480,9 @@ class ScheduleController extends Controller
                 $filters['academic_year'] = getSetting("academic_year");
             }
             $HTMLOUT = '';
+            if (!is_null($filters["semester_no"])) {
+
+            }
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
                 $filters['semester_no'] = $semester_no;
@@ -473,28 +506,12 @@ class ScheduleController extends Controller
                             </div>
                             <div class="card-body">
                                 <!--begin::Row-->
-                                <div class="row">
-                                    <div class="available-schedule-items col-md-3 drop-zone small"
-                                         data-semester-no="'.$semester_no.'"
-                                         style="max-height: 90vh;overflow: auto;">';
-                $availableLessons = $this->availableLessons($filters);
-                foreach ($availableLessons as $lesson) {
-                    $HTMLOUT .= "
-                    <div id=\"available-lesson-$lesson->id\" draggable=\"true\" 
-                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary\"
-                  data-semester-no=\"$lesson->semester_no\"
-                  data-lesson-code=\"$lesson->code\"
-                  data-lesson-id=\"$lesson->id\">
-                    <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><i class=\"bi bi-book\"></i> $lesson->code $lesson->name</div>
-                      $lesson->lecturer_name
-                    </div>
-                    <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
-                  </div>
-                    ";
+                                <div class="row">';
+                if (!$only_table) {
+                    $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
                 }
-                $HTMLOUT .= '       </div>
-                                    <div class="schedule-table col-md-9" data-semester-no="' . $semester_no . '">';
+                $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
+                $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $semester_no . '">';
                 $HTMLOUT .= $this->createScheduleTable($filters);
                 $HTMLOUT .= '
 

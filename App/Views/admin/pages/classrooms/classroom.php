@@ -3,6 +3,7 @@
  * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
+ * @var string $scheduleHTML
  */
 ?>
 <!--begin::App Main-->
@@ -63,26 +64,7 @@
                 </div>
             </div>
             <!--end::Row-->
-            <!--begin::Row Program-->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card card-outline card-primary mb-4">
-                        <div class="card-header">
-                            <h3 class="card-title">Program</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--begin::Row Program-->
+            <?= $scheduleHTML ?>
         </div>
         <!--end::Container-->
     </div>
