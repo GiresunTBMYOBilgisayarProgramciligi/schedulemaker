@@ -86,6 +86,9 @@ class Controller
             if (is_null($id)) {
                 throw new Exception('Geçerli bir ID sağlanmadı.');
             }
+            if ($this->table_name == "users" and $id==1) {
+                throw new Exception("Birincil yönetici hesabı silinemez.");
+            }
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
                 throw new Exception('Table name özelliği tanımlı değil.');
@@ -98,7 +101,7 @@ class Controller
                 throw new Exception('Kayıt bulunamadı veya silinemedi.');
             }
         } catch (Exception $e) {
-            throw new Exception("Dilme işlemi yapılırken hata oluştu:" . $e->getMessage());
+            throw new Exception( $e->getMessage());
         }
     }
 
