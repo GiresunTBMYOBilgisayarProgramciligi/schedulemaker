@@ -48,6 +48,9 @@
                                             <input type="text" class="form-control" id="code" name="code"
                                                    placeholder="Kodu"
                                                    required>
+                                            <div class="invalid-feedback">
+                                                Ders kodu hatalı
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -75,6 +78,7 @@
                                             <label class="form-label"  for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    placeholder="Adı" required>
+
                                         </div>
                                     </div>
                                 </div>

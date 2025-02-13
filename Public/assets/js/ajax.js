@@ -12,7 +12,74 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".ajaxFormDelete").forEach((form) => {
         form.addEventListener("submit", handleAjaxDelete);
     });
+    function toUpperCaseTR(value) {
+        return value.toLocaleUpperCase('tr-TR');
+    }
 
+    // Input elementi için maskeleme fonksiyonu
+    function initializeCodeMask(inputElement) {
+        // Değişiklikleri dinle
+        inputElement.addEventListener('input', function(e) {
+            let value = toUpperCaseTR(e.target.value); // Otomatik büyük harfe çevir
+            // Sadece harf ve rakamları al (tire ve noktayı kaldır)
+            value = value.replace(/[^A-ZĞÜŞİÖÇI0-9]/g, '');;
+
+            let formattedValue = '';
+
+            // İlk kısım (harf kısmı)
+            const letters = value.match(/[A-ZĞÜŞİÖÇI]+/)?.[0] || '';
+            formattedValue = letters;
+
+            // Eğer harf kısmından sonra rakam varsa, otomatik tire ekle
+            const numbers = value.slice(letters.length);
+            if (numbers.length > 0) {
+                formattedValue += '-' + numbers;
+            }
+
+            // Nokta ekleme kontrolü (eğer son kısımda nokta ve rakam varsa)
+            if (formattedValue.includes('-') && numbers.length > 3) {
+                const mainPart = numbers.slice(0, 3);
+                const decimal = numbers.slice(3);
+                formattedValue = letters + '-' + mainPart;
+                if (decimal) {
+                    formattedValue += '.' + decimal;
+                }
+            }
+
+            // Maksimum uzunluk kontrolü
+            formattedValue = formattedValue.slice(0, 10);
+
+            // Değeri güncelle
+            e.target.value = formattedValue;
+        });
+
+        // Blur olduğunda format kontrolü
+        inputElement.addEventListener('input', function(e) {
+            const value = e.target.value;
+            const isValid = validateCourseCode(value);
+
+            // Geçerlilik durumuna göre görsel geri bildirim
+            if (isValid) {
+                inputElement.classList.remove('is-invalid');
+                inputElement.classList.add('is-valid');
+            } else {
+                inputElement.classList.remove('is-valid');
+                inputElement.classList.add('is-invalid');
+            }
+        });
+    }
+
+    // Ders kodu formatını doğrula
+    function validateCourseCode(code) {
+        // Format: AAA-NNN veya AAA-NNN.N
+        const pattern = /^[A-ZĞÜŞİÖÇI]{2,4}-\d{3}(?:\.\d)?$/;
+        return pattern.test(code);
+    }
+    //code id li bir input varsa
+    const codeInput = document.querySelector("input#code");
+    if (codeInput) {
+        initializeCodeMask(codeInput);
+    }
     /**
      *
      * @type {Modal}
@@ -22,7 +89,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleAjaxForm(event) {
         event.preventDefault();
-
+        if (codeInput){
+            if (!validateCourseCode(codeInput.value)){
+                return;
+            }
+        }
         const form = event.target;
 
         modal.prepareModal(form.getAttribute("title"));

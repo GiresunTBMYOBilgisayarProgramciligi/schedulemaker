@@ -53,6 +53,9 @@
                                                    placeholder="Kodu"
                                                    value="<?= $lesson->code ?>"
                                                    required>
+                                            <div class="invalid-feedback">
+                                                Ders kodu hatalı
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">

@@ -37,11 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /**
-     * Formlarda name ve last_name
-     *
-     */
-
-    /**
      * Her kelimenin ilk harfini büyük yapma fonksiyonu (Türkçe destekli)
      * @param value
      * @returns {string}
@@ -68,7 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const nameInput = document.getElementById("name");
     const lastNameInput = document.getElementById("last_name");
-    const codeInput = document.getElementById("code");
 
     // Name alanını her kelimenin ilk harfi büyük olacak şekilde düzenle
     if (nameInput) {
@@ -76,13 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
             event.target.value = capitalizeWordsTR(event.target.value);
         });
     }
-
-    // Last Name ve Code alanlarını tamamen büyük harflere dönüştür
-    [lastNameInput, codeInput].forEach((input) => {
-        if (input) {
-            input.addEventListener("input", (event) => {
-                event.target.value = toUpperCaseTR(event.target.value);
-            });
-        }
-    });
+    if (lastNameInput) {
+        lastNameInput.addEventListener("input", (event) => {
+            event.target.value = toUpperCaseTR(event.target.value);
+        });
+    }
 });
