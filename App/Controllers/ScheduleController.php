@@ -21,12 +21,12 @@ class ScheduleController extends Controller
      * @var true[]
      */
     private array $emptyWeek = array(
-        "day0" => true,//Pazartesi
-        "day1" => true,//Salı
-        "day2" => true,//Çarşamba
-        "day3" => true,//Perşembe
-        "day4" => true,//Cuma
-        "day5" => true //Cumartesi
+        "day0" => null,//Pazartesi
+        "day1" => null,//Salı
+        "day2" => null,//Çarşamba
+        "day3" => null,//Perşembe
+        "day4" => null,//Cuma
+        "day5" => null //Cumartesi
     );
 
     /**
@@ -178,11 +178,13 @@ class ScheduleController extends Controller
                             </div>
                         </td>';
                         }
-                    } elseif (is_null($day) || $day === true) {
+                    } elseif (is_null($day)) {
                         // Eğer null veya true ise boş dropzone ekle
-                        $out .= ($day === true && $times[$i] === "12.00 - 12.50")
+                        $out .= ($times[$i] === "12.00 - 12.50")
                             ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
                             : '<td class="drop-zone"></td>';
+                    } elseif ($day === true) {
+                        $out .= '<td class="bg-success"></td>';
                     } else {
                         // Eğer false ise kırmızı vurgulu hücre ekle
                         $out .= '<td class="bg-danger"></td>';
@@ -555,7 +557,7 @@ class ScheduleController extends Controller
             $q = $this->database->prepare($sql);
             $q->execute($new_schedule_arr);
             return $this->database->lastInsertId();
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası) program var gün güncellenecek
                 try {
@@ -599,10 +601,10 @@ class ScheduleController extends Controller
                     }
                     return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
-                    throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage());
+                    throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage(), $e->getCode(), $e);
                 }
             } else {
-                throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage());
+                throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage(), 0, $e);
             }
         }
     }
@@ -640,7 +642,6 @@ class ScheduleController extends Controller
                 $this->table_name,
                 implode(", ", $columns)
             );
-
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
@@ -677,27 +678,37 @@ class ScheduleController extends Controller
                 throw new Exception("Silinecek Ders bulunamadı" . var_export($scheduleData, true));
             }
             //belirtilen günde bir ders var ise
-            if (array_key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
-                if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
-                    //var olan gün ilebelirtilen gün bilgisi aynı ise
-                    $schedule->{"day" . $filters["day_index"]} = null;
+            if (is_array($schedule->{"day" . $filters["day_index"]})) {
+                if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
+                    if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
+                        //var olan gün ilebelirtilen gün bilgisi aynı ise
+                        $schedule->{"day" . $filters["day_index"]} = null;
+                        if ($this->isScheduleEmpty($schedule))
+                            $this->delete($schedule->id);
+                        else
+                            $this->updateSchedule($schedule);
+                    }
+                } else {
+                    // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
+                    for ($i = 0; $i < 2; $i++) {
+                        if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
+                            unset($schedule->{"day" . $filters["day_index"]}[$i]);
+                        }
+                    }
                     if ($this->isScheduleEmpty($schedule))
                         $this->delete($schedule->id);
                     else
                         $this->updateSchedule($schedule);
                 }
-            } else {
-                // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
-                for ($i = 0; $i < 2; $i++) {
-                    if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
-                        unset($schedule->{"day" . $filters["day_index"]}[$i]);
-                    }
-                }
+            } elseif (!is_null($schedule->{"day" . $filters["day_index"]})) {
+                // bu durumda ders true yada false dir. Aslında false değerindedir
+                $schedule->{"day" . $filters["day_index"]} = null;
                 if ($this->isScheduleEmpty($schedule))
                     $this->delete($schedule->id);
                 else
                     $this->updateSchedule($schedule);
             }
+
         } catch (Exception $e) {
             throw new Exception("Program silinirken bir hata oluştu" . $e->getMessage());
         }

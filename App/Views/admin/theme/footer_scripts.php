@@ -50,4 +50,6 @@
 <script type="module" src="/assets/js/data_table.js"></script>
 <script type="module" src="/assets/js/formEvents.js"></script>
 <script type="module" src="/assets/js/schedule.js"></script>
+<script type="module" src="/assets/js/userSchedule.js"></script>
+
 <!--end::Script-->

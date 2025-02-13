@@ -23,6 +23,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
+use function App\Helpers\getSetting;
 
 class AjaxRouter extends Router
 {
@@ -685,8 +686,7 @@ class AjaxRouter extends Router
                                 ]);
                                 $savedId = $scheduleController->saveNew($schedule);
                                 if ($savedId == 0) {
-                                    $this->response['status'] = "error";
-                                    $this->response['msg'] = $owner_type . " kaydı yapılırken hata oluştu";
+                                    throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
                                 } else
                                     $this->response[$owner_type . "_result"] = $savedId;
                             }
@@ -708,6 +708,37 @@ class AjaxRouter extends Router
                 ];
             }
 
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($this->response);
+        }
+    }
+
+    public function saveSchedulePreferenceAction()
+    {
+        if ($this->checkAjax()) {
+            try {
+                $scheduleController = new ScheduleController();
+                $filters = [
+                    "type" => "lesson",
+                    "semester" => getSetting("semester"),
+                    "academic_year" => getSetting("academic_year"),
+                ];
+                $filters = array_merge($filters, $this->data);
+                $schedule = new Schedule();
+                $schedule->fill($filters);
+                $savedId = $scheduleController->saveNew($schedule);
+                if ($savedId == 0) {
+                    throw new Exception("Hoca tercihi kaydedilemedi");
+                } else {
+                    $this->response = array_merge($this->response, array("status" => "success"));
+                }
+            } catch (Exception $e) {
+                $this->response = [
+                    "msg" => $e->getMessage(),
+                    "trace" => $e->getTraceAsString(),
+                    "status" => "error"
+                ];
+            }
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($this->response);
         }
@@ -785,32 +816,56 @@ class AjaxRouter extends Router
                 $scheduleController = new ScheduleController();
                 $lessonController = new LessonController();
                 $classroomController = new ClassroomController();
-                $lesson = $lessonController->getLesson($this->data['lesson_id']);
-                $lecturer = $lesson->getLecturer();
-                $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
                 if (!key_exists("semester", $this->data)) {
-                    $this->data["semester"] = getCurrentSemester();
+                    $this->data["semester"] = getSetting("semester");
                 }
-                $owners = ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id];
-                $day = [
-                    "lesson_id" => $lesson->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                foreach ($owners as $owner_type => $owner_id) {
+                if (!key_exists("academic_year", $this->data)) {
+                    $this->data["academic_year"] = getSetting("academic_year");
+                }
+                if (!key_exists("owner_type", $this->data)) {
+                    $owners = [];
+                    if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
+                        $lesson = $lessonController->getLesson($this->data['lesson_id']);
+                        $lecturer = $lesson->getLecturer();
+                        $owners['user'] = $lecturer->id;
+                        $owners['lesson'] = $lesson->id;
+                        $owners['program'] = $lesson->program_id;
+                        $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+                        $owners = ["classroom" => $classroom->id];
+                        $day = [
+                            "lesson_id" => $lesson->id,
+                            "classroom_id" => $classroom->id,
+                            "lecturer_id" => $lecturer->id,
+                        ];
+                        foreach ($owners as $owner_type => $owner_id) {
+                            $filters = [
+                                "owner_type" => $owner_type,
+                                "owner_id" => $owner_id,
+                                "day_index" => $this->data['day_index'],
+                                "day" => $day,
+                                "type" => "lesson",
+                                "time" => $this->data['time'],
+                                "semester_no" => $this->data['semester_no'],
+                                "semester" => $this->data["semester"],
+                                "academic_year" => $this->data['academic_year'],
+                            ];
+                            $scheduleController->deleteSchedule($filters);
+                        }
+                    } else throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
+                }else{
                     $filters = [
-                        "owner_type" => $owner_type,
-                        "owner_id" => $owner_id,
-                        "day_index" => $this->data['day_index'],
-                        "day" => $day,
-                        "type" => "lesson",
-                        "time" => $this->data['time'],
-                        "semester_no" => $this->data['semester_no'],
+                        "owner_type" => $this->data["owner_type"],
+                        "owner_id" => $this->data["owner_id"],
                         "semester" => $this->data["semester"],
-                        "academic_year" => $this->data['academic_year'],
+                        "academic_year" => $this->data["academic_year"],
+                        "semester_no" => $this->data["semester_no"],
+                        "type" => $this->data["type"],
+                        "time" => $this->data["time"],
+                        "day_index" => $this->data["day_index"],
                     ];
                     $scheduleController->deleteSchedule($filters);
                 }
+
             } catch (Exception $e) {
                 $this->response = [
                     "msg" => $e->getMessage(),
