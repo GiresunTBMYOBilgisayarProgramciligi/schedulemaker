@@ -2,7 +2,9 @@
  * Uygyn dersler listesinden ders sürüklenmeye başladığında aynı sezondaki tablo içerisinde uygun olmayan hücrelerin listesi
  * todo Bu yapı özel bulutta matematik web-dev dalında olduğu gibi tamamiyle olaylar üzerinden çalıştırılabilir.
  */
-let unavailableCell;
+let unavailableCells;
+
+let preferredCells;
 /**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
@@ -242,15 +244,23 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
-                    console.error(data.msg);
+                    console.error(data);
                     return false;
                 } else {
                     //todo tabloya yükleniyor efekti
-                    unavailableCell = data.unavailableCells
-                    if (unavailableCell) {
+                    unavailableCells = data.unavailableCells;
+                    if (unavailableCells) {
                         for (let i = 0; i <= 9; i++) {
-                            for (let cell in unavailableCell[i]) {
+                            for (let cell in unavailableCells[i]) {
                                 table.rows[i].cells[cell].classList.add("text-bg-danger")
+                            }
+                        }
+                    }
+                    preferredCells= data.preferredCells;
+                    if (preferredCells){
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in preferredCells[i]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-success")
                             }
                         }
                     }
@@ -411,13 +421,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
                  */
                 table.rows[i].cells[j].classList.remove("text-bg-danger")
+                table.rows[i].cells[j].classList.remove("text-bg-success")
             }
         }
         /**
          * Veri Tabanından alınan Uygun olmayan hücreler bilgisi temizleniyor
          * @type {null}
          */
-        unavailableCell = null;
+        unavailableCells = null;
     }
 
     async function deleteSchedule(scheduleData) {
@@ -463,9 +474,6 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<void>}
      */
     async function dropTableToList(tableElement, draggedElement, dropZone) {
-        console.log(draggedElement.dataset);
-        console.log(dropZone.dataset.semesterNo);
-
         if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
         let result = await deleteSchedule(
             {

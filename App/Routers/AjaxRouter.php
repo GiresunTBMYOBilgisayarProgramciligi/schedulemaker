@@ -753,6 +753,10 @@ class AjaxRouter extends Router
                 if (!key_exists("semester", $this->data)) {
                     $filters["semester"] = getCurrentSemester();
                 }
+                if (!key_exists("academic_year", $this->data)) {
+                    $filters["academic_year"] = getSetting("academic_year");
+                }
+
                 if (key_exists("lesson_id", $this->data)) {
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
@@ -766,6 +770,7 @@ class AjaxRouter extends Router
                     $lessonSchedules = $scheduleController->getListByFilters($filters);
                     if (count($lessonSchedules) > 0) {
                         $unavailableCells = [];
+                        $preferredCells = [];
                         $tableRows = [
                             "08.00 - 08.50",
                             "09.00 - 09.50",
@@ -778,17 +783,23 @@ class AjaxRouter extends Router
                             "16.00 - 16.50"
                         ];
                         foreach ($lessonSchedules as $lessonSchedule) {
-                            $row = array_search($lessonSchedule->time, $tableRows);
+                            $rowIndex = array_search($lessonSchedule->time, $tableRows);
                             $cells = [];
                             for ($i = 0; $i < 6; $i++) {
-                                if (!is_null($lessonSchedule->{"day" . $i}) or $lessonSchedule->{"day" . $i} === false) {
-                                    $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
+                                if (!is_null($lessonSchedule->{"day" . $i})) {
+                                    if ($lessonSchedule->{"day" . $i} === false) {
+                                        $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
+                                        $unavailableCells[$rowIndex + 1] = $cells; //ilk satır günler olduğu için +1
+                                    }
+                                    if ($lessonSchedule->{"day" . $i} === true) {
+                                        $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
+                                        $preferredCells[$rowIndex + 1] = $cells; //ilk satır günler olduğu için +1
+                                    }
                                 }
                             }
-                            $unavailableCells[$row + 1] = $cells; //ilk satır günler olduğu için +1
                         }
 
-                        $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
+                        $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells, "preferredCells" => $preferredCells);
                     } else {
                         $this->response = [
                             "msg" => "Hocanın tüm saatleri müsait",
@@ -823,6 +834,7 @@ class AjaxRouter extends Router
                     $this->data["academic_year"] = getSetting("academic_year");
                 }
                 if (!key_exists("owner_type", $this->data)) {
+                    //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
                     $owners = [];
                     if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
                         $lesson = $lessonController->getLesson($this->data['lesson_id']);
@@ -831,7 +843,7 @@ class AjaxRouter extends Router
                         $owners['lesson'] = $lesson->id;
                         $owners['program'] = $lesson->program_id;
                         $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
-                        $owners = ["classroom" => $classroom->id];
+                        $owners["classroom"] = $classroom->id;
                         $day = [
                             "lesson_id" => $lesson->id,
                             "classroom_id" => $classroom->id,
@@ -852,7 +864,7 @@ class AjaxRouter extends Router
                             $scheduleController->deleteSchedule($filters);
                         }
                     } else throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
-                }else{
+                } else {
                     $filters = [
                         "owner_type" => $this->data["owner_type"],
                         "owner_id" => $this->data["owner_id"],
