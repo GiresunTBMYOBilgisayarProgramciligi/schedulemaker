@@ -3,7 +3,7 @@
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
  * @var \App\Controllers\UserController $userController
  */
-use function App\Helpers\canUserDo;
+use function App\Helpers\isAuthorized;
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -48,7 +48,7 @@ use function App\Helpers\canUserDo;
                 </li>
                 <!-- /Başlangıç-->
                 <!-- Kullanıcı İşlemleri -->
-                <?php if (canUserDo(8)): ?>
+                <?php if (isAuthorized("submanager")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?=
@@ -83,7 +83,7 @@ use function App\Helpers\canUserDo;
                 <?php endif; ?>
                 <!-- /Kullanıcı İşlemleri -->
                 <!-- Ders İşlemleri -->
-                <?php if (canUserDo(8)): ?>
+                <?php if (isAuthorized("submanager")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
@@ -117,7 +117,7 @@ use function App\Helpers\canUserDo;
                 <?php endif; ?>
                 <!-- /Ders İşlemleri -->
                 <!-- Derslik İşlemleri -->
-                <?php if (canUserDo(8)): ?>
+                <?php if (isAuthorized("submanager")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
@@ -151,7 +151,7 @@ use function App\Helpers\canUserDo;
                 <?php endif; ?>
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
-                <?php if (canUserDo(7)): ?>
+                <?php if (isAuthorized("department_head")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'program') or str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
@@ -218,7 +218,7 @@ use function App\Helpers\canUserDo;
                 <?php endif; ?>
                 <!-- /Akademik Birimler -->
                 <!-- Takvim  -->
-                <?php if (canUserDo(7)): ?>
+                <?php if (isAuthorized("department_head")): ?>
                 <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
@@ -253,7 +253,7 @@ use function App\Helpers\canUserDo;
                 <?php endif; ?>
                 <!-- /Takvim -->
                 <!-- Ayarlar -->
-                <?php if (canUserDo(8)): ?>
+                <?php if (isAuthorized("submanager")): ?>
                     <li class="nav-item">
                         <a href="/admin/settings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-sliders"></i>

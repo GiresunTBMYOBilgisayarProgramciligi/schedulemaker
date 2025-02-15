@@ -69,18 +69,21 @@ function getSemesterNumbers(?string $semester = null): array
 /**
  * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
  * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
- * @param int $level "admin" => 10,
- * "manager" => 9,
- * "submanager" => 8,
- * "department_head" => 7,
- * "lecturer" => 6,
- * "user" => 5
+ * @param string $role "admin","manager", "submanager", "department_head", "lecturer", "user"
  * @return bool
  */
-function canUserDo(int $level): bool
+function isAuthorized(string $role): bool
 {
     try {
-        return (new UserController())->canUserDoAction($level);
+        $roleLevels = [
+            "admin" => 10,
+            "manager" => 9,
+            "submanager" => 8,
+            "department_head" => 7,
+            "lecturer" => 6,
+            "user" => 5
+        ];
+        return (new UserController())->canUserDoAction($roleLevels[$role]);
     } catch (Exception $e) {
         $_SESSION['errors'][] = $e->getMessage();
         return false;
