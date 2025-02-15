@@ -271,18 +271,18 @@ class UserController extends Controller
      * "department_head" => 7,
      * "lecturer" => 6,
      * "user" => 5
+     * @param bool $reverse eğer true girilmişse belirtilen rolden düşük roller için yetki verir
      * @return bool
      * @throws Exception
      */
-    public static function canUserDoAction(int $actionLevel): bool
+    public static function canUserDoAction(int $actionLevel, $reverse = false): bool
     {
 
         //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
         try {
             $user = (new UserController)->getCurrentUser();
         } catch (Exception $e) {
-            error_log($e->getMessage());
-            return false;
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
 
         $roleLevels = [
@@ -293,6 +293,9 @@ class UserController extends Controller
             "lecturer" => 6,
             "user" => 5
         ];
-        return $roleLevels[$user->role] >= $actionLevel;
+        return match ($reverse) {
+            true => $roleLevels[$user->role] <= $actionLevel,
+            false => $roleLevels[$user->role] >= $actionLevel
+        };
     }
 }
