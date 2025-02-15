@@ -10,6 +10,7 @@ use PDOException;
 use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
+use function App\Helpers\isAuthorized;
 
 class ScheduleController extends Controller
 {
@@ -469,10 +470,11 @@ class ScheduleController extends Controller
 
     /**
      * @param array $filters
+     * @param bool $only_table
      * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = [], $only_table = false): string
+    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
         try {
             if (!key_exists("semester", $filters)) {
@@ -543,6 +545,8 @@ class ScheduleController extends Controller
     public function saveNew(Schedule $new_schedule): int
     {
         try {
+            if (!isAuthorized("department_head"))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
             //dizi türündeki veriler serialize ediliyor
@@ -617,6 +621,8 @@ class ScheduleController extends Controller
     public function updateSchedule(Schedule $schedule): int
     {
         try {
+            if (!isAuthorized("department_head"))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
             //dizi türündeki veriler serialize ediliyor
             array_walk($scheduleData, function (&$value) {
@@ -666,6 +672,8 @@ class ScheduleController extends Controller
     public function deleteSchedule($filters): void
     {
         try {
+            if (!isAuthorized("department_head"))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             if (!key_exists("semester", $filters)) {
                 $filters['semester'] = getSetting('semester');
             }
