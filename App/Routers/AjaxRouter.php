@@ -118,7 +118,7 @@ class AjaxRouter extends Router
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Güncellendi.",
                     "status" => "success",
-                    "redirect" => "/admin/listusers",
+                    "redirect" => "back",
                 );
             } catch (Exception $e) {
                 $this->response = [
@@ -144,7 +144,6 @@ class AjaxRouter extends Router
                 $this->response = array(
                     "msg" => "Kullanıcı başarıyla Silindi.",
                     "status" => "success",
-                    "redirect" => "/admin/listusers",
                 );
 
             } catch (Exception $e) {

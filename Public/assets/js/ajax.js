@@ -120,7 +120,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (data.redirect) {
                     modal.cancelButton.addEventListener("click", () => {
-                        window.location.href = data.redirect;
+                        if (data.redirect==="back"){
+                            window.history.back()
+                        }else
+                            window.location.href = data.redirect;
                     });
                 }
             })
@@ -165,7 +168,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     if (data.redirect) {
                         modal.cancelButton.addEventListener("click", () => {
-                            window.location.href = data.redirect;
+                            console.log(data)
+                            if (data.redirect==="back"){
+                                window.history.back()
+                            }else
+                                window.location.href = data.redirect;
                         });
                     }
                 })
