@@ -151,7 +151,7 @@ use function App\Helpers\isAuthorized;
                 <?php endif; ?>
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
-                <?php if (isAuthorized("department_head")): ?>
+                <?php if (isAuthorized("lecturer")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'program') or str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
@@ -162,6 +162,27 @@ use function App\Helpers\isAuthorized;
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
+                            <?php if (isAuthorized("department_head",true)): ?>
+                            <li class="nav-item">
+                                <a href="/admin/department/<?=$currentUser->department_id?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-buildings"></i>
+                                    <p>
+                                        Bölümüm
+                                    </p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            <?php if (isAuthorized("department_head",true)): ?>
+                            <li class="nav-item">
+                                <a href="/admin/program/<?=$currentUser->program_id?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-building"></i>
+                                    <p>
+                                        Programım
+                                    </p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            <?php if (isAuthorized("submanager")): ?>
                             <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'department') or str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                                 <a href="#" class="nav-link">
                                     <i class="bi bi-buildings nav-icon"></i>
@@ -212,7 +233,7 @@ use function App\Helpers\isAuthorized;
                                     </li>
                                 </ul>
                             </li>
-
+                            <?php endif; ?>
                         </ul>
                     </li>
                 <?php endif; ?>
