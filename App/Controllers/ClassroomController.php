@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use PDO;
 use PDOException;
 use Exception;
+use function App\Helpers\isAuthorized;
 
 /**
  * Controller sınıfından türetilmiştir. Derslikler ile ilgili işlemleri yönetir.
@@ -64,6 +65,8 @@ class ClassroomController extends Controller
     public function saveNew(Classroom $new_classroom): int
     {
         try {
+            if (!isAuthorized("submanager"))
+                throw new Exception("Bu işlem için yetkiniz yok.");
             $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id']);
 
             // Dinamik SQL sorgusu oluştur
@@ -92,6 +95,8 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
+            if (!isAuthorized("submanager"))
+                throw new Exception("Bu işlem için yetkiniz yok.");
             $classroomData = $classroom->getArray(['table_name', 'database', 'id'], true);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
