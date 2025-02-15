@@ -240,10 +240,10 @@ use function App\Helpers\isAuthorized;
                 <!-- /Akademik Birimler -->
                 <!-- Takvim  -->
                 <?php if (isAuthorized("department_head")): ?>
-                <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
+                <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
-                       (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'active' : ''; ?>">
+                       (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'schedule' : ''; ?>">
                         <i class="nav-icon bi bi-calendar"></i>
                         <p>
                             Takvim İşlemleri
@@ -253,7 +253,7 @@ use function App\Helpers\isAuthorized;
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
                             <a href="/admin/editschedule"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listusers')) ? 'active' : ''; ?>">
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
                                 <i class="nav-icon bi bi-person-lines-fill"></i>
                                 <p>
                                     Ders Programını Düzenle
@@ -262,7 +262,7 @@ use function App\Helpers\isAuthorized;
                         </li>
                         <li class="nav-item">
                             <a href="#"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'active' : ''; ?>">
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
                                 <i class="nav-icon bi bi-person-plus-fill"></i>
                                 <p>
                                     Sınav Programını Düzenle
