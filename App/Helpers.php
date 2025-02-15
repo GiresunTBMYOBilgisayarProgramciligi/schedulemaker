@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Controllers\LessonController;
 use App\Controllers\SettingsController;
+use App\Controllers\UserController;
 use Exception;
 
 function getSetting($key = null, $group = "general")
@@ -38,8 +39,8 @@ function getCurrentSemester()
 }
 
 /**
+ * @param string|null $semester
  * @return array
- * @throws Exception
  */
 function getSemesterNumbers(?string $semester = null): array
 {
@@ -53,13 +54,35 @@ function getSemesterNumbers(?string $semester = null): array
         // Güz döneminde **tek**, Bahar döneminde **çift** sayılar seçilmeli
         return array_values(array_filter(range(1, $semester_count), function ($semester_no) use ($semester) {
             return match ($semester) {
-                'Güz'   => $semester_no % 2 === 1, // Tek sayılar
+                'Güz' => $semester_no % 2 === 1, // Tek sayılar
                 'Bahar' => $semester_no % 2 === 0, // Çift sayılar
                 default => true, // Varsayılan: Tüm dönemleri döndür
             };
         }));
     } catch (Exception $e) {
         error_log("getSemesterNumbers Error: " . $e->getMessage());
+        $_SESSION['errors'][] = "getSemesterNumbers Error: " . $e->getMessage();
         return [];
+    }
+}
+
+/**
+ * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
+ * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
+ * @param int $level "admin" => 10,
+ * "manager" => 9,
+ * "submanager" => 8,
+ * "department_head" => 7,
+ * "lecturer" => 6,
+ * "user" => 5
+ * @return bool
+ */
+function canUserDo(int $level): bool
+{
+    try {
+        return (new UserController())->canUserDoAction($level);
+    } catch (Exception $e) {
+        $_SESSION['errors'][] = $e->getMessage();
+        return false;
     }
 }
