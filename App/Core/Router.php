@@ -33,10 +33,11 @@ class Router
 
     /**
      * path ile belirtilen yola yönlendirme oluşturur.
-     * @param $path
+     * @param null $path
+     * @param bool $goBack
      * @return void
      */
-    #[NoReturn] public function Redirect($path = null, $goBack = true): void
+    #[NoReturn] public function Redirect($path = null, bool $goBack = true): void
     {
         $path = is_null($path) ? "/admin" : $path;
         if ($goBack) {

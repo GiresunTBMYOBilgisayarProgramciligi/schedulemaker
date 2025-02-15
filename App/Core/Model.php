@@ -46,26 +46,36 @@ class Model
         return false;
     }
 
-    public function fill($data = [])
+    /**
+     * @param array $data
+     * @return void
+     * @throws Exception
+     */
+    public function fill(array $data = []): void
     {
-        // ReflectionClass ile alt sınıfın özelliklerini alın
-        $reflection = new \ReflectionClass($this);
-        $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
+        try {
+            // ReflectionClass ile alt sınıfın özelliklerini alın
+            $reflection = new \ReflectionClass($this);
+            $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
 
-        foreach ($properties as $property) {
-            $propertyName = $property->getName();
+            foreach ($properties as $property) {
+                $propertyName = $property->getName();
 
-            // Tarih alanı kontrolü
-            if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
-                $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
-                    ? new \DateTime($data[$propertyName])
-                    : null;
-            } else {
-                // Diğer alanlarda null kontrolü
-                $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
-                $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
+                // Tarih alanı kontrolü
+                if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
+                    $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
+                        ? new \DateTime($data[$propertyName])
+                        : null;
+                } else {
+                    // Diğer alanlarda null kontrolü
+                    $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
+                    $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
+                }
             }
+        } catch (Exception $exception) {
+            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
         }
+
     }
 
     /**
@@ -87,7 +97,7 @@ class Model
                 }
             } else $list = [];
             return $list;
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
         }
     }

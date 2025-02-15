@@ -6,6 +6,8 @@
 
 namespace App\Core;
 
+use Exception;
+
 /**
  * Ana View Sınıfı
  * Bir kontrolcü tarafından çağırılır
@@ -29,7 +31,7 @@ class View
     }
 
     /**
-     * @return void
+     * @throws Exception
      */
     public function Render(): void
     {
@@ -44,7 +46,7 @@ class View
                 ob_start();
                 ob_get_clean();
                 include $this->view_folder . '/' . 'theme.php';
-            } else throw new \Exception($this->view_folder . '/pages/' . $this->view_page . '.php'. "View dosyası mevcut değil ");
-        } else throw new \Exception('View folder does not exist');
+            } else throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php'. "View dosyası mevcut değil ");
+        } else throw new Exception('View folder does not exist');
     }
 }
