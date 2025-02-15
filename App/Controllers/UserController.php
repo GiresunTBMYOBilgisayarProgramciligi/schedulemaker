@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Department;
 use App\Models\User;
 use Exception;
 use PDO;
@@ -272,30 +273,63 @@ class UserController extends Controller
      * "lecturer" => 6,
      * "user" => 5
      * @param bool $reverse eğer true girilmişse belirtilen rolden düşük roller için yetki verir
+     * @param null $model Kullanıcı ile ilişkisi kontrol edilecek olan model
      * @return bool
      * @throws Exception
      */
-    public static function canUserDoAction(int $actionLevel, $reverse = false): bool
+    public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
     {
-
-        //todo her kullanıcının kendi bilgilerini düzenleyebilmesi için bir düzenleme yapmak lazım
         try {
             $user = (new UserController)->getCurrentUser();
+            $isOwner = false;
+            if (!is_null($model)) {
+                switch (get_class($model)) {
+                    case "App\Models\User":
+                        /*
+                         * Aktif kullanıcı model kullanıcısı ise yada
+                         * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
+                         */
+                        $department = (new DepartmentController())->getDepartment($model->department_id);
+                        $isOwner = ($user->id == $model->id or $user->id == $department->chairperson_id);
+                        break;
+                    case "App\Models\Lesson":
+                        /*
+                         * Aktif kullanıcı Dersin sahibi ise yada
+                         * Aktif kullanıcı Dersin bölüm başkanı ise
+                         */
+                        $department = (new DepartmentController())->getDepartment($model->department_id);
+                        $isOwner = ($model->lecturer_id == $user->id or $user->id == $department->chairperson_id);
+                        break;
+                    case "App\Models\Program":
+                        /*
+                         * Aktif kullanıcı Programın bölüm başkanı ise
+                         */
+                        $department = (new DepartmentController())->getDepartment($model->department_id);
+                        $isOwner = $user->id == $department->chairperson_id;
+                        break;
+                    case "App\Models\Department":
+                        /*
+                         * Aktif kullanıcı Blüm başkanı ise
+                         */
+                        $isOwner = $user->id == $model->chairperson_id;
+                        break;
+                }
+            }
+            $roleLevels = [
+                "admin" => 10,
+                "manager" => 9,
+                "submanager" => 8,
+                "department_head" => 7,
+                "lecturer" => 6,
+                "user" => 5
+            ];
+            $isAuthorizedRole = match ($reverse) {
+                true => $roleLevels[$user->role] <= $actionLevel,
+                false => $roleLevels[$user->role] >= $actionLevel
+            };
+            return $isAuthorizedRole or $isOwner;
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
-
-        $roleLevels = [
-            "admin" => 10,
-            "manager" => 9,
-            "submanager" => 8,
-            "department_head" => 7,
-            "lecturer" => 6,
-            "user" => 5
-        ];
-        return match ($reverse) {
-            true => $roleLevels[$user->role] <= $actionLevel,
-            false => $roleLevels[$user->role] >= $actionLevel
-        };
     }
 }

@@ -71,9 +71,10 @@ function getSemesterNumbers(?string $semester = null): array
  * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
  * @param string $role "admin","manager", "submanager", "department_head", "lecturer", "user"
  * @param bool $reverse eğer true girilmişse belirtilen rolden düşük roller için yetki verir
+ * @param null $model Denetim yapılan model
  * @return bool
  */
-function isAuthorized(string $role, $reverse = false): bool
+function isAuthorized(string $role, bool $reverse = false, $model = null): bool
 {
     try {
         $roleLevels = [
@@ -84,7 +85,7 @@ function isAuthorized(string $role, $reverse = false): bool
             "lecturer" => 6,
             "user" => 5
         ];
-        return (new UserController())->canUserDoAction($roleLevels[$role],$reverse);
+        return (new UserController())->canUserDoAction($roleLevels[$role], $reverse, $model);
     } catch (Exception $e) {
         $_SESSION['errors'][] = $e->getMessage();
         return false;
