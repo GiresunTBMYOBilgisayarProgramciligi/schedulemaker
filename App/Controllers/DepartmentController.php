@@ -91,7 +91,7 @@ class DepartmentController extends Controller
     public function updateDepartment(Department $department): int
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager",false,$department))
                 throw new Exception("Bu işlem için yetkiniz yok.");
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar

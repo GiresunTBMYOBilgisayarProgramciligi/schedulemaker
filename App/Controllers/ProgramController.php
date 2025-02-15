@@ -7,6 +7,7 @@ use App\Models\Program;
 use Exception;
 use PDO;
 use PDOException;
+use function App\Helpers\isAuthorized;
 
 class ProgramController extends Controller
 {
@@ -23,10 +24,10 @@ class ProgramController extends Controller
     {
         if (!is_null($id)) {
             try {
-                $smtt = $this->database->prepare("select * from $this->table_name where id=:id");
-                $smtt->bindValue(":id", $id, PDO::PARAM_INT);
-                $smtt->execute();
-                $program_data = $smtt->fetch(\PDO::FETCH_ASSOC);
+                $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+                $stmt->execute();
+                $program_data = $stmt->fetch(\PDO::FETCH_ASSOC);
                 if ($program_data) {
                     $program = new Program();
                     $program->fill($program_data);
@@ -64,6 +65,8 @@ class ProgramController extends Controller
     public function saveNew(Program $new_program): int
     {
         try {
+            if (!isAuthorized("submanager"))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_program_arr);
@@ -89,6 +92,8 @@ class ProgramController extends Controller
     public function updateProgram(Program $program):int
     {
         try {
+            if (!isAuthorized("submanager",false,$program))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             $programData = $program->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
