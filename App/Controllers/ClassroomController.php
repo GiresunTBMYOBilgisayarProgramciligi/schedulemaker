@@ -80,7 +80,7 @@ class ClassroomController extends Controller
                 error_log($e->getMessage());
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), $e->getCode(),$e);
             }
         }
 

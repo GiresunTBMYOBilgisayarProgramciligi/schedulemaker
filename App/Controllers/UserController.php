@@ -8,13 +8,19 @@ use App\Models\User;
 use Exception;
 use PDO;
 use PDOException;
+use function App\Helpers\isAuthorized;
 
 class UserController extends Controller
 {
     protected string $table_name = "users";
     protected string $modelName = "App\Models\User";
 
-    public function getUser($id)
+    /**
+     * @param $id
+     * @return User
+     * @throws Exception
+     */
+    public function getUser($id): User
     {
         if (!is_null($id)) {
             try {
@@ -29,10 +35,9 @@ class UserController extends Controller
                     return $user;
                 } else throw new Exception("User not found");
             } catch (Exception $e) {
-                // todo sitede bildirim şeklinde bir hata mesajı gösterip silsin.
-                echo $e->getMessage();
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
-        }
+        } else throw new Exception("Kullanıcı id numarası belirtilmemiş");
     }
 
     /**
@@ -53,20 +58,19 @@ class UserController extends Controller
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
-
     }
 
     /**
      * Sadece akademisyen olan kullanıcıların sayısını döner
-     * @return false|int
+     * @return int
+     * @throws Exception
      */
-    public function getAcademicCount()
+    public function getAcademicCount(): int
     {
         try {
             return $this->getCount(["!role" => ["user", "admin"]]);
         } catch (Exception $e) {
-            var_dump($e);
-            return false;
+            throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -129,6 +133,8 @@ class UserController extends Controller
     public function saveNew(User $new_user): int
     {
         try {
+            if (!isAuthorized("submanager", false, $new_user))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
             $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
@@ -159,6 +165,8 @@ class UserController extends Controller
     public function updateUser(User $user): int
     {
         try {
+            if (!isAuthorized("submanager", false, $user))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             // Şifre kontrolü ve hash işlemi
             if (empty($user->password)) {
                 $user->password = null;
@@ -167,7 +175,18 @@ class UserController extends Controller
             }
 
             // Kullanıcı verilerini filtrele
-            $userData = $user->getArray(['table_name', 'database', 'id', "register_date", "last_login"], true);
+            /*
+             * Array filter boş değerleri siliyor böylece şifre null değilse ise null değeri diziden silinmiş oluyor.
+             * Bu ekleme şifre boş bırakıldığında şifrenin silinmesi hatasını çözmek için eklendi
+             */
+            $userData = $user->getArray(array_filter([
+                'table_name',
+                'database',
+                'id',
+                'register_date',
+                'last_login',
+                !is_null($user->password) ? null : 'password'
+            ]), true);
 
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
@@ -238,14 +257,20 @@ class UserController extends Controller
      */
     public function getRoleList(): array
     {
-        return [
+        $list = [
             "user" => "Kullanıcı",
             "lecturer" => "Akademisyen",
-            "admin" => "Yönetici",
             "department_head" => "Bölüm Başkanı",
-            "manager" => "Müdür",
             "submanager" => "Müdür Yardımcısı"
         ];
+        if (isAuthorized("admin")) {
+            $list = array_merge(
+                $list,
+                ["manager" => "Müdür","admin" => "Yönetici"
+                ]
+            );
+        }
+        return $list;
     }
 
     /**
