@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use Exception;
 use PDO;
 use PDOException;
+use function App\Helpers\isAuthorized;
 
 class LessonController extends Controller
 {
@@ -92,6 +93,9 @@ class LessonController extends Controller
     public function saveNew(Lesson $new_lesson): int
     {
         try {
+            if (!isAuthorized("submanager", false, $new_lesson))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
 
@@ -119,6 +123,8 @@ class LessonController extends Controller
     public function updateLesson(Lesson $lesson): int
     {
         try {
+            if (!isAuthorized("submanager", false, $lesson))
+                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             // Lesson nesnesinden filtrelenmiş verileri al
             $lessonData = $lesson->getArray(['table_name', 'database', 'id'], true);
 
