@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Model;
+use Exception;
 use PDO;
 use PDOException;
 
@@ -34,10 +35,16 @@ class Department extends Model
 
     /**
      * @return User Chair Person
+     * @throws Exception
      */
     public function getChairperson(): User
     {
-        return (new UserController())->getUser($this->chairperson_id);
+        try {
+            return (new UserController())->getUser($this->chairperson_id);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        }
+
     }
 
     public function getProgramCount()
@@ -49,63 +56,111 @@ class Department extends Model
         return $data['count'];
     }
 
-    public function getPrograms()
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function getPrograms(): array
     {
-        $stmt = $this->database->prepare("Select * From programs where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $programs = $stmt->fetchAll();
-        $programs_list = array();
-        foreach ($programs as $programData) {
-            $program = new Program();
-            $program->fill($programData);
-            $programs_list[] = $program;
+        try {
+            $stmt = $this->database->prepare("Select * From programs where department_id=:id");
+            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $programs = $stmt->fetchAll();
+            $programs_list = array();
+            foreach ($programs as $programData) {
+                $program = new Program();
+                $program->fill($programData);
+                $programs_list[] = $program;
+            }
+            return $programs_list;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
-        return $programs_list;
+
     }
 
-    public function getLecturers()
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function getLecturers(): array
     {
-        $stmt = $this->database->prepare("Select * From users where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $lecturers = $stmt->fetchAll();
-        $lecturers_list = array();
-        foreach ($lecturers as $lecturerData) {
-            $lecturer = new User();
-            $lecturer->fill($lecturerData);
-            $lecturers_list[] = $lecturer;
+        try {
+            $stmt = $this->database->prepare("Select * From users where department_id=:id");
+            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $lecturers = $stmt->fetchAll();
+            $lecturers_list = array();
+            foreach ($lecturers as $lecturerData) {
+                $lecturer = new User();
+                $lecturer->fill($lecturerData);
+                $lecturers_list[] = $lecturer;
+            }
+            return $lecturers_list;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
-        return $lecturers_list;
-    }
-    public function getLecturerCount()
-    {
-        $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+
     }
 
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getLecturerCount(): mixed
+    {
+        try {
+            $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
+            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetch();
+            return $data['count'];
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        }
+
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
     public function getLessons(): array
     {
-        $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $lessons = $stmt->fetchAll();
-        $lessons_list = array();
-        foreach ($lessons as $lessonData) {
-            $lesson = new Lesson();
-            $lesson->fill($lessonData);
-            $lessons_list[] = $lesson;
+        try {
+            $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
+            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $lessons = $stmt->fetchAll();
+            $lessons_list = array();
+            foreach ($lessons as $lessonData) {
+                $lesson = new Lesson();
+                $lesson->fill($lessonData);
+                $lessons_list[] = $lesson;
+            }
+            return $lessons_list;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
-        return $lessons_list;
+
     }
-    public function getLessonCount(){
-        $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getLessonCount(): mixed
+    {
+        try {
+            $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
+            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+            $data = $stmt->fetch();
+            return $data['count'];
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        }
+
     }
 }

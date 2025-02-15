@@ -88,7 +88,7 @@ class Schedule extends Model
      * Tablo oluştururken günler döngüye sokulurken kullanılır
      * @return array
      */
-    public function getWeek()
+    public function getWeek(): array
     {
         return [
             $this->day0,
@@ -100,7 +100,7 @@ class Schedule extends Model
         ];
     }
 
-    public function getdayName($dayString)
+    public function getdayName($dayString): string
     {
         $days = [
             "day0" => "Pazartesi",
@@ -113,7 +113,7 @@ class Schedule extends Model
         return $days[$dayString];
     }
 
-    public function getOwnerTypeScreenName()
+    public function getOwnerTypeScreenName(): string
     {
         $names = [
             "user" => "Hoca",

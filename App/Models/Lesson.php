@@ -7,8 +7,6 @@ use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Model;
 use Exception;
-use PDO;
-use PDOException;
 
 class Lesson extends Model
 {
@@ -32,10 +30,16 @@ class Lesson extends Model
 
     /**
      * @return User|null
+     * @throws Exception
      */
     public function getLecturer(): User|null
     {
-        return (new UserController())->getUser($this->lecturer_id);
+        try {
+            return (new UserController())->getUser($this->lecturer_id);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        }
+
     }
 
     /**

@@ -82,13 +82,13 @@ class User extends Model
     {
         try {
             return (new ProgramController())->getProgram($this->program_id)->name ?? "";
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             throw new Exception($exception->getMessage(), $exception->getCode());
         }
 
     }
 
-    public function getRoleName()
+    public function getRoleName(): string
     {
         $role_names = [
             "user" => "Kullanıcı",
@@ -115,37 +115,51 @@ class User extends Model
         }
     }
 
-    public function getGravatarURL($size = 50)
+    public function getGravatarURL($size = 50): string
     {
         $default = "";
         return "https://www.gravatar.com/avatar/" . md5(strtolower(trim($this->mail))) . "?d=" . urlencode($default) . "&s=" . $size;
     }
 
-    public function getLessonCount()
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function getLessonCount(): mixed
     {
-        $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
-        $stmt->bindParam(":id", $this->id);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+        try {
+            $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
+            $stmt->bindParam(":id", $this->id);
+            $stmt->execute();
+            $data = $stmt->fetch();
+            return $data['count'];
+        } catch (Exception $exception) {
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
+        }
+
     }
 
     /**
      * todo
      * @return int
      */
-    public function getTotalStudentCount()
+    public function getTotalStudentCount(): int
     {
         return 100;
     }
 
     public function getTotalLessonHours()
     {
-        $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
-        $stmt->bindParam(":id", $this->id);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['total'];
+        try {
+            $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
+            $stmt->bindParam(":id", $this->id);
+            $stmt->execute();
+            $data = $stmt->fetch();
+            return $data['total'];
+        } catch (Exception $exception) {
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
+        }
+
 
     }
 }
