@@ -3,6 +3,7 @@
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
  * @var \App\Controllers\UserController $userController
  */
+use function App\Helpers\canUserDo;
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -47,7 +48,7 @@
                 </li>
                 <!-- /Başlangıç-->
                 <!-- Kullanıcı İşlemleri -->
-                <?php if ($userController->canUserDoAction(8)): ?>
+                <?php if (canUserDo(8)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?=
@@ -82,7 +83,7 @@
                 <?php endif; ?>
                 <!-- /Kullanıcı İşlemleri -->
                 <!-- Ders İşlemleri -->
-                <?php if ($userController->canUserDoAction(8)): ?>
+                <?php if (canUserDo(8)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
@@ -116,7 +117,7 @@
                 <?php endif; ?>
                 <!-- /Ders İşlemleri -->
                 <!-- Derslik İşlemleri -->
-                <?php if ($userController->canUserDoAction(8)): ?>
+                <?php if (canUserDo(8)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
@@ -150,7 +151,7 @@
                 <?php endif; ?>
                 <!-- /Derslik İşlemleri -->
                 <!-- Akademik Birimler -->
-                <?php if ($userController->canUserDoAction(7)): ?>
+                <?php if (canUserDo(7)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'program') or str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
                         <a href="#"
                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'departments')) ? 'active' : ''; ?>">
@@ -216,7 +217,8 @@
                     </li>
                 <?php endif; ?>
                 <!-- /Akademik Birimler -->
-                <!-- Takvim todo -->
+                <!-- Takvim  -->
+                <?php if (canUserDo(7)): ?>
                 <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
                     <a href="#"
                        class="nav-link <?=
@@ -248,9 +250,10 @@
                         </li>
                     </ul>
                 </li>
+                <?php endif; ?>
                 <!-- /Takvim -->
                 <!-- Ayarlar -->
-                <?php if ($userController->canUserDoAction(8)): ?>
+                <?php if (canUserDo(8)): ?>
                     <li class="nav-item">
                         <a href="/admin/settings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-sliders"></i>
