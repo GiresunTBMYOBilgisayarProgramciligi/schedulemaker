@@ -48,7 +48,12 @@ class DepartmentController extends Controller
     public function getDepartmentsList(): array
     {
         try {
-            return $this->getListByFilters();
+            if (isAuthorized("submanager")) {
+                $list = $this->getListByFilters();
+            } else {
+                $list = $this->getListByFilters(['id' => (new UserController())->getCurrentUser()->department_id]);
+            }
+            return $list;
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode());
         }
@@ -91,7 +96,7 @@ class DepartmentController extends Controller
     public function updateDepartment(Department $department): int
     {
         try {
-            if (!isAuthorized("submanager",false,$department))
+            if (!isAuthorized("submanager", false, $department))
                 throw new Exception("Bu işlem için yetkiniz yok.");
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
