@@ -260,14 +260,22 @@ class UserController extends Controller
         $list = [
             "user" => "Kullanıcı",
             "lecturer" => "Akademisyen",
-            "department_head" => "Bölüm Başkanı",
-            "submanager" => "Müdür Yardımcısı"
-        ];
+            ];
         if (isAuthorized("admin")) {
             $list = array_merge(
                 $list,
-                ["manager" => "Müdür","admin" => "Yönetici"
-                ]
+                ["department_head" => "Bölüm Başkanı","submanager" => "Müdür Yardımcısı","manager" => "Müdür","admin" => "Yönetici"]
+            );
+        }
+        elseif (isAuthorized("manager")) {
+            $list = array_merge(
+                $list,
+                ["department_head" => "Bölüm Başkanı","submanager" => "Müdür Yardımcısı","manager" => "Müdür"]
+            );
+        }elseif (isAuthorized("submanager")) {
+            $list = array_merge(
+                $list,
+                ["department_head" => "Bölüm Başkanı",]
             );
         }
         return $list;
