@@ -85,6 +85,8 @@ function isAuthorized(string $role, bool $reverse = false, $model = null): bool
             "lecturer" => 6,
             "user" => 5
         ];
+        if (!$roleLevels[$role])
+            throw new Exception("Yetkilendirme işlemi için doğru bir yetki belirtilmemiş");
         return (new UserController())->canUserDoAction($roleLevels[$role], $reverse, $model);
     } catch (Exception $e) {
         $_SESSION['errors'][] = $e->getMessage();
