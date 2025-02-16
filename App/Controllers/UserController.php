@@ -239,13 +239,15 @@ class UserController extends Controller
 
     /**
      * Rolü kullanıcı dışında olan kullanıcıların listesi
+     * @param array $filter
      * @return array
      * @throws Exception
      */
-    public function getLecturerList(): array
+    public function getLecturerList(array $filter = []): array
     {
         try {
-            return $this->getListByFilters(["!role" => ["user", "admin"]]);
+            $filter= array_merge($filter, ["!role" => ["user", "admin"]]);
+            return $this->getListByFilters($filter);
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
@@ -260,19 +262,18 @@ class UserController extends Controller
         $list = [
             "user" => "Kullanıcı",
             "lecturer" => "Akademisyen",
-            ];
+        ];
         if (isAuthorized("admin")) {
             $list = array_merge(
                 $list,
-                ["department_head" => "Bölüm Başkanı","submanager" => "Müdür Yardımcısı","manager" => "Müdür","admin" => "Yönetici"]
+                ["department_head" => "Bölüm Başkanı", "submanager" => "Müdür Yardımcısı", "manager" => "Müdür", "admin" => "Yönetici"]
             );
-        }
-        elseif (isAuthorized("manager")) {
+        } elseif (isAuthorized("manager")) {
             $list = array_merge(
                 $list,
-                ["department_head" => "Bölüm Başkanı","submanager" => "Müdür Yardımcısı","manager" => "Müdür"]
+                ["department_head" => "Bölüm Başkanı", "submanager" => "Müdür Yardımcısı", "manager" => "Müdür"]
             );
-        }elseif (isAuthorized("submanager")) {
+        } elseif (isAuthorized("submanager")) {
             $list = array_merge(
                 $list,
                 ["department_head" => "Bölüm Başkanı",]
