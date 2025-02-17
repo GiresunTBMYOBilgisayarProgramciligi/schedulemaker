@@ -49,7 +49,7 @@
         </div>
         <div class="card-body login-card-body">
             <p class="login-box-msg">Başlamak için giriş yapın</p>
-            <form action="/ajax/login" method="post" class="ajaxForm" title="Giriş Yapılıyor">
+            <form action="/auth/ajaxlogin" method="post" class="ajaxForm" title="Giriş Yapılıyor">
                 <div class="input-group mb-1">
                     <div class="form-floating">
                         <input id="loginEmail" type="email" class="form-control" value="" placeholder="" name="mail" required/>

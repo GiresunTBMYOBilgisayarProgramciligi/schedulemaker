@@ -2,7 +2,9 @@
 
 namespace App\Routers;
 
+use App\Controllers\UserController;
 use App\Core\Router;
+use Exception;
 
 class AuthRouter extends Router
 {
@@ -35,5 +37,40 @@ class AuthRouter extends Router
         // Ana sayfaya veya giriş sayfasına yönlendir
         header("Location: /auth/login");
         exit;
+    }
+
+    public function ajaxloginAction()
+    {
+        try {
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
+            ) {
+                $loginData = $_POST;
+                $usersController = new UserController();
+                $usersController->login([
+                    'mail' => $loginData['mail'],
+                    'password' => $loginData['password'],
+                    "remember_me" => isset($loginData['remember_me'])
+                ]);
+
+                $response = array(
+                    "msg" => "Kullanıcı başarıyla Giriş yaptı.",
+                    "redirect" => "/admin",
+                    "status" => "success"
+                );
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode($response);
+            }
+
+        } catch (Exception $e) {
+            $response = [
+                "msg" => $e->getMessage(),
+                "trace" => $e->getTraceAsString(),
+                "status" => "error"
+            ];
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($response);
+        }
+
     }
 }
