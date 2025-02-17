@@ -246,7 +246,7 @@ class UserController extends Controller
     public function getLecturerList(array $filter = []): array
     {
         try {
-            $filter= array_merge($filter, ["!role" => ["user", "admin"]]);
+            $filter = array_merge($filter, ["!role" => ["user", "admin"]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
@@ -339,13 +339,13 @@ class UserController extends Controller
                          * Aktif kullanıcı Programın bölüm başkanı ise
                          */
                         $department = (new DepartmentController())->getDepartment($model->department_id);
-                        $isOwner = $user->id == $department->chairperson_id;
+                        $isOwner = ($user->id == $department->chairperson_id or $user->program_id == $model->id);
                         break;
                     case "App\Models\Department":
                         /*
                          * Aktif kullanıcı Blüm başkanı ise
                          */
-                        $isOwner = $user->id == $model->chairperson_id;
+                        $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
                         break;
                 }
             }
