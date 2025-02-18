@@ -61,6 +61,19 @@ class User extends Model
     }
 
     /**
+     * @return Department | false
+     * @throws Exception
+     */
+    public function getDepartment(): Department|false
+    {
+        try {
+            return (new DepartmentController())->getDepartment($this->department_id);
+        } catch (Exception $e) {
+            throw new Exception("Kullanıcının Bölümü alınırken hata oluştu:" . $e->getMessage());
+        }
+    }
+
+    /**
      * Bölüm Adının döner
      * @return string
      * @throws Exception
@@ -68,7 +81,7 @@ class User extends Model
     public function getDepartmentName(): string
     {
         try {
-            return (new DepartmentController())->getDepartment($this->department_id)->name ?? "";
+            return $this->getDepartment()->name ?? "";
         } catch (Exception $exception) {
             throw new Exception($exception->getMessage(), $exception->getCode());
         }
