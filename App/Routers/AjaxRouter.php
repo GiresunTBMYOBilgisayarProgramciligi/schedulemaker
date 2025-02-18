@@ -24,6 +24,7 @@ use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSetting;
+use function App\Helpers\isAuthorized;
 
 class AjaxRouter extends Router
 {
@@ -41,6 +42,10 @@ class AjaxRouter extends Router
         if (!$this->checkAjax()) {
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
+        }
+        $userController = new UserController();
+        if (!$userController->isLoggedIn()) {
+            $this->Redirect('/auth/login', false);
         }
     }
 
@@ -62,7 +67,11 @@ class AjaxRouter extends Router
     /*
      * User Ajax Actions
      */
-    public function addNewUserAction()
+    /**
+     * Ajax ile gelen verilerden oluşturduğu User modeli ile yeni kullanıcı ekler
+     * @return void
+     */
+    public function addNewUserAction(): void
     {
         try {
             $usersController = new UserController();
@@ -101,7 +110,11 @@ class AjaxRouter extends Router
 
     }
 
-    public function updateUserAction()
+    /**
+     * Ajax ile gelen verilerden oluşturduğu User Modeli ile verileri günceller
+     * @return void
+     */
+    public function updateUserAction(): void
     {
         try {
             $usersController = new UserController();
@@ -137,9 +150,11 @@ class AjaxRouter extends Router
 
     }
 
-    public function deleteUserAction()
+    public function deleteUserAction(): void
     {
         try {
+            if (!isAuthorized("submanager"))
+                throw new Exception("Kullanıcı silme yetkiniz yok");
             $usersController = new UserController();
             $usersController->delete($this->data['id']);
 
@@ -160,36 +175,10 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function loginAction()
-    {
-        try {
-            $usersController = new UserController();
-            $usersController->login([
-                'mail' => $this->data['mail'],
-                'password' => $this->data['password'],
-                "remember_me" => isset($this->data['remember_me'])
-            ]);
-
-            $this->response = array(
-                "msg" => "Kullanıcı başarıyla Giriş yaptı.",
-                "redirect" => "/admin",
-                "status" => "success"
-            );
-        } catch (Exception $e) {
-            $this->response = [
-                "msg" => $e->getMessage(),
-                "trace" => $e->getTraceAsString(),
-                "status" => "error"
-            ];
-        }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
-    }
-
     /*
      * Lessons Ajax Actions
      */
-    public function addLessonAction()
+    public function addLessonAction(): void
     {
         try {
             $lessonController = new LessonController();
@@ -227,7 +216,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function updateLessonAction()
+    public function updateLessonAction(): void
     {
         try {
             $lessonController = new LessonController();
@@ -261,16 +250,24 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function deleteLessonAction()
+    public function deleteLessonAction(): void
     {
         try {
             $lessonController = new LessonController();
+            $lesson = $lessonController->getLesson($this->data['id']);
+            $currentUser = (new UserController())->getCurrentUser();
+            if (!isAuthorized("submanager", false, $lesson)) {
+                throw new Exception("Bu dersi silme yetkiniz yok");
+            }
+            if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
+                throw new Exception("Bu dersi silme yetkiniz yok");
+            }
             $lessonController->delete($this->data['id']);
 
             $this->response = array(
                 "msg" => "Ders Başarıyla Silindi.",
                 "status" => "success",
-                "redirect" => "/admin/listlessons",
+                "redirect" => "back",
             );
         } catch (Exception $e) {
             $this->response = [
@@ -287,7 +284,7 @@ class AjaxRouter extends Router
     /*
      * Classrooms Ajax Actions
      */
-    public function addClassroomAction()
+    public function addClassroomAction(): void
     {
         try {
             $classroomController = new ClassroomController();
@@ -315,7 +312,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function updateClassroomAction()
+    public function updateClassroomAction(): void
     {
         try {
             $classroomController = new ClassroomController();
@@ -340,9 +337,12 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function deleteClassroomAction()
+    public function deleteClassroomAction(): void
     {
         try {
+            if (!isAuthorized("submanager")) {
+                throw new Exception("Derslik silme yetkiniz yok");
+            }
             $classroomController = new ClassroomController();
             $classroomController->delete($this->data['id']);
 
@@ -366,7 +366,7 @@ class AjaxRouter extends Router
     /*
      * Departments Ajax Actions
      */
-    public function addDepartmentAction()
+    public function addDepartmentAction(): void
     {
         try {
             $departmentController = new DepartmentController();
@@ -394,7 +394,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function updateDepartmentAction()
+    public function updateDepartmentAction(): void
     {
         try {
             $departmentController = new DepartmentController();
@@ -419,9 +419,12 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function deleteDepartmentAction()
+    public function deleteDepartmentAction(): void
     {
         try {
+            if (!isAuthorized("submanager")) {
+                throw new Exception("Bölüm silme yetkiniz yok");
+            }
             $departmentController = new DepartmentController();
             $departmentController->delete($this->data['id']);
 
@@ -445,7 +448,7 @@ class AjaxRouter extends Router
     /*
      * Programs Ajax Actions
      */
-    public function addProgramAction()
+    public function addProgramAction(): void
     {
         try {
             $programController = new ProgramController();
@@ -473,7 +476,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function updateProgramAction()
+    public function updateProgramAction(): void
     {
         try {
             $programController = new ProgramController();
@@ -499,9 +502,12 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function deleteProgramAction()
+    public function deleteProgramAction(): void
     {
         try {
+            if (!isAuthorized("submanager")) {
+                throw new Exception("Program silme yetkiniz yok");
+            }
             $programController = new ProgramController();
             $programController->delete($this->data['id']);
 
@@ -522,7 +528,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function getProgramsListAction($department_id)
+    public function getProgramsListAction($department_id): void
     {
         try {
             $programController = new ProgramController();
@@ -545,7 +551,7 @@ class AjaxRouter extends Router
      * Schedules Ajax Actions
      */
 
-    public function getScheduleHTMLAction()
+    public function getScheduleHTMLAction(): void
     {
         try {
             $scheduleController = new ScheduleController();
@@ -563,9 +569,12 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function getAvailableClassroomForScheduleAction()
+    public function getAvailableClassroomForScheduleAction(): void
     {
         try {
+            if (!isAuthorized("department_head")) {
+                throw new Exception("Uygun ders listesini almak için yetkiniz yok");
+            }
             $scheduleController = new ScheduleController();
             $classrooms = $scheduleController->availableClassrooms($this->data);
             $this->response['status'] = "success";
@@ -602,12 +611,17 @@ class AjaxRouter extends Router
                 $lesson = $lessonController->getLesson($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+                //todo bu kısımda her bir model için yetki kontrolü yapılablir. Şuanda saveNew içerisinde yapılıyor. owner sıralamasına göre yapılıyor.
+                if (!isAuthorized("submanager", false, $lesson)) {
+                    // Dersin sahibi yada bölümbaşkanı değilsen yada müdür yardımcısı ve üstü bir rolün yoksa
+
+                }
                 /*
                  * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
                  */
                 $crashFilters = [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                    "owners" => ["user" => $lecturer->id, "classroom" => $classroom->id, "program" => $lesson->program_id, "lesson" => $lesson->id],
+                    "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id, "classroom" => $classroom->id],//sıralama yetki kontrolü için önemli
                     // Programın türü lesson yada exam
                     "type" => "lesson",
                     "time_start" => $this->data['time_start'],
@@ -679,7 +693,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function saveSchedulePreferenceAction()
+    public function saveSchedulePreferenceAction(): void
     {
         try {
             $scheduleController = new ScheduleController();
@@ -708,7 +722,11 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function checkLecturerScheduleAction()
+    /**
+     * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
+     * @return void
+     */
+    public function checkLecturerScheduleAction(): void
     {
         try {
             $lessonController = new LessonController();
@@ -750,7 +768,7 @@ class AjaxRouter extends Router
                         $cells = [];
                         for ($i = 0; $i < 6; $i++) {
                             if (!is_null($lessonSchedule->{"day" . $i})) {
-                                if ($lessonSchedule->{"day" . $i} === false) {
+                                if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
                                     $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
                                     $unavailableCells[$rowIndex + 1] = $cells; //ilk satır günler olduğu için +1
                                 }
@@ -782,7 +800,7 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
-    public function deleteScheduleAction()
+    public function deleteScheduleAction(): void
     {
         try {
             $scheduleController = new ScheduleController();
@@ -800,9 +818,9 @@ class AjaxRouter extends Router
                 if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
                     $lesson = $lessonController->getLesson($this->data['lesson_id']);
                     $lecturer = $lesson->getLecturer();
+                    $owners['program'] = $lesson->program_id;
                     $owners['user'] = $lecturer->id;
                     $owners['lesson'] = $lesson->id;
-                    $owners['program'] = $lesson->program_id;
                     $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
                     $owners["classroom"] = $classroom->id;
                     $day = [
@@ -854,7 +872,7 @@ class AjaxRouter extends Router
      * Setting Actions
      */
 
-    public function saveSettingsAction()
+    public function saveSettingsAction(): void
     {
         try {
             $settingsController = new SettingsController();

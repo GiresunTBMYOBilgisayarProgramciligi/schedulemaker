@@ -545,7 +545,7 @@ class ScheduleController extends Controller
     public function saveNew(Schedule $new_schedule): int
     {
         try {
-            if (!isAuthorized("submanager",false,$new_schedule))
+            if (!isAuthorized("submanager", false, $new_schedule))
                 throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
@@ -623,8 +623,8 @@ class ScheduleController extends Controller
     public function updateSchedule(Schedule $schedule): int
     {
         try {
-            if (!isAuthorized("department_head"))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $schedule))
+                throw new Exception("Ders Programı güncelleme yetkiniz yok");
             $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
             //dizi türündeki veriler serialize ediliyor
             array_walk($scheduleData, function (&$value) {
@@ -674,8 +674,6 @@ class ScheduleController extends Controller
     public function deleteSchedule($filters): void
     {
         try {
-            if (!isAuthorized("department_head"))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             if (!key_exists("semester", $filters)) {
                 $filters['semester'] = getSetting('semester');
             }
@@ -687,6 +685,8 @@ class ScheduleController extends Controller
             if (!$schedule) {
                 throw new Exception("Silinecek Ders bulunamadı" . var_export($scheduleData, true));
             }
+            if (!isAuthorized("submanager", false, $schedule))
+                throw new Exception("Ders Programı güncelleme yetkiniz yok");
             //belirtilen günde bir ders var ise
             if (is_array($schedule->{"day" . $filters["day_index"]})) {
                 if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {

@@ -352,12 +352,25 @@ class UserController extends Controller
                          * owner_type program, user, lesson, classroom
                          *
                          */
-                        $isOwner = match ($model->owner_type) {
-                            "program" => (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id,
-                            "user" => true,// Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
-                            "lesson" => (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id,
-                            "classroom" => true //sınıf için denetim yok,
-                        };
+                        switch ($model->owner_type) {
+                            case "program":
+                                $isOwner = (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                                break;
+                            case "user":
+                                $ScheduleUser = (new UserController())->getUser($model->owner_id);
+                                if ($ScheduleUser->getDepartment()) {
+                                    $isOwner = $ScheduleUser->getDepartment()->chairperson_id == $user->id;
+                                } else $isOwner = true;
+                                $isOwner = ($isOwner or $ScheduleUser->id == $user->id);
+                                // Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
+                                break;
+                            case "lesson":
+                                $isOwner = (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                                break;
+                            case "classroom":
+                                $isOwner = true;//sınıf için denetim yok
+                                break;
+                        }
                         break;
                 }
             }
