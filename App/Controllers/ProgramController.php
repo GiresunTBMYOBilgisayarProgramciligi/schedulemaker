@@ -33,7 +33,7 @@ class ProgramController extends Controller
                     $program->fill($program_data);
 
                     return $program;
-                } else throw new Exception("Department not found");
+                } else throw new Exception("Program not found");
             } catch (Exception $e) {
                 throw new Exception($e->getMessage(), $e->getCode());
             }

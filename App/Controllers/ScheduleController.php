@@ -485,7 +485,7 @@ class ScheduleController extends Controller
             }
             $HTMLOUT = '';
             if (!is_null($filters["semester_no"])) {
-
+                throw new Exception("Dönem numarası girilmemeiş");
             }
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
@@ -545,8 +545,8 @@ class ScheduleController extends Controller
     public function saveNew(Schedule $new_schedule): int
     {
         try {
-            if (!isAuthorized("department_head"))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager",false,$new_schedule))
+                throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
             //dizi türündeki veriler serialize ediliyor
@@ -605,10 +605,12 @@ class ScheduleController extends Controller
                     }
                     return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
-                    throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage(), $e->getCode(), $e);
+                    $_SESSION["errors"]['ScheduleController->saveNew'][] = $e->getMessage();
+                    throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), $e->getCode(), $e);
                 }
             } else {
-                throw new Exception("Program Güncellenirken hata oluştu" . $e->getMessage(), 0, $e);
+                $_SESSION["errors"]['ScheduleController->saveNew'][] = $e->getMessage();
+                throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), 0, $e);
             }
         }
     }

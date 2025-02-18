@@ -36,7 +36,7 @@ class LessonController extends Controller
                     return $lesson;
                 } else throw new Exception("Lesson not found");
             } catch (Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), $e->getCode(), $e);
             }
         } else throw new Exception("Ders id numarası belirtilmelidir");
     }
