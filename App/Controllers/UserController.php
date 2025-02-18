@@ -347,6 +347,18 @@ class UserController extends Controller
                          */
                         $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
                         break;
+                    case "App\Models\Schedule":
+                        /*
+                         * owner_type program, user, lesson, classroom
+                         *
+                         */
+                        $isOwner = match ($model->owner_type) {
+                            "program" => (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id,
+                            "user" => true,// Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
+                            "lesson" => (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id,
+                            "classroom" => true //sınıf için denetim yok,
+                        };
+                        break;
                 }
             }
             $roleLevels = [
