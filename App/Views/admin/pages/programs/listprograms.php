@@ -63,7 +63,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
-                                                   href="/admin/editprogam/<?=$program->id?>">Düzenle</a>
+                                                   href="/admin/editprogram/<?=$program->id?>">Düzenle</a>
                                             </li>
                                             <li>
                                                 <hr class="dropdown-divider">

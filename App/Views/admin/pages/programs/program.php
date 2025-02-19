@@ -5,7 +5,11 @@
  * @var \App\Controllers\ScheduleController $scheduleController
  * @var string $page_title
  * @var string $scheduleHTML
+ * @var \App\Models\User $currentUser
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -71,16 +75,22 @@
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
+                            <?php if(isAuthorized("submanager")): ?>
                             <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-primary">Programı
                                 Düzenle</a>
+                            <?php endif; ?>
+                            <?php if(isAuthorized("submanager",false,$program) and $currentUser->role =="department_head"): ?>
                             <a href="/admin/addlesson/<?= $program->id ?>" class="btn btn-success">Ders Ekle</a>
                             <a href="/admin/adduser/<?= $program->department_id ?>/<?= $program->id ?>"
                                class="btn btn-success">Hoca Ekle</a>
+                            <?php endif; ?>
+                            <?php if(isAuthorized("submanager")): ?>
                             <form action="/ajax/deleteprogram/<?= $program->id ?>" class="ajaxFormDelete d-inline"
                                   id="deleteProgram-<?= $program->id ?>" method="post">
                                 <input type="hidden" name="id" value="<?= $program->id ?>">
                                 <input type="submit" class="btn btn-danger" value="Sil" role="button">
                             </form>
+                            <?php endif; ?>
                         </div>
                         <!-- /.card-footer -->
                     </div>
@@ -104,7 +114,9 @@
                                 <tr>
                                     <th scope="col">Ünvanı Adı Soyadı</th>
                                     <th scope="col">e-Posta</th>
+                                    <?php if (isAuthorized("department_head")): ?>
                                     <th scope="col" class="text-center">İşlemler</th>
+                                    <?php endif; ?>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -112,6 +124,7 @@
                                     <tr>
                                         <td><?= $lecturer->getFullName() ?></td>
                                         <td><?= $lecturer->mail ?></td>
+                                        <?php if (isAuthorized("department_head")): ?>
                                         <td class="text-center">
                                             <div class="dropdown">
                                                 <button type="button" class="btn btn-primary dropdown-toggle"
@@ -127,6 +140,7 @@
                                                         <a class="dropdown-item"
                                                            href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
                                                     </li>
+                                                    <?php if (isAuthorized("submanager")):?>
                                                     <li>
                                                         <hr class="dropdown-divider">
                                                     </li>
@@ -140,9 +154,11 @@
                                                             <input type="submit" class="dropdown-item" value="Sil">
                                                         </form>
                                                     </li>
+                                                    <?php endif; ?>
                                                 </ul>
                                             </div>
                                         </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                                 </tbody>
@@ -191,6 +207,7 @@
                                         <td><?= $lesson->semester_no ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                         <td class="text-center">
+                                            <?php if (isAuthorized("submanager", false, $lesson)): ?>
                                             <div class="dropdown">
                                                 <button type="button" class="btn btn-primary dropdown-toggle"
                                                         data-bs-toggle="dropdown" aria-expanded="false">
@@ -205,21 +222,25 @@
                                                         <a class="dropdown-item"
                                                            href="/admin/editlesson/<?=$lesson->id?>">Düzenle</a>
                                                     </li>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li>
-                                                        <form action="/ajax/deletelesson/<?=$lesson->id?>"
-                                                              class="ajaxFormDelete"
-                                                              id="deleteLesson-<?=$lesson->id?>"
-                                                              method="post">
-                                                            <input type="hidden" name="id"
-                                                                   value="<?=$lesson->id?>">
-                                                            <input type="submit" class="dropdown-item" value="Sil">
-                                                        </form>
-                                                    </li>
+                                                    <?php if (isAuthorized("submanager", false, $lesson) and $currentUser->id == $lesson->getDepartment()->chairperson_id): ?>
+                                                        <li>
+                                                            <hr class="dropdown-divider">
+                                                        </li>
+                                                        <li>
+                                                            <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                                                  class="ajaxFormDelete"
+                                                                  id="deleteLesson-<?= $lesson->id ?>"
+                                                                  method="post">
+                                                                <input type="hidden" name="id"
+                                                                       value="<?= $lesson->id ?>">
+                                                                <input type="submit" class="dropdown-item"
+                                                                       value="Sil">
+                                                            </form>
+                                                        </li>
+                                                    <?php endif; ?>
                                                 </ul>
                                             </div>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?></tbody>
