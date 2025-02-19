@@ -6,6 +6,9 @@
  * @var string $page_title
  * @var array $users
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -76,6 +79,7 @@
                                                 <a class="dropdown-item"
                                                    href="/admin/edituser/<?= $user->id ?>">Düzenle</a>
                                             </li>
+                                            <?php if (isAuthorized("submanager")): ?>
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
@@ -89,6 +93,7 @@
                                                     <input type="submit" class="dropdown-item" value="Sil">
                                                 </form>
                                             </li>
+                                            <?php endif; ?>
                                         </ul>
                                     </div>
                                 </td>

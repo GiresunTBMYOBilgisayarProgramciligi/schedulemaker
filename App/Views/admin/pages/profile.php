@@ -9,6 +9,9 @@
  * @var string $scheduleHTML
  * todo users klasörüne taşınabilir
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -74,6 +77,19 @@
 
                         </div>
                         <!-- /.card-body -->
+                        <div class="card-footer text-end">
+                            <?php if (isAuthorized("submanager")): ?>
+                                <form action="/ajax/deleteuser/<?= $user->id ?>"
+                                      class="ajaxFormDelete"
+                                      id="deleteUser-<?= $user->id ?>"
+                                      method="post">
+                                    <input type="hidden" name="id"
+                                           value="<?= $user->id ?>">
+                                    <input form="deleteUser-<?= $user->id ?>" type="submit" class="btn btn-danger"
+                                           value="Kullanıcıyı Sil">
+                                </form>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <!-- /.card -->
                 </div>
@@ -192,7 +208,9 @@
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
+
                             <button type="submit" class="btn btn-primary">Güncelle</button>
+
                         </div>
 
                         </form>

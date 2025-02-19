@@ -108,16 +108,32 @@ class AdminRouter extends Router
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
+
+            $departmentFilters = [];
+            if ($department_id) {
+                $department = (new DepartmentController())->getDepartment($department_id);
+                if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id))
+                    throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
+                //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
+            }
+            if ($program_id) {
+                $program = (new ProgramController())->getProgram($program_id);
+                if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id))
+                    throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
+            }
+            if (!($department or $program)) {
+                if (!isAuthorized("submanager"))
+                    throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Kullanıcı Ekle",
-                "departments" => (new DepartmentController())->getDepartmentsList(),
+                "departments" => (new DepartmentController())->getDepartmentsList($departmentFilters),
             ]);
+
             $this->callView("admin/users/adduser", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();
-            $this->Redirect("/admin/listusers");
+            $this->Redirect(null, true);
         }
 
     }
@@ -142,7 +158,7 @@ class AdminRouter extends Router
             $this->callView("admin/profile", $this->view_data);
         } catch (Exception $e) {
             $_SESSION["errors"][] = $e->getMessage();
-            $this->Redirect("/admin/listusers");
+            $this->Redirect(null,true);
         }
 
     }
@@ -166,7 +182,7 @@ class AdminRouter extends Router
             $this->callView("admin/users/edituser", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();
-            $this->Redirect("/admin/listusers");
+            $this->Redirect(null,true);
         }
 
     }

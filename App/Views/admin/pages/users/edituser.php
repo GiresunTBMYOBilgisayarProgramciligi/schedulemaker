@@ -7,6 +7,9 @@
  * @var array $departments \App\Models\Department->getDepartments())
  * @var $page_title
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -84,7 +87,8 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="role">Rol</label>
-                                            <select class="form-select" id="role" name="role">
+                                            <select class="form-select" id="role"
+                                                    name="role" <?= isAuthorized("submanager") ? "" : "disabled" ?>>
                                                 <?php foreach ($userController->getRoleList() as $role => $value): ?>
                                                     <option value="<?= $role ?>"
                                                         <?= $role == $user->role ? "selected" : "" ?>><?= $value ?></option>
@@ -95,7 +99,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
-                                            <select class="form-select" id="title" name="title">
+                                            <select class="form-select" id="title" name="title" <?= isAuthorized("submanager") ? "" : "disabled" ?>>
                                                 <?php $titleList = $userController->getTitleList();
                                                 array_unshift($titleList, "");
                                                 foreach ($titleList as $title): ?>
