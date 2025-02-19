@@ -73,7 +73,7 @@ class Model
                 }
             }
         } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 
     }
@@ -98,7 +98,7 @@ class Model
             } else $list = [];
             return $list;
         } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
 

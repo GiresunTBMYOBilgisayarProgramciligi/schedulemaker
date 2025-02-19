@@ -196,7 +196,7 @@ class ScheduleController extends Controller
             $out .= '</tbody>
                </table>';
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
         return $out;
@@ -283,7 +283,7 @@ class ScheduleController extends Controller
             $HTMLOut .= '</div>';
             return $HTMLOut;
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -532,7 +532,7 @@ class ScheduleController extends Controller
             }
             return $HTMLOUT;
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -606,7 +606,7 @@ class ScheduleController extends Controller
                     return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
                     $_SESSION["errors"]['ScheduleController->saveNew'][] = $e->getMessage();
-                    throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), $e->getCode(), $e);
+                    throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), (int)$e->getCode(), $e);
                 }
             } else {
                 $_SESSION["errors"]['ScheduleController->saveNew'][] = $e->getMessage();

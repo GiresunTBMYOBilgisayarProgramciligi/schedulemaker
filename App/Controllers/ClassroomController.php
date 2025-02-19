@@ -37,7 +37,7 @@ class ClassroomController extends Controller
                     return $classroom;
                 } else throw new Exception("Classroom not found");
             } catch (Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         } else throw new Exception("id belirtilmelidir");
     }
@@ -52,7 +52,7 @@ class ClassroomController extends Controller
         try {
             return $this->getListByFilters();
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -80,7 +80,7 @@ class ClassroomController extends Controller
                 error_log($e->getMessage());
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), $e->getCode(),$e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(),$e);
             }
         }
 
@@ -129,7 +129,7 @@ class ClassroomController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }

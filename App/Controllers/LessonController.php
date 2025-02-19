@@ -36,7 +36,7 @@ class LessonController extends Controller
                     return $lesson;
                 } else throw new Exception("Lesson not found");
             } catch (Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         } else throw new Exception("Ders id numarası belirtilmelidir");
     }
@@ -80,7 +80,7 @@ class LessonController extends Controller
             if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -108,7 +108,7 @@ class LessonController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.", $e->getCode());
+                throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.", (int)$e->getCode(), $e);
             } else {
                 throw $e;
             }
@@ -156,7 +156,7 @@ class LessonController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.", $e->getCode());
+                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.", (int)$e->getCode(), $e);
             } else {
                 throw $e;
             }
@@ -173,7 +173,7 @@ class LessonController extends Controller
         try {
             return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 }

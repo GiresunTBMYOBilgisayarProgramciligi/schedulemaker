@@ -52,7 +52,7 @@ class Lesson extends Model
         try {
             return (new DepartmentController())->getDepartment($this->department_id);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -66,7 +66,7 @@ class Lesson extends Model
         try {
             return (new ProgramController())->getProgram($this->program_id);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 

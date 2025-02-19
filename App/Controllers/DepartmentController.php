@@ -54,7 +54,7 @@ class DepartmentController extends Controller
             }
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -80,7 +80,7 @@ class DepartmentController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.", $e->getCode());
+                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
             } else {
                 throw $e;
             }

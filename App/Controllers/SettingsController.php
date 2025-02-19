@@ -36,7 +36,7 @@ class SettingsController extends Controller
                 return $setting;
             } else throw new Exception("Ayar Bulunamadı");
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -63,7 +63,7 @@ class SettingsController extends Controller
                 $setting->id = $existingSetting->id;
                 return $this->updateSetting($setting);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -104,9 +104,9 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", $e->getCode(), $e);
+                throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", (int)$e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -130,7 +130,7 @@ class SettingsController extends Controller
             }
             return $settings;
         }catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 }

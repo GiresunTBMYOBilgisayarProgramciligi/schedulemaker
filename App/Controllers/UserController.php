@@ -35,7 +35,7 @@ class UserController extends Controller
                     return $user;
                 } else throw new Exception("User not found");
             } catch (Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         } else throw new Exception("Kullanıcı id numarası belirtilmemiş");
     }
@@ -56,7 +56,7 @@ class UserController extends Controller
             }
             return $user;
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -70,7 +70,7 @@ class UserController extends Controller
         try {
             return $this->getCount(["!role" => ["user", "admin"]]);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -119,7 +119,7 @@ class UserController extends Controller
             $stmt = $this->database->prepare($sql);
             $stmt->execute([$user->id]);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -148,9 +148,9 @@ class UserController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", $e->getCode(), $e);
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -216,9 +216,9 @@ class UserController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", $e->getCode(), $e);
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -233,7 +233,7 @@ class UserController extends Controller
         try {
             return $this->getListByFilters();
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -249,7 +249,7 @@ class UserController extends Controller
             $filter = array_merge($filter, ["!role" => ["user", "admin"]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -388,7 +388,7 @@ class UserController extends Controller
             };
             return $isAuthorizedRole or $isOwner;
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode(), $e);
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 }

@@ -35,7 +35,7 @@ class ProgramController extends Controller
                     return $program;
                 } else throw new Exception("Program not found");
             } catch (Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
         return null;
@@ -53,7 +53,7 @@ class ProgramController extends Controller
             if (!is_null($department_id)) $filters["department_id"] = $department_id;
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 
@@ -77,9 +77,9 @@ class ProgramController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.", $e->getCode(), $e);
+                throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -123,9 +123,9 @@ class ProgramController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.",$e->getCode(), $e);
+                throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), $e->getCode());
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }

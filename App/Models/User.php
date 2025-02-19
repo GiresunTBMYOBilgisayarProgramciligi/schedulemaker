@@ -83,7 +83,7 @@ class User extends Model
         try {
             return $this->getDepartment()->name ?? "";
         } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), $exception->getCode());
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
 
@@ -96,7 +96,7 @@ class User extends Model
         try {
             return (new ProgramController())->getProgram($this->program_id)->name ?? "";
         } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), $exception->getCode());
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 
     }
@@ -124,7 +124,7 @@ class User extends Model
         try {
             return (new LessonController())->getLessonsList($this->id) ?? [];
         } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), $exception->getCode());
+            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
 
