@@ -42,18 +42,17 @@ class DepartmentController extends Controller
     }
 
     /**
+     * @param array $filters
      * @return array
      * @throws Exception
      */
-    public function getDepartmentsList(): array
+    public function getDepartmentsList(array $filters = []): array
     {
         try {
-            if (isAuthorized("submanager")) {
-                $list = $this->getListByFilters();
-            } else {
-                $list = $this->getListByFilters(['id' => (new UserController())->getCurrentUser()->department_id]);
+            if (!isAuthorized("submanager")) {
+                $filters['id'] = (new UserController())->getCurrentUser()->department_id;
             }
-            return $list;
+            return $this->getListByFilters($filters);
         } catch (Exception $e) {
             throw new Exception($e->getMessage(), $e->getCode());
         }
