@@ -120,14 +120,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 modal.removeSpinner()
                 modal.body.innerHTML = message;
 
-                if (data.redirect) {
-                    modal.cancelButton.addEventListener("click", () => {
+                modal.cancelButton.addEventListener("click", () => {
+                    if (data.redirect) {
                         if (data.redirect === "back") {
                             window.history.back()
                         } else
                             window.location.href = data.redirect;
-                    });
-                }
+                    }
+                    window.location.reload();//todo yenileme yapınca ajaxın anlamı kalmıyor
+                    //update formalrında değişiklik yapmaya gerek yok.
+                    //yeni ekleme formlarında da form reset çalışmalı
+                    //yönlendirme yapmaya gerek yok 
+                });
+
             })
             .catch((error) => {
                 modal.title.textContent = "Hata";
