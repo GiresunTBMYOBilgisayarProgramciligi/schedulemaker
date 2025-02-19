@@ -6,6 +6,9 @@
  * @var string $page_title
  * @var string $scheduleHTML
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -67,11 +70,13 @@
                         </div>
                         <div class="card-footer text-end">
                             <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
+                            <?php if (isAuthorized("department_head")):?>
                             <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline"
                                   method="post">
                                 <input type="hidden" name="id" value="<?= $lesson->id ?>">
                                 <input type="submit" class="btn btn-danger" value="Sil">
                             </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

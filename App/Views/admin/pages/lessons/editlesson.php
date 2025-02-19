@@ -10,6 +10,9 @@
  * @var string $page_title
  * @var array $lecturers
  */
+
+use function App\Helpers\isAuthorized;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -48,11 +51,13 @@
                                 <div class="row">
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="code">Kodu</label>
+                                            <label class="form-label" for="code">Kodu</label>
                                             <input type="text" class="form-control" id="code" name="code"
                                                    placeholder="Kodu"
                                                    value="<?= $lesson->code ?>"
-                                                   required>
+                                                   required
+                                                <?= isAuthorized("department_head") ? "" : "disabled" ?>
+                                            >
                                             <div class="invalid-feedback">
                                                 Ders kodu hatalı
                                             </div>
@@ -60,8 +65,8 @@
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="type">Türü</label>
-                                            <select class="form-select" id="type" name="type">
+                                            <label class="form-label" for="type">Türü</label>
+                                            <select class="form-select" id="type" name="type" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lessonController->getTypeList() as $type): ?>
                                                     <option value="<?= $type ?>"
                                                         <?= $type == $lesson->type ? "selected" : "" ?>><?= $type ?></option>
@@ -72,9 +77,9 @@
 
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="semester_no">Dönemi</label>
-                                            <select class="form-select" id="semester_no" name="semester_no">
-                                                <?php foreach ($lessonController->getSemesterNoList() as $key=>$value): ?>
+                                            <label class="form-label" for="semester_no">Dönemi</label>
+                                            <select class="form-select" id="semester_no" name="semester_no" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                                <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
                                                     <option value="<?= $key ?>"
                                                         <?= $key == $lesson->semester_no ? "selected" : "" ?>><?= $value ?></option>
                                                 <?php endforeach ?>
@@ -83,16 +88,16 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="name">Adı</label>
+                                            <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $lesson->name ?>" required>
+                                                   placeholder="Adı" value="<?= $lesson->name ?>" required <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="password">Dersin Hocası</label>
+                                            <label class="form-label" for="password">Dersin Hocası</label>
                                             <select class="form-select" id="lecturer_id" name="lecturer_id">
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
@@ -103,24 +108,24 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="size">Mevcut</label>
+                                            <label class="form-label" for="size">Mevcut</label>
                                             <input type="number" class="form-control" id="size" name="size"
                                                    placeholder="Mevcut" value="<?= $lesson->size ?>" required>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="hours">Ders Saati</label>
+                                            <label class="form-label" for="hours">Ders Saati</label>
                                             <input type="number" class="form-control" id="hours" name="hours"
-                                                   placeholder="Ders Saati" value="<?= $lesson->hours ?>" required>
+                                                   placeholder="Ders Saati" value="<?= $lesson->hours ?>" required <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="department_id">Bölüm</label>
-                                            <select class="form-select" id="department_id" name="department_id">
+                                            <label class="form-label" for="department_id">Bölüm</label>
+                                            <select class="form-select" id="department_id" name="department_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
@@ -133,8 +138,8 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id">
+                                            <label class="form-label" for="program_id">Program</label>
+                                            <select class="form-select" id="program_id" name="program_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lesson->getDepartmentProgramsList() as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $lesson->program_id ? 'selected' : '' ?>>

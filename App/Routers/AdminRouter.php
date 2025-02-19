@@ -238,7 +238,7 @@ class AdminRouter extends Router
         }
     }
 
-    public function EditLessonAction($id = null)
+    public function EditLessonAction($id = null): void
     {
         try {
             $lessonController = new LessonController();
@@ -266,8 +266,8 @@ class AdminRouter extends Router
             } else$this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage() . $e->getTraceAsString();
-            $this->Redirect("/admin/listlessons");
+            $_SESSION["errors"][] = $e->getMessage();
+            $this->Redirect(null, true);
         }
 
     }
@@ -390,7 +390,7 @@ class AdminRouter extends Router
             $this->callView("admin/departments/listdepartments", $this->view_data);
         } catch (Exception $exception) {
             $_SESSION["errors"][] = $exception->getMessage();
-            $this->Redirect("/admin/listdepartments");
+            $this->Redirect(null, true);
         }
 
     }
