@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".ajaxFormDelete").forEach((form) => {
         form.addEventListener("submit", handleAjaxDelete);
     });
+
     function toUpperCaseTR(value) {
         return value.toLocaleUpperCase('tr-TR');
     }
@@ -19,10 +20,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Input elementi için maskeleme fonksiyonu
     function initializeCodeMask(inputElement) {
         // Değişiklikleri dinle
-        inputElement.addEventListener('input', function(e) {
+        inputElement.addEventListener('input', function (e) {
             let value = toUpperCaseTR(e.target.value); // Otomatik büyük harfe çevir
             // Sadece harf ve rakamları al (tire ve noktayı kaldır)
-            value = value.replace(/[^A-ZĞÜŞİÖÇI0-9]/g, '');;
+            value = value.replace(/[^A-ZĞÜŞİÖÇI0-9]/g, '');
 
             let formattedValue = '';
 
@@ -54,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Blur olduğunda format kontrolü
-        inputElement.addEventListener('input', function(e) {
+        inputElement.addEventListener('input', function (e) {
             const value = e.target.value;
             const isValid = validateCourseCode(value);
 
@@ -75,6 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const pattern = /^[A-ZĞÜŞİÖÇI]{2,4}-\d{3}(?:\.\d)?$/;
         return pattern.test(code);
     }
+
     //code id li bir input varsa
     const codeInput = document.querySelector("input#code");
     if (codeInput) {
@@ -89,8 +91,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleAjaxForm(event) {
         event.preventDefault();
-        if (codeInput){
-            if (!validateCourseCode(codeInput.value)){
+        if (codeInput) {
+            if (!validateCourseCode(codeInput.value)) {
                 return;
             }
         }
@@ -120,9 +122,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (data.redirect) {
                     modal.cancelButton.addEventListener("click", () => {
-                        if (data.redirect==="back"){
+                        if (data.redirect === "back") {
                             window.history.back()
-                        }else
+                        } else
                             window.location.href = data.redirect;
                     });
                 }
@@ -138,11 +140,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Silme işlemi için onay fonksiyonu
     function handleAjaxDelete(event) {
+        let lessonRow = event.target.closest('tr');
         event.preventDefault();
         const form = event.target;
 
         modal.prepareModal(gettext.confirmDelete, gettext.deleteMessage, true)
-        modal.confirmButton.textContent=gettext.delete
+        modal.confirmButton.textContent = gettext.delete
         modal.showModal()
         modal.confirmButton.addEventListener("click", () => {
 
@@ -157,21 +160,35 @@ document.addEventListener("DOMContentLoaded", function () {
             })
                 .then(response => response.json())
                 .then((data) => {
-                    const statusClass = data.status === "error" ? "danger" : data.status;
-                    modal.body.classList.add("text-bg-" + statusClass)
+                    if (data.status === "error") {
+                        const statusClass = data.status === "error" ? "danger" : data.status;
+                        modal.body.classList.add("text-bg-" + statusClass)
+                        const message = Array.isArray(data.msg)
+                            ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                            : data.msg;
+                        modal.removeSpinner()
+                        modal.body.innerHTML = message;
+                    } else {
+                        modal.body.classList.add("text-bg-" + data.status)
 
-                    const message = Array.isArray(data.msg)
-                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                        : data.msg;
-                    modal.removeSpinner()
-                    modal.body.innerHTML = message;
+                        const message = Array.isArray(data.msg)
+                            ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                            : data.msg;
+                        modal.removeSpinner()
+                        modal.body.innerHTML = message;
+                        if (lessonRow) {
+                            lessonRow.remove();
+                        } else {
+                            window.history.back()
+                        }
+                    }
 
                     if (data.redirect) {
                         modal.cancelButton.addEventListener("click", () => {
                             console.log(data)
-                            if (data.redirect==="back"){
+                            if (data.redirect === "back") {
                                 window.history.back()
-                            }else
+                            } else
                                 window.location.href = data.redirect;
                         });
                     }
