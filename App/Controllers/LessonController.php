@@ -126,8 +126,7 @@ class LessonController extends Controller
             if (!isAuthorized("submanager", false, $lesson))
                 throw new Exception("Bu işlemi yapmak için yetkiniz yok");
             // Lesson nesnesinden filtrelenmiş verileri al
-            $lessonData = $lesson->getArray(['table_name', 'database', 'id'], true);
-
+            $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
             // Sorgu ve placeholder'lar için başlangıç ayarları
             $columns = [];
             $parameters = [];

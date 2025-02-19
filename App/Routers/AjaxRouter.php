@@ -37,6 +37,8 @@ class AjaxRouter extends Router
      */
     private $data = [];
 
+    private $currentUser = null;
+
     public function __construct()
     {
         if (!$this->checkAjax()) {
@@ -46,7 +48,7 @@ class AjaxRouter extends Router
         $userController = new UserController();
         if (!$userController->isLoggedIn()) {
             $this->Redirect('/auth/login', false);
-        }
+        } else $userController->getCurrentUser();
     }
 
     /**
@@ -230,13 +232,21 @@ class AjaxRouter extends Router
             if ($lessonData['program_id'] == '0') {
                 $lessonData['program_id'] = null;
             }
+            /**
+             *
+             */
+            if (isAuthorized("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
+                $lessonData = [];
+                $lessonData['id'] = $this->data['id'];
+                $lessonData['size'] = $this->data['size'];
+            }
             $lesson = new Lesson();
             $lesson->fill($lessonData);
             $lesson = $lessonController->updateLesson($lesson);
             $this->response = array(
                 "msg" => "Ders başarıyla Güncellendi.",
                 "status" => "success",
-                "redirect" => "/admin/listlessons",
+                "redirect" => "back",
             );
         } catch (Exception $e) {
             $this->response = [
