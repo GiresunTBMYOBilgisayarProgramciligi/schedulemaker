@@ -212,7 +212,7 @@ class UserController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $user->id;
-            } else throw new Exception("Kullanıcı Güncellenemedi");
+            } else throw new Exception("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
