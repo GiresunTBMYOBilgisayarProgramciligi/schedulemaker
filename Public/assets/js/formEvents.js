@@ -20,6 +20,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Program select kutusunu temizle
                     programSelect.innerHTML = "";
                     console.log(data)
+                    const option = document.createElement("option");
+                    option.value = null;
+                    option.textContent = "Program Seçiniz";
+                    programSelect.appendChild(option);
                     // Gelen programları ekle
                     data['programs'].forEach(program => {
                         const option = document.createElement("option");

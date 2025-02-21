@@ -124,7 +124,7 @@
                                         <div class="mb-3">
                                             <label class="form-label"  for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id">
-                                                <option value="0">Program Seçiniz</option>
+                                                <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>
