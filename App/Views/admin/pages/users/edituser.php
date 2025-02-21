@@ -41,7 +41,7 @@ use function App\Helpers\isAuthorized;
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <form action="/ajax/updateUser" method="post" class="ajaxForm"
+                        <form action="/ajax/updateUser" method="post" class="ajaxForm updateForm"
                               title="Kullanıcı Bilgilerini Güncelle">
                             <div class="card-body pb-0">
                                 <div class="row">

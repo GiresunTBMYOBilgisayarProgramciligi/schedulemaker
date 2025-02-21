@@ -34,7 +34,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <form action="/ajax/updateClassroom" method="post" class="ajaxForm"
+                        <form action="/ajax/updateClassroom" method="post" class="ajaxForm updateForm"
                               title="Derslik Bilgilerini Güncelle">
                             <input type="hidden" name="id" value="<?= $classroom->id ?>">
                             <div class="card-body">

@@ -44,7 +44,7 @@ use function App\Helpers\isAuthorized;
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <form action="/ajax/updateLesson" method="post" class="ajaxForm"
+                        <form action="/ajax/updateLesson" method="post" class="ajaxForm updateForm"
                               title="Ders Bilgilerini Güncelle">
                             <input type="hidden" name="id" value="<?= $lesson->id ?>">
                             <div class="card-body pb-0">

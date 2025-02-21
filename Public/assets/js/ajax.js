@@ -111,14 +111,23 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
-                const statusClass = data.status === "error" ? "danger" : data.status;
-                modal.body.classList.add("text-bg-" + statusClass)
+                if (data.status === "error") {
+                    const statusClass = data.status === "error" ? "danger" : data.status;
+                    modal.body.classList.add("text-bg-" + statusClass)
+                    const message = Array.isArray(data.msg)
+                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                        : data.msg;
+                    modal.removeSpinner()
+                    modal.body.innerHTML = message;
+                } else {
+                    modal.body.classList.add("text-bg-" + data.status)
 
-                const message = Array.isArray(data.msg)
-                    ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                    : data.msg;
-                modal.removeSpinner()
-                modal.body.innerHTML = message;
+                    const message = Array.isArray(data.msg)
+                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                        : data.msg;
+                    modal.removeSpinner()
+                    modal.body.innerHTML = message;
+                }
 
                 modal.cancelButton.addEventListener("click", () => {
                     if (data.redirect) {
@@ -127,10 +136,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         } else
                             window.location.href = data.redirect;
                     }
-                    window.location.reload();//todo yenileme yapınca ajaxın anlamı kalmıyor
-                    //update formalrında değişiklik yapmaya gerek yok.
-                    //yeni ekleme formlarında da form reset çalışmalı
-                    //yönlendirme yapmaya gerek yok 
+                    if (!form.classList.contains("updateForm")){
+                        form.reset();
+                    }
                 });
 
             })
@@ -190,7 +198,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     if (data.redirect) {
                         modal.cancelButton.addEventListener("click", () => {
-                            console.log(data)
                             if (data.redirect === "back") {
                                 window.history.back()
                             } else

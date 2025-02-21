@@ -37,7 +37,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <form action="/ajax/updateDepartment" method="post" class="ajaxForm"
+                        <form action="/ajax/updateDepartment" method="post" class="ajaxForm updateForm"
                               title="Bölüm Bilgilerini Güncelle">
                             <input type="hidden" name="id" value="<?= $department->id ?>">
                             <div class="card-body pb-0">

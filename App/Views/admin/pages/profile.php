@@ -108,7 +108,7 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <form action="/ajax/updateUser" method="post" class="ajaxForm"
+                            <form action="/ajax/updateUser" method="post" class="ajaxForm updateForm"
                                   title="Bilgileri Güncelle">
                                 <div class="row">
                                     <div class="col-md-6">

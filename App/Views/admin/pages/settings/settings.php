@@ -36,7 +36,7 @@ use function App\Helpers\getSetting;
             <div class="row">
                 <div class="col-12">
                     <div class="card ">
-                        <form id="addUserForm" action="/ajax/saveSettings" method="post" class="ajaxForm"
+                        <form id="addUserForm" action="/ajax/saveSettings" method="post" class="ajaxForm updateForm"
                               title="Ayarları Düzenle">
                             <div class="card-body pb-0">
                                 <div class="row">
