@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Program;
 use Exception;
 use PDO;
@@ -33,8 +34,12 @@ class ProgramController extends Controller
                     $program->fill($program_data);
 
                     return $program;
-                } else throw new Exception("Program not found");
+                } else {
+                    Logger::setErrorLog("Program Bulunamadı");
+                    throw new Exception("Program Bulunamadı");
+                }
             } catch (Exception $e) {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -53,6 +58,7 @@ class ProgramController extends Controller
             if (!is_null($department_id)) $filters["department_id"] = $department_id;
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -65,8 +71,11 @@ class ProgramController extends Controller
     public function saveNew(Program $new_program): int
     {
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Yeni Program oluşturma yetkiniz yok");
+                throw new Exception("Yeni Program oluşturma yetkiniz yok");
+            }
+
             $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_program_arr);
@@ -77,8 +86,10 @@ class ProgramController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
+                Logger::setErrorLog("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -89,11 +100,14 @@ class ProgramController extends Controller
      * @return int
      * @throws Exception
      */
-    public function updateProgram(Program $program):int
+    public function updateProgram(Program $program): int
     {
         try {
-            if (!isAuthorized("submanager",false,$program))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $program)) {
+                Logger::setErrorLog("Program güncelleme yetkiniz yok");
+                throw new Exception("Program güncelleme yetkiniz yok");
+            }
+
             $programData = $program->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
@@ -119,12 +133,17 @@ class ProgramController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $program->id;
-            } else throw new Exception("Program Güncellenemedi");
+            } else {
+                Logger::setErrorLog("Program Güncellenemedi");
+                throw new Exception("Program Güncellenemedi");
+            }
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
+                Logger::setErrorLog("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
