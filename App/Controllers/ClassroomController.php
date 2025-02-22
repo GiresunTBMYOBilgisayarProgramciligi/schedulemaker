@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Classroom;
 use PDO;
 use PDOException;
@@ -35,11 +36,18 @@ class ClassroomController extends Controller
                     $classroom->fill($classroomData);
 
                     return $classroom;
-                } else throw new Exception("Classroom not found");
+                } else {
+                    Logger::setErrorLog("Derslik Bulunamadı");
+                    throw new Exception("Derslik Bulunamadı");
+                }
             } catch (Exception $e) {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
-        } else throw new Exception("id belirtilmelidir");
+        } else {
+            Logger::setErrorLog("İd belirtilmelidir");
+            throw new Exception("İd belirtilmelidir");
+        }
     }
 
     /**
@@ -52,6 +60,7 @@ class ClassroomController extends Controller
         try {
             return $this->getListByFilters();
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -65,8 +74,11 @@ class ClassroomController extends Controller
     public function saveNew(Classroom $new_classroom): int
     {
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Bu işlem için yetkiniz yok.");
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Yeni derslik oluşturma yetkiniz yok");
+                throw new Exception("Yeni derslik oluşturma yetkiniz yok");
+            }
+
             $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id']);
 
             // Dinamik SQL sorgusu oluştur
@@ -77,10 +89,12 @@ class ClassroomController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                error_log($e->getMessage());
+                Logger::setExceptionLog($e);
+                Logger::setErrorLog("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(),$e);
+                Logger::setExceptionLog($e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
 
@@ -95,8 +109,11 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Bu işlem için yetkiniz yok.");
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Derslik güncelleme yetkiniz yok");
+                throw new Exception("Derslik güncelleme yetkiniz yok");
+            }
+
             $classroomData = $classroom->getArray(['table_name', 'database', 'id'], true);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
@@ -122,13 +139,17 @@ class ClassroomController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $classroom->id;
-            } else throw new Exception("Derslik Güncellenemedi");
+            } else{
+                Logger::setErrorLog("Derslik Güncellenemedi");
+                throw new Exception("Derslik Güncellenemedi");
+            }
         } catch (PDOException $e) {
-            error_log($e->getMessage());
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                Logger::setErrorLog("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
