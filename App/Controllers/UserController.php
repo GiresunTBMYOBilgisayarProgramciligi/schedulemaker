@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Department;
 use App\Models\User;
 use Exception;
@@ -33,11 +34,18 @@ class UserController extends Controller
                     $user->fill($u);
 
                     return $user;
-                } else throw new Exception("User not found");
+                } else {
+                    Logger::setErrorLog("Kullanıcı Bulunamdı");
+                    throw new Exception("Kullanıcı Bulunamdı");
+                }
             } catch (Exception $e) {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
-        } else throw new Exception("Kullanıcı id numarası belirtilmemiş");
+        } else {
+            Logger::setErrorLog("Kullanıcı id numarası belirtilmemiş");
+            throw new Exception("Kullanıcı id numarası belirtilmemiş");
+        }
     }
 
     /**
@@ -56,6 +64,7 @@ class UserController extends Controller
             }
             return $user;
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -70,6 +79,7 @@ class UserController extends Controller
         try {
             return $this->getCount(["!role" => ["user", "admin"]]);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -119,6 +129,7 @@ class UserController extends Controller
             $stmt = $this->database->prepare($sql);
             $stmt->execute([$user->id]);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -133,8 +144,10 @@ class UserController extends Controller
     public function saveNew(User $new_user): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_user))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $new_user)){
+                Logger::setErrorLog("Kullanıcı oluşturma yetkiniz yok");
+                throw new Exception("Kullanıcı oluşturma yetkiniz yok");
+            }
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
             $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
@@ -148,8 +161,10 @@ class UserController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                Logger::setErrorLog("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.");
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -165,8 +180,11 @@ class UserController extends Controller
     public function updateUser(User $user): int
     {
         try {
-            if (!isAuthorized("submanager", false, $user))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $user)){
+                Logger::setErrorLog("Kullancı bilgilerini güncelleme yetkiniz yok");
+                throw new Exception("Kullancı bilgilerini güncelleme yetkiniz yok");
+            }
+
             // Şifre kontrolü ve hash işlemi
             if (empty($user->password)) {
                 $user->password = null;
@@ -212,12 +230,17 @@ class UserController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $user->id;
-            } else throw new Exception("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
+            } else{
+                Logger::setErrorLog("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
+                throw new Exception("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
+            }
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                Logger::setErrorLog("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.");
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -233,6 +256,7 @@ class UserController extends Controller
         try {
             return $this->getListByFilters();
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -249,6 +273,7 @@ class UserController extends Controller
             $filter = array_merge($filter, ["!role" => ["user", "admin"]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -388,6 +413,7 @@ class UserController extends Controller
             };
             return $isAuthorizedRole or $isOwner;
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }

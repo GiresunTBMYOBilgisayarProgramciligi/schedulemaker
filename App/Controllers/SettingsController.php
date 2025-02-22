@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Setting;
 use Exception;
 use function App\Helpers\isAuthorized;
@@ -22,6 +23,7 @@ class SettingsController extends Controller
     {
         try {
             if (is_null($key)) {
+                Logger::setErrorLog("Ayar için anahtar girilmelidir");
                 throw new Exception("Ayar için anahtar girilmelidir");
             }
             $whereClause = "";
@@ -34,8 +36,12 @@ class SettingsController extends Controller
                 $setting = new Setting();
                 $setting->fill($settingsData);
                 return $setting;
-            } else throw new Exception("Ayar Bulunamadı");
+            } else {
+                Logger::setErrorLog("Ayar Bulunamadı");
+                throw new Exception("Ayar Bulunamadı");
+            }
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -48,8 +54,10 @@ class SettingsController extends Controller
     public function saveNew(Setting $setting): int
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Bu işlemi yapmak için yetkiniz yok");
                 throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            }
             $newSettingData = $setting->getArray(['table_name', "database", "id"]);
 
             $sql = $this->createInsertSQL($newSettingData);
@@ -63,6 +71,7 @@ class SettingsController extends Controller
                 $setting->id = $existingSetting->id;
                 return $this->updateSetting($setting);
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -76,8 +85,11 @@ class SettingsController extends Controller
     public function updateSetting(Setting $setting): int
     {
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Ayar güncelleme yetkiniz yok");
+                throw new Exception("Ayar güncelleme yetkiniz yok");
+            }
+
             $settingData = $setting->getArray(['table_name', "database", "id"]);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
@@ -104,8 +116,10 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                Logger::setErrorLog("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin");
                 throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", (int)$e->getCode(), $e);
             } else {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -116,7 +130,8 @@ class SettingsController extends Controller
      * @return array
      * @throws Exception
      */
-    public function getSettings():array{
+    public function getSettings(): array
+    {
         try {
             $settingModels = $this->getListByFilters();
             $settings = [];
@@ -129,7 +144,8 @@ class SettingsController extends Controller
                 };
             }
             return $settings;
-        }catch (Exception $e) {
+        } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
