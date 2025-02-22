@@ -28,35 +28,32 @@ include "theme/head.php";
 
 <?php
 include "theme/footer_scripts.php";
+/**
+ * Model ve Controller sınıflarında oluşan hatalar errors içerisine kaydedilir ve burada tüm hatalar geliştirici konsoluna yazılır.
+ */
 if (isset($_SESSION['errors'])) {
-    foreach ($_SESSION['errors'] as $errorKey => $errorValue) {
-        /**
-         * Tüm hata mesajları throw edilmeden önce dizi şeklinde session a yada başka bir değişkene kaydedilerek konsolda gösterilebilir
-         * Şuanki hali ile Session verisi sayfa yenilendikten sonra gözüküyor. Bir ajax sorgusu ile Session değerlerini sayfa yenilemeden alabilirim
-         * Bu sayede hata mesajlarının ne zaman nerede hangi sırayla oluştuğunu da görebilirm
-         * Log kaydı eklediğimde bu işlem loglarda tutulacak aslında.
-         * @see \App\Controllers\ScheduleController:608
-         */
-        if (is_array($errorValue)) {
-            foreach ($errorValue as $error) {
-                echo '<script>
-            document.addEventListener("DOMContentLoaded", function () {
-            console.log("' . $errorKey . ' => ' . $error . '");
-            });
-            </script>';
-            }
+    // Tüm hata dizisini JSON'a çevirip tek bir script tag'i içinde yazdıralım
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let errors = ' . json_encode($_SESSION['errors'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . ';
+        // Tüm diziyi konsolda göster
+        console.log(errors);
+    });
+    </script>';
 
-        } else {
-            echo '<script>
-            document.addEventListener("DOMContentLoaded", function () {
-            alert("' . $errorValue . '");
-            });
-            </script>';
-        }
-    }
     unset($_SESSION['errors']);
 }
+/**
+ * Router Sınıflarında error tek bir hata mesajı olarak döner
+ */
+if (isset($_SESSION['error'])) {
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function () {
+            new Toast().prepareToast("Hata","' . $_SESSION['error'] . '","danger");
+    });
+    </script>';
+    unset($_SESSION['error']);
+}
 ?>
-<!-- todo buraya eğer sessionda hata tenımlanmışsa toast ile hataları göstermek için bir şeyler eklenmeli -->
 </body>
 </html>
