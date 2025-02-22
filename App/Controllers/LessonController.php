@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Lesson;
 use Exception;
 use PDO;
@@ -34,11 +35,18 @@ class LessonController extends Controller
                     $lesson->fill($lessonData);
 
                     return $lesson;
-                } else throw new Exception("Lesson not found");
+                } else {
+                    Logger::setErrorLog("Ders bulunamadı");
+                    throw new Exception("Ders bulunamadı");
+                }
             } catch (Exception $e) {
+                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
-        } else throw new Exception("Ders id numarası belirtilmelidir");
+        } else {
+            Logger::setErrorLog("Ders id numarası belirtilmelidir");
+            throw new Exception("Ders id numarası belirtilmelidir");
+        }
     }
 
     /**
@@ -80,6 +88,7 @@ class LessonController extends Controller
             if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -93,8 +102,10 @@ class LessonController extends Controller
     public function saveNew(Lesson $new_lesson): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_lesson))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $new_lesson)) {
+                Logger::setErrorLog("Yeni Ders oluşturma yetkiniz yok");
+                throw new Exception("Yeni Ders oluşturma yetkiniz yok");
+            }
 
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
@@ -108,9 +119,11 @@ class LessonController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.", (int)$e->getCode(), $e);
+                Logger::setErrorLog("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.");
+                throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.");
             } else {
-                throw $e;
+                Logger::setExceptionLog($e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -123,8 +136,11 @@ class LessonController extends Controller
     public function updateLesson(Lesson $lesson): int
     {
         try {
-            if (!isAuthorized("submanager", false, $lesson))
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+            if (!isAuthorized("submanager", false, $lesson)) {
+                Logger::setErrorLog("Ders güncelleme yetkiniz yok");
+                throw new Exception("Ders güncelleme yetkiniz yok");
+            }
+
             // Lesson nesnesinden filtrelenmiş verileri al
             $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
             // Sorgu ve placeholder'lar için başlangıç ayarları
@@ -151,13 +167,18 @@ class LessonController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $lesson->id;
-            } else throw new Exception("Ders Güncellenemedi");
+            } else {
+                Logger::setErrorLog("Ders Güncellenemedi");
+                throw new Exception("Ders Güncellenemedi");
+            }
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.", (int)$e->getCode(), $e);
+                Logger::setErrorLog("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.");
+                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.");
             } else {
-                throw $e;
+                Logger::setExceptionLog($e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -172,6 +193,7 @@ class LessonController extends Controller
         try {
             return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }

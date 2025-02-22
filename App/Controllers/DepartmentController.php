@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\Logger;
 use App\Models\Department;
 use Exception;
 use PDO;
@@ -54,6 +55,7 @@ class DepartmentController extends Controller
             }
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -67,8 +69,11 @@ class DepartmentController extends Controller
     public function saveNew(Department $new_department): int
     {
         try {
-            if (!isAuthorized("submanager"))
-                throw new Exception("Bu işlem için yetkiniz yok.");
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Yeni Bölüm oluşturma yetkiniz yok");
+                throw new Exception("Yeni Bölüm oluşturma yetkiniz yok");
+            }
+
             $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id']);
 
             // Dinamik SQL sorgusu oluştur
@@ -80,9 +85,11 @@ class DepartmentController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.", (int)$e->getCode(), $e);
+                Logger::setErrorLog("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw $e;
+                Logger::setExceptionLog($e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
@@ -95,8 +102,11 @@ class DepartmentController extends Controller
     public function updateDepartment(Department $department): int
     {
         try {
-            if (!isAuthorized("submanager", false, $department))
-                throw new Exception("Bu işlem için yetkiniz yok.");
+            if (!isAuthorized("submanager", false, $department)) {
+                Logger::setErrorLog("Bölüm Güncelleme yetkiniz yok");
+                throw new Exception("Bölüm Güncelleme yetkiniz yok");
+            }
+
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];
@@ -122,13 +132,18 @@ class DepartmentController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $department->id;
-            } else throw new Exception("Bölüm Güncellenemedi");
+            } else{
+                Logger::setErrorLog("Bölüm Güncellenemedi");
+                throw new Exception("Bölüm Güncellenemedi");
+            }
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
+                Logger::setErrorLog("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw $e;
+                Logger::setExceptionLog($e);
+                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
     }
