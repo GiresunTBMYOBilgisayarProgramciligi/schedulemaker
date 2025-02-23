@@ -164,55 +164,132 @@ class Controller
     }
 
     /**
-     * Bu fonksiyondan önce whereClause ve parameters değişkenlerinin tanımlanmış olması gerekmektedir.
-     * velilen filtreye göre sql sorgusunun where kısmını oluşturur.
-     * ! işareti != yada not olarak işlenir
-     * dizi olan değerler in () içerisinde işlenir
+     * SQL sorgularının WHERE kısmını dinamik olarak oluşturur.
      *
-     * @param $filters
-     * @param $whereClause
-     * @param $parameters
-     * @return void whereClasuse ve parameters değişkeninin günceller.
+     * Desteklenen operatörler:
+     * - Eşitlik: Direkt değer atama ile (`'column' => 'value'`)
+     * - Eşit Değil: Başına ! koyarak (`'!column' => 'value'`)
+     * - Büyüktür: `'column' => ['>' => value]`
+     * - Büyük Eşittir: `'column' => ['>=' => value]`
+     * - Küçüktür: `'column' => ['<' => value]`
+     * - Küçük Eşittir: `'column' => ['<=' => value]`
+     * - LIKE: `'column' => ['like' => '%value%']`
+     * - NOT LIKE: `'column' => ['!like' => '%value%']`
+     * - IN: `'column' => ['in' => [1, 2, 3]]`
+     * - NOT IN: `'!column' => ['in' => [1, 2, 3]]`
+     *
+     * Örnek kullanım:
+     * $filters = [
+     *     'age' => ['>' => 18],                 // age > 18
+     *     'price' => ['<=' => 1000],           // price <= 1000
+     *     'status' => 'active',                // status = 'active'
+     *     '!category' => 'deleted',            // category != 'deleted'
+     *     'name' => ['like' => '%john%'],      // name LIKE '%john%'
+     *     'tags' => ['in' => [1, 2, 3]],      // tags IN (1,2,3)
+     *     'priority' => ['>=' => 5]           // priority >= 5
+     * ];
+     *
+     * $whereClause = '';
+     * $parameters = [];
+     * $this->prepareWhereClause($filters, $whereClause, $parameters);
+     *
+     * // Çıktı örneği:
+     * // WHERE `age` > :age_0 AND `price` <= :price_0 AND `status` = :status
+     * // AND `category` != :category AND `name` LIKE :name_0
+     * // AND `tags` IN (:tags_0, :tags_1, :tags_2) AND `priority` >= :priority_0
+     *
+     * @param array|null $filters        Filtre koşullarını içeren dizi. null ise boş WHERE clause döner
+     * @param string $whereClause        WHERE clause'un atanacağı referans değişken
+     * @param array $parameters         Prepared statement parametrelerinin atanacağı referans değişken
+     * @return void                     whereClause ve parameters değişkenlerini günceller
+     *
+     * @throws \InvalidArgumentException Geçersiz operatör kullanıldığında
+     *
+     * @example
+     * // Basit eşitlik kontrolü
+     * $filters = ['status' => 'active'];
+     *
+     * // Sayısal karşılaştırma
+     * $filters = ['age' => ['>' => 18]];
+     *
+     * // LIKE sorgusu
+     * $filters = ['name' => ['like' => '%john%']];
+     *
+     * // IN operatörü
+     * $filters = ['category_id' => ['in' => [1, 2, 3]]];
+     *
+     * // Karışık sorgular
+     * $filters = [
+     *     'age' => ['>' => 18],
+     *     '!status' => 'inactive',
+     *     'category' => ['in' => [1, 2, 3]]
+     * ];
      */
-    public function prepareWhereClause($filters, &$whereClause, &$parameters): void
+    public function prepareWhereClause(?array $filters, string &$whereClause, array &$parameters): void
     {
-        if (!is_null($filters)) {
-            // Koşullar ve parametreler
-            $conditions = [];
+        if (is_null($filters)) {
+            $whereClause = "";
             $parameters = [];
+            return;
+        }
 
-            // Parametrelerden WHERE koşullarını oluştur
-            foreach ($filters as $column => $value) {
-                $isNotCondition = false;
+        $conditions = [];
+        $parameters = [];
 
-                // Eğer anahtar '!' ile başlıyorsa, NOT koşulu
-                if (str_starts_with($column, '!')) {
-                    $isNotCondition = true;
-                    $column = ltrim($column, '!'); // '!' işaretini kaldır
-                }
+        // Desteklenen operatörler
+        $operators = [
+            '>' => '>',
+            '>=' => '>=',
+            '<' => '<',
+            '<=' => '<=',
+            '!=' => '!=',
+            '=' => '=',
+            'like' => 'LIKE',
+            '!like' => 'NOT LIKE'
+        ];
 
-                if (is_array($value) and count($value) > 0) {
-                    // Eğer değer bir array ise, IN ifadesi oluştur
+        foreach ($filters as $column => $value) {
+            $isNotCondition = false;
+
+            // NOT operatörü kontrolü
+            if (str_starts_with($column, '!')) {
+                $isNotCondition = true;
+                $column = ltrim($column, '!');
+            }
+
+            // Dizi değerler için işlem
+            if (is_array($value)) {
+                // IN operatörü için dizi kontrolü
+                if (isset($value['in']) && is_array($value['in']) && count($value['in']) > 0) {
                     $placeholders = [];
-                    foreach ($value as $index => $item) {
+                    foreach ($value['in'] as $index => $item) {
                         $placeholder = ":{$column}_{$index}";
                         $placeholders[] = $placeholder;
                         $parameters[$placeholder] = $item;
                     }
-                    $conditions[] = $isNotCondition
-                        ? "$column NOT IN (" . implode(", ", $placeholders) . ")"
-                        : "$column IN (" . implode(", ", $placeholders) . ")";
-                } else {
-                    // Normal eşitlik kontrolü
-                    $conditions[] = $isNotCondition
-                        ? "`$column` != :$column"
-                        : "`$column` = :$column";
-                    $parameters[":$column"] = $value;
+                    $operator = $isNotCondition ? 'NOT IN' : 'IN';
+                    $conditions[] = "`$column` $operator (" . implode(", ", $placeholders) . ")";
+                }
+                // Karşılaştırma operatörleri için kontrol
+                else {
+                    foreach ($value as $operator => $operandValue) {
+                        if (isset($operators[$operator])) {
+                            $placeholder = ":{$column}_" . count($parameters);
+                            $conditions[] = "`$column` " . $operators[$operator] . " $placeholder";
+                            $parameters[$placeholder] = $operandValue;
+                        }
+                    }
                 }
             }
-            // WHERE ifadesini oluştur
-            $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
-        } else $whereClause = "";
+            // Basit eşitlik kontrolü
+            else {
+                $placeholder = ":{$column}";
+                $operator = $isNotCondition ? '!=' : '=';
+                $conditions[] = "`$column` $operator $placeholder";
+                $parameters[$placeholder] = $value;
+            }
+        }
 
+        $whereClause = count($conditions) > 0 ? "WHERE " . implode(" AND ", $conditions) : "";
     }
 }
