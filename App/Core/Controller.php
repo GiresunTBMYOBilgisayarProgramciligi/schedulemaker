@@ -15,7 +15,8 @@ class Controller
             $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]);
-        } catch (\PDOException $exception) {
+        } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             echo $exception->getMessage();
         }
 
@@ -53,7 +54,7 @@ class Controller
                 throw new Exception('Table name özelliği tanımlı değil.');
             }
             $parameters = [];
-            $whereClause="";
+            $whereClause = "";
             $this->prepareWhereClause($filters, $whereClause, $parameters);
 
             // Sorguyu hazırla
@@ -71,6 +72,7 @@ class Controller
             return $stmt->fetchColumn();
 
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }
@@ -84,13 +86,16 @@ class Controller
     {
         try {
             if (is_null($id)) {
+                Logger::setErrorLog('Geçerli bir ID sağlanmadı.');
                 throw new Exception('Geçerli bir ID sağlanmadı.');
             }
-            if ($this->table_name == "users" and $id==1) {
+            if ($this->table_name == "users" and $id == 1) {
+                Logger::setErrorLog("Birincil yönetici hesabı silinemez.");
                 throw new Exception("Birincil yönetici hesabı silinemez.");
             }
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
+                Logger::setErrorLog('Table name özelliği tanımlı değil.');
                 throw new Exception('Table name özelliği tanımlı değil.');
             }
 
@@ -98,10 +103,12 @@ class Controller
             $stmt->execute([":id" => $id]);
 
             if (!$stmt->rowCount() > 0) {
+                Logger::setErrorLog('Kayıt bulunamadı veya silinemedi.');
                 throw new Exception('Kayıt bulunamadı veya silinemedi.');
             }
         } catch (Exception $e) {
-            throw new Exception( $e->getMessage());
+            Logger::setExceptionLog($e);
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -126,8 +133,11 @@ class Controller
             foreach ($parameters as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
-            if (!$stmt->execute())
+            if (!$stmt->execute()) {
+                Logger::setErrorLog("Komut çalıştırılamadı error");
                 throw new Exception("Komut çalıştırılamadı");
+            }
+
 
             // Verileri işle
             $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -136,6 +146,7 @@ class Controller
             if ($result) {
                 // Alt sınıfta table_name tanımlı mı kontrol et
                 if (!property_exists($this, 'modelName')) {
+                    Logger::setErrorLog('Model Adı özelliği tanımlı değil.');
                     throw new Exception('Model Adı özelliği tanımlı değil.');
                 }
                 foreach ($result as $data) {
@@ -147,6 +158,7 @@ class Controller
             return $models;
 
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }

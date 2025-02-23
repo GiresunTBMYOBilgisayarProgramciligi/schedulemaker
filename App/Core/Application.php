@@ -5,6 +5,8 @@
 
 namespace App\Core;
 
+use Exception;
+
 /**
  * Uygulamanın temel çalıştırma mantığını içeren sınıf.
  *
@@ -42,11 +44,12 @@ class Application
             if (method_exists($this->router, $this->action)) {
                 call_user_func_array([$this->router, $this->action], $this->parameters);
             } else {
+                Logger::setErrorLog("Böyle Bir Action Yok.");
                 echo "Böyle Bir Action Yok.";
             }
-        } catch (\Throwable $exception) {
-
-            echo "Böyle bir Router yok yada bir hata oluştu. -> " . $exception->getMessage() . " " . $exception->getFile() . " " . $exception->getLine();
+        } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
+            echo "Böyle bir Router yok yada bir hata oluştu. -> ";
         }
 
     }

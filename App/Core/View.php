@@ -46,7 +46,13 @@ class View
                 ob_start();
                 ob_get_clean();
                 include $this->view_folder . '/' . 'theme.php';
-            } else throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php'. "View dosyası mevcut değil ");
-        } else throw new Exception('View folder does not exist');
+            } else {
+                Logger::setErrorLog($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
+                throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
+            }
+        } else {
+            Logger::setErrorLog('View folder does not exist');
+            throw new Exception('View folder does not exist');
+        }
     }
 }

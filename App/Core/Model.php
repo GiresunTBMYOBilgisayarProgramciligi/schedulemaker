@@ -73,6 +73,7 @@ class Model
                 }
             }
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 
@@ -98,6 +99,7 @@ class Model
             } else $list = [];
             return $list;
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
