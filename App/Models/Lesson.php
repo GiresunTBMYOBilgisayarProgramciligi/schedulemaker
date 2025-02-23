@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
@@ -89,5 +90,18 @@ class Lesson extends Model
     public function getFullName(): string
     {
         return $this->name . " (" . $this->code . ")";
+    }
+
+    /**
+     * @return string
+     * @throws Exception
+     */
+    public function getClassroomTypeName(): string
+    {
+        try {
+            return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
+        } catch (Exception) {
+            throw new Exception("Deslik türü alınamadı");
+        }
     }
 }

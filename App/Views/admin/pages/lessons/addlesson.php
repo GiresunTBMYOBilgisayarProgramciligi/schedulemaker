@@ -7,7 +7,11 @@
  * @var \App\Controllers\LessonController $lessonController
  * @var string $page_title
  * @var array $lecturers
+ * @var array $classroomTypes
  */
+
+use function App\Helpers\getSetting;
+
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -83,12 +87,22 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="lecturer_id">Dersin Hocası</label>
                                             <select class="form-select" id="lecturer_id" name="lecturer_id">
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label"  for="classroom_type">Sınıf Türü</label>
+                                            <select class="form-select" id="classroom_type" name="classroom_type">
+                                                <?php foreach ($classroomTypes as $id=>$classroomType): ?>
+                                                    <option value="<?= $id ?>"><?= $classroomType ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -109,7 +123,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="department_id">Bölüm</label>
                                             <select class="form-select" id="department_id" name="department_id">
@@ -120,12 +134,32 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id">
-                                                <option value="0">İlk olarak Bölüm Seçiniz</option>
+                                            <select class="form-select" id="program_id" name="program_id" required>
+                                                <option>İlk olarak Bölüm Seçiniz</option>
                                             </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
+                                            <div class="input-group ">
+                                                <select class="form-select" id="academic_year" name="academic_year">
+                                                    <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSetting("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                            <?= $year . ' - ' . $year + 1 ?>
+                                                        </option>
+                                                    <?php endfor; ?>
+                                                </select>
+                                                <span class="input-group-text"> - </span>
+                                                <select class="form-select" id="semester" name="semester">
+                                                    <option value="Güz" <?= getSetting("semester") == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                    <option value="Bahar" <?= getSetting("semester") == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                    <option value="Yaz" <?= getSetting("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

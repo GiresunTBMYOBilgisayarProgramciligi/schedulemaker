@@ -49,6 +49,10 @@
                             <th scope="col">Hocası</th>
                             <th scope="col">Bölüm</th>
                             <th scope="col">Program</th>
+                            <th scope="col">Dönem</th>
+                            <th scope="col">Yıl</th>
+                            <th scope="col">Derslik türü</th>
+
                             <th scope="col" class="text-center">İşlemler</th>
                         </tr>
                         </thead>
@@ -65,6 +69,9 @@
                                 <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                 <td><?= $lesson->getDepartment()->name ?></td>
                                 <td><?= $lesson->getProgram()->name ?></td>
+                                <td><?= $lesson->semester ?></td>
+                                <td><?= $lesson->academic_year ?></td>
+                                <td><?= $lesson->getClassroomTypeName() ?></td>
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"

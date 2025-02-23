@@ -267,6 +267,7 @@ class AdminRouter extends Router
                 "page_title" => "Ders Ekle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
                 "lessonController" => new LessonController(),
+                "classroomTypes" => (new ClassroomController())->getTypeList()
             ]);
             if ($this->currentUser->role == "department_head") {
                 $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
@@ -296,9 +297,10 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "lessonController" => new LessonController(),
                 "lesson" => $lesson,
-                "page_title" => $lesson->getFullName() . " Düzenle",//todo ders olmayınca hata veriyor.
+                "page_title" => $lesson->getFullName() . " Düzenle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
                 "programController" => new ProgramController(),
+                "classroomTypes" => (new ClassroomController())->getTypeList()
             ]);
             $userController = new UserController();
             if ($this->currentUser->role == "department_head") {

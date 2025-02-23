@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Controllers\ClassroomController;
 use App\Core\Model;
+use Exception;
 
 class Classroom extends Model
 {
@@ -39,14 +40,14 @@ class Classroom extends Model
 
     /**
      * @return string
-     * @throws \Exception
+     * @throws Exception
      */
-    public function getTypeName()
+    public function getTypeName(): string
     {
         try {
             return (new ClassroomController())->getTypeList()[$this->type] ?? "";
-        } catch (\Exception) {
-            throw new \Exception("Deslik türü alınamadı");
+        } catch (Exception) {
+            throw new Exception("Deslik türü alınamadı");
         }
 
     }
