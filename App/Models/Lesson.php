@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Controllers\DepartmentController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
+use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 
@@ -20,6 +21,18 @@ class Lesson extends Model
     public ?int $lecturer_id = null;
     public ?int $department_id = null;
     public ?int $program_id = null;
+    /**
+     * Güz, Bahar, Yaz
+     * @var string|null
+     */
+    public ?string $semester = null;
+    /**
+     *
+     * @var int|null
+     * @see ClassroomController->getTypeList()
+     */
+    public ?int $classroom_type = null;
+    public ?string $academic_year = null;
 
     private string $table_name = "lessons";
 
@@ -37,6 +50,7 @@ class Lesson extends Model
         try {
             return (new UserController())->getUser($this->lecturer_id);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -52,6 +66,7 @@ class Lesson extends Model
         try {
             return (new DepartmentController())->getDepartment($this->department_id);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -66,6 +81,7 @@ class Lesson extends Model
         try {
             return (new ProgramController())->getProgram($this->program_id);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }

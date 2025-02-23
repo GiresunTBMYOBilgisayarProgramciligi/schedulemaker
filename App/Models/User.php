@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
+use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 use PDO;
@@ -69,6 +70,7 @@ class User extends Model
         try {
             return (new DepartmentController())->getDepartment($this->department_id);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception("Kullanıcının Bölümü alınırken hata oluştu:" . $e->getMessage());
         }
     }
@@ -83,6 +85,7 @@ class User extends Model
         try {
             return $this->getDepartment()->name ?? "";
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
@@ -96,6 +99,7 @@ class User extends Model
         try {
             return (new ProgramController())->getProgram($this->program_id)->name ?? "";
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 
@@ -124,6 +128,7 @@ class User extends Model
         try {
             return (new LessonController())->getLessonsList($this->id) ?? [];
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
     }
@@ -147,6 +152,7 @@ class User extends Model
             $data = $stmt->fetch();
             return $data['count'];
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 
@@ -161,6 +167,9 @@ class User extends Model
         return 100;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getTotalLessonHours()
     {
         try {
@@ -170,6 +179,7 @@ class User extends Model
             $data = $stmt->fetch();
             return $data['total'];
         } catch (Exception $exception) {
+            Logger::setExceptionLog($exception);
             throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
 

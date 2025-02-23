@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 use PDO;
@@ -40,6 +41,7 @@ class Program extends Model
         try {
             return new Department($this->department_id);
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -64,6 +66,7 @@ class Program extends Model
             }
             return $lecturers_list;
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -82,6 +85,7 @@ class Program extends Model
             $data = $stmt->fetch();
             return $data['count'];
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -100,6 +104,7 @@ class Program extends Model
             $data = $stmt->fetch();
             return $data['count'];
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -124,6 +129,7 @@ class Program extends Model
             }
             return $lessons_list;
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -142,6 +148,7 @@ class Program extends Model
             $data = $stmt->fetch();
             return $data['sum'];
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
