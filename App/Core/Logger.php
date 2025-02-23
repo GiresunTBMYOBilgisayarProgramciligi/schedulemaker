@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Core;
+
 use Exception;
 
 /**
@@ -35,7 +36,8 @@ class Logger
         ];
     }
 
-    public static function setExceptionLog(Exception $exception): void {
+    public static function setExceptionLog(Exception $exception): void
+    {
         $info = self::getCallerInfo();
 
         $_SESSION["errors"][] = [
@@ -70,6 +72,16 @@ class Logger
             $info['class'],
             $info['method']
         );
+        //todo diğer loglama işlemleri yapılacak
+    }
+
+    public static function setAndShowErrorLog($errorMessage): void
+    {
+        self::setErrorLog($errorMessage);
+        /**
+         * @see App/Views/admin/theme.php
+         */
+        $_SESSION["error"][] = $errorMessage;
         //todo diğer loglama işlemleri yapılacak
     }
 }

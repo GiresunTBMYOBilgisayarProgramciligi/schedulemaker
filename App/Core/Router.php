@@ -32,9 +32,10 @@ class Router
     }
 
     /**
+     * goback değeri false yapılmadığı sürece geri yönlendirme yapar. Reri yönlendirme yoksa belirtilen adrese yönlendirme yapar yol belirtilmezse /admin sayfasına yönlendirir.
      * path ile belirtilen yola yönlendirme oluşturur.
      * @param null $path
-     * @param bool $goBack
+     * @param bool $goBack true
      * @return void
      */
     #[NoReturn] public function Redirect($path = null, bool $goBack = true): void

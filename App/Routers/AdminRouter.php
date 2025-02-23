@@ -12,6 +12,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+use App\Core\Logger;
 use App\Core\Router;
 
 use App\Models\User;
@@ -39,6 +40,7 @@ class AdminRouter extends Router
             $this->view_data["userController"] = new UserController();//her sayfada olmalı
             $this->currentUser = $this->view_data["userController"]->getCurrentUser();
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -74,7 +76,7 @@ class AdminRouter extends Router
                 "page_title" => "Anasayfa"]);
             $this->callView("admin/index", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
         }
 
     }
@@ -85,8 +87,11 @@ class AdminRouter extends Router
     public function ListUsersAction()
     {
         try {
-            if (!isAuthorized("department_head"))
+            if (!isAuthorized("department_head")) {
+                Logger::setErrorLog("Kullanıcı listesini görme yetkiniz yok");
                 throw new Exception("Kullanıcı listesini görme yetkiniz yok");
+            }
+
             //$userController =$this->view_data["userController"]; bu şekilde kullanınca otomatik tamamlama çalışmıyor
             $userController = new UserController();
             $this->view_data = array_merge($this->view_data, [
@@ -98,7 +103,7 @@ class AdminRouter extends Router
             } else$this->view_data['users'] = $userController->getListByFilters();
             $this->callView("admin/users/listusers", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -108,22 +113,27 @@ class AdminRouter extends Router
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         try {
-
             $departmentFilters = [];
             if ($department_id) {
                 $department = (new DepartmentController())->getDepartment($department_id);
-                if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id))
+                if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
+                    Logger::setErrorLog("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
+                }
                 //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
             }
             if ($program_id) {
                 $program = (new ProgramController())->getProgram($program_id);
-                if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id))
+                if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id)) {
+                    Logger::setErrorLog("Bu programa yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
+                }
             }
             if (!($department or $program)) {
-                if (!isAuthorized("submanager"))
+                if (!isAuthorized("submanager")) {
+                    Logger::setErrorLog("Yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
+                }
             }
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Kullanıcı Ekle",
@@ -131,8 +141,8 @@ class AdminRouter extends Router
             ]);
 
             $this->callView("admin/users/adduser", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
 
@@ -147,8 +157,10 @@ class AdminRouter extends Router
             } else {
                 $user = $userController->getUser($id);
             }
-            if (!isAuthorized("submanager", false, $user))
+            if (!isAuthorized("submanager", false, $user)) {
+                Logger::setErrorLog("Bu profili görme yetkiniz yok");
                 throw new Exception("Bu profili görme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Profil Sayfası",
@@ -157,8 +169,8 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/profile", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
-            $this->Redirect(null,true);
+            Logger::setAndShowErrorLog($e->getMessage());
+            $this->Redirect(null, true);
         }
 
     }
@@ -172,17 +184,19 @@ class AdminRouter extends Router
             } else {
                 $user = $userController->getUser($id);
             }
-            if (!isAuthorized("submanager", false, $user))
-                throw new Exception("kullanıcı düzenleme yetkiniz yok");
+            if (!isAuthorized("submanager", false, $user)) {
+                Logger::setErrorLog("Kullanıcı düzenleme yetkiniz yok");
+                throw new Exception("Kullanıcı düzenleme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
                 "programController" => new ProgramController()]);
             $this->callView("admin/users/edituser", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
-            $this->Redirect(null,true);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
+            $this->Redirect(null, true);
         }
 
     }
@@ -196,17 +210,22 @@ class AdminRouter extends Router
             $lessonController = new LessonController();
             if (!is_null($id)) {
                 $lesson = $lessonController->getLesson($id);
-            } else throw new Exception("Ders İd numarası belirtilmelidir");
-            if (!isAuthorized("submanager", false, $lesson))
+            } else {
+                Logger::setErrorLog("Ders İd numarası belirtilmelidir");
+                throw new Exception("Ders İd numarası belirtilmelidir");
+            }
+            if (!isAuthorized("submanager", false, $lesson)) {
+                Logger::setErrorLog("Bu dersi görme yetkiniz yok");
                 throw new Exception("Bu dersi görme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "lesson" => $lesson,
                 "page_title" => $lesson->name . " Sayfası",
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'lesson', 'owner_id' => $lesson->id, 'type' => 'lesson'], true),
             ]);
             $this->callView("admin/lessons/lesson", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listlessons");
         }
 
@@ -215,8 +234,11 @@ class AdminRouter extends Router
     public function ListLessonsAction()
     {
         try {
-            if (!isAuthorized("department_head"))
+            if (!isAuthorized("department_head")) {
+                Logger::setErrorLog("Ders listesini görme yetkiniz yok");
                 throw new Exception("Ders listesini görme yetkiniz yok");
+            }
+
             $lessonController = new LessonController();
             $this->view_data = array_merge($this->view_data, [
                 "lessonController" => $lessonController,
@@ -224,10 +246,10 @@ class AdminRouter extends Router
             ]);
             if ($this->currentUser->role == "department_head") {
                 $this->view_data['lessons'] = $lessonController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-            } else$this->view_data['lessons'] = $lessonController->getListByFilters();
+            } else $this->view_data['lessons'] = $lessonController->getListByFilters();
             $this->callView("admin/lessons/listlessons", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -236,8 +258,10 @@ class AdminRouter extends Router
     public function AddLessonAction()
     {
         try {
-            if (!isAuthorized("department_head"))
+            if (!isAuthorized("department_head")) {
+                Logger::setErrorLog("Ders ekleme yetkiniz yok");
                 throw new Exception("Ders ekleme yetkiniz yok");
+            }
             $userController = new UserController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ders Ekle",
@@ -246,10 +270,10 @@ class AdminRouter extends Router
             ]);
             if ($this->currentUser->role == "department_head") {
                 $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-            } else$this->view_data['lecturers'] = $userController->getListByFilters();
+            } else $this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/addlesson", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listlessons");
         }
     }
@@ -261,10 +285,14 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $lesson = $lessonController->getLesson($id);
             } else {
+                Logger::setErrorLog("Belirtilen ders bulunamadı");
                 throw new Exception("Belirtilen ders bulunamadı");
             }
-            if (!isAuthorized("submanager", false, $lesson))
+            if (!isAuthorized("submanager", false, $lesson)) {
+                Logger::setErrorLog("Bu dersi düzenleme yetkiniz yok");
                 throw new Exception("Bu dersi düzenleme yetkiniz yok");
+            }
+
             $this->view_data = array_merge($this->view_data, [
                 "lessonController" => new LessonController(),
                 "lesson" => $lesson,
@@ -282,7 +310,7 @@ class AdminRouter extends Router
             } else$this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
 
@@ -294,19 +322,24 @@ class AdminRouter extends Router
     public function classroomAction($id = null)
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Derslik sayfasını görme yetkiniz yok");
                 throw new Exception("Derslik sayfasını görme yetkiniz yok");
+            }
             $classroomController = new ClassroomController();
             if (!is_null($id)) {
                 $classroom = $classroomController->getClassroom($id);
-            } else throw new Exception("Derslik id Numarası belirtilmemiş");
+            } else {
+                Logger::setErrorLog("Derslik id Numarası belirtilmemiş");
+                throw new Exception("Derslik id Numarası belirtilmemiş");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "classroom" => $classroom,
                 "page_title" => $classroom->name . " Sayfası",
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'classroom', 'owner_id' => $classroom->id, 'type' => 'lesson'], true),
             ]);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
         $this->callView("admin/classrooms/classroom", $this->view_data);
@@ -315,61 +348,67 @@ class AdminRouter extends Router
     public function ListClassroomsAction()
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Derslik listesini görme yetkiniz yok");
                 throw new Exception("Derslik listesini görme yetkiniz yok");
+            }
             $classroomController = new ClassroomController();
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => $classroomController,
                 "classrooms" => $classroomController->getClassroomsList(),
-                "classroomTypes"=>$classroomController->getTypeList(),
+                "classroomTypes" => $classroomController->getTypeList(),
                 "page_title" => "Derslik Listesi"
             ]);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+            $this->callView("admin/classrooms/listclassrooms", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
-        $this->callView("admin/classrooms/listclassrooms", $this->view_data);
     }
 
     public function AddClassroomAction()
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Yeni derslik ekleme yetkiniz yok");
                 throw new Exception("Yeni derslik ekleme yetkiniz yok");
+            }
             $classroomController = new ClassroomController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Derslik Ekle",
-                "classroomTypes"=>$classroomController->getTypeList()
+                "classroomTypes" => $classroomController->getTypeList()
             ]);
             $this->callView("admin/classrooms/addclassroom", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["error"]= $e->getMessage();
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
-
     }
 
     public function editClassroomAction($id = null)
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Bu dersliği düzenleme yetkiniz yok");
                 throw new Exception("Bu dersliği düzenleme yetkiniz yok");
+            }
             $classroomController = new ClassroomController();
             if (!is_null($id)) {
                 $classroom = $classroomController->getClassroom($id);
             } else {
-                $classroom = null;//todo sınıf yoksa ne yapılmalı? hata mesajıyla sayfanın yinede yüklenmesi sağlanmalı
+                Logger::setErrorLog("Derslik Bulunamadı");
+                throw new Exception("Derslik Bulunamadı");
             }
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => new ClassroomController(),
                 "classroom" => $classroom,
-                "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
+                "page_title" => $classroom->name . "Düzenle",
             ]);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+            $this->callView("admin/classrooms/editclassroom", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
-        $this->callView("admin/classrooms/editclassroom", $this->view_data);
     }
 
     /*
@@ -381,25 +420,32 @@ class AdminRouter extends Router
             $departmentController = new DepartmentController();
             if (!is_null($id)) {
                 $department = $departmentController->getDepartment($id);
-            } else throw new Exception("İd belirtilmemiş");
-            if (!isAuthorized("submanager", false, $department))
+            } else {
+                Logger::setErrorLog("İd belirtilmemiş");
+                throw new Exception("İd belirtilmemiş");
+            }
+            if (!isAuthorized("submanager", false, $department)) {
+                Logger::setErrorLog("Bu bölüm sayfasını görme yetkiniz yok");
                 throw new Exception("Bu bölüm sayfasını görme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "department" => $department,
                 "page_title" => $department->name . " Sayfası"
             ]);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+            $this->callView("admin/departments/department", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
-        $this->callView("admin/departments/department", $this->view_data);
     }
 
     public function ListDepartmentsAction()
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Bölümler listesini görmek için yetkiniz yok");
                 throw new Exception("Bölümler listesini görmek için yetkiniz yok");
+            }
             $departmentController = new DepartmentController();
             $this->view_data = array_merge($this->view_data, [
                 "departmentController" => $departmentController,
@@ -407,25 +453,26 @@ class AdminRouter extends Router
                 "page_title" => "Bölüm Listesi"
             ]);
             $this->callView("admin/departments/listdepartments", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
-
     }
 
     public function AddDepartmentAction()
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Yeni Bölüm ekleme yetkiniz yok");
                 throw new Exception("Yeni Bölüm ekleme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Bölüm Ekle",
                 "lecturers" => $this->view_data["userController"]->getLecturerList(),
             ]);
             $this->callView("admin/departments/adddepartment", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -434,12 +481,15 @@ class AdminRouter extends Router
     public function editDepartmentAction($id = null)
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")) {
+                Logger::setErrorLog("Bu bölümü düzenleme yetkiniz yok");
                 throw new Exception("Bu bölümü düzenleme yetkiniz yok");
+            }
             $departmentController = new DepartmentController();
             if (!is_null($id)) {
                 $department = $departmentController->getDepartment($id);
             } else {
+                Logger::setErrorLog("Bölüm bulunamadı");
                 throw new Exception("Bölüm bulunamadı");
             }
             $this->view_data = array_merge($this->view_data, [
@@ -448,11 +498,11 @@ class AdminRouter extends Router
                 "page_title" => $department->name . " Düzenle",//todo ders olmayınca hata veriyor.
                 "lecturers" => $this->view_data["userController"]->getLecturerList(),
             ]);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+            $this->callView("admin/departments/editdepartment", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
-        $this->callView("admin/departments/editdepartment", $this->view_data);
     }
 
     /*
@@ -465,22 +515,27 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $program = $programController->getProgram($id);
                 if (!$program) {
+                    Logger::setErrorLog("Belirtilen Program bulunamadı");
                     throw new Exception("Belirtilen Program bulunamadı");
                 }
-            } else throw new Exception("Program id değeri belirtilmelidir");
-            if (!isAuthorized("submanager", false, $program))
+            } else{
+                Logger::setErrorLog("Program id değeri belirtilmelidir");
+                throw new Exception("Program id değeri belirtilmelidir");
+            }
+            if (!isAuthorized("submanager", false, $program)){
+                Logger::setErrorLog("Bu programı görüntülemek için yetkiniz yok");
                 throw new Exception("Bu programı görüntülemek için yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "program" => $program,
                 "page_title" => $program->name . " Sayfası",
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $program->id, 'type' => 'lesson'], true),
             ]);
             $this->callView("admin/programs/program", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
-
     }
 
     /**
@@ -490,8 +545,10 @@ class AdminRouter extends Router
     public function ListProgramsAction($department_id = null): void
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Programlar listesini görmek için yetkiniz yok");
                 throw new Exception("Programlar listesini görmek için yetkiniz yok");
+            }
             $programController = new ProgramController();
             $this->view_data = array_merge($this->view_data, [
                 "programController" => $programController,
@@ -499,8 +556,8 @@ class AdminRouter extends Router
                 "page_title" => "Program Listesi",
             ]);
             $this->callView("admin/programs/listprograms", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -509,16 +566,18 @@ class AdminRouter extends Router
     public function AddProgramAction($department_id = null)
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Program ekleme yetkiniz yok");
                 throw new Exception("Program ekleme yetkiniz yok");
+            }
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Program Ekle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
                 "department_id" => $department_id
             ]);
             $this->callView("admin/programs/addprogram", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
 
@@ -527,15 +586,19 @@ class AdminRouter extends Router
     public function editProgramAction($id = null)
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Program düzenleme yetkiniz yok");
                 throw new Exception("Program düzenleme yetkiniz yok");
+            }
             $programController = new ProgramController();
             if (!is_null($id)) {
                 $program = $programController->getProgram($id);
                 if (!$program) {
+                    Logger::setErrorLog("Belirtilen Program bulunamadı");
                     throw new Exception("Belirtilen Program bulunamadı");
                 }
             } else {
+                Logger::setErrorLog("Program id numarası belirtilmelidir");
                 throw new Exception("Program id numarası belirtilmelidir");
             }
             $this->view_data = array_merge($this->view_data, [
@@ -545,8 +608,8 @@ class AdminRouter extends Router
                 "page_title" => $program->name . " Düzenle",//todo ders olmayınca hata veriyor.
             ]);
             $this->callView("admin/programs/editprogram", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
 
@@ -562,8 +625,10 @@ class AdminRouter extends Router
     public function EditScheduleAction($department_id = null)
     {
         try {
-            if (!isAuthorized("department_head"))
+            if (!isAuthorized("department_head")){
+                Logger::setErrorLog("Ders programı düzenleme yetkiniz yok");
                 throw new Exception("Ders programı düzenleme yetkiniz yok");
+            }
             $userController = new UserController();
             $currentUser = $userController->getCurrentUser();
             $departmentController = new DepartmentController();
@@ -573,6 +638,7 @@ class AdminRouter extends Router
             } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
                 $departments = [$departmentController->getDepartment($currentUser->department_id)];
             } else {
+                Logger::setErrorLog("Bu işlem için yetkiniz yok");
                 throw new Exception("Bu işlem için yetkiniz yok");
             }
             $this->view_data = array_merge($this->view_data, [
@@ -583,11 +649,10 @@ class AdminRouter extends Router
                 "current_semesters" => getCurrentSemester()
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
-
     }
 
     /*
@@ -596,17 +661,18 @@ class AdminRouter extends Router
     public function SettingsAction()
     {
         try {
-            if (!isAuthorized("submanager"))
+            if (!isAuthorized("submanager")){
+                Logger::setErrorLog("Ayarlar sayfasına erişim yetkiniz yok");
                 throw new Exception("Ayarlar sayfasına erişim yetkiniz yok");
+            }
             $settingsController = new SettingsController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ayarlar",
                 "settings" => $settingsController->getSettings()
             ]);
             $this->callView("admin/settings/settings", $this->view_data);
-
-        } catch (Exception $exception) {
-            $_SESSION["error"]= $exception->getMessage();
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
