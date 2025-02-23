@@ -635,7 +635,7 @@ class AjaxRouter extends Router
                  */
                 $crashFilters = [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                    "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id, "classroom" => $classroom->id],//sıralama yetki kontrolü için önemli
+                    "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
                     // Programın türü lesson yada exam
                     "type" => "lesson",
                     "time_start" => $this->data['time_start'],
@@ -643,7 +643,15 @@ class AjaxRouter extends Router
                     "lesson_hours" => $this->data['lesson_hours'],
                     "semester_no" => trim($this->data['semester_no']),
                     "semester" => $this->data['semester'],
-                    "academic_year" => $this->data['academic_year'],];
+                    "academic_year" => $this->data['academic_year'],
+                ];
+                /**
+                 * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+                 * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
+                 */
+                if ($classroom->type != 3) {
+                    $crashFilters['owners']['classroom'] = $classroom->id;
+                }
                 if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
                     /**
                      * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
