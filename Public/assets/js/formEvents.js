@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     programSelect.innerHTML = "";
                     console.log(data)
                     const option = document.createElement("option");
-                    option.value = null;
+                    option.value = 0;
                     option.textContent = "Program Seçiniz";
                     programSelect.appendChild(option);
                     // Gelen programları ekle
