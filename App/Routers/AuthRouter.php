@@ -3,6 +3,7 @@
 namespace App\Routers;
 
 use App\Controllers\UserController;
+use App\Core\Logger;
 use App\Core\Router;
 use Exception;
 
@@ -63,6 +64,7 @@ class AuthRouter extends Router
             }
 
         } catch (Exception $e) {
+            Logger::setExceptionLog($e);
             $response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -71,6 +73,5 @@ class AuthRouter extends Router
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($response);
         }
-
     }
 }
