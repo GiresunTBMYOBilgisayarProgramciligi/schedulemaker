@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     })
 
-    function getSchedulesHTML(scheduleData =new FormData()) {
+    function getSchedulesHTML(scheduleData = new FormData()) {
         return fetch("/ajax/getScheduleHTML", {
             method: "POST",
             headers: {
@@ -146,8 +146,9 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param dayIndex
      * @param classroomSelect
      * @param event
+     * @param lessonId
      */
-    function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, event) {
+    function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, lessonId, event) {
         console.log("Derslikler alınıyor")
         let data = new FormData();
         data.append("hours", event.target.value);
@@ -157,6 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("owner_type", "classroom")
         data.append("semester", document.getElementById("semester").value)
         data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("lesson_id", lessonId);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
         fetch("/ajax/getAvailableClassroomForSchedule", {
@@ -256,8 +258,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     }
-                    preferredCells= data.preferredCells;
-                    if (preferredCells){
+                    preferredCells = data.preferredCells;
+                    if (preferredCells) {
                         for (let i = 0; i <= 9; i++) {
                             for (let cell in preferredCells[i]) {
                                 table.rows[i].cells[cell].classList.add("text-bg-success")
@@ -276,6 +278,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table");
+        let lessonId = draggedElement.dataset['lessonId'];
         /*
          Dönem kontrolü yapılıyor.
          */
@@ -312,7 +315,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours")
         let classroomSelect = scheduleModal.body.querySelector("#classroom")
         // ders saati değişince ders listesi çekilecek
-        selectedHoursInput.addEventListener("change", fetchAvailableClassrooms.bind(this, scheduleTime, droppedCellIndex - 1, classroomSelect))
+        selectedHoursInput.addEventListener("change", fetchAvailableClassrooms.bind(this, scheduleTime, droppedCellIndex - 1, classroomSelect, lessonId))
         selectedHoursInput.dispatchEvent(new Event("change"))
 
         let classroomSelectForm = scheduleModal.body.querySelector("form");
@@ -353,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkedHours++
             }
 
-            let lessonId = draggedElement.dataset['lessonId'];
+
             let result = await saveSchedule(
                 {
                     "lesson_id": lessonId,

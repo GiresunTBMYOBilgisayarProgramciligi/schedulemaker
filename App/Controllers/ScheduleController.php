@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Logger;
+use App\Models\Lesson;
 use App\Models\Schedule;
 use Exception;
 use PDO;
@@ -354,6 +355,7 @@ class ScheduleController extends Controller
         //todo SQL: SELECT * FROM classrooms WHERE id NOT IN (2, 2), şeklinde bir sorgu oluşturuyor. Uygun olmayan tek sınıf 2. sınıf. Galiba iki saatlik ders olduğu için
     {
         try {
+            $classroomFilters = [];
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
                 Logger::setErrorLog("Missing hours and time");
                 throw new Exception("Missing hours and time");
@@ -363,6 +365,11 @@ class ScheduleController extends Controller
             }
             if (!key_exists("academic_year", $filters)) {
                 $filters['academic_year'] = getSetting("academic_year");
+            }
+            if (key_exists("lesson_id", $filters)) {
+                $lesson = (new LessonController())->getLesson($filters['lesson_id']);
+                unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
+                $classroomFilters["type"] = $lesson->classroom_type;
             }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
             $unavailable_classroom_ids = [];
@@ -380,7 +387,8 @@ class ScheduleController extends Controller
                             $unavailable_classroom_ids[] = $classroomSchedule->owner_id;
                         }
                     }
-                    $available_classrooms = (new ClassroomController())->getListByFilters(["!id" => $unavailable_classroom_ids]);
+                    $classroomFilters["!id"] = $unavailable_classroom_ids;
+                    $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
                 } else {
                     Logger::setErrorLog("owner_type classroom değil");
                     throw new Exception("owner_type classroom değil");
@@ -462,7 +470,7 @@ class ScheduleController extends Controller
                     }
                 }
 
-            } else{
+            } else {
                 Logger::setErrorLog("Owners bilgileri girilmemiş");
                 throw new Exception("Owners bilgileri girilmemiş");
             }
@@ -499,7 +507,7 @@ class ScheduleController extends Controller
                         $result = false;
                     }
                 }//todo diğer türler için işlemler
-            } else{
+            } else {
                 Logger::setErrorLog("owner_type ve/veya owner_id belirtilmemiş");
                 throw new Exception("owner_type ve/veya owner_id belirtilmemiş");
             }
@@ -589,7 +597,7 @@ class ScheduleController extends Controller
     public function saveNew(Schedule $new_schedule): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_schedule)){
+            if (!isAuthorized("submanager", false, $new_schedule)) {
                 Logger::setErrorLog("Ders Programı kaydetmek için yetkiniz yok");
                 throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
             }
@@ -672,7 +680,7 @@ class ScheduleController extends Controller
     public function updateSchedule(Schedule $schedule): int
     {
         try {
-            if (!isAuthorized("submanager", false, $schedule)){
+            if (!isAuthorized("submanager", false, $schedule)) {
                 Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
                 throw new Exception("Ders Programı güncelleme yetkiniz yok");
             }
@@ -707,7 +715,7 @@ class ScheduleController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $schedule->id;
-            } else{
+            } else {
                 Logger::setErrorLog("Program Güncellenemedi");
                 throw new Exception("Program Güncellenemedi");
             }
@@ -743,7 +751,7 @@ class ScheduleController extends Controller
                 Logger::setErrorLog("Silinecek Ders bulunamadı");
                 throw new Exception("Silinecek Ders bulunamadı");
             }
-            if (!isAuthorized("submanager", false, $schedule)){
+            if (!isAuthorized("submanager", false, $schedule)) {
                 Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
                 throw new Exception("Ders Programı güncelleme yetkiniz yok");
             }
