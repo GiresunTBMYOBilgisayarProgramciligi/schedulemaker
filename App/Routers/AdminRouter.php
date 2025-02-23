@@ -356,7 +356,6 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => $classroomController,
                 "classrooms" => $classroomController->getClassroomsList(),
-                "classroomTypes" => $classroomController->getTypeList(),
                 "page_title" => "Derslik Listesi"
             ]);
             $this->callView("admin/classrooms/listclassrooms", $this->view_data);
@@ -400,8 +399,9 @@ class AdminRouter extends Router
                 throw new Exception("Derslik Bulunamadı");
             }
             $this->view_data = array_merge($this->view_data, [
-                "classroomController" => new ClassroomController(),
+                "classroomController" => $classroomController,
                 "classroom" => $classroom,
+                "classroomTypes"=> $classroomController->getTypeList(),
                 "page_title" => $classroom->name . "Düzenle",
             ]);
             $this->callView("admin/classrooms/editclassroom", $this->view_data);

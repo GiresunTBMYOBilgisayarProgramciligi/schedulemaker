@@ -4,6 +4,7 @@
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
  * @var string $scheduleHTML
+ * @var array $classroomTypes
  */
 ?>
 <!--begin::App Main-->
@@ -51,6 +52,8 @@
                                 <dd class="col-sm-8"><?= $classroom->class_size ?></dd>
                                 <dt class="col-sm-4">Sınav Mevcudu</dt>
                                 <dd class="col-sm-8"><?= $classroom->exam_size ?></dd>
+                                <dt class="col-sm-4">Türü</dt>
+                                <dd class="col-sm-8"><?= $classroom->getTypeName() ?></dd>
                             </dl>
                         </div>
                         <div class="card-footer">

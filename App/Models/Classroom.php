@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use App\Controllers\ClassroomController;
 use App\Core\Model;
 
 class Classroom extends Model
 {
 
-    public ?int $id= null;
-    public ?string $name= null;
-    public ?int $class_size= null;
-    public ?int $exam_size= null;
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?int $class_size = null;
+    public ?int $exam_size = null;
     /*
-     * todo tür ve özellikler şeklinde iki alan eklenebilir.
-     * Tür lab sınıf amfi konferans salonu
-     * Özellikler beyaz tahta, akıllı tahta, projeksiyon var yok, kara tahta
+     * Sınıf Türü
+     * 1-> Derslik
+     * 2-> Bilgisayar laboratuvarı
+     * 3-> Uzaktan Eğitim Sınıfı
      */
+    public ?string $type = null;
     private string $table_name = "classrooms";
 
     public function __construct(int $id = null)
@@ -32,5 +35,19 @@ class Classroom extends Model
             $this->class_size = $class_size;
             $this->exam_size = $exam_size;
         }
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public function getTypeName()
+    {
+        try {
+            return (new ClassroomController())->getTypeList()[$this->type] ?? "";
+        } catch (\Exception) {
+            throw new \Exception("Deslik türü alınamadı");
+        }
+
     }
 }

@@ -2,6 +2,7 @@
 /**
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
+ * @var array $classroomTypes
  */
 ?>
 <!--begin::App Main-->
@@ -39,11 +40,21 @@
                             <input type="hidden" name="id" value="<?= $classroom->id ?>">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    placeholder="Adı" value="<?= $classroom->name ?>" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="">
+                                            <label class="form-label" for="type"> Türü</label>
+                                            <select name="type" id="type" class="form-select">
+                                                <?php foreach ($classroomTypes as $id => $type): ?>
+                                                    <option value="<?= $id ?>" <?= $classroom->type == $id ? "selected" : "" ?>><?= $type ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-3">

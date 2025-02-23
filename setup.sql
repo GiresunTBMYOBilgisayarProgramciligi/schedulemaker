@@ -24,7 +24,7 @@ create table if not exists schedule
     semester      varchar(20),
     academic_year varchar(12),
     primary key (id),
-    unique (owner_type, owner_id, time, semester_no, semester,academic_year)
+    unique (owner_type, owner_id, time, semester_no, semester, academic_year)
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -59,7 +59,8 @@ create table if not exists classrooms
 (
     id         int AUTO_INCREMENT,
     name       varchar(20),
-    plan       text, # oturma planı
+    plan       text,       # oturma planı
+    type       varchar(50),# uzem, lab, normal
     class_size int default 0,
     exam_size  int default 0,
     primary key (id),

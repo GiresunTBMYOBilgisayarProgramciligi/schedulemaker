@@ -2,6 +2,7 @@
 /**
  * @var \App\Controllers\ClassroomController $classroomController
  * @var string $page_title
+ * @var array $classroomTypes
  */
 ?>
 <!--begin::App Main-->
@@ -37,7 +38,7 @@
                         <form action="/ajax/addClassroom" method="post" class="ajaxForm" title="Yeni Derslik Ekle">
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-3">
                                         <div class="">
                                             <label class="form-label" for="name"> Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
@@ -45,6 +46,16 @@
                                             <div id="nameHelp" class="form-text">
                                                 Derslik için bir ad yazınız. Örn. D1
                                             </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="">
+                                            <label class="form-label" for="type"> Türü</label>
+                                            <select name="type" id="type" class="form-select">
+                                                <?php foreach ($classroomTypes as $id=>$type): ?>
+                                                <option value="<?= $id ?>"><?= $type ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-3">

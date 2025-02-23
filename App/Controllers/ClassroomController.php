@@ -89,7 +89,6 @@ class ClassroomController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setExceptionLog($e);
                 Logger::setErrorLog("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
@@ -153,5 +152,14 @@ class ClassroomController extends Controller
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
+    }
+
+    public function getTypeList(): array
+    {
+        return [
+            1 => "Derslik",
+            2 => "Bilgisayar Laboratuvarı",
+            3 => "Uzaktan Eğitim Sınıfı"
+        ];
     }
 }
