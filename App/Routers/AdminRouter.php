@@ -74,7 +74,7 @@ class AdminRouter extends Router
                 "page_title" => "Anasayfa"]);
             $this->callView("admin/index", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
         }
 
     }
@@ -98,7 +98,7 @@ class AdminRouter extends Router
             } else$this->view_data['users'] = $userController->getListByFilters();
             $this->callView("admin/users/listusers", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect("/admin");
         }
 
@@ -132,7 +132,7 @@ class AdminRouter extends Router
 
             $this->callView("admin/users/adduser", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect(null, true);
         }
 
@@ -157,7 +157,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/profile", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect(null,true);
         }
 
@@ -181,7 +181,7 @@ class AdminRouter extends Router
                 "programController" => new ProgramController()]);
             $this->callView("admin/users/edituser", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect(null,true);
         }
 
@@ -206,7 +206,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/lessons/lesson", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin/listlessons");
         }
 
@@ -227,7 +227,7 @@ class AdminRouter extends Router
             } else$this->view_data['lessons'] = $lessonController->getListByFilters();
             $this->callView("admin/lessons/listlessons", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect("/admin");
         }
 
@@ -249,7 +249,7 @@ class AdminRouter extends Router
             } else$this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/addlesson", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect("/admin/listlessons");
         }
     }
@@ -282,7 +282,7 @@ class AdminRouter extends Router
             } else$this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect(null, true);
         }
 
@@ -306,7 +306,7 @@ class AdminRouter extends Router
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'classroom', 'owner_id' => $classroom->id, 'type' => 'lesson'], true),
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
         $this->callView("admin/classrooms/classroom", $this->view_data);
@@ -321,10 +321,11 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => $classroomController,
                 "classrooms" => $classroomController->getClassroomsList(),
+                "classroomTypes"=>$classroomController->getTypeList(),
                 "page_title" => "Derslik Listesi"
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
         $this->callView("admin/classrooms/listclassrooms", $this->view_data);
@@ -335,12 +336,14 @@ class AdminRouter extends Router
         try {
             if (!isAuthorized("submanager"))
                 throw new Exception("Yeni derslik ekleme yetkiniz yok");
+            $classroomController = new ClassroomController();
             $this->view_data = array_merge($this->view_data, [
-                "page_title" => "Derslik Ekle"
+                "page_title" => "Derslik Ekle",
+                "classroomTypes"=>$classroomController->getTypeList()
             ]);
             $this->callView("admin/classrooms/addclassroom", $this->view_data);
         } catch (Exception $e) {
-            $_SESSION["errors"][] = $e->getMessage();
+            $_SESSION["error"]= $e->getMessage();
             $this->Redirect("/admin");
         }
 
@@ -363,7 +366,7 @@ class AdminRouter extends Router
                 "page_title" => $classroom->name . "Düzenle",//todo ders olmayınca hata veriyor.
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
         $this->callView("admin/classrooms/editclassroom", $this->view_data);
@@ -386,7 +389,7 @@ class AdminRouter extends Router
                 "page_title" => $department->name . " Sayfası"
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
         $this->callView("admin/departments/department", $this->view_data);
@@ -405,7 +408,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/listdepartments", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect(null, true);
         }
 
@@ -422,7 +425,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/adddepartment", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin");
         }
 
@@ -446,7 +449,7 @@ class AdminRouter extends Router
                 "lecturers" => $this->view_data["userController"]->getLecturerList(),
             ]);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
         $this->callView("admin/departments/editdepartment", $this->view_data);
@@ -474,7 +477,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/program", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin/listprograms");
         }
 
@@ -497,7 +500,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/listprograms", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin");
         }
 
@@ -515,7 +518,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/addprogram", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin/listprograms");
         }
 
@@ -543,7 +546,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/editprogram", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect("/admin/listprograms");
         }
 
@@ -581,7 +584,7 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
 
@@ -603,7 +606,7 @@ class AdminRouter extends Router
             $this->callView("admin/settings/settings", $this->view_data);
 
         } catch (Exception $exception) {
-            $_SESSION["errors"][] = $exception->getMessage();
+            $_SESSION["error"]= $exception->getMessage();
             $this->Redirect();
         }
     }
