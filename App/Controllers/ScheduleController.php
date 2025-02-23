@@ -237,7 +237,11 @@ class ScheduleController extends Controller
                         Logger::setErrorLog("Yarıyıl bilgisi yok");
                         throw new Exception("Yarıyıl bilgisi yok");
                     }
-                    $lessonFilters['program_id'] = $filters['owner_id'];
+                    $lessonFilters = array_merge($lessonFilters, [
+                        'program_id' => $filters['owner_id'],
+                        'semester' => $filters['semester'],
+                        'academic_year' => $filters['academic_year'],
+                    ]);
                     $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
                     /*
                      * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
@@ -535,8 +539,8 @@ class ScheduleController extends Controller
             }
             $HTMLOUT = '';
             if (!is_null($filters["semester_no"])) {
-                Logger::setErrorLog("Dönem numarası girilmemeiş");
-                throw new Exception("Dönem numarası girilmemeiş");
+                Logger::setErrorLog("Dönem numarası girilmemiş");
+                throw new Exception("Dönem numarası girilmemiş");
             }
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
