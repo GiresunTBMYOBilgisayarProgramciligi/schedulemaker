@@ -165,6 +165,7 @@ class AdminRouter extends Router
             $this->view_data = array_merge($this->view_data, [
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Profil Sayfası",
+                "lesson_list" => $user->getLessonsList(),
                 "departments" => (new DepartmentController())->getDepartmentsList(),
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $user->id, 'type' => 'lesson'], true),
             ]);

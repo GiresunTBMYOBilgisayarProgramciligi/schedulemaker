@@ -7,6 +7,7 @@
  * @var array $departments
  * @var string $page_title
  * @var string $scheduleHTML
+ * @var array $lesson_list
  * todo users klasörüne taşınabilir
  */
 
@@ -238,7 +239,7 @@ use function App\Helpers\isAuthorized;
                         <div class="card-body">
                             <!-- Burada dersler listelenecek -->
                             <div class="row">
-                                <?php foreach ($user->getLessonsList() as $lesson): ?>
+                                <?php foreach ($lesson_list as $lesson): ?>
                                     <div class="col-md-4">
                                         <a href="/admin/lesson/<?= $lesson->id ?>" class="link-underline link-underline-opacity-0">
                                             <div class="info-box text-bg-primary">
