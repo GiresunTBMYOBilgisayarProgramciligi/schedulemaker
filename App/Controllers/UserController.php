@@ -144,7 +144,7 @@ class UserController extends Controller
     public function saveNew(User $new_user): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_user)){
+            if (!isAuthorized("submanager", false, $new_user)) {
                 Logger::setErrorLog("Kullanıcı oluşturma yetkiniz yok");
                 throw new Exception("Kullanıcı oluşturma yetkiniz yok");
             }
@@ -180,16 +180,16 @@ class UserController extends Controller
     public function updateUser(User $user): int
     {
         try {
-            if (!isAuthorized("submanager", false, $user)){
-                Logger::setErrorLog("Kullancı bilgilerini güncelleme yetkiniz yok");
-                throw new Exception("Kullancı bilgilerini güncelleme yetkiniz yok");
+            if (!isAuthorized("submanager", false, $user)) {
+                Logger::setErrorLog("Kullanıcı bilgilerini güncelleme yetkiniz yok");
+                throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
             }
 
             // Şifre kontrolü ve hash işlemi
-            if (empty($user->password)) {
-                $user->password = null;
-            } else {
+            if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
+            } else {
+                unset($user->password);
             }
 
             // Kullanıcı verilerini filtrele
@@ -230,9 +230,9 @@ class UserController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $user->id;
-            } else{
-                Logger::setErrorLog("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
-                throw new Exception("Muhtemelen hiç bir bilgi değiştirilmediği için kullanıcı Güncellenemedi");
+            } else {
+                Logger::setErrorLog("Muhtemelen hiçbir bilgi değiştirilmediği için kullanıcı güncellenemedi");
+                throw new Exception("Muhtemelen hiçbir bilgi değiştirilmediği için kullanıcı güncellenemedi");
             }
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
@@ -270,7 +270,7 @@ class UserController extends Controller
     public function getLecturerList(array $filter = []): array
     {
         try {
-            $filter = array_merge($filter, ["!role" => ['in'=>["user", "admin"]]]);
+            $filter = array_merge($filter, ["!role" => ['in' => ["user", "admin"]]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
             Logger::setExceptionLog($e);

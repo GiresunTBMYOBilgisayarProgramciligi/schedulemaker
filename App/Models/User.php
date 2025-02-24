@@ -115,7 +115,7 @@ class User extends Model
             "manager" => "Müdür",
             "submanager" => "Müdür Yardımcısı"
         ];
-        return $role_names[$this->role];
+        return $role_names[$this->role] ?? "";
     }
 
     /**
@@ -125,12 +125,7 @@ class User extends Model
      */
     public function getLessonsList(): array
     {
-        try {
-            return (new LessonController())->getLessonsList($this->id) ?? [];
-        } catch (Exception $exception) {
-            Logger::setExceptionLog($exception);
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
+        return (new LessonController())->getLessonsList($this->id) ?? [];
     }
 
     public function getGravatarURL($size = 50): string
