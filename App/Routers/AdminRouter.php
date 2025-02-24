@@ -12,6 +12,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+use App\Core\AssetManager;
 use App\Core\Logger;
 use App\Core\Router;
 
@@ -28,24 +29,21 @@ class AdminRouter extends Router
 {
     private $view_data = [];
     private User $currentUser;
+    private AssetManager $assetManager;
 
-    /**
-     * @throws Exception
-     */
     public function __construct()
     {
         try {
-            // Her çağrıdan önce kullanıcı giriş durumunu kontrol et
             $this->beforeAction();
-            $this->view_data["userController"] = new UserController();//her sayfada olmalı
+            $this->assetManager = new AssetManager();
+            $this->view_data["userController"] = new UserController();
+            $this->view_data["assetManager"] = $this->assetManager; // View'da kullanmak için
             $this->currentUser = $this->view_data["userController"]->getCurrentUser();
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
-
     }
-
     /**
      * Aksiyonlardan önce çalıştırılan kontrol mekanizması
      */
@@ -91,7 +89,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Kullanıcı listesini görme yetkiniz yok");
                 throw new Exception("Kullanıcı listesini görme yetkiniz yok");
             }
-
+            $this->assetManager->loadPageAssets('listpages');
             //$userController =$this->view_data["userController"]; bu şekilde kullanınca otomatik tamamlama çalışmıyor
             $userController = new UserController();
             $this->view_data = array_merge($this->view_data, [
@@ -135,6 +133,7 @@ class AdminRouter extends Router
                     throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
                 }
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Kullanıcı Ekle",
                 "departments" => (new DepartmentController())->getDepartmentsList($departmentFilters),
@@ -161,6 +160,8 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bu profili görme yetkiniz yok");
                 throw new Exception("Bu profili görme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('profilepage');
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Profil Sayfası",
@@ -188,6 +189,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Kullanıcı düzenleme yetkiniz yok");
                 throw new Exception("Kullanıcı düzenleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "user" => $user,
                 "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
@@ -218,6 +220,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bu dersi görme yetkiniz yok");
                 throw new Exception("Bu dersi görme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('singlepages');
             $this->view_data = array_merge($this->view_data, [
                 "lesson" => $lesson,
                 "page_title" => $lesson->name . " Sayfası",
@@ -238,7 +241,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Ders listesini görme yetkiniz yok");
                 throw new Exception("Ders listesini görme yetkiniz yok");
             }
-
+            $this->assetManager->loadPageAssets('listpages');
             $lessonController = new LessonController();
             $this->view_data = array_merge($this->view_data, [
                 "lessonController" => $lessonController,
@@ -262,6 +265,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Ders ekleme yetkiniz yok");
                 throw new Exception("Ders ekleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $userController = new UserController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ders Ekle",
@@ -293,7 +297,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bu dersi düzenleme yetkiniz yok");
                 throw new Exception("Bu dersi düzenleme yetkiniz yok");
             }
-
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "lessonController" => new LessonController(),
                 "lesson" => $lesson,
@@ -335,6 +339,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Derslik id Numarası belirtilmemiş");
                 throw new Exception("Derslik id Numarası belirtilmemiş");
             }
+            $this->assetManager->loadPageAssets('singlepages');
             $this->view_data = array_merge($this->view_data, [
                 "classroom" => $classroom,
                 "page_title" => $classroom->name . " Sayfası",
@@ -354,6 +359,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Derslik listesini görme yetkiniz yok");
                 throw new Exception("Derslik listesini görme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('listpages');
             $classroomController = new ClassroomController();
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => $classroomController,
@@ -374,6 +380,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Yeni derslik ekleme yetkiniz yok");
                 throw new Exception("Yeni derslik ekleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $classroomController = new ClassroomController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Derslik Ekle",
@@ -400,6 +407,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Derslik Bulunamadı");
                 throw new Exception("Derslik Bulunamadı");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "classroomController" => $classroomController,
                 "classroom" => $classroom,
@@ -430,6 +438,10 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bu bölüm sayfasını görme yetkiniz yok");
                 throw new Exception("Bu bölüm sayfasını görme yetkiniz yok");
             }
+            $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
+            $this->assetManager->addJs("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.js");
+            $this->assetManager->addJs("/assets/js/data_table.js");
+            $this->assetManager->loadPageAssets('singlepages');
             $this->view_data = array_merge($this->view_data, [
                 "department" => $department,
                 "page_title" => $department->name . " Sayfası"
@@ -448,6 +460,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bölümler listesini görmek için yetkiniz yok");
                 throw new Exception("Bölümler listesini görmek için yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('listpages');
             $departmentController = new DepartmentController();
             $this->view_data = array_merge($this->view_data, [
                 "departmentController" => $departmentController,
@@ -468,6 +481,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Yeni Bölüm ekleme yetkiniz yok");
                 throw new Exception("Yeni Bölüm ekleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Bölüm Ekle",
                 "lecturers" => $this->view_data["userController"]->getLecturerList(),
@@ -494,6 +508,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bölüm bulunamadı");
                 throw new Exception("Bölüm bulunamadı");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "departmentController" => $departmentController,
                 "department" => $department,
@@ -528,6 +543,11 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Bu programı görüntülemek için yetkiniz yok");
                 throw new Exception("Bu programı görüntülemek için yetkiniz yok");
             }
+            $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
+            $this->assetManager->addJs("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.js");
+            $this->assetManager->addJs("/assets/js/data_table.js");
+            $this->assetManager->loadPageAssets('singlepages');
+
             $this->view_data = array_merge($this->view_data, [
                 "program" => $program,
                 "page_title" => $program->name . " Sayfası",
@@ -551,6 +571,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Programlar listesini görmek için yetkiniz yok");
                 throw new Exception("Programlar listesini görmek için yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('listpages');
             $programController = new ProgramController();
             $this->view_data = array_merge($this->view_data, [
                 "programController" => $programController,
@@ -572,6 +593,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Program ekleme yetkiniz yok");
                 throw new Exception("Program ekleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Program Ekle",
                 "departments" => (new DepartmentController())->getDepartmentsList(),
@@ -603,6 +625,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Program id numarası belirtilmelidir");
                 throw new Exception("Program id numarası belirtilmelidir");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $this->view_data = array_merge($this->view_data, [
                 "programController" => $programController,
                 "program" => $program,
@@ -631,6 +654,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Ders programı düzenleme yetkiniz yok");
                 throw new Exception("Ders programı düzenleme yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('editschedule');
             $userController = new UserController();
             $currentUser = $userController->getCurrentUser();
             $departmentController = new DepartmentController();
@@ -667,6 +691,7 @@ class AdminRouter extends Router
                 Logger::setErrorLog("Ayarlar sayfasına erişim yetkiniz yok");
                 throw new Exception("Ayarlar sayfasına erişim yetkiniz yok");
             }
+            $this->assetManager->loadPageAssets('formpages');
             $settingsController = new SettingsController();
             $this->view_data = array_merge($this->view_data, [
                 "page_title" => "Ayarlar",
