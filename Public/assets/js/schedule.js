@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
                         option.value = classroom.name//todo value yerine id nasıl olur?
-                        option.innerText = classroom.name
+                        option.innerText = classroom.name + " (" + classroom.class_size + ")"
                         classroomSelect.appendChild(option)
                     })
                 }

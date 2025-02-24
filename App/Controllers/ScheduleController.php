@@ -374,7 +374,6 @@ class ScheduleController extends Controller
                 $lesson = (new LessonController())->getLesson($filters['lesson_id']);
                 unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
                 $classroomFilters["type"] = $lesson->classroom_type;
-                $classroomFilters["class_size"]= ['>'=>$lesson->size];
             }
             $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
             $unavailable_classroom_ids = [];
@@ -395,10 +394,6 @@ class ScheduleController extends Controller
                     }
                     $classroomFilters["!id"] = $unavailable_classroom_ids;
                     $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
-                    if (count($available_classrooms) == 0) {
-                        unset($classroomFilters['class_size']);
-                        $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
-                    }
                 } else {
                     Logger::setErrorLog("owner_type classroom değil");
                     throw new Exception("owner_type classroom değil");
