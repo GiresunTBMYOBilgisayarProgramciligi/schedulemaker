@@ -270,7 +270,7 @@ class UserController extends Controller
     public function getLecturerList(array $filter = []): array
     {
         try {
-            $filter = array_merge($filter, ["!role" => ["user", "admin"]]);
+            $filter = array_merge($filter, ["!role" => ['in'=>["user", "admin"]]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
             Logger::setExceptionLog($e);

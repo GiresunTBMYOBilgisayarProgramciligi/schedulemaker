@@ -101,7 +101,6 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      */
     function checkLessonCrash(dropZone, draggedElement) {
-        //todo backend ile de kontrol eklenebilir.
         if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
             //eğer zeten iki grup eklenmişse
             if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
@@ -364,7 +363,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     "lesson_hours": lessonHours,
                     "day_index": droppedCellIndex - 1,
                     "selected_classroom": selectedClassroom,
-                    "semester_no": draggedElement.dataset.semesterNo
+                    "semester_no": draggedElement.dataset.semesterNo,
+                    "academic_year": document.getElementById("academic_year").value,
+                    "semester": document.getElementById("semester").value
                 });
             if (result) {
                 /**
@@ -484,7 +485,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
-                "classroom_name": draggedElement.querySelector("span.badge").innerText
+                "classroom_name": draggedElement.querySelector("span.badge").innerText,
+                "semester": document.getElementById("semester").value,
+                "academic_year": document.getElementById("academic_year").value
             });
         if (result) {
             let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
@@ -522,7 +525,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
-                "classroom_name": draggedElement.querySelector("span.badge").innerText
+                "classroom_name": draggedElement.querySelector("span.badge").innerText,
+                "semester": document.getElementById("semester").value,
+                "academic_year": document.getElementById("academic_year").value
             });
         if (deleteResult) {
             console.log("Eski ders Silindi");
@@ -535,7 +540,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 "lesson_hours": 1,
                 "day_index": droppedCellIndex - 1,
                 "selected_classroom": draggedElement.querySelector("span.badge").innerText,
-                "semester_no": draggedElement.dataset.semesterNo
+                "semester_no": draggedElement.dataset.semesterNo,
+                "semester": document.getElementById("semester").value,
+                "academic_year": document.getElementById("academic_year").value
             });
         if (saveResult) {
             console.log("Yeni ders eklendi");

@@ -432,11 +432,12 @@ class ScheduleController extends Controller
             if (array_key_exists('owners', $filters)) {
                 foreach ($filters["owners"] as $owner_type => $owner_id) {
                     $ownerFilter = [
-                        "time" => $times,
+                        "time" => ['in' => $times],
                         "owner_type" => $owner_type,
                         "owner_id" => $owner_id,
                         "type" => $filters['type'],
                         "semester" => $filters['semester'],
+                        "academic_year" => $filters['academic_year'],
                     ];
                     if ($owner_type == "program") {
                         $ownerFilter["semester_no"] = $filters["semester_no"];
