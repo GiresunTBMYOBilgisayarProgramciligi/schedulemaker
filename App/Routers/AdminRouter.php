@@ -201,7 +201,24 @@ class AdminRouter extends Router
             Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
+    }
 
+    public function importUsersAction()
+    {
+        try {
+            $userController = new UserController();
+            if (!isAuthorized("submanager")) {
+                throw new Exception("Kullanıcı İçe aktarma yetkiniz yok");
+            }
+            $this->assetManager->loadPageAssets('formpages');
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => " Kullanıcı İçe aktar",
+            ]);
+            $this->callView("admin/users/importusers", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
+            $this->Redirect(null, true);
+        }
     }
 
     /*

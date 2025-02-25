@@ -64,6 +64,17 @@ class ProgramController extends Controller
     }
 
     /**
+     * @param string $name
+     * @return Program|bool
+     * @throws Exception,
+     */
+    public function getProgramByName(string $name): Program|bool
+    {
+        return $this->getListByFilters(["name" => $name])[0] ?? false;
+
+    }
+
+    /**
      * @param Program $new_program
      * @return int
      * @throws Exception

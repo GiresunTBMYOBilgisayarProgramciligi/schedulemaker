@@ -61,6 +61,16 @@ class DepartmentController extends Controller
     }
 
     /**
+     * @param string $name
+     * @return Department|bool
+     * @throws Exception
+     */
+    public function getDepartmentByName(string $name): Department|bool
+    {
+        return $this->getListByFilters(["name" => $name])[0] ?? false;
+    }
+
+    /**
      * Parametre olarak verilen modeli veri tabanına kaydeder
      * @param Department $new_department
      * @return int Veri tabanına eklenen Department id numarası
@@ -132,7 +142,7 @@ class DepartmentController extends Controller
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
                 return $department->id;
-            } else{
+            } else {
                 Logger::setErrorLog("Bölüm Güncellenemedi");
                 throw new Exception("Bölüm Güncellenemedi");
             }

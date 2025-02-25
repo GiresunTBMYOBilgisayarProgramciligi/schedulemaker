@@ -78,6 +78,15 @@ use function App\Helpers\isAuthorized;
                                     </p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="/admin/importusers"
+                                   class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importusers')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-box-arrow-in-down"></i>
+                                    <p>
+                                        İçe aktar
+                                    </p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 <?php endif; ?>
@@ -259,7 +268,7 @@ use function App\Helpers\isAuthorized;
                         <li class="nav-item">
                             <a href="/admin/editschedule"
                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
-                                <i class="nav-icon bi bi-person-lines-fill"></i>
+                                <i class="nav-icon bi bi-calendar-plus"></i>
                                 <p>
                                     Ders Programını Düzenle
                                 </p>
@@ -268,7 +277,7 @@ use function App\Helpers\isAuthorized;
                         <li class="nav-item">
                             <a href="#"
                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
-                                <i class="nav-icon bi bi-person-plus-fill"></i>
+                                <i class="nav-icon bi bi-calendar2-plus"></i>
                                 <p>
                                     Sınav Programını Düzenle
                                 </p>

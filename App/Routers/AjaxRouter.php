@@ -13,6 +13,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+use App\Core\ImportExportManager;
 use App\Core\Logger;
 use App\Core\Router;
 use App\Models\Classroom;
@@ -37,6 +38,7 @@ class AjaxRouter extends Router
      * @var array Ajax isteği verileri
      */
     private $data = [];
+    private $files = [];
 
     private $currentUser = null;
 
@@ -62,6 +64,7 @@ class AjaxRouter extends Router
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
         ) {
             $this->data = $_POST;
+            $this->files = $_FILES;
             return true;
         } else
             return false;
@@ -920,6 +923,28 @@ class AjaxRouter extends Router
             }
             $this->response['status'] = "success";
             $this->response['msg'] = "Ayarlar kaydedildi";
+        } catch (Exception $e) {
+            Logger::setExceptionLog($e);
+            $this->response = [
+                "msg" => $e->getMessage(),
+                "trace" => $e->getTraceAsString(),
+                "status" => "error"
+            ];
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($this->response);
+    }
+
+    /*
+     * İmport ve Export
+     */
+    public function importUsersAction(): void
+    {
+        try {
+            $importExportManager = new ImportExportManager($this->files);
+            $result = $importExportManager->importUsersFromExcel();
+            $this->response['status'] = "success";
+            $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errors']);
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
             $this->response = [

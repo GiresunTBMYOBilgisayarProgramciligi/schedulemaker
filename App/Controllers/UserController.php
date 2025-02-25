@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\Logger;
-use App\Models\Department;
 use App\Models\User;
 use Exception;
 use PDO;
@@ -46,6 +45,16 @@ class UserController extends Controller
             Logger::setErrorLog("Kullanıcı id numarası belirtilmemiş");
             throw new Exception("Kullanıcı id numarası belirtilmemiş");
         }
+    }
+
+    /**
+     * @param string $mail
+     * @return User|bool
+     * @throws Exception
+     */
+    public function getUserByEmail(string $mail): User|bool
+    {
+        return $this->getListByFilters(["mail" => $mail])[0] ?? false;
     }
 
     /**
@@ -150,7 +159,7 @@ class UserController extends Controller
             }
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
-            $new_user_arr["password"] = password_hash($new_user_arr["password"], PASSWORD_DEFAULT);
+            $new_user_arr["password"] = password_hash($new_user_arr["password"] ?? "123456", PASSWORD_DEFAULT);
 
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_user_arr);
@@ -188,8 +197,6 @@ class UserController extends Controller
             // Şifre kontrolü ve hash işlemi
             if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
-            } else {
-                unset($user->password);
             }
 
             // Kullanıcı verilerini filtrele
@@ -228,12 +235,7 @@ class UserController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            if ($stmt->rowCount() > 0) {
-                return $user->id;
-            } else {
-                Logger::setErrorLog("Muhtemelen hiçbir bilgi değiştirilmediği için kullanıcı güncellenemedi");
-                throw new Exception("Muhtemelen hiçbir bilgi değiştirilmediği için kullanıcı güncellenemedi");
-            }
+            return $user->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -314,6 +316,7 @@ class UserController extends Controller
     public function getTitleList(): array
     {
         return [
+            "Araş. Gör.",
             "Öğr. Gör.",
             "Öğr. Gör. Dr.",
             "Dr. Öğr. Üyesi",

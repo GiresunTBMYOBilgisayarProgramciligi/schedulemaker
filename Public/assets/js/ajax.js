@@ -2,8 +2,9 @@
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
 document.addEventListener("DOMContentLoaded", function () {
-    const body = document.body;
-
+    //code id li bir input varsa
+    const codeInput = document.querySelector("input#code");
+    const importFileInput = document.querySelector("input#importFile")
     // Formlara olay dinleyicileri ekleme
     document.querySelectorAll(".ajaxForm").forEach((form) => {
         form.addEventListener("submit", handleAjaxForm);
@@ -77,8 +78,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return pattern.test(code);
     }
 
-    //code id li bir input varsa
-    const codeInput = document.querySelector("input#code");
+    /**
+     * CodeIput varsa maske uygula
+     */
     if (codeInput) {
         initializeCodeMask(codeInput);
     }
@@ -91,13 +93,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function handleAjaxForm(event) {
         event.preventDefault();
+        /**
+         * Code input varsa maskeyi doğrula
+         */
         if (codeInput) {
             if (!validateCourseCode(codeInput.value)) {
                 return;
             }
         }
         const form = event.target;
-
+        let data = new FormData(form);
+        if (importFileInput) {
+            let file = importFileInput.files[0]
+            data.append("file", file)
+        }
         modal.prepareModal(form.getAttribute("title"));
         modal.addSpinner();
         modal.showModal();
@@ -107,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
             },
-            body: new FormData(form),
+            body: data,
         })
             .then(response => response.json())
             .then((data) => {
@@ -136,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         } else
                             window.location.href = data.redirect;
                     }
-                    if (!form.classList.contains("updateForm")){
+                    if (!form.classList.contains("updateForm")) {
                         form.reset();
                     }
                 });
