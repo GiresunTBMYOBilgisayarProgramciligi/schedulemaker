@@ -121,6 +121,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
+                    if (data.errors){
+                        console.log(data.errors)
+                    }
                     const statusClass = data.status === "error" ? "danger" : data.status;
                     modal.body.classList.add("text-bg-" + statusClass)
                     const message = Array.isArray(data.msg)

@@ -85,6 +85,7 @@ class ImportExportManager
             "status" => "success",
             "added" => $addedCount,
             "updated" => $updatedCount,
+            "errorCount" => $errorCount,
             "errors" => $errors
         ];
     }
