@@ -35,13 +35,17 @@ class Department extends Model
     }
 
     /**
+     * Bölüm başkanı Modelini döner. Eğer bölüm başkanı tanımlı değilse Boş Model döner
      * @return User Chair Person
      * @throws Exception
      */
     public function getChairperson(): User
     {
         try {
-            return (new UserController())->getUser($this->chairperson_id);
+            if (is_null($this->chairperson_id)) {
+                return new User(); // bölüm başkanı tanımlı değilse boş kullanıcı döndür.
+            } else
+                return (new UserController())->getUser($this->chairperson_id);
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);

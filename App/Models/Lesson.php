@@ -49,6 +49,9 @@ class Lesson extends Model
     public function getLecturer(): User|null
     {
         try {
+            if (is_null($this->lecturer_id)) {
+                return new User(); //hoca tanımlı değilse boş kullanıcı dön
+            }
             return (new UserController())->getUser($this->lecturer_id);
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
