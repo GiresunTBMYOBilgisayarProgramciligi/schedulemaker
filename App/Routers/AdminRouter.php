@@ -206,7 +206,6 @@ class AdminRouter extends Router
     public function importUsersAction()
     {
         try {
-            $userController = new UserController();
             if (!isAuthorized("submanager")) {
                 throw new Exception("Kullanıcı İçe aktarma yetkiniz yok");
             }
@@ -220,6 +219,7 @@ class AdminRouter extends Router
             $this->Redirect(null, true);
         }
     }
+
 
     /*
      * Lesson Routes
@@ -338,6 +338,23 @@ class AdminRouter extends Router
             $this->Redirect(null, true);
         }
 
+    }
+
+    public function importLessonsAction()
+    {
+        try {
+            if (!isAuthorized("submanager")) {
+                throw new Exception("Ders İçe aktarma yetkiniz yok");
+            }
+            $this->assetManager->loadPageAssets('formpages');
+            $this->view_data = array_merge($this->view_data, [
+                "page_title" => " Ders İçe aktar",
+            ]);
+            $this->callView("admin/lessons/importlessons", $this->view_data);
+        } catch (Exception $e) {
+            Logger::setAndShowErrorLog($e->getMessage());
+            $this->Redirect(null, true);
+        }
     }
 
     /*

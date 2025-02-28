@@ -944,7 +944,27 @@ class AjaxRouter extends Router
             $importExportManager = new ImportExportManager($this->files);
             $result = $importExportManager->importUsersFromExcel();
             $this->response['status'] = "success";
-            $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errors']);
+            $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
+            $this->response['errors'] = $result['errors'];
+        } catch (Exception $e) {
+            Logger::setExceptionLog($e);
+            $this->response = [
+                "msg" => $e->getMessage(),
+                "trace" => $e->getTraceAsString(),
+                "status" => "error"
+            ];
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($this->response);
+    }
+    public function importLessonsAction(): void
+    {
+        try {
+            $importExportManager = new ImportExportManager($this->files);
+            $result = $importExportManager->importLessonsFromExcel();
+            $this->response['status'] = "success";
+            $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
+            $this->response['errors'] = $result['errors'];
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
             $this->response = [

@@ -19,7 +19,7 @@
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Kullanıcı İşlemleri</li>
-                        <li class="breadcrumb-item active">Ekle</li>
+                        <li class="breadcrumb-item active">İçe aktar</li>
                     </ol>
                 </div>
             </div>

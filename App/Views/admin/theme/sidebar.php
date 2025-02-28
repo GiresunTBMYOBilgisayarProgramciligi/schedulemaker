@@ -121,6 +121,15 @@ use function App\Helpers\isAuthorized;
                                     </p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="/admin/importlessons"
+                                   class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importlessons')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-box-arrow-in-down"></i>
+                                    <p>
+                                        İçe aktar
+                                    </p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 <?php endif; ?>
@@ -195,7 +204,6 @@ use function App\Helpers\isAuthorized;
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-
                             <?php if (isAuthorized("submanager")): ?>
                             <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'department') or str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                                 <a href="#" class="nav-link">

@@ -2,9 +2,12 @@
 
 namespace App\Core;
 
+use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
+use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
+use App\Models\Lesson;
 use App\Models\User;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -12,12 +15,15 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ImportExportManager
 {
-    public Spreadsheet $importFile;
-    public Spreadsheet $exportFile;
+    private Spreadsheet $importFile;
+    private Spreadsheet $exportFile;
 
-    public function __construct(array $uploadedFile)
+    private array $formData = [];
+
+    public function __construct(array $uploadedFile, array $formData = [])
     {
         $this->uploadImportFile($uploadedFile['file']);
+        $this->formData = $formData;
     }
 
     public function uploadImportFile(array $uploadedFile): void
@@ -78,6 +84,108 @@ class ImportExportManager
                 $user = new User();
                 $user->fill($userData);
                 $userController->saveNew($user);
+                $addedCount++;
+            }
+        }
+        return [
+            "status" => "success",
+            "added" => $addedCount,
+            "updated" => $updatedCount,
+            "errorCount" => $errorCount,
+            "errors" => $errors
+        ];
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function importLessonsFromExcel(): array
+    {
+        $userController = new UserController();
+        $departmentController = new DepartmentController();
+        $programController = new ProgramController();
+        $lessonsController = new LessonController();
+        $addedCount = 0;
+        $updatedCount = 0;
+        $errorCount = 0;
+        $errors = [];
+        // Excel dosyasını aç
+
+        $sheet = $this->importFile->getActiveSheet();
+        $rows = $sheet->toArray();
+        // Başlık satırını al ve doğrula
+        $headers = array_shift($rows);
+        $headers = array_map('trim', $headers);
+        $expectedHeaders =
+            ["Bölüm", "Program", "Dönemi", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
+
+
+        if ($headers !== $expectedHeaders) {
+            throw new Exception("Excel başlıkları beklenen formatta değil!");
+        }
+        if (isset($this->formData['academic_year']) or isset($this->formData['semester'])) {
+            throw new Exception("Yıl veya dönem belirtilmemiş");
+        }
+        foreach ($rows as $rowIndex => $row) {
+            [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map('trim', $row);
+
+            // Değişkenleri bir diziye topla
+            $data = [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+
+            // Her bir değeri kontrol et
+            foreach ($data as $dataIndex => $value) {
+                if ($value === null || $value === "") {
+                    $errors[] = "Satir " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda eksik veri!";
+                    $errorCount++;
+                    $hasError = true; // Bu satırda hata olduğunu belirt
+                }
+            }
+
+            $department = $departmentController->getDepartmentByName($department_name);
+            $program = $programController->getProgramByName($program_name);
+            $lecturer = $userController->getUserByFullName($lecturer_full_name);
+            if (!$lecturer) {
+                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Hoca hatalı!" . $lecturer_full_name;
+                $errorCount++;
+                $hasError = true; // Bu satırda hata olduğunu belirt
+            } elseif (!$program) {
+                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Program hatalı!" . $program_name;
+                $errorCount++;
+                $hasError = true; // Bu satırda hata olduğunu belirt
+            } elseif (!$department) {
+                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Bölüm hatalı!" . $department_name;
+                $errorCount++;
+                $hasError = true; // Bu satırda hata olduğunu belirt
+            }
+
+            // Eğer bu satırda hata varsa, bir sonraki satıra geç
+            if (isset($hasError) && $hasError) {
+                continue;
+            }
+            $lessonData = [
+                'code' => $code,
+                'name' => $name,
+                'size' => $size,
+                'hours' => $hours,
+                'type' => $type,
+                'semester_no' => $semester_no,
+                'lecturer_id' => $lecturer->id,
+                'department_id' => $department->id,
+                'program_id' => $program->id,
+                'semester' => $this->formData['semester'],
+                'classroom_type' => array_search($classroom_type, (new ClassroomController())->getTypeList()),
+                'academic_year' => $this->formData['academic_year'],
+            ];
+            $lesson = $lessonsController->getLessonByCode($code);
+            if ($lesson) {
+                $lesson->fill($lessonData);
+                $lessonsController->updateLesson($lesson);
+                $updatedCount++;
+            } else {
+                $lesson = new Lesson();
+                $lesson->fill($lessonData);
+                $lessonsController->saveNew($lesson);
                 $addedCount++;
             }
         }
