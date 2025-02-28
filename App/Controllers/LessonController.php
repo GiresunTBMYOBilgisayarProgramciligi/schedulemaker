@@ -50,6 +50,17 @@ class LessonController extends Controller
     }
 
     /**
+     * Kod numarasına göre ders modeli döndürür. Bulamazsa false döner
+     * @param string $code
+     * @return Lesson|bool
+     * @throws Exception
+     */
+    public function getLessonByCode(string $code): Lesson|bool
+    {
+        return $this->getListByFilters(["code" => $code])[0] ?? false;
+    }
+
+    /**
      * todo Sayısal değer olarak kullanılabilir.
      * Dersin türünü seçmek için kullanılacak diziyi döner
      * @return string[]
@@ -165,12 +176,7 @@ class LessonController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            if ($stmt->rowCount() > 0) {
-                return $lesson->id;
-            } else {
-                Logger::setErrorLog("Ders Güncellenemedi");
-                throw new Exception("Ders Güncellenemedi");
-            }
+            return $lesson->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
