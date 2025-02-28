@@ -326,6 +326,70 @@ class UserController extends Controller
     }
 
     /**
+     * Ünvan Ad Soyad şeklinde verilen ismi ünvan, ad, soyad şeklinde ayırarak bir dizi döndürür
+     * @param $fullName
+     * @return array
+     */
+    public function parseAcademicName($fullName): array
+    {
+        // Olası ünvanlar
+        $titles = [
+            "Prof. Dr.",
+            "Doç. Dr.",
+            "Dr. Öğr. Üyesi",
+            "Öğr. Gör. Dr.",
+            "Öğr. Gör.",
+            "Araş. Gör."
+        ];
+
+        // Ünvanları uzunluklarına göre sırala (en uzundan en kısaya)
+        // Bu şekilde "Öğr. Gör." yerine "Öğr. Gör. Dr." gibi daha uzun ünvanları önce yakalayacağız
+        usort($titles, function ($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+
+        $title = '';
+        $nameLastName = '';
+
+        // Ünvanları kontrol et
+        foreach ($titles as $possibleTitle) {
+            if (strpos($fullName, $possibleTitle) === 0) {
+                $title = $possibleTitle;
+                // Ünvanı kaldır ve trim yap
+                $nameLastName = trim(substr($fullName, strlen($possibleTitle)));
+                break;
+            }
+        }
+
+        // Eğer ünvan bulunamadıysa tüm stringi isim soyisim olarak al
+        if (empty($title)) {
+            $nameLastName = trim($fullName);
+        }
+
+        // Ad ve soyadı ayır - son kelime soyadı olacak
+        $nameParts = explode(' ', $nameLastName);
+        $lastName = array_pop($nameParts); // Son kelimeyi al (soyad)
+        $name = implode(' ', $nameParts); // Kalan kısmı ad olarak birleştir
+
+        return [
+            'title' => $title,
+            'name' => $name,
+            'last_name' => $lastName
+        ];
+    }
+
+    /**
+     * @param string $fullName
+     * @return User|bool
+     * @throws Exception
+     */
+    public function getUserByFullName(string $fullName): User|bool
+    {
+        $filters = $this->parseAcademicName($fullName);
+        return $this->getListByFilters($filters)[0] ?? false;
+    }
+
+    /**
      * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
      * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
      * @param int $actionLevel "admin" => 10,
