@@ -78,6 +78,7 @@ class ImportExportManager
             $user = $userController->getUserByEmail($mail);
             if ($user) {
                 $user->fill($userData);
+                $user->password = null;
                 $userController->updateUser($user);
                 $updatedCount++;
             } else {

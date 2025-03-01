@@ -193,10 +193,11 @@ class UserController extends Controller
                 Logger::setErrorLog("Kullanıcı bilgilerini güncelleme yetkiniz yok");
                 throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
             }
-
             // Şifre kontrolü ve hash işlemi
             if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
+            }else{
+                $user->password = null;
             }
 
             // Kullanıcı verilerini filtrele
