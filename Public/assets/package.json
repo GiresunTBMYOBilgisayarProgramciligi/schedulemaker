@@ -3,6 +3,7 @@
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
-    "icheck-bootstrap": "^3.0.1"
+    "icheck-bootstrap": "^3.0.1",
+    "tom-select": "^2.4.3"
   }
 }

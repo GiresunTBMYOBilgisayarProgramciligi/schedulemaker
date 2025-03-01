@@ -120,8 +120,17 @@ class AssetManager
                 [
                     'path' => '/assets/js/ajax.js'
                 ],
+                [//Select arama işlemi için
+                    'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
                 [
                     'path' => '/assets/js/formEvents.js'
+                ],
+
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
                 ]
             ]
         ],
@@ -148,8 +157,8 @@ class AssetManager
                 ],
             ]
         ],
-        'singlepages'=>[
-            'js'=> [
+        'singlepages' => [
+            'js' => [
                 [
                     'path' => '/assets/js/gettext.php'
                 ],

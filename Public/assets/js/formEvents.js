@@ -79,4 +79,12 @@ document.addEventListener("DOMContentLoaded", function () {
             event.target.value = toUpperCaseTR(event.target.value);
         });
     }
+    /*
+    Tüm select elemanlarına arama özelliği eklemek için
+     */
+    let selectInputs = document.querySelectorAll(".tom-select")
+    selectInputs.forEach((select) => {
+        new TomSelect(select, {placeholder:"Seçmek için yazın"});
+    })
+
 });

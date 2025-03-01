@@ -49,7 +49,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select" id="department_id" name="department_id">
+                                            <select class="form-select tom-select" id="department_id" name="department_id">
                                                 <?php foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
                                                         <?= $department->id == $department_id ? "selected" : "" ?>><?= $department->name ?></option>

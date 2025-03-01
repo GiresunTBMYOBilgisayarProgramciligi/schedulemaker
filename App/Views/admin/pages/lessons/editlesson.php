@@ -100,7 +100,8 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="password">Dersin Hocası</label>
-                                            <select class="form-select" id="lecturer_id" name="lecturer_id">
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id">
+                                                <option></option>
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
                                                         <?= $lecturer->id == $lesson->lecturer_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
@@ -137,7 +138,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select" id="department_id" name="department_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select tom-select" id="department_id" name="department_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
