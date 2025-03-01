@@ -796,16 +796,13 @@ class AjaxRouter extends Router
                     ];
                     foreach ($lessonSchedules as $lessonSchedule) {
                         $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                        $cells = [];
-                        for ($i = 0; $i < 6; $i++) {
+                        for ($i = 0; $i < 6; $i++) {//day0-5
                             if (!is_null($lessonSchedule->{"day" . $i})) {
                                 if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
-                                    $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
-                                    $unavailableCells[$rowIndex + 1] = $cells; //ilk satır günler olduğu için +1
+                                    $unavailableCells[$rowIndex + 1][$i+1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                                 }
                                 if ($lessonSchedule->{"day" . $i} === true) {
-                                    $cells[$i + 1] = true;//ilk sütun saatler olduğu için +1
-                                    $preferredCells[$rowIndex + 1] = $cells; //ilk satır günler olduğu için +1
+                                    $preferredCells[$rowIndex + 1][$i+1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                                 }
                             }
                         }
