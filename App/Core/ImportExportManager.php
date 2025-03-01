@@ -69,8 +69,8 @@ class ImportExportManager
             $userData = [
                 'mail' => $mail,
                 'title' => $title,
-                'name' => $name,
-                'last_name' => $last_name,
+                'name' => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
+                'last_name' => mb_strtoupper($last_name, "UTF-8"),
                 'role' => array_search($role, $userController->getRoleList()),
                 'department_id' => $departmentController->getDepartmentByName($department_name)->id ?? null,
                 'program_id' => $programController->getProgramByName($program_name)->id ?? null,
