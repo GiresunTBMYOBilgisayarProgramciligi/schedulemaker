@@ -447,6 +447,7 @@ class ScheduleController extends Controller
                         if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
                             if (is_array($schedule->{$filters["day"]})) {
                                 if ($owner_type == "user") {
+                                    //eğer hocanın o saatte dersi varsa program eklenemez
                                     Logger::setErrorLog("Hoca Programı uygun değil");
                                     throw new Exception("Hoca Programı uygun değil");
                                 }
@@ -462,14 +463,19 @@ class ScheduleController extends Controller
                                 /*
                                  * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                                  */
-                                if (preg_match('/\.\d+$/', $lesson->code) !== 1 and preg_match('/\.\d+$/', $newLesson->code) !== 1) {
-                                    // Dersler gruplu değil çakışma var
-                                    Logger::setErrorLog($schedule->getOwnerTypeScreenName() . " programında " . $schedule->getdayName($filters["day"]) . " gününde " . $schedule->time . " saatinde çakışma var");
-                                    throw new Exception($schedule->getOwnerTypeScreenName() . " programında " . $schedule->getdayName($filters["day"]) . " gününde " . $schedule->time . " saatinde çakışma var");
+                                if (preg_match('/\.\d+$/', $lesson->code) !== 1) {
+                                    //var olan ders gruplı değil
+                                    throw new Exception($lesson->name . "(" . $lesson->code . ") dersi ile çakışıyor");
                                 } else {
-                                    //derslerden sadece bir tanesi gruplu
-                                    Logger::setErrorLog($lesson->name . "(" . $lesson->code . ") dersinin yanına sadece grupu bir ders ekleyebilirsiniz");
-                                    throw new Exception($lesson->name . "(" . $lesson->code . ") dersinin yanına sadece grupu bir ders ekleyebilirsiniz");
+                                    // var olan ders gruplu
+                                    if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
+                                        // yeni eklenecek olan ders gruplu değil
+                                        throw new Exception("Gruplu bir dersin yanına sadece gruplu bir ders eklenebilir.");
+                                    } else {
+                                        //elenecek olan ders de gruplu
+                                        // grup uygunluğu kontrolü javascript ile yapılıyor
+                                        return true;
+                                    }
                                 }
                             }
                         }
