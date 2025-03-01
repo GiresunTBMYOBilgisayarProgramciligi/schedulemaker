@@ -52,7 +52,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="chairperson_id">Bölüm Başkanı</label>
-                                            <select class="form-select" id="chairperson_id" name="chairperson_id">
+                                            <select class="form-select tom-select" id="chairperson_id" name="chairperson_id">
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
                                                         <?= $lecturer->id == $department->chairperson_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
