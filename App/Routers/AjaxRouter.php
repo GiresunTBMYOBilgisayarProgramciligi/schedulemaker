@@ -960,7 +960,7 @@ class AjaxRouter extends Router
     public function importLessonsAction(): void
     {
         try {
-            $importExportManager = new ImportExportManager($this->files);
+            $importExportManager = new ImportExportManager($this->files,$this->data);
             $result = $importExportManager->importLessonsFromExcel();
             $this->response['status'] = "success";
             $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);

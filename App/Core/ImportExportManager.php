@@ -124,7 +124,7 @@ class ImportExportManager
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
-        if (isset($this->formData['academic_year']) or isset($this->formData['semester'])) {
+        if (!isset($this->formData['academic_year']) or !isset($this->formData['semester'])) {
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
         foreach ($rows as $rowIndex => $row) {
