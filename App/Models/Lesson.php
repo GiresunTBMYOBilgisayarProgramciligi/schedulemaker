@@ -39,7 +39,6 @@ class Lesson extends Model
 
     public function __construct()
     {
-        parent::__construct(); # Connect to database
     }
 
     /**

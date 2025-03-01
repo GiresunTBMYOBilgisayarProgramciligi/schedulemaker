@@ -20,9 +20,5 @@ class Setting extends Model
 
     protected array $dateFields = ['created_at', 'updated_at'];
 
-    public function __construct()
-    {
-        parent::__construct(); # Connect to database
-    }
 
 }

@@ -75,14 +75,6 @@ class Schedule extends Model
     public ?string $semester = null;
     public ?string $academic_year = null;
 
-    /**
-     *
-     */
-    public function __construct()
-    {
-        parent::__construct();
-
-    }
 
     /**
      * Tablo oluştururken günler döngüye sokulurken kullanılır

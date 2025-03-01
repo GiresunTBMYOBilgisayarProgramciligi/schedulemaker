@@ -22,21 +22,6 @@ class Classroom extends Model
     public ?string $type = null;
     private string $table_name = "classrooms";
 
-    public function __construct(int $id = null)
-    {
-        parent::__construct(); # Connect to database
-        if (isset($id)) {
-            $q = $this->database->prepare("Select * From $this->table_name WHERE id=:id");
-            $q->execute(["id" => $id]);
-            $data = $q->fetchAll();
-            extract($data);
-            $this->id = $id;
-            $this->name = $name;
-            $this->schedule = $schedule;
-            $this->class_size = $class_size;
-            $this->exam_size = $exam_size;
-        }
-    }
 
     /**
      * @return string

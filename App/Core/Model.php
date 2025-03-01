@@ -10,11 +10,13 @@ use App\Controllers\ProgramController;
 class Model
 {
 
-    public PDO $database;
+    protected PDO $database;
 
     public function __construct()
     {
         try {
+            //todo burada pdo nesnesi oluşturmak parent::__construct çalıştırılan sınıf oluşturulduğunda bir bağlantı oluşmasına neden oluyor. Uzun listelerde fazla bağlantı hatası vermesine neden oluyor.
+            // Model sınıfından türetilen sınıflarda database kullanılmamalı. sadece modelin kendisinde olması yeterli
             $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
         } catch (\PDOException $exception) {
             echo $exception->getMessage();
@@ -56,11 +58,11 @@ class Model
         try {
             // ReflectionClass ile alt sınıfın özelliklerini alın
             $reflection = new \ReflectionClass($this);
-            $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC | \ReflectionProperty::IS_PROTECTED);
+            $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
 
             foreach ($properties as $property) {
                 $propertyName = $property->getName();
-
+                //var_dump("$propertyName:",$propertyName);
                 // Tarih alanı kontrolü
                 if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
                     $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
