@@ -334,14 +334,7 @@ class UserController extends Controller
     public function parseAcademicName($fullName): array
     {
         // Olası ünvanlar
-        $titles = [
-            "Prof. Dr.",
-            "Doç. Dr.",
-            "Dr. Öğr. Üyesi",
-            "Öğr. Gör. Dr.",
-            "Öğr. Gör.",
-            "Araş. Gör."
-        ];
+        $titles = $this->getTitleList();
 
         // Ünvanları uzunluklarına göre sırala (en uzundan en kısaya)
         // Bu şekilde "Öğr. Gör." yerine "Öğr. Gör. Dr." gibi daha uzun ünvanları önce yakalayacağız
