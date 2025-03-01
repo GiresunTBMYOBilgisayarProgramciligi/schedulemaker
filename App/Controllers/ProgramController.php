@@ -142,12 +142,7 @@ class ProgramController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            if ($stmt->rowCount() > 0) {
-                return $program->id;
-            } else {
-                Logger::setErrorLog("Program Güncellenemedi");
-                throw new Exception("Program Güncellenemedi");
-            }
+            return $program->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

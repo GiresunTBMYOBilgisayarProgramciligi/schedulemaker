@@ -74,7 +74,7 @@ class ClassroomController extends Controller
     public function saveNew(Classroom $new_classroom): int
     {
         try {
-            if (!isAuthorized("submanager")){
+            if (!isAuthorized("submanager")) {
                 Logger::setErrorLog("Yeni derslik oluşturma yetkiniz yok");
                 throw new Exception("Yeni derslik oluşturma yetkiniz yok");
             }
@@ -108,7 +108,7 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            if (!isAuthorized("submanager")){
+            if (!isAuthorized("submanager")) {
                 Logger::setErrorLog("Derslik güncelleme yetkiniz yok");
                 throw new Exception("Derslik güncelleme yetkiniz yok");
             }
@@ -136,12 +136,7 @@ class ClassroomController extends Controller
             // Sorguyu hazırla ve çalıştır
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
-            if ($stmt->rowCount() > 0) {
-                return $classroom->id;
-            } else{
-                Logger::setErrorLog("Derslik Güncellenemedi");
-                throw new Exception("Derslik Güncellenemedi");
-            }
+            return $classroom->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
