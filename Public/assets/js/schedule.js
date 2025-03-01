@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     continue;
                 }
                 if (!checkLessonCrash(cell, draggedElement)) {
-                    new Toast().prepareToast("Çakışma", (i + 1) + ". satte çakışma var")
+                    new Toast().prepareToast("Çakışma", (i + 1) + ". saatte çakışma var")
                     return;
                 }
                 checkedHours++
