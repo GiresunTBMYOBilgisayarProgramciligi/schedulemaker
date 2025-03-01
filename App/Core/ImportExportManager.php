@@ -175,7 +175,7 @@ class ImportExportManager
                 'department_id' => $department->id,
                 'program_id' => $program->id,
                 'semester' => $this->formData['semester'],
-                'classroom_type' => array_search($classroom_type, (new ClassroomController())->getTypeList()),
+                'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
                 'academic_year' => $this->formData['academic_year'],
             ];
             $lesson = $lessonsController->getLessonByCode($code);
