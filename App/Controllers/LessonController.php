@@ -21,6 +21,7 @@ class LessonController extends Controller
      * @param $id
      * @return Lesson
      * @throws Exception
+     * todo getlesson metodu filter ile değiştirilecek
      */
     public function getLesson($id): Lesson
     {
@@ -51,13 +52,13 @@ class LessonController extends Controller
 
     /**
      * Kod numarasına göre ders modeli döndürür. Bulamazsa false döner
-     * @param string $code
+     * @param array $filters
      * @return Lesson|bool
      * @throws Exception
      */
-    public function getLessonByCode(string $code): Lesson|bool
+    public function getLessonByFilters(array $filters): Lesson|bool
     {
-        return $this->getListByFilters(["code" => $code])[0] ?? false;
+        return $this->getListByFilters($filters)[0] ?? false;
     }
 
     /**
