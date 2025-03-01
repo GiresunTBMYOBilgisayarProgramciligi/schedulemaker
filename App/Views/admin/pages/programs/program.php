@@ -194,6 +194,7 @@ use function App\Helpers\isAuthorized;
                                     <th scope="col">Saati</th>
                                     <th scope="col">Dönemi</th>
                                     <th scope="col">Hocası</th>
+                                    <th scope="col">Derslik Türü</th>
                                     <th scope="col" class="text-center">İşlemler</th>
                                 </tr>
                                 </thead>
@@ -206,6 +207,7 @@ use function App\Helpers\isAuthorized;
                                         <td><?= $lesson->hours ?></td>
                                         <td><?= $lesson->semester_no ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
+                                        <td><?= $lesson->getClassroomTypeName()?></td>
                                         <td class="text-center">
                                             <?php if (isAuthorized("submanager", false, $lesson)): ?>
                                             <div class="dropdown">
