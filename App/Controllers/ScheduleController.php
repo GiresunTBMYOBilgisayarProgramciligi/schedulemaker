@@ -241,6 +241,7 @@ class ScheduleController extends Controller
                         'program_id' => $filters['owner_id'],
                         'semester' => $filters['semester'],
                         'academic_year' => $filters['academic_year'],
+                        '!type'=> 4
                     ]);
                     $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
                     /*
