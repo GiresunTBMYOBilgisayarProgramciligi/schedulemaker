@@ -131,6 +131,7 @@ class ScheduleController extends Controller
                      */
                     if (is_array($day)) {
                         if (is_array($day[0])) {
+                            //gün içerisinde iki ders var
                             $out .= '<td class="drop-zone">';
                             foreach ($day as $column) {
                                 $column = (object)$column; // Array'i objeye dönüştür
@@ -149,11 +150,17 @@ class ScheduleController extends Controller
                             data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
-                                        <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
+                                        <a class="link-light link-underline-opacity-0" href="/admin/lesson/'.$lesson->id.'\">
+                                            <i class="bi bi-book"></i> 
+                                        </a>
+                                        ' . $lesson->getFullName() . '
                                     </div>
-                                    <div id="classroom-' . $column->classroom_id . '">' . $lecturerName . '</div>
+                                    <div><a class="link-light link-underline-opacity-0" href="/admin/lesson/'.$day->lecturer_id.'\">
+                                        <i class="bi bi-person-square"></i>
+                                    </a>
+                                    ' . $lecturerName . '</div>
                                 </div>
-                                <span class="badge bg-info rounded-pill">
+                                <span  id="classroom-' . $column->classroom_id . '" class="badge bg-info rounded-pill">
                                     <i class="bi bi-door-open"></i> ' . $classroomName . '
                                 </span>
                             </div>';
@@ -178,11 +185,20 @@ class ScheduleController extends Controller
                             data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
-                                        <i class="bi bi-book"></i> ' . $lesson->getFullName() . '
+                                    <a class="link-light link-underline-opacity-0" href="/admin/lesson/'.$lesson->id.'\">
+                                        <i class="bi bi-book"></i>
+                                    </a> 
+                                    ' . $lesson->getFullName() . '
+                                        
                                     </div>
-                                    <div id="classroom-' . $day->classroom_id . '">' . $lecturerName . '</div>
+                                    <div>
+                                    <a class="link-light link-underline-opacity-0" href="/admin/lesson/'.$day->lecturer_id.'\">
+                                        <i class="bi bi-person-square"></i>
+                                    </a>
+                                    ' . $lecturerName . '
+                                    </div>
                                 </div>
-                                <span class="badge bg-info rounded-pill">
+                                <span id="classroom-' . $day->classroom_id . '" class="badge bg-info rounded-pill">
                                     <i class="bi bi-door-open"></i> ' . $classroomName . '
                                 </span>
                             </div>
@@ -258,6 +274,7 @@ class ScheduleController extends Controller
                             ])) {
                             //Ders Programı tamamlanmamışsa
                             $lesson->lecturer_name = $lesson->getLecturer()->getFullName(); // ders sınıfına Hoca adı ekleniyor
+                            $lesson->lecturer_id = $lesson->getLecturer()->id;
                             $lesson->hours -= $this->getCount([
                                 'owner_type' => 'lesson',
                                 'owner_id' => $lesson->id,
@@ -301,8 +318,8 @@ class ScheduleController extends Controller
                   data-lesson-code=\"$lesson->code\"
                   data-lesson-id=\"$lesson->id\">
                     <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><i class=\"bi bi-book\"></i> $lesson->code $lesson->name</div>
-                      $lesson->lecturer_name
+                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name</div>
+                      <a class=\"link-light link-underline-opacity-0\" href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> $lesson->lecturer_name
                     </div>
                     <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
                   </div>
