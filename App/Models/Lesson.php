@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
+use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
 use App\Core\Logger;
@@ -17,7 +18,11 @@ class Lesson extends Model
     public ?string $name = null;
     public ?int $size = null;
     public ?int $hours = null;
-    public ?string $type = null;
+    /**
+     * @var int|null
+     * @see LessonController->getTypeList()
+     */
+    public ?int $type = null;
     public ?int $semester_no = null;
     public ?int $lecturer_id = null;
     public ?int $department_id = null;
@@ -104,6 +109,14 @@ class Lesson extends Model
             return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
         } catch (Exception) {
             throw new Exception("Deslik türü alınamadı");
+        }
+    }
+    public function getTypeName(): string
+    {
+        try {
+            return (new LessonController())->getTypeList()[$this->type] ?? "";
+        } catch (Exception) {
+            throw new Exception("Ders türü alınamadı");
         }
     }
 }

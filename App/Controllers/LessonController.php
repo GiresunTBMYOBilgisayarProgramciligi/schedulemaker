@@ -62,16 +62,16 @@ class LessonController extends Controller
     }
 
     /**
-     * todo Sayısal değer olarak kullanılabilir.
      * Dersin türünü seçmek için kullanılacak diziyi döner
      * @return string[]
      */
     public function getTypeList(): array
     {
         return [
-            "Zorunlu",
-            "Seçmeli",
-            "Üniversite Seçmeli"
+            1 => "Zorunlu",
+            2 => "Seçmeli",
+            3 => "Üniversite Seçmeli",
+            4 => "Staj"
         ];
     }
 

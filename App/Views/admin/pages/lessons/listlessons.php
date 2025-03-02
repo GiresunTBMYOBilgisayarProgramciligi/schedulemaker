@@ -62,7 +62,7 @@
                                 <td><?= $lesson->id ?></td>
                                 <td><?= $lesson->code ?></td>
                                 <td><?= $lesson->name ?></td>
-                                <td><?= $lesson->type ?></td>
+                                <td><?= $lesson->getTypeName() ?></td>
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
                                 <td><?= $lesson->semester_no ?></td>

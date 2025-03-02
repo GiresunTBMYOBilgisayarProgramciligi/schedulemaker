@@ -203,7 +203,7 @@ use function App\Helpers\isAuthorized;
                                     <tr>
                                         <td><?= $lesson->code ?></td>
                                         <td><?= $lesson->name ?></td>
-                                        <td><?= $lesson->type ?></td>
+                                        <td><?= $lesson->getTypeName() ?></td>
                                         <td><?= $lesson->hours ?></td>
                                         <td><?= $lesson->semester_no ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>

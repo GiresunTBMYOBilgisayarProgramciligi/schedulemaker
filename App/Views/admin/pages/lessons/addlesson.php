@@ -61,8 +61,8 @@ use function App\Helpers\getSetting;
                                         <div class="mb-3">
                                             <label class="form-label"  for="type">Türü</label>
                                             <select class="form-select" id="type" name="type">
-                                                <?php foreach ($lessonController->getTypeList() as $type): ?>
-                                                    <option value="<?= $type ?>"><?= $type ?></option>
+                                                <?php foreach ($lessonController->getTypeList() as $id=>$type): ?>
+                                                    <option value="<?= $id ?>"><?= $type ?></option>
                                                 <?php endforeach ?>
                                             </select>
                                         </div>

@@ -84,7 +84,7 @@ create table if not exists lessons
     name           text        NOT NULL,
     size           int,
     hours          int         NOT NULL DEFAULT 2,
-    type           varchar(50)          default 'Zorunlu',
+    type           int          default 1,
     semester_no    int,
     lecturer_id    int,
     department_id  int,

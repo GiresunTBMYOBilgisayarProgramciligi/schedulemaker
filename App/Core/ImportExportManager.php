@@ -169,7 +169,7 @@ class ImportExportManager
                 'name' => $name,
                 'size' => $size,
                 'hours' => $hours,
-                'type' => $type,
+                'type' => array_search(trim($type),(new LessonController())->getTypeList()),
                 'semester_no' => $semester_no,
                 'lecturer_id' => $lecturer->id,
                 'department_id' => $department->id,
