@@ -758,51 +758,74 @@ class ScheduleController extends Controller
                 $filters['academic_year'] = getSetting("academic_year");
             }
             $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
-            $schedule = $this->getListByFilters($scheduleData)[0];
-            if (!$schedule) {
+            $schedules = $this->getListByFilters($scheduleData);
+            if (!$schedules) {
                 Logger::setErrorLog("Silinecek Ders bulunamadı");
                 throw new Exception("Silinecek Ders bulunamadı");
             }
-            if (!isAuthorized("submanager", false, $schedule)) {
-                Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
-                throw new Exception("Ders Programı güncelleme yetkiniz yok");
-            }
+            foreach ($schedules as $schedule) {
+                if (!isAuthorized("submanager", false, $schedule)) {
+                    Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
+                    throw new Exception("Ders Programı güncelleme yetkiniz yok");
+                }
 
-            //belirtilen günde bir ders var ise
-            if (is_array($schedule->{"day" . $filters["day_index"]})) {
-                if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
-                    if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
-                        //var olan gün ilebelirtilen gün bilgisi aynı ise
-                        $schedule->{"day" . $filters["day_index"]} = null;
-                        if ($this->isScheduleEmpty($schedule))
-                            $this->delete($schedule->id);
-                        else
-                            $this->updateSchedule($schedule);
+                /**
+                 * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm sezonlar silinir.
+                 */
+                if (!key_exists("semester_no", $filters)) {
+                    $currentSemesters = getSemesterNumbers($filters["semester"]);
+                    foreach ($currentSemesters as $currentSemester) {
+                        $filters["semester_no"] = $currentSemester;
+                        $this->checkAndDeleteSchedule($schedule, $filters);
                     }
                 } else {
-                    // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
-                    for ($i = 0; $i < 2; $i++) {
-                        if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
-                            unset($schedule->{"day" . $filters["day_index"]}[$i]);
-                        }
-                    }
+                    $this->checkAndDeleteSchedule($schedule, $filters);
+                }
+            }
+        } catch (Exception $e) {
+            Logger::setExceptionLog($e);
+            throw new Exception("Program silinirken bir hata oluştu" . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param $schedule
+     * @param $filters
+     * @return void
+     * @throws Exception
+     */
+    private function checkAndDeleteSchedule($schedule, $filters): void
+    {
+        //belirtilen günde bir ders var ise
+        if (is_array($schedule->{"day" . $filters["day_index"]})) {
+            if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
+                if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
+                    //var olan gün ilebelirtilen gün bilgisi aynı ise
+                    $schedule->{"day" . $filters["day_index"]} = null;
                     if ($this->isScheduleEmpty($schedule))
                         $this->delete($schedule->id);
                     else
                         $this->updateSchedule($schedule);
                 }
-            } elseif (!is_null($schedule->{"day" . $filters["day_index"]})) {
-                // bu durumda ders true yada false dir. Aslında false değerindedir
-                $schedule->{"day" . $filters["day_index"]} = null;
+            } else {
+                // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
+                for ($i = 0; $i < 2; $i++) {
+                    if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
+                        unset($schedule->{"day" . $filters["day_index"]}[$i]);
+                    }
+                }
                 if ($this->isScheduleEmpty($schedule))
                     $this->delete($schedule->id);
                 else
                     $this->updateSchedule($schedule);
             }
-
-        } catch (Exception $e) {
-            Logger::setExceptionLog($e);
-            throw new Exception("Program silinirken bir hata oluştu" . $e->getMessage());
+        } elseif (!is_null($schedule->{"day" . $filters["day_index"]})) {
+            // bu durumda ders true yada false dir. Aslında false değerindedir
+            $schedule->{"day" . $filters["day_index"]} = null;
+            if ($this->isScheduleEmpty($schedule))
+                $this->delete($schedule->id);
+            else
+                $this->updateSchedule($schedule);
         }
     }
 

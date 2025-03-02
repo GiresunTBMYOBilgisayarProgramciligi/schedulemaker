@@ -25,6 +25,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
+use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
 use function App\Helpers\isAuthorized;
 
@@ -732,14 +733,21 @@ class AjaxRouter extends Router
                 "academic_year" => getSetting("academic_year"),
             ];
             $filters = array_merge($filters, $this->data);
-            $schedule = new Schedule();
-            $schedule->fill($filters);
-            $savedId = $scheduleController->saveNew($schedule);
-            if ($savedId == 0) {
-                Logger::setErrorLog("Hoca tercihi kaydedilemedi");
-                throw new Exception("Hoca tercihi kaydedilemedi");
-            } else {
-                $this->response = array_merge($this->response, array("status" => "success"));
+            $currentSemesters = getSemesterNumbers($filters["semester"]);
+            /**
+             * Her iki dönem için de tercih kaydediliyor.
+             */
+            foreach ($currentSemesters as $semester_no) {
+                $filters['semester_no'] = $semester_no;
+                $schedule = new Schedule();
+                $schedule->fill($filters);
+                $savedId = $scheduleController->saveNew($schedule);
+                if ($savedId == 0) {
+                    Logger::setErrorLog("Hoca tercihi kaydedilemedi");
+                    throw new Exception("Hoca tercihi kaydedilemedi");
+                } else {
+                    $this->response = array_merge($this->response, array("status" => "success"));
+                }
             }
         } catch (Exception $e) {
             Logger::setExceptionLog($e);
@@ -875,16 +883,21 @@ class AjaxRouter extends Router
                     throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
                 }
             } else {
-                $filters = [
-                    "owner_type" => $this->data["owner_type"],
-                    "owner_id" => $this->data["owner_id"],
-                    "semester" => $this->data["semester"],
-                    "academic_year" => $this->data["academic_year"],
-                    "semester_no" => $this->data["semester_no"],
-                    "type" => $this->data["type"],
-                    "time" => $this->data["time"],
-                    "day_index" => $this->data["day_index"],
-                ];
+                /**
+                 * Burada null coalescing operatörü (??) ile eksik dizin hatalarını önlüyoruz ve sonra array_filter ile boş değerleri temizliyoruz.
+                 */
+                $filters = array_filter([
+                    "owner_type" => $this->data["owner_type"] ?? null,
+                    "owner_id" => $this->data["owner_id"] ?? null,
+                    "semester" => $this->data["semester"] ?? null,
+                    "academic_year" => $this->data["academic_year"] ?? null,
+                    "semester_no" => $this->data["semester_no"] ?? null,
+                    "type" => $this->data["type"] ?? null,
+                    "time" => $this->data["time"] ?? null,
+                    "day_index" => $this->data["day_index"] ?? null,
+                ], function($value) {
+                    return $value !== null && $value !== '';
+                });
                 $scheduleController->deleteSchedule($filters);
             }
         } catch (Exception $e) {

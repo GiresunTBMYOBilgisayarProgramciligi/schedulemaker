@@ -39,6 +39,7 @@ function getCurrentSemester()
 }
 
 /**
+ * Belirtilen döneme göre uygun dönem numaraları listesini döner
  * @param string|null $semester
  * @return array
  */

@@ -13,15 +13,16 @@ document.addEventListener("DOMContentLoaded", function () {
     async function clickHandler(event) {
         let cell = event.target;
         let row = cell.closest("tr");
-        let table = cell.closest("table");
+        let clickedTable = cell.closest("table");
+        let tables = document.querySelectorAll('.schedule-table table');
+        console.log(tables)
         let user_id = document.querySelector("input[name=id]").value;
         if (cell.tagName !== "TD") return;
         console.log("cellIndex", event.target.cellIndex);
         console.log("rowIndex", row.rowIndex);
         console.log("user_id", user_id);
         let data = {
-            "semester_no": table.dataset.semesterNo,
-            "time": table.rows[row.rowIndex].cells[0].innerText,
+            "time": clickedTable.rows[row.rowIndex].cells[0].innerText,
             "owner_id": user_id,
             "owner_type": "user",
             "type": "lesson",
@@ -33,7 +34,10 @@ document.addEventListener("DOMContentLoaded", function () {
             data["day" + (cell.cellIndex - 1)] = 1;
             let result = await saveSchedulePreference(data);
             if (result) {
-                cell.classList.add("bg-success");
+                tables.forEach((table)=>{
+                    console.log(table.rows[row.rowIndex].cells[cell.cellIndex])
+                    table.rows[row.rowIndex].cells[cell.cellIndex].classList.add("bg-success");
+                })
             } else {
                 new Toast().prepareToast("Hata", "İşlem yapılırken bir hata oluştu", "danger");
                 return false;
@@ -44,8 +48,11 @@ document.addEventListener("DOMContentLoaded", function () {
             data["day" + (cell.cellIndex - 1)] = 0;//false yazıldığındda veri tabanına true olarak geçiyor. Bu nedenle 1 ve 0 olarak değer veriyorum
             let result = await saveSchedulePreference(data);
             if (result) {
-                cell.classList.remove("bg-success");
-                cell.classList.add("bg-danger");
+                tables.forEach((table)=>{
+                    console.log(table.rows[row.rowIndex].cells[cell.cellIndex])
+                    table.rows[row.rowIndex].cells[cell.cellIndex].classList.remove("bg-success");
+                    table.rows[row.rowIndex].cells[cell.cellIndex].classList.add("bg-danger");
+                })
             } else {
                 new Toast().prepareToast("Hata", "İşlem yapılırken bir hata oluştu", "danger");
                 return false;
@@ -56,7 +63,10 @@ document.addEventListener("DOMContentLoaded", function () {
             data["day_index"] = (cell.cellIndex - 1);
             let result = await deleteSchedule(data);
             if (result) {
-                cell.classList.remove("bg-danger");
+                tables.forEach((table)=>{
+                    console.log(table.rows[row.rowIndex].cells[cell.cellIndex])
+                    table.rows[row.rowIndex].cells[cell.cellIndex].classList.remove("bg-danger");
+                })
             }else {
                 new Toast().prepareToast("Hata", "İşlem yapılırken bir hata oluştu", "danger");
                 return false;
