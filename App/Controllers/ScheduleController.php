@@ -356,7 +356,6 @@ class ScheduleController extends Controller
      * @throws Exception
      */
     public function availableClassrooms(array $filters = []): array
-        //todo SQL: SELECT * FROM classrooms WHERE id NOT IN (2, 2), şeklinde bir sorgu oluşturuyor. Uygun olmayan tek sınıf 2. sınıf. Galiba iki saatlik ders olduğu için
     {
         try {
             $classroomFilters = [];
@@ -381,7 +380,7 @@ class ScheduleController extends Controller
                 if ($filters['owner_type'] == "classroom") {
                     $classroomSchedules = $this->getListByFilters(
                         [
-                            "time" => $times,
+                            "time" => ['in'=>$times],
                             "owner_type" => $filters['owner_type'],
                             "semester" => $filters['semester'],
                             "academic_year" => $filters['academic_year'],
@@ -389,10 +388,13 @@ class ScheduleController extends Controller
                     );
                     foreach ($classroomSchedules as $classroomSchedule) {
                         if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtiken gün boş değilse derslik uygun değildir
-                            $unavailable_classroom_ids[] = $classroomSchedule->owner_id;
+                            // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
+                            $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
                         }
                     }
-                    $classroomFilters["!id"] = $unavailable_classroom_ids;
+                    // Anahtarları diziye dönüştürüyoruz.
+                    $unavailable_classroom_ids = array_keys($unavailable_classroom_ids);
+                    $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
                     $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
                 } else {
                     Logger::setErrorLog("owner_type classroom değil");

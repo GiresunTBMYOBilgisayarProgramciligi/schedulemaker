@@ -619,7 +619,7 @@ class AjaxRouter extends Router
      *
      * @return void
      */
-    public function saveScheduleAction()
+    public function saveScheduleAction(): void
     {
         try {
             $lessonController = new LessonController();
