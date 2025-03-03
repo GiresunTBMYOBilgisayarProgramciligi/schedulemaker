@@ -35,22 +35,32 @@ class View
      */
     public function Render(): void
     {
-        $this->view_folder = $_ENV['VIEWS_PATH'] . '/' . strtolower($this->view_folder);
+        try {
+            $this->view_folder = $_ENV['VIEWS_PATH'] . '/' . strtolower($this->view_folder);
 
-        if (is_dir($this->view_folder)) {
-            /**
-             * view_page dosyası theme.php içerisinde yüklenecek
-             */
-            if (file_exists($this->view_folder . '/pages/' . $this->view_page . '.php')) {
-                extract($this->view_data);
-                ob_start();
-                ob_get_clean();
-                include $this->view_folder . '/' . 'theme.php';
+            if (is_dir($this->view_folder)) {
+                /**
+                 * view_page dosyası theme.php içerisinde yüklenecek
+                 */
+                if (file_exists($this->view_folder . '/pages/' . $this->view_page . '.php')) {
+                    extract($this->view_data);
+                    ob_start();
+                    ob_get_clean();
+                    include $this->view_folder . '/' . 'theme.php';
+                } else {
+                    throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
+                }
             } else {
-                throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
+                throw new Exception('View folder does not exist');
             }
-        } else {
-            throw new Exception('View folder does not exist');
+        } catch (Exception $exception) {
+            //todo view içerisindeki hatalar bu şekilde gösteriliyor. ama hatalar sayfanın yüklenmesini engelleyebiliyor
+            echo '<script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                            alert("'. $exception->getMessage() . '");
+                    });
+                </script>';
         }
+
     }
 }
