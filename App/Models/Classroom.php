@@ -29,11 +29,6 @@ class Classroom extends Model
      */
     public function getTypeName(): string
     {
-        try {
-            return (new ClassroomController())->getTypeList()[$this->type] ?? "";
-        } catch (Exception) {
-            throw new Exception("Deslik türü alınamadı");
-        }
-
+        return (new ClassroomController())->getTypeList()[$this->type] ?? "";
     }
 }

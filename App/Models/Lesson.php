@@ -42,25 +42,16 @@ class Lesson extends Model
 
     private string $table_name = "lessons";
 
-    public function __construct()
-    {
-    }
-
     /**
      * @return User|null
      * @throws Exception
      */
     public function getLecturer(): User|null
     {
-        try {
             if (is_null($this->lecturer_id)) {
                 return new User(); //hoca tanımlı değilse boş kullanıcı dön
             }
             return (new UserController())->getUser($this->lecturer_id);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -70,11 +61,7 @@ class Lesson extends Model
      */
     public function getDepartment(): Department|null
     {
-        try {
             return (new DepartmentController())->getDepartment($this->department_id);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
     }
 
     /**
@@ -84,11 +71,7 @@ class Lesson extends Model
      */
     public function getProgram(): Program|null
     {
-        try {
             return (new ProgramController())->getProgram($this->program_id);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
     }
 
     public function getFullName(): string
@@ -102,18 +85,10 @@ class Lesson extends Model
      */
     public function getClassroomTypeName(): string
     {
-        try {
             return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
-        } catch (Exception) {
-            throw new Exception("Deslik türü alınamadı");
-        }
     }
     public function getTypeName(): string
     {
-        try {
             return (new LessonController())->getTypeList()[$this->type] ?? "";
-        } catch (Exception) {
-            throw new Exception("Ders türü alınamadı");
-        }
     }
 }

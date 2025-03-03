@@ -34,14 +34,6 @@ class User extends Model
 
     private string $table_name = "users";
 
-    /**
-     *
-     */
-    public function __construct()
-    {
-        parent::__construct(); # Connect to database
-    }
-
     public function getRegisterDate(): string
     {
         return !is_null($this->register_date) ? $this->register_date->format('Y-m-d H:i:s') : "";
@@ -67,11 +59,7 @@ class User extends Model
      */
     public function getDepartment(): Department|false
     {
-        try {
-            return (new DepartmentController())->getDepartment($this->department_id);
-        } catch (Exception $e) {
-            throw new Exception("Kullanıcının Bölümü alınırken hata oluştu:" . $e->getMessage());
-        }
+        return (new DepartmentController())->getDepartment($this->department_id);
     }
 
     /**
@@ -81,11 +69,7 @@ class User extends Model
      */
     public function getDepartmentName(): string
     {
-        try {
-            return $this->getDepartment()->name ?? "";
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
+        return $this->getDepartment()->name ?? "";
     }
 
     /**
@@ -94,11 +78,7 @@ class User extends Model
      */
     public function getProgramName(): string
     {
-        try {
-            return (new ProgramController())->getProgram($this->program_id)->name ?? "";
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
+        return (new ProgramController())->getProgram($this->program_id)->name ?? "";
 
     }
 
@@ -137,15 +117,11 @@ class User extends Model
      */
     public function getLessonCount(): mixed
     {
-        try {
-            $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
-            $stmt->bindParam(":id", $this->id);
-            $stmt->execute();
-            $data = $stmt->fetch();
-            return $data['count'];
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
+        $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
+        $stmt->bindParam(":id", $this->id);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
 
     }
 
@@ -163,16 +139,10 @@ class User extends Model
      */
     public function getTotalLessonHours()
     {
-        try {
-            $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
-            $stmt->bindParam(":id", $this->id);
-            $stmt->execute();
-            $data = $stmt->fetch();
-            return $data['total'];
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
-
-
+        $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
+        $stmt->bindParam(":id", $this->id);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['total'];
     }
 }

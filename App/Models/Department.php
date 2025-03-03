@@ -40,15 +40,10 @@ class Department extends Model
      */
     public function getChairperson(): User
     {
-        try {
-            if (is_null($this->chairperson_id)) {
-                return new User(); // bölüm başkanı tanımlı değilse boş kullanıcı döndür.
-            } else
-                return (new UserController())->getUser($this->chairperson_id);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
+        if (is_null($this->chairperson_id)) {
+            return new User(); // bölüm başkanı tanımlı değilse boş kullanıcı döndür.
+        } else
+            return (new UserController())->getUser($this->chairperson_id);
     }
 
     public function getProgramCount()
@@ -66,22 +61,17 @@ class Department extends Model
      */
     public function getPrograms(): array
     {
-        try {
-            $stmt = $this->database->prepare("Select * From programs where department_id=:id");
-            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-            $programs = $stmt->fetchAll();
-            $programs_list = array();
-            foreach ($programs as $programData) {
-                $program = new Program();
-                $program->fill($programData);
-                $programs_list[] = $program;
-            }
-            return $programs_list;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        $stmt = $this->database->prepare("Select * From programs where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $programs = $stmt->fetchAll();
+        $programs_list = array();
+        foreach ($programs as $programData) {
+            $program = new Program();
+            $program->fill($programData);
+            $programs_list[] = $program;
         }
-
+        return $programs_list;
     }
 
     /**
@@ -90,22 +80,17 @@ class Department extends Model
      */
     public function getLecturers(): array
     {
-        try {
-            $stmt = $this->database->prepare("Select * From users where department_id=:id");
-            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-            $lecturers = $stmt->fetchAll();
-            $lecturers_list = array();
-            foreach ($lecturers as $lecturerData) {
-                $lecturer = new User();
-                $lecturer->fill($lecturerData);
-                $lecturers_list[] = $lecturer;
-            }
-            return $lecturers_list;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        $stmt = $this->database->prepare("Select * From users where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lecturers = $stmt->fetchAll();
+        $lecturers_list = array();
+        foreach ($lecturers as $lecturerData) {
+            $lecturer = new User();
+            $lecturer->fill($lecturerData);
+            $lecturers_list[] = $lecturer;
         }
-
+        return $lecturers_list;
     }
 
     /**
@@ -114,16 +99,11 @@ class Department extends Model
      */
     public function getLecturerCount(): mixed
     {
-        try {
-            $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
-            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-            $data = $stmt->fetch();
-            return $data['count'];
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
+        $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
     }
 
     /**
@@ -132,22 +112,17 @@ class Department extends Model
      */
     public function getLessons(): array
     {
-        try {
-            $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
-            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-            $lessons = $stmt->fetchAll();
-            $lessons_list = array();
-            foreach ($lessons as $lessonData) {
-                $lesson = new Lesson();
-                $lesson->fill($lessonData);
-                $lessons_list[] = $lesson;
-            }
-            return $lessons_list;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $lessons = $stmt->fetchAll();
+        $lessons_list = array();
+        foreach ($lessons as $lessonData) {
+            $lesson = new Lesson();
+            $lesson->fill($lessonData);
+            $lessons_list[] = $lesson;
         }
-
+        return $lessons_list;
     }
 
     /**
@@ -156,15 +131,10 @@ class Department extends Model
      */
     public function getLessonCount(): mixed
     {
-        try {
-            $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
-            $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-            $stmt->execute();
-            $data = $stmt->fetch();
-            return $data['count'];
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
+        $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
+        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch();
+        return $data['count'];
     }
 }

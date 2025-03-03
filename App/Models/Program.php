@@ -37,12 +37,7 @@ class Program extends Model
      */
     public function getDepartment(): Department
     {
-        try {
             return new Department($this->department_id);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -51,7 +46,6 @@ class Program extends Model
      */
     public function getLecturers(): array
     {
-        try {
             $stmt = $this->database->prepare("Select * From users where program_id=:id");
             $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
             $stmt->execute();
@@ -63,10 +57,6 @@ class Program extends Model
                 $lecturers_list[] = $lecturer;
             }
             return $lecturers_list;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -75,16 +65,11 @@ class Program extends Model
      */
     public function getLecturerCount(): mixed
     {
-        try {
             $stmt = $this->database->prepare("Select count(*) as count from users where program_id=:id");
             $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
             $stmt->execute();
             $data = $stmt->fetch();
             return $data['count'];
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -93,16 +78,11 @@ class Program extends Model
      */
     public function getLessonCount(): mixed
     {
-        try {
             $stmt = $this->database->prepare("Select count(*) as count from lessons where program_id=:id");
             $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
             $stmt->execute();
             $data = $stmt->fetch();
             return $data['count'];
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -111,7 +91,6 @@ class Program extends Model
      */
     public function getLessons(): array
     {
-        try {
             $stmt = $this->database->prepare("Select * From lessons where program_id=:id");
             $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
             $stmt->execute();
@@ -123,10 +102,6 @@ class Program extends Model
                 $lessons_list[] = $lesson;
             }
             return $lessons_list;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
     }
 
     /**
@@ -135,16 +110,10 @@ class Program extends Model
      */
     public function getStudentCount(): mixed
     {
-        try {
             $stmt = $this->database->prepare("Select sum(size) as sum from lessons where program_id=:id");
             $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
             $stmt->execute();
             $data = $stmt->fetch();
             return $data['sum'];
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
-
-
     }
 }
