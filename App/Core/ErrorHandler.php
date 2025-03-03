@@ -73,9 +73,8 @@ class ErrorHandler
             // Diğer tüm hatalar için genel şablon
             $this->renderErrorView('error', $exception, 500);
         }*/
+        $this->renderErrorView('error', $exception, 500);
 
-        header("Location: /admin");
-        exit();
     }
 
     /**
@@ -119,7 +118,7 @@ class ErrorHandler
         // PHP'nin varsayılan hata loglama mekanizmasını kullan
         // Bu genellikle error_log dosyasına veya syslog'a yazdırır
         error_log($message);
-        $_SESSION['error'] = $exception->getMessage();
+
         // İsterseniz burada başka loglama mekanizmaları da kullanabilirsiniz
         // Örneğin: veritabanına kaydetme, harici bir servis kullanma vb.
     }
@@ -143,8 +142,12 @@ class ErrorHandler
             // API istekleri için JSON formatında hata döndür
             $this->renderJsonError($exception, $statusCode);
             return;
+        }else{
+            $_SESSION['error'] = $exception->getMessage();
+            header("Location: /admin");
+            exit();
         }
-
+/*
         // Görünüm için hata verilerini hazırla
         $errorData = [
             'message' => $exception->getMessage(),
@@ -159,7 +162,7 @@ class ErrorHandler
         }
 
         // Hata şablonunu include et ve göster
-        include_once __DIR__ . "/../views/errors/{$view}.php";
+        include_once __DIR__ . "/../views/errors/{$view}.php";*/
     }
 
     /**
@@ -173,19 +176,19 @@ class ErrorHandler
     private function renderJsonError($exception, $statusCode)
     {
         // Content-Type başlığını JSON olarak ayarla
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=utf-8');
 
         // Temel hata yanıtını oluştur
         $response = [
             'status' => 'error',
-            'message' => $exception->getMessage(),
+            'msg' => $exception->getMessage(),
             'code' => $statusCode
         ];
 
-        // ValidationException için hata detaylarını ekle
+        /*// ValidationException için hata detaylarını ekle
         if ($exception instanceof \App\Core\Exceptions\ValidationException) {
             $response['errors'] = $exception->getErrors();
-        }
+        }*/
 
         // Geliştirme ortamında daha fazla detay göster
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
