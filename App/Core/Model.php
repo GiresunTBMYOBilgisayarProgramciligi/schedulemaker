@@ -14,14 +14,8 @@ class Model
 
     public function __construct()
     {
-        try {
-            //todo burada pdo nesnesi oluşturmak parent::__construct çalıştırılan sınıf oluşturulduğunda bir bağlantı oluşmasına neden oluyor. Uzun listelerde fazla bağlantı hatası vermesine neden oluyor.
-            // Model sınıfından türetilen sınıflarda database kullanılmamalı. sadece modelin kendisinde olması yeterli
-            $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
-        } catch (\PDOException $exception) {
-            echo $exception->getMessage();
-        }
 
+        $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
     }
 
     public function is_data_serialized($data)
@@ -55,29 +49,24 @@ class Model
      */
     public function fill(array $data = []): void
     {
-        try {
-            // ReflectionClass ile alt sınıfın özelliklerini alın
-            $reflection = new \ReflectionClass($this);
-            $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
+        // ReflectionClass ile alt sınıfın özelliklerini alın
+        $reflection = new \ReflectionClass($this);
+        $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
 
-            foreach ($properties as $property) {
-                $propertyName = $property->getName();
-                //var_dump("$propertyName:",$propertyName);
-                // Tarih alanı kontrolü
-                if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
-                    $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
-                        ? new \DateTime($data[$propertyName])
-                        : null;
-                } else {
-                    // Diğer alanlarda null kontrolü
-                    $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
-                    $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
-                }
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+            //var_dump("$propertyName:",$propertyName);
+            // Tarih alanı kontrolü
+            if (property_exists($this, 'dateFields') && in_array($propertyName, $this->dateFields)) {
+                $this->$propertyName = isset($data[$propertyName]) && $data[$propertyName] !== null
+                    ? new \DateTime($data[$propertyName])
+                    : null;
+            } else {
+                // Diğer alanlarda null kontrolü
+                $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
+                $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
             }
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
         }
-
     }
 
     /**
@@ -89,19 +78,15 @@ class Model
      */
     public function getDepartmentProgramsList(): array
     {
-        try {
-            if (property_exists($this, 'department_id')) {
-                if (is_null($this->department_id)) {
-                    $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
-                } else {
-                    $list = (new ProgramController())->getProgramsList($this->department_id);
-                    array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
-                }
-            } else $list = [];
-            return $list;
-        } catch (Exception $exception) {
-            throw new Exception($exception->getMessage(), (int)$exception->getCode(), $exception);
-        }
+        if (property_exists($this, 'department_id')) {
+            if (is_null($this->department_id)) {
+                $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
+            } else {
+                $list = (new ProgramController())->getProgramsList($this->department_id);
+                array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
+            }
+        } else $list = [];
+        return $list;
     }
 
     /**

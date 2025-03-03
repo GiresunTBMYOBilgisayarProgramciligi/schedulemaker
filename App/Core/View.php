@@ -60,6 +60,7 @@ class View
                             alert("'. $exception->getMessage() . '");
                     });
                 </script>';
+            throw new Exception($exception->getMessage());
         }
 
     }

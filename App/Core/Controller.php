@@ -11,14 +11,9 @@ class Controller
 
     public function __construct()
     {
-        try {
             $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]);
-        } catch (Exception $exception) {
-            echo $exception->getMessage();
-        }
-
     }
 
     public function createInsertSQL($data): string
