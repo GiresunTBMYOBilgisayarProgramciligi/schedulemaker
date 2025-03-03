@@ -21,25 +21,21 @@ class SettingsController extends Controller
      */
     public function getSetting($key = null, string $group = "general"): Setting|string
     {
-        try {
-            if (is_null($key)) {
-                throw new Exception("Ayar için anahtar girilmelidir");
-            }
-            $whereClause = "";
-            $parameters = [];
-            $this->prepareWhereClause(["key" => $key, "group" => $group], $whereClause, $parameters);
-            $stmt = $this->database->prepare("SELECT * FROM $this->table_name $whereClause");
-            $stmt->execute($parameters);
-            $settingsData = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($settingsData) {
-                $setting = new Setting();
-                $setting->fill($settingsData);
-                return $setting;
-            } else {
-                throw new Exception("Ayar Bulunamadı");
-            }
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        if (is_null($key)) {
+            throw new Exception("Ayar için anahtar girilmelidir");
+        }
+        $whereClause = "";
+        $parameters = [];
+        $this->prepareWhereClause(["key" => $key, "group" => $group], $whereClause, $parameters);
+        $stmt = $this->database->prepare("SELECT * FROM $this->table_name $whereClause");
+        $stmt->execute($parameters);
+        $settingsData = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if ($settingsData) {
+            $setting = new Setting();
+            $setting->fill($settingsData);
+            return $setting;
+        } else {
+            throw new Exception("Ayar Bulunamadı");
         }
     }
 
@@ -124,20 +120,16 @@ class SettingsController extends Controller
      */
     public function getSettings(): array
     {
-        try {
-            $settingModels = $this->getListByFilters();
-            $settings = [];
-            foreach ($settingModels as $setting) {
-                $settings[$setting->group][$setting->key] = match ($setting->type) {
-                    'integer' => (int)$setting->value,
-                    'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
-                    'json' => json_decode($setting->value, true),
-                    default => $setting->value
-                };
-            }
-            return $settings;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        $settingModels = $this->getListByFilters();
+        $settings = [];
+        foreach ($settingModels as $setting) {
+            $settings[$setting->group][$setting->key] = match ($setting->type) {
+                'integer' => (int)$setting->value,
+                'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
+                'json' => json_decode($setting->value, true),
+                default => $setting->value
+            };
         }
+        return $settings;
     }
 }

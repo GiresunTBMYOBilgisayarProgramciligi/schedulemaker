@@ -23,21 +23,17 @@ class UserController extends Controller
     public function getUser($id): User
     {
         if (!is_null($id)) {
-            try {
-                $u = $this->database->prepare("select * from $this->table_name where id=:id");
-                $u->bindValue(":id", $id, PDO::PARAM_INT);
-                $u->execute();
-                $u = $u->fetch(\PDO::FETCH_ASSOC);
-                if ($u) {
-                    $user = new User();
-                    $user->fill($u);
+            $u = $this->database->prepare("select * from $this->table_name where id=:id");
+            $u->bindValue(":id", $id, PDO::PARAM_INT);
+            $u->execute();
+            $u = $u->fetch(\PDO::FETCH_ASSOC);
+            if ($u) {
+                $user = new User();
+                $user->fill($u);
 
-                    return $user;
-                } else {
-                    throw new Exception("Kullanıcı Bulunamdı");
-                }
-            } catch (Exception $e) {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                return $user;
+            } else {
+                throw new Exception("Kullanıcı Bulunamdı");
             }
         } else {
             throw new Exception("Kullanıcı id numarası belirtilmemiş");
@@ -61,17 +57,13 @@ class UserController extends Controller
      */
     public function getCurrentUser(): User|false
     {
-        try {
-            $user = false;
-            if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
-                $user = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
-            } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-                $user = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
-            }
-            return $user;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        $user = false;
+        if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
+            $user = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
+        } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
+            $user = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
         }
+        return $user;
     }
 
     /**
@@ -81,11 +73,7 @@ class UserController extends Controller
      */
     public function getAcademicCount(): int
     {
-        try {
-            return $this->getCount(["!role" => ["user", "admin"]]);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        return $this->getCount(["!role" => ["user", "admin"]]);
     }
 
     /**
@@ -105,36 +93,32 @@ class UserController extends Controller
      */
     public function login(array $loginData): void
     {
-        try {
-            $loginData = (object)$loginData;
-            $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
-            $stmt->bindParam(':mail', $loginData->mail);
-            $stmt->execute();
+        $loginData = (object)$loginData;
+        $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
+        $stmt->bindParam(':mail', $loginData->mail);
+        $stmt->execute();
 
-            if ($stmt) {
-                $user = $stmt->fetch(\PDO::FETCH_OBJ);
-                if ($user) {
-                    if (password_verify($loginData->password, $user->password)) {
-                        if (!$loginData->remember_me) {
-                            $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
-                        } else {
-                            setcookie($_ENV["COOKIE_KEY"], $user->id, [
-                                'expires' => time() + (86400 * 30),
-                                'path' => '/',
-                                'httponly' => true,     // JavaScript erişimini engeller
-                                'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
-                            ]);
-                        }
-                    } else throw new Exception("Şifre Yanlış");
-                } else throw new Exception("Kullanıcı kayıtlı değil");
-            } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
-            // Update las login date
-            $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
-            $stmt = $this->database->prepare($sql);
-            $stmt->execute([$user->id]);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        if ($stmt) {
+            $user = $stmt->fetch(\PDO::FETCH_OBJ);
+            if ($user) {
+                if (password_verify($loginData->password, $user->password)) {
+                    if (!$loginData->remember_me) {
+                        $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
+                    } else {
+                        setcookie($_ENV["COOKIE_KEY"], $user->id, [
+                            'expires' => time() + (86400 * 30),
+                            'path' => '/',
+                            'httponly' => true,     // JavaScript erişimini engeller
+                            'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
+                        ]);
+                    }
+                } else throw new Exception("Şifre Yanlış");
+            } else throw new Exception("Kullanıcı kayıtlı değil");
+        } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
+        // Update las login date
+        $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
+        $stmt = $this->database->prepare($sql);
+        $stmt->execute([$user->id]);
     }
 
     /**
@@ -186,7 +170,7 @@ class UserController extends Controller
             // Şifre kontrolü ve hash işlemi
             if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
-            }else{
+            } else {
                 $user->password = null;
             }
 
@@ -244,11 +228,7 @@ class UserController extends Controller
      */
     public function getUsersList(): array
     {
-        try {
-            return $this->getListByFilters();
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        return $this->getListByFilters();
     }
 
     /**
@@ -259,12 +239,8 @@ class UserController extends Controller
      */
     public function getLecturerList(array $filter = []): array
     {
-        try {
-            $filter = array_merge($filter, ["!role" => ['in' => ["user", "admin"]]]);
-            return $this->getListByFilters($filter);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        $filter = array_merge($filter, ["!role" => ['in' => ["user", "admin"]]]);
+        return $this->getListByFilters($filter);
     }
 
     /**
@@ -385,82 +361,78 @@ class UserController extends Controller
      */
     public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
     {
-        try {
-            $user = (new UserController)->getCurrentUser();
-            $isOwner = false;
-            if (!is_null($model)) {
-                switch (get_class($model)) {
-                    case "App\Models\User":
-                        /*
-                         * Aktif kullanıcı model kullanıcısı ise yada
-                         * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
-                         */
-                        $department = (new DepartmentController())->getDepartment($model->department_id);
-                        $isOwner = ($user->id == $model->id or $user->id == $department->chairperson_id);
-                        break;
-                    case "App\Models\Lesson":
-                        /*
-                         * Aktif kullanıcı Dersin sahibi ise yada
-                         * Aktif kullanıcı Dersin bölüm başkanı ise
-                         */
-                        $department = (new DepartmentController())->getDepartment($model->department_id);
-                        $isOwner = ($model->lecturer_id == $user->id or $user->id == $department->chairperson_id);
-                        break;
-                    case "App\Models\Program":
-                        /*
-                         * Aktif kullanıcı Programın bölüm başkanı ise
-                         */
-                        $department = (new DepartmentController())->getDepartment($model->department_id);
-                        $isOwner = ($user->id == $department->chairperson_id or $user->program_id == $model->id);
-                        break;
-                    case "App\Models\Department":
-                        /*
-                         * Aktif kullanıcı Blüm başkanı ise
-                         */
-                        $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
-                        break;
-                    case "App\Models\Schedule":
-                        /*
-                         * owner_type program, user, lesson, classroom
-                         *
-                         */
-                        switch ($model->owner_type) {
-                            case "program":
-                                $isOwner = (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id;
-                                break;
-                            case "user":
-                                $ScheduleUser = (new UserController())->getUser($model->owner_id);
-                                if ($ScheduleUser->getDepartment()) {
-                                    $isOwner = $ScheduleUser->getDepartment()->chairperson_id == $user->id;
-                                } else $isOwner = true;
-                                $isOwner = ($isOwner or $ScheduleUser->id == $user->id);
-                                // Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
-                                break;
-                            case "lesson":
-                                $isOwner = (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id;
-                                break;
-                            case "classroom":
-                                $isOwner = true;//sınıf için denetim yok
-                                break;
-                        }
-                        break;
-                }
+        $user = (new UserController)->getCurrentUser();
+        $isOwner = false;
+        if (!is_null($model)) {
+            switch (get_class($model)) {
+                case "App\Models\User":
+                    /*
+                     * Aktif kullanıcı model kullanıcısı ise yada
+                     * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
+                     */
+                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $isOwner = ($user->id == $model->id or $user->id == $department->chairperson_id);
+                    break;
+                case "App\Models\Lesson":
+                    /*
+                     * Aktif kullanıcı Dersin sahibi ise yada
+                     * Aktif kullanıcı Dersin bölüm başkanı ise
+                     */
+                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $isOwner = ($model->lecturer_id == $user->id or $user->id == $department->chairperson_id);
+                    break;
+                case "App\Models\Program":
+                    /*
+                     * Aktif kullanıcı Programın bölüm başkanı ise
+                     */
+                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $isOwner = ($user->id == $department->chairperson_id or $user->program_id == $model->id);
+                    break;
+                case "App\Models\Department":
+                    /*
+                     * Aktif kullanıcı Blüm başkanı ise
+                     */
+                    $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
+                    break;
+                case "App\Models\Schedule":
+                    /*
+                     * owner_type program, user, lesson, classroom
+                     *
+                     */
+                    switch ($model->owner_type) {
+                        case "program":
+                            $isOwner = (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            break;
+                        case "user":
+                            $ScheduleUser = (new UserController())->getUser($model->owner_id);
+                            if ($ScheduleUser->getDepartment()) {
+                                $isOwner = $ScheduleUser->getDepartment()->chairperson_id == $user->id;
+                            } else $isOwner = true;
+                            $isOwner = ($isOwner or $ScheduleUser->id == $user->id);
+                            // Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
+                            break;
+                        case "lesson":
+                            $isOwner = (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            break;
+                        case "classroom":
+                            $isOwner = true;//sınıf için denetim yok
+                            break;
+                    }
+                    break;
             }
-            $roleLevels = [
-                "admin" => 10,
-                "manager" => 9,
-                "submanager" => 8,
-                "department_head" => 7,
-                "lecturer" => 6,
-                "user" => 5
-            ];
-            $isAuthorizedRole = match ($reverse) {
-                true => $roleLevels[$user->role] <= $actionLevel,
-                false => $roleLevels[$user->role] >= $actionLevel
-            };
-            return $isAuthorizedRole or $isOwner;
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
+        $roleLevels = [
+            "admin" => 10,
+            "manager" => 9,
+            "submanager" => 8,
+            "department_head" => 7,
+            "lecturer" => 6,
+            "user" => 5
+        ];
+        $isAuthorizedRole = match ($reverse) {
+            true => $roleLevels[$user->role] <= $actionLevel,
+            false => $roleLevels[$user->role] >= $actionLevel
+        };
+        return $isAuthorizedRole or $isOwner;
     }
 }
