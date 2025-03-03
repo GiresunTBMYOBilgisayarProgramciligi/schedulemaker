@@ -35,21 +35,14 @@ class Application
 
     public function __construct()
     {
-
-
         $this->ParseURL();
-        try {
             $this->router = "App\\Routers\\" . $this->router;//namespace
             $this->router = new $this->router;
             if (method_exists($this->router, $this->action)) {
                 call_user_func_array([$this->router, $this->action], $this->parameters);
             } else {
-                echo "Böyle Bir Action Yok.";
+                throw new Exception("Böyle Bir Action Yok.");
             }
-        } catch (Exception $exception) {
-            echo "Böyle bir Router yok yada bir hata oluştu. -> ";
-        }
-
     }
 
     /**
