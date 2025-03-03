@@ -74,6 +74,8 @@ class ErrorHandler
             $this->renderErrorView('error', $exception, 500);
         }*/
 
+        header("Location: /admin");
+        exit();
     }
 
     /**
@@ -117,7 +119,7 @@ class ErrorHandler
         // PHP'nin varsayılan hata loglama mekanizmasını kullan
         // Bu genellikle error_log dosyasına veya syslog'a yazdırır
         error_log($message);
-
+        $_SESSION['error'] = $exception->getMessage();
         // İsterseniz burada başka loglama mekanizmaları da kullanabilirsiniz
         // Örneğin: veritabanına kaydetme, harici bir servis kullanma vb.
     }
@@ -137,7 +139,7 @@ class ErrorHandler
         http_response_code($statusCode);
 
         // API isteği mi kontrol et
-        if ($this->isApiRequest()) {
+        if ($this->isAjax()) {
             // API istekleri için JSON formatında hata döndür
             $this->renderJsonError($exception, $statusCode);
             return;
@@ -204,7 +206,7 @@ class ErrorHandler
      *
      * @return bool İstek API isteği mi
      */
-    private function isApiRequest()
+    private function isAjax()
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
