@@ -79,6 +79,12 @@ class AssetManager
                 'crossorigin' => 'anonymous'
             ]
         ],
+        [
+            'path' => '/assets/js/gettext.php'
+        ],
+        [
+            'path' => '/assets/js/myHTMLElements.js'
+        ],
     ];
 
     // Sayfa özel assetleri
@@ -99,24 +105,12 @@ class AssetManager
                     'path' => '/assets/js/data_table.js'
                 ],
                 [
-                    'path' => '/assets/js/gettext.php'
-                ],
-                [
-                    'path' => '/assets/js/myHTMLElements.js'
-                ],
-                [
                     'path' => '/assets/js/ajax.js'
                 ]
             ]
         ],
         'formpages' => [
             'js' => [
-                [
-                    'path' => '/assets/js/gettext.php'
-                ],
-                [
-                    'path' => '/assets/js/myHTMLElements.js'
-                ],
                 [
                     'path' => '/assets/js/ajax.js'
                 ],
@@ -137,12 +131,6 @@ class AssetManager
         'editschedule' => [
             'js' => [
                 [
-                    'path' => '/assets/js/gettext.php'
-                ],
-                [
-                    'path' => '/assets/js/myHTMLElements.js'
-                ],
-                [
                     'path' => '/assets/js/schedule.js'
                 ],
                 [
@@ -159,12 +147,6 @@ class AssetManager
         ],
         'singlepages' => [
             'js' => [
-                [
-                    'path' => '/assets/js/gettext.php'
-                ],
-                [
-                    'path' => '/assets/js/myHTMLElements.js'
-                ],
                 [
                     'path' => '/assets/js/ajax.js'
                 ],
