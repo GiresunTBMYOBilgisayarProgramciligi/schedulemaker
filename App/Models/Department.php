@@ -29,7 +29,6 @@ class Department extends Model
             extract($data);
             $this->id = $id;
             $this->name = $name;
-            $this->schedule = $schedule_id;
             $this->chairperson_id = $chairperson_id;
         }
     }
