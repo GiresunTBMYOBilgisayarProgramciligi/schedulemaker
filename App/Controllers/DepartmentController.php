@@ -55,7 +55,6 @@ class DepartmentController extends Controller
             }
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -80,7 +79,6 @@ class DepartmentController extends Controller
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Yeni Bölüm oluşturma yetkiniz yok");
                 throw new Exception("Yeni Bölüm oluşturma yetkiniz yok");
             }
 
@@ -95,10 +93,8 @@ class DepartmentController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -113,7 +109,6 @@ class DepartmentController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $department)) {
-                Logger::setErrorLog("Bölüm Güncelleme yetkiniz yok");
                 throw new Exception("Bölüm Güncelleme yetkiniz yok");
             }
 
@@ -144,10 +139,8 @@ class DepartmentController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }

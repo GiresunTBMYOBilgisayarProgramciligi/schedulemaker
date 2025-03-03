@@ -26,26 +26,19 @@ class ClassroomController extends Controller
     public function getClassroom($id): Classroom
     {
         if (!is_null($id)) {
-            try {
-                $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-                $stmt->execute();
-                $classroomData = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($classroomData) {
-                    $classroom = new Classroom();
-                    $classroom->fill($classroomData);
+            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $classroomData = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($classroomData) {
+                $classroom = new Classroom();
+                $classroom->fill($classroomData);
 
-                    return $classroom;
-                } else {
-                    Logger::setErrorLog("Derslik Bulunamadı");
-                    throw new Exception("Derslik Bulunamadı");
-                }
-            } catch (Exception $e) {
-                Logger::setExceptionLog($e);
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                return $classroom;
+            } else {
+                throw new Exception("Derslik Bulunamadı");
             }
         } else {
-            Logger::setErrorLog("İd belirtilmelidir");
             throw new Exception("İd belirtilmelidir");
         }
     }
@@ -57,12 +50,7 @@ class ClassroomController extends Controller
      */
     public function getClassroomsList(): array
     {
-        try {
-            return $this->getListByFilters();
-        } catch (Exception $e) {
-            Logger::setExceptionLog($e);
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        return $this->getListByFilters();
     }
 
     /**
@@ -75,7 +63,6 @@ class ClassroomController extends Controller
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Yeni derslik oluşturma yetkiniz yok");
                 throw new Exception("Yeni derslik oluşturma yetkiniz yok");
             }
 
@@ -89,10 +76,8 @@ class ClassroomController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -109,7 +94,6 @@ class ClassroomController extends Controller
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Derslik güncelleme yetkiniz yok");
                 throw new Exception("Derslik güncelleme yetkiniz yok");
             }
 
@@ -140,10 +124,8 @@ class ClassroomController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }

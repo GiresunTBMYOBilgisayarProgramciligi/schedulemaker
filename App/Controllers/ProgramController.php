@@ -35,11 +35,9 @@ class ProgramController extends Controller
 
                     return $program;
                 } else {
-                    Logger::setErrorLog("Program Bulunamadı");
                     throw new Exception("Program Bulunamadı");
                 }
             } catch (Exception $e) {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -58,7 +56,6 @@ class ProgramController extends Controller
             if (!is_null($department_id)) $filters["department_id"] = $department_id;
             return $this->getListByFilters($filters);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -83,7 +80,6 @@ class ProgramController extends Controller
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Yeni Program oluşturma yetkiniz yok");
                 throw new Exception("Yeni Program oluşturma yetkiniz yok");
             }
 
@@ -97,10 +93,8 @@ class ProgramController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -115,7 +109,6 @@ class ProgramController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $program)) {
-                Logger::setErrorLog("Program güncelleme yetkiniz yok");
                 throw new Exception("Program güncelleme yetkiniz yok");
             }
 
@@ -146,10 +139,8 @@ class ProgramController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }

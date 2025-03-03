@@ -40,7 +40,6 @@ class AdminRouter extends Router
             $this->view_data["assetManager"] = $this->assetManager; // View'da kullanmak için
             $this->currentUser = $this->view_data["userController"]->getCurrentUser();
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -74,7 +73,6 @@ class AdminRouter extends Router
                 "page_title" => "Anasayfa"]);
             $this->callView("admin/index", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
         }
 
     }
@@ -86,7 +84,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("department_head")) {
-                Logger::setErrorLog("Kullanıcı listesini görme yetkiniz yok");
                 throw new Exception("Kullanıcı listesini görme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('listpages');
@@ -101,7 +98,6 @@ class AdminRouter extends Router
             } else$this->view_data['users'] = $userController->getListByFilters();
             $this->callView("admin/users/listusers", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -115,7 +111,6 @@ class AdminRouter extends Router
             if ($department_id) {
                 $department = (new DepartmentController())->getDepartment($department_id);
                 if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
-                    Logger::setErrorLog("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
                 }
                 //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
@@ -123,13 +118,11 @@ class AdminRouter extends Router
             if ($program_id) {
                 $program = (new ProgramController())->getProgram($program_id);
                 if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id)) {
-                    Logger::setErrorLog("Bu programa yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
                 }
             }
             if (!($department or $program)) {
                 if (!isAuthorized("submanager")) {
-                    Logger::setErrorLog("Yeni kullanıcı ekleme yetkiniz yok");
                     throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
                 }
             }
@@ -141,7 +134,6 @@ class AdminRouter extends Router
 
             $this->callView("admin/users/adduser", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
 
@@ -157,7 +149,6 @@ class AdminRouter extends Router
                 $user = $userController->getUser($id);
             }
             if (!isAuthorized("submanager", false, $user)) {
-                Logger::setErrorLog("Bu profili görme yetkiniz yok");
                 throw new Exception("Bu profili görme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('profilepage');
@@ -171,7 +162,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/profile", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
 
@@ -187,7 +177,6 @@ class AdminRouter extends Router
                 $user = $userController->getUser($id);
             }
             if (!isAuthorized("submanager", false, $user)) {
-                Logger::setErrorLog("Kullanıcı düzenleme yetkiniz yok");
                 throw new Exception("Kullanıcı düzenleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -198,7 +187,6 @@ class AdminRouter extends Router
                 "programController" => new ProgramController()]);
             $this->callView("admin/users/edituser", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
     }
@@ -215,7 +203,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/users/importusers", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
     }
@@ -231,11 +218,9 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $lesson = $lessonController->getLesson($id);
             } else {
-                Logger::setErrorLog("Ders İd numarası belirtilmelidir");
                 throw new Exception("Ders İd numarası belirtilmelidir");
             }
             if (!isAuthorized("submanager", false, $lesson)) {
-                Logger::setErrorLog("Bu dersi görme yetkiniz yok");
                 throw new Exception("Bu dersi görme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('singlepages');
@@ -246,7 +231,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/lessons/lesson", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listlessons");
         }
 
@@ -256,7 +240,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("department_head")) {
-                Logger::setErrorLog("Ders listesini görme yetkiniz yok");
                 throw new Exception("Ders listesini görme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('listpages');
@@ -270,7 +253,6 @@ class AdminRouter extends Router
             } else $this->view_data['lessons'] = $lessonController->getListByFilters();
             $this->callView("admin/lessons/listlessons", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -280,7 +262,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("department_head")) {
-                Logger::setErrorLog("Ders ekleme yetkiniz yok");
                 throw new Exception("Ders ekleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -296,7 +277,6 @@ class AdminRouter extends Router
             } else $this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/addlesson", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listlessons");
         }
     }
@@ -308,11 +288,9 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $lesson = $lessonController->getLesson($id);
             } else {
-                Logger::setErrorLog("Belirtilen ders bulunamadı");
                 throw new Exception("Belirtilen ders bulunamadı");
             }
             if (!isAuthorized("submanager", false, $lesson)) {
-                Logger::setErrorLog("Bu dersi düzenleme yetkiniz yok");
                 throw new Exception("Bu dersi düzenleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -334,7 +312,6 @@ class AdminRouter extends Router
             } else$this->view_data['lecturers'] = $userController->getListByFilters();
             $this->callView("admin/lessons/editlesson", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
 
@@ -352,7 +329,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/lessons/importlessons", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
     }
@@ -364,14 +340,12 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Derslik sayfasını görme yetkiniz yok");
                 throw new Exception("Derslik sayfasını görme yetkiniz yok");
             }
             $classroomController = new ClassroomController();
             if (!is_null($id)) {
                 $classroom = $classroomController->getClassroom($id);
             } else {
-                Logger::setErrorLog("Derslik id Numarası belirtilmemiş");
                 throw new Exception("Derslik id Numarası belirtilmemiş");
             }
             $this->assetManager->loadPageAssets('singlepages');
@@ -381,7 +355,6 @@ class AdminRouter extends Router
                 "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'classroom', 'owner_id' => $classroom->id, 'type' => 'lesson'], true),
             ]);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
         $this->callView("admin/classrooms/classroom", $this->view_data);
@@ -391,7 +364,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Derslik listesini görme yetkiniz yok");
                 throw new Exception("Derslik listesini görme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('listpages');
@@ -403,7 +375,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/classrooms/listclassrooms", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
@@ -412,7 +383,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Yeni derslik ekleme yetkiniz yok");
                 throw new Exception("Yeni derslik ekleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -423,7 +393,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/classrooms/addclassroom", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
     }
@@ -432,14 +401,12 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Bu dersliği düzenleme yetkiniz yok");
                 throw new Exception("Bu dersliği düzenleme yetkiniz yok");
             }
             $classroomController = new ClassroomController();
             if (!is_null($id)) {
                 $classroom = $classroomController->getClassroom($id);
             } else {
-                Logger::setErrorLog("Derslik Bulunamadı");
                 throw new Exception("Derslik Bulunamadı");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -451,7 +418,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/classrooms/editclassroom", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
@@ -466,11 +432,9 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $department = $departmentController->getDepartment($id);
             } else {
-                Logger::setErrorLog("İd belirtilmemiş");
                 throw new Exception("İd belirtilmemiş");
             }
             if (!isAuthorized("submanager", false, $department)) {
-                Logger::setErrorLog("Bu bölüm sayfasını görme yetkiniz yok");
                 throw new Exception("Bu bölüm sayfasını görme yetkiniz yok");
             }
             $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
@@ -483,7 +447,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/department", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
@@ -492,7 +455,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Bölümler listesini görmek için yetkiniz yok");
                 throw new Exception("Bölümler listesini görmek için yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('listpages');
@@ -504,7 +466,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/listdepartments", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect(null, true);
         }
     }
@@ -513,7 +474,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Yeni Bölüm ekleme yetkiniz yok");
                 throw new Exception("Yeni Bölüm ekleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -523,7 +483,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/adddepartment", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -533,14 +492,12 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Bu bölümü düzenleme yetkiniz yok");
                 throw new Exception("Bu bölümü düzenleme yetkiniz yok");
             }
             $departmentController = new DepartmentController();
             if (!is_null($id)) {
                 $department = $departmentController->getDepartment($id);
             } else {
-                Logger::setErrorLog("Bölüm bulunamadı");
                 throw new Exception("Bölüm bulunamadı");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -552,7 +509,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/departments/editdepartment", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
@@ -567,15 +523,12 @@ class AdminRouter extends Router
             if (!is_null($id)) {
                 $program = $programController->getProgram($id);
                 if (!$program) {
-                    Logger::setErrorLog("Belirtilen Program bulunamadı");
                     throw new Exception("Belirtilen Program bulunamadı");
                 }
             } else{
-                Logger::setErrorLog("Program id değeri belirtilmelidir");
                 throw new Exception("Program id değeri belirtilmelidir");
             }
             if (!isAuthorized("submanager", false, $program)){
-                Logger::setErrorLog("Bu programı görüntülemek için yetkiniz yok");
                 throw new Exception("Bu programı görüntülemek için yetkiniz yok");
             }
             $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
@@ -590,7 +543,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/program", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
     }
@@ -603,7 +555,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")){
-                Logger::setErrorLog("Programlar listesini görmek için yetkiniz yok");
                 throw new Exception("Programlar listesini görmek için yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('listpages');
@@ -615,7 +566,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/listprograms", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin");
         }
 
@@ -625,7 +575,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")){
-                Logger::setErrorLog("Program ekleme yetkiniz yok");
                 throw new Exception("Program ekleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -636,7 +585,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/addprogram", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
 
@@ -646,18 +594,15 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")){
-                Logger::setErrorLog("Program düzenleme yetkiniz yok");
                 throw new Exception("Program düzenleme yetkiniz yok");
             }
             $programController = new ProgramController();
             if (!is_null($id)) {
                 $program = $programController->getProgram($id);
                 if (!$program) {
-                    Logger::setErrorLog("Belirtilen Program bulunamadı");
                     throw new Exception("Belirtilen Program bulunamadı");
                 }
             } else {
-                Logger::setErrorLog("Program id numarası belirtilmelidir");
                 throw new Exception("Program id numarası belirtilmelidir");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -669,7 +614,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/programs/editprogram", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect("/admin/listprograms");
         }
 
@@ -686,7 +630,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("department_head")){
-                Logger::setErrorLog("Ders programı düzenleme yetkiniz yok");
                 throw new Exception("Ders programı düzenleme yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('editschedule');
@@ -699,7 +642,6 @@ class AdminRouter extends Router
             } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
                 $departments = [$departmentController->getDepartment($currentUser->department_id)];
             } else {
-                Logger::setErrorLog("Bu işlem için yetkiniz yok");
                 throw new Exception("Bu işlem için yetkiniz yok");
             }
             $this->view_data = array_merge($this->view_data, [
@@ -711,7 +653,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/schedules/editschedule", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }
@@ -723,7 +664,6 @@ class AdminRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")){
-                Logger::setErrorLog("Ayarlar sayfasına erişim yetkiniz yok");
                 throw new Exception("Ayarlar sayfasına erişim yetkiniz yok");
             }
             $this->assetManager->loadPageAssets('formpages');
@@ -734,7 +674,6 @@ class AdminRouter extends Router
             ]);
             $this->callView("admin/settings/settings", $this->view_data);
         } catch (Exception $e) {
-            Logger::setAndShowErrorLog($e->getMessage());
             $this->Redirect();
         }
     }

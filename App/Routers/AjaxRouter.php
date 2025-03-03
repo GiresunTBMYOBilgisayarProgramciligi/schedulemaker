@@ -96,7 +96,6 @@ class AjaxRouter extends Router
             $new_user->fill($userData);
             $user = $usersController->saveNew($new_user);
             if (!$user) {
-                Logger::setErrorLog("Kullanıcı Eklenemedi");
                 throw new Exception("Kullanıcı Eklenemedi");
             } else {
                 $this->response = array(
@@ -105,7 +104,6 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -143,7 +141,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -158,7 +155,6 @@ class AjaxRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Kullanıcı silme yetkiniz yok");
                 throw new Exception();
             }
             $usersController = new UserController();
@@ -169,7 +165,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -201,7 +196,6 @@ class AjaxRouter extends Router
             $new_lesson->fill($lessonData);
             $user = $lessonController->saveNew($new_lesson);
             if (!$user) {
-                Logger::setErrorLog("Kullanıcı eklenemedi");
                 throw new Exception("Kullanıcı eklenemedi");
             } else {
                 $this->response = array(
@@ -210,7 +204,6 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -252,7 +245,6 @@ class AjaxRouter extends Router
 
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -270,11 +262,9 @@ class AjaxRouter extends Router
             $lesson = $lessonController->getLesson($this->data['id']);
             $currentUser = (new UserController())->getCurrentUser();
             if (!isAuthorized("submanager", false, $lesson)) {
-                Logger::setErrorLog("Bu dersi silme yetkiniz yok");
                 throw new Exception("Bu dersi silme yetkiniz yok");
             }
             if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
-                Logger::setErrorLog("Bu dersi silme yetkiniz yok");
                 throw new Exception("Bu dersi silme yetkiniz yok");
             }
             $lessonController->delete($this->data['id']);
@@ -284,7 +274,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -307,7 +296,6 @@ class AjaxRouter extends Router
             $new_classroom->fill($classroomData);
             $classroom = $classroomController->saveNew($new_classroom);
             if (!$classroom) {
-                Logger::setErrorLog("Derslik oluşturulamadı");
                 throw new Exception("Derslik oluşturulamadı");
             } else {
                 $this->response = array(
@@ -316,7 +304,6 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -340,7 +327,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -355,7 +341,6 @@ class AjaxRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Derslik silme yetkiniz yok");
                 throw new Exception("Derslik silme yetkiniz yok");
             }
             $classroomController = new ClassroomController();
@@ -366,7 +351,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -389,7 +373,6 @@ class AjaxRouter extends Router
             $new_department->fill($departmentData);
             $department = $departmentController->saveNew($new_department);
             if (!$department) {
-                Logger::setErrorLog("Bölüm Eklenemedi");
                 throw new Exception("Bölüm Eklenemedi");
             } else {
                 $this->response = array(
@@ -398,7 +381,6 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -423,7 +405,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -438,7 +419,6 @@ class AjaxRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Bölüm silme yetkiniz yok");
                 throw new Exception("Bölüm silme yetkiniz yok");
             }
             $departmentController = new DepartmentController();
@@ -449,7 +429,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -472,7 +451,6 @@ class AjaxRouter extends Router
             $new_program->fill($programData);
             $program = $programController->saveNew($new_program);
             if (!$program) {
-                Logger::setErrorLog("Program kaydedilemedi");
                 throw new Exception("Program kaydedilemedi");
             } else {
                 $this->response = array(
@@ -481,7 +459,6 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -506,7 +483,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -521,7 +497,6 @@ class AjaxRouter extends Router
     {
         try {
             if (!isAuthorized("submanager")) {
-                Logger::setErrorLog("Program silme yetkiniz yok");
                 throw new Exception("Program silme yetkiniz yok");
             }
             $programController = new ProgramController();
@@ -532,7 +507,6 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -551,7 +525,6 @@ class AjaxRouter extends Router
             $this->response['status'] = "success";
             $this->response['programs'] = $programs;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -574,7 +547,6 @@ class AjaxRouter extends Router
             $this->response['status'] = "success";
             $this->response['HTML'] = $schedulesHTML;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -589,7 +561,6 @@ class AjaxRouter extends Router
     {
         try {
             if (!isAuthorized("department_head")) {
-                Logger::setErrorLog("Uygun ders listesini almak için yetkiniz yok");
                 throw new Exception("Uygun ders listesini almak için yetkiniz yok");
             }
             $scheduleController = new ScheduleController();
@@ -597,7 +568,6 @@ class AjaxRouter extends Router
             $this->response['status'] = "success";
             $this->response['classrooms'] = $classrooms;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -693,7 +663,6 @@ class AjaxRouter extends Router
                             ]);
                             $savedId = $scheduleController->saveNew($schedule);
                             if ($savedId == 0) {
-                                Logger::setErrorLog($owner_type . " kaydı yapılırken hata oluştu");
                                 throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
                             } else
                                 $this->response[$owner_type . "_result"] = $savedId;
@@ -708,11 +677,9 @@ class AjaxRouter extends Router
                     ];
                 }
             } else {
-                Logger::setErrorLog("Kaydedilecek ders id numarası yok ");
                 throw new Exception("Kaydedilecek ders id numarası yok ");
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -743,14 +710,12 @@ class AjaxRouter extends Router
                 $schedule->fill($filters);
                 $savedId = $scheduleController->saveNew($schedule);
                 if ($savedId == 0) {
-                    Logger::setErrorLog("Hoca tercihi kaydedilemedi");
                     throw new Exception("Hoca tercihi kaydedilemedi");
                 } else {
                     $this->response = array_merge($this->response, array("status" => "success"));
                 }
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -825,7 +790,6 @@ class AjaxRouter extends Router
                 }
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -879,7 +843,6 @@ class AjaxRouter extends Router
                         $scheduleController->deleteSchedule($filters);
                     }
                 } else {
-                    Logger::setErrorLog("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
                     throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
                 }
             } else {
@@ -901,7 +864,6 @@ class AjaxRouter extends Router
                 $scheduleController->deleteSchedule($filters);
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -934,7 +896,6 @@ class AjaxRouter extends Router
             $this->response['status'] = "success";
             $this->response['msg'] = "Ayarlar kaydedildi";
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -957,7 +918,6 @@ class AjaxRouter extends Router
             $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
             $this->response['errors'] = $result['errors'];
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),
@@ -976,7 +936,6 @@ class AjaxRouter extends Router
             $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
             $this->response['errors'] = $result['errors'];
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $this->response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),

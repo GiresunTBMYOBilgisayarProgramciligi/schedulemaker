@@ -47,7 +47,6 @@ class Department extends Model
             } else
                 return (new UserController())->getUser($this->chairperson_id);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -81,7 +80,6 @@ class Department extends Model
             }
             return $programs_list;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -106,7 +104,6 @@ class Department extends Model
             }
             return $lecturers_list;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -125,7 +122,6 @@ class Department extends Model
             $data = $stmt->fetch();
             return $data['count'];
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -150,7 +146,6 @@ class Department extends Model
             }
             return $lessons_list;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -169,7 +164,6 @@ class Department extends Model
             $data = $stmt->fetch();
             return $data['count'];
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 

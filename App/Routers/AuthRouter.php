@@ -64,7 +64,6 @@ class AuthRouter extends Router
             }
 
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             $response = [
                 "msg" => $e->getMessage(),
                 "trace" => $e->getTraceAsString(),

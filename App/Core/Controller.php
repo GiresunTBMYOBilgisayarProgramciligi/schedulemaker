@@ -16,7 +16,6 @@ class Controller
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]);
         } catch (Exception $exception) {
-            Logger::setExceptionLog($exception);
             echo $exception->getMessage();
         }
 
@@ -72,7 +71,6 @@ class Controller
             return $stmt->fetchColumn();
 
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }
@@ -86,16 +84,13 @@ class Controller
     {
         try {
             if (is_null($id)) {
-                Logger::setErrorLog('Geçerli bir ID sağlanmadı.');
                 throw new Exception('Geçerli bir ID sağlanmadı.');
             }
             if ($this->table_name == "users" and $id == 1) {
-                Logger::setErrorLog("Birincil yönetici hesabı silinemez.");
                 throw new Exception("Birincil yönetici hesabı silinemez.");
             }
             // Alt sınıfta table_name tanımlı mı kontrol et
             if (!property_exists($this, 'table_name')) {
-                Logger::setErrorLog('Table name özelliği tanımlı değil.');
                 throw new Exception('Table name özelliği tanımlı değil.');
             }
 
@@ -103,11 +98,9 @@ class Controller
             $stmt->execute([":id" => $id]);
 
             if (!$stmt->rowCount() > 0) {
-                Logger::setErrorLog('Kayıt bulunamadı veya silinemedi.');
                 throw new Exception('Kayıt bulunamadı veya silinemedi.');
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }
@@ -134,7 +127,6 @@ class Controller
                 $stmt->bindValue($key, $value);
             }
             if (!$stmt->execute()) {
-                Logger::setErrorLog("Komut çalıştırılamadı error");
                 throw new Exception("Komut çalıştırılamadı");
             }
 
@@ -146,7 +138,6 @@ class Controller
             if ($result) {
                 // Alt sınıfta table_name tanımlı mı kontrol et
                 if (!property_exists($this, 'modelName')) {
-                    Logger::setErrorLog('Model Adı özelliği tanımlı değil.');
                     throw new Exception('Model Adı özelliği tanımlı değil.');
                 }
                 foreach ($result as $data) {
@@ -158,7 +149,6 @@ class Controller
             return $models;
 
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }

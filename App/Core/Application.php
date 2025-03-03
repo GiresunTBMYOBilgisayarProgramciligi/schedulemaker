@@ -44,11 +44,9 @@ class Application
             if (method_exists($this->router, $this->action)) {
                 call_user_func_array([$this->router, $this->action], $this->parameters);
             } else {
-                Logger::setErrorLog("Böyle Bir Action Yok.");
                 echo "Böyle Bir Action Yok.";
             }
         } catch (Exception $exception) {
-            Logger::setExceptionLog($exception);
             echo "Böyle bir Router yok yada bir hata oluştu. -> ";
         }
 

@@ -52,15 +52,12 @@ class ScheduleController extends Controller
 
                     return $schedule;
                 } else {
-                    Logger::setErrorLog("Ders Programı bulunamadı");
                     throw new Exception("Ders Programı bulunamadı");
                 }
             } catch (Exception $e) {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage());
             }
         } else {
-            Logger::setErrorLog("Ders Programı id'si belirtilmelidir");
             throw new Exception("Ders Programı id'si belirtilmelidir");
         }
     }
@@ -221,7 +218,6 @@ class ScheduleController extends Controller
             $out .= '</tbody>
                </table>';
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -250,7 +246,6 @@ class ScheduleController extends Controller
                     if (array_key_exists("semester_no", $filters)) {
                         $lessonFilters['semester_no'] = $filters['semester_no'];
                     } else {
-                        Logger::setErrorLog("Yarıyıl bilgisi yok");
                         throw new Exception("Yarıyıl bilgisi yok");
                     }
                     $lessonFilters = array_merge($lessonFilters, [
@@ -286,12 +281,10 @@ class ScheduleController extends Controller
                     }
                 }
             } else {
-                Logger::setErrorLog("Owner_type ve/veya owner id yok");
                 throw new Exception("Owner_type ve/veya owner id yok");
             }
             return $available_lessons;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
     }
@@ -303,7 +296,6 @@ class ScheduleController extends Controller
     {
         try {
             if (!key_exists('semester_no', $filters)) {
-                Logger::setErrorLog("Dönem numarası belirtilmelidir");
                 throw new Exception("Dönem numarası belirtilmelidir");
             }
             $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
@@ -328,7 +320,6 @@ class ScheduleController extends Controller
             $HTMLOut .= '</div>';
             return $HTMLOut;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -378,7 +369,6 @@ class ScheduleController extends Controller
         try {
             $classroomFilters = [];
             if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
-                Logger::setErrorLog("Missing hours and time");
                 throw new Exception("Missing hours and time");
             }
             if (!key_exists("semester", $filters)) {
@@ -415,15 +405,12 @@ class ScheduleController extends Controller
                     $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
                     $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
                 } else {
-                    Logger::setErrorLog("owner_type classroom değil");
                     throw new Exception("owner_type classroom değil");
                 }
             } else {
-                Logger::setErrorLog("owner_type belirtilmemiş");
                 throw new Exception("owner_type belirtilmemiş");
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
 
@@ -439,7 +426,6 @@ class ScheduleController extends Controller
     {
         try {
             if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
-                Logger::setErrorLog("Ders saati yada program saati yok");
                 throw new Exception("Ders saati yada program saati yok");
             }
             if (!key_exists("semester", $filters)) {
@@ -468,7 +454,6 @@ class ScheduleController extends Controller
                             if (is_array($schedule->{$filters["day"]})) {
                                 if ($owner_type == "user") {
                                     //eğer hocanın o saatte dersi varsa program eklenemez
-                                    Logger::setErrorLog("Hoca Programı uygun değil");
                                     throw new Exception("Hoca Programı uygun değil");
                                 }
                                 // belirtilen gün içerisinde bir veri varsa
@@ -503,11 +488,9 @@ class ScheduleController extends Controller
                 }
 
             } else {
-                Logger::setErrorLog("Owners bilgileri girilmemiş");
                 throw new Exception("Owners bilgileri girilmemiş");
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
         return true;
@@ -540,11 +523,9 @@ class ScheduleController extends Controller
                     }
                 }//todo diğer türler için işlemler
             } else {
-                Logger::setErrorLog("owner_type ve/veya owner_id belirtilmemiş");
                 throw new Exception("owner_type ve/veya owner_id belirtilmemiş");
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage());
         }
         return $result;
@@ -567,7 +548,6 @@ class ScheduleController extends Controller
             }
             $HTMLOUT = '';
             if (!is_null($filters["semester_no"])) {
-                Logger::setErrorLog("Dönem numarası girilmemiş");
                 throw new Exception("Dönem numarası girilmemiş");
             }
             $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -615,7 +595,6 @@ class ScheduleController extends Controller
             }
             return $HTMLOUT;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -630,7 +609,6 @@ class ScheduleController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $new_schedule)) {
-                Logger::setErrorLog("Ders Programı kaydetmek için yetkiniz yok");
                 throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
             }
 
@@ -677,13 +655,11 @@ class ScheduleController extends Controller
 
                                     $updatingSchedule->{"day" . $i} = $dayData;
                                 } else {
-                                    Logger::setErrorLog("Dersler gruplu değil bu şekilde kaydedilemez");
                                     throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
                                 }
                             } else {
                                 // Gün verisi dizi değilse null, true yada false olabilir.
                                 if ($updatingSchedule->{"day" . $i} === false) {
-                                    Logger::setErrorLog("Belirtilen gün için ders eklenmesine izin verilmemiş");
                                     throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
                                 } else {
                                     // ders normal şekilde güncellenecek
@@ -694,11 +670,9 @@ class ScheduleController extends Controller
                     }
                     return $this->updateSchedule($updatingSchedule);
                 } catch (Exception $e) {
-                    Logger::setExceptionLog($e);
                     throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), (int)$e->getCode(), $e);
                 }
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception("Program Güncellenirken hata oluştu. " . $e->getMessage(), 0, $e);
             }
         }
@@ -713,7 +687,6 @@ class ScheduleController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $schedule)) {
-                Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
                 throw new Exception("Ders Programı güncelleme yetkiniz yok");
             }
 
@@ -748,16 +721,13 @@ class ScheduleController extends Controller
             if ($stmt->rowCount() > 0) {
                 return $schedule->id;
             } else {
-                Logger::setErrorLog("Program Güncellenemedi");
                 throw new Exception("Program Güncellenemedi");
             }
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Schedule Çakışması var" . $e->getMessage());
                 throw new Exception("Schedule Çakışması var" . $e->getMessage());
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception("Schedule güncellenirken Hata oluştu" . $e->getMessage());
             }
         }
@@ -780,12 +750,10 @@ class ScheduleController extends Controller
             $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
             $schedules = $this->getListByFilters($scheduleData);
             if (!$schedules) {
-                Logger::setErrorLog("Silinecek Ders bulunamadı");
                 throw new Exception("Silinecek Ders bulunamadı");
             }
             foreach ($schedules as $schedule) {
                 if (!isAuthorized("submanager", false, $schedule)) {
-                    Logger::setErrorLog("Ders Programı güncelleme yetkiniz yok");
                     throw new Exception("Ders Programı güncelleme yetkiniz yok");
                 }
 
@@ -803,7 +771,6 @@ class ScheduleController extends Controller
                 }
             }
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception("Program silinirken bir hata oluştu" . $e->getMessage());
         }
     }

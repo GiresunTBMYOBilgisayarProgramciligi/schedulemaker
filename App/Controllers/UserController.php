@@ -34,15 +34,12 @@ class UserController extends Controller
 
                     return $user;
                 } else {
-                    Logger::setErrorLog("Kullanıcı Bulunamdı");
                     throw new Exception("Kullanıcı Bulunamdı");
                 }
             } catch (Exception $e) {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         } else {
-            Logger::setErrorLog("Kullanıcı id numarası belirtilmemiş");
             throw new Exception("Kullanıcı id numarası belirtilmemiş");
         }
     }
@@ -73,7 +70,6 @@ class UserController extends Controller
             }
             return $user;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -88,7 +84,6 @@ class UserController extends Controller
         try {
             return $this->getCount(["!role" => ["user", "admin"]]);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -138,7 +133,6 @@ class UserController extends Controller
             $stmt = $this->database->prepare($sql);
             $stmt->execute([$user->id]);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -154,7 +148,6 @@ class UserController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $new_user)) {
-                Logger::setErrorLog("Kullanıcı oluşturma yetkiniz yok");
                 throw new Exception("Kullanıcı oluşturma yetkiniz yok");
             }
             // Yeni kullanıcı verilerini bir dizi olarak alın
@@ -170,10 +163,8 @@ class UserController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.");
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -190,7 +181,6 @@ class UserController extends Controller
     {
         try {
             if (!isAuthorized("submanager", false, $user)) {
-                Logger::setErrorLog("Kullanıcı bilgilerini güncelleme yetkiniz yok");
                 throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
             }
             // Şifre kontrolü ve hash işlemi
@@ -240,10 +230,8 @@ class UserController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                Logger::setErrorLog("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.");
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
             } else {
-                Logger::setExceptionLog($e);
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
@@ -259,7 +247,6 @@ class UserController extends Controller
         try {
             return $this->getListByFilters();
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -276,7 +263,6 @@ class UserController extends Controller
             $filter = array_merge($filter, ["!role" => ['in' => ["user", "admin"]]]);
             return $this->getListByFilters($filter);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -474,7 +460,6 @@ class UserController extends Controller
             };
             return $isAuthorizedRole or $isOwner;
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }

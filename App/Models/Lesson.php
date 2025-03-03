@@ -58,7 +58,6 @@ class Lesson extends Model
             }
             return (new UserController())->getUser($this->lecturer_id);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
 
@@ -74,7 +73,6 @@ class Lesson extends Model
         try {
             return (new DepartmentController())->getDepartment($this->department_id);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
@@ -89,7 +87,6 @@ class Lesson extends Model
         try {
             return (new ProgramController())->getProgram($this->program_id);
         } catch (Exception $e) {
-            Logger::setExceptionLog($e);
             throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
