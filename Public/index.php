@@ -10,6 +10,8 @@ define("DEBUG_MODE", $_ENV['DEBUG']); // Geliştirme ortamında true, canlı ort
 
 ini_set('display_errors', 1);
 error_reporting(E_ERROR);
+setlocale(LC_ALL, 'tr_TR.UTF-8');
+
 // Hata işleyicisini başlat
 $errorHandler = new \App\Core\ErrorHandler();
 $errorHandler->register();
