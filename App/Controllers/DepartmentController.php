@@ -24,20 +24,16 @@ class DepartmentController extends Controller
     public function getDepartment($id): Department|bool
     {
         if (!is_null($id)) {
-            try {
-                $smtt = $this->database->prepare("select * from $this->table_name where id=:id");
-                $smtt->bindValue(":id", $id, PDO::PARAM_INT);
-                $smtt->execute();
-                $departmentData = $smtt->fetch(\PDO::FETCH_ASSOC);
-                if ($departmentData) {
-                    $department = new Department();
-                    $department->fill($departmentData);
+            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $departmentData = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($departmentData) {
+                $department = new Department();
+                $department->fill($departmentData);
 
-                    return $department;
-                } else throw new Exception("Department not found");
-            } catch (Exception $e) {
-                throw new $e;
-            }
+                return $department;
+            } else throw new Exception("Bölüm bulunamadı");
         }
         return false;
     }
@@ -49,14 +45,10 @@ class DepartmentController extends Controller
      */
     public function getDepartmentsList(array $filters = []): array
     {
-        try {
-            if (!isAuthorized("submanager")) {
-                $filters['id'] = (new UserController())->getCurrentUser()->department_id;
-            }
-            return $this->getListByFilters($filters);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+        if (!isAuthorized("submanager")) {
+            $filters['id'] = (new UserController())->getCurrentUser()->department_id;
         }
+        return $this->getListByFilters($filters);
     }
 
     /**

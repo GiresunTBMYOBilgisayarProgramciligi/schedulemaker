@@ -26,21 +26,17 @@ class LessonController extends Controller
     public function getLesson($id): Lesson
     {
         if (!is_null($id)) {
-            try {
-                $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-                $stmt->execute();
-                $lessonData = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($lessonData) {
-                    $lesson = new Lesson();
-                    $lesson->fill($lessonData);
+            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $lessonData = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($lessonData) {
+                $lesson = new Lesson();
+                $lesson->fill($lessonData);
 
-                    return $lesson;
-                } else {
-                    throw new Exception("Ders bulunamadı");
-                }
-            } catch (Exception $e) {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                return $lesson;
+            } else {
+                throw new Exception("Ders bulunamadı");
             }
         } else {
             throw new Exception("Ders id numarası belirtilmelidir");
@@ -92,13 +88,9 @@ class LessonController extends Controller
      */
     public function getLessonsList(?int $lecturer_id = null): array
     {
-        try {
-            $filters = [];
-            if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
-            return $this->getListByFilters($filters);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        $filters = [];
+        if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
+        return $this->getListByFilters($filters);
     }
 
     /**
@@ -187,10 +179,6 @@ class LessonController extends Controller
      */
     public function getSemesterCount(): int
     {
-        try {
-            return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
     }
 }

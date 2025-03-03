@@ -24,21 +24,17 @@ class ProgramController extends Controller
     public function getProgram($id): Program|null
     {
         if (!is_null($id)) {
-            try {
-                $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-                $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-                $stmt->execute();
-                $program_data = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if ($program_data) {
-                    $program = new Program();
-                    $program->fill($program_data);
+            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
+            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+            $stmt->execute();
+            $program_data = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if ($program_data) {
+                $program = new Program();
+                $program->fill($program_data);
 
-                    return $program;
-                } else {
-                    throw new Exception("Program Bulunamadı");
-                }
-            } catch (Exception $e) {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                return $program;
+            } else {
+                throw new Exception("Program Bulunamadı");
             }
         }
         return null;
@@ -51,13 +47,9 @@ class ProgramController extends Controller
      */
     public function getProgramsList(?int $department_id = null): array
     {
-        try {
-            $filters = [];
-            if (!is_null($department_id)) $filters["department_id"] = $department_id;
-            return $this->getListByFilters($filters);
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
-        }
+        $filters = [];
+        if (!is_null($department_id)) $filters["department_id"] = $department_id;
+        return $this->getListByFilters($filters);
     }
 
     /**
