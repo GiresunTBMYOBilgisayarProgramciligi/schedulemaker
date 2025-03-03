@@ -47,32 +47,26 @@ class Controller
      */
     public function getCount(?array $filters = []): int
     {
-        try {
-            // Alt sınıfta table_name tanımlı mı kontrol et
-            if (!property_exists($this, 'table_name')) {
-                throw new Exception('Table name özelliği tanımlı değil.');
-            }
-            $parameters = [];
-            $whereClause = "";
-            $this->prepareWhereClause($filters, $whereClause, $parameters);
-
-            // Sorguyu hazırla
-            $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
-            $stmt = $this->database->prepare($sql);
-
-            // Parametreleri bağla
-            foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            $stmt->execute();
-
-            // Verileri işle
-            return $stmt->fetchColumn();
-
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        // Alt sınıfta table_name tanımlı mı kontrol et
+        if (!property_exists($this, 'table_name')) {
+            throw new Exception('Table name özelliği tanımlı değil.');
         }
+        $parameters = [];
+        $whereClause = "";
+        $this->prepareWhereClause($filters, $whereClause, $parameters);
+
+        // Sorguyu hazırla
+        $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
+        $stmt = $this->database->prepare($sql);
+
+        // Parametreleri bağla
+        foreach ($parameters as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        // Verileri işle
+        return $stmt->fetchColumn();
     }
 
     /**
@@ -82,26 +76,22 @@ class Controller
      */
     public function delete($id = null): void
     {
-        try {
-            if (is_null($id)) {
-                throw new Exception('Geçerli bir ID sağlanmadı.');
-            }
-            if ($this->table_name == "users" and $id == 1) {
-                throw new Exception("Birincil yönetici hesabı silinemez.");
-            }
-            // Alt sınıfta table_name tanımlı mı kontrol et
-            if (!property_exists($this, 'table_name')) {
-                throw new Exception('Table name özelliği tanımlı değil.');
-            }
+        if (is_null($id)) {
+            throw new Exception('Geçerli bir ID sağlanmadı.');
+        }
+        if ($this->table_name == "users" and $id == 1) {
+            throw new Exception("Birincil yönetici hesabı silinemez.");
+        }
+        // Alt sınıfta table_name tanımlı mı kontrol et
+        if (!property_exists($this, 'table_name')) {
+            throw new Exception('Table name özelliği tanımlı değil.');
+        }
 
-            $stmt = $this->database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
-            $stmt->execute([":id" => $id]);
+        $stmt = $this->database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
+        $stmt->execute([":id" => $id]);
 
-            if (!$stmt->rowCount() > 0) {
-                throw new Exception('Kayıt bulunamadı veya silinemedi.');
-            }
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        if (!$stmt->rowCount() > 0) {
+            throw new Exception('Kayıt bulunamadı veya silinemedi.');
         }
     }
 
@@ -113,44 +103,38 @@ class Controller
      */
     public function getListByFilters(array $filters = null): array
     {
-        try {
-            $whereClause = "";
-            $parameters = [];
-            $this->prepareWhereClause($filters, $whereClause, $parameters);
+        $whereClause = "";
+        $parameters = [];
+        $this->prepareWhereClause($filters, $whereClause, $parameters);
 
-            // Sorguyu hazırla
-            $sql = "SELECT * FROM $this->table_name $whereClause";
+        // Sorguyu hazırla
+        $sql = "SELECT * FROM $this->table_name $whereClause";
 
-            $stmt = $this->database->prepare($sql);
-            // Parametreleri bağla
-            foreach ($parameters as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-            if (!$stmt->execute()) {
-                throw new Exception("Komut çalıştırılamadı");
-            }
-
-
-            // Verileri işle
-            $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $models = [];
-
-            if ($result) {
-                // Alt sınıfta table_name tanımlı mı kontrol et
-                if (!property_exists($this, 'modelName')) {
-                    throw new Exception('Model Adı özelliği tanımlı değil.');
-                }
-                foreach ($result as $data) {
-                    $model = new $this->modelName();
-                    $model->fill($data);
-                    $models[] = $model;
-                }
-            }
-            return $models;
-
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        $stmt = $this->database->prepare($sql);
+        // Parametreleri bağla
+        foreach ($parameters as $key => $value) {
+            $stmt->bindValue($key, $value);
         }
+        if (!$stmt->execute()) {
+            throw new Exception("Komut çalıştırılamadı");
+        }
+
+        // Verileri işle
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $models = [];
+
+        if ($result) {
+            // Alt sınıfta table_name tanımlı mı kontrol et
+            if (!property_exists($this, 'modelName')) {
+                throw new Exception('Model Adı özelliği tanımlı değil.');
+            }
+            foreach ($result as $data) {
+                $model = new $this->modelName();
+                $model->fill($data);
+                $models[] = $model;
+            }
+        }
+        return $models;
     }
 
     /**
@@ -188,9 +172,9 @@ class Controller
      * // AND `category` != :category AND `name` LIKE :name_0
      * // AND `tags` IN (:tags_0, :tags_1, :tags_2) AND `priority` >= :priority_0
      *
-     * @param array|null $filters        Filtre koşullarını içeren dizi. null ise boş WHERE clause döner
-     * @param string $whereClause        WHERE clause'un atanacağı referans değişken
-     * @param array $parameters         Prepared statement parametrelerinin atanacağı referans değişken
+     * @param array|null $filters Filtre koşullarını içeren dizi. null ise boş WHERE clause döner
+     * @param string $whereClause WHERE clause'un atanacağı referans değişken
+     * @param array $parameters Prepared statement parametrelerinin atanacağı referans değişken
      * @return void                     whereClause ve parameters değişkenlerini günceller
      *
      * @throws \InvalidArgumentException Geçersiz operatör kullanıldığında
@@ -259,8 +243,7 @@ class Controller
                     }
                     $operator = $isNotCondition ? 'NOT IN' : 'IN';
                     $conditions[] = "`$column` $operator (" . implode(", ", $placeholders) . ")";
-                }
-                // Karşılaştırma operatörleri için kontrol
+                } // Karşılaştırma operatörleri için kontrol
                 else {
                     foreach ($value as $operator => $operandValue) {
                         if (isset($operators[$operator])) {
@@ -270,8 +253,7 @@ class Controller
                         }
                     }
                 }
-            }
-            // Basit eşitlik kontrolü
+            } // Basit eşitlik kontrolü
             else {
                 $placeholder = ":{$column}";
                 $operator = $isNotCondition ? '!=' : '=';
