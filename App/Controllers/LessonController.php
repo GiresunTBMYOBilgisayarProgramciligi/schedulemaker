@@ -42,16 +42,6 @@ class LessonController extends Controller
         }
     }
 
-    /**
-     * Kod numarasına göre ders modeli döndürür. Bulamazsa false döner
-     * @param array $filters
-     * @return Lesson|bool
-     * @throws Exception
-     */
-    public function getLessonByFilters(array $filters): Lesson|bool
-    {
-        return $this->getListByFilters($filters)[0] ?? false;
-    }
 
     /**
      * Dersin türünü seçmek için kullanılacak diziyi döner

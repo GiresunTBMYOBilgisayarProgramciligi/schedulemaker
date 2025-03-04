@@ -179,7 +179,7 @@ class ImportExportManager
                 'academic_year' => $this->formData['academic_year'],
             ];
             //Ders ders kodu, program_id ikilisine göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = $lessonsController->getLessonByFilters(['code' => $code, 'program_id' => $program->id]);
+            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();
             if ($lesson) {
                 $lesson->fill($lessonData);
                 $lessonsController->updateLesson($lesson);
