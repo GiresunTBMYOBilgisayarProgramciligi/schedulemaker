@@ -84,38 +84,12 @@ class Controller
      */
     public function getListByFilters(array $filters = null): array
     {
-        $whereClause = "";
-        $parameters = [];
-        $this->prepareWhereClause($filters, $whereClause, $parameters);
-
-        // Sorguyu hazırla
-        $sql = "SELECT * FROM $this->table_name $whereClause";
-
-        $stmt = $this->database->prepare($sql);
-        // Parametreleri bağla
-        foreach ($parameters as $key => $value) {
-            $stmt->bindValue($key, $value);
+        // Alt sınıfta table_name tanımlı mı kontrol et
+        if (!property_exists($this, 'modelName')) {
+            throw new Exception('Model adı özelliği tanımlı değil.');
         }
-        if (!$stmt->execute()) {
-            throw new Exception("Komut çalıştırılamadı");
-        }
-
-        // Verileri işle
-        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        $models = [];
-
-        if ($result) {
-            // Alt sınıfta table_name tanımlı mı kontrol et
-            if (!property_exists($this, 'modelName')) {
-                throw new Exception('Model Adı özelliği tanımlı değil.');
-            }
-            foreach ($result as $data) {
-                $model = new $this->modelName();
-                $model->fill($data);
-                $models[] = $model;
-            }
-        }
-        return $models;
+        $model = new $this->modelName;
+        return $model->get()->where($filters)->all();
     }
 
     /**
