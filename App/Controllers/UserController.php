@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Department;
 use App\Models\User;
 use Exception;
 use PDO;
@@ -370,7 +371,7 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısı ise yada
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
-                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($user->id == $model->id or $user->id == $department->chairperson_id);
                     break;
                 case "App\Models\Lesson":
@@ -378,14 +379,14 @@ class UserController extends Controller
                      * Aktif kullanıcı Dersin sahibi ise yada
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
-                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($model->lecturer_id == $user->id or $user->id == $department->chairperson_id);
                     break;
                 case "App\Models\Program":
                     /*
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
-                    $department = (new DepartmentController())->getDepartment($model->department_id);
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($user->id == $department->chairperson_id or $user->program_id == $model->id);
                     break;
                 case "App\Models\Department":

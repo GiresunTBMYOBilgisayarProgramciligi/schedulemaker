@@ -15,29 +15,6 @@ class DepartmentController extends Controller
     protected string $modelName = "App\Models\Department";
 
     /**
-     * Belirtilen id değerine sahip Bölüm/Department Sınıfını döner. İd blirtilmemişse false döner
-     * @param $id
-     * @return Department|bool
-     * @throws Exception
-     */
-    public function getDepartment($id): Department|bool
-    {
-        if (!is_null($id)) {
-            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            $departmentData = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($departmentData) {
-                $department = new Department();
-                $department->fill($departmentData);
-
-                return $department;
-            } else throw new Exception("Bölüm bulunamadı");
-        }
-        return false;
-    }
-
-    /**
      * @param array $filters
      * @return array
      * @throws Exception

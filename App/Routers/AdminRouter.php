@@ -16,6 +16,7 @@ use App\Core\AssetManager;
 use App\Core\Router;
 
 use App\Models\Classroom;
+use App\Models\Department;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
@@ -91,12 +92,15 @@ class AdminRouter extends Router
         $this->callView("admin/users/listusers", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function AddUserAction(int $department_id = null, int $program_id = null)
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $departmentFilters = [];
         if ($department_id) {
-            $department = (new DepartmentController())->getDepartment($department_id);
+            $department = (new Department())->find($department_id);
             if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
                 throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
             }
@@ -365,7 +369,7 @@ class AdminRouter extends Router
     {
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = $departmentController->getDepartment($id);
+            $department = (new Department())->find($id);
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -411,6 +415,9 @@ class AdminRouter extends Router
         $this->callView("admin/departments/adddepartment", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function editDepartmentAction($id = null)
     {
         if (!isAuthorized("submanager")) {
@@ -418,7 +425,7 @@ class AdminRouter extends Router
         }
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = $departmentController->getDepartment($id);
+            $department = (new Department())->find($id);
         } else {
             throw new Exception("Bölüm bulunamadı");
         }
@@ -539,7 +546,7 @@ class AdminRouter extends Router
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
-            $departments = [$departmentController->getDepartment($currentUser->department_id)];
+            $departments = [(new Department())->find($currentUser->department_id)];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
