@@ -7,7 +7,6 @@ use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
-use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 

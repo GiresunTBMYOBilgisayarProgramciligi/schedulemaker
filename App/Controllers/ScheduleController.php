@@ -3,8 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Logger;
-use App\Models\Lesson;
 use App\Models\Schedule;
 use Exception;
 use PDO;

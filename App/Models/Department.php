@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Controllers\ProgramController;
 use App\Controllers\UserController;
-use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 use PDO;

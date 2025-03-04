@@ -14,7 +14,6 @@ use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\ImportExportManager;
-use App\Core\Logger;
 use App\Core\Router;
 use App\Models\Classroom;
 use App\Models\Department;

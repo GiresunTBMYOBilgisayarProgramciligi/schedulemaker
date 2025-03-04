@@ -3,7 +3,6 @@
 namespace App\Routers;
 
 use App\Controllers\UserController;
-use App\Core\Logger;
 use App\Core\Router;
 use Exception;
 

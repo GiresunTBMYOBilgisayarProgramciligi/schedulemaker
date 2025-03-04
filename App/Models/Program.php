@@ -2,11 +2,9 @@
 
 namespace App\Models;
 
-use App\Core\Logger;
 use App\Core\Model;
 use Exception;
 use PDO;
-use PDOException;
 
 class Program extends Model
 {

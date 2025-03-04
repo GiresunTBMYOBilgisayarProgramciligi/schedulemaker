@@ -5,10 +5,8 @@ namespace App\Models;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
-use App\Core\Logger;
 use App\Core\Model;
 use Exception;
-use PDO;
 
 /**
  * users tablosundaki her biri kayıtı temsil eden sınıf

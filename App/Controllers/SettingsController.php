@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\Logger;
 use App\Models\Setting;
 use Exception;
 use function App\Helpers\isAuthorized;
