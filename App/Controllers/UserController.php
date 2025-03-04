@@ -389,7 +389,7 @@ class UserController extends Controller
                             // Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
                             break;
                         case "lesson":
-                            $isOwner = (new LessonController())->getLesson($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            $isOwner = (new Lesson())->find($model->owner_id)->getDepartment()->chairperson_id == $user->id;
                             break;
                         case "classroom":
                             $isOwner = true;//sınıf için denetim yok

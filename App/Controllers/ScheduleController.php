@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Classroom;
+use App\Models\Lesson;
 use App\Models\Schedule;
 use Exception;
 use PDO;
@@ -99,7 +100,7 @@ class ScheduleController extends Controller
                         $out .= '<td class="drop-zone">';
                         foreach ($day as $column) {
                             $column = (object)$column; // Array'i objeye dönüştür
-                            $lesson = (new LessonController())->getLesson($column->lesson_id);
+                            $lesson = (new Lesson())->find($column->lesson_id);
                             $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
                             $classroomName = (new Classroom())->find($column->classroom_id)->name;
@@ -133,7 +134,7 @@ class ScheduleController extends Controller
                     } else {
                         // Eğer day bir array ise bilgileri yazdır
                         $day = (object)$day; // Array'i objeye dönüştür
-                        $lesson = (new LessonController())->getLesson($day->lesson_id);
+                        $lesson = (new Lesson())->find($day->lesson_id);
                         $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturerName = $lesson->getLecturer()->getFullName();
                         $classroomName = (new Classroom)->find($day->classroom_id)->name;
@@ -333,7 +334,7 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSetting("academic_year");
         }
         if (key_exists("lesson_id", $filters)) {
-            $lesson = (new LessonController())->getLesson($filters['lesson_id']);
+            $lesson = (new Lesson())->find($filters['lesson_id']);
             unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
             $classroomFilters["type"] = $lesson->classroom_type;
         }
@@ -410,11 +411,11 @@ class ScheduleController extends Controller
                             /**
                              * var olan dersin kodu
                              */
-                            $lesson = (new LessonController())->getLesson($schedule->{$filters["day"]}['lesson_id']);
+                            $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id']);
                             /**
                              * yeni eklenmek istenen dersin kodu
                              */
-                            $newLesson = (new LessonController())->getLesson($filters['owners']['lesson']);
+                            $newLesson = (new Lesson())->find($filters['owners']['lesson']);
                             /*
                              * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                              */
@@ -463,7 +464,7 @@ class ScheduleController extends Controller
                 //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
                 $schedules = $this->getListByFilters($filters);
                 $lessonController = new LessonController();
-                $lesson = $lessonController->getLesson($filters['owner_id']);
+                $lesson = (new Lesson())->find($filters['owner_id']);
                 if (count($schedules) < $lesson->hours) {
                     $result = false;
                 }
@@ -579,11 +580,11 @@ class ScheduleController extends Controller
                             /**
                              * Var olan dersin kodu
                              */
-                            $lessonCode = (new LessonController())->getLesson($updatingSchedule->{"day" . $i}['lesson_id'])->code;
+                            $lessonCode = (new Lesson())->find($updatingSchedule->{"day" . $i}['lesson_id'])->code;
                             /**
                              * Yeni eklenecek dersin kodu
                              */
-                            $newLessonCode = (new LessonController())->getLesson($new_schedule->{"day" . $i}['lesson_id'])->code;
+                            $newLessonCode = (new Lesson())->find($new_schedule->{"day" . $i}['lesson_id'])->code;
                             // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
                             // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
                             if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {

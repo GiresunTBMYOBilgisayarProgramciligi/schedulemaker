@@ -17,6 +17,7 @@ use App\Core\Router;
 
 use App\Models\Classroom;
 use App\Models\Department;
+use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
 use Exception;
@@ -196,7 +197,7 @@ class AdminRouter extends Router
     {
         $lessonController = new LessonController();
         if (!is_null($id)) {
-            $lesson = $lessonController->getLesson($id);
+            $lesson = (new Lesson())->find($id);
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
@@ -255,7 +256,7 @@ class AdminRouter extends Router
     {
         $lessonController = new LessonController();
         if (!is_null($id)) {
-            $lesson = $lessonController->getLesson($id);
+            $lesson = (new Lesson())->find($id);
         } else {
             throw new Exception("Belirtilen ders bulunamadı");
         }

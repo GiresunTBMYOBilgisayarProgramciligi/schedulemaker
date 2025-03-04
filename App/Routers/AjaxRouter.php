@@ -218,7 +218,7 @@ class AjaxRouter extends Router
     public function deleteLessonAction(): void
     {
         $lessonController = new LessonController();
-        $lesson = $lessonController->getLesson($this->data['id']);
+        $lesson = (new Lesoon())->find($this->data['id']);
         $currentUser = (new UserController())->getCurrentUser();
         if (!isAuthorized("submanager", false, $lesson)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
@@ -451,7 +451,7 @@ class AjaxRouter extends Router
         $scheduleController = new ScheduleController();
         $classroomController = new ClassroomController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = $lessonController->getLesson($this->data['lesson_id']);
+            $lesson = (new Lesoon())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
             //todo bu kısımda her bir model için yetki kontrolü yapılablir. Şuanda saveNew içerisinde yapılıyor. owner sıralamasına göre yapılıyor.
@@ -569,6 +569,7 @@ class AjaxRouter extends Router
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void
+     * @throws Exception
      */
     public function checkLecturerScheduleAction(): void
     {
@@ -582,7 +583,7 @@ class AjaxRouter extends Router
         }
 
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = $lessonController->getLesson($this->data['lesson_id']);
+            $lesson = (new Lesoon())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $filters = [
                 "owner_type" => "user",
@@ -647,7 +648,7 @@ class AjaxRouter extends Router
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
-                $lesson = $lessonController->getLesson($this->data['lesson_id']);
+                $lesson = (new Lesoon())->find($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $owners['program'] = $lesson->program_id;
                 $owners['user'] = $lecturer->id;

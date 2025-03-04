@@ -16,34 +16,6 @@ class LessonController extends Controller
     protected string $modelName = "App\Models\Lesson";
 
     /**
-     * Belirtilen id numarasına sahip ders Modeli döndürülür
-     * @param $id
-     * @return Lesson
-     * @throws Exception
-     * todo getlesson metodu filter ile değiştirilecek
-     */
-    public function getLesson($id): Lesson
-    {
-        if (!is_null($id)) {
-            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            $lessonData = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($lessonData) {
-                $lesson = new Lesson();
-                $lesson->fill($lessonData);
-
-                return $lesson;
-            } else {
-                throw new Exception("Ders bulunamadı");
-            }
-        } else {
-            throw new Exception("Ders id numarası belirtilmelidir");
-        }
-    }
-
-
-    /**
      * Dersin türünü seçmek için kullanılacak diziyi döner
      * @return string[]
      */
