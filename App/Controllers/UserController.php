@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
 use Exception;
@@ -50,7 +51,7 @@ class UserController extends Controller
     public function getAcademicCount(): int
     {
         $userModel = new User();
-        return $userModel->get()->where(["!role" => ['in'=>["user", "admin"]]])->count();
+        return $userModel->get()->where(["!role" => ['in' => ["user", "admin"]]])->count();
     }
 
     /**
@@ -347,52 +348,56 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısı ise yada
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = ($user->id == $model->id or $user->id == $department->chairperson_id);
+                    $department = (new Department())->find($model->department_id ?? 0);
+                    $isOwner = ($user->id == $model->id or $user->id == $department?->chairperson_id);
                     break;
+
                 case "App\Models\Lesson":
                     /*
                      * Aktif kullanıcı Dersin sahibi ise yada
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = ($model->lecturer_id == $user->id or $user->id == $department->chairperson_id);
+                    $department = (new Department())->find($model->department_id ?? 0);
+                    $isOwner = ($model->lecturer_id == $user->id or $user->id == $department?->chairperson_id);
                     break;
+
                 case "App\Models\Program":
                     /*
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = ($user->id == $department->chairperson_id or $user->program_id == $model->id);
+                    $department = (new Department())->find($model->department_id ?? 0);
+                    $isOwner = ($user->id == $department?->chairperson_id or $user->program_id == $model->id);
                     break;
+
                 case "App\Models\Department":
                     /*
-                     * Aktif kullanıcı Blüm başkanı ise
+                     * Aktif kullanıcı Bölüm başkanı ise
                      */
                     $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
                     break;
+
                 case "App\Models\Schedule":
                     /*
                      * owner_type program, user, lesson, classroom
-                     *
                      */
                     switch ($model->owner_type) {
                         case "program":
-                            $isOwner = (new Program())->find($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            $program = (new Program())->find($model->owner_id ?? 0);
+                            $isOwner = $program?->getDepartment()?->chairperson_id == $user->id;
                             break;
+
                         case "user":
-                            $ScheduleUser = (new User())->find($model->owner_id);
-                            if ($ScheduleUser->getDepartment()) {
-                                $isOwner = $ScheduleUser->getDepartment()->chairperson_id == $user->id;
-                            } else $isOwner = true;
-                            $isOwner = ($isOwner or $ScheduleUser->id == $user->id);
-                            // Bölümsüz hocalar yada başka bölümden gelen hocaların da ders programı güncelleneceği için
+                            $ScheduleUser = (new User())->find($model->owner_id ?? 0);
+                            $isOwner = ($ScheduleUser?->getDepartment()?->chairperson_id == $user->id or $ScheduleUser?->id == $user->id);
                             break;
+
                         case "lesson":
-                            $isOwner = (new Lesson())->find($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            $lesson = (new Lesson())->find($model->owner_id ?? 0);
+                            $isOwner = $lesson?->getDepartment()?->chairperson_id == $user->id;
                             break;
+
                         case "classroom":
-                            $isOwner = true;//sınıf için denetim yok
+                            $isOwner = true; // Sınıf için denetim yok
                             break;
                     }
                     break;
