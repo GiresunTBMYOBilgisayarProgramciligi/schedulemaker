@@ -32,32 +32,6 @@ class ScheduleController extends Controller
     );
 
     /**
-     * Veri tabanından verileri alıp Schedule Modeli ile oluşturulan bir veri döndürür
-     * @param int|null $id
-     * @return Schedule
-     * @throws Exception
-     */
-    public function getSchedule(?int $id = null): Schedule
-    {
-        if (!is_null($id)) {
-            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            $stmt = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($stmt) {
-                $schedule = new Schedule();
-                $schedule->fill($stmt);
-
-                return $schedule;
-            } else {
-                throw new Exception("Ders Programı bulunamadı");
-            }
-        } else {
-            throw new Exception("Ders Programı id'si belirtilmelidir");
-        }
-    }
-
-    /**
      * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
      * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
      * @return string
