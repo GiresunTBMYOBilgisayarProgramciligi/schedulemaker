@@ -33,15 +33,18 @@ class AjaxRouter extends Router
     /**
      * @var array Ajax cevap verisi
      */
-    public array $response = []; //todo bu kullanılırken =array şeklinde değil. push yada [] şeklindekullanılmalı. kontrol edilip düzeltilmeli
+    public array $response = [];
     /**
      * @var array Ajax isteği verileri
      */
-    private $data = [];
-    private $files = [];
+    private array $data = [];
+    private array $files = [];
 
-    private $currentUser = null;
+    private User|null $currentUser = null;
 
+    /**
+     * @throws Exception
+     */
     public function __construct()
     {
         if (!$this->checkAjax()) {
@@ -50,7 +53,7 @@ class AjaxRouter extends Router
         }
         $userController = new UserController();
         if (!$userController->isLoggedIn()) {
-            $this->Redirect('/auth/login', false);
+            throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın",330);
         } else $userController->getCurrentUser();
     }
 
@@ -218,7 +221,7 @@ class AjaxRouter extends Router
     public function deleteLessonAction(): void
     {
         $lessonController = new LessonController();
-        $lesson = (new Lesoon())->find($this->data['id']);
+        $lesson = (new Lesson())->find($this->data['id']);
         $currentUser = (new UserController())->getCurrentUser();
         if (!isAuthorized("submanager", false, $lesson)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
@@ -451,7 +454,7 @@ class AjaxRouter extends Router
         $scheduleController = new ScheduleController();
         $classroomController = new ClassroomController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesoon())->find($this->data['lesson_id']);
+            $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
             //todo bu kısımda her bir model için yetki kontrolü yapılablir. Şuanda saveNew içerisinde yapılıyor. owner sıralamasına göre yapılıyor.
@@ -583,7 +586,7 @@ class AjaxRouter extends Router
         }
 
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesoon())->find($this->data['lesson_id']);
+            $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $filters = [
                 "owner_type" => "user",
@@ -648,7 +651,7 @@ class AjaxRouter extends Router
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
-                $lesson = (new Lesoon())->find($this->data['lesson_id']);
+                $lesson = (new Lesson())->find($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $owners['program'] = $lesson->program_id;
                 $owners['user'] = $lecturer->id;

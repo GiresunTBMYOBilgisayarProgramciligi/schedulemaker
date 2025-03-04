@@ -51,7 +51,7 @@ class ErrorHandler
      * İstisnaları işleyecek metod
      * Tüm istisnalar için merkezi işleme noktası
      *
-     * @param \Exception $exception Yakalanan istisna
+     * @param Exception $exception Yakalanan istisna
      * @return void
      */
     public function handleException($exception)
@@ -105,13 +105,13 @@ class ErrorHandler
      * İstisnayı loglama metodu
      * Tüm istisnaları yapılandırılmış formatta loglar
      *
-     * @param \Exception $exception Loglanacak istisna
+     * @param Exception $exception Loglanacak istisna
      * @return void
      */
     private function logException($exception)
     {
         // Hata mesajını oluştur
-        $message = "Exception: " .  mb_convert_encoding($exception->getMessage(), 'UTF-8', 'auto');
+        $message = "Exception: " . mb_convert_encoding($exception->getMessage(), 'UTF-8', 'auto');
         $message .= " in " . $exception->getFile() . " on line " . $exception->getLine();
         $message .= "\nStack trace: " . $exception->getTraceAsString();
 
@@ -128,7 +128,7 @@ class ErrorHandler
      * İstisna ve durum koduna göre uygun hata sayfasını gösterir
      *
      * @param string $view Gösterilecek görünüm şablonu
-     * @param \Exception $exception İşlenen istisna
+     * @param Exception $exception İşlenen istisna
      * @param int $statusCode HTTP durum kodu
      * @return void
      */
@@ -142,38 +142,38 @@ class ErrorHandler
             // API istekleri için JSON formatında hata döndür
             $this->renderJsonError($exception, $statusCode);
             return;
-        }else{
+        } else {
             $_SESSION['error'] = $exception->getMessage();
             header("Location: /admin");
             exit();
         }
-/*
-        // Görünüm için hata verilerini hazırla
-        $errorData = [
-            'message' => $exception->getMessage(),
-            'code' => $statusCode
-        ];
+        /*
+                // Görünüm için hata verilerini hazırla
+                $errorData = [
+                    'message' => $exception->getMessage(),
+                    'code' => $statusCode
+                ];
 
-        // Geliştirme ortamında daha fazla detay göster
-        if (defined('DEBUG_MODE') && DEBUG_MODE) {
-            $errorData['file'] = $exception->getFile();
-            $errorData['line'] = $exception->getLine();
-            $errorData['trace'] = $exception->getTraceAsString();
-        }
+                // Geliştirme ortamında daha fazla detay göster
+                if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                    $errorData['file'] = $exception->getFile();
+                    $errorData['line'] = $exception->getLine();
+                    $errorData['trace'] = $exception->getTraceAsString();
+                }
 
-        // Hata şablonunu include et ve göster
-        include_once __DIR__ . "/../views/errors/{$view}.php";*/
+                // Hata şablonunu include et ve göster
+                include_once __DIR__ . "/../views/errors/{$view}.php";*/
     }
 
     /**
      * JSON formatında hata yanıtı oluşturan metod
      * API istekleri için hata yanıtlarını JSON formatında döndürür
      *
-     * @param \Exception $exception İşlenen istisna
+     * @param Exception $exception İşlenen istisna
      * @param int $statusCode HTTP durum kodu
      * @return void
      */
-    private function renderJsonError($exception, $statusCode)
+    private function renderJsonError(Exception $exception, int $statusCode): void
     {
         // Content-Type başlığını JSON olarak ayarla
         header('Content-Type: application/json; charset=utf-8');
@@ -182,8 +182,13 @@ class ErrorHandler
         $response = [
             'status' => 'error',
             'msg' => $exception->getMessage(),
-            'code' => $statusCode
+            'code' => $statusCode,
+
         ];
+
+        if ($exception->getCode() === 330) {
+            $response['redirect'] = "/auth/login";
+        }
 
         /*// ValidationException için hata detaylarını ekle
         if ($exception instanceof \App\Core\Exceptions\ValidationException) {
