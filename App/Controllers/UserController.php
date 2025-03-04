@@ -72,7 +72,8 @@ class UserController extends Controller
      */
     public function getAcademicCount(): int
     {
-        return $this->getCount(["!role" => ["user", "admin"]]);
+        $userModel = new User();
+        return $userModel->get()->where(["!role" => ['in'=>["user", "admin"]]])->count();
     }
 
     /**

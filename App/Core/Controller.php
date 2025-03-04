@@ -11,9 +11,9 @@ class Controller
 
     public function __construct()
     {
-            $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-            ]);
+        $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+        ]);
     }
 
     public function createInsertSQL($data): string
@@ -43,25 +43,11 @@ class Controller
     public function getCount(?array $filters = []): int
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name')) {
-            throw new Exception('Table name özelliği tanımlı değil.');
+        if (!property_exists($this, 'modelName')) {
+            throw new Exception('Model adı özelliği tanımlı değil.');
         }
-        $parameters = [];
-        $whereClause = "";
-        $this->prepareWhereClause($filters, $whereClause, $parameters);
-
-        // Sorguyu hazırla
-        $sql = "SELECT COUNT(*) as 'count' FROM $this->table_name $whereClause";
-        $stmt = $this->database->prepare($sql);
-
-        // Parametreleri bağla
-        foreach ($parameters as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-
-        $stmt->execute();
-        // Verileri işle
-        return $stmt->fetchColumn();
+        $model = new $this->modelName;
+        return $model->get()->where($filters)->count();
     }
 
     /**
