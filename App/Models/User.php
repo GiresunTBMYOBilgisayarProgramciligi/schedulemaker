@@ -57,7 +57,10 @@ class User extends Model
      */
     public function getDepartment(): Department|false
     {
-        return (new Department())->find($this->department_id);
+        if (!is_null($this->department_id)) {
+            return (new Department())->find($this->department_id) ?? false;
+        } else return false;
+
     }
 
     /**
@@ -76,8 +79,9 @@ class User extends Model
      */
     public function getProgramName(): string
     {
-        return (new Program())->find($this->program_id)->name ?? "";
-
+        if (!is_null($this->program_id)) {
+            return (new Program())->find($this->program_id)->name ?? "";
+        } else return "";
     }
 
     public function getRoleName(): string
@@ -100,7 +104,7 @@ class User extends Model
      */
     public function getLessonsList(): array
     {
-        return (new Lesson())->get()->where(['lecturer_id'=>$this->id])->all() ?? [];
+        return (new Lesson())->get()->where(['lecturer_id' => $this->id])->all() ?? [];
     }
 
     public function getGravatarURL($size = 50): string
@@ -116,7 +120,7 @@ class User extends Model
     public function getLessonCount(): mixed
     {
         $lessonModel = new Lesson();
-        return $lessonModel->get()->where(['lecturer_id'=>$this->id])->count();
+        return $lessonModel->get()->where(['lecturer_id' => $this->id])->count();
     }
 
     /**
@@ -134,6 +138,6 @@ class User extends Model
     public function getTotalLessonHours()
     {
         $lessonModel = new Lesson();
-        return $lessonModel->get()->where(['lecturer_id'=>$this->id])->sum('hours');
+        return $lessonModel->get()->where(['lecturer_id' => $this->id])->sum('hours');
     }
 }
