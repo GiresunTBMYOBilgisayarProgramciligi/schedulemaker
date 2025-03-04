@@ -14,30 +14,6 @@ class ProgramController extends Controller
     protected string $table_name = "programs";
     protected string $modelName = "App\Models\Program";
 
-    /**
-     * id numarası verilen program modelini döndürür
-     * @param $id
-     * @return Program|null
-     * @throws Exception
-     */
-    public function getProgram($id): Program|null
-    {
-        if (!is_null($id)) {
-            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            $program_data = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($program_data) {
-                $program = new Program();
-                $program->fill($program_data);
-
-                return $program;
-            } else {
-                throw new Exception("Program Bulunamadı");
-            }
-        }
-        return null;
-    }
 
     /**
      * @param int | null $department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir

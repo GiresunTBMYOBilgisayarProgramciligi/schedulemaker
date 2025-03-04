@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use App\Models\Program;
 use App\Models\User;
 use Exception;
 use PDO;
@@ -402,7 +403,7 @@ class UserController extends Controller
                      */
                     switch ($model->owner_type) {
                         case "program":
-                            $isOwner = (new ProgramController())->getProgram($model->owner_id)->getDepartment()->chairperson_id == $user->id;
+                            $isOwner = (new Program())->find($model->owner_id)->getDepartment()->chairperson_id == $user->id;
                             break;
                         case "user":
                             $ScheduleUser = (new UserController())->getUser($model->owner_id);

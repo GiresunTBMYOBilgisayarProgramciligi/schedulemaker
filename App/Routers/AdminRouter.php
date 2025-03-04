@@ -17,6 +17,7 @@ use App\Core\Router;
 
 use App\Models\Classroom;
 use App\Models\Department;
+use App\Models\Program;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
@@ -107,7 +108,7 @@ class AdminRouter extends Router
             //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
         }
         if ($program_id) {
-            $program = (new ProgramController())->getProgram($program_id);
+            $program = (new Program())->find($program_id);
             if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id)) {
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
@@ -442,11 +443,14 @@ class AdminRouter extends Router
     /*
      * Program Routes
      */
+    /**
+     * @throws Exception
+     */
     public function programAction($id = null)
     {
         $programController = new ProgramController();
         if (!is_null($id)) {
-            $program = $programController->getProgram($id);
+            $program = (new Program())->find($id);
             if (!$program) {
                 throw new Exception("Belirtilen Program bulunamadı");
             }
@@ -509,7 +513,7 @@ class AdminRouter extends Router
         }
         $programController = new ProgramController();
         if (!is_null($id)) {
-            $program = $programController->getProgram($id);
+            $program = (new Program())->find($id);
             if (!$program) {
                 throw new Exception("Belirtilen Program bulunamadı");
             }
