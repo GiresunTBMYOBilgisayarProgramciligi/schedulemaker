@@ -28,7 +28,7 @@ class Department extends Model
         if (is_null($this->chairperson_id)) {
             return new User(); // bölüm başkanı tanımlı değilse boş kullanıcı döndür.
         } else
-            return (new UserController())->getUser($this->chairperson_id);
+            return (new User())->find($this->chairperson_id);
     }
 
     public function getProgramCount()

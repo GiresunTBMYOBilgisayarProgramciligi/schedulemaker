@@ -127,13 +127,16 @@ class AdminRouter extends Router
         $this->callView("admin/users/adduser", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function ProfileAction($id = null)
     {
         $userController = new UserController();
         if (is_null($id)) {
             $user = $userController->getCurrentUser();
         } else {
-            $user = $userController->getUser($id);
+            $user = (new User())->find($id);
         }
         if (!isAuthorized("submanager", false, $user)) {
             throw new Exception("Bu profili görme yetkiniz yok");
@@ -150,13 +153,16 @@ class AdminRouter extends Router
         $this->callView("admin/profile", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function EditUserAction($id = null)
     {
         $userController = new UserController();
         if (is_null($id)) {
             $user = $userController->getCurrentUser();
         } else {
-            $user = $userController->getUser($id);
+            $user = (new User())->find($id);
         }
         if (!isAuthorized("submanager", false, $user)) {
             throw new Exception("Kullanıcı düzenleme yetkiniz yok");
@@ -242,6 +248,9 @@ class AdminRouter extends Router
         $this->callView("admin/lessons/addlesson", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function EditLessonAction($id = null): void
     {
         $lessonController = new LessonController();
@@ -266,9 +275,9 @@ class AdminRouter extends Router
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
             /* Bölümsüz hocalar için dersin hocası da listeye ekleniyor. (Okul dışından gelen hocalar için)*/
-            $this->view_data['lecturers'][] = $userController->getUser($lesson->lecturer_id);
+            $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } elseif ($this->currentUser->role == "lecturer") {
-            $this->view_data['lecturers'][] = $userController->getUser($lesson->lecturer_id);
+            $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } else$this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/lessons/editlesson", $this->view_data);
     }

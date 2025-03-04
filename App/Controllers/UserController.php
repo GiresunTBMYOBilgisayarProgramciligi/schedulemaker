@@ -17,31 +17,6 @@ class UserController extends Controller
     protected string $modelName = "App\Models\User";
 
     /**
-     * @param $id
-     * @return User
-     * @throws Exception
-     */
-    public function getUser($id): User
-    {
-        if (!is_null($id)) {
-            $u = $this->database->prepare("select * from $this->table_name where id=:id");
-            $u->bindValue(":id", $id, PDO::PARAM_INT);
-            $u->execute();
-            $u = $u->fetch(\PDO::FETCH_ASSOC);
-            if ($u) {
-                $user = new User();
-                $user->fill($u);
-
-                return $user;
-            } else {
-                throw new Exception("Kullanıcı Bulunamdı");
-            }
-        } else {
-            throw new Exception("Kullanıcı id numarası belirtilmemiş");
-        }
-    }
-
-    /**
      * @param string $mail
      * @return User|bool
      * @throws Exception
@@ -60,9 +35,9 @@ class UserController extends Controller
     {
         $user = false;
         if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
-            $user = $this->getUser($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
+            $user = (new User())->find($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
         } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-            $user = $this->getUser($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
+            $user = (new User())->find($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
         }
         return $user;
     }
@@ -406,7 +381,7 @@ class UserController extends Controller
                             $isOwner = (new Program())->find($model->owner_id)->getDepartment()->chairperson_id == $user->id;
                             break;
                         case "user":
-                            $ScheduleUser = (new UserController())->getUser($model->owner_id);
+                            $ScheduleUser = (new User())->find($model->owner_id);
                             if ($ScheduleUser->getDepartment()) {
                                 $isOwner = $ScheduleUser->getDepartment()->chairperson_id == $user->id;
                             } else $isOwner = true;
