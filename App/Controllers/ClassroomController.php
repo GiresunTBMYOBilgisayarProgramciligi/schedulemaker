@@ -18,31 +18,6 @@ class ClassroomController extends Controller
     protected string $modelName = "App\Models\Classroom";
 
     /**
-     * @param $id
-     * @return Classroom
-     * @throws Exception
-     */
-    public function getClassroom($id): Classroom
-    {
-        if (!is_null($id)) {
-            $stmt = $this->database->prepare("select * from $this->table_name where id=:id");
-            $stmt->bindValue(":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            $classroomData = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($classroomData) {
-                $classroom = new Classroom();
-                $classroom->fill($classroomData);
-
-                return $classroom;
-            } else {
-                throw new Exception("Derslik Bulunamadı");
-            }
-        } else {
-            throw new Exception("İd belirtilmelidir");
-        }
-    }
-
-    /**
      * Tüm dersliklerin listesini döner
      * @return array
      * @throws Exception

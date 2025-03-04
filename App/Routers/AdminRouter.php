@@ -15,6 +15,7 @@ use App\Controllers\UserController;
 use App\Core\AssetManager;
 use App\Core\Router;
 
+use App\Models\Classroom;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
@@ -282,14 +283,16 @@ class AdminRouter extends Router
     /*
      * Classroom Routes
      */
+    /**
+     * @throws Exception
+     */
     public function classroomAction($id = null)
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Derslik sayfasını görme yetkiniz yok");
         }
-        $classroomController = new ClassroomController();
         if (!is_null($id)) {
-            $classroom = $classroomController->getClassroom($id);
+            $classroom = (new Classroom())->find($id);
         } else {
             throw new Exception("Derslik id Numarası belirtilmemiş");
         }
@@ -331,6 +334,9 @@ class AdminRouter extends Router
         $this->callView("admin/classrooms/addclassroom", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
     public function editClassroomAction($id = null)
     {
         if (!isAuthorized("submanager")) {
@@ -338,7 +344,7 @@ class AdminRouter extends Router
         }
         $classroomController = new ClassroomController();
         if (!is_null($id)) {
-            $classroom = $classroomController->getClassroom($id);
+            $classroom = (new Classroom())->find($id);
         } else {
             throw new Exception("Derslik Bulunamadı");
         }

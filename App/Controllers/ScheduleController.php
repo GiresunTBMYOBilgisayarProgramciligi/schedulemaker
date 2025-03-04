@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Models\Classroom;
 use App\Models\Schedule;
 use Exception;
 use PDO;
@@ -127,7 +128,7 @@ class ScheduleController extends Controller
                             $lesson = (new LessonController())->getLesson($column->lesson_id);
                             $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
-                            $classroomName = (new ClassroomController())->getClassroom($column->classroom_id)->name;
+                            $classroomName = (new Classroom())->find($column->classroom_id)->name;
                             $out .= '
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
@@ -161,7 +162,7 @@ class ScheduleController extends Controller
                         $lesson = (new LessonController())->getLesson($day->lesson_id);
                         $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturerName = $lesson->getLecturer()->getFullName();
-                        $classroomName = (new ClassroomController())->getClassroom($day->classroom_id)->name;
+                        $classroomName = (new Classroom)->find($day->classroom_id)->name;
                         $out .= '
                         <td class="drop-zone">
                             <div 
