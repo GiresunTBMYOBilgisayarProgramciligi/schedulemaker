@@ -10,7 +10,7 @@ use App\Controllers\ProgramController;
 class Model
 {
     protected string $table_name = "";
-    protected PDO $database;
+    private static ?PDO $database = null;
     protected ?string $whereClause = null;
     protected array $parameters = [];
     protected array $relations = [];
@@ -21,7 +21,9 @@ class Model
 
     public function __construct()
     {
-        $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
+        if (self::$database === null) {
+            self::$database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
+        }
     }
     /*
      * Quey Builder
@@ -182,7 +184,7 @@ class Model
                 $this->parameters[$placeholder] = $value;
             }
         }
-        $this->whereClause = count($conditions) > 0 ? implode(" ".$logicalOperator." ", $conditions) : "";
+        $this->whereClause = count($conditions) > 0 ? implode(" " . $logicalOperator . " ", $conditions) : "";
         return $this;
     }
 
@@ -312,7 +314,7 @@ class Model
     public function all(): array
     {
         $query = $this->buildQuery();
-        $statement = $this->database->prepare($query['sql']);
+        $statement = self::$database->prepare($query['sql']);
         $statement->execute($query['parameters']);
         $results = $statement->fetchAll(PDO::FETCH_ASSOC);
         // İlişkili verileri yükle //todo
@@ -345,6 +347,7 @@ class Model
      * ID'ye göre kayıt bulur
      * @param int $id
      * @return object|null
+     * @throws Exception
      */
     public function find(int $id): ?object
     {
@@ -466,13 +469,13 @@ class Model
 
         $sql = "INSERT INTO {$this->table_name} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
 
-        $statement = $this->database->prepare($sql);
+        $statement = self::$database->prepare($sql);
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
 
         $statement->execute();
-        return $this->database->lastInsertId();
+        return self::$database->lastInsertId();
     }
 
 
@@ -484,7 +487,7 @@ class Model
 
         $sql = "UPDATE {$this->table_name} SET " . implode(', ', $setStatements) . " WHERE id = :id";
 
-        $statement = $this->database->prepare($sql);
+        $statement = self::$database->prepare($sql);
         $statement->bindValue(':id', $id);
 
         foreach ($data as $field => $value) {
@@ -502,7 +505,7 @@ class Model
     public function delete(int $id): bool
     {
         $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
-        $statement = $this->database->prepare($sql);
+        $statement = self::$database->prepare($sql);
         $statement->bindValue(':id', $id);
         return $statement->execute();
     }
@@ -519,10 +522,24 @@ class Model
         // LIMIT ve OFFSET'i kaldır
         $sql = preg_replace('/LIMIT \d+( OFFSET \d+)?/', '', $sql);
 
-        $statement = $this->database->prepare($sql);
+        $statement = self::$database->prepare($sql);
         $statement->execute($query['parameters']);
         $result = $statement->fetch(PDO::FETCH_OBJ);
 
         return isset($result->count) ? (int)$result->count : 0;
+    }
+
+    public function sum(string $column): float
+    {
+        $query = $this->buildQuery();
+        $sql = preg_replace('/SELECT .* FROM/', "SELECT SUM($column) as total FROM", $query['sql']);
+
+        // LIMIT ve OFFSET'i kaldır
+        $sql = preg_replace('/LIMIT \d+( OFFSET \d+)?/', '', $sql);
+        $statement = self::$database->prepare($sql);
+        $statement->execute($query['parameters']);
+        $result = $statement->fetch(PDO::FETCH_OBJ);
+
+        return isset($result->total) ? (float)$result->total : 0.0;
     }
 }

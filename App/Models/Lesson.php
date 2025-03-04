@@ -3,10 +3,7 @@
 namespace App\Models;
 
 use App\Controllers\ClassroomController;
-use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
-use App\Controllers\ProgramController;
-use App\Controllers\UserController;
 use App\Core\Model;
 use Exception;
 
@@ -47,10 +44,10 @@ class Lesson extends Model
      */
     public function getLecturer(): User|null
     {
-            if (is_null($this->lecturer_id)) {
-                return new User(); //hoca tanımlı değilse boş kullanıcı dön
-            }
-            return (new UserController())->getUser($this->lecturer_id);
+        if (is_null($this->lecturer_id)) {
+            return new User(); //hoca tanımlı değilse boş kullanıcı dön
+        }
+        return (new User())->find($this->lecturer_id);
     }
 
     /**
@@ -60,7 +57,7 @@ class Lesson extends Model
      */
     public function getDepartment(): Department|null
     {
-            return (new DepartmentController())->getDepartment($this->department_id);
+        return (new Department())->find($this->department_id);
     }
 
     /**
@@ -70,12 +67,12 @@ class Lesson extends Model
      */
     public function getProgram(): Program|null
     {
-            return (new ProgramController())->getProgram($this->program_id);
+        return (new Program())->find($this->program_id);
     }
 
     public function getFullName(): string
     {
-        return $this->name . " (" . $this->code . ")";
+        return trim($this->name . " (" . $this->code . ")");
     }
 
     /**
@@ -84,10 +81,11 @@ class Lesson extends Model
      */
     public function getClassroomTypeName(): string
     {
-            return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
+        return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
     }
+
     public function getTypeName(): string
     {
-            return (new LessonController())->getTypeList()[$this->type] ?? "";
+        return (new LessonController())->getTypeList()[$this->type] ?? "";
     }
 }

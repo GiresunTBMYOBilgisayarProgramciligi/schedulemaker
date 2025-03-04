@@ -57,7 +57,7 @@ class User extends Model
      */
     public function getDepartment(): Department|false
     {
-        return (new DepartmentController())->getDepartment($this->department_id);
+        return (new Department())->find($this->department_id);
     }
 
     /**
@@ -76,7 +76,7 @@ class User extends Model
      */
     public function getProgramName(): string
     {
-        return (new ProgramController())->getProgram($this->program_id)->name ?? "";
+        return (new Program())->find($this->program_id)->name ?? "";
 
     }
 
@@ -100,7 +100,7 @@ class User extends Model
      */
     public function getLessonsList(): array
     {
-        return (new LessonController())->getLessonsList($this->id) ?? [];
+        return (new Lesson())->get()->where(['lecturer_id'=>$this->id])->all() ?? [];
     }
 
     public function getGravatarURL($size = 50): string
@@ -115,12 +115,8 @@ class User extends Model
      */
     public function getLessonCount(): mixed
     {
-        $stmt = $this->database->prepare("SELECT COUNT(*) as count FROM lessons WHERE lecturer_id = :id");
-        $stmt->bindParam(":id", $this->id);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
-
+        $lessonModel = new Lesson();
+        return $lessonModel->get()->where(['lecturer_id'=>$this->id])->count();
     }
 
     /**
@@ -137,10 +133,7 @@ class User extends Model
      */
     public function getTotalLessonHours()
     {
-        $stmt = $this->database->prepare("SELECT Sum(hours) as total FROM lessons WHERE lecturer_id = :id");
-        $stmt->bindParam(":id", $this->id);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['total'];
+        $lessonModel = new Lesson();
+        return $lessonModel->get()->where(['lecturer_id'=>$this->id])->sum('hours');
     }
 }

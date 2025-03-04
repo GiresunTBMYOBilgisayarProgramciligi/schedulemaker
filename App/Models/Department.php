@@ -17,20 +17,6 @@ class Department extends Model
 
     protected string $table_name = "departments";
 
-    public function __construct(int $id = null)
-    {
-        parent::__construct(); # Connect to database
-        if (isset($id)) {
-            $q = $this->database->prepare("Select * From $this->table_name WHERE id=:id");
-            $q->bindValue(":id", $id, PDO::PARAM_INT);
-            $q->execute();
-            $data = $q->fetch();
-            extract($data);
-            $this->id = $id;
-            $this->name = $name;
-            $this->chairperson_id = $chairperson_id;
-        }
-    }
 
     /**
      * Bölüm başkanı Modelini döner. Eğer bölüm başkanı tanımlı değilse Boş Model döner
