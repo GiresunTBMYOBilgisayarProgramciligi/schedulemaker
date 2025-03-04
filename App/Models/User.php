@@ -32,7 +32,7 @@ class User extends Model
      */
     protected array $dateFields = ['register_date', 'last_login'];
 
-    private string $table_name = "users";
+    protected string $table_name = "users";
 
     public function getRegisterDate(): string
     {
@@ -50,7 +50,7 @@ class User extends Model
      */
     public function getFullName(): string
     {
-        return $this->title . " " . $this->name . " " . $this->last_name;
+        return trim($this->title . " " . $this->name . " " . $this->last_name);
     }
 
     /**
