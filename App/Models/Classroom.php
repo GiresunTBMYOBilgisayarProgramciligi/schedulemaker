@@ -20,7 +20,7 @@ class Classroom extends Model
      * 3-> Uzaktan Eğitim Sınıfı
      */
     public ?string $type = null;
-    private string $table_name = "classrooms";
+    protected string $table_name = "classrooms";
 
 
     /**

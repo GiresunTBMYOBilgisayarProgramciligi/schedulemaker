@@ -16,7 +16,7 @@ class Department extends Model
     public ?string $name = null;
     public ?int $chairperson_id = null;
 
-    private string $table_name = "departments";
+    protected string $table_name = "departments";
 
     public function __construct(int $id = null)
     {

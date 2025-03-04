@@ -18,6 +18,8 @@ class Setting extends Model
     public ?\DateTime $created_at = null;
     public ?\DateTime $updated_at = null;
 
+    protected string $table_name='settings';
+
     protected array $dateFields = ['created_at', 'updated_at'];
 
 

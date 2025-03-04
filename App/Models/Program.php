@@ -14,7 +14,7 @@ class Program extends Model
     public ?string $name = null;
     public ?int $department_id = null;
 
-    private string $table_name = "programs";
+    protected string $table_name = "programs";
 
     public function __construct(int $id = null)
     {

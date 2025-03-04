@@ -6,7 +6,7 @@ use App\Core\Model;
 
 class Schedule extends Model
 {
-    protected $table = "schedule";
+    protected string $table_name = "schedule";
 
     public ?int $id = null;
     /**

@@ -40,7 +40,7 @@ class Lesson extends Model
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
 
-    private string $table_name = "lessons";
+    protected string $table_name = "lessons";
 
     /**
      * @return User|null
