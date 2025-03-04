@@ -23,19 +23,11 @@ class SettingsController extends Controller
         if (is_null($key)) {
             throw new Exception("Ayar için anahtar girilmelidir");
         }
-        $whereClause = "";
-        $parameters = [];
-        $this->prepareWhereClause(["key" => $key, "group" => $group], $whereClause, $parameters);
-        $stmt = $this->database->prepare("SELECT * FROM $this->table_name $whereClause");
-        $stmt->execute($parameters);
-        $settingsData = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if ($settingsData) {
-            $setting = new Setting();
-            $setting->fill($settingsData);
-            return $setting;
-        } else {
+        $settingModel = new Setting();
+        $setting = $settingModel->get()->where(["key" => $key, "group" => $group])->first();
+        if (is_null($setting)) {
             throw new Exception("Ayar Bulunamadı");
-        }
+        } else return $setting;
     }
 
     /**
@@ -119,7 +111,8 @@ class SettingsController extends Controller
      */
     public function getSettings(): array
     {
-        $settingModels = $this->getListByFilters();
+        $settingModel= new Setting();
+        $settingModels = $settingModel->get()->all();
         $settings = [];
         foreach ($settingModels as $setting) {
             $settings[$setting->group][$setting->key] = match ($setting->type) {
