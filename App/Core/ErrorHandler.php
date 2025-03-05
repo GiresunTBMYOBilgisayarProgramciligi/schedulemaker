@@ -4,6 +4,7 @@
 namespace App\Core;
 
 use Exception;
+use Throwable;
 
 /**
  * Claude ile oluşturularak üzerinde düzenlemeler yapıldı
@@ -169,11 +170,11 @@ class ErrorHandler
      * JSON formatında hata yanıtı oluşturan metod
      * API istekleri için hata yanıtlarını JSON formatında döndürür
      *
-     * @param Exception $exception İşlenen istisna
+     * @param Throwable $exception İşlenen istisna
      * @param int $statusCode HTTP durum kodu
      * @return void
      */
-    private function renderJsonError(Exception $exception, int $statusCode): void
+    private function renderJsonError(Throwable $exception, int $statusCode): void
     {
         // Content-Type başlığını JSON olarak ayarla
         header('Content-Type: application/json; charset=utf-8');
