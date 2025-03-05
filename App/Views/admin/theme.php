@@ -5,7 +5,8 @@
 include "theme/head.php";
 ?>
 <!--begin::Body-->
-<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">
+<!--<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">-->
+<body class="layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded">
 <!--begin::App Wrapper-->
 <div class="app-wrapper">
 
