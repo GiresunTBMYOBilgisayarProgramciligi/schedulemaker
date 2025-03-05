@@ -426,12 +426,12 @@ class Model
     }
 
     /**
-     * Modelin tüm public özelliklerini döner, null olanları ve istenmeyen alanları hariç tutar.
+     * Modelin tüm public özelliklerini döner, null olanları ve istenmeyen alanları $acceptNull değişkenine göre hariç tutar.
      * @param array $excludedProperties Hariç tutulacak özellikler
      * @param bool $acceptNull
      * @return array
      */
-    public function getArray(array $excludedProperties = ['table_name', 'database'], bool $acceptNull = false): array
+    public function getArray(array $excludedProperties = [], bool $acceptNull = false): array
     {
         // ReflectionClass kullanarak sadece public özellikleri alın
         $reflection = new \ReflectionClass($this);
@@ -459,11 +459,20 @@ class Model
         return $result;
     }
 
-    /*
-    public function create(array $data): int
+
+    /**
+     * @throws Exception
+     */
+    public function create():void
     {
+        // Alt sınıfta table_name tanımlı mı kontrol et
+        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
+            throw new Exception('Model düzgün oluşturulmamış');
+        }
+        $data = $this->getArray(['id', "register_date", "last_login"]);
+
         $fields = array_keys($data);
-        $placeholders = array_map(function($field) {
+        $placeholders = array_map(function ($field) {
             return ":{$field}";
         }, $fields);
 
@@ -474,28 +483,41 @@ class Model
             $statement->bindValue(":{$field}", $value);
         }
 
-        $statement->execute();
-        return self::$database->lastInsertId();
+        if ($statement->execute()){
+            $this->id = self::$database->lastInsertId();
+        }else{
+            throw new Exception("Kullanıcı oluşturulurken hata oluştu");
+        }
+
+
     }
 
 
-    public function update(int $id, array $data): bool
+    /**
+     * @throws Exception
+     */
+    public function update(): bool
     {
-        $setStatements = array_map(function($field) {
+        // Alt sınıfta table_name tanımlı mı kontrol et
+        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
+            throw new Exception('Model düzgün oluşturulmamış');
+        }
+        $data = $this->getArray(['id']);
+        $setStatements = array_map(function ($field) {
             return "{$field} = :{$field}";
         }, array_keys($data));
 
         $sql = "UPDATE {$this->table_name} SET " . implode(', ', $setStatements) . " WHERE id = :id";
 
         $statement = self::$database->prepare($sql);
-        $statement->bindValue(':id', $id);
+        $statement->bindValue(':id', $this->id);
 
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
 
         return $statement->execute();
-    }*/
+    }
 
     /**
      * Kayıt silme
@@ -505,7 +527,7 @@ class Model
     public function delete(): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name') and !property_exists($this, 'id') ) {
+        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
             throw new Exception('Model düzgün oluşturulmamış');
         }
 
