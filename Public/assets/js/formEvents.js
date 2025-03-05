@@ -4,10 +4,13 @@
 document.addEventListener("DOMContentLoaded", function () {
     const departmentSelect = document.getElementById("department_id");
     const programSelect = document.getElementById("program_id");
+
     if (departmentSelect) {
         departmentSelect.addEventListener("change", function () {
             const departmentId = this.value;
-
+            let spinner = new Spinner();
+            programSelect.querySelector('option').innerText=""
+            spinner.showSpinner(programSelect.querySelector('option'))
             // AJAX isteği gönder
             fetch(`/ajax/getProgramsList/${departmentId}`, {
                 method: "POST",
