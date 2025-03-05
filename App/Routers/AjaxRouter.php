@@ -239,21 +239,18 @@ class AjaxRouter extends Router
     /*
      * Classrooms Ajax Actions
      */
+    /**
+     * @throws Exception
+     */
     public function addClassroomAction(): void
     {
         $classroomController = new ClassroomController();
-        $classroomData = $this->data;
-        $new_classroom = new Classroom();
-        $new_classroom->fill($classroomData);
-        $classroom = $classroomController->saveNew($new_classroom);
-        if (!$classroom) {
-            throw new Exception("Derslik oluşturulamadı");
-        } else {
-            $this->response = array(
-                "msg" => "Derslik başarıyla eklendi.",
-                "status" => "success",
-            );
-        }
+        $classroomController->saveNew($this->data);
+
+        $this->response = array(
+            "msg" => "Derslik başarıyla eklendi.",
+            "status" => "success",
+        );
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->response);
     }

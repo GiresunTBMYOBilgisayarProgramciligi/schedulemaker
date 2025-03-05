@@ -102,7 +102,7 @@ class UserController extends Controller
 
     /**
      * User modeli ile gelen verilele yani kullanıcı oluşturur
-     * @param User $new_user
+     * @param array $userData
      * @return int
      * @throws Exception
      * @see AjaxRouter->addUserAction

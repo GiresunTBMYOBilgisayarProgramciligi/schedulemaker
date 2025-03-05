@@ -30,24 +30,20 @@ class ClassroomController extends Controller
 
     /**
      * Veri tabanında yeni bir derslik oluşturur
-     * @param Classroom $new_classroom
+     * @param array $classroomData
      * @return int eklenen derslikid numarası
      * @throws Exception
      */
-    public function saveNew(Classroom $new_classroom): int
+    public function saveNew(array $classroomData): int
     {
         try {
             if (!isAuthorized("submanager")) {
                 throw new Exception("Yeni derslik oluşturma yetkiniz yok");
             }
-
-            $new_classroom_arr = $new_classroom->getArray(['table_name', 'database', 'id']);
-
-            // Dinamik SQL sorgusu oluştur
-            $sql = $this->createInsertSQL($new_classroom_arr);
-            $q = $this->database->prepare($sql);
-            $q->execute($new_classroom_arr);
-            return $this->database->lastInsertId();
+            $new_classroom = new Classroom();
+            $new_classroom->fill($classroomData);
+            $new_classroom->create();
+            return $new_classroom->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
