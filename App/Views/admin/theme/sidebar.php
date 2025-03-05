@@ -284,7 +284,7 @@ use function App\Helpers\isAuthorized;
                         </li>
                         <li class="nav-item">
                             <a href="#"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editexamschedule')) ? 'active' : ''; ?>">
                                 <i class="nav-icon bi bi-calendar2-plus"></i>
                                 <p>
                                     Sınav Programını Düzenle
