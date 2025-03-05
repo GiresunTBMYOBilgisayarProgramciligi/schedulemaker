@@ -82,20 +82,6 @@ class Modal {
         this.modal.appendChild(this.dialog);
     }
 
-    addSpinner() {
-        this.spinner = document.createElement("div");
-        this.spinner.classList.add("d-flex", "justify-content-center")
-        this.spinner.innerHTML = `<div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>`;
-
-        this.body.appendChild(this.spinner)
-    }
-
-    removeSpinner() {
-        this.spinner.remove();
-    }
-
     prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true) {
         this.title.innerHTML = title.trim();
         this.body.innerHTML = content.trim()
@@ -234,13 +220,11 @@ class Toast {
         container.appendChild(this.toast);
 
         // Bootstrap Toast opsiyonları
-        const toastOptions = {
+        this.bsToast = new bootstrap.Toast(this.toast, {
             animation: true,
             autohide: autohide,
             delay: delay,
-        };
-
-        const bsToast = new bootstrap.Toast(this.toast, toastOptions);
+        });
 
         // Toast kapatıldığında DOM'dan kaldır
         this.toast.addEventListener("hidden.bs.toast", () => {
@@ -248,6 +232,53 @@ class Toast {
         });
 
         // Toast'u göster
-        bsToast.show();
+        this.bsToast.show();
+    }
+
+    /**
+     * Toast'ı manuel olarak kapatır
+     */
+    closeToast() {
+        if (this.bsToast) {
+            this.bsToast.hide();
+        }
+    }
+}
+
+
+class Spinner {
+
+    constructor() {
+        this.spinnerContainer = null;
+        this.createSpinner();
+    }
+
+    createSpinner(type = "border") {
+        // Geçerli türleri kontrol et
+        const spinnerType = type === "grow" ? "spinner-grow" : "spinner-border";
+
+        // Spinner ana konteynerini oluştur
+        this.spinnerContainer = document.createElement("div");
+        this.spinnerContainer.classList.add("d-flex", "justify-content-center");
+
+        // Spinner elemanını oluştur
+        this.spinnerContainer.innerHTML = `
+        <div class="${spinnerType}" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+    `;
+    }
+
+    showSpinner(parent = document.body, type = "border") {
+        if (!this.spinnerContainer) {
+            this.createSpinner(type);
+        }
+        parent.appendChild(this.spinnerContainer);
+    }
+
+    removeSpinner() {
+        if (this.spinnerContainer && this.spinnerContainer.parentNode) {
+            this.spinnerContainer.remove();
+        }
     }
 }
