@@ -718,9 +718,10 @@ class ScheduleController extends Controller
         //belirtilen günde bir ders var ise
         if (is_array($schedule->{"day" . $filters["day_index"]})) {
             if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
+                // lesson_id var ise tek bir ders var demektir
                 if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
-                    //var olan gün ilebelirtilen gün bilgisi aynı ise
-                    $schedule->{"day" . $filters["day_index"]} = null;
+                    //var olan gün ile belirtilen gün bilgisi aynı ise
+                    $schedule->{"day" . $filters["day_index"]} = null; //gün boşaltıldı
                     if ($this->isScheduleEmpty($schedule))
                         $schedule->delete();
                     else
@@ -730,8 +731,12 @@ class ScheduleController extends Controller
                 // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
                 for ($i = 0; $i < 2; $i++) {
                     if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
-                        unset($schedule->{"day" . $filters["day_index"]}[$i]);
+                        array_splice($schedule->{"day" . $filters["day_index"]}, $i, 1);
                     }
+                }
+                //eğer tek bir ders kaldıysa gün içerisindeki diziyi ders dizisi olarak ayarlar
+                if (count($schedule->{"day" . $filters["day_index"]}) == 1) {
+                    $schedule->{"day" . $filters["day_index"]} = $schedule->{"day" . $filters["day_index"]}[0];
                 }
                 if ($this->isScheduleEmpty($schedule))
                     $schedule->delete();
