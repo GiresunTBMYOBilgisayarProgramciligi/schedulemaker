@@ -499,27 +499,22 @@ class Model
 
     /**
      * Kayıt silme
-     * @param int|null $id
      * @return bool
      * @throws Exception
      */
-    public function delete(int $id = null): bool
+    public function delete(): bool
     {
-        if (is_null($id) and !isset($this->id)) {
-            throw new Exception('Geçerli bir ID sağlanmadı.');
-        } elseif (!is_null($this->id)) {
-            $id = $this->id;
-        }
-        if ($this->table_name == "users" and $id == 1) {
-            throw new Exception("Birincil yönetici hesabı silinemez.");
-        }
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name')) {
-            throw new Exception('Table name özelliği tanımlı değil.');
+        if (!property_exists($this, 'table_name') and !property_exists($this, 'id') ) {
+            throw new Exception('Model düzgün oluşturulmamış');
+        }
+
+        if ($this->table_name == "users" and $this->id == 1) {
+            throw new Exception("Birincil yönetici hesabı silinemez.");
         }
 
         $statement = self::$database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
-        $statement->bindValue(':id', $id);
+        $statement->bindValue(':id', $this->id);
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else return true;
