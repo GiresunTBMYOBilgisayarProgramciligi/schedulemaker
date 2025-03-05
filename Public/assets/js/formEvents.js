@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
         departmentSelect.addEventListener("change", function () {
             const departmentId = this.value;
             let spinner = new Spinner();
-            programSelect.querySelector('option').innerText=""
+            programSelect.querySelector('option').innerText = ""
             spinner.showSpinner(programSelect.querySelector('option'))
             // AJAX isteği gönder
             fetch(`/ajax/getProgramsList/${departmentId}`, {
@@ -23,17 +23,27 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Program select kutusunu temizle
                     programSelect.innerHTML = "";
                     console.log(data)
-                    const option = document.createElement("option");
-                    option.value = 0;
-                    option.textContent = "Program Seçiniz";
-                    programSelect.appendChild(option);
-                    // Gelen programları ekle
-                    data['programs'].forEach(program => {
+                    if (data['programs'].length > 1) {
+                        const option = document.createElement("option");
+                        option.value = 0;
+                        option.textContent = "Program Seçiniz";
+                        programSelect.appendChild(option);
+                        // Gelen programları ekle
+                        data['programs'].forEach(program => {
+                            const option = document.createElement("option");
+                            option.value = program.id;
+                            option.textContent = program.name;
+                            programSelect.appendChild(option);
+                        });
+                    } else if (data['programs'].length === 1) {
+                        let program = data['programs'][0];
                         const option = document.createElement("option");
                         option.value = program.id;
                         option.textContent = program.name;
+                        option.selected = true
                         programSelect.appendChild(option);
-                    });
+                    }
+
                     // Select elementinin change olayını tetikle
                     programSelect.dispatchEvent(new Event("change"));
                 })
@@ -87,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     let selectInputs = document.querySelectorAll(".tom-select")
     selectInputs.forEach((select) => {
-        new TomSelect(select, {placeholder:"Seçmek için yazın"});
+        new TomSelect(select, {placeholder: "Seçmek için yazın"});
     })
 
 });
