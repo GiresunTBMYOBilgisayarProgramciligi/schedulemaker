@@ -722,7 +722,7 @@ class ScheduleController extends Controller
                     //var olan gün ilebelirtilen gün bilgisi aynı ise
                     $schedule->{"day" . $filters["day_index"]} = null;
                     if ($this->isScheduleEmpty($schedule))
-                        $this->delete($schedule->id);
+                        $schedule->delete();
                     else
                         $this->updateSchedule($schedule);
                 }
@@ -734,7 +734,7 @@ class ScheduleController extends Controller
                     }
                 }
                 if ($this->isScheduleEmpty($schedule))
-                    $this->delete($schedule->id);
+                    $schedule->delete();
                 else
                     $this->updateSchedule($schedule);
             }
@@ -742,7 +742,7 @@ class ScheduleController extends Controller
             // bu durumda ders true yada false dir. Aslında false değerindedir
             $schedule->{"day" . $filters["day_index"]} = null;
             if ($this->isScheduleEmpty($schedule))
-                $this->delete($schedule->id);
+                $schedule->delete();
             else
                 $this->updateSchedule($schedule);
         }

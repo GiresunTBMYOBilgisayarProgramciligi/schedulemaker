@@ -50,31 +50,6 @@ class Controller
         return $model->get()->where($filters)->count();
     }
 
-    /**
-     * @param $id
-     * @return void
-     * @throws Exception
-     */
-    public function delete($id = null): void
-    {
-        if (is_null($id)) {
-            throw new Exception('Geçerli bir ID sağlanmadı.');
-        }
-        if ($this->table_name == "users" and $id == 1) {
-            throw new Exception("Birincil yönetici hesabı silinemez.");
-        }
-        // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name')) {
-            throw new Exception('Table name özelliği tanımlı değil.');
-        }
-
-        $stmt = $this->database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
-        $stmt->execute([":id" => $id]);
-
-        if (!$stmt->rowCount() > 0) {
-            throw new Exception('Kayıt bulunamadı veya silinemedi.');
-        }
-    }
 
     /**
      * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir

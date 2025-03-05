@@ -53,7 +53,7 @@ class AjaxRouter extends Router
         }
         $userController = new UserController();
         if (!$userController->isLoggedIn()) {
-            throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın",330);
+            throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın", 330);
         } else $userController->getCurrentUser();
     }
 
@@ -138,13 +138,15 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function deleteUserAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception();
         }
-        $usersController = new UserController();
-        $usersController->delete($this->data['id']);
+        (new User())->find($this->data['id'])->delete();
 
         $this->response = array(
             "msg" => "Kullanıcı başarıyla Silindi.",
@@ -218,6 +220,9 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function deleteLessonAction(): void
     {
         $lessonController = new LessonController();
@@ -229,7 +234,7 @@ class AjaxRouter extends Router
         if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
         }
-        $lessonController->delete($this->data['id']);
+        $lesson->delete();
 
         $this->response = array(
             "msg" => "Ders Başarıyla Silindi.",
@@ -276,13 +281,15 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function deleteClassroomAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Derslik silme yetkiniz yok");
         }
-        $classroomController = new ClassroomController();
-        $classroomController->delete($this->data['id']);
+        (new Classroom())->find($this->data['id'])->delete();
 
         $this->response = array(
             "msg" => "Derslik başarıyla silindi.",
@@ -330,13 +337,15 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function deleteDepartmentAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Bölüm silme yetkiniz yok");
         }
-        $departmentController = new DepartmentController();
-        $departmentController->delete($this->data['id']);
+        (new Department())->find($this->data['id'])->delete();
 
         $this->response = array(
             "msg" => "Bölüm Başarıyla Silindi.",
@@ -384,13 +393,15 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function deleteProgramAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Program silme yetkiniz yok");
         }
-        $programController = new ProgramController();
-        $programController->delete($this->data['id']);
+        (new Program())->find($this->data['id'])->delete();
 
         $this->response = array(
             "msg" => "Program Başarıyla Silindi.",
