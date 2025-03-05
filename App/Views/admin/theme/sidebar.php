@@ -307,6 +307,18 @@ use function App\Helpers\isAuthorized;
                     </li>
                 <?php endif; ?>
                 <!-- /Ayarlar -->
+                <!-- Bölüm başkanı altı için Profilim -->
+                <?php if (isAuthorized("submanager",true)): ?>
+                    <li class="nav-item">
+                        <a href="/admin/profile" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'profile')) ? 'active' : ''; ?>">
+                            <i class="nav-icon bi bi-person-badge"></i>
+                            <p>
+                                Profilim
+                            </p>
+                        </a>
+                    </li>
+                <?php endif; ?>
+                <!-- /Bölüm başkanı altı için Profilim -->
             </ul>
             <!--end::Sidebar Menu-->
         </nav>
