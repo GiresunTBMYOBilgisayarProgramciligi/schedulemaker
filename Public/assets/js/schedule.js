@@ -5,6 +5,7 @@
 let unavailableCells;
 
 let preferredCells;
+let spinner= new Spinner();
 /**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
@@ -22,11 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("semester", document.getElementById("semester").value)
         data.append("academic_year", document.getElementById("academic_year").value);
         promises.push(getSchedulesHTML(data));
-
+        spinner.showSpinner(document.getElementById("schedule_container"))
         // Tüm işlemlerin tamamlanmasını bekle
         Promise.all(promises)
             .then(() => {
                 console.log("Tüm işlemler tamamlandı!");
+                spinner.removeSpinner();
                 // Tüm işlemler tamamlandıktan sonra başlatılacak işlem
                 afterAllTasksComplete();
             })
@@ -159,7 +161,9 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("academic_year", document.getElementById("academic_year").value);
         data.append("lesson_id", lessonId);
         //clear classroomSelect
-        classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
+        classroomSelect.innerHTML = `<option value=""></option>`;
+        let spiner= new Spinner();
+        spiner.showSpinner(classroomSelect.querySelector("option"))
         fetch("/ajax/getAvailableClassroomForSchedule", {
             method: "POST",
             headers: {
@@ -169,6 +173,8 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
+                spiner.removeSpinner();
+                classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
                 if (data.status === "error") {
                     new Toast().prepareToast("Hata", "Uygun ders listesi alınırken hata oluştu", "danger");
                     console.error(data.msg)
@@ -235,6 +241,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_id", lessonId);
         data.append("semester", document.getElementById("semester").value)
         data.append("academic_year", document.getElementById("academic_year").value);
+        let toast=new Toast();
+        toast.prepareToast("Yükleniyor","Hocanın programı kontrol ediliyor...");
         return fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
             headers: {
@@ -244,6 +252,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
+                toast.closeToast()
                 if (data.status === "error") {
                     console.error(data);
                     return false;
@@ -355,7 +364,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkedHours++
             }
 
-
+            let toast= new Toast();
+            toast.prepareToast("Yükleniyor...","Ders, programa kaydediliyor...")
             let result = await saveSchedule(
                 {
                     "lesson_id": lessonId,
@@ -368,6 +378,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "semester": document.getElementById("semester").value
                 });
             if (result) {
+                toast.closeToast();
                 /**
                  * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
                  */
@@ -407,6 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 scheduleModal.closeModal();
                 clearCells(table);
             } else {
+                toast.closeToast();
                 scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
                 scheduleModal.body.classList.add("text-bg-danger");
             }
