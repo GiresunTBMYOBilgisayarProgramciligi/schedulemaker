@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @see /assets/js/myHTMLElements.js
      */
     const modal = new Modal();
-
+    const spinner = new Spinner();
     function handleAjaxForm(event) {
         event.preventDefault();
         /**
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("file", file)
         }
         modal.prepareModal(form.getAttribute("title"));
-        modal.addSpinner();
+        spinner.showSpinner(modal.body)
         modal.showModal();
 
         fetch(form.action, {
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const message = Array.isArray(data.msg)
                         ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
                         : data.msg;
-                    modal.removeSpinner()
+                    spinner.removeSpinner();
                     modal.body.innerHTML = message;
                 } else {
                     modal.body.classList.add("text-bg-" + data.status)
@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const message = Array.isArray(data.msg)
                         ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
                         : data.msg;
-                    modal.removeSpinner()
+                    spinner.removeSpinner();
                     modal.body.innerHTML = message;
                 }
 
@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function () {
         modal.showModal()
         modal.confirmButton.addEventListener("click", () => {
 
-            modal.addSpinner();
+            spinner.showSpinner(modal.body)
             modal.confirmButton.remove();
             fetch(form.action, {
                 method: form.method || "POST",
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         const message = Array.isArray(data.msg)
                             ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
                             : data.msg;
-                        modal.removeSpinner()
+                        spinner.removeSpinner()
                         modal.body.innerHTML = message;
                     } else {
                         modal.body.classList.add("text-bg-" + data.status)
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         const message = Array.isArray(data.msg)
                             ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
                             : data.msg;
-                        modal.removeSpinner()
+                        spinner.removeSpinner()
                         modal.body.innerHTML = message;
                         if (lessonRow) {
                             lessonRow.remove();
