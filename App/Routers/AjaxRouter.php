@@ -636,11 +636,14 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * Ders programından veri silmek için gerekli kontrolleri yapar
+     * @return void
+     * @throws Exception
+     */
     public function deleteScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $lessonController = new LessonController();
-        $classroomController = new ClassroomController();
         if (!key_exists("semester", $this->data)) {
             $this->data["semester"] = getSetting("semester");
         }
@@ -653,10 +656,11 @@ class AjaxRouter extends Router
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
                 $lesson = (new Lesson())->find($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
+                $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
+                //set Owners
                 $owners['program'] = $lesson->program_id;
                 $owners['user'] = $lecturer->id;
                 $owners['lesson'] = $lesson->id;
-                $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
                 $owners["classroom"] = $classroom->id;
                 $day = [
                     "lesson_id" => $lesson->id,
@@ -669,7 +673,7 @@ class AjaxRouter extends Router
                         "owner_id" => $owner_id,
                         "day_index" => $this->data['day_index'],
                         "day" => $day,
-                        "type" => "lesson",
+                        "type" => "lesson",//todo bu da istekle gelmeli sınav programı için ayrı fonksiyonlar yazmadan halledilse iyi olur
                         "time" => $this->data['time'],
                         "semester_no" => $this->data['semester_no'],
                         "semester" => $this->data["semester"],

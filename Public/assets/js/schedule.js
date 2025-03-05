@@ -558,8 +558,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         if (saveResult) {
             console.log("Yeni ders eklendi");
-
-
             cell.appendChild(draggedElement);
         } else console.error("Yeni ders Eklenemedi")
 

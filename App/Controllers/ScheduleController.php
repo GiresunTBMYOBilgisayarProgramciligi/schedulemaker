@@ -685,7 +685,7 @@ class ScheduleController extends Controller
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
         $schedules = $this->getListByFilters($scheduleData);
         if (!$schedules) {
-            throw new Exception("Silinecek Ders bulunamadı");
+            throw new Exception("Silinecek ders programı bulunamadı");
         }
         foreach ($schedules as $schedule) {
             if (!isAuthorized("submanager", false, $schedule)) {
@@ -693,7 +693,7 @@ class ScheduleController extends Controller
             }
 
             /**
-             * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm sezonlar silinir.
+             * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
              */
             if (!key_exists("semester_no", $filters)) {
                 $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -746,6 +746,7 @@ class ScheduleController extends Controller
             else
                 $this->updateSchedule($schedule);
         }
+
     }
 
     /**
