@@ -193,6 +193,9 @@ class AdminRouter extends Router
     /*
      * Lesson Routes
      */
+    /**
+     * @throws Exception
+     */
     public function lessonAction($id = null)
     {
         $lessonController = new LessonController();

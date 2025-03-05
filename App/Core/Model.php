@@ -351,7 +351,9 @@ class Model
      */
     public function find(int $id): ?object
     {
-        return $this->where(['id' => $id])->first();
+        $model=$this->where(['id' => $id])->first();
+        if (!$model) throw new Exception($this->table_name ." tabosunda sonuç bulunamadı.");
+        return $model;
     }
 
     public function is_data_serialized($data): bool
