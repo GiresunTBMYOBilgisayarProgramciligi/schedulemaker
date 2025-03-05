@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Classroom;
+use App\Models\Schedule;
 use PDO;
 use PDOException;
 use Exception;
@@ -112,5 +113,19 @@ class ClassroomController extends Controller
             2 => "Bilgisayar Laboratuvarı",
             3 => "Uzaktan Eğitim Sınıfı"
         ];
+    }
+
+    /**
+     * @param int $id Silinecek dersin id numarası
+     * @throws Exception
+     */
+    public function delete(int $id): void
+    {
+        // ilişkili tüm programı sil
+        $schedules = (new Schedule())->get()->where(["owner_type" => "classroom", "owner_id" => $id])->all();
+        foreach ($schedules as $schedule) {
+            $schedule->delete();
+        }
+        (new Classroom())->find($id)->delete();
     }
 }

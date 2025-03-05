@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
+use App\Models\Schedule;
 use App\Models\User;
 use Exception;
 use PDO;
@@ -416,5 +417,19 @@ class UserController extends Controller
             false => $roleLevels[$user->role] >= $actionLevel
         };
         return $isAuthorizedRole or $isOwner;
+    }
+
+    /**
+     * @param int $id Silinecek dersin id numarası
+     * @throws Exception
+     */
+    public function delete(int $id): void
+    {
+        // ilişkili tüm programı sil
+        $schedules = (new Schedule())->get()->where(["owner_type" => "user", "owner_id" => $id])->all();
+        foreach ($schedules as $schedule) {
+            $schedule->delete();
+        }
+        (new User())->find($id)->delete();
     }
 }

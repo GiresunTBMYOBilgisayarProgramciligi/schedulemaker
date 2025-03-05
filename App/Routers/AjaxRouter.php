@@ -1,8 +1,4 @@
 <?php
-/**
- * todo ajax işlemi sonrası hangi sayfadan gelindiyse o sayfaya yönlendirme yapılabilir.
- * todo Program sayfasından ders düzenleme işlemine girildiğinde geri program sayfasına dönmeli
- */
 
 namespace App\Routers;
 
@@ -28,6 +24,9 @@ use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
 use function App\Helpers\isAuthorized;
 
+/**
+ * todo Router görevi sefece gelen isteiği ilgili Controller a yönlendirmek. gerekl işlemleri ve dönülecek view i controller belirler.
+ */
 class AjaxRouter extends Router
 {
     /**
@@ -79,6 +78,7 @@ class AjaxRouter extends Router
     /**
      * Ajax ile gelen verilerden oluşturduğu User modeli ile yeni kullanıcı ekler
      * @return void
+     * @throws Exception
      */
     public function addNewUserAction(): void
     {
@@ -146,7 +146,7 @@ class AjaxRouter extends Router
         if (!isAuthorized("submanager")) {
             throw new Exception();
         }
-        (new User())->find($this->data['id'])->delete();
+        (new UserController())->delete($this->data['id']);
 
         $this->response = array(
             "msg" => "Kullanıcı başarıyla Silindi.",
@@ -225,7 +225,6 @@ class AjaxRouter extends Router
      */
     public function deleteLessonAction(): void
     {
-        $lessonController = new LessonController();
         $lesson = (new Lesson())->find($this->data['id']);
         $currentUser = (new UserController())->getCurrentUser();
         if (!isAuthorized("submanager", false, $lesson)) {
@@ -234,7 +233,7 @@ class AjaxRouter extends Router
         if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
         }
-        $lesson->delete();
+        (new LessonController())->delete($lesson->id);
 
         $this->response = array(
             "msg" => "Ders Başarıyla Silindi.",
@@ -289,7 +288,7 @@ class AjaxRouter extends Router
         if (!isAuthorized("submanager")) {
             throw new Exception("Derslik silme yetkiniz yok");
         }
-        (new Classroom())->find($this->data['id'])->delete();
+        (new ClassroomController())->delete($this->data['id']);
 
         $this->response = array(
             "msg" => "Derslik başarıyla silindi.",
@@ -345,7 +344,7 @@ class AjaxRouter extends Router
         if (!isAuthorized("submanager")) {
             throw new Exception("Bölüm silme yetkiniz yok");
         }
-        (new Department())->find($this->data['id'])->delete();
+        (new DepartmentController())->delete($this->data['id']);
 
         $this->response = array(
             "msg" => "Bölüm Başarıyla Silindi.",
@@ -401,7 +400,7 @@ class AjaxRouter extends Router
         if (!isAuthorized("submanager")) {
             throw new Exception("Program silme yetkiniz yok");
         }
-        (new Program())->find($this->data['id'])->delete();
+        (new ProgramController())->delete($this->data['id']);
 
         $this->response = array(
             "msg" => "Program Başarıyla Silindi.",

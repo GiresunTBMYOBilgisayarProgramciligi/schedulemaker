@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
@@ -112,5 +113,15 @@ class DepartmentController extends Controller
                 throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
             }
         }
+    }
+
+    /**
+     * @param int $id Silinecek dersin id numarası
+     * @throws Exception
+     */
+    public function delete(int $id): void
+    {
+        //todo silinen bölüm ile ilgili diğe silme işlemleri
+        (new Department())->find($id)->delete();
     }
 }
