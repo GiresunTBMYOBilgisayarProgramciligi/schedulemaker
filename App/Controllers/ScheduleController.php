@@ -120,7 +120,7 @@ class ScheduleController extends Controller
                                         </a>
                                         ' . $lesson->getFullName() . '
                                     </div>
-                                    <div><a class="link-light link-underline-opacity-0" href="/admin/lesson/' . $day->lecturer_id . '\">
+                                    <div><a class="link-light link-underline-opacity-0" href="/admin/lesson/' . $lesson->getLecturer()->id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
                                     ' . $lecturerName . '</div>
