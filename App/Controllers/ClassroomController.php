@@ -106,15 +106,6 @@ class ClassroomController extends Controller
         }
     }
 
-    public function getTypeList(): array
-    {
-        return [
-            1 => "Derslik",
-            2 => "Bilgisayar Laboratuvarı",
-            3 => "Uzaktan Eğitim Sınıfı"
-        ];
-    }
-
     /**
      * @param int $id Silinecek dersin id numarası
      * @throws Exception
@@ -127,5 +118,14 @@ class ClassroomController extends Controller
             $schedule->delete();
         }
         (new Classroom())->find($id)->delete();
+    }
+
+    public function getTypeList(): array
+    {
+        return [
+            1 => "Derslik",
+            2 => "Bilgisayar Laboratuvarı",
+            3 => "Uzaktan Eğitim Sınıfı"
+        ];
     }
 }

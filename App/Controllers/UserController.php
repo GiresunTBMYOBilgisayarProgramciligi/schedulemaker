@@ -107,22 +107,19 @@ class UserController extends Controller
      * @throws Exception
      * @see AjaxRouter->addUserAction
      */
-    public function saveNew(User $new_user): int
+    public function saveNew(array $userData): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_user)) {
+            if (!isAuthorized("submanager")) {
                 throw new Exception("Kullanıcı oluşturma yetkiniz yok");
             }
             // Yeni kullanıcı verilerini bir dizi olarak alın
-            $new_user_arr = $new_user->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
-            $new_user_arr["password"] = password_hash($new_user_arr["password"] ?? "123456", PASSWORD_DEFAULT);
+            $userData["password"] = password_hash($userData["password"] ?? "123456", PASSWORD_DEFAULT);
 
-            // Dinamik SQL sorgusu oluştur
-            $sql = $this->createInsertSQL($new_user_arr);
-            // Hazırlama ve parametre bağlama
-            $q = $this->database->prepare($sql);
-            $q->execute($new_user_arr);
-            return $this->database->lastInsertId();
+            $new_user = new User();
+            $new_user->fill($userData);
+            $new_user->create();
+            return $new_user->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
@@ -159,8 +156,6 @@ class UserController extends Controller
              * Bu ekleme şifre boş bırakıldığında şifrenin silinmesi hatasını çözmek için eklendi
              */
             $userData = $user->getArray(array_filter([
-                'table_name',
-                'database',
                 'id',
                 'register_date',
                 'last_login',

@@ -82,7 +82,6 @@ class AjaxRouter extends Router
      */
     public function addNewUserAction(): void
     {
-        $usersController = new UserController();
         $userData = $this->data;
         /*
          * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
@@ -93,17 +92,11 @@ class AjaxRouter extends Router
         if (is_null($userData['program_id']) or $userData['program_id'] == '0') {
             unset($userData['program_id']);
         }
-        $new_user = new User();
-        $new_user->fill($userData);
-        $user = $usersController->saveNew($new_user);
-        if (!$user) {
-            throw new Exception("Kullanıcı Eklenemedi");
-        } else {
-            $this->response = array(
-                "msg" => "Kullanıcı başarıyla eklendi.",
-                "status" => "success",
-            );
-        }
+        (new UserController())->saveNew($userData);
+        $this->response = array(
+            "msg" => "Kullanıcı başarıyla eklendi.",
+            "status" => "success",
+        );
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->response);
     }
@@ -174,8 +167,8 @@ class AjaxRouter extends Router
         }
         $new_lesson = new Lesson();
         $new_lesson->fill($lessonData);
-        $user = $lessonController->saveNew($new_lesson);
-        if (!$user) {
+        $lesson = $lessonController->saveNew($new_lesson);
+        if (!$lesson) {
             throw new Exception("Kullanıcı eklenemedi");
         } else {
             $this->response = array(

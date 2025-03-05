@@ -82,9 +82,7 @@ class ImportExportManager
                 $userController->updateUser($user);
                 $updatedCount++;
             } else {
-                $user = new User();
-                $user->fill($userData);
-                $userController->saveNew($user);
+                $userController->saveNew($userData);
                 $addedCount++;
             }
         }
