@@ -45,10 +45,12 @@ class AdminRouter extends Router
 
     /**
      * Aksiyonlardan önce çalıştırılan kontrol mekanizması
+     * @throws Exception
      */
     private function beforeAction(): void
     {
         $userController = new UserController();
+        $this->view_data['currentUser'] = $userController->getCurrentUser();
         if (!$userController->isLoggedIn()) {
             //todo goback ön tanımlı olarak false olursa daha iyi olur gibi. ön tanımlı true olduğu için login redirect çalışmıyordu
             $this->Redirect('/auth/login', false);
@@ -63,6 +65,7 @@ class AdminRouter extends Router
     public function IndexAction(): void
     {
         $programController = new ProgramController();
+        $user = (new UserController())->getCurrentUser();
         $this->view_data = array_merge($this->view_data, [
             "departmentController" => new DepartmentController(),
             "classroomController" => new ClassroomController(),
@@ -70,6 +73,10 @@ class AdminRouter extends Router
             "programController" => $programController,
             "programs" => $programController->getProgramsList(),
             "page_title" => "Anasayfa"]);
+        if (!is_null($user->program_id))
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $user->program_id, 'type' => 'lesson'], true);
+        else
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $user->id, 'type' => 'lesson'], true);
         $this->callView("admin/index", $this->view_data);
     }
 

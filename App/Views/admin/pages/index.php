@@ -6,6 +6,8 @@
  * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Controllers\ProgramController $programController
+ * @var string $scheduleHTML
+ * @var \App\Models\User $currentUser
  * @var array $programs
  */
 ?>
@@ -107,65 +109,70 @@
                 <!-- ./col -->
             </div>
             <!-- /.row -->
-            <h4>Programlar</h4>
-            <!-- Main row -->
-            <div class="row">
-                <?php foreach ($programs as $program): ?>
-                    <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
-                        <div class="card d-flex flex-fill mb-3">
-                            <div class="card-header text-muted border-bottom-0">
-                                <?= $program->getDepartment()->name ?>
-                            </div>
-                            <div class="card-body pt-0">
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h2 class="lead"><b><?= $program->name ?></b></h2>
+            <?php if (\App\Helpers\isAuthorized("manager", true)): ?>
+                <h4><?= $currentUser->getProgramName()?> Ders Programı</h4>
+                <?= $scheduleHTML ?>
+            <?php else: ?>
+                <h4>Programlar</h4>
+                <!-- Main row -->
+                <div class="row">
+                    <?php foreach ($programs as $program): ?>
+                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
+                            <div class="card d-flex flex-fill mb-3">
+                                <div class="card-header text-muted border-bottom-0">
+                                    <?= $program->getDepartment()->name ?>
+                                </div>
+                                <div class="card-body pt-0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <h2 class="lead"><b><?= $program->name ?></b></h2>
 
-                                        <ul class="list-group list-group-flush text-muted mt-2">
-                                            <li class="list-group-item small">
+                                            <ul class="list-group list-group-flush text-muted mt-2">
+                                                <li class="list-group-item small">
                                                 <span class="">
                                                     <i class="bi bi-mortarboard"></i>
                                                 </span>
-                                                <strong>Bölüm Başkan:</strong>
-                                                <a href="/admin/profile/<?= $program->getDepartment()->getChairperson()->id ?>">
-                                                    <?= $program->getDepartment()->getChairperson()->getFullName() ?>
-                                                </a>
-                                            </li>
-                                            <li class="list-group-item small">
+                                                    <strong>Bölüm Başkan:</strong>
+                                                    <a href="/admin/profile/<?= $program->getDepartment()->getChairperson()->id ?>">
+                                                        <?= $program->getDepartment()->getChairperson()->getFullName() ?>
+                                                    </a>
+                                                </li>
+                                                <li class="list-group-item small">
                                                 <span class="">
                                                     <i class="bi bi-person-vcard"></i>
                                                 </span>
-                                                <strong>Akademisyen Sayısı:</strong>
-                                                <?= $program->getLecturerCount() ?>
-                                            </li>
-                                            <li class="list-group-item small">
+                                                    <strong>Akademisyen Sayısı:</strong>
+                                                    <?= $program->getLecturerCount() ?>
+                                                </li>
+                                                <li class="list-group-item small">
                                                 <span class="">
                                                     <i class="bi bi-book"></i>
                                                 </span>
-                                                <strong>Ders Sayısı:</strong>
-                                                <?= $program->getLessonCount() ?>
-                                            </li>
-                                        </ul>
+                                                    <strong>Ders Sayısı:</strong>
+                                                    <?= $program->getLessonCount() ?>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="text-end">
+                                        <a href="/admin/department/<?= $program->getDepartment()->id ?>"
+                                           class="btn btn-sm btn-primary">
+                                            Bölüm Detayları
+                                        </a>
+                                        <a href="/admin/program/<?= $program->id ?>"
+                                           class="btn btn-sm btn-primary">
+                                            Detaylar
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-footer">
-                                <div class="text-end">
-                                    <a href="/admin/department/<?= $program->getDepartment()->id ?>"
-                                       class="btn btn-sm btn-primary">
-                                        Bölüm Detayları
-                                    </a>
-                                    <a href="/admin/program/<?= $program->id ?>"
-                                       class="btn btn-sm btn-primary">
-                                        Detaylar
-                                    </a>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <!-- /.row (main row) -->
+                    <?php endforeach; ?>
+                </div>
+                <!-- /.row (main row) -->
+            <?php endif; ?>
         </div>
         <!--end::Container-->
     </div>

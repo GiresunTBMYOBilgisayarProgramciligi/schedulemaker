@@ -15,12 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
         let row = cell.closest("tr");
         let clickedTable = cell.closest("table");
         let tables = document.querySelectorAll('.schedule-table table');
-        console.log(tables)
         let user_id = document.querySelector("input[name=id]").value;
         if (cell.tagName !== "TD") return;
-        console.log("cellIndex", event.target.cellIndex);
-        console.log("rowIndex", row.rowIndex);
-        console.log("user_id", user_id);
         let data = {
             "time": clickedTable.rows[row.rowIndex].cells[0].innerText,
             "owner_id": user_id,
