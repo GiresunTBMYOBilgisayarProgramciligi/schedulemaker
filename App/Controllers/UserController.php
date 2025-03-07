@@ -344,7 +344,7 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısı ise yada
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id ?? 0);
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
                     $isOwner = ($user->id == $model->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -353,7 +353,7 @@ class UserController extends Controller
                      * Aktif kullanıcı Dersin sahibi ise yada
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id ?? 0);
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
                     $isOwner = ($model->lecturer_id == $user->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -361,7 +361,7 @@ class UserController extends Controller
                     /*
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
-                    $department = (new Department())->find($model->department_id ?? 0);
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
                     $isOwner = ($user->id == $department?->chairperson_id or $user->program_id == $model->id);
                     break;
 
