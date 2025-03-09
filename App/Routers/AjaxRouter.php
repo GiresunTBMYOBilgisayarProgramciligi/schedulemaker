@@ -414,6 +414,9 @@ class AjaxRouter extends Router
      * Schedules Ajax Actions
      */
 
+    /**
+     * @throws Exception
+     */
     public function getScheduleHTMLAction(): void
     {
         $scheduleController = new ScheduleController();
@@ -447,10 +450,10 @@ class AjaxRouter extends Router
      * "semester_no"
      *
      * @return void
+     * @throws Exception
      */
     public function saveScheduleAction(): void
     {
-        $lessonController = new LessonController();
         $scheduleController = new ScheduleController();
         $classroomController = new ClassroomController();
         if (key_exists("lesson_id", $this->data)) {
@@ -541,6 +544,9 @@ class AjaxRouter extends Router
         echo json_encode($this->response);
     }
 
+    /**
+     * @throws Exception
+     */
     public function saveSchedulePreferenceAction(): void
     {
         $scheduleController = new ScheduleController();
@@ -704,6 +710,24 @@ class AjaxRouter extends Router
         }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->response);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function exportScheduleAction(): void
+    {
+        if (!isAuthorized('department_head'))
+            throw new Exception("Ders Programı Dışa Aktarma Yetkiniz Yok");
+        $filters=$this->data;
+        if (!key_exists('type', $filters)) {
+            throw new Exception("Dışarı aktarma işlemi için tür seçilmemiş.");
+        }
+        if (!key_exists('owner_type', $filters)) {
+            throw new Exception("Dışarı aktarma işlemi için ders programı sahibi seçilmemiş.");
+        }
+        $importExportManager= new ImportExportManager();
+        $importExportManager->exportSchedule($filters);
     }
 
     /*

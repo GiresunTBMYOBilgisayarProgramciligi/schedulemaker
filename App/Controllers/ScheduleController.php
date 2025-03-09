@@ -38,7 +38,7 @@ class ScheduleController extends Controller
      * @return string
      * @throws Exception
      */
-    public function createScheduleTable(array $filters = []): string
+    public function createScheduleHTMLTable(array $filters = []): string
     {
         $schedules = $this->getListByFilters($filters);
         $semester_no = isset($filters['semester_no']) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
@@ -46,23 +46,26 @@ class ScheduleController extends Controller
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
-        $tableRows = [
-            "08.00 - 08.50" => (object)$this->emptyWeek,
-            "09.00 - 09.50" => (object)$this->emptyWeek,
-            "10.00 - 10.50" => (object)$this->emptyWeek,
-            "11.00 - 11.50" => (object)$this->emptyWeek,
-            "12.00 - 12.50" => (object)$this->emptyWeek,
-            "13.00 - 13.50" => (object)$this->emptyWeek,
-            "14.00 - 14.50" => (object)$this->emptyWeek,
-            "15.00 - 15.50" => (object)$this->emptyWeek,
-            "16.00 - 16.50" => (object)$this->emptyWeek
+        $scheduleRows = [
+            "08.00 - 08.50" => (object)$this->generateEmptyWeek(),
+            "09.00 - 09.50" => (object)$this->generateEmptyWeek(),
+            "10.00 - 10.50" => (object)$this->generateEmptyWeek(),
+            "11.00 - 11.50" => (object)$this->generateEmptyWeek(),
+            "12.00 - 12.50" => (object)$this->generateEmptyWeek(),
+            "13.00 - 13.50" => (object)$this->generateEmptyWeek(),
+            "14.00 - 14.50" => (object)$this->generateEmptyWeek(),
+            "15.00 - 15.50" => (object)$this->generateEmptyWeek(),
+            "16.00 - 16.50" => (object)$this->generateEmptyWeek()
         ];
+        /**
+         * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
+         */
         $lessonHourCount = [];
         /*
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
         foreach ($schedules as $schedule) {
-            $tableRows[$schedule->time] = $schedule->getWeek();
+            $scheduleRows[$schedule->time] = $schedule->getWeek();
         }
 
         $out =
@@ -80,9 +83,9 @@ class ScheduleController extends Controller
                                 </tr>
                                 </thead>
                                 <tbody>';
-        $times = array_keys($tableRows);
+        $times = array_keys($scheduleRows);
         for ($i = 0; $i < count($times); $i++) {
-            $tableRow = $tableRows[$times[$i]];
+            $tableRow = $scheduleRows[$times[$i]];
             $out .=
                 '
                 <tr>
@@ -187,6 +190,65 @@ class ScheduleController extends Controller
                </table>';
 
         return $out;
+    }
+
+    /**
+     * @param $type string  html | excel
+     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
+     * @return array
+     */
+    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = 4): array
+    {
+        $emptyWeek = [];
+        foreach (range(0, $maxDayIndex) as $index) {
+            $emptyWeek["day{$index}"] = null;
+            if ($type == 'excel')
+                $emptyWeek["Derslik"] = null;
+        }
+        return $emptyWeek;
+    }
+
+    /**
+     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir dizi döner
+     * @param array $filters
+     * @return array|bool
+     * @throws Exception
+     */
+    public function createScheduleExcelTable(array $filters = []): array|bool
+    {
+        $schedules = (new Schedule())->get()->where($filters)->all();
+        if (count($schedules) == 0) return false;
+        //tablo verileri temizlenir
+        $scheduleRows = [
+            "08.00 - 08.50" => (object)$this->generateEmptyWeek('excel'),
+            "09.00 - 09.50" => (object)$this->generateEmptyWeek('excel'),
+            "10.00 - 10.50" => (object)$this->generateEmptyWeek('excel'),
+            "11.00 - 11.50" => (object)$this->generateEmptyWeek('excel'),
+            "12.00 - 12.50" => (object)$this->generateEmptyWeek('excel'),
+            "13.00 - 13.50" => (object)$this->generateEmptyWeek('excel'),
+            "14.00 - 14.50" => (object)$this->generateEmptyWeek('excel'),
+            "15.00 - 15.50" => (object)$this->generateEmptyWeek('excel'),
+            "16.00 - 16.50" => (object)$this->generateEmptyWeek('excel')
+        ];
+        /*
+         * Veri tabanından alınan bilgileri ön tanımlı satırlar yerine yerleştiriliyor
+         */
+        foreach ($schedules as $schedule) {
+            $scheduleRows[$schedule->time] = $schedule->getWeek('excel');
+        }
+        $scheduleArray = [];
+        $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
+
+        $times = array_keys($scheduleRows);
+        for ($i = 0; $i < count($times); $i++) {
+            $tableRow = $scheduleRows[$times[$i]];
+            $row = [$times[$i]];
+            foreach ($tableRow as $day) {
+                $row[] = $day;
+            }
+            $scheduleArray[] = $row;
+        }
+        return $scheduleArray;
     }
 
     /**
@@ -490,10 +552,9 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSetting("academic_year");
         }
         $HTMLOUT = '';
-        if (!is_null($filters["semester_no"])) {
-            throw new Exception("Dönem numarası girilmemiş");
-        }
+
         $currentSemesters = getSemesterNumbers($filters["semester"]);
+
         foreach ($currentSemesters as $semester_no) {
             $filters['semester_no'] = $semester_no;
             $HTMLOUT .= '
@@ -522,7 +583,7 @@ class ScheduleController extends Controller
             }
             $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
             $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $semester_no . '">';
-            $HTMLOUT .= $this->createScheduleTable($filters);
+            $HTMLOUT .= $this->createScheduleHTMLTable($filters);
             $HTMLOUT .= '
 
                                     </div>

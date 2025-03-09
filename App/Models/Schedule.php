@@ -37,37 +37,37 @@ class Schedule extends Model
     public ?int $semester_no = null;
     /**
      * Pazartesi günü için time alanında belirlenen saatteki program bilgileri
-     *  array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *  array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|bool|null
      */
     public array|bool|null $day0 = null;
     /**
      * Salı günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public array|bool|null $day1 = null;
     /**
      * Çarşamba günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public array|bool|null $day2 = null;
     /**
      * Perşembe günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public array|bool|null $day3 = null;
     /**
      * Cuma günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public array|bool|null $day4 = null;
     /**
      * Cumartesi günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=1,"classroom_id"=>1,"lesson_id"=>1)
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
      * @var array|null
      */
     public array|bool|null $day5 = null;
@@ -78,18 +78,42 @@ class Schedule extends Model
 
     /**
      * Tablo oluştururken günler döngüye sokulurken kullanılır
+     * @param string $type html | excel
+     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
      * @return array
      */
-    public function getWeek(): array
+    public function getWeek(string $type = 'html', int $maxDayIndex = 4): array
     {
-        return [
-            $this->day0,
-            $this->day1,
-            $this->day2,
-            $this->day3,
-            $this->day4,
-            $this->day5,
-        ];
+        $week = [];
+        foreach (range(0, $maxDayIndex) as $dayIndex) {
+            if ($type === 'excel') {
+                $day = $this->{"day{$dayIndex}"};
+                if (is_array($day)) {
+                    //günde ders var
+                    if (is_array($day[0])) {
+                        // günde iki ders var
+                        $groupDayLessons=[];
+                        $groupDayClasrooms=[];
+                        foreach ($day as $groupLesson){
+                            $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecture_id' => $groupLesson['lecture_id']]; // ders bilgileri
+                            $groupDayClasrooms[] = ['classroom_id' => $groupLesson['classroom_id']];// sınıf bilgileri
+                        }
+                        $week[]=$groupDayLessons;
+                        $week[]=$groupDayClasrooms;
+                    }else{
+                        // günde tek ders var
+                        $week[] = ['lesson_id' => $day['lesson_id'], 'lecture_id' => $day['lecture_id']]; // ders bilgileri
+                        $week[] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri
+                    }
+                } else {
+                    //günde ders yok
+                    $week[] = null;// ders bilgileri
+                    $week[] = null;// sınıf bilgileri
+                }
+
+            } else $week[] = $this->{"day{$dayIndex}"};
+        }
+        return $week;
     }
 
     public function getdayName($dayString): string

@@ -3,7 +3,6 @@
  * @var string $page_title
  * @var array $departments
  * @var array $settings
- * @var array $current_semesters
  */
 ?>
 <!--begin::App Main-->
@@ -19,7 +18,7 @@
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Takvim İşlemleri</li>
-                        <li class="breadcrumb-item active">Program Düzenle</li>
+                        <li class="breadcrumb-item active">Program Dışa aktar</li>
                     </ol>
                 </div>
             </div>
@@ -63,14 +62,20 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <div id="nameHelp" class="form-text">
+                                            Bölüm seçilmezse tüm programlar dışa aktarılır
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label" for="program_id">Program</label>
                                         <select class="form-select" id="program_id" name="program_id">
-                                            <option value="0">İlk olarak Bölüm Seçiniz</option>
+                                            <option value="0">İlk olarak Program seçiniz</option>
                                         </select>
+                                        <div id="nameHelp" class="form-text">
+                                            Program seçilmezse tüm programlar dışa aktarılır
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -106,8 +111,8 @@
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="programSelect" id="programSelect"
-                                           value="Seç">
+                                    <input class="btn btn-primary" type="button" name="export" id="export"
+                                           value="Dışa aktar">
                                 </div>
                             </div>
                         </div>

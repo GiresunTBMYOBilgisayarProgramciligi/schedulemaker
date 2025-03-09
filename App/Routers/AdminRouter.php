@@ -584,6 +584,34 @@ class AdminRouter extends Router
         $this->callView("admin/schedules/editschedule", $this->view_data);
     }
 
+    /**
+     * @throws Exception
+     */
+    public function exportScheduleAction()
+    {
+        if (!isAuthorized("department_head")) {
+            throw new Exception("Ders programı Dışa aktarma yetkiniz yok");
+        }
+        $userController = new UserController();
+        $this->assetManager->loadPageAssets('exportschedule');
+        $departmentController = new DepartmentController();
+        $settingsController = new SettingsController();
+        if ($userController->canUserDoAction(8)) {
+            $departments = $departmentController->getDepartmentsList();
+        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+            $departments = [(new Department())->find($this->currentUser->department_id)];
+        } else {
+            throw new Exception("Bu işlem için yetkiniz yok");
+        }
+        $this->view_data = array_merge($this->view_data, [
+            "scheduleController" => new ScheduleController(),
+            "departments" => $departments,
+            "settings" => $settingsController->getSettings(),
+            "page_title" => "Ders Programı Dışa aktar",
+        ]);
+        $this->callView("admin/schedules/exportschedule", $this->view_data);
+    }
+
     /*
      * Ayarlar
      */

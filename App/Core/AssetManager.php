@@ -138,6 +138,16 @@ class AssetManager
                 ]
             ]
         ],
+        'exportschedule' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/formEvents.js'
+                ]
+            ]
+        ],
         'profilepage' => [
             'js' => [
                 [

@@ -291,6 +291,15 @@ use function App\Helpers\isAuthorized;
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="/admin/exportschedule"
+                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'exportschedule')) ? 'active' : ''; ?>">
+                                <i class="nav-icon bi bi-calendar2-plus"></i>
+                                <p>
+                                    Dışa Aktar
+                                </p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <?php endif; ?>
