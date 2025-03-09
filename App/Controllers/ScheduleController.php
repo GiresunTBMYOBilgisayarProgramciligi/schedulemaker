@@ -332,7 +332,7 @@ class ScheduleController extends Controller
                   data-lesson-code=\"$lesson->code\"
                   data-lesson-id=\"$lesson->id\">
                     <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name</div>
+                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
                       <a class=\"link-light link-underline-opacity-0\" href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> $lesson->lecturer_name
                     </div>
                     <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
