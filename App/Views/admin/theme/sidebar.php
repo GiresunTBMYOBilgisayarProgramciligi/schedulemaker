@@ -282,19 +282,19 @@ use function App\Helpers\isAuthorized;
                                 </p>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <!--<li class="nav-item">
                             <a href="#"
-                               class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editexamschedule')) ? 'active' : ''; ?>">
+                               class="nav-link <?php /*= (str_contains($_SERVER["REQUEST_URI"], 'editexamschedule')) ? 'active' : ''; */?>">
                                 <i class="nav-icon bi bi-calendar2-plus"></i>
                                 <p>
                                     Sınav Programını Düzenle
                                 </p>
                             </a>
-                        </li>
+                        </li>-->
                         <li class="nav-item">
                             <a href="/admin/exportschedule"
                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'exportschedule')) ? 'active' : ''; ?>">
-                                <i class="nav-icon bi bi-calendar2-plus"></i>
+                                <i class="nav-icon bi bi-box-arrow-down"></i>
                                 <p>
                                     Dışa Aktar
                                 </p>
