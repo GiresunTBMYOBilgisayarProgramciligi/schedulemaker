@@ -744,7 +744,12 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSetting("academic_year");
         }
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
+        if ($scheduleData['owner_type'] == "classroom") {
+            $classroom = (new Classroom())->find($scheduleData['owner_id']);
+            if ($classroom->type == 3) return;
+        }
         $schedules = $this->getListByFilters($scheduleData);
+
         if (!$schedules) {
             throw new Exception("Silinecek ders programı bulunamadı");
         }
