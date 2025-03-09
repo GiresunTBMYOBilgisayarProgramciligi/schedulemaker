@@ -5,7 +5,7 @@
 let unavailableCells;
 
 let preferredCells;
-let spinner= new Spinner();
+let spinner = new Spinner();
 /**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_id", lessonId);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""></option>`;
-        let spiner= new Spinner();
+        let spiner = new Spinner();
         spiner.showSpinner(classroomSelect.querySelector("option"))
         fetch("/ajax/getAvailableClassroomForSchedule", {
             method: "POST",
@@ -241,8 +241,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("lesson_id", lessonId);
         data.append("semester", document.getElementById("semester").value)
         data.append("academic_year", document.getElementById("academic_year").value);
-        let toast=new Toast();
-        toast.prepareToast("Yükleniyor","Hocanın programı kontrol ediliyor...");
+        let toast = new Toast();
+        toast.prepareToast("Yükleniyor", "Hocanın programı kontrol ediliyor...");
         return fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
             headers: {
@@ -364,13 +364,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 checkedHours++
             }
 
-            let toast= new Toast();
-            toast.prepareToast("Yükleniyor...","Ders, programa kaydediliyor...")
+            let toast = new Toast();
+            toast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
             let result = await saveSchedule(
                 {
                     "lesson_id": lessonId,
                     "schedule_time": scheduleTime,
-                    "lesson_hours": lessonHours,
+                    "lesson_hours": selectedHours,
                     "day_index": droppedCellIndex - 1,
                     "selected_classroom": selectedClassroom,
                     "semester_no": draggedElement.dataset.semesterNo,
