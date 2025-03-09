@@ -145,6 +145,14 @@ class AssetManager
                 ],
                 [
                     'path' => '/assets/js/formEvents.js'
+                ],
+                [//Select arama işlemi için
+                    'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
                 ]
             ]
         ],

@@ -608,7 +608,11 @@ class AdminRouter extends Router
             "departments" => $departments,
             "settings" => $settingsController->getSettings(),
             "page_title" => "Ders Programı Dışa aktar",
+            "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
+        if ($this->currentUser->role == "department_head") {
+            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+        } else $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/schedules/exportschedule", $this->view_data);
     }
 

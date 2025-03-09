@@ -3,6 +3,8 @@
  * @var string $page_title
  * @var array $departments
  * @var array $settings
+ * @var array $lecturers
+ * @var array $classrooms
  */
 ?>
 <!--begin::App Main-->
@@ -35,26 +37,13 @@
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="card card-primary card-outline">
-                        <div class="card-header">
-                            <h3 class="card-title">Program Seçin</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                    <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                    <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                </button>
-                            </div>
-                        </div>
                         <div class="card-body">
                             <!--begin::Row-->
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label" for="department_id">Bölüm</label>
-                                        <select class="form-select" id="department_id" name="department_id">
+                                        <select class="form-select tom-select" id="department_id" name="department_id">
                                             <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                             foreach ($departments as $department): ?>
                                                 <option value="<?= $department->id ?>">
@@ -113,6 +102,70 @@
                                 <div class="text-end">
                                     <input class="btn btn-primary" type="button" name="export" id="export"
                                            value="Dışa aktar">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--end::Row-->
+            <!--start::Row-->
+            <div class="row">
+                <div class="col-6">
+                    <div class="card card-primary card-outline">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="lecturer_id">Hoca</label>
+                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" >
+                                            <option></option>
+                                            <?php foreach ($lecturers as $lecturer): ?>
+                                                <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div id="nameHelp" class="form-text">
+                                            Hoca seçilmezse tüm hoca programları dışa aktarılır
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::card-body-->
+                        <div class="card-footer card-primary">
+                            <div class="row">
+                                <div class="text-end">
+                                    <input class="btn btn-primary" type="button" name="export2" id="export2" value="Dışa aktar">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card card-primary card-outline">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="classroom_id">Derslik</label>
+                                        <select class="form-select" id="classroom_id" name="classroom_id">
+                                            <option value="0">Derslik Seçiniz</option>
+                                            <?php foreach ($classrooms as $classroom): ?>
+                                                <option value="<?= $classroom->id ?>"><?= $classroom->name ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div id="nameHelp" class="form-text">
+                                            Derslik seçilmezse tüm derslik programları dışa aktarılır
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--end::card-body-->
+                        <div class="card-footer card-primary">
+                            <div class="row">
+                                <div class="text-end">
+                                    <input class="btn btn-primary" type="button" name="export3" id="export3" value="Dışa aktar">
                                 </div>
                             </div>
                         </div>
