@@ -114,7 +114,7 @@ use function App\Helpers\isAuthorized;
                                             <label class="form-label"  for="classroom_type">Sınıf Türü</label>
                                             <select class="form-select" id="classroom_type" name="classroom_type">
                                                 <?php foreach ($classroomTypes as $id=>$classroomType): ?>
-                                                    <option value="<?= $id ?>"><?= $classroomType ?></option>
+                                                    <option value="<?= $id ?>" <?=$id==$lesson->classroom_type ? "selected":""?>><?= $classroomType ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
