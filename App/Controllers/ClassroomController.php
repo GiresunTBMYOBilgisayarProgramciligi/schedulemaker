@@ -25,7 +25,7 @@ class ClassroomController extends Controller
      */
     public function getClassroomsList(): array
     {
-        return $this->getListByFilters();
+        return (new Classroom())->get()->all();
     }
 
     /**
