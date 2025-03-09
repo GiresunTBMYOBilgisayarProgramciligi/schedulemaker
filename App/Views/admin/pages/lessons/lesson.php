@@ -52,24 +52,26 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <div class="card-body">
                             <dl class="row">
-                                <dt class="col-sm-4">Ders Kodu</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->code, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Ders Adı</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->name, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Ders Türü</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Saat</dt>
-                                <dd class="col-sm-8"><?= $lesson->hours ?></dd>
-                                <dt class="col-sm-4">Dönemi</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->semester_no, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Bölüm</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getDepartment()->name, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Program</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Derslik Türü</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->getClassroomTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
-                                <dt class="col-sm-4">Akademik yıl ve Dönem</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($lesson->academic_year." ". $lesson->semester, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Ders Kodu</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->code, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Ders Adı</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Ders Türü</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Saat</dt>
+                                <dd class="col-sm-4"><?= $lesson->hours ?></dd>
+                                <dt class="col-sm-2">Dönemi</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->semester_no .". Yarıyıl", ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Bölüm</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getDepartment()->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Program</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Derslik Türü</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getClassroomTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Akademik yıl ve Dönem</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->academic_year." ". $lesson->semester, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Mevcudu</dt>
+                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->size, ENT_QUOTES, 'UTF-8') ?></dd>
                             </dl>
                         </div>
                         <div class="card-footer text-end">
