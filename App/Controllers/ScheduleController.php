@@ -398,7 +398,8 @@ class ScheduleController extends Controller
         if (key_exists("lesson_id", $filters)) {
             $lesson = (new Lesson())->find($filters['lesson_id']);
             unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
-            $classroomFilters["type"] = $lesson->classroom_type;
+            if ($lesson->classroom_type != 4) // karma sınıf için tür filtresi ekleme
+                $classroomFilters["type"] = $lesson->classroom_type;
         }
         $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
         $unavailable_classroom_ids = [];
@@ -413,7 +414,7 @@ class ScheduleController extends Controller
                     ]
                 );
                 foreach ($classroomSchedules as $classroomSchedule) {
-                    if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtiken gün boş değilse derslik uygun değildir
+                    if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
                         // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
                         $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
                     }
@@ -746,7 +747,7 @@ class ScheduleController extends Controller
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']);
-            if ($classroom->type == 3) return;
+            if ($classroom->type == 3) return; // uzaktan eğitim sınıfı ise programa kaydı yoktur
         }
         $schedules = $this->getListByFilters($scheduleData);
 

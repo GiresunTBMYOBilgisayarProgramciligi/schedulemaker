@@ -121,7 +121,8 @@ class ClassroomController extends Controller
         return [
             1 => "Derslik",
             2 => "Bilgisayar Laboratuvarı",
-            3 => "Uzaktan Eğitim Sınıfı"
+            3 => "Uzaktan Eğitim Sınıfı",
+            4 => "Karma" // hem lab hem sınıf olabilecek dersler için
         ];
     }
 }
