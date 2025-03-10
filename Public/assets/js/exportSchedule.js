@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
     exportButton2.addEventListener("click", async function () {
         if (lecturerSelect.value > 0) {
             data.append("owner_type", "user");
-            data.append("owner_id", programSelect.value);
+            data.append("owner_id", lecturerSelect.value);
         } else {
             data.append("owner_type", "user");
         }
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     exportButton3.addEventListener("click", async function () {
         if (classroomSelect.value > 0) {
             data.append("owner_type", "classroom");
-            data.append("owner_id", programSelect.value);
+            data.append("owner_id", classroomSelect.value);
         } else {
             data.append("owner_type", "classroom");
         }
