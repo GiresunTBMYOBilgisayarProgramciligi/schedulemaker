@@ -16,12 +16,12 @@ class Program extends Model
 
 
     /**
-     * @return Department Programın bağlı olduğu Department sınıfı
+     * @return Department
      * @throws Exception
      */
     public function getDepartment(): Department
     {
-        return new Department($this->department_id);
+        return (new Department)->find($this->department_id);
     }
 
     /**
