@@ -41,22 +41,24 @@ class ScheduleController extends Controller
     public function createScheduleHTMLTable(array $filters = []): string
     {
         $schedules = $this->getListByFilters($filters);
-        $semester_no = isset($filters['semester_no']) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
+        // eğer semerser_not dizi ise dönemler birleştirilmiş demektir.
+        $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
         $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [
-            "08.00 - 08.50" => (object)$this->generateEmptyWeek(),
-            "09.00 - 09.50" => (object)$this->generateEmptyWeek(),
-            "10.00 - 10.50" => (object)$this->generateEmptyWeek(),
-            "11.00 - 11.50" => (object)$this->generateEmptyWeek(),
-            "12.00 - 12.50" => (object)$this->generateEmptyWeek(),
-            "13.00 - 13.50" => (object)$this->generateEmptyWeek(),
-            "14.00 - 14.50" => (object)$this->generateEmptyWeek(),
-            "15.00 - 15.50" => (object)$this->generateEmptyWeek(),
-            "16.00 - 16.50" => (object)$this->generateEmptyWeek()
+            "08.00 - 08.50" => $this->generateEmptyWeek(),
+            "09.00 - 09.50" => $this->generateEmptyWeek(),
+            "10.00 - 10.50" => $this->generateEmptyWeek(),
+            "11.00 - 11.50" => $this->generateEmptyWeek(),
+            "12.00 - 12.50" => $this->generateEmptyWeek(),
+            "13.00 - 13.50" => $this->generateEmptyWeek(),
+            "14.00 - 14.50" => $this->generateEmptyWeek(),
+            "15.00 - 15.50" => $this->generateEmptyWeek(),
+            "16.00 - 16.50" => $this->generateEmptyWeek()
         ];
+
         /**
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
          */
@@ -65,7 +67,15 @@ class ScheduleController extends Controller
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
         foreach ($schedules as $schedule) {
-            $scheduleRows[$schedule->time] = $schedule->getWeek();
+
+            $week = $schedule->getWeek();
+
+            foreach ($week as $day => $value) {
+                if (!is_null($value)) {
+                    $scheduleRows[$schedule->time][$day] = $value;
+                }
+            }
+
         }
 
         $out =
@@ -79,7 +89,7 @@ class ScheduleController extends Controller
                                     <th>Çarşamba</th>
                                     <th>Perşembe</th>
                                     <th>Cuma</th>
-                                    <th>Cumartesi</th>
+                                    <!--<th>Cumartesi</th>-->
                                 </tr>
                                 </thead>
                                 <tbody>';
@@ -220,15 +230,15 @@ class ScheduleController extends Controller
         if (count($schedules) == 0) return false;
         //tablo verileri temizlenir
         $scheduleRows = [
-            "08.00 - 08.50" => (object)$this->generateEmptyWeek('excel'),
-            "09.00 - 09.50" => (object)$this->generateEmptyWeek('excel'),
-            "10.00 - 10.50" => (object)$this->generateEmptyWeek('excel'),
-            "11.00 - 11.50" => (object)$this->generateEmptyWeek('excel'),
-            "12.00 - 12.50" => (object)$this->generateEmptyWeek('excel'),
-            "13.00 - 13.50" => (object)$this->generateEmptyWeek('excel'),
-            "14.00 - 14.50" => (object)$this->generateEmptyWeek('excel'),
-            "15.00 - 15.50" => (object)$this->generateEmptyWeek('excel'),
-            "16.00 - 16.50" => (object)$this->generateEmptyWeek('excel')
+            "08.00 - 08.50" => $this->generateEmptyWeek('excel'),
+            "09.00 - 09.50" => $this->generateEmptyWeek('excel'),
+            "10.00 - 10.50" => $this->generateEmptyWeek('excel'),
+            "11.00 - 11.50" => $this->generateEmptyWeek('excel'),
+            "12.00 - 12.50" => $this->generateEmptyWeek('excel'),
+            "13.00 - 13.50" => $this->generateEmptyWeek('excel'),
+            "14.00 - 14.50" => $this->generateEmptyWeek('excel'),
+            "15.00 - 15.50" => $this->generateEmptyWeek('excel'),
+            "16.00 - 16.50" => $this->generateEmptyWeek('excel')
         ];
         /*
          * Veri tabanından alınan bilgileri ön tanımlı satırlar yerine yerleştiriliyor
@@ -553,18 +563,33 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSetting("academic_year");
         }
         $HTMLOUT = '';
+        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
+            // birleştirilmiş dönem
+            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+        } else {
+            $currentSemesters = getSemesterNumbers($filters["semester"]);
+            foreach ($currentSemesters as $semester_no) {
+                $filters['semester_no'] = $semester_no;
+                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+            }
+        }
+        return $HTMLOUT;
+    }
 
-        $currentSemesters = getSemesterNumbers($filters["semester"]);
+    /**
+     * @throws Exception
+     */
+    private function prepareScheduleCard($filters, bool $only_table = false): string
+    {
+        $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
 
-        foreach ($currentSemesters as $semester_no) {
-            $filters['semester_no'] = $semester_no;
-            $HTMLOUT .= '
+        $HTMLOUT = '
                 <!--begin::Row Program Satırı-->
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="card card-outline card-primary">
                             <div class="card-header">
-                                <h3 class="card-title">' . $semester_no . '. Yarıyıl Programı</h3>
+                                <h3 class="card-title">' . $semester_no . '</h3>
                                 <div class="card-tools">
                                     <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
                                         <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
@@ -579,13 +604,13 @@ class ScheduleController extends Controller
                             <div class="card-body">
                                 <!--begin::Row-->
                                 <div class="row">';
-            if (!$only_table) {
-                $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
-            }
-            $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
-            $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $semester_no . '">';
-            $HTMLOUT .= $this->createScheduleHTMLTable($filters);
-            $HTMLOUT .= '
+        if (!($only_table)) {
+            $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
+        }
+        $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
+        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $filters['semester_no'] . '">';
+        $HTMLOUT .= $this->createScheduleHTMLTable($filters);
+        $HTMLOUT .= '
 
                                     </div>
                                 </div>
@@ -596,8 +621,6 @@ class ScheduleController extends Controller
                 </div>
                 <!--end::Row-->
             ';
-
-        }
         return $HTMLOUT;
     }
 

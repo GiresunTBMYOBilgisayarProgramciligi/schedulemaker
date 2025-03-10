@@ -111,7 +111,7 @@ class Schedule extends Model
                     $week[] = null;// sınıf bilgileri
                 }
 
-            } else $week[] = $this->{"day{$dayIndex}"};
+            } else $week["day{$dayIndex}"] = $this->{"day{$dayIndex}"};
         }
         return $week;
     }

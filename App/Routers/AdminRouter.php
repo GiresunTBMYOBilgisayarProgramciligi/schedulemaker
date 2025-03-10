@@ -22,6 +22,7 @@ use App\Models\Program;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getCurrentSemester;
+use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\isAuthorized;
 
 /**
@@ -156,7 +157,15 @@ class AdminRouter extends Router
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "lesson_list" => $user->getLessonsList(),
             "departments" => (new DepartmentController())->getDepartmentsList(),
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $user->id, 'type' => 'lesson'], true),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'user',
+                    'owner_id' => $user->id,
+                    'type' => 'lesson',
+                    'semester_no' => ['in' => getSemesterNumbers()]
+                ],
+                true
+            ),
         ]);
         $this->callView("admin/profile", $this->view_data);
     }
@@ -218,7 +227,15 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "lesson" => $lesson,
             "page_title" => $lesson->name . " Sayfası",
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'lesson', 'owner_id' => $lesson->id, 'type' => 'lesson'], true),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'lesson',
+                    'owner_id' => $lesson->id,
+                    'type' => 'lesson',
+                    'semester_no' => ['in' => getSemesterNumbers()]
+                ],
+                true
+            ),
         ]);
         $this->callView("admin/lessons/lesson", $this->view_data);
     }
@@ -325,7 +342,13 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "classroom" => $classroom,
             "page_title" => $classroom->name . " Sayfası",
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'classroom', 'owner_id' => $classroom->id, 'type' => 'lesson'], true),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'classroom',
+                    'owner_id' => $classroom->id,
+                    'type' => 'lesson',
+                    'semester_no' => ['in' => getSemesterNumbers()]
+                ], true),
         ]);
         $this->callView("admin/classrooms/classroom", $this->view_data);
     }
