@@ -31,13 +31,9 @@ class Department extends Model
             return (new User())->find($this->chairperson_id);
     }
 
-    public function getProgramCount()
+    public function getProgramCount(): int
     {
-        $stmt = $this->database->prepare("Select count(*) as count from programs where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+        return (new Program())->get()->where(['department_id'=>$this->id])->count();
     }
 
     /**
@@ -46,17 +42,7 @@ class Department extends Model
      */
     public function getPrograms(): array
     {
-        $stmt = $this->database->prepare("Select * From programs where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $programs = $stmt->fetchAll();
-        $programs_list = array();
-        foreach ($programs as $programData) {
-            $program = new Program();
-            $program->fill($programData);
-            $programs_list[] = $program;
-        }
-        return $programs_list;
+        return (new Program())->get()->where(['department_id'=>$this->id])->all();
     }
 
     /**
@@ -65,17 +51,7 @@ class Department extends Model
      */
     public function getLecturers(): array
     {
-        $stmt = $this->database->prepare("Select * From users where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $lecturers = $stmt->fetchAll();
-        $lecturers_list = array();
-        foreach ($lecturers as $lecturerData) {
-            $lecturer = new User();
-            $lecturer->fill($lecturerData);
-            $lecturers_list[] = $lecturer;
-        }
-        return $lecturers_list;
+        return (new User())->get()->where(['department_id'=>$this->id,'!role'=>'user'])->all();
     }
 
     /**
@@ -84,11 +60,7 @@ class Department extends Model
      */
     public function getLecturerCount(): mixed
     {
-        $stmt = $this->database->prepare("Select count(*) as count from users where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+        return (new User())->get()->where(['department_id'=>$this->id,'!role'=>'user'])->count();
     }
 
     /**
@@ -97,17 +69,7 @@ class Department extends Model
      */
     public function getLessons(): array
     {
-        $stmt = $this->database->prepare("Select * From lessons where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $lessons = $stmt->fetchAll();
-        $lessons_list = array();
-        foreach ($lessons as $lessonData) {
-            $lesson = new Lesson();
-            $lesson->fill($lessonData);
-            $lessons_list[] = $lesson;
-        }
-        return $lessons_list;
+        return (new Lesson())->get()->where(['department_id'=>$this->id])->all();
     }
 
     /**
@@ -116,10 +78,6 @@ class Department extends Model
      */
     public function getLessonCount(): mixed
     {
-        $stmt = $this->database->prepare("Select count(*) as count from lessons where department_id=:id");
-        $stmt->bindValue(":id", $this->id, PDO::PARAM_INT);
-        $stmt->execute();
-        $data = $stmt->fetch();
-        return $data['count'];
+        return (new Lesson())->get()->where(['department_id'=>$this->id])->count();
     }
 }
