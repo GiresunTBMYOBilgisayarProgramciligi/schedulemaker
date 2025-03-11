@@ -48,7 +48,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     programSelect.dispatchEvent(new Event("change"));
                 })
                 .catch(error => {
-                    console.error("Programları alırken bir hata oluştu:", error);
+                    new Toast().prepareToast("Hata", "Programları alırken bir hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                    console.error(error);
                 });
         });
     }
