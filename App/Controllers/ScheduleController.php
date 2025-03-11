@@ -20,43 +20,66 @@ class ScheduleController extends Controller
     protected string $table_name = 'schedule';
     protected string $modelName = "App\Models\Schedule";
     /**
-     * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır. True değeri o gün program düzelemeye uygun anlamına gelir.
-     * @var true[]
+     * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
+     * @param $type string  html | excel
+     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
+     * @return array
      */
-    private array $emptyWeek = array(
-        "day0" => null,//Pazartesi
-        "day1" => null,//Salı
-        "day2" => null,//Çarşamba
-        "day3" => null,//Perşembe
-        "day4" => null,//Cuma
-        "day5" => null //Cumartesi
-    );
+    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = 4): array
+    {
+        $emptyWeek = [];
+        foreach (range(0, $maxDayIndex) as $index) {
+            $emptyWeek["day{$index}"] = null;
+            if ($type == 'excel')
+                $emptyWeek["classroom{$index}"] = null;
+        }
+        return $emptyWeek;
+    }
 
     /**
-     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
-     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
-     * @return string
+     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir dizi döner
+     * @param array $filters
+     * @return array|bool
      * @throws Exception
      */
-    public function createScheduleHTMLTable(array $filters = []): string
+    public function createScheduleExcelTable(array $filters = []): array|bool
     {
-        $schedules = $this->getListByFilters($filters);
-        // eğer semerser_not dizi ise dönemler birleştirilmiş demektir.
-        $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
-        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
+        $schedules = (new Schedule())->get()->where($filters)->all();
+        if (count($schedules) == 0) return false; //program boş ise false dön
+        $scheduleRows = $this->prepareScheduleRows($filters,'excel');
+        $scheduleArray = [];
+        $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
+
+        foreach ($scheduleRows as $time => $tableRow) {
+            $row = [$time];
+            foreach ($tableRow as $day) {
+                $row[] = $day;
+            }
+            $scheduleArray[] = $row;
+        }
+        return $scheduleArray;
+    }
+
+    /**
+     * Ders programı tablosunun verilerini oluşturur
+     * @throws Exception
+     */
+    private function prepareScheduleRows(array $filters = [], $type = "html"): array
+    {
+        $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [
-            "08.00 - 08.50" => $this->generateEmptyWeek(),
-            "09.00 - 09.50" => $this->generateEmptyWeek(),
-            "10.00 - 10.50" => $this->generateEmptyWeek(),
-            "11.00 - 11.50" => $this->generateEmptyWeek(),
-            "12.00 - 12.50" => $this->generateEmptyWeek(),
-            "13.00 - 13.50" => $this->generateEmptyWeek(),
-            "14.00 - 14.50" => $this->generateEmptyWeek(),
-            "15.00 - 15.50" => $this->generateEmptyWeek(),
-            "16.00 - 16.50" => $this->generateEmptyWeek()
+            "08.00 - 08.50" => $this->generateEmptyWeek($type),
+            "09.00 - 09.50" => $this->generateEmptyWeek($type),
+            "10.00 - 10.50" => $this->generateEmptyWeek($type),
+            "11.00 - 11.50" => $this->generateEmptyWeek($type),
+            "12.00 - 12.50" => $this->generateEmptyWeek($type),
+            "13.00 - 13.50" => $this->generateEmptyWeek($type),
+            "14.00 - 14.50" => $this->generateEmptyWeek($type),
+            "15.00 - 15.50" => $this->generateEmptyWeek($type),
+            "16.00 - 16.50" => $this->generateEmptyWeek($type)
         ];
 
         /**
@@ -67,17 +90,33 @@ class ScheduleController extends Controller
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
         foreach ($schedules as $schedule) {
-
-            $week = $schedule->getWeek();
-
+            $week = $schedule->getWeek($type);
             foreach ($week as $day => $value) {
                 if (!is_null($value)) {
                     $scheduleRows[$schedule->time][$day] = $value;
                 }
             }
-
         }
+        return $scheduleRows;
+    }
 
+    /**
+     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
+     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
+     * @return string
+     * @throws Exception
+     */
+    public function createScheduleHTMLTable(array $filters = []): string
+    {
+        $scheduleRows = $this->prepareScheduleRows($filters, "html");
+        // eğer semerser_not dizi ise dönemler birleştirilmiş demektir.
+        $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
+        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
+
+        /**
+         * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
+         */
+        $lessonHourCount = [];
         $out =
             '
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
@@ -128,19 +167,21 @@ class ScheduleController extends Controller
                             data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
-                                        <a class="link-light link-underline-opacity-0" href="/admin/lesson/' . $lesson->id . '\">
+                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i> 
                                         </a>
                                         ' . $lesson->getFullName() . '
                                     </div>
-                                    <div><a class="link-light link-underline-opacity-0" href="/admin/profile/' . $lesson->getLecturer()->id . '\">
+                                    <div><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lesson->getLecturer()->id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
                                     ' . $lecturerName . '</div>
                                 </div>
-                                <span  id="classroom-' . $column->classroom_id . '" class="badge bg-info rounded-pill">
-                                    <i class="bi bi-door-open"></i> ' . $classroomName . '
-                                </span>
+                                <a href="/admin/classroom/' . $column->classroom_id . '" class="link-light link-underline-opacity-0" target="_blank">
+                                    <span  id="classroom-' . $column->classroom_id . '" class="badge bg-info rounded-pill">
+                                        <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                    </span>
+                                </a>
                             </div>';
                         }
                         $out .= '</td>';
@@ -163,22 +204,24 @@ class ScheduleController extends Controller
                             data-semester="' . $semester . '">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
-                                    <a class="link-light link-underline-opacity-0" href="/admin/lesson/' . $lesson->id . '\">
+                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                         <i class="bi bi-book"></i>
                                     </a> 
                                     ' . $lesson->getFullName() . '
                                         
                                     </div>
                                     <div>
-                                    <a class="link-light link-underline-opacity-0" href="/admin/profile/' . $day->lecturer_id . '\">
+                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $day->lecturer_id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
                                     ' . $lecturerName . '
                                     </div>
                                 </div>
-                                <span id="classroom-' . $day->classroom_id . '" class="badge bg-info rounded-pill">
-                                    <i class="bi bi-door-open"></i> ' . $classroomName . '
-                                </span>
+                                <a href="/admin/classroom/' . $day->classroom_id . '" class="link-light link-underline-opacity-0" target="_blank">
+                                    <span id="classroom-' . $day->classroom_id . '" class="badge bg-info rounded-pill">
+                                        <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                    </span>
+                                </a>
                             </div>
                         </td>';
                     }
@@ -203,65 +246,79 @@ class ScheduleController extends Controller
     }
 
     /**
-     * @param $type string  html | excel
-     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
-     * @return array
+     * @param array $filters
+     * @param bool $only_table
+     * @return string
+     * @throws Exception
      */
-    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = 4): array
+    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
-        $emptyWeek = [];
-        foreach (range(0, $maxDayIndex) as $index) {
-            $emptyWeek["day{$index}"] = null;
-            if ($type == 'excel')
-                $emptyWeek["classroom{$index}"] = null;
+        if (!key_exists("semester", $filters)) {
+            $filters['semester'] = getSetting('semester');
         }
-        return $emptyWeek;
+        if (!key_exists("academic_year", $filters)) {
+            $filters['academic_year'] = getSetting("academic_year");
+        }
+        $HTMLOUT = '';
+        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
+            // birleştirilmiş dönem
+            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+        } else {
+            $currentSemesters = getSemesterNumbers($filters["semester"]);
+            foreach ($currentSemesters as $semester_no) {
+                $filters['semester_no'] = $semester_no;
+                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+            }
+        }
+        return $HTMLOUT;
     }
 
     /**
-     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir dizi döner
-     * @param array $filters
-     * @return array|bool
      * @throws Exception
      */
-    public function createScheduleExcelTable(array $filters = []): array|bool
+    private function prepareScheduleCard($filters, bool $only_table = false): string
     {
-        $schedules = (new Schedule())->get()->where($filters)->all();
-        if (count($schedules) == 0) return false;
-        //tablo verileri temizlenir
-        $scheduleRows = [
-            "08.00 - 08.50" => $this->generateEmptyWeek('excel'),
-            "09.00 - 09.50" => $this->generateEmptyWeek('excel'),
-            "10.00 - 10.50" => $this->generateEmptyWeek('excel'),
-            "11.00 - 11.50" => $this->generateEmptyWeek('excel'),
-            "12.00 - 12.50" => $this->generateEmptyWeek('excel'),
-            "13.00 - 13.50" => $this->generateEmptyWeek('excel'),
-            "14.00 - 14.50" => $this->generateEmptyWeek('excel'),
-            "15.00 - 15.50" => $this->generateEmptyWeek('excel'),
-            "16.00 - 16.50" => $this->generateEmptyWeek('excel')
-        ];
-        /*
-         * Veri tabanından alınan bilgileri ön tanımlı satırlar yerine yerleştiriliyor
-         */
-        foreach ($schedules as $schedule) {
-            $week = $schedule->getWeek('excel');
-            foreach ($week as $day => $value) {
-                if (!is_null($value)) {
-                    $scheduleRows[$schedule->time][$day] = $value;
-                }
-            }
-        }
-        $scheduleArray = [];
-        $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
+        $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
 
-        foreach ($scheduleRows as $time =>$tableRow) {
-            $row = [$time];
-            foreach ($tableRow as $day) {
-                $row[] = $day;
-            }
-            $scheduleArray[] = $row;
+        $HTMLOUT = '
+                <!--begin::Row Program Satırı-->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">' . $semester_no . '</h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
+                                        <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
+                                        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!--begin::Row-->
+                                <div class="row">';
+        if (!($only_table)) {
+            $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
         }
-        return $scheduleArray;
+        $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
+        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $filters['semester_no'] . '">';
+        $HTMLOUT .= $this->createScheduleHTMLTable($filters);
+        $HTMLOUT .= '
+
+                                    </div>
+                                </div>
+                                <!--end::Row-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end::Row-->
+            ';
+        return $HTMLOUT;
     }
 
     /**
@@ -345,8 +402,8 @@ class ScheduleController extends Controller
                   data-lesson-code=\"$lesson->code\"
                   data-lesson-id=\"$lesson->id\">
                     <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
-                      <a class=\"link-light link-underline-opacity-0\" href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> $lesson->lecturer_name
+                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
+                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> $lesson->lecturer_name
                     </div>
                     <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
                   </div>
@@ -551,81 +608,6 @@ class ScheduleController extends Controller
         return $result;
     }
 
-    /**
-     * @param array $filters
-     * @param bool $only_table
-     * @return string
-     * @throws Exception
-     */
-    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
-    {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
-        }
-        $HTMLOUT = '';
-        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
-            // birleştirilmiş dönem
-            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
-        } else {
-            $currentSemesters = getSemesterNumbers($filters["semester"]);
-            foreach ($currentSemesters as $semester_no) {
-                $filters['semester_no'] = $semester_no;
-                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
-            }
-        }
-        return $HTMLOUT;
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function prepareScheduleCard($filters, bool $only_table = false): string
-    {
-        $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
-
-        $HTMLOUT = '
-                <!--begin::Row Program Satırı-->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="card card-outline card-primary">
-                            <div class="card-header">
-                                <h3 class="card-title">' . $semester_no . '</h3>
-                                <div class="card-tools">
-                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                        <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <!--begin::Row-->
-                                <div class="row">';
-        if (!($only_table)) {
-            $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
-        }
-        $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
-        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $filters['semester_no'] . '">';
-        $HTMLOUT .= $this->createScheduleHTMLTable($filters);
-        $HTMLOUT .= '
-
-                                    </div>
-                                </div>
-                                <!--end::Row-->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!--end::Row-->
-            ';
-        return $HTMLOUT;
-    }
 
     /**
      * Schedule tablosuna yeni kayıt ekler
