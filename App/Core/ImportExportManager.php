@@ -246,8 +246,8 @@ class ImportExportManager
                     }
                 } else {
                     //id belirtilmemişse tüm programlar için filtre oluşturulacak
-                    $lecturers = (new Program())->get()->all();
-                    foreach ($lecturers as $program) {
+                    $programs = (new Program())->get()->all();
+                    foreach ($programs as $program) {
                         foreach ($semesterNumbers as $semester_no) {
                             // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
                             $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
