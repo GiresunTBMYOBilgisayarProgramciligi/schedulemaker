@@ -98,17 +98,17 @@ class Schedule extends Model
                             $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecture_id' => $groupLesson['lecture_id']]; // ders bilgileri
                             $groupDayClasrooms[] = ['classroom_id' => $groupLesson['classroom_id']];// sınıf bilgileri
                         }
-                        $week[]=$groupDayLessons;
-                        $week[]=$groupDayClasrooms;
+                        $week["day{$dayIndex}"]=$groupDayLessons;
+                        $week["classroom{$dayIndex}"]=$groupDayClasrooms;
                     }else{
                         // günde tek ders var
-                        $week[] = ['lesson_id' => $day['lesson_id'], 'lecture_id' => $day['lecture_id']]; // ders bilgileri
-                        $week[] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri
+                        $week["day{$dayIndex}"] = ['lesson_id' => $day['lesson_id'], 'lecture_id' => $day['lecture_id']]; // ders bilgileri
+                        $week["classroom{$dayIndex}"] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri
                     }
                 } else {
                     //günde ders yok
-                    $week[] = null;// ders bilgileri
-                    $week[] = null;// sınıf bilgileri
+                    $week["day{$dayIndex}"] = null;// ders bilgileri
+                    $week["classroom{$dayIndex}"] = null;// sınıf bilgileri
                 }
 
             } else $week["day{$dayIndex}"] = $this->{"day{$dayIndex}"};

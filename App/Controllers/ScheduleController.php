@@ -213,7 +213,7 @@ class ScheduleController extends Controller
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
             if ($type == 'excel')
-                $emptyWeek["Derslik"] = null;
+                $emptyWeek["classroom{$index}"] = null;
         }
         return $emptyWeek;
     }
@@ -244,15 +244,18 @@ class ScheduleController extends Controller
          * Veri tabanından alınan bilgileri ön tanımlı satırlar yerine yerleştiriliyor
          */
         foreach ($schedules as $schedule) {
-            $scheduleRows[$schedule->time] = $schedule->getWeek('excel');
+            $week = $schedule->getWeek('excel');
+            foreach ($week as $day => $value) {
+                if (!is_null($value)) {
+                    $scheduleRows[$schedule->time][$day] = $value;
+                }
+            }
         }
         $scheduleArray = [];
         $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
 
-        $times = array_keys($scheduleRows);
-        for ($i = 0; $i < count($times); $i++) {
-            $tableRow = $scheduleRows[$times[$i]];
-            $row = [$times[$i]];
+        foreach ($scheduleRows as $time =>$tableRow) {
+            $row = [$time];
             foreach ($tableRow as $day) {
                 $row[] = $day;
             }
