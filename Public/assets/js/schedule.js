@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
             .then(response => response.json())
             .then((data) => {
-                if (data.status === "error") {
+                if (data && data.status === "error") {
                     console.error(data.msg);
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
@@ -327,8 +327,9 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedHoursInput.dispatchEvent(new Event("change"))
 
         let classroomSelectForm = scheduleModal.body.querySelector("form");
-        scheduleModal.confirmButton.addEventListener("click", () => {
-            classroomSelectForm.dispatchEvent(new Event("submit"));
+        scheduleModal.confirmButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            classroomSelectForm.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
         })
 
         classroomSelectForm.addEventListener("submit", async function (event) {

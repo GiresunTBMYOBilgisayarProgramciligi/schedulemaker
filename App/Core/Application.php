@@ -33,6 +33,9 @@ class Application
      */
     protected $parameters = array();
 
+    /**
+     * @throws Exception
+     */
     public function __construct()
     {
         $this->ParseURL();
@@ -41,7 +44,7 @@ class Application
             if (method_exists($this->router, $this->action)) {
                 call_user_func_array([$this->router, $this->action], $this->parameters);
             } else {
-                throw new Exception("Böyle Bir Action Yok.");
+                throw new Exception("Böyle Bir Action Yok. | ". $this->action);
             }
     }
 
@@ -62,7 +65,7 @@ class Application
         if (!empty($request)) {
             $url = explode("/", $request);
             $this->router = isset($url[0]) ? ucfirst($url[0]) . "Router" : "HomeRouter";
-            $this->action = isset($url[1]) ? $url[1] . "Action" : "IndexAction";
+            $this->action = isset($url[1]) ? rtrim($url[1],"?") . "Action" : "IndexAction";
             unset($url[0], $url[1]);
             $this->parameters = !empty($url) ? array_values($url) : array();
         } else {

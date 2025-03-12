@@ -2,7 +2,7 @@
 
 namespace App\Core;
 
-use App\Core\View;
+use Exception;
 use JetBrains\PhpStorm\NoReturn;
 
 class Router
@@ -14,6 +14,7 @@ class Router
      * @param string $view_path örn admin/index ilk bölüm view adı sonrası view içerisinde dosya yolu(page klasörü içerisinde)
      * @param array $data view'e aktarılan veriler
      * @return void
+     * @throws Exception
      */
     public function callView(string $view_path, array $data = []): void
     {

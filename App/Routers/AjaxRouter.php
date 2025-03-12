@@ -72,6 +72,35 @@ class AjaxRouter extends Router
             return false;
     }
 
+    private function sendResponse(): void
+    {
+        // Cache kontrolü - tarayıcı önbelleğe almasın
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Pragma: no-cache");
+        header("Expires: " . gmdate("D, d M Y H:i:s", time() - 3600) . " GMT"); // 1 saat öncesine ayarlanmış tarih
+
+        // Firefox için bağlantı yönetimi
+        header("Connection: keep-alive");
+
+        // İçerik tipi ve karakter kodlaması
+        header('Content-Type: application/json; charset=utf-8');
+        // CORS başlıkları - ihtiyacınıza göre düzenleyin
+        header("Access-Control-Allow-Origin: *"); // Belirli bir domain için sınırlandırabilirsiniz
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type, X-Requested-With");
+        // Hata raporlamasını kapatın (üretim ortamında)
+        ini_set('display_errors', 0);
+
+        // Yanıtın sıkıştırılması (isteğe bağlı, performans artırır)
+        if (extension_loaded('zlib') && !ini_get('zlib.output_compression')) {
+            ini_set('zlib.output_compression', 'On');
+        }
+
+        // JSON çıktısını oluştururken Türkçe karakterler için Unicode desteği
+        echo json_encode($this->response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit; // İşlem sonlandırma
+    }
+
     /*
      * User Ajax Actions
      */
@@ -97,8 +126,7 @@ class AjaxRouter extends Router
             "msg" => "Kullanıcı başarıyla eklendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -127,8 +155,7 @@ class AjaxRouter extends Router
             "msg" => "Kullanıcı başarıyla Güncellendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -145,8 +172,7 @@ class AjaxRouter extends Router
             "msg" => "Kullanıcı başarıyla Silindi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -176,8 +202,7 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function updateLessonAction(): void
@@ -209,8 +234,7 @@ class AjaxRouter extends Router
             "status" => "success",
 
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -232,8 +256,7 @@ class AjaxRouter extends Router
             "msg" => "Ders Başarıyla Silindi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -251,8 +274,7 @@ class AjaxRouter extends Router
             "msg" => "Derslik başarıyla eklendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function updateClassroomAction(): void
@@ -266,8 +288,7 @@ class AjaxRouter extends Router
             "msg" => "Derslik başarıyla Güncellendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -284,8 +305,7 @@ class AjaxRouter extends Router
             "msg" => "Derslik başarıyla silindi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -306,8 +326,7 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function updateDepartmentAction(): void
@@ -322,8 +341,7 @@ class AjaxRouter extends Router
             "msg" => "Bölüm başarıyla Güncellendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -340,8 +358,7 @@ class AjaxRouter extends Router
             "msg" => "Bölüm Başarıyla Silindi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -362,8 +379,7 @@ class AjaxRouter extends Router
                 "status" => "success",
             );
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function updateProgramAction(): void
@@ -378,8 +394,7 @@ class AjaxRouter extends Router
             "msg" => "Program Başarıyla Güncellendi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -396,8 +411,7 @@ class AjaxRouter extends Router
             "msg" => "Program Başarıyla Silindi.",
             "status" => "success",
         );
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function getProgramsListAction($department_id): void
@@ -406,8 +420,7 @@ class AjaxRouter extends Router
         $programs = $programController->getProgramsList($department_id);
         $this->response['status'] = "success";
         $this->response['programs'] = $programs;
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -423,8 +436,7 @@ class AjaxRouter extends Router
         $schedulesHTML = $scheduleController->getSchedulesHTML($this->data);
         $this->response['status'] = "success";
         $this->response['HTML'] = $schedulesHTML;
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function getAvailableClassroomForScheduleAction(): void
@@ -436,8 +448,7 @@ class AjaxRouter extends Router
         $classrooms = $scheduleController->availableClassrooms($this->data);
         $this->response['status'] = "success";
         $this->response['classrooms'] = $classrooms;
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -540,8 +551,7 @@ class AjaxRouter extends Router
         } else {
             throw new Exception("Kaydedilecek ders id numarası yok ");
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -571,8 +581,7 @@ class AjaxRouter extends Router
                 $this->response = array_merge($this->response, array("status" => "success"));
             }
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -638,8 +647,7 @@ class AjaxRouter extends Router
                 ];
             }
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -708,8 +716,7 @@ class AjaxRouter extends Router
             });
             $scheduleController->deleteSchedule($filters);
         }
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /**
@@ -719,14 +726,14 @@ class AjaxRouter extends Router
     {
         if (!isAuthorized('department_head'))
             throw new Exception("Ders Programı Dışa Aktarma Yetkiniz Yok");
-        $filters=$this->data;
+        $filters = $this->data;
         if (!key_exists('type', $filters)) {
             throw new Exception("Dışarı aktarma işlemi için tür seçilmemiş.");
         }
         if (!key_exists('owner_type', $filters)) {
             throw new Exception("Dışarı aktarma işlemi için ders programı sahibi seçilmemiş.");
         }
-        $importExportManager= new ImportExportManager();
+        $importExportManager = new ImportExportManager();
         $importExportManager->exportSchedule($filters);
     }
 
@@ -750,8 +757,7 @@ class AjaxRouter extends Router
         }
         $this->response['status'] = "success";
         $this->response['msg'] = "Ayarlar kaydedildi";
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     /*
@@ -764,8 +770,7 @@ class AjaxRouter extends Router
         $this->response['status'] = "success";
         $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
         $this->response['errors'] = $result['errors'];
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 
     public function importLessonsAction(): void
@@ -775,7 +780,6 @@ class AjaxRouter extends Router
         $this->response['status'] = "success";
         $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
         $this->response['errors'] = $result['errors'];
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($this->response);
+        $this->sendResponse();
     }
 }
