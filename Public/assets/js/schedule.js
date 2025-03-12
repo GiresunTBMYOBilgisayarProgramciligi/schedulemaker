@@ -561,50 +561,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Yeni ders eklendi");
             cell.appendChild(draggedElement);
         } else console.error("Yeni ders Eklenemedi")
-
-
-        /* dersleri toplu halde taşıma işlemi için aşağıdaki kodları yazdım. ama çok sorun çıkartıyor tek tek taşıyacağım
-        let draggedLessonOrder = draggedElement.id.match(/-(\d+)$/)[1];
-        let lessonID = draggedElement.id.replace(/-\d+$/, "");
-        let lessonsInTable = table.querySelectorAll('[id^="' + lessonID + '"]');
-        lessonsInTable.forEach((lesson) => {
-            lesson.remove()
-        })
-        //dersin bırakıldığı satırın tablo içindeki index numarası
-        let droppedRowIndex = dropZone.closest("tr").rowIndex
-        //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        let droppedCellIndex = dropZone.cellIndex
-
-        function checkTable(rowIndex) {
-            // tablo sınırlarına dışına çıkarsa 0. satır başlık satırı
-            if (rowIndex < 1 || rowIndex > table.rows.length - 1) {
-                new Toast().prepareToast("Hata", "Ders belirtilen alana sığmadı", "danger")
-                return false;
-            }
-            return true;
-        }
-
-        let luchtimePassed = false;
-        for (let i = 0; i < lessonsInTable.length; i++) {
-            let lesson = lessonsInTable[i];
-            let lessonOrder = lesson.id.match(/-(\d+)$/)[1];
-            let shift = parseInt(draggedLessonOrder) - parseInt(lessonOrder);//dersin sürüklenen derse göre konumunu belirlemek için kullaılır
-            let newRowIndex = parseInt(droppedRowIndex) - shift
-            if (luchtimePassed) newRowIndex += 1;
-            if (!checkTable(newRowIndex)) return;
-            let row = table.rows[newRowIndex];
-            let cell = row.cells[droppedCellIndex];
-            if (!checkTable(cell, newRowIndex)) return;
-            if (!checkLessonCrash(cell, lesson)) return;
-            // Eğer hücre "drop-zone" sınıfına sahip değilse satırı bir arttır. Öğle arası kontrolü
-            if (!cell.classList.contains("drop-zone")) {
-                newRowIndex += 1;
-                luchtimePassed = true;
-                let row = table.rows[newRowIndex];
-                cell = row.cells[droppedCellIndex];
-            }
-            cell.appendChild(lesson);
-        }*/
     }
 
     /**
