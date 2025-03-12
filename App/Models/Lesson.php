@@ -88,4 +88,27 @@ class Lesson extends Model
     {
         return (new LessonController())->getTypeList()[$this->type] ?? "";
     }
+
+    /**
+     * Ders saati ile ders adına kayıtlı schedule sayısı aynı ise ders ders programı tamamlanmıştır.
+     * @return bool true if complete
+     * @throws Exception
+     */
+    public function IsScheduleComplete(): bool
+    {
+        $result = false;
+        //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+        $schedules = (new Schedule())->get()->where([
+            'owner_id' => $this->id,
+            'semester_no' => $this->semester_no,
+            'owner_type' => 'lesson',
+            'academic_year' => $this->academic_year,
+            'type' => 'lesson',
+            'semester' => $this->semester
+        ])->all();
+        if (count($schedules) == $this->hours) {
+            $result = true;
+        }
+        return $result;
+    }
 }

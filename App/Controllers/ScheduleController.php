@@ -19,6 +19,7 @@ class ScheduleController extends Controller
 
     protected string $table_name = 'schedule';
     protected string $modelName = "App\Models\Schedule";
+
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
      * @param $type string  html | excel
@@ -46,7 +47,7 @@ class ScheduleController extends Controller
     {
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0) return false; //program boş ise false dön
-        $scheduleRows = $this->prepareScheduleRows($filters,'excel');
+        $scheduleRows = $this->prepareScheduleRows($filters, 'excel');
         $scheduleArray = [];
         $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
 
@@ -339,7 +340,7 @@ class ScheduleController extends Controller
             }
             if ($filters['owner_type'] == "program") {
                 $lessonFilters = [];
-                if (array_key_exists("semester_no", $filters)) {
+                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
                     $lessonFilters['semester_no'] = $filters['semester_no'];
                 } else {
                     throw new Exception("Yarıyıl bilgisi yok");
@@ -348,21 +349,15 @@ class ScheduleController extends Controller
                     'program_id' => $filters['owner_id'],
                     'semester' => $filters['semester'],
                     'academic_year' => $filters['academic_year'],
-                    '!type' => 4
+                    '!type' => 4// staj dersleri dahil değil
                 ]);
-                $lessonsList = (new LessonController())->getListByFilters($lessonFilters);
-                /*
+                $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
+                /**
                  * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
                  */
                 foreach ($lessonsList as $lesson) {
-                    if (!$this->checkIsScheduleComplete(
-                        [
-                            'owner_type' => 'lesson',
-                            'owner_id' => $lesson->id,
-                            "semester" => $filters['semester'],
-                            "semester_no" => $filters['semester_no'],
-                            "academic_year" => $filters['academic_year'],
-                        ])) {
+                    if (!$lesson->IsScheduleComplete()) {
                         //Ders Programı tamamlanmamışsa
                         $lesson->lecturer_name = $lesson->getLecturer()->getFullName(); // ders sınıfına Hoca adı ekleniyor
                         $lesson->lecturer_id = $lesson->getLecturer()->id;
@@ -577,38 +572,6 @@ class ScheduleController extends Controller
         }
         return true;
     }
-
-    /**
-     * Gelen owner_type a göre belirlenen koşulların sağlanıp sağlanmadığını kontrol ederek Takvimin tamamlanıp tamamlanmadığını döner
-     * @param array $filters kontrol edilecek Modelin bilgilerini içerir lesson, lecturer,program,department
-     * @return bool
-     * @throws Exception
-     */
-    public function checkIsScheduleComplete(array $filters = []): bool
-    {
-        $result = true;
-        if (array_key_exists('owner_type', $filters) and array_key_exists('owner_id', $filters)) {
-            if (!key_exists("semester", $filters)) {
-                $filters['semester'] = getSetting('semester');
-            }
-            if (!key_exists("academic_year", $filters)) {
-                $filters['academic_year'] = getSetting("academic_year");
-            }
-            if ($filters['owner_type'] == "lesson") {
-                //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
-                $schedules = $this->getListByFilters($filters);
-                $lessonController = new LessonController();
-                $lesson = (new Lesson())->find($filters['owner_id']);
-                if (count($schedules) < $lesson->hours) {
-                    $result = false;
-                }
-            }//todo diğer türler için işlemler
-        } else {
-            throw new Exception("owner_type ve/veya owner_id belirtilmemiş");
-        }
-        return $result;
-    }
-
 
     /**
      * Schedule tablosuna yeni kayıt ekler
