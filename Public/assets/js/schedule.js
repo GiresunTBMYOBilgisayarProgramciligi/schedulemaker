@@ -614,6 +614,13 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function dropHandler(element, event) {
         event.preventDefault();
+        let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+        dropZones.forEach((dropZone)=>{
+            dropZone.style.border = ""
+            const tooltip = bootstrap.Tooltip.getInstance(dropZone);
+            if (tooltip)
+                tooltip.hide()
+        })
         /**
          * Bırakma eyleminin yapıldığı ana element (eventListenner'ı olan)
          */
@@ -677,6 +684,16 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData(data, event.target.dataset[data])
         }
         if (event.target.closest("table")) {
+            let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+            dropZones.forEach((dropZone)=>{
+                dropZone.style.border = "2px dashed"
+                // Bootstrap tooltip nesnesini oluştur
+                const tooltip = new bootstrap.Tooltip(dropZone, {
+                    trigger: 'manual', // Elle kontrol edeceğiz
+                    placement: 'right'
+                });
+                tooltip.show();
+            })
             event.dataTransfer.setData("start_element", "table")
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
