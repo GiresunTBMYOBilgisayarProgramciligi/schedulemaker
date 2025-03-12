@@ -103,9 +103,12 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      */
     function checkLessonCrash(dropZone, draggedElement) {
-        if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) {
+        /*
+        * dersler "scheduleTable-" ile başlayan idler içerir
+         */
+        if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length !== 0) { // ders var mı ?
             //eğer zeten iki grup eklenmişse
-            if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) {
+            if (dropZone.querySelectorAll('[id^=\"scheduleTable-\"]').length > 1) { // birden fazla ders var mı ?
                 console.log("Zaten iki ders var")
                 new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
                 return false;
@@ -186,7 +189,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         classroomSelect.appendChild(option)
                     })
                 }
-
             })
             .catch((error) => {
                 new Toast().prepareToast("Hata", "Uygun ders listesi alınırken hata oluştu", "danger");
@@ -395,7 +397,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     let lesson = draggedElement.cloneNode(true)
                     lesson.dataset['scheduleDay'] = droppedCellIndex - 1;
-                    lesson.dataset['scheduleTime'] = row.cells[0].innerText;
+                    lesson.dataset['scheduleTime'] = row.cells[0].innerText;//todo derslik bağlantısı
                     lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
                     cell.appendChild(lesson);
 
