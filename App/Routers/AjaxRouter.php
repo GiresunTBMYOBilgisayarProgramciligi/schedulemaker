@@ -471,11 +471,6 @@ class AjaxRouter extends Router
             $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
-            //todo bu kısımda her bir model için yetki kontrolü yapılablir. Şuanda saveNew içerisinde yapılıyor. owner sıralamasına göre yapılıyor.
-            if (!isAuthorized("submanager", false, $lesson)) {
-                // Dersin sahibi yada bölümbaşkanı değilsen yada müdür yardımcısı ve üstü bir rolün yoksa
-
-            }
             /*
              * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
              */

@@ -528,7 +528,7 @@ class ScheduleController extends Controller
                 if ($owner_type == "program") {
                     $ownerFilter["semester_no"] = $filters["semester_no"];
                 }
-                $schedules = $this->getListByFilters($ownerFilter);
+                $schedules = (new Schedule())->get()->where($ownerFilter)->all();
                 foreach ($schedules as $schedule) {
                     if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
                         if (is_array($schedule->{$filters["day"]})) {
@@ -556,11 +556,14 @@ class ScheduleController extends Controller
                                 if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
                                     // yeni eklenecek olan ders gruplu değil
                                     throw new Exception("Gruplu bir dersin yanına sadece gruplu bir ders eklenebilir.");
-                                } else {
-                                    //elenecek olan ders de gruplu
-                                    // grup uygunluğu kontrolü javascript ile yapılıyor
-                                    return true;
                                 }
+                                    //diğer durumda ekenecek olan ders de gruplu
+                                    // grup uygunluğu kontrolü javascript ile yapılıyor
+                            }
+                            $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']);
+                            $newClassroom = (new Classroom())->find($filters['owners']['classroom']);
+                            if ($classroom->name == $newClassroom->name) {
+                                throw new Exception("Derslikler çakışıyor");
                             }
                         }
                     }
