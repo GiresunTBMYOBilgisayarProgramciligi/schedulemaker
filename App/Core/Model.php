@@ -349,8 +349,10 @@ class Model
      * @return object|null
      * @throws Exception
      */
-    public function find(int $id): ?object
+    public function find($id): ?object
     {
+        if (is_null($id))
+            throw new Exception("İd değeri doğru belirtilmediği için aranan nesne bulunamadı");
         $model=$this->where(['id' => $id])->first();
         if (!$model) throw new Exception($this->table_name ." tabosunda sonuç bulunamadı.");
         return $model;
