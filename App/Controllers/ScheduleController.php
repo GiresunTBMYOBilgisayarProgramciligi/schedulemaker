@@ -392,7 +392,8 @@ class ScheduleController extends Controller
         }
         $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
                                          data-semester-no="' . $filters['semester_no'] . '"
-                                         style="max-height: 90vh;overflow: auto;">';
+                                         style="max-height: 90vh;overflow: auto;"
+                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {
             $HTMLOut .= "
