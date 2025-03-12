@@ -470,7 +470,7 @@ class AjaxRouter extends Router
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
-            $classroom = $classroomController->getListByFilters(["name" => trim($this->data['classroom_name'])])[0];
+            $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
             //todo bu kısımda her bir model için yetki kontrolü yapılablir. Şuanda saveNew içerisinde yapılıyor. owner sıralamasına göre yapılıyor.
             if (!isAuthorized("submanager", false, $lesson)) {
                 // Dersin sahibi yada bölümbaşkanı değilsen yada müdür yardımcısı ve üstü bir rolün yoksa
@@ -516,29 +516,34 @@ class AjaxRouter extends Router
                         "classroom_id" => $classroom->id,
                         "lecturer_id" => $lecturer->id,
                     ];
-
-                    $schedule = new Schedule();
-                    /*
-                     * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
-                     * Bu değerler için döngü oluşturuluyor
-                     */
-                    foreach ($crashFilters['owners'] as $owner_type => $owner_id) {
-                        $schedule->fill([
-                            "type" => "lesson",
-                            "owner_type" => $owner_type,
-                            "owner_id" => $owner_id,
-                            "day" . $this->data['day_index'] => $day,
-                            "time" => $time,
-                            "semester_no" => trim($this->data['semester_no']),
-                            "semester" => $this->data['semester'],
-                            "academic_year" => $this->data['academic_year'],
-                        ]);
-                        $savedId = $scheduleController->saveNew($schedule);
-                        if ($savedId == 0) {
-                            throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
-                        } else
-                            $this->response[$owner_type . "_result"] = $savedId;
+                    $lesson = (new Lesson())->find($day["lesson_id"]);
+                    if (!$lesson->IsScheduleComplete()) {
+                        $schedule = new Schedule();
+                        /*
+                         * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
+                         * Bu değerler için döngü oluşturuluyor
+                         */
+                        foreach ($crashFilters['owners'] as $owner_type => $owner_id) {
+                            $schedule->fill([
+                                "type" => "lesson",
+                                "owner_type" => $owner_type,
+                                "owner_id" => $owner_id,
+                                "day" . $this->data['day_index'] => $day,
+                                "time" => $time,
+                                "semester_no" => trim($this->data['semester_no']),
+                                "semester" => $this->data['semester'],
+                                "academic_year" => $this->data['academic_year'],
+                            ]);
+                            $savedId = $scheduleController->saveNew($schedule);
+                            if ($savedId == 0) {
+                                throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
+                            } else
+                                $this->response[$owner_type . "_result"] = $savedId;
+                        }
+                    } else {
+                        throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
                     }
+
                 }
 
                 $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
