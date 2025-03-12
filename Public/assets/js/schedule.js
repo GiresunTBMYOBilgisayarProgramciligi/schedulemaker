@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let classroomSelectForm = scheduleModal.body.querySelector("form");
         scheduleModal.confirmButton.addEventListener("click", (event) => {
             event.preventDefault();
-            classroomSelectForm.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
+            classroomSelectForm.dispatchEvent(new SubmitEvent("submit", {cancelable: true}));
         })
 
         classroomSelectForm.addEventListener("submit", async function (event) {
@@ -543,24 +543,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 "academic_year": document.getElementById("academic_year").value
             });
         if (deleteResult) {
-            console.log("Eski ders Silindi");
+            let saveResult = await saveSchedule(
+                {
+                    "lesson_id": draggedElement.dataset.lessonId,
+                    "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
+                    "lesson_hours": 1,
+                    "day_index": droppedCellIndex - 1,
+                    "selected_classroom": draggedElement.querySelector("span.badge").innerText,
+                    "semester_no": draggedElement.dataset.semesterNo,
+                    "semester": document.getElementById("semester").value,
+                    "academic_year": document.getElementById("academic_year").value
+                });
+            if (saveResult) {
+                console.log("Yeni ders eklendi");
+                //update dataset
+                draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
+                draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
+                cell.appendChild(draggedElement);
+            } else console.error("Yeni ders Eklenemedi")
         } else console.log("Eski ders Silinemedi");
 
-        let saveResult = await saveSchedule(
-            {
-                "lesson_id": draggedElement.dataset.lessonId,
-                "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
-                "lesson_hours": 1,
-                "day_index": droppedCellIndex - 1,
-                "selected_classroom": draggedElement.querySelector("span.badge").innerText,
-                "semester_no": draggedElement.dataset.semesterNo,
-                "semester": document.getElementById("semester").value,
-                "academic_year": document.getElementById("academic_year").value
-            });
-        if (saveResult) {
-            console.log("Yeni ders eklendi");
-            cell.appendChild(draggedElement);
-        } else console.error("Yeni ders Eklenemedi")
     }
 
     /**
@@ -571,7 +573,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function dropHandler(element, event) {
         event.preventDefault();
         let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-        dropZones.forEach((dropZone)=>{
+        dropZones.forEach((dropZone) => {
             dropZone.style.border = ""
             const tooltip = bootstrap.Tooltip.getInstance(dropZone);
             if (tooltip)
@@ -641,7 +643,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (event.target.closest("table")) {
             let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-            dropZones.forEach((dropZone)=>{
+            dropZones.forEach((dropZone) => {
                 dropZone.style.border = "2px dashed"
                 // Bootstrap tooltip nesnesini oluştur
                 const tooltip = new bootstrap.Tooltip(dropZone, {
