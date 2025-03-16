@@ -112,15 +112,14 @@ class AssetManager
         'formpages' => [
             'js' => [
                 [
+                    'path' => '/assets/js/formEvents.js'
+                ],
+                [
                     'path' => '/assets/js/ajax.js'
                 ],
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
                 ],
-                [
-                    'path' => '/assets/js/formEvents.js'
-                ],
-
             ],
             'css' => [
                 [
@@ -131,10 +130,10 @@ class AssetManager
         'editschedule' => [
             'js' => [
                 [
-                    'path' => '/assets/js/schedule.js'
+                    'path' => '/assets/js/formEvents.js'
                 ],
                 [
-                    'path' => '/assets/js/formEvents.js'
+                    'path' => '/assets/js/schedule.js'
                 ]
             ]
         ],
