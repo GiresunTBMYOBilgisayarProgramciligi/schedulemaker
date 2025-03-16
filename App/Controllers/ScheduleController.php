@@ -279,6 +279,7 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
+        //Semester No dizi ise dönemler birleştirilmiş demektir
         $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
 
         $HTMLOUT = '
@@ -306,7 +307,8 @@ class ScheduleController extends Controller
             $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
         }
         $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
-        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" data-semester-no="' . $filters['semester_no'] . '">';
+        $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
+        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" ' . $dataSemesterNo . '>';
         $HTMLOUT .= $this->createScheduleHTMLTable($filters);
         $HTMLOUT .= '
 
@@ -557,8 +559,8 @@ class ScheduleController extends Controller
                                     // yeni eklenecek olan ders gruplu değil
                                     throw new Exception("Gruplu bir dersin yanına sadece gruplu bir ders eklenebilir.");
                                 }
-                                    //diğer durumda ekenecek olan ders de gruplu
-                                    // grup uygunluğu kontrolü javascript ile yapılıyor
+                                //diğer durumda ekenecek olan ders de gruplu
+                                // grup uygunluğu kontrolü javascript ile yapılıyor
                             }
                             $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']);
                             $newClassroom = (new Classroom())->find($filters['owners']['classroom']);
