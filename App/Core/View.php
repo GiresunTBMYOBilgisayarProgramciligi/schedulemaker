@@ -44,8 +44,8 @@ class View
                 if (file_exists($this->view_folder . '/pages/' . $this->view_page . '.php')) {
                     extract($this->view_data);
                     ob_start();
-                    ob_get_clean();
                     include $this->view_folder . '/' . 'theme.php';
+                    ob_end_flush();
                 } else {
                     throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
                 }
