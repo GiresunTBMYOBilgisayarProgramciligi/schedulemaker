@@ -74,6 +74,34 @@ use function App\Helpers\isAuthorized;
                                 <dd class="col-sm-4"><?= htmlspecialchars($lesson->academic_year . " " . $lesson->semester, ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt class="col-sm-2">Mevcudu</dt>
                                 <dd class="col-sm-4"><?= htmlspecialchars($lesson->size, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <?php
+                                if ($lesson->getParentLesson()):
+                                    ?>
+                                    <dt class="col-sm-2">Bağlı Olduğu Ders</dt>
+                                    <dd class="col-sm-10 p-0">
+                                        <a class="link-dark link-underline-opacity-0"
+                                           href="/admin/lesson/<?= $lesson->getParentLesson()->id ?>">
+                                            <?= htmlspecialchars($lesson->getParentLesson()->getFullName() . "-" . $lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?>
+                                        </a>
+                                    </dd>
+                                <?php endif; ?>
+                                <?php
+                                if (count($lesson->getChildLessonList()) > 0):
+                                    ?>
+                                    <dt class="col-sm-2">Bağlı Dersler</dt>
+                                    <dd class="col-sm-10 p-0">
+                                        <ul class="list-group list-group-flush">
+                                            <?php
+                                            foreach ($lesson->getChildLessonList() as $childLesson) {
+                                                echo '<li class="list-group-item"><a href="/admin/lesson/' . $childLesson->id . '" class="link-dark link-underline-opacity-0">';
+                                                echo htmlspecialchars($childLesson->getFullName() . "-" . $childLesson->getProgram()->name, ENT_QUOTES, 'UTF-8') . "<br>";
+                                                echo '</a></li>';
+                                            }
+                                            ?>
+                                        </ul>
+
+                                    </dd>
+                                <?php endif; ?>
                             </dl>
                         </div>
                         <div class="card-footer text-end">
@@ -146,7 +174,8 @@ use function App\Helpers\isAuthorized;
 <div class="modal" tabindex="-1" id="CombineLessonModal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/ajax/combineLesson" name="CombineLesson" id="CombineLesson" method="post" class="ajaxFormCombineLesson" title="Dersler birleştiriliyor">
+            <form action="/ajax/combineLesson" name="CombineLesson" id="CombineLesson" method="post"
+                  class="ajaxFormCombineLesson" title="Dersler birleştiriliyor">
                 <div class="modal-body">
                     <div class="accordion " id="accordionCombineLesson">
                         <div class="accordion-item">
@@ -168,12 +197,12 @@ use function App\Helpers\isAuthorized;
                                     <select class="form-select" name="parent_lesson_id" id="parent_lesson_id">
                                         <option value="0">Ders Seçiniz</option>
                                         <?php
-                                        $programName="";
+                                        $programName = "";
                                         /** @var Lesson $combineLesson */
                                         foreach ($combineLessonList as $combineLesson):
-                                            if ($programName!= $combineLesson->getProgram()->name){
+                                            if ($programName != $combineLesson->getProgram()->name) {
                                                 $programName = $combineLesson->getProgram()->name;
-                                                echo  '<option disabled>'.$programName.'</option>';
+                                                echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
                                             <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?></option>
@@ -197,17 +226,18 @@ use function App\Helpers\isAuthorized;
                                         Bu derse bağlanan dersler programda düzenlenemezler. Bağlı ders bağlandığı ders
                                         hangi gün ve saate eklenirse o saate otomatik olarak eklenir
                                     </p>
-                                    <input type="hidden" name="lesson_id" id="parent_lesson_id" value="<?= $lesson->id ?>">
+                                    <input type="hidden" name="lesson_id" id="parent_lesson_id"
+                                           value="<?= $lesson->id ?>">
                                     <label for="child_lesson_id" class="form-label">Birleştirilecek Ders</label>
                                     <select class="form-select" name="child_lesson_id" id="child_lesson_id">
                                         <option value="0">Ders Seçiniz</option>
                                         <?php
-                                        $programName="";
+                                        $programName = "";
                                         /** @var Lesson $combineLesson */
                                         foreach ($combineLessonList as $combineLesson):
-                                            if ($programName!= $combineLesson->getProgram()->name){
+                                            if ($programName != $combineLesson->getProgram()->name) {
                                                 $programName = $combineLesson->getProgram()->name;
-                                                echo  '<option disabled>'.$programName.'</option>';
+                                                echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
                                             <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?></option>
@@ -219,7 +249,8 @@ use function App\Helpers\isAuthorized;
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="modalCancel" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-secondary" id="modalCancel" data-bs-dismiss="modal">Kapat
+                    </button>
                     <button type="submit" class="btn btn-primary" id="modalConfirm">Birleştir</button>
                 </div>
             </form>
