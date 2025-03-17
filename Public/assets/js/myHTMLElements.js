@@ -1,5 +1,5 @@
 class Modal {
-    constructor() {
+    constructor(existingModalId = null) {
         this.dialog = "";
         this.content = "";
         this.header = "";
@@ -14,7 +14,27 @@ class Modal {
         this.spinner = ""
         this.isOpen = false;
 
-        this.initializeModal();
+        if (existingModalId) {
+            this.useExistingModal(existingModalId);
+        } else {
+            this.initializeModal();
+        }
+    }
+
+    useExistingModal(modalId) {
+        this.modal = document.getElementById(modalId);
+        if (!this.modal) {
+            console.error(`Modal with ID '${modalId}' not found.`);
+            return;
+        }
+        this.dialog = this.modal.querySelector(".modal-dialog");
+        this.content = this.modal.querySelector(".modal-content");
+        this.header = this.modal.querySelector(".modal-header");
+        this.title = this.modal.querySelector(".modal-title");
+        this.body = this.modal.querySelector(".modal-body");
+        this.footer = this.modal.querySelector(".modal-footer");
+        this.cancelButton = this.modal.querySelector("#modalCancel");
+        this.confirmButton = this.modal.querySelector("#modalConfirm");
     }
 
     /**
@@ -83,7 +103,7 @@ class Modal {
     }
 
     prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true) {
-        this.title.innerHTML = title.trim();
+        this.title.innerHTML = title?.trim();
         this.body.innerHTML = content.trim()
 
         if (!showConfirmButton) {
