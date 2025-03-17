@@ -214,8 +214,10 @@ class AdminRouter extends Router
      */
     public function lessonAction($id = null)
     {
-        $lessonController = new LessonController();
         if (!is_null($id)) {
+            /**
+             * @var Lesson $lesson
+             */
             $lesson = (new Lesson())->find($id);
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
@@ -236,6 +238,7 @@ class AdminRouter extends Router
                 ],
                 true
             ),
+            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id'=>$lesson->lecturer_id,'!id'=>$lesson->id])->all(),
         ]);
         $this->callView("admin/lessons/lesson", $this->view_data);
     }

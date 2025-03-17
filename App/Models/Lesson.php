@@ -35,6 +35,7 @@ class Lesson extends Model
      */
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
+    public ?int $parent_lesson_id = null;
 
     protected string $table_name = "lessons";
 

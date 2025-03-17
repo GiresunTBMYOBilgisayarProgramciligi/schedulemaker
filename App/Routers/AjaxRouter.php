@@ -259,6 +259,25 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
+    public function combineLessonAction(): void
+    {
+        sleep(5);
+        if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
+            $lessonController = new LessonController();
+            $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
+            $this->response = array(
+                "msg" => "Dersler Başarıyla birleştirildi.",
+                "status" => "success",
+
+            );
+        } else throw new Exception("Birleştirmek için dersler belirtilmemiş");
+
+
+        $this->sendResponse();
+    }
     /*
      * Classrooms Ajax Actions
      */
@@ -335,7 +354,7 @@ class AjaxRouter extends Router
         $departmentData = $this->data;
         $department = new Department();
         $department->fill($departmentData);
-        $department = $departmentController->updateDepartment($department);
+        $departmentController->updateDepartment($department);
 
         $this->response = array(
             "msg" => "Bölüm başarıyla Güncellendi.",

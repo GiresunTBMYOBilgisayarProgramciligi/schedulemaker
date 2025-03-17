@@ -157,4 +157,25 @@ class LessonController extends Controller
     {
         return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
     }
+
+    /**
+     * @throws Exception
+     */
+    public function combineLesson(int $parentLessonId = null, int $childLessonId = null)
+    {
+        /**
+         * @var Lesson $parentLesson
+         * @var Lesson $childLesson
+         */
+        $parentLesson = (new Lesson())->find($parentLessonId);
+        $childLesson = (new Lesson())->find($childLessonId);
+        if (!(isAuthorized('department_head', false, $childLesson) and isAuthorized('department_head', false, $parentLesson))) {
+            throw new Exception("Ders birleştirme yetkiniz yok");
+        }
+        if ($childLesson->parent_lesson_id and $childLesson->parent_lesson_id != $parentLesson->id) {
+            throw new Exception("Bu ders zaten başka bir ders ile birleştirilmiş");
+        }
+        $childLesson->parent_lesson_id = $parentLesson->id;
+        $childLesson->update();
+    }
 }
