@@ -14,11 +14,7 @@ include "theme/head.php";
     /** @var \App\Controllers\UserController $userController
      * @var \App\Models\User | false $currentUser Oturum açmış kullanıcı modeli. Oturum açılmamışsa false
      * */
-    try {
-        $currentUser = $userController->getCurrentUser();
-    } catch (Exception $e) {
-        $_SESSION["errors"][] = $e->getMessage();
-    }
+    $currentUser = $userController->getCurrentUser();
     include "theme/navbar.php";
     include "theme/sidebar.php";
     include "pages/" . $this->view_page . ".php";
@@ -29,24 +25,6 @@ include "theme/head.php";
 
 <?php
 include "theme/footer_scripts.php";
-/**
- * Model ve Controller sınıflarında oluşan hatalar errors içerisine kaydedilir ve burada tüm hatalar geliştirici konsoluna yazılır.
- */
-if (isset($_SESSION['errors'])) {
-    // Tüm hata dizisini JSON'a çevirip tek bir script tag'i içinde yazdıralım
-    echo '<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let errors = ' . json_encode($_SESSION['errors'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . ';
-        // Tüm diziyi konsolda göster
-        console.log(errors);
-    });
-    </script>';
-
-    unset($_SESSION['errors']);
-}
-/**
- * Router Sınıflarında error tek bir hata mesajı olarak döner
- */
 if (isset($_SESSION['error'])) {
     echo '<script>
     document.addEventListener("DOMContentLoaded", function () {
