@@ -361,7 +361,6 @@ class ScheduleController extends Controller
                 foreach ($lessonsList as $lesson) {
                     if (!$lesson->IsScheduleComplete()) {
                         //Ders Programı tamamlanmamışsa
-                        $lesson->lecturer_name = $lesson->getLecturer()->getFullName(); // ders sınıfına Hoca adı ekleniyor
                         $lesson->lecturer_id = $lesson->getLecturer()->id;
                         $lesson->hours -= $this->getCount([
                             'owner_type' => 'lesson',
@@ -401,7 +400,7 @@ class ScheduleController extends Controller
                   data-lesson-id=\"$lesson->id\">
                     <div class=\"ms-2 me-auto\">
                       <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
-                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> $lesson->lecturer_name
+                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> ".$lesson->getLecturer()->getFullName()."
                     </div>
                     <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
                   </div>
