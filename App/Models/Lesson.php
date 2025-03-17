@@ -71,6 +71,26 @@ class Lesson extends Model
         return (new Program())->find($this->program_id);
     }
 
+    /**
+     * @return Lesson|null
+     * @throws Exception
+     */
+    public function getParentLesson(): Lesson|null
+    {
+        if ($this->parent_lesson_id)
+            return (new Lesson())->find($this->parent_lesson_id);
+        else return null;
+
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getChildLessonList(): array
+    {
+        return (new Lesson())->get()->where(["parent_lesson_id"=> $this->id])->all();
+    }
+
     public function getFullName(): string
     {
         return trim($this->name . " (" . $this->code . ")");
