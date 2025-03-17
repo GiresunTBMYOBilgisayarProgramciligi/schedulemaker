@@ -264,7 +264,6 @@ class AjaxRouter extends Router
      */
     public function combineLessonAction(): void
     {
-        sleep(5);
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
             $lessonController = new LessonController();
             $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
