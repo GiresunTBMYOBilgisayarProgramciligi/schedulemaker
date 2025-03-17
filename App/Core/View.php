@@ -37,7 +37,6 @@ class View
     {
         try {
             $this->view_folder = $_ENV['VIEWS_PATH'] . '/' . strtolower($this->view_folder);
-
             if (is_dir($this->view_folder)) {
                 /**
                  * view_page dosyası theme.php içerisinde yüklenecek
@@ -60,7 +59,6 @@ class View
                             alert("'. $exception->getMessage() . '");
                     });
                 </script>';
-            throw new Exception($exception->getMessage());
         }
 
     }
