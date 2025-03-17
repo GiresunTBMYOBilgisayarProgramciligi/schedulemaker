@@ -81,7 +81,7 @@ use function App\Helpers\isAuthorized;
                                     <dd class="col-sm-10 p-0">
                                         <a class="link-dark link-underline-opacity-0"
                                            href="/admin/lesson/<?= $lesson->getParentLesson()->id ?>">
-                                            <?= htmlspecialchars($lesson->getParentLesson()->getFullName() . "-" . $lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?>
+                                            <?= htmlspecialchars($lesson->getParentLesson()->getFullName() . "-" . $lesson->getParentLesson()->getProgram()->name, ENT_QUOTES, 'UTF-8') ?>
                                         </a>
                                     </dd>
                                 <?php endif; ?>
