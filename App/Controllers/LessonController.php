@@ -172,10 +172,33 @@ class LessonController extends Controller
         if (!(isAuthorized('department_head', false, $childLesson) and isAuthorized('department_head', false, $parentLesson))) {
             throw new Exception("Ders birleştirme yetkiniz yok");
         }
-        if ($childLesson->parent_lesson_id and $childLesson->parent_lesson_id != $parentLesson->id) {
-            throw new Exception("Bu ders zaten başka bir ders ile birleştirilmiş");
+        /*
+         * Bir derse bağlanmak istenilen bir ders zaten bir derse bağlı ise hata verir.
+         */
+        if ($childLesson->parent_lesson_id) {
+            $childLesson->getParentLesson();
+            throw new Exception($childLesson->getProgram()->name . " - " . $childLesson->name . " zaten " . $childLesson->getParentLesson()->getProgram()->name . " - " . $childLesson->getParentLesson()->getFullName() . " dersine bağlı");
         }
+        /*
+         * Bağlanmak istenilen ders zaten başka bir derse bağlı ise bağlantı üst ebeveyne yapılır
+         */
+        if ($parentLesson->parent_lesson_id) {
+            /**
+             * @var Lesson $existingParentLesson
+             */
+            $parentLesson = (new Lesson())->find($parentLesson->parent_lesson_id);
+        }
+
         $childLesson->parent_lesson_id = $parentLesson->id;
         $childLesson->update();
+
+        //Başka derse bağlanan derse bağlı dersler varsa onlarda bu derse bağlanır
+        $childLessons = $childLesson->getChildLessonList();
+        if (count($childLessons) > 0) {
+            foreach ($childLessons as $child) {
+                $child->parent_lesson_id = $parentLesson->id;
+                $child->update();
+            }
+        }
     }
 }
