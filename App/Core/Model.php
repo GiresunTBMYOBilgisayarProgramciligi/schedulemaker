@@ -506,7 +506,7 @@ class Model
         if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
             throw new Exception('Model düzgün oluşturulmamış');
         }
-        $data = $this->getArray(['id']);
+        $data = $this->getArray(['id'],true);
         $setStatements = array_map(function ($field) {
             return "{$field} = :{$field}";
         }, array_keys($data));
