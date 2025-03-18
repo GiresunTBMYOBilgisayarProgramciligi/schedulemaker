@@ -270,7 +270,7 @@ class AjaxRouter extends Router
             $this->response = array(
                 "msg" => "Dersler Başarıyla birleştirildi.",
                 "status" => "success",
-
+                "redirect"=> "self"
             );
         } else throw new Exception("Birleştirmek için dersler belirtilmemiş");
 

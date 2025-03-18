@@ -151,6 +151,13 @@ class Modal {
             this.modal.remove();
         });
     }
+    hideModal(){
+        // Bootstrap modal kapatma işlemi
+        const bootstrapModal = bootstrap.Modal.getInstance(this.modal);
+        if (bootstrapModal) {
+            bootstrapModal.hide(); // Bootstrap üzerinden kapat
+        }
+    }
 }
 
 class Toast {

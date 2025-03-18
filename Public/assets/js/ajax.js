@@ -195,19 +195,19 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Buders başka derse bağlanacak");
             data.append('child_lesson_id', lessonId);
             let conbineModal = new Modal("CombineLessonModal");
-            conbineModal.closeModal();
+            conbineModal.hideModal();
             fetchForm(form, data)
 
         } else if (childLessonId != 0) {
             console.log("Bu derse bir ders bağlanacak");
             data.append("parent_lesson_id", lessonId)
             let conbineModal = new Modal("CombineLessonModal");
-            conbineModal.closeModal();
+            conbineModal.hideModal();
             fetchForm(form, data)
         }
     }
 
-    function fetchForm(form,data) {
+    function fetchForm(form, data) {
         let modal = new Modal();
         modal.prepareModal(form.getAttribute("title"));
         spinner.showSpinner(modal.body)
@@ -246,11 +246,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 modal.cancelButton.addEventListener("click", () => {
                     if (data.redirect) {
-                        if (data.redirect === "back") {
+                        console.log("redirect")
+                        if (data.redirect === "back")
                             window.history.back()
-                        } else
+                        else if (data.redirect === "self")
+                            window.location.reload();
+                        else
                             window.location.href = data.redirect;
                     }
+
                     if (!form.classList.contains("updateForm")) {
                         form.reset();
                     }
