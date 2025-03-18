@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", function () {
         form.addEventListener("submit", handleAjaxCombineLesson);
     })
 
+    document.querySelectorAll(".ajaxDeleteParentLesson").forEach((form) => {
+        form.addEventListener("submit", handleAjaxDeleteParentLesson);
+    })
+
     /**
      *
      * @type {Modal}
@@ -205,6 +209,20 @@ document.addEventListener("DOMContentLoaded", function () {
             conbineModal.hideModal();
             fetchForm(form, data)
         }
+    }
+
+    function handleAjaxDeleteParentLesson(event) {
+        event.preventDefault();
+        const form = event.target;
+        let data = new FormData(form);
+        let deleteParentModal = new Modal()
+        deleteParentModal.prepareModal("Bağlantı Silme Onayı","Bu dersin bağlantısını silmek istediğinizden emin miziniz?",true,true);
+        modal.confirmButton.textContent = gettext.delete
+        deleteParentModal.showModal();
+        deleteParentModal.confirmButton.addEventListener("click",(event)=>{
+            deleteParentModal.hideModal();
+            fetchForm(form,data)
+        })
     }
 
     function fetchForm(form, data) {

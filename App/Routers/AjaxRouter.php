@@ -270,13 +270,31 @@ class AjaxRouter extends Router
             $this->response = array(
                 "msg" => "Dersler Başarıyla birleştirildi.",
                 "status" => "success",
-                "redirect"=> "self"
+                "redirect" => "self"
             );
         } else throw new Exception("Birleştirmek için dersler belirtilmemiş");
 
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function deleteParentLessonAction(): void
+    {
+        if (key_exists("id", $this->data)) {
+            $lessonController = new LessonController();
+            $lessonController->removeParentLesson($this->data['id']);
+            $this->response = array(
+                "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
+                "status" => "success",
+                "redirect" => "self"
+            );
+        } else throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
 
         $this->sendResponse();
     }
+
     /*
      * Classrooms Ajax Actions
      */

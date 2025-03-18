@@ -83,6 +83,14 @@ use function App\Helpers\isAuthorized;
                                            href="/admin/lesson/<?= $lesson->getParentLesson()->id ?>">
                                             <?= htmlspecialchars($lesson->getParentLesson()->getFullName() . "-" . $lesson->getParentLesson()->getProgram()->name, ENT_QUOTES, 'UTF-8') ?>
                                         </a>
+                                        <form action="/ajax/deleteParentLesson" method="post"
+                                              class="d-inline ajaxDeleteParentLesson">
+                                            <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                            <button type="submit"
+                                                    class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
+                                                X
+                                            </button>
+                                        </form>
                                     </dd>
                                 <?php endif; ?>
                                 <?php
@@ -91,14 +99,25 @@ use function App\Helpers\isAuthorized;
                                     <dt class="col-sm-2">Bağlı Dersler</dt>
                                     <dd class="col-sm-10 p-0">
                                         <ul class="list-group list-group-flush">
-                                            <?php
-                                            foreach ($lesson->getChildLessonList() as $childLesson) {
-                                                echo '<li class="list-group-item"><a href="/admin/lesson/' . $childLesson->id . '" class="link-dark link-underline-opacity-0">';
-                                                echo htmlspecialchars($childLesson->getFullName() . "-" . $childLesson->getProgram()->name, ENT_QUOTES, 'UTF-8') . "<br>";
-                                                echo '</a></li>';
-                                            }
-                                            ?>
+                                            <?php foreach ($lesson->getChildLessonList() as $childLesson): ?>
+                                                <li class="list-group-item">
+                                                    <a href="/admin/lesson/<?= $childLesson->id ?>"
+                                                       class="link-dark link-underline-opacity-0">
+                                                        <?= $childLesson->getFullName() . "-" .
+                                                        $childLesson->getProgram()->name ?>
+                                                    </a>
+                                                    <form action="/ajax/deleteParentLesson" method="post"
+                                                          class="d-inline ajaxDeleteParentLesson">
+                                                        <input type="hidden" name="id" value="<?= $childLesson->id ?>">
+                                                        <button type="submit"
+                                                                class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
+                                                            X
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            <?php endforeach; ?>
                                         </ul>
+
 
                                     </dd>
                                 <?php endif; ?>

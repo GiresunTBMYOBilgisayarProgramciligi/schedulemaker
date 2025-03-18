@@ -161,7 +161,7 @@ class LessonController extends Controller
     /**
      * @throws Exception
      */
-    public function combineLesson(int $parentLessonId = null, int $childLessonId = null)
+    public function combineLesson(int $parentLessonId = null, int $childLessonId = null): void
     {
         /**
          * @var Lesson $parentLesson
@@ -169,7 +169,7 @@ class LessonController extends Controller
          */
         $parentLesson = (new Lesson())->find($parentLessonId);
         $childLesson = (new Lesson())->find($childLessonId);
-        if (!(isAuthorized('department_head', false, $childLesson) and isAuthorized('department_head', false, $parentLesson))) {
+        if (!(isAuthorized('submanager', false, $childLesson) and isAuthorized('submanager', false, $parentLesson))) {
             throw new Exception("Ders birleştirme yetkiniz yok");
         }
         /*
@@ -200,5 +200,20 @@ class LessonController extends Controller
                 $child->update();
             }
         }
+    }
+
+    public function removeParentLesson(int $lessonId): void
+    {
+        /**
+         * @var Lesson $lesson
+         */
+        $lesson = (new Lesson())->find($lessonId);
+        if (!isAuthorized('submanager', false, $lesson)) {
+            throw new Exception("Ders düzenleme yetkiniz yok");
+        }
+        $lesson->parent_lesson_id = null;
+        error_log(var_export($lesson, true));
+        $lesson->update();
+        error_log(var_export($lesson, true));
     }
 }
