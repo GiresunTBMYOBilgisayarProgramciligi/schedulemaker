@@ -148,13 +148,13 @@ class ScheduleController extends Controller
                  * Eğer bir ders kaydedilmişse day true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
                  */
                 if (is_array($day)) {
-                    if (is_array($day[0])) {
+                    if (isset($day[0]) and is_array($day[0])) {
                         //gün içerisinde iki ders var
                         $out .= '<td class="drop-zone">';
                         foreach ($day as $column) {
                             $column = (object)$column; // Array'i objeye dönüştür
                             $lesson = (new Lesson())->find($column->lesson_id);
-                            $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
+                            $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
                             $classroomName = (new Classroom())->find($column->classroom_id)->name;
                             $out .= '
@@ -190,7 +190,7 @@ class ScheduleController extends Controller
                         // Eğer day bir array ise bilgileri yazdır
                         $day = (object)$day; // Array'i objeye dönüştür
                         $lesson = (new Lesson())->find($day->lesson_id);
-                        $lessonHourCount[$lesson->id] = is_null($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
+                        $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturerName = $lesson->getLecturer()->getFullName();
                         $classroomName = (new Classroom)->find($day->classroom_id)->name;
                         $out .= '
