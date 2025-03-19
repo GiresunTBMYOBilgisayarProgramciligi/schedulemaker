@@ -392,17 +392,28 @@ class ScheduleController extends Controller
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {
+            /**
+             * @var Lesson $lesson
+             * @var Lesson $parentLesson
+             */
+            $dragable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
+            $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
+            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
+            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
             $HTMLOut .= "
-                    <div id=\"available-lesson-$lesson->id\" draggable=\"true\" 
-                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary\"
+                    <div id=\"available-lesson-$lesson->id\" draggable=\"$dragable\" 
+                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded $text_bg\"
                   data-semester-no=\"$lesson->semester_no\"
                   data-lesson-code=\"$lesson->code\"
-                  data-lesson-id=\"$lesson->id\">
+                  data-lesson-id=\"$lesson->id\"
+                  $popover
+                  >
                     <div class=\"ms-2 me-auto\">
                       <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
-                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> ".$lesson->getLecturer()->getFullName()."
+                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
                     </div>
-                    <span class=\"badge bg-info rounded-pill\">$lesson->hours</span>
+                    <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
                   </div>
                     ";
         }

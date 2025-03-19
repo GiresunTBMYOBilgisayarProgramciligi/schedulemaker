@@ -50,6 +50,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data['status'] !== 'error') {
                     const container = document.getElementById('schedule_container');
                     container.innerHTML = data['HTML'];
+                    /**
+                     * Bağlı derslerde gösterilecek popoverları aktif etmek için eklendi.
+                     * @type {*[]}
+                     */
+                    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                    console.log(popoverTriggerList)
+                    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                        return new bootstrap.Popover(popoverTriggerEl)
+                    })
                 } else {
                     new Toast().prepareToast("Hata", data['msg'], "danger");
                     console.error(data['msg']);
