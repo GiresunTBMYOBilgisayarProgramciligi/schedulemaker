@@ -117,8 +117,6 @@ use function App\Helpers\isAuthorized;
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
-
-
                                     </dd>
                                 <?php endif; ?>
                             </dl>

@@ -212,8 +212,6 @@ class LessonController extends Controller
             throw new Exception("Ders düzenleme yetkiniz yok");
         }
         $lesson->parent_lesson_id = null;
-        error_log(var_export($lesson, true));
         $lesson->update();
-        error_log(var_export($lesson, true));
     }
 }

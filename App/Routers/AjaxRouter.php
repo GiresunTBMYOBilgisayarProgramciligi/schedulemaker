@@ -183,13 +183,16 @@ class AjaxRouter extends Router
         $lessonController = new LessonController();
         $lessonData = $this->data;
         /*
-         * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
+         * Eğer bölüm ve program seçilmediyse o alarlar siliniyor
          */
-        if (is_null($lessonData['department_id']) or $lessonData['department_id'] == '0') {
-            unset($lessonData['department_id']);
+        if (empty($lessonData['lecturer_id'])) {
+            throw new Exception("Hoca Seçmelisiniz");
         }
-        if (is_null($lessonData['program_id']) or $lessonData['program_id'] == '0') {
-            unset($lessonData['program_id']);
+        if (empty($lessonData['department_id'])) {
+            throw new Exception("Bölüm Seçmelisiniz");
+        }
+        if (empty($lessonData['program_id'])) {
+            throw new Exception("Program Seçmelisiniz");
         }
         $new_lesson = new Lesson();
         $new_lesson->fill($lessonData);

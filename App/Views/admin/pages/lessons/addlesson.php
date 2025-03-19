@@ -60,7 +60,7 @@ use function App\Helpers\getSetting;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label"  for="type">Türü</label>
-                                            <select class="form-select" id="type" name="type">
+                                            <select class="form-select" id="type" name="type" required>
                                                 <?php foreach ($lessonController->getTypeList() as $id=>$type): ?>
                                                     <option value="<?= $id ?>"><?= $type ?></option>
                                                 <?php endforeach ?>
@@ -70,7 +70,7 @@ use function App\Helpers\getSetting;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label"  for="semester_no">Dönemi</label>
-                                            <select class="form-select" id="semester_no" name="semester_no">
+                                            <select class="form-select" id="semester_no" name="semester_no" required>
                                                 <?php foreach ($lessonController->getSemesterNoList() as $key=>$value): ?>
                                                     <option value="<?= $key ?>"><?= $value ?></option>
                                                 <?php endforeach ?>
@@ -90,7 +90,7 @@ use function App\Helpers\getSetting;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" >
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" required>
                                                 <option></option>
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
@@ -101,7 +101,7 @@ use function App\Helpers\getSetting;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="classroom_type">Sınıf Türü</label>
-                                            <select class="form-select" id="classroom_type" name="classroom_type">
+                                            <select class="form-select" id="classroom_type" name="classroom_type" required>
                                                 <?php foreach ($classroomTypes as $id=>$classroomType): ?>
                                                     <option value="<?= $id ?>"><?= $classroomType ?></option>
                                                 <?php endforeach; ?>
@@ -127,7 +127,7 @@ use function App\Helpers\getSetting;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label"  for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id">
+                                            <select class="form-select tom-select" id="department_id" name="department_id" required>
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"><?= $department->name ?></option>
