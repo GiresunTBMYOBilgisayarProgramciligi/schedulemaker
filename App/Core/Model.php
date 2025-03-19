@@ -353,8 +353,8 @@ class Model
     {
         if (is_null($id))
             throw new Exception("İd değeri doğru belirtilmediği için aranan nesne bulunamadı");
-        $model=$this->where(['id' => $id])->first();
-        if (!$model) throw new Exception($this->table_name ." tabosunda sonuç bulunamadı.");
+        $model = $this->where(['id' => $id])->first();
+        if (!$model) throw new Exception($this->table_name . " tabosunda sonuç bulunamadı.");
         return $model;
     }
 
@@ -403,8 +403,10 @@ class Model
                     : null;
             } else {
                 // Diğer alanlarda null kontrolü
-                $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
-                $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
+                if (isset($data[$propertyName])) {
+                    $data[$propertyName] = $this->is_data_serialized($data[$propertyName]) ? unserialize($data[$propertyName]) : $data[$propertyName];
+                    $this->$propertyName = $data[$propertyName] ?? $this->$propertyName;
+                }
             }
         }
     }
@@ -467,7 +469,7 @@ class Model
     /**
      * @throws Exception
      */
-    public function create():void
+    public function create(): void
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
         if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
@@ -487,9 +489,9 @@ class Model
             $statement->bindValue(":{$field}", $value);
         }
 
-        if ($statement->execute()){
+        if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-        }else{
+        } else {
             throw new Exception("Kullanıcı oluşturulurken hata oluştu");
         }
 
@@ -506,7 +508,7 @@ class Model
         if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
             throw new Exception('Model düzgün oluşturulmamış');
         }
-        $data = $this->getArray(['id'],true);
+        $data = $this->getArray(['id'], true);
         $setStatements = array_map(function ($field) {
             return "{$field} = :{$field}";
         }, array_keys($data));
