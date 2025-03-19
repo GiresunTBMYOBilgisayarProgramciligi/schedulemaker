@@ -13,15 +13,16 @@ let spinner = new Spinner();
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const programSelectButton = document.getElementById("programSelect");
-
+    const academic_year = document.getElementById("academic_year").value;
+    const semester = document.getElementById("semester").value;
     programSelectButton.addEventListener("click", function () {
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         let data = new FormData();
         data.append("type", "lesson")
         data.append("owner_type", "program");
         data.append("owner_id", programSelect.value);
-        data.append("semester", document.getElementById("semester").value)
-        data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("semester", semester)
+        data.append("academic_year", academic_year);
         promises.push(getSchedulesHTML(data));
         spinner.showSpinner(document.getElementById("schedule_container"))
         // Tüm işlemlerin tamamlanmasını bekle
@@ -111,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param dropZone
      * @param draggedElement
      */
-    function checkLessonCrash(dropZone, draggedElement) {
+    async function checkLessonCrash(dropZone, draggedElement) {
         /*
         * dersler "scheduleTable-" ile başlayan idler içerir
          */
@@ -150,7 +151,48 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
         }
-        return true;
+        let data = new FormData();
+        let table = dropZone.closest("table")
+        //dersin bırakıldığı satırın tablo içindeki index numarası
+        let droppedRowIndex = dropZone.closest("tr").rowIndex
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        let droppedCellIndex = dropZone.cellIndex
+        let row = table.rows[droppedRowIndex];
+        let cell = row.cells[droppedCellIndex];
+        data.append("lesson_hours", 1)
+        data.append("semester", semester)
+        data.append("academic_year", academic_year)
+        data.append("time_start", table.rows[droppedRowIndex].cells[0].innerText)
+        data.append("classroom_name", draggedElement.querySelector("span.badge").innerText,)
+        data.append("lesson_id", draggedElement.dataset.lessonId)
+        data.append("day_index", (droppedCellIndex - 1))
+        data.append("semester_no", draggedElement.dataset.semesterNo)
+        data.append("type", "lesson")
+
+        let result = await fetch("/ajax/checkBackEndLessonCrash", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        }).then(response => response.json())
+            .then((data) => {
+                if (data && data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+        console.log("crash:",result)
+        return result;
+
     }
 
     /**
@@ -169,8 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day", "day" + dayIndex)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
-        data.append("semester", document.getElementById("semester").value)
-        data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("semester", semester)
+        data.append("academic_year", academic_year);
         data.append("lesson_id", lessonId);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""></option>`;
@@ -211,10 +253,10 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("time_start", scheduleData.schedule_time);
         data.append("lesson_hours", scheduleData.lesson_hours);
         data.append("day_index", scheduleData.day_index);
-        data.append("classroom_name", scheduleData.selected_classroom);
+        data.append("classroom_name", scheduleData.classroom_name);
         data.append("semester_no", scheduleData.semester_no)
-        data.append("semester", document.getElementById("semester").value)
-        data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("semester", semester)
+        data.append("academic_year", academic_year);
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -250,8 +292,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function highlightUnavailableCells(lessonId, table) {
         let data = new FormData()
         data.append("lesson_id", lessonId);
-        data.append("semester", document.getElementById("semester").value)
-        data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("semester", semester)
+        data.append("academic_year", academic_year);
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Hocanın programı kontrol ediliyor...");
         return fetch("/ajax/checkLecturerSchedule", {
@@ -384,10 +426,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     "schedule_time": scheduleTime,
                     "lesson_hours": selectedHours,
                     "day_index": droppedCellIndex - 1,
-                    "selected_classroom": selectedClassroom,
+                    "classroom_name": selectedClassroom,
                     "semester_no": draggedElement.dataset.semesterNo,
-                    "academic_year": document.getElementById("academic_year").value,
-                    "semester": document.getElementById("semester").value
+                    "academic_year": academic_year,
+                    "semester": semester
                 });
             if (result) {
                 toast.closeToast();
@@ -466,8 +508,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester", document.getElementById("semester").value)
-        data.append("academic_year", document.getElementById("academic_year").value);
+        data.append("semester", semester)
+        data.append("academic_year", academic_year);
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
             headers: {
@@ -510,8 +552,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": document.getElementById("semester").value,
-                "academic_year": document.getElementById("academic_year").value
+                "semester": semester,
+                "academic_year": academic_year
             });
         if (result) {
             let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
@@ -542,7 +584,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let droppedCellIndex = dropZone.cellIndex
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
-        if (!checkLessonCrash(cell, draggedElement)) return;
+        if (!await checkLessonCrash(cell, draggedElement)) return;
         let deleteResult = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset.lessonId,
@@ -550,8 +592,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": document.getElementById("semester").value,
-                "academic_year": document.getElementById("academic_year").value
+                "semester": semester,
+                "academic_year": academic_year
             });
         if (deleteResult) {
             let saveResult = await saveSchedule(
@@ -560,10 +602,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
                     "lesson_hours": 1,
                     "day_index": droppedCellIndex - 1,
-                    "selected_classroom": draggedElement.querySelector("span.badge").innerText,
+                    "classroom_name": draggedElement.querySelector("span.badge").innerText,
                     "semester_no": draggedElement.dataset.semesterNo,
-                    "semester": document.getElementById("semester").value,
-                    "academic_year": document.getElementById("academic_year").value
+                    "semester": semester,
+                    "academic_year": academic_year
                 });
             if (saveResult) {
                 console.log("Yeni ders eklendi");

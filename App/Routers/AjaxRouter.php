@@ -491,6 +491,48 @@ class AjaxRouter extends Router
     }
 
     /**
+     * @throws Exception
+     */
+    public function checkBackEndLessonCrashAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        if (key_exists("lesson_id", $this->data)) {
+            $lesson = (new Lesson())->find($this->data['lesson_id']);
+            $lecturer = $lesson->getLecturer();
+            $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
+
+            /*
+             * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+             */
+            $crashFilters = [
+                //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
+                "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
+                // Programın türü lesson yada exam
+                "type" => "lesson",
+                "time_start" => $this->data['time_start'],
+                "day" => "day" . $this->data['day_index'],
+                "lesson_hours" => $this->data['lesson_hours'],
+                "semester_no" => trim($this->data['semester_no']),
+                "semester" => $this->data['semester'],
+                "academic_year" => $this->data['academic_year'],
+            ];
+            /**
+             * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+             * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
+             */
+            if (!is_null($classroom) and $classroom->type != 3) {
+                $crashFilters['owners']['classroom'] = $classroom->id;
+            }
+            if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
+                $this->response['status'] = "success";
+                $this->response['msg'] = "Çakışma yok";
+            }
+        }
+
+        $this->sendResponse();
+    }
+
+    /**
      * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
      * "lesson_id" Programa eklenen dersin id numarası
      * "time_start" programa eklenen dersin başlangıç saati
@@ -505,7 +547,6 @@ class AjaxRouter extends Router
     public function saveScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $classroomController = new ClassroomController();
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
