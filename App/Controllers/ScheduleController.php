@@ -102,6 +102,60 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
+     * @param array $filters
+     * @return array
+     * @throws Exception
+     */
+    public function availableLessons(array $filters = []): array
+    {
+        $available_lessons = [];
+        if (key_exists('owner_type', $filters) and key_exists('owner_id', $filters)) {
+            if (!key_exists("semester", $filters)) {
+                $filters['semester'] = getSetting('semester');
+            }
+            if (!key_exists("academic_year", $filters)) {
+                $filters['academic_year'] = getSetting("academic_year");
+            }
+            if ($filters['owner_type'] == "program") {
+                $lessonFilters = [];
+                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
+                    $lessonFilters['semester_no'] = $filters['semester_no'];
+                } else {
+                    throw new Exception("Yarıyıl bilgisi yok");
+                }
+                $lessonFilters = array_merge($lessonFilters, [
+                    'program_id' => $filters['owner_id'],
+                    'semester' => $filters['semester'],
+                    'academic_year' => $filters['academic_year'],
+                    '!type' => 4// staj dersleri dahil değil
+                ]);
+                $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
+                /**
+                 * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
+                 */
+                foreach ($lessonsList as $lesson) {
+                    if (!$lesson->IsScheduleComplete()) {
+                        //Ders Programı tamamlanmamışsa
+                        $lesson->lecturer_id = $lesson->getLecturer()->id;
+                        $lesson->hours -= $this->getCount([
+                            'owner_type' => 'lesson',
+                            'owner_id' => $lesson->id,
+                            "semester" => $filters['semester'],
+                            "academic_year" => $filters['academic_year'],
+                        ]);// programa eklenmiş olan saatlar çıkartılıyor.
+                        $available_lessons[] = $lesson;
+                    }
+                }
+            }
+        } else {
+            throw new Exception("Owner_type ve/veya owner id yok");
+        }
+        return $available_lessons;
+    }
+
+    /**
      * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
      * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
      * @return string
@@ -258,33 +312,47 @@ class ScheduleController extends Controller
 
         return $out;
     }
-
     /**
-     * @param array $filters
-     * @param bool $only_table
-     * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
+    public function createAvailableLessonsHTML(array $filters = []): string
     {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
+        if (!key_exists('semester_no', $filters)) {
+            throw new Exception("Dönem numarası belirtilmelidir");
         }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
+        $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
+                                         data-semester-no="' . $filters['semester_no'] . '"
+                                         style="max-height: 90vh;overflow: auto;"
+                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
+        $availableLessons = $this->availableLessons($filters);
+        foreach ($availableLessons as $lesson) {
+            /**
+             * @var Lesson $lesson
+             * @var Lesson $parentLesson
+             */
+            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
+            $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
+            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
+            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
+            $HTMLOut .= "
+                    <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
+                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded $text_bg\"
+                  data-semester-no=\"$lesson->semester_no\"
+                  data-lesson-code=\"$lesson->code\"
+                  data-lesson-id=\"$lesson->id\"
+                  $popover
+                  >
+                    <div class=\"ms-2 me-auto\">
+                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
+                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
+                    </div>
+                    <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
+                  </div>
+                    ";
         }
-        $HTMLOUT = '';
-        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
-            // birleştirilmiş dönem
-            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
-        } else {
-            $currentSemesters = getSemesterNumbers($filters["semester"]);
-            foreach ($currentSemesters as $semester_no) {
-                $filters['semester_no'] = $semester_no;
-                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
-            }
-        }
-        return $HTMLOUT;
+        $HTMLOut .= '</div>';
+        return $HTMLOut;
     }
 
     /**
@@ -338,103 +406,33 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
+     * Dönem numarasına göre birleştirilmiş yada her bir dönem için Schedule Card oluşturur
      * @param array $filters
-     * @return array
+     * @param bool $only_table
+     * @return string
      * @throws Exception
      */
-    public function availableLessons(array $filters = []): array
+    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
-        $available_lessons = [];
-        if (key_exists('owner_type', $filters) and key_exists('owner_id', $filters)) {
-            if (!key_exists("semester", $filters)) {
-                $filters['semester'] = getSetting('semester');
-            }
-            if (!key_exists("academic_year", $filters)) {
-                $filters['academic_year'] = getSetting("academic_year");
-            }
-            if ($filters['owner_type'] == "program") {
-                $lessonFilters = [];
-                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
-                    $lessonFilters['semester_no'] = $filters['semester_no'];
-                } else {
-                    throw new Exception("Yarıyıl bilgisi yok");
-                }
-                $lessonFilters = array_merge($lessonFilters, [
-                    'program_id' => $filters['owner_id'],
-                    'semester' => $filters['semester'],
-                    'academic_year' => $filters['academic_year'],
-                    '!type' => 4// staj dersleri dahil değil
-                ]);
-                $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
-                /**
-                 * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-                 */
-                foreach ($lessonsList as $lesson) {
-                    if (!$lesson->IsScheduleComplete()) {
-                        //Ders Programı tamamlanmamışsa
-                        $lesson->lecturer_id = $lesson->getLecturer()->id;
-                        $lesson->hours -= $this->getCount([
-                            'owner_type' => 'lesson',
-                            'owner_id' => $lesson->id,
-                            "semester" => $filters['semester'],
-                            "academic_year" => $filters['academic_year'],
-                        ]);// programa eklenmiş olan saatlar çıkartılıyor.
-                        $available_lessons[] = $lesson;
-                    }
-                }
-            }
+        if (!key_exists("semester", $filters)) {
+            $filters['semester'] = getSetting('semester');
+        }
+        if (!key_exists("academic_year", $filters)) {
+            $filters['academic_year'] = getSetting("academic_year");
+        }
+        $HTMLOUT = '';
+        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
+            // birleştirilmiş dönem
+            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
         } else {
-            throw new Exception("Owner_type ve/veya owner id yok");
+            $currentSemesters = getSemesterNumbers($filters["semester"]);
+            foreach ($currentSemesters as $semester_no) {
+                $filters['semester_no'] = $semester_no;
+                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+            }
         }
-        return $available_lessons;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function createAvailableLessonsHTML(array $filters = []): string
-    {
-        if (!key_exists('semester_no', $filters)) {
-            throw new Exception("Dönem numarası belirtilmelidir");
-        }
-        $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
-                                         data-semester-no="' . $filters['semester_no'] . '"
-                                         style="max-height: 90vh;overflow: auto;"
-                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
-        $availableLessons = $this->availableLessons($filters);
-        foreach ($availableLessons as $lesson) {
-            /**
-             * @var Lesson $lesson
-             * @var Lesson $parentLesson
-             */
-            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
-            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
-            $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
-            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
-            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
-            $HTMLOut .= "
-                    <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
-                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded $text_bg\"
-                  data-semester-no=\"$lesson->semester_no\"
-                  data-lesson-code=\"$lesson->code\"
-                  data-lesson-id=\"$lesson->id\"
-                  $popover
-                  >
-                    <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
-                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
-                    </div>
-                    <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
-                  </div>
-                    ";
-        }
-        $HTMLOut .= '</div>';
-        return $HTMLOut;
-    }
-
-    /**
+        return $HTMLOUT;
+    }    /**
      * Başlangıç saatine ve ders saat miktarına göre saat dizisi oluşturur
      * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
      * @param int $hours
