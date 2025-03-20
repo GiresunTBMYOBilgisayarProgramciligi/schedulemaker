@@ -417,6 +417,7 @@ class Model
      * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
      * @return object[]
      * @throws Exception
+     * todo bunun yeri burası değil
      */
     public function getDepartmentProgramsList(): array
     {
@@ -476,7 +477,12 @@ class Model
             throw new Exception('Model düzgün oluşturulmamış');
         }
         $data = $this->getArray(['id', "register_date", "last_login"]);
-
+        //dizi türündeki veriler serialize ediliyor
+        array_walk($data, function (&$value) {
+            if (is_array($value)) {
+                $value = serialize($value);
+            }
+        });
         $fields = array_keys($data);
         $placeholders = array_map(function ($field) {
             return ":{$field}";
@@ -491,11 +497,8 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-        } else {
-            throw new Exception("Kullanıcı oluşturulurken hata oluştu");
         }
-
-
+        //todo burada hata kontrolü yapılmalı mı yoksa controller içinde hata yakalayıp farklı işlemler yapmak grektiği için hata yakalama işi oraya mı bırakılmalı
     }
 
 

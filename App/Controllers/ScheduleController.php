@@ -157,15 +157,21 @@ class ScheduleController extends Controller
                             $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturerName = $lesson->getLecturer()->getFullName();
                             $classroomName = (new Classroom())->find($column->classroom_id)->name;
+                            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+                            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
+                            $parentLesson = (new Lesson())->find($lesson->parent_lesson_id);
+                            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
                             $out .= '
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
-                            draggable="true" 
-                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
+                            draggable="' . $draggable . '" 
+                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
-                            data-semester="' . $semester . '">
+                            data-semester="' . $semester . '"
+                            ' . $popover . '
+                            >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
@@ -193,16 +199,23 @@ class ScheduleController extends Controller
                         $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturerName = $lesson->getLecturer()->getFullName();
                         $classroomName = (new Classroom)->find($day->classroom_id)->name;
+                        $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+                        $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
+                        $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
+                        $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
+                        $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
                         $out .= '
                         <td class="drop-zone">
                             <div 
                             id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
-                            draggable="true" 
-                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded text-bg-primary"
+                            draggable="' . $draggable . '" 
+                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
-                            data-semester="' . $semester . '">
+                            data-semester="' . $semester . '"
+                            ' . $popover . '
+                            >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
                                     <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
@@ -219,7 +232,7 @@ class ScheduleController extends Controller
                                     </div>
                                 </div>
                                 <a href="/admin/classroom/' . $day->classroom_id . '" class="link-light link-underline-opacity-0" target="_blank">
-                                    <span id="classroom-' . $day->classroom_id . '" class="badge bg-info rounded-pill">
+                                    <span id="classroom-' . $day->classroom_id . '" class="badge ' . $badgeCSS . ' rounded-pill">
                                         <i class="bi bi-door-open"></i> ' . $classroomName . '
                                     </span>
                                 </a>
@@ -396,13 +409,13 @@ class ScheduleController extends Controller
              * @var Lesson $lesson
              * @var Lesson $parentLesson
              */
-            $dragable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
             $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
             $HTMLOut .= "
-                    <div id=\"available-lesson-$lesson->id\" draggable=\"$dragable\" 
+                    <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
                   class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded $text_bg\"
                   data-semester-no=\"$lesson->semester_no\"
                   data-lesson-code=\"$lesson->code\"
@@ -601,7 +614,6 @@ class ScheduleController extends Controller
                 throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
             }
 
-            // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
             //dizi türündeki veriler serialize ediliyor
             array_walk($new_schedule_arr, function (&$value) {
