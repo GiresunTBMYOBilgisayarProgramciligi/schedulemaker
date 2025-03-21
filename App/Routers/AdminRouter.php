@@ -118,7 +118,7 @@ class AdminRouter extends Router
         }
         if ($program_id) {
             $program = (new Program())->find($program_id);
-            if (!(isAuthorized("submanager") or $this->currentUser->id == $program->getDepartment()->chairperson_id)) {
+            if (!(isAuthorized("submanager") or $this->currentUser->id == $program?->getDepartment()?->chairperson_id)) {
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
         }

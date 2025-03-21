@@ -52,14 +52,14 @@ class User extends Model
     }
 
     /**
-     * @return Department | false
+     * @return Department | null
      * @throws Exception
      */
-    public function getDepartment(): Department|false
+    public function getDepartment(): Department|null
     {
         if (!is_null($this->department_id)) {
-            return (new Department())->find($this->department_id) ?? false;
-        } else return false;
+            return (new Department())->find($this->department_id) ?? null;
+        } else return null;
 
     }
 

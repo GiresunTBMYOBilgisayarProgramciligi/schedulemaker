@@ -344,7 +344,7 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısı ise yada
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
                     $isOwner = ($user->id == $model->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -353,7 +353,7 @@ class UserController extends Controller
                      * Aktif kullanıcı Dersin sahibi ise yada
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
                     $isOwner = ($model->lecturer_id == $user->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -361,7 +361,7 @@ class UserController extends Controller
                     /*
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id):null;
+                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
                     $isOwner = ($user->id == $department?->chairperson_id or $user->program_id == $model->id);
                     break;
 
@@ -378,17 +378,17 @@ class UserController extends Controller
                      */
                     switch ($model->owner_type) {
                         case "program":
-                            $program = (new Program())->find($model->owner_id ?? 0);
+                            $program = !is_null($model->owner_id) ? (new Program())->find($model->owner_id) : null;
                             $isOwner = $program?->getDepartment()?->chairperson_id == $user->id;
                             break;
 
                         case "user":
-                            $ScheduleUser = (new User())->find($model->owner_id ?? 0);
+                            $ScheduleUser = !is_null($model->owner_id) ? (new User())->find($model->owner_id) : null;
                             $isOwner = ($ScheduleUser?->getDepartment()?->chairperson_id == $user->id or $ScheduleUser?->id == $user->id);
                             break;
 
                         case "lesson":
-                            $lesson = (new Lesson())->find($model->owner_id ?? 0);
+                            $lesson = !is_null($model->owner_id) ? (new Lesson())->find($model->owner_id) : null;
                             $isOwner = $lesson?->getDepartment()?->chairperson_id == $user->id;
                             break;
 
