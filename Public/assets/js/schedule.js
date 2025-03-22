@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
                     console.log(popoverTriggerList)
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                        return new bootstrap.Popover(popoverTriggerEl)
+                        return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
                     })
                 } else {
                     new Toast().prepareToast("Hata", data['msg'], "danger");
@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error(error);
                 return false;
             });
-        console.log("crash:",result)
+        console.log("crash:", result)
         return result;
 
     }
