@@ -604,16 +604,16 @@ class AjaxRouter extends Router
             array_unshift($lessons, $lesson);
 
             $isCrashed = false;
-            foreach ($lessons as $lesson) {
+            foreach ($lessons as $child) {
                 /*
              * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
              */
                 $crashFilters = array_merge($filters, [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                     "owners" => [
-                        "program" => $lesson->program_id,
+                        "program" => $child->program_id,
                         "user" => $lecturer->id,
-                        "lesson" => $lesson->id
+                        "lesson" => $child->id
                     ],//sıralama yetki kontrolü için önemli
                 ]);
                 /**
@@ -642,28 +642,27 @@ class AjaxRouter extends Router
                  * her bir saat için ayrı ekleme yapılacak
                  */
                 foreach ($timeArray as $time) {
-                    foreach ($lessons as $lesson) {
+                    foreach ($lessons as $child) {
                         /**
-                         * @var Lesson $lesson
+                         * @var Lesson $child
                          */
                         $scheduleFilters = array_merge($filters, [
                             //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                             "owners" => [
-                                "program" => $lesson->program_id,
-
-                                "lesson" => $lesson->id
+                                "program" => $child->program_id,
+                                "lesson" => $child->id
                             ],//sıralama yetki kontrolü için önemli);
                         ]);
-                        $scheduleFilters["owners"]["user"] = !is_null($lesson->parent_lesson_id) ? $lesson->getLecturer()->id : null;
+                        $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
                         /**
                          * veri tabanına eklenecek gün verisi
                          */
                         $day = [
-                            "lesson_id" => $lesson->id,
+                            "lesson_id" => $child->id,
                             "classroom_id" => $classroom->id,
                             "lecturer_id" => $lecturer->id,
                         ];
-                        if (!$lesson->IsScheduleComplete()) {
+                        if (!$child->IsScheduleComplete()) {
                             $schedule = new Schedule();
                             /*
                              * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
@@ -816,6 +815,7 @@ class AjaxRouter extends Router
         if (!key_exists("academic_year", $this->data)) {
             $this->data["academic_year"] = getSetting("academic_year");
         }
+
         if (!key_exists("owner_type", $this->data)) {
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
@@ -823,29 +823,36 @@ class AjaxRouter extends Router
                 $lesson = (new Lesson())->find($this->data['lesson_id']);
                 $lecturer = $lesson->getLecturer();
                 $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
-                //set Owners
-                $owners['program'] = $lesson->program_id;
-                $owners['user'] = $lecturer->id;
-                $owners['lesson'] = $lesson->id;
-                $owners["classroom"] = $classroom->id;
-                $day = [
-                    "lesson_id" => $lesson->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                foreach ($owners as $owner_type => $owner_id) {
-                    $filters = [
-                        "owner_type" => $owner_type,
-                        "owner_id" => $owner_id,
-                        "day_index" => $this->data['day_index'],
-                        "day" => $day,
-                        "type" => "lesson",//todo bu da istekle gelmeli sınav programı için ayrı fonksiyonlar yazmadan halledilse iyi olur
-                        "time" => $this->data['time'],
-                        "semester_no" => $this->data['semester_no'],
-                        "semester" => $this->data["semester"],
-                        "academic_year" => $this->data['academic_year'],
+                // bağlı dersleri alıyoruz
+                $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+                //bağlı dersler listesine ana dersi ekliyoruz
+                array_unshift($lessons, $lesson);
+                foreach ($lessons as $child) {
+                    //set Owners
+                    $owners['program'] = $child->program_id;
+                    $owners["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
+                    $owners['lesson'] = $child->id;
+                    $owners["classroom"] = $classroom->id;
+                    $day = [
+                        "lesson_id" => $child->id,
+                        "classroom_id" => $classroom->id,
+                        "lecturer_id" => $lecturer->id,
                     ];
-                    $scheduleController->deleteSchedule($filters);
+                    foreach ($owners as $owner_type => $owner_id) {
+                        if (is_null($owner_id)) continue; // child lesson ise owner_id null olduğundan atlanacak
+                        $filters = [
+                            "owner_type" => $owner_type,
+                            "owner_id" => $owner_id,
+                            "day_index" => $this->data['day_index'],
+                            "day" => $day,
+                            "type" => "lesson",//todo bu da istekle gelmeli sınav programı için ayrı fonksiyonlar yazmadan halledilse iyi olur
+                            "time" => $this->data['time'],
+                            "semester_no" => $this->data['semester_no'],
+                            "semester" => $this->data["semester"],
+                            "academic_year" => $this->data['academic_year'],
+                        ];
+                        $scheduleController->deleteSchedule($filters);
+                    }
                 }
             } else {
                 throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
@@ -853,6 +860,7 @@ class AjaxRouter extends Router
         } else {
             /**
              * Burada null coalescing operatörü (??) ile eksik dizin hatalarını önlüyoruz ve sonra array_filter ile boş değerleri temizliyoruz.
+             * todo buradaki yapı tüm filtrelere uygulanabilir
              */
             $filters = array_filter([
                 "owner_type" => $this->data["owner_type"] ?? null,

@@ -730,18 +730,12 @@ class ScheduleController extends Controller
      */
     public function deleteSchedule($filters): void
     {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
-        }
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']);
             if ($classroom->type == 3) return; // uzaktan eğitim sınıfı ise programa kaydı yoktur
         }
-        $schedules = $this->getListByFilters($scheduleData);
+        $schedules = (new Schedule())->get()->where($scheduleData)->all();
 
         if (!$schedules) {
             throw new Exception("Silinecek ders programı bulunamadı");
