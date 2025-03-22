@@ -528,15 +528,6 @@ class ScheduleController extends Controller
      */
     public function checkScheduleCrash(array $filters = []): bool
     {
-        if (!key_exists("lesson_hours", $filters) or !key_exists("time_start", $filters)) {
-            throw new Exception("Ders saati yada program saati yok");
-        }
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
-        }
         $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
         if (array_key_exists('owners', $filters)) {
             foreach ($filters["owners"] as $owner_type => $owner_id) {
@@ -562,10 +553,12 @@ class ScheduleController extends Controller
                             // belirtilen gün içerisinde bir veri varsa
                             /**
                              * var olan dersin kodu
+                             * @var Lesson $lesson
                              */
                             $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id']);
                             /**
                              * yeni eklenmek istenen dersin kodu
+                             * @var Lesson $newLesson
                              */
                             $newLesson = (new Lesson())->find($filters['owners']['lesson']);
                             /*
@@ -578,15 +571,17 @@ class ScheduleController extends Controller
                                 // var olan ders gruplu
                                 if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
                                     // yeni eklenecek olan ders gruplu değil
-                                    throw new Exception("Gruplu bir dersin yanına sadece gruplu bir ders eklenebilir.");
+                                    throw new Exception($lesson->getFullName()." dersinin yanına sadece gruplu bir ders eklenebilir.");
                                 }
                                 //diğer durumda ekenecek olan ders de gruplu
                                 // grup uygunluğu kontrolü javascript ile yapılıyor
                             }
                             $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']);
-                            $newClassroom = (new Classroom())->find($filters['owners']['classroom']);
-                            if ($classroom->name == $newClassroom->name) {
-                                throw new Exception("Derslikler çakışıyor");
+                            if (isset($filters['owners']['classroom'])){
+                                $newClassroom = (new Classroom())->find($filters['owners']['classroom']);
+                                if ($classroom->name == $newClassroom->name) {
+                                    throw new Exception("Derslikler çakışıyor");
+                                }
                             }
                         }
                     }
@@ -639,14 +634,14 @@ class ScheduleController extends Controller
                             /**
                              * Var olan dersin kodu
                              */
-                            $lessonCode = (new Lesson())->find($updatingSchedule->{"day" . $i}['lesson_id'])->code;
+                            $lesson = (new Lesson())->find($updatingSchedule->{"day" . $i}['lesson_id']);
                             /**
                              * Yeni eklenecek dersin kodu
                              */
-                            $newLessonCode = (new Lesson())->find($new_schedule->{"day" . $i}['lesson_id'])->code;
+                            $newLesson = (new Lesson())->find($new_schedule->{"day" . $i}['lesson_id']);
                             // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
                             // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
-                            if (preg_match('/\.\d+$/', $lessonCode) === 1 and preg_match('/\.\d+$/', $newLessonCode) === 1) {
+                            if (preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1) {
                                 $dayData = [];
                                 $dayData[] = $updatingSchedule->{"day" . $i};
                                 $dayData[] = $new_schedule->{"day" . $i};

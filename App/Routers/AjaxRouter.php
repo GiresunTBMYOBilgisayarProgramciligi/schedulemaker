@@ -491,39 +491,68 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Front-end tarafında her bir saat için yapılan çakışma kontrolünün back-end kısmında yapılmasını sağlar
+     * tek bir saat için kontrol yapılıyor.
+     * todo birleştirilmiş ders kontrolü
      * @throws Exception
      */
     public function checkBackEndLessonCrashAction(): void
     {
+        //todo key exists kontrolleri birleştirilebilir
+        if (!key_exists("lesson_hours", $this->data) or !key_exists("time_start", $this->data)) {
+            throw new Exception("Ders saati yada program saati yok");
+        }
+        if (!key_exists("semester", $this->data)) {
+            $this->data['semester'] = getSetting('semester');
+        }
+        if (!key_exists("academic_year", $this->data)) {
+            $this->data['academic_year'] = getSetting("academic_year");
+        }
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
+            // bağlı dersleri alıyoruz
+            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+            //bağlı dersler listesine ana dersi ekliyoruz
+            array_unshift($lessons, $lesson);
 
-            /*
-             * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
-             */
-            $crashFilters = [
-                //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
-                // Programın türü lesson yada exam
-                "type" => "lesson",
-                "time_start" => $this->data['time_start'],
-                "day" => "day" . $this->data['day_index'],
-                "lesson_hours" => $this->data['lesson_hours'],
-                "semester_no" => trim($this->data['semester_no']),
-                "semester" => $this->data['semester'],
-                "academic_year" => $this->data['academic_year'],
-            ];
-            /**
-             * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
-             * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-             */
-            if (!is_null($classroom) and $classroom->type != 3) {
-                $crashFilters['owners']['classroom'] = $classroom->id;
+            $isCrashed = false;
+
+            foreach ($lessons as $lesson) {
+                /*
+                 * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+                 */
+                $crashFilters = [
+                    //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
+                    "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
+                    // Programın türü lesson yada exam
+                    "type" => "lesson",
+                    "time_start" => $this->data['time_start'],
+                    "day" => "day" . $this->data['day_index'],
+                    "lesson_hours" => $this->data['lesson_hours'],
+                    "semester_no" => trim($this->data['semester_no']),
+                    "semester" => $this->data['semester'],
+                    "academic_year" => $this->data['academic_year'],
+                ];
+                /**
+                 * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+                 * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
+                 */
+                if (!is_null($classroom) and $classroom->type != 3) {
+                    $crashFilters['owners']['classroom'] = $classroom->id;
+                }
+
+                if ($scheduleController->checkScheduleCrash($crashFilters)) {
+                    $isCrashed = true;
+                } else {
+                    $isCrashed = false;
+                    break;
+                }
             }
-            if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
+
+            if ($isCrashed) {// çakışma yok ise
                 $this->response['status'] = "success";
                 $this->response['msg'] = "Çakışma yok";
             }
@@ -546,34 +575,64 @@ class AjaxRouter extends Router
      */
     public function saveScheduleAction(): void
     {
+        if (!key_exists("lesson_hours", $this->data) or !key_exists("time_start", $this->data)) {
+            throw new Exception("Ders saati yada program saati yok");
+        }
+        if (!key_exists("semester", $this->data)) {
+            $this->data['semester'] = getSetting('semester');
+        }
+        if (!key_exists("academic_year", $this->data)) {
+            $this->data['academic_year'] = getSetting("academic_year");
+        }
+        $filters = [
+            "type" => "lesson",// Programın türü lesson yada exam todo datadan al
+            "time_start" => $this->data['time_start'],
+            "day" => "day" . $this->data['day_index'],
+            "lesson_hours" => $this->data['lesson_hours'],
+            "semester_no" => trim($this->data['semester_no']),
+            "semester" => $this->data['semester'],
+            "academic_year" => $this->data['academic_year'],
+        ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']);
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
-            /*
+            // bağlı dersleri alıyoruz
+            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+            //bağlı dersler listesine ana dersi ekliyoruz
+            array_unshift($lessons, $lesson);
+
+            $isCrashed = false;
+            foreach ($lessons as $lesson) {
+                /*
              * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
              */
-            $crashFilters = [
-                //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
-                // Programın türü lesson yada exam
-                "type" => "lesson",
-                "time_start" => $this->data['time_start'],
-                "day" => "day" . $this->data['day_index'],
-                "lesson_hours" => $this->data['lesson_hours'],
-                "semester_no" => trim($this->data['semester_no']),
-                "semester" => $this->data['semester'],
-                "academic_year" => $this->data['academic_year'],
-            ];
-            /**
-             * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
-             * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-             */
-            if ($classroom->type != 3) {
-                $crashFilters['owners']['classroom'] = $classroom->id;
+                $crashFilters = array_merge($filters, [
+                    //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
+                    "owners" => [
+                        "program" => $lesson->program_id,
+                        "user" => $lecturer->id,
+                        "lesson" => $lesson->id
+                    ],//sıralama yetki kontrolü için önemli
+                ]);
+                /**
+                 * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+                 * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
+                 */
+                if ($classroom->type != 3) {
+                    $crashFilters['owners']['classroom'] = $classroom->id;
+                }
+
+                if ($scheduleController->checkScheduleCrash($crashFilters)) {
+                    $isCrashed = true;
+                } else {
+                    $isCrashed = false;
+                    break;
+                }
             }
-            if ($scheduleController->checkScheduleCrash($crashFilters)) {// çakışma yok ise
+
+            if ($isCrashed) {// çakışma yok ise
                 /**
                  * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
                  *
@@ -583,42 +642,55 @@ class AjaxRouter extends Router
                  * her bir saat için ayrı ekleme yapılacak
                  */
                 foreach ($timeArray as $time) {
-                    /**
-                     * veri tabanına eklenecek gün verisi
-                     */
-                    $day = [
-                        "lesson_id" => $this->data['lesson_id'],
-                        "classroom_id" => $classroom->id,
-                        "lecturer_id" => $lecturer->id,
-                    ];
-                    $lesson = (new Lesson())->find($day["lesson_id"]);
-                    if (!$lesson->IsScheduleComplete()) {
-                        $schedule = new Schedule();
-                        /*
-                         * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
-                         * Bu değerler için döngü oluşturuluyor
+                    foreach ($lessons as $lesson) {
+                        /**
+                         * @var Lesson $lesson
                          */
-                        foreach ($crashFilters['owners'] as $owner_type => $owner_id) {
-                            $schedule->fill([
-                                "type" => "lesson",
-                                "owner_type" => $owner_type,
-                                "owner_id" => $owner_id,
-                                "day" . $this->data['day_index'] => $day,
-                                "time" => $time,
-                                "semester_no" => trim($this->data['semester_no']),
-                                "semester" => $this->data['semester'],
-                                "academic_year" => $this->data['academic_year'],
-                            ]);
-                            $savedId = $scheduleController->saveNew($schedule);
-                            if ($savedId == 0) {
-                                throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
-                            } else
-                                $this->response[$owner_type . "_result"] = $savedId;
-                        }
-                    } else {
-                        throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
-                    }
+                        $scheduleFilters = array_merge($filters, [
+                            //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
+                            "owners" => [
+                                "program" => $lesson->program_id,
 
+                                "lesson" => $lesson->id
+                            ],//sıralama yetki kontrolü için önemli);
+                        ]);
+                        $scheduleFilters["owners"]["user"] = !is_null($lesson->parent_lesson_id) ? $lesson->getLecturer()->id : null;
+                        /**
+                         * veri tabanına eklenecek gün verisi
+                         */
+                        $day = [
+                            "lesson_id" => $lesson->id,
+                            "classroom_id" => $classroom->id,
+                            "lecturer_id" => $lecturer->id,
+                        ];
+                        if (!$lesson->IsScheduleComplete()) {
+                            $schedule = new Schedule();
+                            /*
+                             * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
+                             * Bu değerler için döngü oluşturuluyor
+                             */
+                            foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
+                                if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
+                                $schedule->fill([
+                                    "type" => "lesson",//todo datadan al
+                                    "owner_type" => $owner_type,
+                                    "owner_id" => $owner_id,
+                                    "day" . $this->data['day_index'] => $day,
+                                    "time" => $time,
+                                    "semester_no" => trim($this->data['semester_no']),
+                                    "semester" => $this->data['semester'],
+                                    "academic_year" => $this->data['academic_year'],
+                                ]);
+                                $savedId = $scheduleController->saveNew($schedule);
+                                if ($savedId == 0) {
+                                    throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
+                                } else
+                                    $this->response[$owner_type . "_result"] = $savedId;
+                            }
+                        } else {
+                            throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
+                        }
+                    }
                 }
 
                 $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
