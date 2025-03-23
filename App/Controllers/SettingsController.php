@@ -18,16 +18,13 @@ class SettingsController extends Controller
      * @return Setting|string
      * @throws Exception
      */
-    public function getSetting($key = null, string $group = "general"): Setting|string
+    public function getSetting($key = null, string $group = "general"): Setting|null
     {
         if (is_null($key)) {
             throw new Exception("Ayar için anahtar girilmelidir");
         }
         $settingModel = new Setting();
-        $setting = $settingModel->get()->where(["key" => $key, "group" => $group])->first();
-        if (is_null($setting)) {
-            throw new Exception("Ayar Bulunamadı");
-        } else return $setting;
+        return $settingModel->get()->where(["key" => $key, "group" => $group])->first();
     }
 
     /**

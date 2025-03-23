@@ -150,10 +150,9 @@ class LessonController extends Controller
 
     /**
      * En yüksek dönem numarasını verir.
-     * @return int
-     * @throws Exception
+     * @return int|null
      */
-    public function getSemesterCount(): int
+    public function getMaxSemesterNo(): ?int
     {
         return $this->database->query("select max(semester_no) as semester_count from $this->table_name")->fetchColumn();
     }
