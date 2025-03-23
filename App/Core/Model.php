@@ -354,7 +354,7 @@ class Model
         if (is_null($id))
             throw new Exception("İd değeri doğru belirtilmediği için $this->table_name tablosunda aranan nesne bulunamadı");
         $model = $this->where(['id' => $id])->first();
-        if (!$model) throw new Exception($this->table_name . " tabosunda sonuç bulunamadı.");
+        if (!$model) throw new Exception($this->table_name . " tabosunda sonuç bulunamadı.");//todo bulamayınca hata mı vermeli null mu dönmeli
         return $model;
     }
 

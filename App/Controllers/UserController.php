@@ -384,7 +384,12 @@ class UserController extends Controller
 
                         case "user":
                             $ScheduleUser = !is_null($model->owner_id) ? (new User())->find($model->owner_id) : null;
-                            $isOwner = ($ScheduleUser?->getDepartment()?->chairperson_id == $user->id or $ScheduleUser?->id == $user->id);
+                            $ScheduleUserDepartment = $ScheduleUser?->getDepartment();
+                            if (is_null($ScheduleUserDepartment)) {
+                                $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
+                            } else {
+                                $isOwner = ($ScheduleUser?->getDepartment()?->chairperson_id == $user->id or $ScheduleUser?->id == $user->id);
+                            }
                             break;
 
                         case "lesson":
