@@ -49,7 +49,7 @@
                             <tr>
                                 <td><?= $program->id ?></td>
                                 <td><?= $program->name ?></td>
-                                <td><?= $program->getDepartment()->name ?></td>
+                                <td><?= $program->getDepartment()?->name ?></td>
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"
