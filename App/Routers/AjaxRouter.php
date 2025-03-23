@@ -642,6 +642,11 @@ class AjaxRouter extends Router
                  * her bir saat için ayrı ekleme yapılacak
                  */
                 foreach ($timeArray as $time) {
+                    if (count($lessons)>1){
+                        if (!isAuthorized('submanager')){
+                            throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
+                        }
+                    }
                     foreach ($lessons as $child) {
                         /**
                          * @var Lesson $child
