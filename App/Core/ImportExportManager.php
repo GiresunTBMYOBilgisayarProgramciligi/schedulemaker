@@ -79,7 +79,9 @@ class ImportExportManager
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
         foreach ($rows as $index => $row) {
-            [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map('trim', $row);
+            [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
+                return trim((string)($item ?? ''));
+            }, $row);
 
             if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
                 $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
@@ -147,7 +149,9 @@ class ImportExportManager
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
         foreach ($rows as $rowIndex => $row) {
-            [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map('trim', $row);
+            [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
+                return trim((string)($item ?? ''));
+            }, $row);
 
             // Değişkenleri bir diziye topla
             $data = [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type];
