@@ -72,6 +72,7 @@ use function App\Helpers\getSetting;
                                 </div>
                             </div>
                             <div class="card-footer text-end">
+                                <a href="/admin/download/Ders Listesi.xlsx" type="button" class="btn btn-success">Şablon İndir</a>
                                 <button type="submit" class="btn btn-primary">İçe aktar</button>
                             </div>
                         </form>

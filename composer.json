@@ -12,7 +12,8 @@
   "require": {
     "vlucas/phpdotenv": "^5.5",
     "ext-pdo": "*",
-    "phpoffice/phpspreadsheet": "^4.0"
+    "phpoffice/phpspreadsheet": "^4.0",
+    "ext-fileinfo": "*"
   },
   "autoload": {
     "psr-4": {

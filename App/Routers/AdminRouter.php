@@ -658,4 +658,45 @@ class AdminRouter extends Router
         ]);
         $this->callView("admin/settings/settings", $this->view_data);
     }
+
+    /**
+     * @throws Exception
+     */
+    public function downloadAction($filename)
+    {
+        $filename = urldecode($filename);
+        $filename = basename($filename);
+        $filePath= $_ENV["DOWNLOAD_PATH"] . "/".$filename;
+        // Dosya yolu geçerli mi?
+        if (!file_exists($filePath)) {
+            error_log(var_export($filePath, true));
+            throw new Exception("İndirilecek dosya bulunamadı",404);
+        }
+
+        // Güvenlik önlemi: Gerçek yol kontrolü (isteğe bağlı)
+        $realPath = realpath($filePath);
+        $baseDir = realpath($_ENV["DOWNLOAD_PATH"]); // indirilebilir dosyaların olduğu klasör
+        if (!str_starts_with($realPath, $baseDir)) {
+            throw new Exception("Bu dosyaya erişim izniniz yok.", 403);
+        }
+
+        // Dosya bilgileri
+        $filename = basename($filePath);
+        $encodedFilename = rawurlencode($filename);
+        $fileSize = filesize($filePath);
+        $fileType = mime_content_type($filePath);
+
+        // İndirme başlıkları
+        header("Content-Description: File Transfer");
+        header("Content-Type: " . $fileType);
+        header("Content-Disposition: attachment; filename=\"$filename\"; filename*=UTF-8''$encodedFilename");
+        header("Content-Length: " . $fileSize);
+        header("Cache-Control: must-revalidate");
+        header("Pragma: public");
+        header("Expires: 0");
+
+        // Dosyayı gönder
+        readfile($filePath);
+        exit;
+    }
 }
