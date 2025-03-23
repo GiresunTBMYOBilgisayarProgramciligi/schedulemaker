@@ -137,7 +137,7 @@ class ImportExportManager
         $headers = array_shift($rows);
         $headers = array_map('trim', $headers);
         $expectedHeaders =
-            ["Bölüm", "Program", "Dönemi", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
+            ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
 
 
         if ($headers !== $expectedHeaders) {

@@ -45,7 +45,7 @@
                             <th scope="col">Türü</th>
                             <th scope="col">Mevcudu</th>
                             <th scope="col">Saati</th>
-                            <th scope="col">Dönemi</th>
+                            <th scope="col">Yarıyılı</th>
                             <th scope="col">Hocası</th>
                             <th scope="col">Bölüm</th>
                             <th scope="col">Program</th>

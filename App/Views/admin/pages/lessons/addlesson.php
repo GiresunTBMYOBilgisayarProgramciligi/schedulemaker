@@ -69,7 +69,7 @@ use function App\Helpers\getSetting;
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="semester_no">Dönemi</label>
+                                            <label class="form-label"  for="semester_no">Yarıyılı</label>
                                             <select class="form-select" id="semester_no" name="semester_no" required>
                                                 <?php foreach ($lessonController->getSemesterNoList() as $key=>$value): ?>
                                                     <option value="<?= $key ?>"><?= $value ?></option>

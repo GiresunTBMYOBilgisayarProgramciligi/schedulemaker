@@ -62,7 +62,7 @@ use function App\Helpers\isAuthorized;
                                 <dd class="col-sm-4"><?= htmlspecialchars($lesson->getTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt class="col-sm-2">Saat</dt>
                                 <dd class="col-sm-4"><?= $lesson->hours ?></dd>
-                                <dt class="col-sm-2">Dönemi</dt>
+                                <dt class="col-sm-2">Yarıyılı</dt>
                                 <dd class="col-sm-4"><?= htmlspecialchars($lesson->semester_no . ". Yarıyıl", ENT_QUOTES, 'UTF-8') ?></dd>
                                 <dt class="col-sm-2">Bölüm</dt>
                                 <dd class="col-sm-4"><?= htmlspecialchars($lesson->getDepartment()->name, ENT_QUOTES, 'UTF-8') ?></dd>
