@@ -14,11 +14,11 @@ function getSetting($key = null, $group = "general")
 {
     $settingsController = new SettingsController();
     $setting = $settingsController->getSetting($key, $group);
-    return match ($setting->type) {
+    return match ($setting?->type) {
         'integer' => (int)$setting->value,
         'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
         'json' => json_decode($setting->value, true),
-        default => $setting->value
+        default => $setting?->value
     };
 }
 
@@ -47,7 +47,7 @@ function getSemesterNumbers(?string $semester = null): array
     $semester = $semester ?? getSetting('semester');
 
     // Geçerli dönem sayısını al
-    $semester_count = (new LessonController())->getSemesterCount();
+    $semester_count = (new LessonController())->getMaxSemesterNo() ?? 4;
 
     // Güz döneminde **tek**, Bahar döneminde **çift** sayılar seçilmeli
     return array_values(array_filter(range(1, $semester_count), function ($semester_no) use ($semester) {

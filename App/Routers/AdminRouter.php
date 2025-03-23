@@ -122,7 +122,7 @@ class AdminRouter extends Router
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
         }
-        if (!($department or $program)) {
+        if (!(isset($department) or isset($program))) {
             if (!isAuthorized("submanager")) {
                 throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
             }
@@ -238,7 +238,7 @@ class AdminRouter extends Router
                 ],
                 true
             ),
-            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id'=>$lesson->lecturer_id,'!id'=>$lesson->id])->all(),
+            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id])->all(),
         ]);
         $this->callView("admin/lessons/lesson", $this->view_data);
     }
@@ -592,7 +592,6 @@ class AdminRouter extends Router
         $userController = new UserController();
         $currentUser = $userController->getCurrentUser();
         $departmentController = new DepartmentController();
-        $settingsController = new SettingsController();
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
@@ -603,7 +602,6 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "settings" => $settingsController->getSettings(),
             "page_title" => "Takvim Düzenle",
             "current_semesters" => getCurrentSemester()
         ]);
@@ -621,7 +619,6 @@ class AdminRouter extends Router
         $userController = new UserController();
         $this->assetManager->loadPageAssets('exportschedule');
         $departmentController = new DepartmentController();
-        $settingsController = new SettingsController();
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
@@ -632,7 +629,6 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "settings" => $settingsController->getSettings(),
             "page_title" => "Ders Programı Dışa aktar",
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
@@ -651,10 +647,8 @@ class AdminRouter extends Router
             throw new Exception("Ayarlar sayfasına erişim yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('formpages');
-        $settingsController = new SettingsController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ayarlar",
-            "settings" => $settingsController->getSettings()
         ]);
         $this->callView("admin/settings/settings", $this->view_data);
     }
@@ -666,11 +660,11 @@ class AdminRouter extends Router
     {
         $filename = urldecode($filename);
         $filename = basename($filename);
-        $filePath= $_ENV["DOWNLOAD_PATH"] . "/".$filename;
+        $filePath = $_ENV["DOWNLOAD_PATH"] . "/" . $filename;
         // Dosya yolu geçerli mi?
         if (!file_exists($filePath)) {
             error_log(var_export($filePath, true));
-            throw new Exception("İndirilecek dosya bulunamadı",404);
+            throw new Exception("İndirilecek dosya bulunamadı", 404);
         }
 
         // Güvenlik önlemi: Gerçek yol kontrolü (isteğe bağlı)

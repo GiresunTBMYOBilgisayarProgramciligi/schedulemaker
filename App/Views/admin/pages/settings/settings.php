@@ -1,7 +1,6 @@
 <?php
 /**
  * @var string $page_title
- * @var array $settings
  */
 
 use function App\Helpers\getSetting;
@@ -49,7 +48,7 @@ use function App\Helpers\getSetting;
                                                 <select class="form-select" id="settings[general][academic_year][value]"
                                                         name="settings[general][academic_year][value]">
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $settings['general']['academic_year'] == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSetting("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                             <?= $year . ' - ' . $year + 1 ?>
                                                         </option>
                                                     <?php endfor; ?>
@@ -58,9 +57,9 @@ use function App\Helpers\getSetting;
                                                 <input type="hidden" name="settings[general][semester][type]" id="settings[general][semester][type]" value="string">
                                                 <select class="form-select" id="settings[general][semester][value]"
                                                         name="settings[general][semester][value]">
-                                                    <option value="Güz" <?= $settings['general']['semester'] == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                    <option value="Bahar" <?= $settings['general']['semester'] == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                    <option value="Yaz" <?= $settings['general']['semester'] == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                    <option value="Güz" <?= getSetting("semester") == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                    <option value="Bahar" <?= getSetting("semester") == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                    <option value="Yaz" <?= getSetting("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                                 </select>
                                             </div>
 
