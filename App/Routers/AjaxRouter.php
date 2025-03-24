@@ -659,10 +659,10 @@ class AjaxRouter extends Router
                             ],//sıralama yetki kontrolü için önemli);
                         ]);
                         /**
-                         * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+                         * Uzem Sınıfı değilse ve asıl ders ise çakışma kontrolüne dersliği de ekle
                          * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
                          */
-                        if ($classroom->type != 3) {
+                        if ($classroom->type != 3 and is_null($child->parent_lesson_id)) {
                             $scheduleFilters['owners']['classroom'] = $classroom->id;
                         }
                         //sadece asıl dersin bilgisi kullanıcıya eklenecek
