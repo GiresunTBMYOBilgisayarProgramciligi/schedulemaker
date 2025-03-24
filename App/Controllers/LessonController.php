@@ -199,6 +199,43 @@ class LessonController extends Controller
                 $child->update();
             }
         }
+        /**
+         * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
+         * @var Schedule $parentSchedule
+         */
+
+        $scheduleController = new ScheduleController();
+        $parentSchedules = (new Schedule())->get()->where(['owner_type' => "lesson", "owner_id" => $parentLesson->id])->all();
+        foreach ($parentSchedules as $parentSchedule) {
+            //Ders programı gününü bul
+            $day = [];
+            for ($i = 1; $i <= 5; $i++) {
+                if (!is_null($parentSchedule->{"day$i"})) {
+                    $day["day$i"] = $parentSchedule->{"day$i"};
+                    $day["day$i"]["lesson_id"] = $childLesson->id;
+                }
+            }
+            $owners["lesson"] = $childLesson->id;
+            $owners["program"] = $childLesson->getProgram()->id;
+            foreach ($owners as $owner_type => $owner_id) {
+                $scheduleData = [
+                    "type" => "lesson",
+                    "owner_type" => $owner_type,
+                    "owner_id" => $owner_id,
+                    array_keys($day)[0] => $day[array_keys($day)[0]],
+                    "time" => $parentSchedule->time,
+                    "semester_no" => $parentSchedule->semester_no,
+                    "semester" => $parentSchedule->semester,
+                    "academic_year" => $parentSchedule->academic_year,
+                ];
+                error_log(__LINE__.". satır scheduleData:".var_export($scheduleData,true));
+                $childSchedule = new Schedule();
+                $childSchedule->fill($scheduleData);
+                $savedId = $scheduleController->saveNew($childSchedule);
+            }
+        }
+
+
     }
 
     public function removeParentLesson(int $lessonId): void

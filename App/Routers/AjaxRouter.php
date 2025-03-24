@@ -493,7 +493,7 @@ class AjaxRouter extends Router
     /**
      * Front-end tarafında her bir saat için yapılan çakışma kontrolünün back-end kısmında yapılmasını sağlar
      * tek bir saat için kontrol yapılıyor.
-     * todo birleştirilmiş ders kontrolü
+
      * @throws Exception
      */
     public function checkBackEndLessonCrashAction(): void
