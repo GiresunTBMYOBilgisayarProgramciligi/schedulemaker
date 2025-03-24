@@ -432,7 +432,9 @@ class ScheduleController extends Controller
             }
         }
         return $HTMLOUT;
-    }    /**
+    }
+
+    /**
      * Başlangıç saatine ve ders saat miktarına göre saat dizisi oluşturur
      * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
      * @param int $hours
@@ -566,18 +568,30 @@ class ScheduleController extends Controller
                              */
                             if (preg_match('/\.\d+$/', $lesson->code) !== 1) {
                                 //var olan ders gruplı değil
+                                if ($_ENV["DEBUG"]) {
+                                    error_log(__LINE__ . ". satırda lesson değişkeni:" . var_export($lesson, true));
+                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" . var_export($newLesson, true));
+                                    error_log(__LINE__ . ". satırda schedule değişkeni:" . var_export($schedule, true));
+                                    error_log(__LINE__ . ". satırda ownerFilter değişkeni:" . var_export($ownerFilter, true));
+                                }
                                 throw new Exception($lesson->name . "(" . $lesson->code . ") dersi ile çakışıyor");
                             } else {
                                 // var olan ders gruplu
                                 if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
                                     // yeni eklenecek olan ders gruplu değil
-                                    throw new Exception($lesson->getFullName()." dersinin yanına sadece gruplu bir ders eklenebilir.");
+                                    if ($_ENV["DEBUG"]) {
+                                        error_log(__LINE__ . ". satırda lesson değişkeni:" . var_export($lesson, true));
+                                        error_log(__LINE__ . ". satırda newLesson değişkeni:" . var_export($newLesson, true));
+                                        error_log(__LINE__ . ". satırda schedule değişkeni:" . var_export($schedule, true));
+                                        error_log(__LINE__ . ". satırda ownerFilter değişkeni:" . var_export($ownerFilter, true));
+                                    }
+                                    throw new Exception($lesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
                                 }
                                 //diğer durumda ekenecek olan ders de gruplu
                                 // grup uygunluğu kontrolü javascript ile yapılıyor
                             }
                             $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']);
-                            if (isset($filters['owners']['classroom'])){
+                            if (isset($filters['owners']['classroom'])) {
                                 $newClassroom = (new Classroom())->find($filters['owners']['classroom']);
                                 if ($classroom->name == $newClassroom->name) {
                                     throw new Exception("Derslikler çakışıyor");
@@ -648,11 +662,24 @@ class ScheduleController extends Controller
 
                                 $updatingSchedule->{"day" . $i} = $dayData;
                             } else {
+                                if($_ENV["DEBUG"]){
+                                    error_log(__LINE__ . ". satırda lesson değişkeni:" .var_export($lesson, true));
+                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" .var_export($newLesson, true));
+                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" .var_export($new_schedule, true));
+                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" .var_export($updatingSchedule, true));
+                                }
+
                                 throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
                             }
                         } else {
                             // Gün verisi dizi değilse null, true yada false olabilir.
                             if ($updatingSchedule->{"day" . $i} === false) {
+                                if($_ENV["DEBUG"]){
+                                    error_log(__LINE__ . ". satırda lesson değişkeni:" .var_export($lesson, true));
+                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" .var_export($newLesson, true));
+                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" .var_export($new_schedule, true));
+                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" .var_export($updatingSchedule, true));
+                                }
                                 throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
                             } else {
                                 // ders normal şekilde güncellenecek
@@ -738,6 +765,10 @@ class ScheduleController extends Controller
         $schedules = (new Schedule())->get()->where($scheduleData)->all();
 
         if (!$schedules) {
+            if($_ENV["DEBUG"]){
+                error_log(__LINE__ . ". satırda filters değişkeni:" .var_export($filters, true));
+                error_log(__LINE__ . ". satırda lesson scheduleData:" .var_export($scheduleData, true));
+            }
             throw new Exception("Silinecek ders programı bulunamadı");
         }
         foreach ($schedules as $schedule) {

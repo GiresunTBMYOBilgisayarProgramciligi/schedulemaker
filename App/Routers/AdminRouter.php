@@ -663,7 +663,10 @@ class AdminRouter extends Router
         $filePath = $_ENV["DOWNLOAD_PATH"] . "/" . $filename;
         // Dosya yolu geçerli mi?
         if (!file_exists($filePath)) {
-            error_log(var_export($filePath, true));
+            if($_ENV["DEBUG"]){
+                error_log(__LINE__ . ". satırda filePath değişkeni:" .var_export($filePath, true));
+            }
+
             throw new Exception("İndirilecek dosya bulunamadı", 404);
         }
 
