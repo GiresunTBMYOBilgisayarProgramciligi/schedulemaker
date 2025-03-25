@@ -528,6 +528,7 @@ class ScheduleController extends Controller
      * @param array $filters
      * @return bool
      * @throws Exception
+     * //todo hem back-end hem de front-end de kullanılıyor gereksiz kaynak tüketimi
      */
     public function checkScheduleCrash(array $filters = []): bool
     {
@@ -860,6 +861,7 @@ class ScheduleController extends Controller
                 if (!is_null($schedule->{"day$i"})) {
                     $day_index = $i;
                     $classroom = (new Classroom())->find($schedule->{"day$i"}['classroom_id']);
+                    //todo gruplu dersler için gün seçimi doğru yapılmalı
                     $day = $schedule->{"day$i"};
                 }
             }
