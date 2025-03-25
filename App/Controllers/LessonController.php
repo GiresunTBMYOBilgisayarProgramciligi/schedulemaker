@@ -200,11 +200,23 @@ class LessonController extends Controller
             }
         }
         /**
+         * Çocuk dersin var olan programları siliniyor
+         */
+        $scheduleController = new ScheduleController();
+        $scheduleFilters = $scheduleController->findLessonSchedules(
+            [
+                "lesson_id" => $childLesson->id,
+                "semester_no" => $childLesson->semester_no,
+                "semester" => $childLesson->semester,
+                "academic_year" => $childLesson->academic_year
+            ]);
+        foreach ($scheduleFilters as $scheduleFilter) {
+            $scheduleController->deleteSchedule($scheduleFilter);
+        }
+        /**
          * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
          * @var Schedule $parentSchedule
          */
-
-        $scheduleController = new ScheduleController();
         $parentSchedules = (new Schedule())->get()->where(['owner_type' => "lesson", "owner_id" => $parentLesson->id])->all();
         foreach ($parentSchedules as $parentSchedule) {
             //Ders programı gününü bul
@@ -228,7 +240,6 @@ class LessonController extends Controller
                     "semester" => $parentSchedule->semester,
                     "academic_year" => $parentSchedule->academic_year,
                 ];
-                error_log(__LINE__.". satır scheduleData:".var_export($scheduleData,true));
                 $childSchedule = new Schedule();
                 $childSchedule->fill($scheduleData);
                 $savedId = $scheduleController->saveNew($childSchedule);
@@ -238,7 +249,10 @@ class LessonController extends Controller
 
     }
 
-    public function removeParentLesson(int $lessonId): void
+    /**
+     * @throws Exception
+     */
+    public function deleteParentLesson(int $lessonId): void
     {
         /**
          * @var Lesson $lesson

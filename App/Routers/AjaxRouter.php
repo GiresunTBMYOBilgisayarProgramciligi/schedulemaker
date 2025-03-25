@@ -287,7 +287,7 @@ class AjaxRouter extends Router
     {
         if (key_exists("id", $this->data)) {
             $lessonController = new LessonController();
-            $lessonController->removeParentLesson($this->data['id']);
+            $lessonController->deleteParentLesson($this->data['id']);
             $this->response = array(
                 "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
                 "status" => "success",
@@ -493,7 +493,6 @@ class AjaxRouter extends Router
     /**
      * Front-end tarafında her bir saat için yapılan çakışma kontrolünün back-end kısmında yapılmasını sağlar
      * tek bir saat için kontrol yapılıyor.
-
      * @throws Exception
      */
     public function checkBackEndLessonCrashAction(): void
@@ -642,8 +641,8 @@ class AjaxRouter extends Router
                  * her bir saat için ayrı ekleme yapılacak
                  */
                 foreach ($timeArray as $time) {
-                    if (count($lessons)>1){
-                        if (!isAuthorized('submanager')){
+                    if (count($lessons) > 1) {
+                        if (!isAuthorized('submanager')) {
                             throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
                         }
                     }
@@ -884,6 +883,7 @@ class AjaxRouter extends Router
                 "type" => $this->data["type"] ?? null,
                 "time" => $this->data["time"] ?? null,
                 "day_index" => $this->data["day_index"] ?? null,
+                "day" => $this->data["day"] ?? null,
             ], function ($value) {
                 return $value !== null && $value !== '';
             });
