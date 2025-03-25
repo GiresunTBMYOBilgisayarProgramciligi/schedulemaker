@@ -507,6 +507,15 @@ class AjaxRouter extends Router
         if (!key_exists("academic_year", $this->data)) {
             $this->data['academic_year'] = getSetting("academic_year");
         }
+        $filters = [
+            "type" => "lesson",// Programın türü lesson yada exam todo datadan al
+            "time_start" => $this->data['time_start'],
+            "day" => "day" . $this->data['day_index'],
+            "lesson_hours" => $this->data['lesson_hours'],
+            "semester_no" => trim($this->data['semester_no']),
+            "semester" => $this->data['semester'],
+            "academic_year" => $this->data['academic_year'],
+        ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']);
@@ -519,22 +528,18 @@ class AjaxRouter extends Router
 
             $isCrashed = false;
 
-            foreach ($lessons as $lesson) {
+            foreach ($lessons as $child) {
                 /*
                  * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
                  */
-                $crashFilters = [
+                $crashFilters = array_merge($filters, [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                    "owners" => ["program" => $lesson->program_id, "user" => $lecturer->id, "lesson" => $lesson->id],//sıralama yetki kontrolü için önemli
-                    // Programın türü lesson yada exam
-                    "type" => "lesson",
-                    "time_start" => $this->data['time_start'],
-                    "day" => "day" . $this->data['day_index'],
-                    "lesson_hours" => $this->data['lesson_hours'],
-                    "semester_no" => trim($this->data['semester_no']),
-                    "semester" => $this->data['semester'],
-                    "academic_year" => $this->data['academic_year'],
-                ];
+                    "owners" => [
+                        "program" => $child->program_id,
+                        "user" => $lecturer->id,
+                        "lesson" => $child->id
+                    ],//sıralama yetki kontrolü için önemli
+                ]);
                 /**
                  * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
                  * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
@@ -605,8 +610,8 @@ class AjaxRouter extends Router
             $isCrashed = false;
             foreach ($lessons as $child) {
                 /*
-             * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
-             */
+                * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+                */
                 $crashFilters = array_merge($filters, [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                     "owners" => [
@@ -619,7 +624,7 @@ class AjaxRouter extends Router
                  * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
                  * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
                  */
-                if ($classroom->type != 3) {
+                if (!is_null($classroom) and $classroom->type != 3) {
                     $crashFilters['owners']['classroom'] = $classroom->id;
                 }
 

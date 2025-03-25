@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!cell.classList.contains("drop-zone")) {
                     continue;
                 }
-                if (!checkLessonCrash(cell, draggedElement)) {
+                if (!await checkLessonCrash(cell, draggedElement)) {
                     new Toast().prepareToast("Çakışma", (i + 1) + ". saatte çakışma var")
                     return;
                 }
