@@ -261,6 +261,20 @@ class LessonController extends Controller
         if (!isAuthorized('submanager', false, $lesson)) {
             throw new Exception("Ders düzenleme yetkiniz yok");
         }
+        /**
+         * Çocuk dersin var olan programları siliniyor
+         */
+        $scheduleController = new ScheduleController();
+        $scheduleFilters = $scheduleController->findLessonSchedules(
+            [
+                "lesson_id" => $lesson->id,
+                "semester_no" => $lesson->semester_no,
+                "semester" => $lesson->semester,
+                "academic_year" => $lesson->academic_year
+            ]);
+        foreach ($scheduleFilters as $scheduleFilter) {
+            $scheduleController->deleteSchedule($scheduleFilter);
+        }
         $lesson->parent_lesson_id = null;
         $lesson->update();
     }
