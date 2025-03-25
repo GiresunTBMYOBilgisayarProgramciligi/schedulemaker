@@ -312,6 +312,7 @@ class ScheduleController extends Controller
 
         return $out;
     }
+
     /**
      * @throws Exception
      */
@@ -542,6 +543,7 @@ class ScheduleController extends Controller
                     "academic_year" => $filters['academic_year'],
                 ];
                 if ($owner_type == "program") {
+                    // sadece program için dönem numarası ekleniyor. Diğerlerinde diğer dönemlerle de çakışma kontrol edilmeli
                     $ownerFilter["semester_no"] = $filters["semester_no"];
                 }
                 $schedules = (new Schedule())->get()->where($ownerFilter)->all();
@@ -563,6 +565,12 @@ class ScheduleController extends Controller
                              * @var Lesson $newLesson
                              */
                             $newLesson = (new Lesson())->find($filters['owners']['lesson']);
+                            if ($lesson->id === $newLesson->id) {
+                                //birleştirilmiş derslere yeni ders eklerken ana dersin programı var ise kaıt işlemi yapılırken ana ders de kayıt işlemine dahil olduğunda çakışma oluyor.
+                                // bu çakışmayı önlemek için var olan ders ile yeni eklenecek ders aynı ise döngüyü atlıyoruz
+                                //todo bu tekrarın nedenini tam çözemedim
+                                continue;
+                            }
                             /*
                              * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                              */
@@ -662,11 +670,11 @@ class ScheduleController extends Controller
 
                                 $updatingSchedule->{"day" . $i} = $dayData;
                             } else {
-                                if($_ENV["DEBUG"]){
-                                    error_log(__LINE__ . ". satırda lesson değişkeni:" .var_export($lesson, true));
-                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" .var_export($newLesson, true));
-                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" .var_export($new_schedule, true));
-                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" .var_export($updatingSchedule, true));
+                                if ($_ENV["DEBUG"]) {
+                                    error_log(__LINE__ . ". satırda lesson değişkeni:" . var_export($lesson, true));
+                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" . var_export($newLesson, true));
+                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" . var_export($new_schedule, true));
+                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" . var_export($updatingSchedule, true));
                                 }
 
                                 throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
@@ -674,11 +682,11 @@ class ScheduleController extends Controller
                         } else {
                             // Gün verisi dizi değilse null, true yada false olabilir.
                             if ($updatingSchedule->{"day" . $i} === false) {
-                                if($_ENV["DEBUG"]){
-                                    error_log(__LINE__ . ". satırda lesson değişkeni:" .var_export($lesson, true));
-                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" .var_export($newLesson, true));
-                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" .var_export($new_schedule, true));
-                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" .var_export($updatingSchedule, true));
+                                if ($_ENV["DEBUG"]) {
+                                    error_log(__LINE__ . ". satırda lesson değişkeni:" . var_export($lesson, true));
+                                    error_log(__LINE__ . ". satırda newLesson değişkeni:" . var_export($newLesson, true));
+                                    error_log(__LINE__ . ". satırda new_schedule değişkeni:" . var_export($new_schedule, true));
+                                    error_log(__LINE__ . ". satırda updatingSchedule değişkeni:" . var_export($updatingSchedule, true));
                                 }
                                 throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
                             } else {
@@ -765,9 +773,9 @@ class ScheduleController extends Controller
         $schedules = (new Schedule())->get()->where($scheduleData)->all();
 
         if (!$schedules) {
-            if($_ENV["DEBUG"]){
-                error_log(__LINE__ . ". satırda filters değişkeni:" .var_export($filters, true));
-                error_log(__LINE__ . ". satırda lesson scheduleData:" .var_export($scheduleData, true));
+            if ($_ENV["DEBUG"]) {
+                error_log(__LINE__ . ". satırda filters değişkeni:" . var_export($filters, true));
+                error_log(__LINE__ . ". satırda lesson scheduleData:" . var_export($scheduleData, true));
             }
             throw new Exception("Silinecek ders programı bulunamadı");
         }
@@ -852,5 +860,62 @@ class ScheduleController extends Controller
             }
         }
         return $weekEmpty;
+    }
+
+    /**
+     * Bir ders ile bağlantılı tüm programların dizisini döener
+     * @param $filters ["lesson_id","semester_no","semester","academic_year","type"] alanları olmalı
+     * @return array
+     * @throws Exception
+     */
+    public function findLessonSchedules($filters): array
+    {
+        /**
+         * @var Lesson $lesson
+         */
+        $lesson = (new Lesson())->find($filters['lesson_id']);
+
+        $filters = [];
+        // aynı bilgileri program sınıf ve hoca için de kaydedildiği için sadece ders için programlar alınıyor.
+        $schedules = (new Schedule())->get()->where(["owner_type" => "lesson", "owner_id" => $lesson->id])->all();
+        /**
+         * @var Schedule $schedule
+         */
+        foreach ($schedules as $schedule) {
+            $day_index = null;
+            $day = null;
+            $classroom = null;
+            for ($i = 1; $i <= 5; $i++) {
+                if (!is_null($schedule->{"day$i"})) {
+                    $day_index = $i;
+                    $classroom = (new Classroom())->find($schedule->{"day$i"}['classroom_id']);
+                    $day = $schedule->{"day$i"};
+                }
+            }
+            $owners = array_filter([
+                "lesson" => $lesson->id ?? null,
+                "user" => $lesson->getLecturer()?->id ?? null,
+                "program" => $lesson->getProgram()?->id ?? null,
+                "classroom" => $classroom?->id ?? null,
+            ], function ($value) {
+                return $value !== null && $value !== '';
+            });
+            foreach ($owners as $owner_type => $owner_id) {
+                $filters[] = array_filter([
+                    "owner_type" => $owner_type ?? null,
+                    "owner_id" => $owner_id ?? null,
+                    "semester" => $schedule->semester ?? null,
+                    "academic_year" => $schedule->academic_year ?? null,
+                    "semester_no" => $schedule->semester_no ?? null,
+                    "type" => $schedule->type ?? null,
+                    "time" => $schedule->time ?? null,
+                    "day_index" => $day_index ?? null,
+                    "day" => $day ?? null
+                ], function ($value) {
+                    return $value !== null && $value !== '';
+                });
+            }
+        }
+        return $filters;
     }
 }
