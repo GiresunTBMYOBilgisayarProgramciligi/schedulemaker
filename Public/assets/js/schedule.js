@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param dropZone
      * @param draggedElement
      */
-    async function checkLessonCrash(dropZone, draggedElement) {
+    async function checkLessonCrash(dropZone, draggedElement,selectedClassroom) {
         /*
         * dersler "scheduleTable-" ile başlayan idler içerir
          */
@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("semester", semester)
         data.append("academic_year", academic_year)
         data.append("time_start", table.rows[droppedRowIndex].cells[0].innerText)
-        data.append("classroom_name", draggedElement.querySelector("span.badge").innerText,)
+        data.append("classroom_name", selectedClassroom ?? draggedElement.querySelector("span.badge").innerText,)
         data.append("lesson_id", draggedElement.dataset.lessonId)
         data.append("day_index", (droppedCellIndex - 1))
         data.append("semester_no", draggedElement.dataset.semesterNo)
@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!cell.classList.contains("drop-zone")) {
                     continue;
                 }
-                if (!await checkLessonCrash(cell, draggedElement)) {
+                if (!await checkLessonCrash(cell, draggedElement,selectedClassroom)) {
                     new Toast().prepareToast("Çakışma", (i + 1) + ". saatte çakışma var")
                     return;
                 }
