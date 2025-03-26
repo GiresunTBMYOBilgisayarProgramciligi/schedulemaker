@@ -213,7 +213,7 @@ class ScheduleController extends Controller
                             $classroomName = (new Classroom())->find($column->classroom_id)->name;
                             $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
                             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
-                            $parentLesson = (new Lesson())->find($lesson->parent_lesson_id);
+                            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
                             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
                             $out .= '
                             <div 
@@ -315,6 +315,7 @@ class ScheduleController extends Controller
 
     /**
      * @throws Exception
+     * todo html çıktı hazırlayan fonksiyonlar kaldırılıp view içerisinde hazırlanmalı
      */
     public function createAvailableLessonsHTML(array $filters = []): string
     {
