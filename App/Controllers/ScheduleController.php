@@ -567,12 +567,6 @@ class ScheduleController extends Controller
                              * @var Lesson $newLesson
                              */
                             $newLesson = (new Lesson())->find($filters['owners']['lesson']);
-                            if ($lesson->id === $newLesson->id) {
-                                //birleştirilmiş derslere yeni ders eklerken ana dersin programı var ise kaıt işlemi yapılırken ana ders de kayıt işlemine dahil olduğunda çakışma oluyor.
-                                // bu çakışmayı önlemek için var olan ders ile yeni eklenecek ders aynı ise döngüyü atlıyoruz
-                                //todo bu tekrarın nedenini tam çözemedim
-                                continue;
-                            }
                             /*
                              * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
                              */
