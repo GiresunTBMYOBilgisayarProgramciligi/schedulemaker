@@ -595,7 +595,7 @@ class AdminRouter extends Router
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
-            $departments = [(new Department())->find($currentUser->department_id)];
+            $departments = [(new Department())->find($currentUser->department_id ?? 0) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -663,8 +663,8 @@ class AdminRouter extends Router
         $filePath = $_ENV["DOWNLOAD_PATH"] . "/" . $filename;
         // Dosya yolu geçerli mi?
         if (!file_exists($filePath)) {
-            if($_ENV["DEBUG"]){
-                error_log(__LINE__ . ". satırda filePath değişkeni:" .var_export($filePath, true));
+            if ($_ENV["DEBUG"]) {
+                error_log(__LINE__ . ". satırda filePath değişkeni:" . var_export($filePath, true));
             }
 
             throw new Exception("İndirilecek dosya bulunamadı", 404);
