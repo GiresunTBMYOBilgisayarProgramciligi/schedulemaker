@@ -141,10 +141,10 @@ class AjaxRouter extends Router
         /*
          * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
          */
-        if ($userData['department_id'] == '0') {
+        if (isset($userData['department_id']) and $userData['department_id'] == '0') {
             $userData['department_id'] = null;
         }
-        if ($userData['program_id'] == '0') {
+        if (isset($userData['program_id']) and $userData['program_id'] == '0') {
             $userData['program_id'] = null;
         }
         $new_user = new User();
