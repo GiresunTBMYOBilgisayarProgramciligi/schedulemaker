@@ -110,14 +110,14 @@ class AdminRouter extends Router
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $departmentFilters = [];
         if ($department_id) {
-            $department = (new Department())->find($department_id);
+            $department = (new Department())->find($department_id)?: throw new Exception("Bölüm Bulunamadı");
             if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
                 throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
             }
             //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
         }
         if ($program_id) {
-            $program = (new Program())->find($program_id);
+            $program = (new Program())->find($program_id)?: throw new Exception("Program bulunamadı");
             if (!(isAuthorized("submanager") or $this->currentUser->id == $program?->getDepartment()?->chairperson_id)) {
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
@@ -145,7 +145,7 @@ class AdminRouter extends Router
         if (is_null($id)) {
             $user = $userController->getCurrentUser();
         } else {
-            $user = (new User())->find($id);
+            $user = (new User())->find($id)?: throw new Exception("Kullanıcı bulunamadı");
         }
         if (!isAuthorized("submanager", false, $user)) {
             throw new Exception("Bu profili görme yetkiniz yok");
@@ -179,7 +179,7 @@ class AdminRouter extends Router
         if (is_null($id)) {
             $user = $userController->getCurrentUser();
         } else {
-            $user = (new User())->find($id);
+            $user = (new User())->find($id)?: throw new Exception("Kullanıcı bulunamadı");
         }
         if (!isAuthorized("submanager", false, $user)) {
             throw new Exception("Kullanıcı düzenleme yetkiniz yok");
@@ -218,7 +218,7 @@ class AdminRouter extends Router
             /**
              * @var Lesson $lesson
              */
-            $lesson = (new Lesson())->find($id);
+            $lesson = (new Lesson())->find($id) ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
@@ -286,7 +286,7 @@ class AdminRouter extends Router
     {
         $lessonController = new LessonController();
         if (!is_null($id)) {
-            $lesson = (new Lesson())->find($id);
+            $lesson = (new Lesson())->find($id) ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Belirtilen ders bulunamadı");
         }
@@ -337,7 +337,7 @@ class AdminRouter extends Router
             throw new Exception("Derslik sayfasını görme yetkiniz yok");
         }
         if (!is_null($id)) {
-            $classroom = (new Classroom())->find($id);
+            $classroom = (new Classroom())->find($id)?: throw new Exception("Derslik bulunamadı");
         } else {
             throw new Exception("Derslik id Numarası belirtilmemiş");
         }
@@ -395,7 +395,7 @@ class AdminRouter extends Router
         }
         $classroomController = new ClassroomController();
         if (!is_null($id)) {
-            $classroom = (new Classroom())->find($id);
+            $classroom = (new Classroom())->find($id)?: throw new Exception("Derslik bulunamadı");
         } else {
             throw new Exception("Derslik Bulunamadı");
         }
@@ -416,7 +416,7 @@ class AdminRouter extends Router
     {
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = (new Department())->find($id);
+            $department = (new Department())->find($id)?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -472,7 +472,7 @@ class AdminRouter extends Router
         }
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = (new Department())->find($id);
+            $department = (new Department())->find($id)?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("Bölüm bulunamadı");
         }
@@ -496,7 +496,7 @@ class AdminRouter extends Router
     {
         $programController = new ProgramController();
         if (!is_null($id)) {
-            $program = (new Program())->find($id);
+            $program = (new Program())->find($id)?: throw new Exception("Program bulunamadı");
             if (!$program) {
                 throw new Exception("Belirtilen Program bulunamadı");
             }
@@ -559,7 +559,7 @@ class AdminRouter extends Router
         }
         $programController = new ProgramController();
         if (!is_null($id)) {
-            $program = (new Program())->find($id);
+            $program = (new Program())->find($id)?: throw new Exception("Program bulunamadı");
             if (!$program) {
                 throw new Exception("Belirtilen Program bulunamadı");
             }
@@ -595,7 +595,7 @@ class AdminRouter extends Router
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
-            $departments = [(new Department())->find($currentUser->department_id ?? 0) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
+            $departments = [(new Department())->find($currentUser->department_id) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -622,7 +622,7 @@ class AdminRouter extends Router
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
-            $departments = [(new Department())->find($this->currentUser->department_id)];
+            $departments = [(new Department())->find($this->currentUser->department_id)]?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }

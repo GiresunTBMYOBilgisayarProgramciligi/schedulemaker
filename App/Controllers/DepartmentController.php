@@ -121,7 +121,8 @@ class DepartmentController extends Controller
      */
     public function delete(int $id): void
     {
-        //todo silinen bölüm ile ilgili diğe silme işlemleri
-        (new Department())->find($id)->delete();
+        $department = (new Department())->find($id) ?: throw new Exception("Silinecek Bölüm bulunamadı");
+        //todo silinen bölüm ile ilgili diğer silme işlemleri
+        $department->delete();
     }
 }

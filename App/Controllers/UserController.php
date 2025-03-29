@@ -344,7 +344,7 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısı ise yada
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($user->id == $model->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -353,7 +353,7 @@ class UserController extends Controller
                      * Aktif kullanıcı Dersin sahibi ise yada
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($model->lecturer_id == $user->id or $user->id == $department?->chairperson_id);
                     break;
 
@@ -361,7 +361,7 @@ class UserController extends Controller
                     /*
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
-                    $department = !is_null($model->department_id) ? (new Department())->find($model->department_id) : null;
+                    $department = (new Department())->find($model->department_id);
                     $isOwner = ($user->id == $department?->chairperson_id or $user->program_id == $model->id);
                     break;
 
@@ -378,12 +378,12 @@ class UserController extends Controller
                      */
                     switch ($model->owner_type) {
                         case "program":
-                            $program = !is_null($model->owner_id) ? (new Program())->find($model->owner_id) : null;
+                            $program = (new Program())->find($model->owner_id);
                             $isOwner = $program?->getDepartment()?->chairperson_id == $user->id;
                             break;
 
                         case "user":
-                            $ScheduleUser = !is_null($model->owner_id) ? (new User())->find($model->owner_id) : null;
+                            $ScheduleUser = (new User())->find($model->owner_id);
                             $ScheduleUserDepartment = $ScheduleUser?->getDepartment();
                             if (is_null($ScheduleUserDepartment)) {
                                 $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
@@ -393,7 +393,7 @@ class UserController extends Controller
                             break;
 
                         case "lesson":
-                            $lesson = !is_null($model->owner_id) ? (new Lesson())->find($model->owner_id) : null;
+                            $lesson = (new Lesson())->find($model->owner_id);
                             $isOwner = $lesson?->getDepartment()?->chairperson_id == $user->id;
                             break;
 
@@ -425,11 +425,12 @@ class UserController extends Controller
      */
     public function delete(int $id): void
     {
-        // ilişkili tüm programı sil
+        $user = (new User())->find($id) ?: throw new Exception("Silinecek Kullanıcı bulunamadı");
+        // ilişkili tüm programı sil todo
         $schedules = (new Schedule())->get()->where(["owner_type" => "user", "owner_id" => $id])->all();
         foreach ($schedules as $schedule) {
             $schedule->delete();
         }
-        (new User())->find($id)->delete();
+        $user->delete();
     }
 }

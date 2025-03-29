@@ -245,7 +245,7 @@ class AjaxRouter extends Router
      */
     public function deleteLessonAction(): void
     {
-        $lesson = (new Lesson())->find($this->data['id']);
+        $lesson = (new Lesson())->find($this->data['id'])?: throw new Exception("Ders bulunamadı");
         $currentUser = (new UserController())->getCurrentUser();
         if (!isAuthorized("submanager", false, $lesson)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
@@ -518,7 +518,7 @@ class AjaxRouter extends Router
         ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']);
+            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
             // bağlı dersleri alıyoruz
@@ -599,7 +599,7 @@ class AjaxRouter extends Router
         ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']);
+            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
             // bağlı dersleri alıyoruz
@@ -769,7 +769,7 @@ class AjaxRouter extends Router
         }
 
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']);
+            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $filters = [
                 "owner_type" => "user",
@@ -837,7 +837,7 @@ class AjaxRouter extends Router
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
-                $lesson = (new Lesson())->find($this->data['lesson_id']);
+                $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
                 $lecturer = $lesson->getLecturer();
                 $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
                 // bağlı dersleri alıyoruz
