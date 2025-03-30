@@ -20,10 +20,10 @@ class Department extends Model
 
     /**
      * Bölüm başkanı Modelini döner. Eğer bölüm başkanı tanımlı değilse Boş Model döner
-     * @return User | null Chair Person
+     * @return User Chair Person
      * @throws Exception
      */
-    public function getChairperson(): ?User
+    public function getChairperson(): User
     {
         if (is_null($this->chairperson_id)) {
             return new User(); // bölüm başkanı tanımlı değilse boş kullanıcı döndür.

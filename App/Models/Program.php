@@ -21,7 +21,9 @@ class Program extends Model
      */
     public function getDepartment(): Department|null
     {
-        return (new Department)->find($this->department_id);
+        if (!is_null($this->department_id)) {
+            return (new Department)->find($this->department_id);
+        } else return null;
 
     }
 

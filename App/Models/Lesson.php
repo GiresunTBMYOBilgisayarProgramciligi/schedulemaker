@@ -77,7 +77,9 @@ class Lesson extends Model
      */
     public function getParentLesson(): Lesson|null
     {
-        return (new Lesson())->find($this->parent_lesson_id);
+        if ($this->parent_lesson_id)
+            return (new Lesson())->find($this->parent_lesson_id);
+        else return null;
 
     }
 
@@ -86,7 +88,7 @@ class Lesson extends Model
      */
     public function getChildLessonList(): array
     {
-        return (new Lesson())->get()->where(["parent_lesson_id" => $this->id])->all();
+        return (new Lesson())->get()->where(["parent_lesson_id"=> $this->id])->all();
     }
 
     public function getFullName(): string

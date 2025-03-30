@@ -120,12 +120,11 @@ class ProgramController extends Controller
      */
     public function delete(int $id): void
     {
-        $program = (new Program())->find($id) ?: throw new Exception("Silinecek Program bulunamadı");
-        // ilişkili tüm programı sil //todo bu silme işlemi findLessonSchedules da olduğu gibi olmalı
+        // ilişkili tüm programı sil
         $schedules = (new Schedule())->get()->where(["owner_type" => "program", "owner_id" => $id])->all();
         foreach ($schedules as $schedule) {
             $schedule->delete();
         }
-        $program->delete();
+        (new Program())->find($id)->delete();
     }
 }

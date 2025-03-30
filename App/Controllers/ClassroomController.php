@@ -108,14 +108,12 @@ class ClassroomController extends Controller
      */
     public function delete(int $id): void
     {
-        $classroom = (new Classroom())->find($id) ?: throw new Exception("Silinecek derslik bulunamadı");
-        // ilişkili tüm programı sil //todo bu silme işlemi findLessonSchedules da olduğu gibi olmalı
+        // ilişkili tüm programı sil
         $schedules = (new Schedule())->get()->where(["owner_type" => "classroom", "owner_id" => $id])->all();
         foreach ($schedules as $schedule) {
             $schedule->delete();
         }
-
-        $classroom->delete();
+        (new Classroom())->find($id)->delete();
     }
 
     public function getTypeList(): array

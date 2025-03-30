@@ -140,14 +140,12 @@ class LessonController extends Controller
      */
     public function delete(int $id): void
     {
-        $lesson = (new Lesson())->find($id) ?: throw new Exception("Silinecek Ders bulunamadı");
         // ilişkili tüm programı sil
-        $scheduleController = new ScheduleController();
-        $scheduleFilters = $scheduleController->findLessonSchedules(['lesson_id' => $lesson->id]);
-        foreach ($scheduleFilters as $scheduleFilter) {
-            $scheduleController->deleteSchedule($scheduleFilter);
+        $schedules = (new Schedule())->get()->where(["owner_type" => "lesson", "owner_id" => $id])->all();
+        foreach ($schedules as $schedule) {
+            $schedule->delete();
         }
-        $lesson->delete();
+        (new Lesson())->find($id)->delete();
     }
 
     /**
@@ -168,9 +166,8 @@ class LessonController extends Controller
          * @var Lesson $parentLesson
          * @var Lesson $childLesson
          */
-        $parentLesson = (new Lesson())->find($parentLessonId) ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
-        $childLesson = (new Lesson())->find($childLessonId) ?: throw new Exception("Birleştirilecek ders bulunamadı");
-
+        $parentLesson = (new Lesson())->find($parentLessonId);
+        $childLesson = (new Lesson())->find($childLessonId);
         if (!(isAuthorized('submanager', false, $childLesson) and isAuthorized('submanager', false, $parentLesson))) {
             throw new Exception("Ders birleştirme yetkiniz yok");
         }
@@ -188,7 +185,7 @@ class LessonController extends Controller
             /**
              * @var Lesson $existingParentLesson
              */
-            $parentLesson = (new Lesson())->find($parentLesson->parent_lesson_id) ?: throw new Exception("Bağlanmak istenilen dersin üst ebeveyni bulunamadı");
+            $parentLesson = (new Lesson())->find($parentLesson->parent_lesson_id);
         }
 
         $childLesson->parent_lesson_id = $parentLesson->id;
@@ -260,7 +257,7 @@ class LessonController extends Controller
         /**
          * @var Lesson $lesson
          */
-        $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
+        $lesson = (new Lesson())->find($lessonId);
         if (!isAuthorized('submanager', false, $lesson)) {
             throw new Exception("Ders düzenleme yetkiniz yok");
         }
