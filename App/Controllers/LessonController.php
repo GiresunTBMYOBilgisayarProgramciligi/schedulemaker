@@ -63,15 +63,8 @@ class LessonController extends Controller
     public function saveNew(Lesson $new_lesson): int
     {
         try {
-            // Yeni kullanıcı verilerini bir dizi olarak alın
-            $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
-
-            // Dinamik SQL sorgusu oluştur
-            $sql = $this->createInsertSQL($new_lesson_arr);
-            // Hazırlama ve parametre bağlama
-            $q = $this->database->prepare($sql);
-            $q->execute($new_lesson_arr);
-            return $this->database->lastInsertId();
+            $new_lesson->create();
+            return $new_lesson->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

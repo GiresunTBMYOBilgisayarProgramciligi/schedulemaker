@@ -214,6 +214,7 @@ class UserController extends Controller
     /**
      * Formlarda listelenecek Rol, yetki listesi
      * @return string[]
+     * @throws Exception
      */
     public function getRoleList(): array
     {

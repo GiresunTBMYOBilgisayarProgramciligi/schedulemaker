@@ -211,7 +211,7 @@ class AjaxRouter extends Router
 
         $lesson = $lessonController->saveNew($new_lesson);
         if (!$lesson) {
-            throw new Exception("Kullanıcı eklenemedi");
+            throw new Exception("Ders eklenemedi");
         } else {
             $this->response = array(
                 "msg" => "Ders başarıyla eklendi.",

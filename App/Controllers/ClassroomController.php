@@ -35,7 +35,6 @@ class ClassroomController extends Controller
     public function saveNew(array $classroomData): int
     {
         try {
-
             $new_classroom = new Classroom();
             $new_classroom->fill($classroomData);
             $new_classroom->create();
