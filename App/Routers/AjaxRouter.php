@@ -222,7 +222,7 @@ class AjaxRouter extends Router
             $lessonData['program_id'] = null;
         }
         /**
-         *
+         * Hoca ve altı yetkive dersi veren kullanıcı ise
          */
         if (isAuthorized("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
             $lessonData = [];
@@ -250,6 +250,9 @@ class AjaxRouter extends Router
         if (!isAuthorized("submanager", false, $lesson)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
         }
+        /**
+         * Hoca altında yetki ve dersin sahibi değilse
+         */
         if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
         }

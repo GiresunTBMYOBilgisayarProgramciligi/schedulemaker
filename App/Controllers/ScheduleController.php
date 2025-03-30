@@ -12,7 +12,6 @@ use PDOException;
 use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
-use function App\Helpers\isAuthorized;
 
 class ScheduleController extends Controller
 {
@@ -609,10 +608,6 @@ class ScheduleController extends Controller
     public function saveNew(Schedule $new_schedule): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_schedule)) {
-                throw new Exception("Ders Programı kaydetmek için yetkiniz yok");
-            }
-
             $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
             //dizi türündeki veriler serialize ediliyor
             array_walk($new_schedule_arr, function (&$value) {
@@ -682,10 +677,6 @@ class ScheduleController extends Controller
     public function updateSchedule(Schedule $schedule): int
     {
         try {
-            if (!isAuthorized("submanager", false, $schedule)) {
-                throw new Exception("Ders Programı güncelleme yetkiniz yok");
-            }
-
             $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
             //dizi türündeki veriler serialize ediliyor
             array_walk($scheduleData, function (&$value) {
@@ -747,10 +738,6 @@ class ScheduleController extends Controller
             throw new Exception("Silinecek ders programı bulunamadı");
         }
         foreach ($schedules as $schedule) {
-            if (!isAuthorized("submanager", false, $schedule)) {
-                throw new Exception("Ders Programı güncelleme yetkiniz yok");
-            }
-
             /**
              * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
              */
