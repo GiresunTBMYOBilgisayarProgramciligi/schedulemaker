@@ -7,7 +7,6 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use Exception;
-use PDO;
 use PDOException;
 use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
@@ -323,7 +322,6 @@ class ScheduleController extends Controller
         }
         $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
                                          data-semester-no="' . $filters['semester_no'] . '"
-                                         style="max-height: 90vh;overflow: auto;"
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {
