@@ -57,7 +57,8 @@ document.addEventListener("DOMContentLoaded", function () {
             confirmDeleteModal.closeModal();
             fetchForm(form, new FormData(form)).then(() => {
                 if (lessonRow) {
-                    lessonRow.remove();
+                    dataTable.row(lessonRow).remove().draw();
+                    //lessonRow.remove();
                 } else {
                     window.history.back()
                 }
