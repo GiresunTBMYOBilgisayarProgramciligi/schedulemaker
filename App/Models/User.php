@@ -57,9 +57,7 @@ class User extends Model
      */
     public function getDepartment(): Department|null
     {
-        if (!is_null($this->department_id)) {
-            return (new Department())->find($this->department_id) ?? null;
-        } else return null;
+        return (new Department())->find($this->department_id);
 
     }
 
@@ -79,9 +77,7 @@ class User extends Model
      */
     public function getProgramName(): string
     {
-        if (!is_null($this->program_id)) {
-            return (new Program())->find($this->program_id)->name ?? "";
-        } else return "";
+        return (new Program())->find($this->program_id)->name ?? "";
     }
 
     public function getRoleName(): string

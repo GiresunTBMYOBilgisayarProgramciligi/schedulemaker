@@ -310,8 +310,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     console.error(data);
                     return false;
                 } else {
-                    //todo tabloya yükleniyor efekti
-                    unavailableCells = data.unavailableCells;
                     if (unavailableCells) {
                         for (let i = 0; i <= 9; i++) {
                             for (let cell in unavailableCells[i]) {

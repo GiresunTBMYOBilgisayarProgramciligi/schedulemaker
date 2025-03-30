@@ -54,6 +54,8 @@ class View
             }
         } catch (Exception $exception) {
             //todo view içerisindeki hatalar bu şekilde gösteriliyor. ama hatalar sayfanın yüklenmesini engelleyebiliyor
+            //todo bu şekilde bir form elemanı içerisinde çalıştırıldığı için hata gösterilmiyor
+            error_log($exception->getMessage().$exception->getTraceAsString());
             echo '<script>
                     document.addEventListener("DOMContentLoaded", function () {
                             alert("'. $exception->getMessage() . '");
