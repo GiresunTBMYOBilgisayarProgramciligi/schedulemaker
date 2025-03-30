@@ -121,6 +121,9 @@ class AjaxRouter extends Router
         if (is_null($userData['program_id']) or $userData['program_id'] == '0') {
             unset($userData['program_id']);
         }
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Kullanıcı oluşturma yetkiniz yok");
+        }
         (new UserController())->saveNew($userData);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla eklendi.",
@@ -149,6 +152,9 @@ class AjaxRouter extends Router
         }
         $new_user = new User();
         $new_user->fill($userData);
+        if (!isAuthorized("submanager", false, $new_user)) {
+            throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
+        }
         $userId = $usersController->updateUser($new_user);
 
         $this->response = array(
@@ -178,6 +184,9 @@ class AjaxRouter extends Router
     /*
      * Lessons Ajax Actions
      */
+    /**
+     * @throws Exception
+     */
     public function addLessonAction(): void
     {
         $lessonController = new LessonController();
@@ -196,6 +205,10 @@ class AjaxRouter extends Router
         }
         $new_lesson = new Lesson();
         $new_lesson->fill($lessonData);
+        if (!isAuthorized("submanager", false, $new_lesson)) {
+            throw new Exception("Yeni Ders oluşturma yetkiniz yok");
+        }
+
         $lesson = $lessonController->saveNew($new_lesson);
         if (!$lesson) {
             throw new Exception("Kullanıcı eklenemedi");
@@ -208,6 +221,9 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function updateLessonAction(): void
     {
         $lessonController = new LessonController();
@@ -231,6 +247,10 @@ class AjaxRouter extends Router
         }
         $lesson = new Lesson();
         $lesson->fill($lessonData);
+        if (!isAuthorized("submanager", false, $lesson)) {
+            throw new Exception("Ders güncelleme yetkiniz yok");
+        }
+
         $lesson = $lessonController->updateLesson($lesson);
         $this->response = array(
             "msg" => "Ders başarıyla Güncellendi.",
@@ -272,6 +292,9 @@ class AjaxRouter extends Router
     {
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
             $lessonController = new LessonController();
+            if (!isAuthorized('submanager')) {
+                throw new Exception("Ders birleştirme yetkiniz yok");
+            }
             $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
             $this->response = array(
                 "msg" => "Dersler Başarıyla birleştirildi.",
@@ -289,6 +312,9 @@ class AjaxRouter extends Router
     public function deleteParentLessonAction(): void
     {
         if (key_exists("id", $this->data)) {
+            if (!isAuthorized('submanager')) {
+                throw new Exception("Ders birşeltirmesi kaldırma yetkiniz yok");
+            }
             $lessonController = new LessonController();
             $lessonController->deleteParentLesson($this->data['id']);
             $this->response = array(
@@ -309,6 +335,9 @@ class AjaxRouter extends Router
      */
     public function addClassroomAction(): void
     {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Yeni derslik oluşturma yetkiniz yok");
+        }
         $classroomController = new ClassroomController();
         $classroomController->saveNew($this->data);
 
@@ -319,8 +348,15 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function updateClassroomAction(): void
     {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Derslik güncelleme yetkiniz yok");
+        }
+
         $classroomController = new ClassroomController();
         $classroomData = $this->data;
         $classroom = new Classroom();
@@ -353,8 +389,15 @@ class AjaxRouter extends Router
     /*
      * Departments Ajax Actions
      */
+    /**
+     * @throws Exception
+     */
     public function addDepartmentAction(): void
     {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Yeni Bölüm oluşturma yetkiniz yok");
+        }
+
         $departmentController = new DepartmentController();
         $departmentData = $this->data;
         $new_department = new Department();
@@ -371,12 +414,19 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function updateDepartmentAction(): void
     {
         $departmentController = new DepartmentController();
         $departmentData = $this->data;
         $department = new Department();
         $department->fill($departmentData);
+        if (!isAuthorized("submanager", false, $department)) {
+            throw new Exception("Bölüm Güncelleme yetkiniz yok");
+        }
+
         $departmentController->updateDepartment($department);
 
         $this->response = array(
@@ -406,8 +456,14 @@ class AjaxRouter extends Router
     /*
      * Programs Ajax Actions
      */
+    /**
+     * @throws Exception
+     */
     public function addProgramAction(): void
     {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Yeni Program oluşturma yetkiniz yok");
+        }
         $programController = new ProgramController();
         $programData = $this->data;
         $new_program = new Program();
@@ -424,12 +480,19 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function updateProgramAction(): void
     {
         $programController = new ProgramController();
         $programData = $this->data;
         $program = new Program();
         $program->fill($programData);
+        if (!isAuthorized("submanager", false, $program)) {
+            throw new Exception("Program güncelleme yetkiniz yok");
+        }
+
         $programId = $programController->updateProgram($program);
 
         $this->response = array(
@@ -922,8 +985,14 @@ class AjaxRouter extends Router
      * Setting Actions
      */
 
+    /**
+     * @throws Exception
+     */
     public function saveSettingsAction(): void
     {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+        }
         $settingsController = new SettingsController();
         foreach ($this->data['settings'] as $group => $settings) {
             $settingData['group'] = $group;

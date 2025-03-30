@@ -5,10 +5,8 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Classroom;
 use App\Models\Schedule;
-use PDO;
 use PDOException;
 use Exception;
-use function App\Helpers\isAuthorized;
 
 /**
  * Controller sınıfından türetilmiştir. Derslikler ile ilgili işlemleri yönetir.
@@ -37,9 +35,7 @@ class ClassroomController extends Controller
     public function saveNew(array $classroomData): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Yeni derslik oluşturma yetkiniz yok");
-            }
+
             $new_classroom = new Classroom();
             $new_classroom->fill($classroomData);
             $new_classroom->create();
@@ -64,10 +60,6 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Derslik güncelleme yetkiniz yok");
-            }
-
             $classroomData = $classroom->getArray(['table_name', 'database', 'id'], true);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];

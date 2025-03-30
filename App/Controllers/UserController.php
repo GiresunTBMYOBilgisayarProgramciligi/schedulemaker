@@ -110,9 +110,6 @@ class UserController extends Controller
     public function saveNew(array $userData): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Kullanıcı oluşturma yetkiniz yok");
-            }
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $userData["password"] = password_hash($userData["password"] ?? "123456", PASSWORD_DEFAULT);
 
@@ -140,9 +137,6 @@ class UserController extends Controller
     public function updateUser(User $user): int
     {
         try {
-            if (!isAuthorized("submanager", false, $user)) {
-                throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
-            }
             // Şifre kontrolü ve hash işlemi
             if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);

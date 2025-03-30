@@ -47,10 +47,6 @@ class DepartmentController extends Controller
     public function saveNew(Department $new_department): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Yeni Bölüm oluşturma yetkiniz yok");
-            }
-
             $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id']);
 
             // Dinamik SQL sorgusu oluştur
@@ -77,10 +73,6 @@ class DepartmentController extends Controller
     public function updateDepartment(Department $department): int
     {
         try {
-            if (!isAuthorized("submanager", false, $department)) {
-                throw new Exception("Bölüm Güncelleme yetkiniz yok");
-            }
-
             $departmentData = $department->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];

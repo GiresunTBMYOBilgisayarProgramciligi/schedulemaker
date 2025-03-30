@@ -35,9 +35,6 @@ class SettingsController extends Controller
     public function saveNew(Setting $setting): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Bu işlemi yapmak için yetkiniz yok");
-            }
             $newSettingData = $setting->getArray(['table_name', "database", "id"]);
 
             $sql = $this->createInsertSQL($newSettingData);
@@ -64,10 +61,6 @@ class SettingsController extends Controller
     public function updateSetting(Setting $setting): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Ayar güncelleme yetkiniz yok");
-            }
-
             $settingData = $setting->getArray(['table_name', "database", "id"]);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];

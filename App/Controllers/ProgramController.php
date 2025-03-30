@@ -8,7 +8,6 @@ use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
-use function App\Helpers\isAuthorized;
 
 class ProgramController extends Controller
 {
@@ -47,10 +46,6 @@ class ProgramController extends Controller
     public function saveNew(Program $new_program): int
     {
         try {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Yeni Program oluşturma yetkiniz yok");
-            }
-
             $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
             // Dinamik SQL sorgusu oluştur
             $sql = $this->createInsertSQL($new_program_arr);
@@ -76,10 +71,6 @@ class ProgramController extends Controller
     public function updateProgram(Program $program): int
     {
         try {
-            if (!isAuthorized("submanager", false, $program)) {
-                throw new Exception("Program güncelleme yetkiniz yok");
-            }
-
             $programData = $program->getArray(['table_name', 'database', 'id']);
             // Sorgu ve parametreler için ayarlamalar
             $columns = [];

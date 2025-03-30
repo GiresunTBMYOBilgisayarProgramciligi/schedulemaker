@@ -8,7 +8,6 @@ use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
-use function App\Helpers\isAuthorized;
 
 class LessonController extends Controller
 {
@@ -64,10 +63,6 @@ class LessonController extends Controller
     public function saveNew(Lesson $new_lesson): int
     {
         try {
-            if (!isAuthorized("submanager", false, $new_lesson)) {
-                throw new Exception("Yeni Ders oluşturma yetkiniz yok");
-            }
-
             // Yeni kullanıcı verilerini bir dizi olarak alın
             $new_lesson_arr = $new_lesson->getArray(['table_name', 'database', 'id', "register_date", "last_login"]);
 
@@ -95,10 +90,6 @@ class LessonController extends Controller
     public function updateLesson(Lesson $lesson): int
     {
         try {
-            if (!isAuthorized("submanager", false, $lesson)) {
-                throw new Exception("Ders güncelleme yetkiniz yok");
-            }
-
             // Lesson nesnesinden filtrelenmiş verileri al
             $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
             // Sorgu ve placeholder'lar için başlangıç ayarları
@@ -170,10 +161,6 @@ class LessonController extends Controller
          */
         $parentLesson = (new Lesson())->find($parentLessonId) ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
         $childLesson = (new Lesson())->find($childLessonId) ?: throw new Exception("Birleştirilecek ders bulunamadı");
-
-        if (!(isAuthorized('submanager', false, $childLesson) and isAuthorized('submanager', false, $parentLesson))) {
-            throw new Exception("Ders birleştirme yetkiniz yok");
-        }
         /*
          * Bir derse bağlanmak istenilen bir ders zaten bir derse bağlı ise hata verir.
          */
@@ -261,9 +248,6 @@ class LessonController extends Controller
          * @var Lesson $lesson
          */
         $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
-        if (!isAuthorized('submanager', false, $lesson)) {
-            throw new Exception("Ders düzenleme yetkiniz yok");
-        }
         /**
          * Çocuk dersin var olan programları siliniyor
          */
