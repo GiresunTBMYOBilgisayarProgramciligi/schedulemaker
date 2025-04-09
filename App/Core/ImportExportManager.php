@@ -436,7 +436,7 @@ class ImportExportManager
 
                     if (is_array($scheduleCell)) {
                         //bu hücrede ders var demektir
-                        if (is_array($scheduleCell[0])) {
+                        if (isset ($scheduleCell[0]) and is_array($scheduleCell[0])) {
                             // bu alanda gruplu iki ders var demektir.
                             /**
                              * Hücre içerisine yazdırılacak derslerin bilgilerinin dizisi

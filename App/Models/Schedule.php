@@ -90,7 +90,7 @@ class Schedule extends Model
                 $day = $this->{"day{$dayIndex}"};
                 if (is_array($day)) {
                     //günde ders var
-                    if (is_array($day[0])) {
+                    if (isset($day[0]) and is_array($day[0])) {
                         // günde iki ders var
                         $groupDayLessons=[];
                         $groupDayClasrooms=[];
@@ -102,7 +102,7 @@ class Schedule extends Model
                         $week["classroom{$dayIndex}"]=$groupDayClasrooms;
                     }else{
                         // günde tek ders var
-                        $week["day{$dayIndex}"] = ['lesson_id' => $day['lesson_id'], 'lecture_id' => $day['lecture_id']]; // ders bilgileri
+                        $week["day{$dayIndex}"] = ['lesson_id' => $day['lesson_id'], 'lecturer_id' => $day['lecturer_id']]; // ders bilgileri
                         $week["classroom{$dayIndex}"] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri
                     }
                 } else {
