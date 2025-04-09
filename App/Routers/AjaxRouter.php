@@ -25,7 +25,7 @@ use function App\Helpers\getSetting;
 use function App\Helpers\isAuthorized;
 
 /**
- * todo Router görevi sefece gelen isteiği ilgili Controller a yönlendirmek. gerekl işlemleri ve dönülecek view i controller belirler.
+ * todo Router görevi sedece gelen isteiği ilgili Controller a yönlendirmek. gerekl işlemleri ve dönülecek view i controller belirler.
  */
 class AjaxRouter extends Router
 {

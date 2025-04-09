@@ -8,7 +8,6 @@
  * @var string $page_title
  * @var string $scheduleHTML
  * @var array $lesson_list
- * todo users klasörüne taşınabilir
  */
 
 use function App\Helpers\isAuthorized;
