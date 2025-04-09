@@ -420,7 +420,6 @@ class Model
      * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
      * @return object[]
      * @throws Exception
-     * todo bunun yeri burası değil
      */
     public function getDepartmentProgramsList(): array
     {
@@ -501,7 +500,6 @@ class Model
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
         }
-        //todo burada hata kontrolü yapılmalı mı yoksa controller içinde hata yakalayıp farklı işlemler yapmak grektiği için hata yakalama işi oraya mı bırakılmalı
     }
 
 

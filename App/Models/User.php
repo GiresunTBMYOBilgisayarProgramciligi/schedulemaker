@@ -120,12 +120,12 @@ class User extends Model
     }
 
     /**
-     * todo
+     * hocanın girdiği tüm derslerin mevcutlarının toplamını verir
      * @return int
      */
     public function getTotalStudentCount(): int
     {
-        return 100;
+        return (new Lesson())->get()->where(['lecturer_id' => $this->id])->sum("size");
     }
 
     /**
