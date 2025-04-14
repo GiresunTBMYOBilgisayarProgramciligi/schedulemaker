@@ -61,7 +61,9 @@
                             <tr>
                                 <td><?= $lesson->id ?></td>
                                 <td><?= $lesson->code ?></td>
-                                <td><?= $lesson->name ?></td>
+                                <td
+                                    <?= $lesson->getParentLesson() ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->getParentLesson()->getFullName().'('.$lesson->getParentLesson()->getProgram()->name.') Dersine bağlı"' : '' ?>
+                                ><?= $lesson->getParentLesson() ? $lesson->name . "*" : $lesson->name ?></td>
                                 <td><?= $lesson->getTypeName() ?></td>
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
@@ -72,6 +74,7 @@
                                 <td><?= $lesson->semester ?></td>
                                 <td><?= $lesson->academic_year ?></td>
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
+
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"
@@ -81,22 +84,22 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item"
-                                                   href="/admin/lesson/<?=$lesson->id?>">Gör</a>
+                                                   href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item"
-                                                   href="/admin/editlesson/<?=$lesson->id?>">Düzenle</a>
+                                                   href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
                                             </li>
                                             <li>
                                                 <hr class="dropdown-divider">
                                             </li>
                                             <li>
-                                                <form action="/ajax/deletelesson/<?=$lesson->id?>"
+                                                <form action="/ajax/deletelesson/<?= $lesson->id ?>"
                                                       class="ajaxFormDelete"
-                                                      id="deleteLesson-<?=$lesson->id?>"
+                                                      id="deleteLesson-<?= $lesson->id ?>"
                                                       method="post">
                                                     <input type="hidden" name="id"
-                                                           value="<?=$lesson->id?>">
+                                                           value="<?= $lesson->id ?>">
                                                     <input type="submit" class="dropdown-item" value="Sil">
                                                 </form>
                                             </li>
