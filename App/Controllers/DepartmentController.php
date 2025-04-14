@@ -40,21 +40,17 @@ class DepartmentController extends Controller
 
     /**
      * Parametre olarak verilen modeli veri tabanına kaydeder
-     * @param Department $new_department
+     * @param array $department_data
      * @return int Veri tabanına eklenen Department id numarası
      * @throws Exception
      */
-    public function saveNew(Department $new_department): int
+    public function saveNew(array $department_data): int
     {
         try {
-            $new_lesson_arr = $new_department->getArray(['table_name', 'database', 'id']);
-
-            // Dinamik SQL sorgusu oluştur
-            $sql = $this->createInsertSQL($new_lesson_arr);
-            // Hazırlama ve parametre bağlama
-            $q = $this->database->prepare($sql);
-            $q->execute($new_lesson_arr);
-            return $this->database->lastInsertId();
+            $new_department = new Department();
+            $new_department->fill($department_data);
+            $new_department->create();
+            return $new_department->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

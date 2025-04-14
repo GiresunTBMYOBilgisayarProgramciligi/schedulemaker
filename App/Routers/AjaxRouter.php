@@ -399,18 +399,11 @@ class AjaxRouter extends Router
         }
 
         $departmentController = new DepartmentController();
-        $departmentData = $this->data;
-        $new_department = new Department();
-        $new_department->fill($departmentData);
-        $department = $departmentController->saveNew($new_department);
-        if (!$department) {
-            throw new Exception("Bölüm Eklenemedi");
-        } else {
+        $departmentController->saveNew($this->data);
             $this->response = array(
                 "msg" => "Bölüm başarıyla eklendi.",
                 "status" => "success",
             );
-        }
         $this->sendResponse();
     }
 
