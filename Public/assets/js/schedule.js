@@ -339,6 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table");
+        const draggedElementFrameDiv = draggedElement.closest("div.frame");
         let lessonId = draggedElement.dataset['lessonId'];
         /*
          Dönem kontrolü yapılıyor.
@@ -468,6 +469,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     //saatlerin tamamı bittiyse listeden sil
                     draggedElement.remove();
+                    draggedElementFrameDiv.remove();
                 }
                 scheduleModal.closeModal();
                 clearCells(table);

@@ -217,7 +217,7 @@ class ScheduleController extends Controller
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="' . $draggable . '" 
-                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded ' . $text_bg . '"
+                            class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
@@ -231,7 +231,7 @@ class ScheduleController extends Controller
                                         </a>
                                         ' . $lesson->getFullName() . '
                                     </div>
-                                    <div><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lesson->getLecturer()->id . '\">
+                                    <div class="text-nowrap"><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lesson->getLecturer()->id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
                                     ' . $lecturerName . '</div>
@@ -261,7 +261,7 @@ class ScheduleController extends Controller
                             <div 
                             id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="' . $draggable . '" 
-                            class="d-flex justify-content-between align-items-start mb-2 p-2 rounded ' . $text_bg . '"
+                            class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
                             data-schedule-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
@@ -276,7 +276,7 @@ class ScheduleController extends Controller
                                     ' . $lesson->getFullName() . '
                                         
                                     </div>
-                                    <div>
+                                    <div class="text-nowrap">
                                     <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $day->lecturer_id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
@@ -320,7 +320,7 @@ class ScheduleController extends Controller
         if (!key_exists('semester_no', $filters)) {
             throw new Exception("Dönem numarası belirtilmelidir");
         }
-        $HTMLOut = '<div class="available-schedule-items col-md-3 drop-zone small"
+        $HTMLOut = '<div class="row available-schedule-items drop-zone small"
                                          data-semester-no="' . $filters['semester_no'] . '"
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
         $availableLessons = $this->availableLessons($filters);
@@ -335,22 +335,24 @@ class ScheduleController extends Controller
             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
             $HTMLOut .= "
-                    <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
-                  class=\"d-flex justify-content-between align-items-start mb-2 p-2 rounded $text_bg\"
-                  data-semester-no=\"$lesson->semester_no\"
-                  data-lesson-code=\"$lesson->code\"
-                  data-lesson-id=\"$lesson->id\"
-                  $popover
-                  >
-                    <div class=\"ms-2 me-auto\">
-                      <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
-                      <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
-                    </div>
-                    <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
+                    <div class='frame col-md-4 p-0 ps-1 '>
+                        <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
+                      class=\"d-flex justify-content-between align-items-start mb-1 p-2 rounded $text_bg\"
+                      data-semester-no=\"$lesson->semester_no\"
+                      data-lesson-code=\"$lesson->code\"
+                      data-lesson-id=\"$lesson->id\"
+                      $popover
+                      >
+                        <div class=\"ms-2 me-auto\">
+                          <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
+                          <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
+                        </div>
+                        <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
+                      </div>
                   </div>
                     ";
         }
-        $HTMLOut .= '</div>';
+        $HTMLOut .= '</div><!--end::available-schedule-items-->';;
         return $HTMLOut;
     }
 
@@ -380,26 +382,24 @@ class ScheduleController extends Controller
                                     </button>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <!--begin::Row-->
-                                <div class="row">';
+                            <div class="card-body">';
         if (!($only_table)) {
             $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
         }
-        $colCSS = $only_table ? 'col-md-12' : 'col-md-9';
+        $HTMLOUT.='
+                                <!--begin::Row Schedule Table-->
+                                <div class="row">';
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
-        $HTMLOUT .= '   <div class="schedule-table ' . $colCSS . '" ' . $dataSemesterNo . '>';
+        $HTMLOUT .= '   <div class="schedule-table col-md-12" ' . $dataSemesterNo . '>';
         $HTMLOUT .= $this->createScheduleHTMLTable($filters);
         $HTMLOUT .= '
 
-                                    </div>
-                                </div>
-                                <!--end::Row-->
-                            </div>
-                        </div>
+                                    </div><!--end::schedule-table-->
+                                </div><!--end::Row-->
+                            </div><!--end::card-body-->
+                        </div><!--end::Card-->
                     </div>
-                </div>
-                <!--end::Row-->
+                </div><!--end::Row-->
             ';
         return $HTMLOUT;
     }
