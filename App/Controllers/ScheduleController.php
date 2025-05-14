@@ -776,6 +776,7 @@ class ScheduleController extends Controller
                 for ($i = 0; $i < 2; $i++) {
                     if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
                         array_splice($schedule->{"day" . $filters["day_index"]}, $i, 1);
+                        break;
                     }
                 }
                 //eğer tek bir ders kaldıysa gün içerisindeki diziyi ders dizisi olarak ayarlar
