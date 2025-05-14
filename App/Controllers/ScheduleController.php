@@ -773,11 +773,9 @@ class ScheduleController extends Controller
                 }
             } else {
                 // Bu durumda günde iki ders var belirtilen verilere uyan silinecek
-                for ($i = 0; $i < 2; $i++) {
-                    if ($schedule->{"day" . $filters["day_index"]}[$i] == $filters['day']) {
-                        array_splice($schedule->{"day" . $filters["day_index"]}, $i, 1);
-                        break;
-                    }
+                $index = array_search($filters['day'], $schedule->{"day" . $filters["day_index"]});// dizide dersin indexsi bulunuyor.
+                if ($index !== false) {
+                    array_splice($schedule->{"day" . $filters["day_index"]}, $index, 1);
                 }
                 //eğer tek bir ders kaldıysa gün içerisindeki diziyi ders dizisi olarak ayarlar
                 if (count($schedule->{"day" . $filters["day_index"]}) == 1) {
