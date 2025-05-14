@@ -570,7 +570,10 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 //eğer listede yoksa o ders listeye eklenir
                 draggedElement.id = draggedElementIdInList
-                dropZone.appendChild(draggedElement)
+                let draggedElementFrameDiv = document.createElement("div");
+                draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
+                dropZone.appendChild(draggedElementFrameDiv)
+                draggedElementFrameDiv.appendChild(draggedElement)
                 draggedElement.querySelector("span.badge").innerText = 1
                 delete draggedElement.dataset.scheduleTime
                 delete draggedElement.dataset.scheduleDay
