@@ -41,7 +41,7 @@
                         <tr>
                             <th scope="col">İd</th>
                             <th scope="col">Adı</th>
-                            <th scope="col">Türü</th>
+                            <th scope="col" class="filterable">Türü</th>
                             <th scope="col">Ders Mevcudu</th>
                             <th scope="col">Sınav Mevcudu</th>
                             <th scope="col" class="text-center">İşlemler</th>

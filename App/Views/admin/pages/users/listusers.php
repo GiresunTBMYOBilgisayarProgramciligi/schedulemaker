@@ -45,9 +45,9 @@ use function App\Helpers\isAuthorized;
                             <!--<th scope="col">İd</th>-->
                             <th scope="col">Ünvanı Adı Soyadı</th>
                             <th scope="col">e-Posta</th>
-                            <th scope="col">Bölüm</th>
-                            <th scope="col">Program</th>
-                            <th scope="col">Yetki</th>
+                            <th scope="col" class="filterable">Bölüm</th>
+                            <th scope="col" class="filterable">Program</th>
+                            <th scope="col" class="filterable">Yetki</th>
                             <!--<ths cope="col">Kayıt Tarihi</th>-->
                             <th scope="col">Son Giriş Tarihi</th>
                             <th scope="col" class="text-center">İşlemler</th>

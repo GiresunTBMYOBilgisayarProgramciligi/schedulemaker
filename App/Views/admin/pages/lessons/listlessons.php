@@ -41,16 +41,16 @@
                         <tr>
                             <th scope="col">İd</th>
                             <th scope="col">Kodu</th>
-                            <th scope="col">Adı</th>
-                            <th scope="col">Türü</th>
+                            <th scope="col" class="filterable">Adı</th>
+                            <th scope="col" class="filterable">Türü</th>
                             <th scope="col">Mevcudu</th>
                             <th scope="col">Saati</th>
-                            <th scope="col">Yarıyılı</th>
-                            <th scope="col">Hocası</th>
-                            <th scope="col">Bölüm</th>
-                            <th scope="col">Program</th>
-                            <th scope="col">Dönem</th>
-                            <th scope="col">Yıl</th>
+                            <th scope="col" class="filterable">Yarıyılı</th>
+                            <th scope="col" class="filterable">Hocası</th>
+                            <th scope="col" class="filterable">Bölüm</th>
+                            <th scope="col" class="filterable">Program</th>
+                            <th scope="col" class="filterable">Dönem</th>
+                            <th scope="col" class="filterable">Yıl</th>
                             <th scope="col">Derslik türü</th>
 
                             <th scope="col" class="text-center">İşlemler</th>

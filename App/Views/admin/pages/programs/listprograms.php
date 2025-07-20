@@ -40,7 +40,7 @@
                         <tr>
                             <th scope="col">İd</th>
                             <th scope="col">Adı</th>
-                            <th scope="col">Bölüm</th>
+                            <th scope="col" class="filterable">Bölüm</th>
                             <th scope="col" class="text-center">İşlemler</th>
                         </tr>
                         </thead>
