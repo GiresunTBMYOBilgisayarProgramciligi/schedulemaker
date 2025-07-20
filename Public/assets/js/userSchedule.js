@@ -1,3 +1,6 @@
+/**
+ * Profil sayfasındaki ders programı işlemlerini yönetir.
+ */
 document.addEventListener("DOMContentLoaded", function () {
     let scheduleTables = document.querySelectorAll(".schedule-table table");
     scheduleTables.forEach((scheduleTable) => {
