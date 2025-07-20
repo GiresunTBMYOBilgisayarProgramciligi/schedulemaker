@@ -74,6 +74,8 @@ let dataTable = new DataTable('.dataTable', {
                 dropdownMenu.querySelectorAll('a').forEach(a => {
                     a.addEventListener('click', function (e) {
                         e.stopPropagation();
+                        let dropdown = bootstrap.Dropdown.getInstance(filterIcon);
+                        if (dropdown) dropdown.hide();
                     });
                 });
             }
