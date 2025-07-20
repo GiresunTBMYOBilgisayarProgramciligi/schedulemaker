@@ -61,6 +61,15 @@ let dataTable = new DataTable('.dataTable', {
 
                 filterWrapper.appendChild(dropdownMenu);
                 header.appendChild(filterWrapper);
+                filterIcon.addEventListener('click', function (e) {
+                    e.stopPropagation(); // Bu tıklamanın th elementine yayılmasını engeller
+                });
+                dropdownMenu.querySelectorAll('a').forEach(a => {
+                    a.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                    });
+                });
+
 
             }
         });
