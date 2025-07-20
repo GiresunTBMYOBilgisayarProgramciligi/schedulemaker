@@ -77,7 +77,7 @@ use function App\Helpers\getSetting;
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label" for="academic_year]">Dönem</label>
+                                        <label class="form-label" for="academic_year">Dönem</label>
                                         <div class="input-group ">
                                             <select class="form-select" id="academic_year" name="academic_year">
                                                 <?php for ($year = 2023; $year <= date('Y'); $year++): ?>

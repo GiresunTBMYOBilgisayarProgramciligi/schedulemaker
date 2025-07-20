@@ -13,16 +13,16 @@ let spinner = new Spinner();
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
     const programSelectButton = document.getElementById("programSelect");
-    const academic_year = document.getElementById("academic_year").value;
-    const semester = document.getElementById("semester").value;
+    const academicYearSelect = document.getElementById("academic_year");
+    const semesterSelect = document.getElementById("semester");
     programSelectButton.addEventListener("click", function () {
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         let data = new FormData();
         data.append("type", "lesson")
         data.append("owner_type", "program");
         data.append("owner_id", programSelect.value);
-        data.append("semester", semester)
-        data.append("academic_year", academic_year);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
         promises.push(getSchedulesHTML(data));
         spinner.showSpinner(document.getElementById("schedule_container"))
         // Tüm işlemlerin tamamlanmasını bekle
@@ -160,8 +160,8 @@ document.addEventListener("DOMContentLoaded", function () {
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
         data.append("lesson_hours", 1)
-        data.append("semester", semester)
-        data.append("academic_year", academic_year)
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value)
         data.append("time_start", table.rows[droppedRowIndex].cells[0].innerText)
         data.append("classroom_name", selectedClassroom ?? draggedElement.querySelector("span.badge").innerText,)
         data.append("lesson_id", draggedElement.dataset.lessonId)
@@ -211,8 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day", "day" + dayIndex)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
-        data.append("semester", semester)
-        data.append("academic_year", academic_year);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
         data.append("lesson_id", lessonId);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""></option>`;
@@ -255,8 +255,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.classroom_name);
         data.append("semester_no", scheduleData.semester_no)
-        data.append("semester", semester)
-        data.append("academic_year", academic_year);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
         return fetch("/ajax/saveSchedule", {
             method: "POST",
             headers: {
@@ -292,8 +292,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function highlightUnavailableCells(lessonId, table) {
         let data = new FormData()
         data.append("lesson_id", lessonId);
-        data.append("semester", semester)
-        data.append("academic_year", academic_year);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Hocanın programı kontrol ediliyor...");
         return fetch("/ajax/checkLecturerSchedule", {
@@ -429,8 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     "day_index": droppedCellIndex - 1,
                     "classroom_name": selectedClassroom,
                     "semester_no": draggedElement.dataset.semesterNo,
-                    "academic_year": academic_year,
-                    "semester": semester
+                    "academic_year": academicYearSelect.value,
+                    "semester": semesterSelect.value
                 });
             if (result) {
                 toast.closeToast();
@@ -510,8 +510,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester", semester)
-        data.append("academic_year", academic_year);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
             headers: {
@@ -554,8 +554,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semester,
-                "academic_year": academic_year
+                "semester": semesterSelect.value,
+                "academic_year": academicYearSelect.value
             });
         if (result) {
             let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
@@ -597,8 +597,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semester,
-                "academic_year": academic_year
+                "semester": semesterSelect.value,
+                "academic_year": academicYearSelect.value
             });
         if (deleteResult) {
             let saveResult = await saveSchedule(
@@ -609,8 +609,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     "day_index": droppedCellIndex - 1,
                     "classroom_name": draggedElement.querySelector("span.badge").innerText,
                     "semester_no": draggedElement.dataset.semesterNo,
-                    "semester": semester,
-                    "academic_year": academic_year
+                    "semester": semesterSelect.value,
+                    "academic_year": academicYearSelect.value
                 });
             if (saveResult) {
                 console.log("Yeni ders eklendi");
