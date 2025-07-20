@@ -4,8 +4,9 @@ let dataTable = new DataTable('.dataTable', {
         url: '/assets/js/datatable_tr.json'
     },
     initComplete: function () {
-        document.querySelector('.dataTable thead').style.whiteSpace = 'nowrap';// satır kaymalarını önlemek için
+        document.querySelector('.dataTable thead').style.whiteSpace = 'nowrap'; // satır kaymalarını önlemek için
         let api = this.api();
+        let filterIcons = []; // kolon başına ikonları sakla
 
         api.columns().every(function () {
             let column = this;
@@ -21,6 +22,10 @@ let dataTable = new DataTable('.dataTable', {
                 filterIcon.style.cursor = "pointer";
                 filterIcon.setAttribute("data-bs-toggle", "dropdown");
                 filterIcon.setAttribute("aria-expanded", "false");
+
+                // Bu ikonu kaydet
+                filterIcons[column.index()] = filterIcon;
+
                 filterWrapper.appendChild(filterIcon);
 
                 // Dropdown menüsü
@@ -61,20 +66,36 @@ let dataTable = new DataTable('.dataTable', {
 
                 filterWrapper.appendChild(dropdownMenu);
                 header.appendChild(filterWrapper);
+
+                // Tıklamaların sıralama tetiklemesini engelle
                 filterIcon.addEventListener('click', function (e) {
-                    e.stopPropagation(); // Bu tıklamanın th elementine yayılmasını engeller
+                    e.stopPropagation();
                 });
                 dropdownMenu.querySelectorAll('a').forEach(a => {
                     a.addEventListener('click', function (e) {
                         e.stopPropagation();
                     });
                 });
-
-
             }
         });
-    }
 
+        // Tabloda filtre yapıldığında ikon durumunu güncelle
+        api.on('draw', function () {
+            api.columns().every(function () {
+                let column = this;
+                let filterIcon = filterIcons[column.index()];
+                if (!filterIcon) return;
+
+                if (column.search()) {
+                    filterIcon.classList.remove('bi-funnel');
+                    filterIcon.classList.add('bi-funnel-fill'); // dolu ikon
+                } else {
+                    filterIcon.classList.remove('bi-funnel-fill', 'text-primary');
+                    filterIcon.classList.add('bi-funnel');
+                }
+            });
+        });
+    }
 });
 /**
  * Popover
