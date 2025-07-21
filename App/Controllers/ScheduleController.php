@@ -814,7 +814,7 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Bir ders ile bağlantılı tüm programların dizisini döener
+     * Bir ders ile bağlantılı tüm Ders programlarının dizisini döener
      * @param $filters ["lesson_id","semester_no","semester","academic_year","type"] alanları olmalı
      * @return array
      * @throws Exception
@@ -826,10 +826,13 @@ class ScheduleController extends Controller
          */
         $lesson = (new Lesson())->find($filter['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         unset($filter["lesson_id"]);// ders alındıktan sonra sonraki işlemlerde sorun olmaması için lesson_id filtreden silinoyor.
-        $filters[] = ["owner_type" => "lesson", "owner_id" => $lesson->id];
-        $filters = [];
+        $filters = ["owner_type" => "lesson", "owner_id" => $lesson->id];
         // aynı bilgileri program sınıf ve hoca için de kaydedildiği için sadece ders için programlar alınıyor.
-        $schedules = (new Schedule())->get()->where()->all();
+        $schedules = (new Schedule())->get()->where($filters)->all();
+        /**
+         * Derse ait ders programının filtrelerinin saklanacağı değişken
+         */
+        $schedule_filters=[];
         /**
          * @var Schedule $schedule
          */
@@ -854,7 +857,7 @@ class ScheduleController extends Controller
                 return $value !== null && $value !== '';
             });
             foreach ($owners as $owner_type => $owner_id) {
-                $filters[] = array_filter([
+                $schedule_filters[] = array_filter([
                     "owner_type" => $owner_type ?? null,
                     "owner_id" => $owner_id ?? null,
                     "semester" => $schedule->semester ?? null,
@@ -869,7 +872,7 @@ class ScheduleController extends Controller
                 });
             }
         }
-        return $filters;
+        return $schedule_filters;
     }
 
     /**
