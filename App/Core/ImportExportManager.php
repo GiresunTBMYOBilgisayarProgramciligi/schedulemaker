@@ -159,7 +159,7 @@ class ImportExportManager
             // Her bir değeri kontrol et
             foreach ($data as $dataIndex => $value) {
                 if ($value === null || $value === "") {
-                    $errors[] = "Satir " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda eksik veri!";
+                    $errors[] = "Satir " . ($rowIndex + 2) . ": " . $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
                     $errorCount++;
                     $hasError = true; // Bu satırda hata olduğunu belirt
                 }
@@ -169,15 +169,15 @@ class ImportExportManager
             $program = $programController->getProgramByName($program_name);
             $lecturer = $userController->getUserByFullName($lecturer_full_name);
             if (!$lecturer) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Hoca hatalı!" . $lecturer_full_name;
+                $errors[] = "Satır " . ($rowIndex + 2) . ": Hoca hatalı!" . $lecturer_full_name;
                 $errorCount++;
                 $hasError = true; // Bu satırda hata olduğunu belirt
             } elseif (!$program) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Program hatalı!" . $program_name;
+                $errors[] = "Satır " . ($rowIndex + 2) . ": Program hatalı!" . $program_name;
                 $errorCount++;
                 $hasError = true; // Bu satırda hata olduğunu belirt
             } elseif (!$department) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": " . ($dataIndex + 1) . ". sütunda Bölüm hatalı!" . $department_name;
+                $errors[] = "Satır " . ($rowIndex + 2) . ": Bölüm hatalı!" . $department_name;
                 $errorCount++;
                 $hasError = true; // Bu satırda hata olduğunu belirt
             }
