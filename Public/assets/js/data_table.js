@@ -4,7 +4,6 @@ let dataTable = new DataTable('.dataTable', {
         url: '/assets/js/datatable_tr.json'
     },
     initComplete: function () {
-        document.querySelector('.dataTable thead').style.whiteSpace = 'nowrap'; // satır kaymalarını önlemek için
         let api = this.api();
         let filterIcons = []; // kolon başına ikonları sakla
 
@@ -13,6 +12,7 @@ let dataTable = new DataTable('.dataTable', {
             let header = column.header();
 
             if (header.classList.contains("filterable")) {
+                header.style.whiteSpace = 'nowrap'; // satır kaymalarını önlemek için
                 // Filtre ikonu sarmalayıcı
                 let filterWrapper = document.createElement('div');
                 filterWrapper.classList.add('dropdown', 'd-inline-block', 'me-2'); // sağa boşluk
