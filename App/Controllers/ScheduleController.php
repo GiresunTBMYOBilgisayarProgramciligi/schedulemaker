@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Schedule;
+use App\Models\User;
 use Exception;
 use PDOException;
 use function App\Helpers\getCurrentSemester;
@@ -115,6 +116,9 @@ class ScheduleController extends Controller
             if (!key_exists("academic_year", $filters)) {
                 $filters['academic_year'] = getSetting("academic_year");
             }
+            /**
+             *uygun ders listesi sadece program için hazırlanıyor.
+             */
             if ($filters['owner_type'] == "program") {
                 $lessonFilters = [];
                 if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
@@ -162,7 +166,7 @@ class ScheduleController extends Controller
     public function createScheduleHTMLTable(array $filters = []): string
     {
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
-        // eğer semerser_not dizi ise dönemler birleştirilmiş demektir.
+        // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
         $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
 
@@ -207,8 +211,8 @@ class ScheduleController extends Controller
                             $column = (object)$column; // Array'i objeye dönüştür
                             $lesson = (new Lesson())->find($column->lesson_id) ?: throw new Exception("Ders bulunamdı");
                             $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                            $lecturerName = $lesson->getLecturer()->getFullName();
-                            $classroomName = (new Classroom())->find($column->classroom_id)?->name;
+                            $lecturer = (new User())->find($column->lecturer_id);
+                            $classroom = (new Classroom())->find($column->classroom_id);
                             $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
                             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
                             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
@@ -225,20 +229,20 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $column->lecturer_id . '">
+                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '">
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i> 
                                         </a>
                                         ' . $lesson->getFullName() . '
                                     </div>
-                                    <div class="text-nowrap"><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lesson->getLecturer()->id . '\">
+                                    <div class="text-nowrap"><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
-                                    ' . $lecturerName . '</div>
+                                    ' . $lecturer->getFullName() . '</div>
                                 </div>
-                                <a href="/admin/classroom/' . $column->classroom_id . '" class="link-light link-underline-opacity-0" target="_blank">
-                                    <span  id="classroom-' . $column->classroom_id . '" class="badge bg-info rounded-pill">
-                                        <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
+                                    <span  id="classroom-' . $classroom->id . '" class="badge bg-info rounded-pill">
+                                        <i class="bi bi-door-open"></i> ' . $classroom->name . '
                                     </span>
                                 </a>
                             </div>';
@@ -249,8 +253,8 @@ class ScheduleController extends Controller
                         $day = (object)$day; // Array'i objeye dönüştür
                         $lesson = (new Lesson())->find($day->lesson_id) ?: throw new Exception("Ders bulunamdı");
                         $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                        $lecturerName = $lesson->getLecturer()->getFullName();
-                        $classroomName = (new Classroom)->find($day->classroom_id)?->name;
+                        $lecturer = (new User())->find($day->lecturer_id);
+                        $classroom = (new Classroom)->find($day->classroom_id);
                         $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
                         $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
                         $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
@@ -259,7 +263,7 @@ class ScheduleController extends Controller
                         $out .= '
                         <td class="drop-zone">
                             <div 
-                            id="scheduleTable-lesson-' . $day->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
+                            id="scheduleTable-lesson-' . $lesson->id . '-' . $lessonHourCount[$lesson->id] . '"
                             draggable="' . $draggable . '" 
                             class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '"
@@ -269,7 +273,7 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $day->lecturer_id . '">
+                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '">
                                     <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                         <i class="bi bi-book"></i>
                                     </a> 
@@ -277,15 +281,15 @@ class ScheduleController extends Controller
                                         
                                     </div>
                                     <div class="text-nowrap">
-                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $day->lecturer_id . '\">
+                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
                                         <i class="bi bi-person-square"></i>
                                     </a>
-                                    ' . $lecturerName . '
+                                    ' . $lecturer->getFullName() . '
                                     </div>
                                 </div>
-                                <a href="/admin/classroom/' . $day->classroom_id . '" class="link-light link-underline-opacity-0" target="_blank">
-                                    <span id="classroom-' . $day->classroom_id . '" class="badge ' . $badgeCSS . ' rounded-pill">
-                                        <i class="bi bi-door-open"></i> ' . $classroomName . '
+                                <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
+                                    <span id="classroom-' . $classroom->id . '" class="badge ' . $badgeCSS . ' rounded-pill">
+                                        <i class="bi bi-door-open"></i> ' . $classroom->name . '
                                     </span>
                                 </a>
                             </div>
@@ -312,6 +316,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * AvailableLessons metodunun hazırladığı Ders programı için uygun derslerin html çıktısını hazırlar
      * @throws Exception
      * todo html çıktı hazırlayan fonksiyonlar kaldırılıp view içerisinde hazırlanmalı
      */
@@ -357,11 +362,12 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
-        //Semester No dizi ise dönemler birleştirilmiş demektir
+        //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
         $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
 
         $HTMLOUT = '
@@ -555,12 +561,12 @@ class ScheduleController extends Controller
                             }
                             // belirtilen gün içerisinde bir veri varsa
                             /**
-                             * var olan dersin kodu
+                             * var olan ders
                              * @var Lesson $lesson
                              */
                             $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id'])?: throw new Exception("Var olan ders bulunamadı");
                             /**
-                             * yeni eklenmek istenen dersin kodu
+                             * yeni eklenmek istenen ders
                              * @var Lesson $newLesson
                              */
                             $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
@@ -916,6 +922,6 @@ class ScheduleController extends Controller
             "lesson_hours", // int -> Dersin kaç saatlik olduğu
             "owners" // array[string] -> Ders programının ait olduğu birim türleri listesi
         ];
-
+        return [];
     }
 }
