@@ -56,6 +56,7 @@ class Program extends Model
     }
 
     /**
+     * Program bünyesindeki derslerin listesini döner
      * @return array
      * @throws Exception
      */

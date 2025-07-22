@@ -190,11 +190,13 @@ use function App\Helpers\isAuthorized;
                                 <tr>
                                     <th scope="col">Kodu</th>
                                     <th scope="col">Adı</th>
-                                    <th scope="col">Türü</th>
+                                    <th scope="col" class="filterable">Türü</th>
                                     <th scope="col">Saati</th>
-                                    <th scope="col">Dönemi</th>
-                                    <th scope="col">Hocası</th>
-                                    <th scope="col">Derslik Türü</th>
+                                    <th scope="col" class="filterable">Yarıyılı</th>
+                                    <th scope="col" class="filterable">Dönemi</th>
+                                    <th scope="col" class="filterable">Yıl</th>
+                                    <th scope="col" class="filterable">Hocası</th>
+                                    <th scope="col" class="filterable">Derslik Türü</th>
                                     <th scope="col" class="text-center">İşlemler</th>
                                 </tr>
                                 </thead>
@@ -206,6 +208,8 @@ use function App\Helpers\isAuthorized;
                                         <td><?= $lesson->getTypeName() ?></td>
                                         <td><?= $lesson->hours ?></td>
                                         <td><?= $lesson->semester_no ?></td>
+                                        <td><?= $lesson->semester ?></td>
+                                        <td><?= $lesson->academic_year ?></td>
                                         <td><?= $lesson->getLecturer()->getFullName() ?></td>
                                         <td><?= $lesson->getClassroomTypeName()?></td>
                                         <td class="text-center">
