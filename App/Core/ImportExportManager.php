@@ -149,6 +149,7 @@ class ImportExportManager
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
         foreach ($rows as $rowIndex => $row) {
+            $hasError=false;// her bir satıra hatasız başlanıyor
             [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
                 return trim((string)($item ?? ''));
             }, $row);
@@ -184,6 +185,7 @@ class ImportExportManager
 
             // Eğer bu satırda hata varsa, bir sonraki satıra geç
             if (isset($hasError) && $hasError) {
+                $errors[] = "has_Error:".$hasError;
                 continue;
             }
             $lessonData = [
@@ -201,7 +203,7 @@ class ImportExportManager
                 'academic_year' => $this->formData['academic_year'],
             ];
             //Ders ders kodu, program_id ikilisine göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();//todo unique değerine akademik yıl da eklenirse buraya da eklenmeli
+            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();
             if ($lesson) {
                 $lesson->fill($lessonData);
                 $lessonsController->updateLesson($lesson);
