@@ -1023,6 +1023,8 @@ class AjaxRouter extends Router
         $this->response['status'] = "success";
         $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
         $this->response['errors'] = $result['errors'];
+        $this->response['addedLessons'] = $result['addedLessons'];
+        $this->response['updatedLessons'] = $result['updatedLessons'];
         $this->sendResponse();
     }
 }

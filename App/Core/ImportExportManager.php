@@ -127,10 +127,10 @@ class ImportExportManager
         $departmentController = new DepartmentController();
         $programController = new ProgramController();
         $lessonsController = new LessonController();
-        $addedCount = 0;
-        $updatedCount = 0;
         $errorCount = 0;
         $errors = [];
+        $addedLessons = [];
+        $updatedLessons = [];
         // Excel dosyasını aç
 
         $this->sheet = $this->importFile->getActiveSheet();
@@ -201,24 +201,26 @@ class ImportExportManager
                 'academic_year' => $this->formData['academic_year'],
             ];
             //Ders ders kodu, program_id ikilisine göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();
+            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();//todo unique değerine akademik yıl da eklenirse buraya da eklenmeli
             if ($lesson) {
                 $lesson->fill($lessonData);
                 $lessonsController->updateLesson($lesson);
-                $updatedCount++;
+                $updatedLessons[] = $lesson->getFullName();
             } else {
                 $lesson = new Lesson();
                 $lesson->fill($lessonData);
                 $lessonsController->saveNew($lesson);
-                $addedCount++;
+                $addedLessons[] = $lesson->getFullName();
             }
         }
         return [
             "status" => "success",
-            "added" => $addedCount,
-            "updated" => $updatedCount,
+            "added" => count($addedLessons),
+            "updated" => count($updatedLessons),
             "errorCount" => $errorCount,
-            "errors" => $errors
+            "errors" => $errors,
+            "addedLessons" => $addedLessons,
+            "updatedLessons" => $updatedLessons,
         ];
     }
 
