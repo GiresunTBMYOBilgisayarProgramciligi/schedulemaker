@@ -212,7 +212,10 @@ class ScheduleController extends Controller
                             $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturer = (new User())->find($column->lecturer_id);
                             $classroom = (new Classroom())->find($column->classroom_id);
-                            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+                            $draggable = "true";
+                            if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+                                $draggable = "false";
+                            }
                             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
                             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
                             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
@@ -254,7 +257,10 @@ class ScheduleController extends Controller
                         $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturer = (new User())->find($day->lecturer_id);
                         $classroom = (new Classroom)->find($day->classroom_id);
-                        $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+                        $draggable = "true";
+                        if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+                            $draggable = "false";
+                        }
                         $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
                         $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
                         $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
@@ -333,7 +339,10 @@ class ScheduleController extends Controller
              * @var Lesson $lesson
              * @var Lesson $parentLesson
              */
-            $draggable = is_null($lesson->parent_lesson_id) ? "true" : "false";
+            $draggable = "true";
+            if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+                $draggable = "false";
+            }
             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
             $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
@@ -391,7 +400,7 @@ class ScheduleController extends Controller
         if (!($only_table)) {
             $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
         }
-        $HTMLOUT.='
+        $HTMLOUT .= '
                                 <!--begin::Row Schedule Table-->
                                 <div class="row">';
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
@@ -563,7 +572,7 @@ class ScheduleController extends Controller
                              * var olan ders
                              * @var Lesson $lesson
                              */
-                            $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id'])?: throw new Exception("Var olan ders bulunamadı");
+                            $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
                             /**
                              * yeni eklenmek istenen ders
                              * @var Lesson $newLesson
@@ -584,9 +593,9 @@ class ScheduleController extends Controller
                                 //diğer durumda ekenecek olan ders de gruplu
                                 // grup uygunluğu kontrolü javascript ile yapılıyor
                             }
-                            $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id'])?: throw new Exception("Derslik Bulunamadı");
+                            $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
                             if (isset($filters['owners']['classroom'])) {
-                                $newClassroom = (new Classroom())->find($filters['owners']['classroom'])?: throw new Exception("Derslik Bulunamadı");
+                                $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
                                 if ($classroom->name == $newClassroom->name) {
                                     throw new Exception("Derslikler çakışıyor");
                                 }
@@ -732,7 +741,7 @@ class ScheduleController extends Controller
     {
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
-            $classroom = (new Classroom())->find($scheduleData['owner_id'])?: throw new Exception("Derslik Bulunamadı");
+            $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
             if ($classroom->type == 3) return; // uzaktan eğitim sınıfı ise programa kaydı yoktur
         }
         $schedules = (new Schedule())->get()->where($scheduleData)->all();
@@ -837,7 +846,7 @@ class ScheduleController extends Controller
         /**
          * Derse ait ders programının filtrelerinin saklanacağı değişken
          */
-        $schedule_filters=[];
+        $schedule_filters = [];
         /**
          * @var Schedule $schedule
          */
@@ -848,7 +857,7 @@ class ScheduleController extends Controller
             for ($i = 1; $i <= 5; $i++) {
                 if (!is_null($schedule->{"day$i"})) {
                     $day_index = $i;
-                    $classroom = (new Classroom())->find($schedule->{"day$i"}['classroom_id'])?: throw new Exception("Derslik Bulunamadı");
+                    $classroom = (new Classroom())->find($schedule->{"day$i"}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
                     //todo gruplu dersler için gün seçimi doğru yapılmalı
                     $day = $schedule->{"day$i"};
                 }
