@@ -231,16 +231,18 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
+                                    <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i> 
                                         </a>
                                         ' . $lesson->name . '
                                     </div>
-                                    <div class="text-nowrap"><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
-                                        <i class="bi bi-person-square"></i>
-                                    </a>
-                                    ' . $lecturer->getFullName() . '</div>
+                                    <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '" >
+                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
+                                            <i class="bi bi-person-square"></i>
+                                        </a>
+                                        ' . $lecturer->getFullName() . '
+                                    </div>
                                 </div>
                                 <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
                                     <span  id="classroom-' . $classroom->id . '" class="badge bg-info rounded-pill">
@@ -278,18 +280,18 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
+                                    <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i>
                                         </a> 
                                         ' . $lesson->name . '
                                             
                                     </div>
-                                    <div class="text-nowrap">
-                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
-                                        <i class="bi bi-person-square"></i>
-                                    </a>
-                                    ' . $lecturer->getFullName() . '
+                                    <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '">
+                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
+                                            <i class="bi bi-person-square"></i>
+                                        </a>
+                                        ' . $lecturer->getFullName() . '
                                     </div>
                                 </div>
                                 <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
@@ -350,17 +352,28 @@ class ScheduleController extends Controller
             $HTMLOut .= "
                     <div class='frame col-md-4 p-0 ps-1 '>
                         <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
-                      class=\"d-flex justify-content-between align-items-start mb-1 p-2 rounded $text_bg\"
-                      data-semester-no=\"$lesson->semester_no\"
-                      data-lesson-code=\"$lesson->code\"
-                      data-lesson-id=\"$lesson->id\"
-                      $popover
-                      >
-                        <div class=\"ms-2 me-auto\">
-                          <div class=\"fw-bold\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->name ($lesson->size)</div>
-                          <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
-                        </div>
-                        <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
+                          class=\"d-flex justify-content-between align-items-start mb-1 p-2 rounded $text_bg\"
+                          data-semester-no=\"$lesson->semester_no\"
+                          data-lesson-code=\"$lesson->code\"
+                          data-lesson-id=\"$lesson->id\"
+                          $popover
+                        >
+                            <div class=\"ms-2 me-auto\">
+                              <div class=\"fw-bold lesson-title\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \">
+                                <a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'>
+                                 <i class=\"bi bi-book\"></i>
+                                </a> 
+                                $lesson->name ($lesson->size)
+                              </div>
+                              <div class=\"text-nowrap lecturer-title\" id=\"lecturer-$lesson->lecturer_id\">
+                                <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\">
+                                <i class=\"bi bi-person-square\"></i>
+                              </a>
+                              " . $lesson->getLecturer()->getFullName() . "
+                              </div>
+                              
+                            </div>
+                            <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
                       </div>
                   </div>
                     ";

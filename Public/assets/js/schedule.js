@@ -95,8 +95,6 @@ document.addEventListener("DOMContentLoaded", function () {
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
-        console.log(tooltipTriggerList)
-        console.log(tooltipList)
 
     }
 
@@ -471,7 +469,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                     lesson.addEventListener('dragstart', dragStartHandler);
                     //ders kodo tooltip'i aktif ediliyor
-                    let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('[data-bs-toggle="tooltip"]'))
+                    let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('.lesson-title'))
                     addedHours++;
                 }
                 /*
