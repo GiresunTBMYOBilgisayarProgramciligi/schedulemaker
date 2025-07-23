@@ -9,7 +9,6 @@ use App\Models\Schedule;
 use App\Models\User;
 use Exception;
 use PDOException;
-use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
 
@@ -168,7 +167,7 @@ class ScheduleController extends Controller
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
         // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
-        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getCurrentSemester() . '"';
+        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getSetting("semester") . '"';
 
         /**
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar

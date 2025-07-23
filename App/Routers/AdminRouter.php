@@ -21,7 +21,6 @@ use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
 use Exception;
-use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\isAuthorized;
 
@@ -603,7 +602,6 @@ class AdminRouter extends Router
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "page_title" => "Takvim Düzenle",
-            "current_semesters" => getCurrentSemester()
         ]);
         $this->callView("admin/schedules/editschedule", $this->view_data);
     }

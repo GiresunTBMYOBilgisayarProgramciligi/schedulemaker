@@ -2,7 +2,6 @@
 /**
  * @var string $page_title
  * @var array $departments
- * @var array $current_semesters
  */
 
 use function App\Helpers\getSetting;

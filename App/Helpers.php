@@ -23,10 +23,11 @@ function getSetting($key = null, $group = "general")
 }
 
 /**
+ * "Yıl ve dönem bilgisini arada bir boşluk olacak şekilde veriri örn: 2025-2026 Güz
  * @return bool|string
  * @throws Exception
  */
-function getCurrentSemester(): bool|string
+function getCurrentYearAndSemester(): bool|string
 {
     try {
         return getSetting('academic_year') . " " . getSetting('semester');

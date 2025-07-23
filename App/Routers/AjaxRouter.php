@@ -19,7 +19,6 @@ use App\Models\Schedule;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
-use function App\Helpers\getCurrentSemester;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSetting;
 use function App\Helpers\isAuthorized;
@@ -818,10 +817,9 @@ class AjaxRouter extends Router
      */
     public function checkLecturerScheduleAction(): void
     {
-        $lessonController = new LessonController();
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $filters["semester"] = getCurrentSemester();
+            $filters["semester"] = getSetting("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
             $filters["academic_year"] = getSetting("academic_year");
