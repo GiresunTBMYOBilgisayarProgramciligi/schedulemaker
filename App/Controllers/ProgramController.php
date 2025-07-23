@@ -46,13 +46,8 @@ class ProgramController extends Controller
     public function saveNew(Program $new_program): int
     {
         try {
-            $new_program_arr = $new_program->getArray(['table_name', 'database', 'id']);
-            // Dinamik SQL sorgusu oluştur
-            $sql = $this->createInsertSQL($new_program_arr);
-            // Hazırlama ve parametre bağlama
-            $q = $this->database->prepare($sql);
-            $q->execute($new_program_arr);
-            return $this->database->lastInsertId();
+            $new_program->create();
+            return $new_program->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)

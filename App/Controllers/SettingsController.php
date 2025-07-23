@@ -35,12 +35,8 @@ class SettingsController extends Controller
     public function saveNew(Setting $setting): int
     {
         try {
-            $newSettingData = $setting->getArray(['table_name', "database", "id"]);
-
-            $sql = $this->createInsertSQL($newSettingData);
-            $stmt = $this->database->prepare($sql);
-            $stmt->execute($newSettingData);
-            return $this->database->lastInsertId();
+            $setting->create();
+            return $setting->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
