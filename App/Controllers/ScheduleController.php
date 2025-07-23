@@ -231,11 +231,11 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '">
+                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i> 
                                         </a>
-                                        ' . $lesson->getFullName() . '
+                                        ' . $lesson->name . '
                                     </div>
                                     <div class="text-nowrap"><a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
                                         <i class="bi bi-person-square"></i>
@@ -278,12 +278,12 @@ class ScheduleController extends Controller
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
-                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '">
-                                    <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
-                                        <i class="bi bi-book"></i>
-                                    </a> 
-                                    ' . $lesson->getFullName() . '
-                                        
+                                    <div class="fw-bold" id="lecturer-' . $lecturer->id . '" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
+                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
+                                            <i class="bi bi-book"></i>
+                                        </a> 
+                                        ' . $lesson->name . '
+                                            
                                     </div>
                                     <div class="text-nowrap">
                                     <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
@@ -332,7 +332,7 @@ class ScheduleController extends Controller
         }
         $HTMLOut = '<div class="row available-schedule-items drop-zone small"
                                          data-semester-no="' . $filters['semester_no'] . '"
-                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin">';
+                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="data-bs-placement="left"">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {
             /**
@@ -357,7 +357,7 @@ class ScheduleController extends Controller
                       $popover
                       >
                         <div class=\"ms-2 me-auto\">
-                          <div class=\"fw-bold\"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->code $lesson->name ($lesson->size)</div>
+                          <div class=\"fw-bold\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \"><a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'><i class=\"bi bi-book\"></i></a> $lesson->name ($lesson->size)</div>
                           <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\"><i class=\"bi bi-person-square\"></i></a> " . $lesson->getLecturer()->getFullName() . "
                         </div>
                         <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>

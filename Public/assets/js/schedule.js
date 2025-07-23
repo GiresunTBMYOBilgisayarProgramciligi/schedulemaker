@@ -90,6 +90,14 @@ document.addEventListener("DOMContentLoaded", function () {
             element.addEventListener("drop", dropHandler.bind(this, element));
             element.addEventListener("dragover", dragOverHandler.bind(this, element)) // bu olmadan çalışmıyor
         });
+        //sayfadaki tüm tooltiplerin aktif edilmesi için
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+        console.log(tooltipTriggerList)
+        console.log(tooltipList)
+
     }
 
     /**
@@ -339,6 +347,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table");
+        /**
+         * Liste içerisinde her ders bir frame içerisinde bulunuyor.
+         */
         const draggedElementFrameDiv = draggedElement.closest("div.frame");
         let lessonId = draggedElement.dataset['lessonId'];
         /*
@@ -459,6 +470,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
                     //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                     lesson.addEventListener('dragstart', dragStartHandler);
+                    //ders kodo tooltip'i aktif ediliyor
+                    let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('[data-bs-toggle="tooltip"]'))
                     addedHours++;
                 }
                 /*
@@ -704,10 +717,7 @@ document.addEventListener("DOMContentLoaded", function () {
             dropZones.forEach((dropZone) => {
                 dropZone.style.border = "2px dashed"
                 // Bootstrap tooltip nesnesini oluştur
-                const tooltip = new bootstrap.Tooltip(dropZone, {
-                    trigger: 'manual', // Elle kontrol edeceğiz
-                    placement: 'right'
-                });
+                const tooltip = new bootstrap.Tooltip(dropZone);
                 tooltip.show();
             })
             event.dataTransfer.setData("start_element", "table")
