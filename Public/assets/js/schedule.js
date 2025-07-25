@@ -551,12 +551,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /**
      * Tablodan alınarak listeye geri bırakılan dersler için yapılan işlemler
-     * @param tableElement
+     * @param table
      * @param draggedElement
      * @param dropZone
      * @returns {Promise<void>}
      */
-    async function dropTableToList(tableElement, draggedElement, dropZone) {
+    async function dropTableToList(table, draggedElement, dropZone) {
         if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
         let result = await deleteSchedule(
             {
@@ -589,6 +589,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 delete draggedElement.dataset.scheduleTime
                 delete draggedElement.dataset.scheduleDay
             }
+            clearCells(table);
         }
 
     }
@@ -600,7 +601,10 @@ document.addEventListener("DOMContentLoaded", function () {
         let droppedCellIndex = dropZone.cellIndex
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
-        if (!await checkLessonCrash(cell, draggedElement)) return;
+        if (!await checkLessonCrash(cell, draggedElement)){
+            clearCells(table);
+            return;
+        }
         let deleteResult = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset.lessonId,
