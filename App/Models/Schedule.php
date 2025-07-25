@@ -95,7 +95,7 @@ class Schedule extends Model
                         $groupDayLessons=[];
                         $groupDayClasrooms=[];
                         foreach ($day as $groupLesson){
-                            $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecture_id' => $groupLesson['lecture_id']]; // ders bilgileri
+                            $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecturer_id' => $groupLesson['lecturer_id']]; // ders bilgileri
                             $groupDayClasrooms[] = ['classroom_id' => $groupLesson['classroom_id']];// sınıf bilgileri
                         }
                         $week["day{$dayIndex}"]=$groupDayLessons;
