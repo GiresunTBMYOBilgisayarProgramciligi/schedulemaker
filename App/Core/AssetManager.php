@@ -135,6 +135,11 @@ class AssetManager
                 [
                     'path' => '/assets/js/schedule.js'
                 ]
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/css/customCSS.css"
+                ]
             ]
         ],
         'exportschedule' => [
