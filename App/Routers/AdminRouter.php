@@ -89,11 +89,9 @@ class AdminRouter extends Router
             throw new Exception("Kullanıcı listesini görme yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('listpages');
-        //$userController =$this->view_data["userController"]; bu şekilde kullanınca otomatik tamamlama çalışmıyor
         $userController = new UserController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Listesi",
-            "departments" => (new DepartmentController())->getDepartmentsList()
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['users'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
