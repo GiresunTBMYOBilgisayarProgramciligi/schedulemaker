@@ -1,6 +1,9 @@
 /**
- * Uygyn dersler listesinden ders sürüklenmeye başladığında aynı sezondaki tablo içerisinde uygun olmayan hücrelerin listesi
  * todo Bu yapı özel bulutta matematik web-dev dalında olduğu gibi tamamiyle olaylar üzerinden çalıştırılabilir.
+ */
+
+/**
+ * Uygun dersler listesinden ders sürüklenmeye başladığında aynı sezondaki tablo içerisinde uygun olmayan hücrelerin listesi
  */
 let unavailableCells;
 
@@ -118,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param dropZone
      * @param draggedElement
      */
-    async function checkLessonCrash(dropZone, draggedElement,selectedClassroom) {
+    async function checkLessonCrash(dropZone, draggedElement, selectedClassroom) {
         /*
         * dersler "scheduleTable-" ile başlayan idler içerir
          */
@@ -301,8 +304,40 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("semester", semesterSelect.value)
         data.append("academic_year", academicYearSelect.value);
         let toast = new Toast();
-        toast.prepareToast("Yükleniyor", "Hocanın programı kontrol ediliyor...");
-        return fetch("/ajax/checkLecturerSchedule", {
+        toast.prepareToast("Yükleniyor", "Kontrol ediliyor...");
+        //todo checkClassroomSchedule
+        let classroomResult = fetch("/ajax/checkClassroomSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data);
+                    return false;
+                } else {
+                    unavailableCells = data.unavailableCells;
+                    if (unavailableCells) {
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in unavailableCells[i]) {
+                                if (unavailableCells[i][cell]) {
+                                    table.rows[i].cells[cell].classList.add("text-bg-danger");
+                                }
+                            }
+                        }
+                    }
+
+                    return true;
+                }
+            })
+        if (!classroomResult) {
+            toast.prepareToast("Hata", "uygun derslikler kontrol edilirken hata oluştu", "danger");
+            clearCells(table);
+        }
+        let lecturerResult = fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -341,6 +376,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error(error);
                 return false;
             });
+        if (!lecturerResult) {
+            toast.prepareToast("Hata", "Hoca programı kontrol edilirken hata oluştu", "danger");
+            clearCells(table);
+        }
     }
 
     function dropListToTable(listElement, draggedElement, dropZone) {
@@ -421,7 +460,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!cell.classList.contains("drop-zone")) {
                     continue;
                 }
-                if (!await checkLessonCrash(cell, draggedElement,selectedClassroom)) {
+                if (!await checkLessonCrash(cell, draggedElement, selectedClassroom)) {
                     new Toast().prepareToast("Çakışma", (i + 1) + ". saatte çakışma var")
                     return;
                 }
@@ -601,7 +640,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let droppedCellIndex = dropZone.cellIndex
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
-        if (!await checkLessonCrash(cell, draggedElement)){
+        if (!await checkLessonCrash(cell, draggedElement)) {
             clearCells(table);
             return;
         }
@@ -680,6 +719,8 @@ document.addEventListener("DOMContentLoaded", function () {
             case "list":
                 if (droppedZone.classList.contains("available-schedule-items")) {
                     // Listeden Listeye
+                    let table = document.querySelector('table[data-semester-no="' + droppedZone.dataset.semesterNo + '"]');
+                    clearCells(table);
                     return;
                 } else {
                     // Listeden Tabloya bırakma işlemleri

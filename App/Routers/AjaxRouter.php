@@ -264,7 +264,7 @@ class AjaxRouter extends Router
      */
     public function deleteLessonAction(): void
     {
-        $lesson = (new Lesson())->find($this->data['id'])?: throw new Exception("Ders bulunamadı");
+        $lesson = (new Lesson())->find($this->data['id']) ?: throw new Exception("Ders bulunamadı");
         $currentUser = (new UserController())->getCurrentUser();
         if (!isAuthorized("submanager", false, $lesson)) {
             throw new Exception("Bu dersi silme yetkiniz yok");
@@ -399,10 +399,10 @@ class AjaxRouter extends Router
 
         $departmentController = new DepartmentController();
         $departmentController->saveNew($this->data);
-            $this->response = array(
-                "msg" => "Bölüm başarıyla eklendi.",
-                "status" => "success",
-            );
+        $this->response = array(
+            "msg" => "Bölüm başarıyla eklendi.",
+            "status" => "success",
+        );
         $this->sendResponse();
     }
 
@@ -576,7 +576,7 @@ class AjaxRouter extends Router
         ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
             // bağlı dersleri alıyoruz
@@ -657,7 +657,7 @@ class AjaxRouter extends Router
         ];
         $scheduleController = new ScheduleController();
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
             // bağlı dersleri alıyoruz
@@ -819,14 +819,14 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $filters["semester"] = getSetting("semester");
+            $this->data["semester"] = getSetting("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
-            $filters["academic_year"] = getSetting("academic_year");
+            $this->data["academic_year"] = getSetting("academic_year");
         }
 
         if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
             $lecturer = $lesson->getLecturer();
             $filters = [
                 "owner_type" => "user",
@@ -876,6 +876,81 @@ class AjaxRouter extends Router
     }
 
     /**
+     * @throws Exception
+     */
+    public function checkClassroomScheduleAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        if (!key_exists("semester", $this->data)) {
+            $this->data["semester"] = getSetting("semester");
+        }
+        if (!key_exists("academic_year", $this->data)) {
+            $this->data["academic_year"] = getSetting("academic_year");
+        }
+
+        if (key_exists("lesson_id", $this->data)) {
+            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+            $classroom_type = $lesson->classroom_type;
+            $classrooms = (new Classroom())->get()->where(['type' => $classroom_type])->all();
+            /**
+             * Hiç bir derslik için uygun olmayan hücreler
+             */
+            $unavailableCells = [];
+            $tableRows = [
+                "08.00 - 08.50",
+                "09.00 - 09.50",
+                "10.00 - 10.50",
+                "11.00 - 11.50",
+                "12.00 - 12.50",
+                "13.00 - 13.50",
+                "14.00 - 14.50",
+                "15.00 - 15.50",
+                "16.00 - 16.50"
+            ];
+            $classroomIds = [];
+            foreach ($classrooms as $classroom) {
+                $classroomIds[] = $classroom->id;
+                $filters = [
+                    "owner_type" => "classroom",
+                    "owner_id" => $classroom->id,
+                    "type" => "lesson",
+                    "semester" => $this->data['semester'],
+                    "academic_year" => $this->data['academic_year'],
+                ];
+                $classroomSchedules = $scheduleController->getListByFilters($filters);
+
+                if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
+                    foreach ($classroomSchedules as $classroomSchedule) {
+                        $rowIndex = array_search($classroomSchedule->time, $tableRows);
+                        for ($i = 0; $i < 5; $i++) {//day0-4 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
+                            if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
+                                $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+                            }
+                        }
+                    }
+                }
+            }
+            $available = false;
+            foreach ($unavailableCells as $index => $row) {
+                foreach ($row as $cellIndex => $cell) {
+                    foreach ($classroomIds as $classroomId) {
+                        if (!(isset($cell[$classroomId]) and $cell[$classroomId])) {//id tanımlı ve değeri true ise saat uygun değil
+                            $available = true;
+                        }
+                        $unavailableCells[$index][$cellIndex] = !$available;
+                    }
+                }
+            }
+            //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
+            $this->response["status"] = "success";
+            $this->response["msg"] = "";
+            $this->response["unavailableCells"] = $unavailableCells;
+
+        }
+        $this->sendResponse();
+    }
+
+    /**
      * Ders programından veri silmek için gerekli kontrolleri yapar
      * @return void
      * @throws Exception
@@ -894,7 +969,7 @@ class AjaxRouter extends Router
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
-                $lesson = (new Lesson())->find($this->data['lesson_id'])?: throw new Exception("Ders bulunamadı");
+                $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
                 $lecturer = $lesson->getLecturer();
                 $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
                 // bağlı dersleri alıyoruz
