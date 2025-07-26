@@ -321,14 +321,19 @@ class Model
         if (!empty($this->relations) && !empty($results)) {
             $results = $this->loadRelations($results);
         }
-        $models = [];
-        foreach ($results as $result) {
-            $model = new $this();
-            $model->fill($result);
-            $models[] = $model;
+        if ($this->selectedFields != ['*']){
+            return $results;
+        }else{
+            $models = [];
+            foreach ($results as $result) {
+                $model = new $this();
+                $model->fill($result);
+                $models[] = $model;
+            }
+
+            return $models;
         }
 
-        return $models;
     }
 
     /**
