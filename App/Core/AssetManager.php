@@ -165,12 +165,18 @@ class AssetManager
                 [
                     'path' => '/assets/js/userSchedule.js'
                 ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
             ]
         ],
         'singlepages' => [
             'js' => [
                 [
                     'path' => '/assets/js/ajax.js'
+                ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
                 ],
             ]
         ]

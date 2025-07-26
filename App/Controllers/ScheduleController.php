@@ -397,10 +397,13 @@ class ScheduleController extends Controller
                 <!--begin::Row Program Satırı-->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <div class="card card-outline card-primary">
+                        <div id="schedule-card" class="card card-outline card-primary">
                             <div class="card-header">
                                 <h3 class="card-title">' . $semester_no . '</h3>
                                 <div class="card-tools">
+                                    <button id="singlePageExport" data-owner-type="'.$filters["owner_type"].'" data-owner-id="'.$filters["owner_id"].'" type="button" class="btn btn-outline-primary btn-sm" >
+                                        <span>Excel\'e aktar</span> 
+                                    </button>
                                     <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
                                         <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
                                         <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>

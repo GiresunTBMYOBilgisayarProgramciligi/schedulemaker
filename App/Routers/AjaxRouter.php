@@ -1034,8 +1034,6 @@ class AjaxRouter extends Router
      */
     public function exportScheduleAction(): void
     {
-        if (!isAuthorized('department_head'))
-            throw new Exception("Ders Programı Dışa Aktarma Yetkiniz Yok");
         $filters = $this->data;
         if (!key_exists('type', $filters)) {
             throw new Exception("Dışarı aktarma işlemi için tür seçilmemiş.");
