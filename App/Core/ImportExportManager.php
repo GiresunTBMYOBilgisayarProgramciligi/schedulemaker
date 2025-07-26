@@ -499,7 +499,7 @@ class ImportExportManager
         foreach (range('A', 'Z') as $columnID) {
             $this->sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
-        $exportFileName = $filters['academic_year'] . $filters['semester'] . "Ders Programı.xlsx";
+        $exportFileName = $filters['academic_year'] ." ". $filters['semester'] . " ".$title.".xlsx";
         $this->downloadExportFile($exportFileName);
 
     }
