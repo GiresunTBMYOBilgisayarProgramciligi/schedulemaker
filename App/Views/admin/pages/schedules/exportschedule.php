@@ -102,7 +102,7 @@ use function App\Helpers\getSetting;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="export" id="export"
+                                    <input class="btn btn-primary" type="button" name="departmentAndProgramExport" id="departmentAndProgramExport"
                                            value="Dışa aktar">
                                 </div>
                             </div>
@@ -137,7 +137,7 @@ use function App\Helpers\getSetting;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="export2" id="export2" value="Dışa aktar">
+                                    <input class="btn btn-primary" type="button" name="lecturerExport" id="lecturerExport" value="Dışa aktar">
                                 </div>
                             </div>
                         </div>
@@ -167,7 +167,7 @@ use function App\Helpers\getSetting;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="export3" id="export3" value="Dışa aktar">
+                                    <input class="btn btn-primary" type="button" name="classroomExport" id="classroomExport" value="Dışa aktar">
                                 </div>
                             </div>
                         </div>

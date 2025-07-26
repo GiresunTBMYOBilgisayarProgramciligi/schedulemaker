@@ -6,18 +6,19 @@ let spinner = new Spinner();
 document.addEventListener("DOMContentLoaded", function () {
     const departmentSelect = document.getElementById("department_id")
     const programSelect = document.getElementById("program_id")
-    const exportButton = document.getElementById('export')
-    const exportButton2 = document.getElementById('export2')
+    //todo buton isimlerini düzenle
+    const departmentAndProgramExportButton = document.getElementById('departmentAndProgramExport')
+    const lecturerExportButton = document.getElementById('lecturerExport')
     const lecturerSelect = document.getElementById("lecturer_id");
-    const exportButton3 = document.getElementById('export3')
+    const classroomExportExportButton = document.getElementById('classroomExport')
     const classroomSelect = document.getElementById("classroom_id");
     let data = new FormData();
     data.append("type", "lesson");
-    data.append("semester", document.getElementById("semester").value);
-    data.append("academic_year", document.getElementById("academic_year").value);
 
-    exportButton.addEventListener("click", async function () {
 
+    departmentAndProgramExportButton.addEventListener("click", async function () {
+        data.append("semester", document.getElementById("semester").value);
+        data.append("academic_year", document.getElementById("academic_year").value);
         if (programSelect.value > 0) {
             data.append("owner_type", "program");
             data.append("owner_id", programSelect.value);
@@ -33,7 +34,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-    exportButton2.addEventListener("click", async function () {
+    lecturerExportButton.addEventListener("click", async function () {
+        data.append("semester", document.getElementById("semester").value);
+        data.append("academic_year", document.getElementById("academic_year").value);
         if (lecturerSelect.value > 0) {
             data.append("owner_type", "user");
             data.append("owner_id", lecturerSelect.value);
@@ -44,7 +47,9 @@ document.addEventListener("DOMContentLoaded", function () {
         await fetchExportSchedule(data);
     });
 
-    exportButton3.addEventListener("click", async function () {
+    classroomExportExportButton.addEventListener("click", async function () {
+        data.append("semester", document.getElementById("semester").value);
+        data.append("academic_year", document.getElementById("academic_year").value);
         if (classroomSelect.value > 0) {
             data.append("owner_type", "classroom");
             data.append("owner_id", classroomSelect.value);
