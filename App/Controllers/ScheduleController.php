@@ -63,22 +63,22 @@ class ScheduleController extends Controller
      * Ders programı tablosunun verilerini oluşturur
      * @throws Exception
      */
-    private function prepareScheduleRows(array $filters = [], $type = "html"): array
+    private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = 4): array
     {
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [
-            "08.00 - 08.50" => $this->generateEmptyWeek($type),
-            "09.00 - 09.50" => $this->generateEmptyWeek($type),
-            "10.00 - 10.50" => $this->generateEmptyWeek($type),
-            "11.00 - 11.50" => $this->generateEmptyWeek($type),
-            "12.00 - 12.50" => $this->generateEmptyWeek($type),
-            "13.00 - 13.50" => $this->generateEmptyWeek($type),
-            "14.00 - 14.50" => $this->generateEmptyWeek($type),
-            "15.00 - 15.50" => $this->generateEmptyWeek($type),
-            "16.00 - 16.50" => $this->generateEmptyWeek($type)
+            "08.00 - 08.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "09.00 - 09.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "10.00 - 10.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "11.00 - 11.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "12.00 - 12.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "13.00 - 13.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "14.00 - 14.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "15.00 - 15.50" => $this->generateEmptyWeek($type, $maxDayIndex),
+            "16.00 - 16.50" => $this->generateEmptyWeek($type, $maxDayIndex)
         ];
 
         /**
@@ -173,6 +173,8 @@ class ScheduleController extends Controller
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
          */
         $lessonHourCount = [];
+        //todo tablo başlıkları ayrı bir metod ile oluşturulabilir. hem burası hem de excel tablosu için oluşturulan başlıklar maxDayindex değeri de dikkate alınarak oluşturulur.
+        //todo TAblunun günşeri bir parametre ile belirlenebiliyor ama başlıklar manuel. Bu durum eşitlenmeli
         $out =
             '
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
