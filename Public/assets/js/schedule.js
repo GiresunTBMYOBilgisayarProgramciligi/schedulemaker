@@ -120,6 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * Bırakılan alandaki ders ile bırakılan derslerin gruplarının olup olmadığını varsa farklı olup olmadığını kontrol eder
      * @param dropZone
      * @param draggedElement
+     * @param selectedClassroom
      */
     async function checkLessonCrash(dropZone, draggedElement, selectedClassroom) {
         /*
@@ -649,7 +650,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let deleteResult = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset.lessonId,
-                "lecturer_id": draggedElement.dataset['lecturer_id'],
+                "lecturer_id": draggedElement.dataset['lecturerId'],
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,

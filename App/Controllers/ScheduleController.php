@@ -358,6 +358,7 @@ class ScheduleController extends Controller
                           data-semester-no=\"$lesson->semester_no\"
                           data-lesson-code=\"$lesson->code\"
                           data-lesson-id=\"$lesson->id\"
+                          data-lecturer-id=\"" . $lesson->getLecturer()->id . "\"
                           $popover
                         >
                             <div class=\"ms-2 me-auto\">
@@ -391,7 +392,7 @@ class ScheduleController extends Controller
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
-        $semester_no = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
+        $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
 
         $HTMLOUT = '
                 <!--begin::Row Program Satırı-->
@@ -399,7 +400,7 @@ class ScheduleController extends Controller
                     <div class="col-12">
                         <div id="schedule-card" class="card card-outline card-primary">
                             <div class="card-header">
-                                <h3 class="card-title">' . $semester_no . '</h3>
+                                <h3 class="card-title">' . $cardTitle . '</h3>
                                 <div class="card-tools">
                                     <button id="singlePageExport" data-owner-type="'.$filters["owner_type"].'" data-owner-id="'.$filters["owner_id"].'" type="button" class="btn btn-outline-primary btn-sm" >
                                         <span>Excel\'e aktar</span> 
