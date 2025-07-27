@@ -556,6 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function deleteSchedule(scheduleData) {
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
+        data.append("lecturer_id", scheduleData.lecturer_id);
         data.append("time", scheduleData.schedule_time);
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
@@ -600,6 +601,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let result = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset['lessonId'],
+                "lecturer_id": draggedElement.dataset['lecturerId'],
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
@@ -647,6 +649,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let deleteResult = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset.lessonId,
+                "lecturer_id": draggedElement.dataset['lecturer_id'],
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,

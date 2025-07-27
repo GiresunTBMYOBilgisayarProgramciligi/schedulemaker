@@ -970,7 +970,7 @@ class AjaxRouter extends Router
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
                 $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-                $lecturer = $lesson->getLecturer();
+                $lecturer = (new User())->find($this->data['lecturer_id'])?: throw new Exception("Hoca bulunamadı");
                 $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
                 // bağlı dersleri alıyoruz
                 $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
@@ -979,7 +979,7 @@ class AjaxRouter extends Router
                 foreach ($lessons as $child) {
                     //set Owners
                     $owners['program'] = $child->program_id;
-                    $owners["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
+                    $owners["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
                     $owners['lesson'] = $child->id;
                     $owners["classroom"] = $classroom->id;
                     $day = [
