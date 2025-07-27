@@ -257,42 +257,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    async function saveSchedule(scheduleData) {
-        let data = new FormData();
-        data.append("lesson_id", scheduleData.lesson_id);
-        data.append("time_start", scheduleData.schedule_time);
-        data.append("lesson_hours", scheduleData.lesson_hours);
-        data.append("day_index", scheduleData.day_index);
-        data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester_no", scheduleData.semester_no)
-        data.append("semester", semesterSelect.value)
-        data.append("academic_year", academicYearSelect.value);
-        return fetch("/ajax/saveSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                if (data && data.status === "error") {
-                    console.error(data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
-                    return false;
-                } else {
-                    console.log('Program Kaydedildi')
-                    console.log(data)
-                    return true;
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-                return false;
-            });
-    }
-
     /**
      * Belirtilen tabloda dersin hocasının dolu günleri vurgulanır
      * @param lessonId
@@ -383,7 +347,194 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function dropListToTable(listElement, draggedElement, dropZone) {
+
+
+    /**
+     * Ders sürükleme işlemi başlatıldığında tablo üzerinde hocanın uygun olmayan saatleri kırmızı ile vurgulanıyor.
+     * Bu fonksiyon o vurguları siler
+     * @param table
+     */
+    function clearCells(table) {
+        for (let i = 0; i < table.rows.length; i++) {
+            for (let j = 0; j < table.rows[i].cells.length; j++) {
+                /*
+                Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
+                 */
+                table.rows[i].cells[j].classList.remove("text-bg-danger")
+                table.rows[i].cells[j].classList.remove("text-bg-success")
+            }
+        }
+        /**
+         * Veri Tabanından alınan Uygun olmayan hücreler bilgisi temizleniyor
+         * @type {null}
+         */
+        unavailableCells = null;
+    }
+
+    async function saveSchedule(scheduleData) {
+        let data = new FormData();
+        data.append("lesson_id", scheduleData.lesson_id);
+        data.append("time_start", scheduleData.schedule_time);
+        data.append("lesson_hours", scheduleData.lesson_hours);
+        data.append("day_index", scheduleData.day_index);
+        data.append("classroom_name", scheduleData.classroom_name);
+        data.append("semester_no", scheduleData.semester_no)
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
+        return fetch("/ajax/saveSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data && data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log('Program Kaydedildi')
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
+
+    async function deleteSchedule(scheduleData) {
+        let data = new FormData();
+        data.append("lesson_id", scheduleData.lesson_id);
+        data.append("lecturer_id", scheduleData.lecturer_id);
+        data.append("time", scheduleData.schedule_time);
+        data.append("day_index", scheduleData.day_index);
+        data.append("semester_no", scheduleData.semester_no);
+        data.append("classroom_name", scheduleData.classroom_name);
+        data.append("semester", semesterSelect.value)
+        data.append("academic_year", academicYearSelect.value);
+        return fetch("/ajax/deleteSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log("Program Silindi")
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
+
+    /**
+     * Tablodan alınarak listeye geri bırakılan dersler için yapılan işlemler
+     * @param table
+     * @param draggedElement
+     * @param dropZone
+     * @returns {Promise<void>}
+     */
+    async function dropTableToList(table, draggedElement, dropZone) {
+        if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
+        let result = await deleteSchedule(
+            {
+                "lesson_id": draggedElement.dataset['lessonId'],
+                "lecturer_id": draggedElement.dataset['lecturerId'],
+                "schedule_time": draggedElement.dataset.scheduleTime,
+                "day_index": draggedElement.dataset.scheduleDay,
+                "semester_no": draggedElement.dataset.semesterNo,
+                "classroom_name": draggedElement.querySelector("span.badge").innerText,
+                "semester": semesterSelect.value,
+                "academic_year": academicYearSelect.value
+            });
+        if (result) {
+            let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
+            //listede taşınan dersin varlığını kontrol et
+            if (dropZone.querySelector("#" + draggedElementIdInList)) {
+                // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
+                let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
+                let hoursInList = lessonInlist.querySelector("span.badge").innerText
+                lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
+                draggedElement.remove()
+
+            } else {
+                //eğer listede yoksa o ders listeye eklenir
+                draggedElement.id = draggedElementIdInList
+                let draggedElementFrameDiv = document.createElement("div");
+                draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
+                dropZone.appendChild(draggedElementFrameDiv)
+                draggedElementFrameDiv.appendChild(draggedElement)
+                draggedElement.querySelector("span.badge").innerText = 1
+                delete draggedElement.dataset.scheduleTime
+                delete draggedElement.dataset.scheduleDay
+            }
+            clearCells(table);
+        }
+
+    }
+
+    async function dropTableToTable(table, draggedElement, dropZone) {
+        //dersin bırakıldığı satırın tablo içindeki index numarası
+        let droppedRowIndex = dropZone.closest("tr").rowIndex
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        let droppedCellIndex = dropZone.cellIndex
+        let row = table.rows[droppedRowIndex];
+        let cell = row.cells[droppedCellIndex];
+        if (!await checkLessonCrash(cell, draggedElement)) {
+            clearCells(table);
+            return;
+        }
+        let deleteResult = await deleteSchedule(
+            {
+                "lesson_id": draggedElement.dataset.lessonId,
+                "lecturer_id": draggedElement.dataset['lecturerId'],
+                "schedule_time": draggedElement.dataset.scheduleTime,
+                "day_index": draggedElement.dataset.scheduleDay,
+                "semester_no": draggedElement.dataset.semesterNo,
+                "classroom_name": draggedElement.querySelector("span.badge").innerText,
+                "semester": semesterSelect.value,
+                "academic_year": academicYearSelect.value
+            });
+        if (deleteResult) {
+            let saveResult = await saveSchedule(
+                {
+                    "lesson_id": draggedElement.dataset.lessonId,
+                    "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
+                    "lesson_hours": 1,
+                    "day_index": droppedCellIndex - 1,
+                    "classroom_name": draggedElement.querySelector("span.badge").innerText,
+                    "semester_no": draggedElement.dataset.semesterNo,
+                    "semester": semesterSelect.value,
+                    "academic_year": academicYearSelect.value
+                });
+            if (saveResult) {
+                console.log("Yeni ders eklendi");
+                //update dataset
+                draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
+                draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
+                cell.appendChild(draggedElement);
+            } else console.error("Yeni ders Eklenemedi")
+        } else console.log("Eski ders Silinemedi");
+
+    }
+
+    async function dropListToTable(listElement, draggedElement, dropZone) {
         const table = dropZone.closest("table");
         /**
          * Liste içerisinde her ders bir frame içerisinde bulunuyor.
@@ -530,155 +681,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 scheduleModal.body.classList.add("text-bg-danger");
             }
         })
-    }
-
-    /**
-     * Ders sürükleme işlemi başlatıldığında tablo üzerinde hocanın uygun olmayan saatleri kırmızı ile vurgulanıyor.
-     * Bu fonksiyon o vurguları siler
-     * @param table
-     */
-    function clearCells(table) {
-        for (let i = 0; i < table.rows.length; i++) {
-            for (let j = 0; j < table.rows[i].cells.length; j++) {
-                /*
-                Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
-                 */
-                table.rows[i].cells[j].classList.remove("text-bg-danger")
-                table.rows[i].cells[j].classList.remove("text-bg-success")
-            }
-        }
-        /**
-         * Veri Tabanından alınan Uygun olmayan hücreler bilgisi temizleniyor
-         * @type {null}
-         */
-        unavailableCells = null;
-    }
-
-    async function deleteSchedule(scheduleData) {
-        let data = new FormData();
-        data.append("lesson_id", scheduleData.lesson_id);
-        data.append("lecturer_id", scheduleData.lecturer_id);
-        data.append("time", scheduleData.schedule_time);
-        data.append("day_index", scheduleData.day_index);
-        data.append("semester_no", scheduleData.semester_no);
-        data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester", semesterSelect.value)
-        data.append("academic_year", academicYearSelect.value);
-        return fetch("/ajax/deleteSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                if (data.status === "error") {
-                    console.error(data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
-                    return false;
-                } else {
-                    console.log("Program Silindi")
-                    console.log(data)
-                    return true;
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-                return false;
-            });
-    }
-
-    /**
-     * Tablodan alınarak listeye geri bırakılan dersler için yapılan işlemler
-     * @param table
-     * @param draggedElement
-     * @param dropZone
-     * @returns {Promise<void>}
-     */
-    async function dropTableToList(table, draggedElement, dropZone) {
-        if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
-        let result = await deleteSchedule(
-            {
-                "lesson_id": draggedElement.dataset['lessonId'],
-                "lecturer_id": draggedElement.dataset['lecturerId'],
-                "schedule_time": draggedElement.dataset.scheduleTime,
-                "day_index": draggedElement.dataset.scheduleDay,
-                "semester_no": draggedElement.dataset.semesterNo,
-                "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semesterSelect.value,
-                "academic_year": academicYearSelect.value
-            });
-        if (result) {
-            let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
-            //listede taşınan dersin varlığını kontrol et
-            if (dropZone.querySelector("#" + draggedElementIdInList)) {
-                // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
-                let lessonInlist = dropZone.querySelector("#" + draggedElementIdInList);
-                let hoursInList = lessonInlist.querySelector("span.badge").innerText
-                lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
-                draggedElement.remove()
-
-            } else {
-                //eğer listede yoksa o ders listeye eklenir
-                draggedElement.id = draggedElementIdInList
-                let draggedElementFrameDiv = document.createElement("div");
-                draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
-                dropZone.appendChild(draggedElementFrameDiv)
-                draggedElementFrameDiv.appendChild(draggedElement)
-                draggedElement.querySelector("span.badge").innerText = 1
-                delete draggedElement.dataset.scheduleTime
-                delete draggedElement.dataset.scheduleDay
-            }
-            clearCells(table);
-        }
-
-    }
-
-    async function dropTableToTable(table, draggedElement, dropZone) {
-        //dersin bırakıldığı satırın tablo içindeki index numarası
-        let droppedRowIndex = dropZone.closest("tr").rowIndex
-        //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        let droppedCellIndex = dropZone.cellIndex
-        let row = table.rows[droppedRowIndex];
-        let cell = row.cells[droppedCellIndex];
-        if (!await checkLessonCrash(cell, draggedElement)) {
-            clearCells(table);
-            return;
-        }
-        let deleteResult = await deleteSchedule(
-            {
-                "lesson_id": draggedElement.dataset.lessonId,
-                "lecturer_id": draggedElement.dataset['lecturerId'],
-                "schedule_time": draggedElement.dataset.scheduleTime,
-                "day_index": draggedElement.dataset.scheduleDay,
-                "semester_no": draggedElement.dataset.semesterNo,
-                "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semesterSelect.value,
-                "academic_year": academicYearSelect.value
-            });
-        if (deleteResult) {
-            let saveResult = await saveSchedule(
-                {
-                    "lesson_id": draggedElement.dataset.lessonId,
-                    "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
-                    "lesson_hours": 1,
-                    "day_index": droppedCellIndex - 1,
-                    "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                    "semester_no": draggedElement.dataset.semesterNo,
-                    "semester": semesterSelect.value,
-                    "academic_year": academicYearSelect.value
-                });
-            if (saveResult) {
-                console.log("Yeni ders eklendi");
-                //update dataset
-                draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
-                draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
-                cell.appendChild(draggedElement);
-            } else console.error("Yeni ders Eklenemedi")
-        } else console.log("Eski ders Silinemedi");
-
     }
 
     /**
