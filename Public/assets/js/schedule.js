@@ -454,8 +454,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!checkSemesters(dropZone.dataset.semesterNo, draggedElement.dataset.semesterNo)) return;
         let result = await deleteSchedule(
             {
-                "lesson_id": draggedElement.dataset['lessonId'],
-                "lecturer_id": draggedElement.dataset['lecturerId'],
+                "lesson_id": draggedElement.dataset.lessonId,
+                "lecturer_id": draggedElement.dataset.lecturerId,
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
@@ -503,7 +503,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let deleteResult = await deleteSchedule(
             {
                 "lesson_id": draggedElement.dataset.lessonId,
-                "lecturer_id": draggedElement.dataset['lecturerId'],
+                "lecturer_id": draggedElement.dataset.lecturerId,
                 "schedule_time": draggedElement.dataset.scheduleTime,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
