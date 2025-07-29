@@ -94,12 +94,18 @@ class AssetManager
         'listpages' => [
             'css' => [
                 [//dataTables
-                    'path' => 'https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css'
+                    'path' => '/assets/node_modules/datatables.net-bs/css/dataTables.bootstrap.min.css'
                 ]
             ],
             'js' => [
-                [//dataTables
-                    'path' => 'https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.js'
+                [
+                    'path' => "/assets/node_modules/jquery/dist/jquery.min.js"
+                ],
+                [//DataTables core
+                    'path' => '/assets/node_modules/datatables.net/js/dataTables.min.js'
+                ],
+                [//dataTables Bootstrap 5 integration
+                    'path' => '/assets/node_modules/datatables.net-bs/js/dataTables.bootstrap.min.js'
                 ],
                 [
                     'path' => '/assets/js/data_table.js'
