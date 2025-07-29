@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
              * @see formEvents.js
              */
             if (!validateCourseCode(codeInput.value)) {
+                new Toast().prepareToast('Hata', "Ders kodu kurala uygun değil", "danger");
                 return;
             }
         }
