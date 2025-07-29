@@ -115,11 +115,11 @@ class ScheduleController extends Controller
             if (!key_exists("academic_year", $filters)) {
                 $filters['academic_year'] = getSetting("academic_year");
             }
+            $lessonFilters = [];
             /**
              *uygun ders listesi sadece program için hazırlanıyor.
              */
             if ($filters['owner_type'] == "program") {
-                $lessonFilters = [];
                 if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
                     $lessonFilters['semester_no'] = $filters['semester_no'];
                 } else {
@@ -131,23 +131,36 @@ class ScheduleController extends Controller
                     'academic_year' => $filters['academic_year'],
                     '!type' => 4// staj dersleri dahil değil
                 ]);
-                $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
-                /**
-                 * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-                 */
-                foreach ($lessonsList as $lesson) {
-                    if (!$lesson->IsScheduleComplete()) {
-                        //Ders Programı tamamlanmamışsa
-                        $lesson->lecturer_id = $lesson->getLecturer()->id;
-                        $lesson->hours -= $this->getCount([
-                            'owner_type' => 'lesson',
-                            'owner_id' => $lesson->id,
-                            "semester" => $filters['semester'],
-                            "academic_year" => $filters['academic_year'],
-                        ]);// programa eklenmiş olan saatlar çıkartılıyor.
-                        $available_lessons[] = $lesson;
-                    }
+            } elseif ($filters['owner_type'] == "classroom") {
+                $classroom = (new Classroom())->find($filters['owner_id']);
+                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
+                    $lessonFilters['semester_no'] = $filters['semester_no'];
+                } else {
+                    throw new Exception("Yarıyıl bilgisi yok");
+                }
+                $lessonFilters = array_merge($lessonFilters, [
+                    'classroom_type' => $classroom->type,
+                    'semester' => $filters['semester'],
+                    'academic_year' => $filters['academic_year'],
+                    '!type' => 4// staj dersleri dahil değil
+                ]);
+            }
+            $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
+            /**
+             * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+             * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
+             */
+            foreach ($lessonsList as $lesson) {
+                if (!$lesson->IsScheduleComplete()) {
+                    //Ders Programı tamamlanmamışsa
+                    $lesson->lecturer_id = $lesson->getLecturer()->id;
+                    $lesson->hours -= $this->getCount([
+                        'owner_type' => 'lesson',
+                        'owner_id' => $lesson->id,
+                        "semester" => $filters['semester'],
+                        "academic_year" => $filters['academic_year'],
+                    ]);// programa eklenmiş olan saatlar çıkartılıyor.
+                    $available_lessons[] = $lesson;
                 }
             }
         } else {
@@ -334,8 +347,12 @@ class ScheduleController extends Controller
         if (!key_exists('semester_no', $filters)) {
             throw new Exception("Dönem numarası belirtilmelidir");
         }
+        /*
+         * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
+         */
+        $semester_no=is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
         $HTMLOut = '<div class="row available-schedule-items drop-zone small"
-                                         data-semester-no="' . $filters['semester_no'] . '"
+                                         data-semester-no="' .  $semester_no . '"
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="data-bs-placement="left"">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {
@@ -402,7 +419,7 @@ class ScheduleController extends Controller
                             <div class="card-header">
                                 <h3 class="card-title">' . $cardTitle . '</h3>
                                 <div class="card-tools">
-                                    <button id="singlePageExport" data-owner-type="'.$filters["owner_type"].'" data-owner-id="'.$filters["owner_id"].'" type="button" class="btn btn-outline-primary btn-sm" >
+                                    <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
                                         <span>Excel\'e aktar</span> 
                                     </button>
                                     <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">

@@ -338,7 +338,7 @@ class AdminRouter extends Router
         } else {
             throw new Exception("Derslik id Numarası belirtilmemiş");
         }
-        $this->assetManager->loadPageAssets('singlepages');
+        $this->assetManager->loadPageAssets('classroompage');
         $this->view_data = array_merge($this->view_data, [
             "classroom" => $classroom,
             "page_title" => $classroom->name . " Sayfası",
@@ -348,7 +348,7 @@ class AdminRouter extends Router
                     'owner_id' => $classroom->id,
                     'type' => 'lesson',
                     'semester_no' => ['in' => getSemesterNumbers()]
-                ], true),
+                ]),
         ]);
         $this->callView("admin/classrooms/classroom", $this->view_data);
     }

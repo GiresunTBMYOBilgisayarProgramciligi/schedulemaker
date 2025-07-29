@@ -178,6 +178,29 @@ class AssetManager
                 [
                     'path' => '/assets/js/exportSchedule.js'
                 ],
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/css/customCSS.css"
+                ]
+            ]
+        ],
+        'classroompage' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/ajax.js'
+                ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/classroomSchedule.js'
+                ]
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/css/customCSS.css"
+                ]
             ]
         ]
     ];
