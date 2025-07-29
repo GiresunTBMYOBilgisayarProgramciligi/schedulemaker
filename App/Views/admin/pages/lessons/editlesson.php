@@ -99,7 +99,7 @@ use function App\Helpers\isAuthorized;
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label" for="password">Dersin Hocası</label>
+                                            <label class="form-label" for="lecturer_id">Dersin Hocası</label>
                                             <select class="form-select tom-select" id="lecturer_id" name="lecturer_id">
                                                 <option></option>
                                                 <?php foreach ($lecturers as $lecturer): ?>
