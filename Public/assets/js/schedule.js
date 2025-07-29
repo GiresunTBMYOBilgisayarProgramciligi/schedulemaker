@@ -650,7 +650,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     let lesson = draggedElement.cloneNode(true)
                     lesson.dataset['scheduleDay'] = droppedCellIndex - 1;
                     lesson.dataset['scheduleTime'] = row.cells[0].innerText;//todo derslik bağlantısı bunun için derslik isme göre değil id ye göre alınmalı
-                    lesson.querySelector("span.badge").innerHTML = `<i class="bi bi-door-open"></i>${selectedClassroom}`;
+                    //todo derslik id üzerinden alındığında yada başka bir şekilde id alınarak bu link düzenlenmeli
+                    lesson.querySelector("span.badge").innerHTML = `<a href="/admin/listclassroom" class="link-light link-underline-opacity-0" target="_blank">
+                                                                                <i class="bi bi-door-open"></i>${selectedClassroom}
+                                                                             </a>`;
                     cell.appendChild(lesson);
 
                     //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
