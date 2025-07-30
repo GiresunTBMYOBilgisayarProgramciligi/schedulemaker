@@ -852,7 +852,12 @@ class AjaxRouter extends Router
                 ];
                 foreach ($lessonSchedules as $lessonSchedule) {
                     $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                    for ($i = 0; $i < 6; $i++) {//day0-5
+                    if ($rowIndex === false) {
+                        continue; // bu saat tabloda yoksa atla
+                    }
+                    //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
+                    $maxDayIndex = 4;
+                    for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
                         if (!is_null($lessonSchedule->{"day" . $i})) {
                             if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
                                 $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
@@ -922,7 +927,12 @@ class AjaxRouter extends Router
                 if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
                     foreach ($classroomSchedules as $classroomSchedule) {
                         $rowIndex = array_search($classroomSchedule->time, $tableRows);
-                        for ($i = 0; $i < 5; $i++) {//day0-4 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
+                        if ($rowIndex === false) {
+                            continue; // bu saat tabloda yoksa atla
+                        }
+                        //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
+                        $maxDayIndex = 4;
+                        for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
                             if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
                                 $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                             }
@@ -930,21 +940,34 @@ class AjaxRouter extends Router
                     }
                 }
             }
-            $available = false;
-            foreach ($unavailableCells as $index => $row) {
-                foreach ($row as $cellIndex => $cell) {
-                    foreach ($classroomIds as $classroomId) {
-                        if (!(isset($cell[$classroomId]) and $cell[$classroomId])) {//id tanımlı ve değeri true ise saat uygun değil
-                            $available = true;
+            $result = [];
+
+            $result = [];
+
+            foreach ($unavailableCells as $rowKey => $row) {
+                foreach ($row as $colKey => $classrooms) {
+                    $hasAllClassrooms = true;
+
+                    foreach ($classroomIds as $id) {
+                        if (!isset($classrooms[$id])) {
+                            $hasAllClassrooms = false;
+                            break;
                         }
-                        $unavailableCells[$index][$cellIndex] = !$available;
+                    }
+
+                    if ($hasAllClassrooms) {
+                        if (!isset($result[$rowKey])) {
+                            $result[$rowKey] = [];
+                        }
+                        $result[$rowKey][$colKey] = true;
                     }
                 }
             }
+
             //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
             $this->response["status"] = "success";
             $this->response["msg"] = "";
-            $this->response["unavailableCells"] = $unavailableCells;
+            $this->response["unavailableCells"] = $result;
 
         }
         $this->sendResponse();
