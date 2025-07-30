@@ -18,6 +18,7 @@ class Classroom extends Model
      * 1-> Derslik
      * 2-> Bilgisayar laboratuvarı
      * 3-> Uzaktan Eğitim Sınıfı
+     * 4-> Karma (Derslik ve Lab)
      */
     public ?string $type = null;
     protected string $table_name = "classrooms";

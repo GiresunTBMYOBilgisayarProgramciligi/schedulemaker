@@ -895,8 +895,10 @@ class AjaxRouter extends Router
 
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $classroom_type = $lesson->classroom_type;
-            $classrooms = (new Classroom())->get()->where(['type' => $classroom_type])->all();
+            $classroom_type = $lesson->classroom_type==4? [1,2]: [$lesson->classroom_type];
+
+            $classrooms = (new Classroom())->get()->where(['type' => ['in'=> $classroom_type]])->all();
+            $this->response["classrooms"] = $classrooms;
             /**
              * Hiç bir derslik için uygun olmayan hücreler
              */
