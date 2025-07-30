@@ -420,9 +420,7 @@ class AdminRouter extends Router
         if (!isAuthorized("submanager", false, $department)) {
             throw new Exception("Bu bölüm sayfasını görme yetkiniz yok");
         }
-        $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
-        $this->assetManager->addJs("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.js");
-        $this->assetManager->addJs("/assets/js/data_table.js");
+        $this->assetManager->loadPageAssets('listpages');
         $this->assetManager->loadPageAssets('singlepages');
         $this->view_data = array_merge($this->view_data, [
             "department" => $department,
@@ -503,9 +501,7 @@ class AdminRouter extends Router
         if (!isAuthorized("submanager", false, $program)) {
             throw new Exception("Bu programı görüntülemek için yetkiniz yok");
         }
-        $this->assetManager->addCss("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.css");
-        $this->assetManager->addJs("https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.2.1/datatables.min.js");
-        $this->assetManager->addJs("/assets/js/data_table.js");
+        $this->assetManager->loadPageAssets('listpages');
         $this->assetManager->loadPageAssets('singlepages');
 
         $this->view_data = array_merge($this->view_data, [
