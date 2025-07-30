@@ -865,7 +865,7 @@ class ScheduleController extends Controller
 
     /**
      * Bir ders ile bağlantılı tüm Ders programlarının dizisini döener
-     * @param $filters ["lesson_id","semester_no","semester","academic_year","type"] alanları olmalı
+     * @param $filter ["lesson_id","semester_no","semester","academic_year","type"] alanları olmalı
      * @return array
      * @throws Exception
      */
@@ -890,7 +890,8 @@ class ScheduleController extends Controller
             $day_index = null;
             $day = null;
             $classroom = null;
-            for ($i = 1; $i <= 5; $i++) {
+            for ($i = 0; $i <= 5; $i++) {
+                // Bir dersin program kaydından her saat için bir schedule kaydı var ve bunun içinde sadece bir günde bilgiler yazılı olabilir.
                 if (!is_null($schedule->{"day$i"})) {
                     $day_index = $i;
                     $classroom = (new Classroom())->find($schedule->{"day$i"}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
@@ -898,6 +899,7 @@ class ScheduleController extends Controller
                     $day = $schedule->{"day$i"};
                 }
             }
+
             $owners = array_filter([
                 "lesson" => $lesson->id ?? null,
                 "user" => $lesson->getLecturer()?->id ?? null,
