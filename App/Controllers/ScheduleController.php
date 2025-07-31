@@ -81,10 +81,7 @@ class ScheduleController extends Controller
             "16.00 - 16.50" => $this->generateEmptyWeek($type, $maxDayIndex)
         ];
 
-        /**
-         * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
-         */
-        $lessonHourCount = [];
+
         /*
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
@@ -92,6 +89,11 @@ class ScheduleController extends Controller
             $week = $schedule->getWeek($type);
             foreach ($week as $day => $value) {
                 if (!is_null($value)) {
+                    if($value===true and is_array($scheduleRows[$schedule->time][$day])){
+                        // value değeri true ise hocanın tercih ettiği saat demek. aynı zamanda o saat bir dizi ise o saate atama yapılmış demek.
+                        // bu durumda atama yapılmış dersin gözükmesi için saat bilgisi değiştirilmiyor.
+                        continue;
+                    }
                     $scheduleRows[$schedule->time][$day] = $value;
                 }
             }
