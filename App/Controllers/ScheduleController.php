@@ -119,7 +119,7 @@ class ScheduleController extends Controller
             }
             $lessonFilters = [];
             /**
-             *uygun ders listesi sadece program için hazırlanıyor.
+             *uygun ders listesi program için hazırlanıyor.
              */
             if ($filters['owner_type'] == "program") {
                 if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
@@ -142,6 +142,18 @@ class ScheduleController extends Controller
                 }
                 $lessonFilters = array_merge($lessonFilters, [
                     'classroom_type' => $classroom->type,
+                    'semester' => $filters['semester'],
+                    'academic_year' => $filters['academic_year'],
+                    '!type' => 4// staj dersleri dahil değil
+                ]);
+            } elseif ($filters['owner_type'] == "user") {
+                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
+                    $lessonFilters['semester_no'] = $filters['semester_no'];
+                } else {
+                    throw new Exception("Yarıyıl bilgisi yok");
+                }
+                $lessonFilters = array_merge($lessonFilters, [
+                    'lecturer_id' => $filters['owner_id'],
                     'semester' => $filters['semester'],
                     'academic_year' => $filters['academic_year'],
                     '!type' => 4// staj dersleri dahil değil

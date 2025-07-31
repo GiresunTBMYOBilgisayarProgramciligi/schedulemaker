@@ -160,8 +160,8 @@ class AdminRouter extends Router
                     'owner_id' => $user->id,
                     'type' => 'lesson',
                     'semester_no' => ['in' => getSemesterNumbers()]
-                ],
-                true
+                ]
+
             ),
         ]);
         $this->callView("admin/profile", $this->view_data);
