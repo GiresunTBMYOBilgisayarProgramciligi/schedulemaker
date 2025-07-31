@@ -224,7 +224,7 @@ use function App\Helpers\isAuthorized;
             <div class="row mb-3">
                 <div class="col-md-12">
                     <!-- card Derslerim -->
-                    <div class="card card-outline card-primary">
+                    <div class="card card-outline card-primary collapsed-card">
                         <div class="card-header">
                             <h3 class="card-title">Derslerim</h3>
                             <div class="card-tools">
