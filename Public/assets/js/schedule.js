@@ -289,7 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         for (let i = 0; i <= 9; i++) {
                             for (let cell in unavailableCells[i]) {
                                 if (unavailableCells[i][cell]) {
-                                    table.rows[i].cells[cell].classList.add("text-bg-danger");
+                                    table.rows[i].cells[cell].classList.add("text-bg-dark");
                                 }
                             }
                         }
@@ -362,6 +362,7 @@ document.addEventListener("DOMContentLoaded", function () {
                  */
                 table.rows[i].cells[j].classList.remove("text-bg-danger")
                 table.rows[i].cells[j].classList.remove("text-bg-success")
+                table.rows[i].cells[j].classList.remove("text-bg-dark")
             }
         }
         /**
