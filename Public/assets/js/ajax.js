@@ -122,7 +122,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchForm(form, data) {
         let modal = new Modal();
-        let spinner = new Spinner();
         modal.prepareModal(form.getAttribute("title"));
         spinner.showSpinner(modal.body)
         modal.showModal();

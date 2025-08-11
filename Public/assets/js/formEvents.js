@@ -92,7 +92,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (departmentSelect) {
         departmentSelect.addEventListener("change", function () {
             const departmentId = this.value;
-            let spinner = new Spinner();
             programSelect.querySelector('option').innerText = ""
             spinner.showSpinner(programSelect.querySelector('option'))
             // AJAX isteği gönder

@@ -309,3 +309,9 @@ class Spinner {
         }
     }
 }
+
+/**
+ * Tüm dosyalarda aynı spinner kullanılacak. Aynı anda birden fazla spinner eklenmek istendiğinde sorun olabilir. Yeni bei tanımlama yapılması gerekir.
+ * @type {Spinner}
+ */
+let spinner = new Spinner();

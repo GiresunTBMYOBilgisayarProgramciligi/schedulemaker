@@ -1,4 +1,4 @@
-let spinner = new Spinner();
+
 /**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
