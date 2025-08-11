@@ -7,7 +7,6 @@
 let unavailableCells;
 
 let preferredCells;
-let spinner = new Spinner();
 document.addEventListener("DOMContentLoaded", function () {
     // draggable="true" olan tüm elementleri seç
     const dragableElements = document.querySelectorAll('[draggable="true"]');
@@ -43,7 +42,92 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param table
      * @returns {Promise<boolean>}
      */
-    function highlightUnavailableCells(lessonId, table){}
+    function highlightUnavailableCells(lessonId, table){
+        let data = new FormData()
+        data.append("lesson_id", lessonId);
+        let toast = new Toast();
+        toast.prepareToast("Yükleniyor", "Kontrol ediliyor...");
+        let lecturerResult = fetch("/ajax/checkLecturerSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                toast.closeToast()
+                if (data.status === "error") {
+                    console.error(data);
+                    return false;
+                } else {
+                    //todo tabloya yükleniyor efekti
+                    unavailableCells = data.unavailableCells;
+                    if (unavailableCells) {
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in unavailableCells[i]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-danger")
+                                table.rows[i].cells[cell].classList.add("unavailable-for-lecturer")
+                            }
+                        }
+                    }
+                    preferredCells = data.preferredCells;
+                    if (preferredCells) {
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in preferredCells[i]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-success")
+                            }
+                        }
+                    }
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+        if (!lecturerResult) {
+            toast.prepareToast("Hata", "Hoca programı kontrol edilirken hata oluştu", "danger");
+            clearCells(table);
+        }
+        let programResult = fetch("/ajax/checkProgramSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                toast.closeToast()
+                if (data.status === "error") {
+                    console.error(data);
+                    return false;
+                } else {
+                    //todo tabloya yükleniyor efekti
+                    unavailableCells = data.unavailableCells;
+                    if (unavailableCells) {
+                        for (let i = 0; i <= 9; i++) {
+                            for (let cell in unavailableCells[i]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-danger")
+                                table.rows[i].cells[cell].classList.add("unavailable-for-program")
+                            }
+                        }
+                    }
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+        if (!programResult) {
+            toast.prepareToast("Hata", "Hoca programı kontrol edilirken hata oluştu", "danger");
+            clearCells(table);
+        }
+    }
 
     /**
      * Ders sürükleme işlemi başlatıldığında tablo üzerinde hocanın uygun olmayan saatleri kırmızı ile vurgulanıyor.
@@ -56,8 +140,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 /*
                 Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
                  */
-                table.rows[i].cells[j].classList.remove("text-bg-danger")
+                table.rows[i].cells[j].classList.remove("unavailable-for-lecturer")
                 table.rows[i].cells[j].classList.remove("text-bg-success")
+                table.rows[i].cells[j].classList.remove("text-bg-danger")
+                table.rows[i].cells[j].classList.remove("unavailable-for-program")
             }
         }
         /**
@@ -98,8 +184,8 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function dropHandler(element, event) {
         event.preventDefault();
-        let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-        dropZones.forEach((dropZone) => {
+        let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+        removeLessonDropZones.forEach((dropZone) => {
             dropZone.style.border = ""
             const tooltip = bootstrap.Tooltip.getInstance(dropZone);
             if (tooltip)
@@ -109,10 +195,6 @@ document.addEventListener("DOMContentLoaded", function () {
          * Bırakma eyleminin yapıldığı ana element (eventListenner'ı olan)
          */
         const droppedZone = element;
-        /**
-         * Bırakma eyleminin yapıldığı elementin çocuklarından birisi. üzerine bırakılan element
-         */
-        const droppedTargetElement = event.target
         /**
          * alanlar snake case olmalı
          * @type {{}}
@@ -133,7 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
             case "list":
                 if (droppedZone.classList.contains("available-schedule-items")) {
                     // Listeden Listeye
-                    let table = document.querySelector('table[data-semester-no="' + droppedZone.dataset.semesterNo + '"]');
+                    let table = document.querySelector('table');
                     clearCells(table);
                     return;
                 } else {
@@ -170,8 +252,8 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData(data, event.target.dataset[data])
         }
         if (event.target.closest("table")) {
-            let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-            dropZones.forEach((dropZone) => {
+            let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+            removeLessonDropZones.forEach((dropZone) => {
                 dropZone.style.border = "2px dashed"
                 // Bootstrap tooltip nesnesini oluştur
                 const tooltip = new bootstrap.Tooltip(dropZone);
@@ -181,13 +263,13 @@ document.addEventListener("DOMContentLoaded", function () {
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
-            let result = highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
-            let table = document.querySelector('table[data-semester-no="' + event.dataTransfer.getData("semesterNo") + '"]')
+            let table = document.querySelector('table')
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
-            let result = highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table);
         }
     }
 

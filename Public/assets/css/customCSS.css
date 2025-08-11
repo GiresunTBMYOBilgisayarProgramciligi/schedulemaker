@@ -1,3 +1,15 @@
 .available-schedule-items{
     min-height: 30px;
 }
+.unavailable-for-classroom::after {
+    content: "Derslik dolu";
+    color: #fff;
+}
+.unavailable-for-lecturer::after {
+    content: "Hoca dolu";
+    color: #fff;
+}
+.unavailable-for-program::after {
+    content: "Program dolu";
+    color: #fff;
+}

@@ -8,7 +8,6 @@
 let unavailableCells;
 
 let preferredCells;
-let spinner = new Spinner();
 /**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
@@ -59,7 +58,6 @@ document.addEventListener("DOMContentLoaded", function () {
                      * @type {*[]}
                      */
                     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-                    console.log(popoverTriggerList)
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                         return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
                     })
@@ -270,7 +268,6 @@ document.addEventListener("DOMContentLoaded", function () {
         data.append("academic_year", academicYearSelect.value);
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Kontrol ediliyor...");
-        //todo checkClassroomSchedule
         let classroomResult = fetch("/ajax/checkClassroomSchedule", {
             method: "POST",
             headers: {
@@ -289,7 +286,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         for (let i = 0; i <= 9; i++) {
                             for (let cell in unavailableCells[i]) {
                                 if (unavailableCells[i][cell]) {
-                                    table.rows[i].cells[cell].classList.add("text-bg-dark");
+                                    table.rows[i].cells[cell].classList.add("text-bg-danger")
+                                    table.rows[i].cells[cell].classList.add("unavailable-for-classroom");
                                 }
                             }
                         }
@@ -322,6 +320,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         for (let i = 0; i <= 9; i++) {
                             for (let cell in unavailableCells[i]) {
                                 table.rows[i].cells[cell].classList.add("text-bg-danger")
+                                table.rows[i].cells[cell].classList.add("unavailable-for-lecturer")
                             }
                         }
                     }
@@ -362,7 +361,8 @@ document.addEventListener("DOMContentLoaded", function () {
                  */
                 table.rows[i].cells[j].classList.remove("text-bg-danger")
                 table.rows[i].cells[j].classList.remove("text-bg-success")
-                table.rows[i].cells[j].classList.remove("text-bg-dark")
+                table.rows[i].cells[j].classList.remove("unavailable-for-lecturer")
+                table.rows[i].cells[j].classList.remove("unavailable-for-classroom")
             }
         }
         /**
@@ -694,8 +694,9 @@ document.addEventListener("DOMContentLoaded", function () {
      */
     function dropHandler(element, event) {
         event.preventDefault();
-        let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-        dropZones.forEach((dropZone) => {
+        let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+        console.log(removeLessonDropZones);
+        removeLessonDropZones.forEach((dropZone) => {
             dropZone.style.border = ""
             const tooltip = bootstrap.Tooltip.getInstance(dropZone);
             if (tooltip)
@@ -705,10 +706,7 @@ document.addEventListener("DOMContentLoaded", function () {
          * Bırakma eyleminin yapıldığı ana element (eventListenner'ı olan)
          */
         const droppedZone = element;
-        /**
-         * Bırakma eyleminin yapıldığı elementin çocuklarından birisi. üzerine bırakılan element
-         */
-        const droppedTargetElement = event.target
+
         /**
          * alanlar snake case olmalı
          * @type {{}}
@@ -766,8 +764,8 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData(data, event.target.dataset[data])
         }
         if (event.target.closest("table")) {
-            let dropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-            dropZones.forEach((dropZone) => {
+            let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
+            removeLessonDropZones.forEach((dropZone) => {
                 dropZone.style.border = "2px dashed"
                 // Bootstrap tooltip nesnesini oluştur
                 const tooltip = new bootstrap.Tooltip(dropZone);
@@ -777,13 +775,13 @@ document.addEventListener("DOMContentLoaded", function () {
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
-            let result = highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table[data-semester-no="' + event.dataTransfer.getData("semesterNo") + '"]')
             let lessonID = event.target.dataset['lessonId'];
             clearCells(table);
-            let result = highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table);
         }
     }
 

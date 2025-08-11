@@ -895,9 +895,9 @@ class AjaxRouter extends Router
 
         if (key_exists("lesson_id", $this->data)) {
             $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $classroom_type = $lesson->classroom_type==4? [1,2]: [$lesson->classroom_type];
+            $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
 
-            $classrooms = (new Classroom())->get()->where(['type' => ['in'=> $classroom_type]])->all();
+            $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
             $this->response["classrooms"] = $classrooms;
             /**
              * Hiç bir derslik için uygun olmayan hücreler
@@ -944,8 +944,6 @@ class AjaxRouter extends Router
             }
             $result = [];
 
-            $result = [];
-
             foreach ($unavailableCells as $rowKey => $row) {
                 foreach ($row as $colKey => $classrooms) {
                     $hasAllClassrooms = true;
@@ -976,11 +974,78 @@ class AjaxRouter extends Router
     }
 
     /**
+     * @throws Exception
+     */
+    public function checkProgramScheduleAction()
+    {
+        $scheduleController = new ScheduleController();
+        if (!key_exists("semester", $this->data)) {
+            $this->data["semester"] = getSetting("semester");
+        }
+        if (!key_exists("academic_year", $this->data)) {
+            $this->data["academic_year"] = getSetting("academic_year");
+        }
+
+        if (key_exists("lesson_id", $this->data)) {
+            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+            $unavailableCells = [];
+            $program = $lesson->getProgram();
+            $filters = [
+                "owner_type" => "program",
+                "owner_id" => $program->id,
+                "type" => "lesson",
+                "semester" => $this->data['semester'],
+                "semester_no" => $lesson->semester_no,
+                "academic_year" => $this->data['academic_year'],
+            ];
+            $programSchedules = $scheduleController->getListByFilters($filters);
+            if (count($programSchedules) > 0) {
+                $unavailableCells = [];
+                $tableRows = [
+                    "08.00 - 08.50",
+                    "09.00 - 09.50",
+                    "10.00 - 10.50",
+                    "11.00 - 11.50",
+                    "12.00 - 12.50",
+                    "13.00 - 13.50",
+                    "14.00 - 14.50",
+                    "15.00 - 15.50",
+                    "16.00 - 16.50"
+                ];
+                foreach ($programSchedules as $lessonSchedule) {
+                    $rowIndex = array_search($lessonSchedule->time, $tableRows);
+                    if ($rowIndex === false) {
+                        continue; // bu saat tabloda yoksa atla
+                    }
+                    //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
+                    $maxDayIndex = 4;
+                    for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
+                        if (is_array($lessonSchedule->{"day" . $i})) {
+                            $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+                        }
+                    }
+                }
+            }
+
+            $this->response['status'] = "success";
+            $this->response["msg"] = "";
+            $this->response["unavailableCells"] = $unavailableCells;
+        } else {
+            $this->response = [
+                "msg" => "Programın tüm saatleri müsait",
+                "status" => "success"
+            ];
+        }
+        $this->sendResponse();
+    }
+
+    /**
      * Ders programından veri silmek için gerekli kontrolleri yapar
      * @return void
      * @throws Exception
      */
-    public function deleteScheduleAction(): void
+    public
+    function deleteScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
@@ -995,7 +1060,7 @@ class AjaxRouter extends Router
             $owners = [];
             if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
                 $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-                $lecturer = (new User())->find($this->data['lecturer_id'])?: throw new Exception("Hoca bulunamadı");
+                $lecturer = (new User())->find($this->data['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");
                 $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
                 // bağlı dersleri alıyoruz
                 $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
@@ -1057,7 +1122,8 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public function exportScheduleAction(): void
+    public
+    function exportScheduleAction(): void
     {
         $filters = $this->data;
         if (!key_exists('type', $filters)) {
@@ -1077,7 +1143,8 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public function saveSettingsAction(): void
+    public
+    function saveSettingsAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Bu işlemi yapmak için yetkiniz yok");
@@ -1102,7 +1169,8 @@ class AjaxRouter extends Router
     /*
      * İmport ve Export
      */
-    public function importUsersAction(): void
+    public
+    function importUsersAction(): void
     {
         $importExportManager = new ImportExportManager($this->files);
         $result = $importExportManager->importUsersFromExcel();
@@ -1112,7 +1180,8 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    public function importLessonsAction(): void
+    public
+    function importLessonsAction(): void
     {
         $importExportManager = new ImportExportManager($this->files, $this->data);
         $result = $importExportManager->importLessonsFromExcel();
