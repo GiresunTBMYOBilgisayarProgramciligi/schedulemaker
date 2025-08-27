@@ -491,12 +491,15 @@ class Model
             }
         });
         $fields = array_keys($data);
+        // alanları güvenli hale getir (backtick ekle)
+        $escapedFields = array_map(function ($field) {
+            return "`{$field}`";
+        }, $fields);
         $placeholders = array_map(function ($field) {
             return ":{$field}";
         }, $fields);
 
-        $sql = "INSERT INTO {$this->table_name} (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $placeholders) . ")";
-
+        $sql = "INSERT INTO {$this->table_name} (" . implode(', ', $escapedFields) . ") VALUES (" . implode(', ', $placeholders) . ")";
         $statement = self::$database->prepare($sql);
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
