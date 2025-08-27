@@ -530,6 +530,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
                 draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
                 cell.appendChild(draggedElement);
+                clearCells(table);
             } else console.error("Yeni ders Eklenemedi")
         } else console.log("Eski ders Silinemedi");
 
