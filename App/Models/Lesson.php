@@ -6,6 +6,7 @@ use App\Controllers\ClassroomController;
 use App\Controllers\LessonController;
 use App\Core\Model;
 use Exception;
+use function App\Helpers\getSetting;
 
 class Lesson extends Model
 {
@@ -125,7 +126,17 @@ class Lesson extends Model
             'type' => 'lesson',
             'semester' => $this->semester
         ])->all();
-        if (count($schedules) == $this->hours) {
+        $hours = 0;
+        foreach ($schedules as $schedule) {
+            //todo getSetting('maxDayIndex')
+            $maxDayIndex=4;
+            for($i = 0; $i<=$maxDayIndex; $i++) {
+                if(!is_null($schedule->{"day$i"})) {
+                    $hours++;
+                }
+            }
+        }
+        if ($hours == $this->hours) {
             $result = true;
         }
         return $result;
