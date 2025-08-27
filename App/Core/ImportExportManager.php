@@ -21,7 +21,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 
 class ImportExportManager
 {
@@ -399,10 +399,10 @@ class ImportExportManager
     #[NoReturn] public function exportSchedule($filters = []): void
     {
         if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
+            $filters['semester'] = getSettingValue('semester');
         }
         if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
+            $filters['academic_year'] = getSettingValue("academic_year");
         }
 
         $scheduleController = new ScheduleController();

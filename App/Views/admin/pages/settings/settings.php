@@ -3,7 +3,7 @@
  * @var string $page_title
  */
 
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 
 ?>
 <!--begin::App Main-->
@@ -38,33 +38,30 @@ use function App\Helpers\getSetting;
                         <form id="addUserForm" action="/ajax/saveSettings" method="post" class="ajaxForm updateForm"
                               title="Ayarları Düzenle">
                             <div class="card-body pb-0">
-                                <div class="row">
+                                <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
-                                            <input type="hidden" name="settings[general][academic_year][type]"
-                                                   id="settings[general][academic_year][type]" value="string">
-                                            <div class="input-group ">
-                                                <select class="form-select" id="settings[general][academic_year][value]"
-                                                        name="settings[general][academic_year][value]">
-                                                    <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSetting("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                            <?= $year . ' - ' . $year + 1 ?>
-                                                        </option>
-                                                    <?php endfor; ?>
-                                                </select>
-                                                <span class="input-group-text"> - </span>
-                                                <input type="hidden" name="settings[general][semester][type]" id="settings[general][semester][type]" value="string">
-                                                <select class="form-select" id="settings[general][semester][value]"
-                                                        name="settings[general][semester][value]">
-                                                    <option value="Güz" <?= getSetting("semester") == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                    <option value="Bahar" <?= getSetting("semester") == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                    <option value="Yaz" <?= getSetting("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
-                                                </select>
-                                            </div>
-
+                                        <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
+                                        <input type="hidden" name="settings[general][academic_year][type]" id="settings[general][academic_year][type]" value="string">
+                                        <div class="input-group ">
+                                            <select class="form-select" id="settings[general][academic_year][value]"
+                                                    name="settings[general][academic_year][value]">
+                                                <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
+                                                    <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <?= $year . ' - ' . $year + 1 ?>
+                                                    </option>
+                                                <?php endfor; ?>
+                                            </select>
+                                            <span class="input-group-text"> - </span>
+                                            <input type="hidden" name="settings[general][semester][type]" id="settings[general][semester][type]" value="string">
+                                            <select class="form-select" id="settings[general][semester][value]"
+                                                    name="settings[general][semester][value]">
+                                                <option value="Güz" <?= getSettingValue("semester") == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                <option value="Bahar" <?= getSettingValue("semester") == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                <option value="Yaz" <?= getSettingValue("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                            </select>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                             <div class="card-footer text-end">

@@ -10,7 +10,7 @@ use Exception;
 /**
  * @throws Exception
  */
-function getSetting($key = null, $group = "general")
+function getSettingValue($key = null, $group = "general")
 {
     $settingsController = new SettingsController();
     $setting = $settingsController->getSetting($key, $group);
@@ -30,7 +30,7 @@ function getSetting($key = null, $group = "general")
 function getCurrentYearAndSemester(): bool|string
 {
     try {
-        return getSetting('academic_year') . " " . getSetting('semester');
+        return getSettingValue('academic_year') . " " . getSettingValue('semester');
     } catch (Exception $e) {
         throw new Exception("Semester/Dönem Bilgisi oluşturulurken hata oluştu");
     }
@@ -45,7 +45,7 @@ function getCurrentYearAndSemester(): bool|string
 function getSemesterNumbers(?string $semester = null): array
 {
     // Eğer parametre verilmemişse ayarlar tablosundan al
-    $semester = $semester ?? getSetting('semester');
+    $semester = $semester ?? getSettingValue('semester');
 
     // Geçerli dönem sayısını al
     $semester_count = (new LessonController())->getMaxSemesterNo() ?? 4;

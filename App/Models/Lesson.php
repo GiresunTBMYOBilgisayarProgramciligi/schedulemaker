@@ -6,7 +6,7 @@ use App\Controllers\ClassroomController;
 use App\Controllers\LessonController;
 use App\Core\Model;
 use Exception;
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 
 class Lesson extends Model
 {

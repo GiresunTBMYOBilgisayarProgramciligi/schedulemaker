@@ -20,7 +20,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getSemesterNumbers;
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 use function App\Helpers\isAuthorized;
 
 /**
@@ -560,10 +560,10 @@ class AjaxRouter extends Router
             throw new Exception("Ders saati yada program saati yok");
         }
         if (!key_exists("semester", $this->data)) {
-            $this->data['semester'] = getSetting('semester');
+            $this->data['semester'] = getSettingValue('semester');
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data['academic_year'] = getSetting("academic_year");
+            $this->data['academic_year'] = getSettingValue("academic_year");
         }
         $filters = [
             "type" => "lesson",// Programın türü lesson yada exam todo datadan al
@@ -641,10 +641,10 @@ class AjaxRouter extends Router
             throw new Exception("Ders saati yada program saati yok");
         }
         if (!key_exists("semester", $this->data)) {
-            $this->data['semester'] = getSetting('semester');
+            $this->data['semester'] = getSettingValue('semester');
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data['academic_year'] = getSetting("academic_year");
+            $this->data['academic_year'] = getSettingValue("academic_year");
         }
         $filters = [
             "type" => "lesson",// Programın türü lesson yada exam todo datadan al
@@ -788,8 +788,8 @@ class AjaxRouter extends Router
         $scheduleController = new ScheduleController();
         $filters = [
             "type" => "lesson",
-            "semester" => getSetting("semester"),
-            "academic_year" => getSetting("academic_year"),
+            "semester" => getSettingValue("semester"),
+            "academic_year" => getSettingValue("academic_year"),
         ];
         $filters = array_merge($filters, $this->data);
         $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -819,10 +819,10 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSetting("semester");
+            $this->data["semester"] = getSettingValue("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSetting("academic_year");
+            $this->data["academic_year"] = getSettingValue("academic_year");
         }
 
         if (key_exists("lesson_id", $this->data)) {
@@ -887,10 +887,10 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSetting("semester");
+            $this->data["semester"] = getSettingValue("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSetting("academic_year");
+            $this->data["academic_year"] = getSettingValue("academic_year");
         }
 
         if (key_exists("lesson_id", $this->data)) {
@@ -980,10 +980,10 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSetting("semester");
+            $this->data["semester"] = getSettingValue("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSetting("academic_year");
+            $this->data["academic_year"] = getSettingValue("academic_year");
         }
 
         if (key_exists("lesson_id", $this->data)) {
@@ -1049,10 +1049,10 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSetting("semester");
+            $this->data["semester"] = getSettingValue("semester");
         }
         if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSetting("academic_year");
+            $this->data["academic_year"] = getSettingValue("academic_year");
         }
 
         if (!key_exists("owner_type", $this->data)) {

@@ -12,7 +12,7 @@
  * @var array $classroomTypes
  */
 
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 use function App\Helpers\isAuthorized;
 
 ?>

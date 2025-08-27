@@ -10,7 +10,7 @@ use App\Models\User;
 use Exception;
 use PDOException;
 use function App\Helpers\getSemesterNumbers;
-use function App\Helpers\getSetting;
+use function App\Helpers\getSettingValue;
 
 class ScheduleController extends Controller
 {
@@ -112,10 +112,10 @@ class ScheduleController extends Controller
         $available_lessons = [];
         if (key_exists('owner_type', $filters) and key_exists('owner_id', $filters)) {
             if (!key_exists("semester", $filters)) {
-                $filters['semester'] = getSetting('semester');
+                $filters['semester'] = getSettingValue('semester');
             }
             if (!key_exists("academic_year", $filters)) {
-                $filters['academic_year'] = getSetting("academic_year");
+                $filters['academic_year'] = getSettingValue("academic_year");
             }
             $lessonFilters = [];
             /**
@@ -194,7 +194,7 @@ class ScheduleController extends Controller
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
         // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
-        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getSetting("semester") . '"';
+        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getSettingValue("semester") . '"';
 
         /**
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
@@ -242,7 +242,7 @@ class ScheduleController extends Controller
                             $lecturer = (new User())->find($column->lecturer_id);
                             $classroom = (new Classroom())->find($column->classroom_id);
                             $draggable = "true";
-                            if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+                            if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
                                 $draggable = "false";
                             }
                             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
@@ -289,7 +289,7 @@ class ScheduleController extends Controller
                         $lecturer = (new User())->find($day->lecturer_id);
                         $classroom = (new Classroom)->find($day->classroom_id);
                         $draggable = "true";
-                        if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+                        if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
                             $draggable = "false";
                         }
                         $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
@@ -375,7 +375,7 @@ class ScheduleController extends Controller
              * @var Lesson $parentLesson
              */
             $draggable = "true";
-            if (!is_null($lesson->parent_lesson_id) or getSetting("academic_year") != $filters['academic_year'] or getSetting("semester") != $filters['semester']) {
+            if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
                 $draggable = "false";
             }
             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
@@ -478,10 +478,10 @@ class ScheduleController extends Controller
     public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
         if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
+            $filters['semester'] = getSettingValue('semester');
         }
         if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
+            $filters['academic_year'] = getSettingValue("academic_year");
         }
         $HTMLOUT = '';
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
@@ -544,10 +544,10 @@ class ScheduleController extends Controller
             throw new Exception("Missing hours and time");
         }
         if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSetting('semester');
+            $filters['semester'] = getSettingValue('semester');
         }
         if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSetting("academic_year");
+            $filters['academic_year'] = getSettingValue("academic_year");
         }
         if (key_exists("lesson_id", $filters)) {
             $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
