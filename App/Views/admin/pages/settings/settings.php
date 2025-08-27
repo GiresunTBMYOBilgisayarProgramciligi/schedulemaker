@@ -1,9 +1,9 @@
 <?php
 /**
  * @var string $page_title
+ * @var array $settings
  */
 
-use function App\Helpers\getSettingValue;
 
 ?>
 <!--begin::App Main-->
@@ -46,7 +46,7 @@ use function App\Helpers\getSettingValue;
                                             <select class="form-select" id="settings[general][academic_year][value]"
                                                     name="settings[general][academic_year][value]">
                                                 <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                    <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                    <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $settings['general']["academic_year"] == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                         <?= $year . ' - ' . $year + 1 ?>
                                                     </option>
                                                 <?php endfor; ?>
@@ -55,9 +55,9 @@ use function App\Helpers\getSettingValue;
                                             <input type="hidden" name="settings[general][semester][type]" id="settings[general][semester][type]" value="string">
                                             <select class="form-select" id="settings[general][semester][value]"
                                                     name="settings[general][semester][value]">
-                                                <option value="Güz" <?= getSettingValue("semester") == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                <option value="Bahar" <?= getSettingValue("semester") == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                <option value="Yaz" <?= getSettingValue("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                <option value="Güz" <?= $settings['general']["semester"] == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                <option value="Bahar" <?= $settings['general']["semester"] == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                <option value="Yaz" <?= $settings['general']["semester"] == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                             </select>
                                         </div>
                                     </div>

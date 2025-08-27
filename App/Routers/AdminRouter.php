@@ -641,6 +641,7 @@ class AdminRouter extends Router
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ayarlar",
+            "settings" => (new SettingsController())->getSettings()
         ]);
         $this->callView("admin/settings/settings", $this->view_data);
     }
