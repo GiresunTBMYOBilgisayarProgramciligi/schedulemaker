@@ -40,7 +40,7 @@
                             <div class="card-body pb-0">
                                 <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
+                                        <label class="col-form-label" for="settings[general][academic_year][value]">Dönem</label>
                                         <input type="hidden" name="settings[general][academic_year][type]" id="settings[general][academic_year][type]" value="string">
                                         <div class="input-group ">
                                             <select class="form-select" id="settings[general][academic_year][value]"
@@ -61,7 +61,20 @@
                                             </select>
                                         </div>
                                     </div>
-
+                                    <div class="col-md-6">
+                                        <label class="col-form-label" for="settings[general][maxDayIndex][value]">Ders Programının Son Günü</label>
+                                        <input type="hidden" name="settings[general][maxDayIndex][type]" id="settings[general][maxDayIndex][type]" value="integer">
+                                        <select class="form-select" id="settings[general][maxDayIndex][value]"
+                                                name="settings[general][maxDayIndex][value]">
+                                            <option value="0" <?= @$settings['general']["maxDayIndex"] == 0 ? 'selected' : '' ?>>Pazartesi</option>
+                                            <option value="1" <?= @$settings['general']["maxDayIndex"] == 1 ? 'selected' : '' ?>>Salı</option>
+                                            <option value="2" <?= @$settings['general']["maxDayIndex"] == 2 ? 'selected' : '' ?>>Çarşamba</option>
+                                            <option value="3" <?= @$settings['general']["maxDayIndex"] == 3 ? 'selected' : '' ?>>Perşembe</option>
+                                            <option value="4" <?= @$settings['general']["maxDayIndex"] == 4 ? 'selected' : '' ?>>Cuma</option>
+                                            <option value="5" <?= @$settings['general']["maxDayIndex"] == 5 ? 'selected' : '' ?>>Cumartesi</option>
+                                            <option value="6" <?= @$settings['general']["maxDayIndex"] == 6 ? 'selected' : '' ?>>Pazar</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-footer text-end">
