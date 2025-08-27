@@ -128,9 +128,7 @@ class Lesson extends Model
         ])->all();
         $hours = 0;
         foreach ($schedules as $schedule) {
-            //todo getSetting('maxDayIndex')
-            $maxDayIndex=4;
-            for($i = 0; $i<=$maxDayIndex; $i++) {
+            for($i = 0; $i<=getSettingValue('maxDayIndex'); $i++) {
                 if(!is_null($schedule->{"day$i"})) {
                     $hours++;
                 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use function App\Helpers\getSettingValue;
 
 class Schedule extends Model
 {
@@ -79,11 +80,13 @@ class Schedule extends Model
     /**
      * Tablo oluştururken günler döngüye sokulurken kullanılır
      * @param string $type html | excel
-     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
+     * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
      * @return array
+     * @throws \Exception
      */
-    public function getWeek(string $type = 'html', int $maxDayIndex = 4): array
+    public function getWeek(string $type = 'html', int $maxDayIndex = null): array
     {
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
         $week = [];
         foreach (range(0, $maxDayIndex) as $dayIndex) {
             if ($type === 'excel') {
@@ -92,15 +95,15 @@ class Schedule extends Model
                     //günde ders var
                     if (isset($day[0]) and is_array($day[0])) {
                         // günde iki ders var
-                        $groupDayLessons=[];
-                        $groupDayClasrooms=[];
-                        foreach ($day as $groupLesson){
+                        $groupDayLessons = [];
+                        $groupDayClasrooms = [];
+                        foreach ($day as $groupLesson) {
                             $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecturer_id' => $groupLesson['lecturer_id']]; // ders bilgileri
                             $groupDayClasrooms[] = ['classroom_id' => $groupLesson['classroom_id']];// sınıf bilgileri
                         }
-                        $week["day{$dayIndex}"]=$groupDayLessons;
-                        $week["classroom{$dayIndex}"]=$groupDayClasrooms;
-                    }else{
+                        $week["day{$dayIndex}"] = $groupDayLessons;
+                        $week["classroom{$dayIndex}"] = $groupDayClasrooms;
+                    } else {
                         // günde tek ders var
                         $week["day{$dayIndex}"] = ['lesson_id' => $day['lesson_id'], 'lecturer_id' => $day['lecturer_id']]; // ders bilgileri
                         $week["classroom{$dayIndex}"] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri

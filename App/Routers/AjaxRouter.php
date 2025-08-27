@@ -855,9 +855,7 @@ class AjaxRouter extends Router
                     if ($rowIndex === false) {
                         continue; // bu saat tabloda yoksa atla
                     }
-                    //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
-                    $maxDayIndex = 4;
-                    for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
+                    for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
                         if (!is_null($lessonSchedule->{"day" . $i})) {
                             if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
                                 $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
@@ -932,9 +930,7 @@ class AjaxRouter extends Router
                         if ($rowIndex === false) {
                             continue; // bu saat tabloda yoksa atla
                         }
-                        //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
-                        $maxDayIndex = 4;
-                        for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
+                        for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
                             if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
                                 $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                             }
@@ -1017,9 +1013,7 @@ class AjaxRouter extends Router
                     if ($rowIndex === false) {
                         continue; // bu saat tabloda yoksa atla
                     }
-                    //$maxDayIndex = getSetting("max_day_index"); // örneğin 4 veya 5 //todo tabloların maxdayIndex değerlerine göre bu sayı belirlenmeli. 6 olunca cumartesi de oluyor ve hataya neden oluyor.
-                    $maxDayIndex = 4;
-                    for ($i = 0; $i <= $maxDayIndex; $i++) {//day0-4
+                    for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
                         if (is_array($lessonSchedule->{"day" . $i})) {
                             $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                         }

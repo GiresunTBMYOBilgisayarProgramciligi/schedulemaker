@@ -21,11 +21,12 @@ class ScheduleController extends Controller
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
      * @param $type string  html | excel
-     * @param int $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
+     * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
      * @return array
      */
-    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = 4): array
+    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = null): array
     {
+        $maxDayIndex= $maxDayIndex ?? getSettingValue('maxDayIndex');
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -63,8 +64,9 @@ class ScheduleController extends Controller
      * Ders programı tablosunun verilerini oluşturur
      * @throws Exception
      */
-    private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = 4): array
+    private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * Boş tablo oluşturmak için tablo satır verileri
