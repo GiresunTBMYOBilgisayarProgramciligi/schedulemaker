@@ -243,7 +243,7 @@ class ImportExportManager
                         // id numarası belirtilen program Modeli oluşturulur
                         $program = (new Program())->find($filters["owner_id"]); // Burada program_id yerine owner_id kullanılmalı
                         // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
+                        $scheduleFilters[$program->name . " Ders Programı"] = [
                             "semester_no" => $semester_no,
                             'owner_type' => 'program',
                             'owner_id' => $program->id,
@@ -258,7 +258,7 @@ class ImportExportManager
                     foreach ($programs as $program) {
                         foreach ($semesterNumbers as $semester_no) {
                             // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                            $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
+                            $scheduleFilters["Tüm Programlar Ders Programı" ] = [
                                 "semester_no" => $semester_no,
                                 'owner_type' => 'program',
                                 'owner_id' => $program->id,
@@ -313,7 +313,7 @@ class ImportExportManager
                     $lecturers = (new User())->get()->where(['!role' => 'user'])->all();
                     foreach ($lecturers as $lecturer) {
                         // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$lecturer->getFullName() . " Ders Programı"] = [
+                        $scheduleFilters["Tüm Hocalar Ders Programı"] = [
                             "semester_no" => ['in' => $semesterNumbers],
                             'owner_type' => 'user',
                             'owner_id' => $lecturer->id,
@@ -344,7 +344,7 @@ class ImportExportManager
                     $classrooms = (new Classroom())->get()->all();
                     foreach ($classrooms as $classroom) {
                         // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$classroom->name . " Ders Programı"] = [
+                        $scheduleFilters["Tüm Derslikler Ders Programı"] = [
                             "semester_no" => ['in' => $semesterNumbers],
                             'owner_type' => 'classroom',
                             'owner_id' => $classroom->id,
