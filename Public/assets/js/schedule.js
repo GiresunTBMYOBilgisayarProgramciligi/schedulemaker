@@ -205,17 +205,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /**
      *
-     * @param scheduleTime eklenecek dersin ilk saati
+     * @param time eklenecek dersin ilk saati
      * @param dayIndex
      * @param classroomSelect
      * @param event
      * @param lessonId
      */
-    function fetchAvailableClassrooms(scheduleTime, dayIndex, classroomSelect, lessonId, event) {
+    function fetchAvailableClassrooms(time, dayIndex, classroomSelect, lessonId, event) {
         console.log("Derslikler alınıyor")
         let data = new FormData();
         data.append("hours", event.target.value);
-        data.append("time", scheduleTime)
+        data.append("time", time)
         data.append("day", "day" + dayIndex)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
@@ -345,8 +345,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-
-
     /**
      * Ders sürükleme işlemi başlatıldığında tablo üzerinde hocanın uygun olmayan saatleri kırmızı ile vurgulanıyor.
      * Bu fonksiyon o vurguları siler
@@ -374,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function saveSchedule(scheduleData) {
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
-        data.append("time_start", scheduleData.schedule_time);
+        data.append("time_start", scheduleData.time);
         data.append("lesson_hours", scheduleData.lesson_hours);
         data.append("day_index", scheduleData.day_index);
         data.append("classroom_name", scheduleData.classroom_name);
@@ -411,7 +409,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let data = new FormData();
         data.append("lesson_id", scheduleData.lesson_id);
         data.append("lecturer_id", scheduleData.lecturer_id);
-        data.append("time", scheduleData.schedule_time);
+        data.append("time", scheduleData.time);
         data.append("day_index", scheduleData.day_index);
         data.append("semester_no", scheduleData.semester_no);
         data.append("classroom_name", scheduleData.classroom_name);
@@ -456,12 +454,12 @@ document.addEventListener("DOMContentLoaded", function () {
             {
                 "lesson_id": draggedElement.dataset.lessonId,
                 "lecturer_id": draggedElement.dataset.lecturerId,
-                "schedule_time": draggedElement.dataset.scheduleTime,
+                "time": draggedElement.dataset.time, //dersin bulunduğu saat
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semesterSelect.value,
-                "academic_year": academicYearSelect.value
+                "semester": semesterSelect.value, //todo silme işlemi yapılmadan önce dönem değiştirilirse hata oluşur
+                "academic_year": academicYearSelect.value //todo silme işlemi yapılmadan önce yıl değiştirilirse hata oluşur
             });
         if (result) {
             let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
@@ -481,7 +479,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 dropZone.appendChild(draggedElementFrameDiv)
                 draggedElementFrameDiv.appendChild(draggedElement)
                 draggedElement.querySelector("span.badge").innerText = 1
-                delete draggedElement.dataset.scheduleTime
+                delete draggedElement.dataset.time
                 delete draggedElement.dataset.scheduleDay
             }
         }
@@ -502,7 +500,7 @@ document.addEventListener("DOMContentLoaded", function () {
             {
                 "lesson_id": draggedElement.dataset.lessonId,
                 "lecturer_id": draggedElement.dataset.lecturerId,
-                "schedule_time": draggedElement.dataset.scheduleTime,
+                "time": draggedElement.dataset.time,
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
@@ -513,7 +511,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let saveResult = await saveSchedule(
                 {
                     "lesson_id": draggedElement.dataset.lessonId,
-                    "schedule_time": table.rows[droppedRowIndex].cells[0].innerText,
+                    "time": table.rows[droppedRowIndex].cells[0].innerText,
                     "lesson_hours": 1,
                     "day_index": droppedCellIndex - 1,
                     "classroom_name": draggedElement.querySelector("span.badge").innerText,
@@ -524,7 +522,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (saveResult) {
                 console.log("Yeni ders eklendi");
                 //update dataset
-                draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
+                draggedElement.dataset.time = table.rows[droppedRowIndex].cells[0].innerText
                 draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
                 cell.appendChild(draggedElement);
             } else console.error("Yeni ders Eklenemedi")
@@ -554,7 +552,7 @@ document.addEventListener("DOMContentLoaded", function () {
         //dersin bırakıldığı sütunun satır içerisindeki index numarası
         let droppedCellIndex = dropZone.cellIndex
         // dersin bırakıldığı saat örn. 08.00-08.50
-        let scheduleTime = table.rows[droppedRowIndex].cells[0].innerText;
+        let time = table.rows[droppedRowIndex].cells[0].innerText;
         // Modal içerisine saat ve derslik seçimi için form ekleniyor.
         let modalContentHTML = `
             <form>
@@ -575,7 +573,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours")
         let classroomSelect = scheduleModal.body.querySelector("#classroom")
         // ders saati değişince ders listesi çekilecek
-        selectedHoursInput.addEventListener("change", fetchAvailableClassrooms.bind(this, scheduleTime, droppedCellIndex - 1, classroomSelect, lessonId))
+        selectedHoursInput.addEventListener("change", fetchAvailableClassrooms.bind(this, time, droppedCellIndex - 1, classroomSelect, lessonId))
         selectedHoursInput.dispatchEvent(new Event("change"))
 
         let classroomSelectForm = scheduleModal.body.querySelector("form");
@@ -622,7 +620,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let result = await saveSchedule(
                 {
                     "lesson_id": lessonId,
-                    "schedule_time": scheduleTime,
+                    "time": time,
                     "lesson_hours": selectedHours,
                     "day_index": droppedCellIndex - 1,
                     "classroom_name": selectedClassroom,
@@ -647,7 +645,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     let lesson = draggedElement.cloneNode(true)
                     lesson.dataset['scheduleDay'] = droppedCellIndex - 1;
-                    lesson.dataset['scheduleTime'] = row.cells[0].innerText;//todo derslik bağlantısı bunun için derslik isme göre değil id ye göre alınmalı
+                    lesson.dataset['time'] = row.cells[0].innerText;//todo derslik bağlantısı bunun için derslik isme göre değil id ye göre alınmalı
                     //todo derslik id üzerinden alındığında yada başka bir şekilde id alınarak bu link düzenlenmeli
                     lesson.querySelector("span.badge").innerHTML = `<a href="/admin/listclassrooms" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${selectedClassroom}
@@ -691,7 +689,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function dropHandler(element, event) {
         event.preventDefault();
         let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
-        console.log(removeLessonDropZones);
         removeLessonDropZones.forEach((dropZone) => {
             dropZone.style.border = ""
             const tooltip = bootstrap.Tooltip.getInstance(dropZone);

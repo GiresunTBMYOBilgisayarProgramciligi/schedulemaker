@@ -256,7 +256,7 @@ class ScheduleController extends Controller
                             draggable="' . $draggable . '" 
                             class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
-                            data-schedule-time="' . $times[$i] . '"
+                            data-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
                             data-semester="' . $semester . '"
                             ' . $popover . '
@@ -305,7 +305,7 @@ class ScheduleController extends Controller
                             draggable="' . $draggable . '" 
                             class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
-                            data-schedule-time="' . $times[$i] . '"
+                            data-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
                             data-semester="' . $semester . '"
                             ' . $popover . '
@@ -785,9 +785,19 @@ class ScheduleController extends Controller
     }
 
     /**
-     * @param $filters
+     * @param $filters array silinecek programın veri tabanında bulunması için gerekli veriler.
      * @return void
      * @throws Exception
+     * Gerekli veriler
+     * - owner_type
+     * - owner_id
+     * - day_index
+     * - day
+     * - type
+     * - time
+     * - semester_no
+     * - semester
+     * - academic_year
      */
     public function deleteSchedule($filters): void
     {
