@@ -1038,8 +1038,7 @@ class AjaxRouter extends Router
      * @return void
      * @throws Exception
      */
-    public
-    function deleteScheduleAction(): void
+    public function deleteScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
         if (!key_exists("semester", $this->data)) {
@@ -1116,8 +1115,7 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public
-    function exportScheduleAction(): void
+    public function exportScheduleAction(): void
     {
         $filters = $this->data;
         if (!key_exists('type', $filters)) {
@@ -1137,8 +1135,7 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public
-    function saveSettingsAction(): void
+    public function saveSettingsAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Bu işlemi yapmak için yetkiniz yok");
@@ -1163,8 +1160,7 @@ class AjaxRouter extends Router
     /*
      * İmport ve Export
      */
-    public
-    function importUsersAction(): void
+    public function importUsersAction(): void
     {
         $importExportManager = new ImportExportManager($this->files);
         $result = $importExportManager->importUsersFromExcel();
@@ -1174,8 +1170,7 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    public
-    function importLessonsAction(): void
+    public function importLessonsAction(): void
     {
         $importExportManager = new ImportExportManager($this->files, $this->data);
         $result = $importExportManager->importLessonsFromExcel();
