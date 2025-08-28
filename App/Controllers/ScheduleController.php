@@ -258,7 +258,7 @@ class ScheduleController extends Controller
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
                             data-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
-                            data-semester="' . $semester . '"
+                            ' . $semester . '
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
@@ -307,7 +307,7 @@ class ScheduleController extends Controller
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
                             data-time="' . $times[$i] . '"
                             data-schedule-day="' . $dayIndex . '"
-                            data-semester="' . $semester . '"
+                            ' . $semester . '
                             ' . $popover . '
                             >
                                 <div class="ms-2 me-auto">
