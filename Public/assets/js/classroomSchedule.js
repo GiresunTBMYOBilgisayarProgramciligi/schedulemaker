@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<boolean>}
      */
     function highlightUnavailableCells(lessonId, table){
+        clearCells(table);
         let data = new FormData()
         data.append("lesson_id", lessonId);
         let toast = new Toast();
@@ -222,6 +223,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Listeden Tabloya bırakma işlemleri
                     let list = draggedElement.closest(".available-schedule-items");
                     dropListToTable(list, draggedElement, droppedZone)
+                    let table = droppedZone.closest('table');
+                    clearCells(table);
                 }
                 break;
             case "table":
@@ -229,10 +232,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     //Tablodan Listeye
                     let table = draggedElement.closest("table");
                     dropTableToList(table, draggedElement, droppedZone)
+                    clearCells(table);
                 } else {
                     //Tablodan Tabloya
                     let table = draggedElement.closest("table");
                     dropTableToTable(table, draggedElement, droppedZone)
+                    clearCells(table);
                 }
                 break;
         }
@@ -262,13 +267,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData("start_element", "table")
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
-            clearCells(table);
             highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table')
             let lessonID = event.target.dataset['lessonId'];
-            clearCells(table);
             highlightUnavailableCells(lessonID, table);
         }
     }

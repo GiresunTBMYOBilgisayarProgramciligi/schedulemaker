@@ -262,6 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @returns {Promise<boolean>}
      */
     function highlightUnavailableCells(lessonId, table) {
+        clearCells(table);
         let data = new FormData()
         data.append("lesson_id", lessonId);
         data.append("semester", semesterSelect.value)
@@ -298,7 +299,6 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         if (!classroomResult) {
             toast.prepareToast("Hata", "uygun derslikler kontrol edilirken hata oluştu", "danger");
-            clearCells(table);
         }
         let lecturerResult = fetch("/ajax/checkLecturerSchedule", {
             method: "POST",
@@ -342,7 +342,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         if (!lecturerResult) {
             toast.prepareToast("Hata", "Hoca programı kontrol edilirken hata oluştu", "danger");
-            clearCells(table);
         }
     }
 
@@ -485,7 +484,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 delete draggedElement.dataset.scheduleTime
                 delete draggedElement.dataset.scheduleDay
             }
-            clearCells(table);
         }
 
     }
@@ -498,7 +496,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let row = table.rows[droppedRowIndex];
         let cell = row.cells[droppedCellIndex];
         if (!await checkLessonCrash(cell, draggedElement)) {
-            clearCells(table);
             return;
         }
         let deleteResult = await deleteSchedule(
@@ -530,7 +527,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 draggedElement.dataset.scheduleTime = table.rows[droppedRowIndex].cells[0].innerText
                 draggedElement.dataset.scheduleDay = droppedCellIndex - 1;
                 cell.appendChild(draggedElement);
-                clearCells(table);
             } else console.error("Yeni ders Eklenemedi")
         } else console.log("Eski ders Silinemedi");
 
@@ -679,7 +675,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     draggedElementFrameDiv.remove();
                 }
                 scheduleModal.closeModal();
-                clearCells(table);
             } else {
                 toast.closeToast();
                 scheduleModal.prepareModal("Çakışma", "Ders programı uygun değil", false, true)
@@ -735,6 +730,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Listeden Tabloya bırakma işlemleri
                     let list = draggedElement.closest(".available-schedule-items");
                     dropListToTable(list, draggedElement, droppedZone)
+                    let table = droppedZone.closest('table');
+                    clearCells(table);
                 }
                 break;
             case "table":
@@ -742,10 +739,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     //Tablodan Listeye
                     let table = draggedElement.closest("table");
                     dropTableToList(table, draggedElement, droppedZone)
+                    clearCells(table);
                 } else {
                     //Tablodan Tabloya
                     let table = draggedElement.closest("table");
                     dropTableToTable(table, draggedElement, droppedZone)
+                    clearCells(table);
                 }
                 break;
         }
@@ -775,13 +774,11 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData("start_element", "table")
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
-            clearCells(table);
             highlightUnavailableCells(lessonID, table);
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table[data-semester-no="' + event.dataTransfer.getData("semesterNo") + '"]')
             let lessonID = event.target.dataset['lessonId'];
-            clearCells(table);
             highlightUnavailableCells(lessonID, table);
         }
     }
