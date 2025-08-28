@@ -13,11 +13,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const classroomExportExportButton = document.getElementById('classroomExport')
     const classroomSelect = document.getElementById("classroom_id");
     const singlePageExportButton = document.getElementById('singlePageExport')
-    let data = new FormData();
-    data.append("type", "lesson");
+
 
     if (departmentAndProgramExportButton) {
         departmentAndProgramExportButton.addEventListener("click", async function () {
+            let data = new FormData();
+            data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             if (programSelect.value > 0) {
@@ -37,6 +38,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (lecturerExportButton) {
         lecturerExportButton.addEventListener("click", async function () {
+            let data = new FormData();
+            data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             if (lecturerSelect.value > 0) {
@@ -51,6 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (classroomExportExportButton) {
         classroomExportExportButton.addEventListener("click", async function () {
+            let data = new FormData();
+            data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             if (classroomSelect.value > 0) {
@@ -65,6 +70,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (singlePageExportButton) {
         singlePageExportButton.addEventListener("click", async function () {
+            let data = new FormData();
+            data.append("type", "lesson");
             data.append("owner_type", singlePageExportButton.dataset.ownerType);
             data.append("owner_id", singlePageExportButton.dataset.ownerId);
 
