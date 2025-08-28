@@ -407,14 +407,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function deleteSchedule(scheduleData) {
         let data = new FormData();
-        data.append("lesson_id", scheduleData.lesson_id);
-        data.append("lecturer_id", scheduleData.lecturer_id);
-        data.append("time", scheduleData.time);
-        data.append("day_index", scheduleData.day_index);
-        data.append("semester_no", scheduleData.semester_no);
-        data.append("classroom_name", scheduleData.classroom_name);
-        data.append("semester", semesterSelect.value)
-        data.append("academic_year", academicYearSelect.value);
+        // scheduleData içindeki tüm verileri otomatik olarak FormData'ya ekle
+        Object.entries(scheduleData).forEach(([key, value]) => {
+            data.append(key, value);
+        });
+
         return fetch("/ajax/deleteSchedule", {
             method: "POST",
             headers: {
@@ -458,8 +455,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semesterSelect.value, //todo silme işlemi yapılmadan önce dönem değiştirilirse hata oluşur
-                "academic_year": academicYearSelect.value //todo silme işlemi yapılmadan önce yıl değiştirilirse hata oluşur
             });
         if (result) {
             let draggedElementIdInList = "available-lesson-" + draggedElement.dataset.lessonId;
@@ -504,8 +499,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 "day_index": draggedElement.dataset.scheduleDay,
                 "semester_no": draggedElement.dataset.semesterNo,
                 "classroom_name": draggedElement.querySelector("span.badge").innerText,
-                "semester": semesterSelect.value,
-                "academic_year": academicYearSelect.value
             });
         if (deleteResult) {
             let saveResult = await saveSchedule(
@@ -516,8 +509,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     "day_index": droppedCellIndex - 1,
                     "classroom_name": draggedElement.querySelector("span.badge").innerText,
                     "semester_no": draggedElement.dataset.semesterNo,
-                    "semester": semesterSelect.value,
-                    "academic_year": academicYearSelect.value
                 });
             if (saveResult) {
                 console.log("Yeni ders eklendi");
