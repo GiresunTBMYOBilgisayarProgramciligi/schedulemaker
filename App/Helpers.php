@@ -8,12 +8,14 @@ use App\Controllers\UserController;
 use Exception;
 
 /**
+ * @param null $default İstenen ayar bulunamazsa dönülecek ön tanımlı değer
  * @throws Exception
  */
-function getSettingValue($key = null, $group = "general")
+function getSettingValue($key = null, $group = "general",$default = null)
 {
     $settingsController = new SettingsController();
     $setting = $settingsController->getSetting($key, $group);
+    if (is_null($setting)) return $default;
     return match ($setting?->type) {
         'integer' => (int)$setting->value,
         'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
