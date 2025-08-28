@@ -91,7 +91,7 @@ class Schedule extends Model
      */
     public function getWeek(string $type = 'html', int $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
         $week = [];
         foreach (range(0, $maxDayIndex) as $dayIndex) {
             if ($type === 'excel') {

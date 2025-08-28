@@ -23,10 +23,11 @@ class ScheduleController extends Controller
      * @param $type string  html | excel
      * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
      * @return array
+     * @throws Exception
      */
     private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -54,7 +55,7 @@ class ScheduleController extends Controller
         $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
-        for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {
+        for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {
             $headerRow[] = $days[$i]; // Gün adı
             $headerRow[] = 'S';       // Sütun başlığı (Senin tablodaki "S")
         }
@@ -79,7 +80,7 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * Boş tablo oluşturmak için tablo satır verileri
@@ -209,7 +210,7 @@ class ScheduleController extends Controller
         $createTableHeaders = function(): string {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = '<th style="width: 7%;">#</th>';
-            for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {
+            for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {
                 $headers .= '<th>' . $days[$i] . '</th>';
             }
             return $headers;

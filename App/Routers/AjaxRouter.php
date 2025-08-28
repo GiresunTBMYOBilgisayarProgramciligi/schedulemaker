@@ -855,7 +855,7 @@ class AjaxRouter extends Router
                     if ($rowIndex === false) {
                         continue; // bu saat tabloda yoksa atla
                     }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
+                    for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {//day0-4
                         if (!is_null($lessonSchedule->{"day" . $i})) {
                             if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
                                 $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
@@ -930,7 +930,7 @@ class AjaxRouter extends Router
                         if ($rowIndex === false) {
                             continue; // bu saat tabloda yoksa atla
                         }
-                        for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
+                        for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {//day0-4
                             if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
                                 $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                             }
@@ -1013,7 +1013,7 @@ class AjaxRouter extends Router
                     if ($rowIndex === false) {
                         continue; // bu saat tabloda yoksa atla
                     }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {//day0-4
+                    for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {//day0-4
                         if (is_array($lessonSchedule->{"day" . $i})) {
                             $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                         }
@@ -1037,6 +1037,18 @@ class AjaxRouter extends Router
      * Ders programından veri silmek için gerekli kontrolleri yapar
      * @return void
      * @throws Exception
+     * Gerekli bilgiler
+     * - owner_type? (yoksa tüm tipler işleme alınır)
+     * - semester? (yoksa ayarlardan alınır)
+     * - academic_year? (yoksa ayarlardan alınır)
+     * - lesson_id
+     * - classroom_name //todo id ile işlem yapılmalı
+     * - lecturer_id
+     * - day_index
+     * - semester_no
+     * - time silinecek dersin bulunduğu saat
+     * - day_index dersin silineceği gün
+     * - type sınav(exam) yada ders(lesson) programı
      */
     public function deleteScheduleAction(): void
     {
@@ -1089,7 +1101,7 @@ class AjaxRouter extends Router
             } else {
                 throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
             }
-        } else {
+        } else {// owner_type belirtilmişse sadece o type için işlem yapılacak
             /**
              * Burada null coalescing operatörü (??) ile eksik dizin hatalarını önlüyoruz ve sonra array_filter ile boş değerleri temizliyoruz.
              * todo buradaki yapı tüm filtrelere uygulanabilir
