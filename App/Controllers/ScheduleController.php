@@ -26,7 +26,7 @@ class ScheduleController extends Controller
      */
     private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = null): array
     {
-        $maxDayIndex= $maxDayIndex ?? getSettingValue('maxDayIndex');
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex');
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -45,11 +45,23 @@ class ScheduleController extends Controller
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
         $schedules = (new Schedule())->get()->where($filters)->all();
-        if (count($schedules) == 0) return false; //program boş ise false dön
+        if (count($schedules) == 0) return false; // program boş ise false dön
+
         $scheduleRows = $this->prepareScheduleRows($filters, 'excel');
         $scheduleArray = [];
-        $scheduleArray[] = ['', 'Pazartesi', 'S', 'Salı', 'S', 'Çarşamba', 'S', 'Perşembe', 'S', 'Cuma', 'S'];
 
+        // Günler dinamik olarak oluşturuluyor
+        $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+        $headerRow = ['']; // ilk hücre boş olacak (saat için)
+
+        for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {
+            $headerRow[] = $days[$i]; // Gün adı
+            $headerRow[] = 'S';       // Sütun başlığı (Senin tablodaki "S")
+        }
+
+        $scheduleArray[] = $headerRow;
+
+        // Satırları doldur
         foreach ($scheduleRows as $time => $tableRow) {
             $row = [$time];
             foreach ($tableRow as $day) {
@@ -57,6 +69,7 @@ class ScheduleController extends Controller
             }
             $scheduleArray[] = $row;
         }
+
         return $scheduleArray;
     }
 
@@ -91,7 +104,7 @@ class ScheduleController extends Controller
             $week = $schedule->getWeek($type);
             foreach ($week as $day => $value) {
                 if (!is_null($value)) {
-                    if($value===true and is_array($scheduleRows[$schedule->time][$day])){
+                    if ($value === true and is_array($scheduleRows[$schedule->time][$day])) {
                         // value değeri true ise hocanın tercih ettiği saat demek. aynı zamanda o saat bir dizi ise o saate atama yapılmış demek.
                         // bu durumda atama yapılmış dersin gözükmesi için saat bilgisi değiştirilmiyor.
                         continue;
@@ -193,6 +206,15 @@ class ScheduleController extends Controller
      */
     public function createScheduleHTMLTable(array $filters = []): string
     {
+        $createTableHeaders = function(): string {
+            $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+            $headers = '<th style="width: 7%;">#</th>';
+            for ($i = 0; $i <= getSettingValue('maxDayIndex'); $i++) {
+                $headers .= '<th>' . $days[$i] . '</th>';
+            }
+            return $headers;
+        };
+
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
         // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
@@ -202,21 +224,13 @@ class ScheduleController extends Controller
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
          */
         $lessonHourCount = [];
-        //todo tablo başlıkları ayrı bir metod ile oluşturulabilir. hem burası hem de excel tablosu için oluşturulan başlıklar maxDayindex değeri de dikkate alınarak oluşturulur.
-        //todo TAblunun günşeri bir parametre ile belirlenebiliyor ama başlıklar manuel. Bu durum eşitlenmeli
         $out =
             '
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
                                 <thead>
-                                <tr>
-                                    <th style="width: 7%;">#</th>
-                                    <th>Pazartesi</th>
-                                    <th>Salı</th>
-                                    <th>Çarşamba</th>
-                                    <th>Perşembe</th>
-                                    <th>Cuma</th>
-                                    <!--<th>Cumartesi</th>-->
-                                </tr>
+                                <tr>'.
+                                    $createTableHeaders()
+                                .'</tr>
                                 </thead>
                                 <tbody>';
         $times = array_keys($scheduleRows);
@@ -366,9 +380,9 @@ class ScheduleController extends Controller
         /*
          * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
          */
-        $semester_no=is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
+        $semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
         $HTMLOut = '<div class="row available-schedule-items drop-zone small"
-                                         data-semester-no="' .  $semester_no . '"
+                                         data-semester-no="' . $semester_no . '"
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="data-bs-placement="left"">';
         $availableLessons = $this->availableLessons($filters);
         foreach ($availableLessons as $lesson) {

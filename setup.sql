@@ -21,6 +21,7 @@ create table if not exists schedule
     day3          text,
     day4          text,
     day5          text,
+    day6          text,
     semester      varchar(20),
     academic_year varchar(12),
     primary key (id),

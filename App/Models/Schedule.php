@@ -72,7 +72,12 @@ class Schedule extends Model
      * @var array|null
      */
     public array|bool|null $day5 = null;
-
+    /**
+     * PAzar günü için time alanında belirlenen saatteki program bilgileri
+     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
+     * @var array|null
+     */
+    public array|bool|null $day6 = null;
     public ?string $semester = null;
     public ?string $academic_year = null;
 
