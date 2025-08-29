@@ -243,7 +243,7 @@ class ImportExportManager
                         // id numarası belirtilen program Modeli oluşturulur
                         $program = (new Program())->find($filters["owner_id"]); // Burada program_id yerine owner_id kullanılmalı
                         // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$program->name . " Ders Programı"] = [
+                        $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
                             "semester_no" => $semester_no,
                             'owner_type' => 'program',
                             'owner_id' => $program->id,
@@ -258,7 +258,7 @@ class ImportExportManager
                     foreach ($programs as $program) {
                         foreach ($semesterNumbers as $semester_no) {
                             // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                            $scheduleFilters[$program->name . " Ders Programı"] = [
+                            $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
                                 "semester_no" => $semester_no,
                                 'owner_type' => 'program',
                                 'owner_id' => $program->id,
