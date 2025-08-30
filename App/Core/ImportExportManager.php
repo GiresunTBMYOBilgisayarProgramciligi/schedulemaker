@@ -450,7 +450,7 @@ class ImportExportManager
                                 if (isset($groupLesson['lesson_id'])) {
                                     $lesson = (new Lesson())->find($groupLesson['lesson_id']);
                                     // ders bilgileri hücreye yazılır.
-                                    $lessons[] = $lesson->name;
+                                    $lessons[] = $lesson->name."\n"."(".$lesson->getLecturer()->getFullName().")";
                                 }
                                 if (isset($groupLesson['classroom_id'])) {
                                     $classroom = (new Classroom())->find($groupLesson['classroom_id']);
@@ -465,7 +465,7 @@ class ImportExportManager
                             if (isset($scheduleCell['lesson_id'])) {
                                 $lesson = (new Lesson())->find($scheduleCell['lesson_id']);
                                 // ders bilgileri hücreye yazılır.
-                                $cellValue = $lesson->name;
+                                $cellValue = $lesson->name."\n"."(".$lesson->getLecturer()->getFullName().")";
                             }
                             if (isset($scheduleCell['classroom_id'])) {
                                 $classroom = (new Classroom())->find($scheduleCell['classroom_id']);
@@ -481,6 +481,8 @@ class ImportExportManager
 
                     // Hücre stilini düzenleyerek satır sonunu işleme
                     $this->sheet->getStyle($currentCell)->getAlignment()->setWrapText(true);
+                    $this->sheet->getStyle($currentCell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $this->sheet->getStyle($currentCell)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
                     // bir sonraki sütüna geç
                     $colNameIndex++;
                 }
