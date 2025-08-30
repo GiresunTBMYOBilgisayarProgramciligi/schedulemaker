@@ -9,6 +9,11 @@ let unavailableCells;
 
 let preferredCells;
 /**
+ * Ders sürükleme işleminin devam edip etmediği bilgisini tutar
+ * @type {boolean}
+ */
+let isDragging = false;
+/**
  * Program düzenleme işlemlerinde kullanılacak işlemler
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
@@ -261,87 +266,77 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param table
      * @returns {Promise<boolean>}
      */
-    function highlightUnavailableCells(lessonId, table) {
+    async function highlightUnavailableCells(lessonId, table) {
         clearCells(table);
-        let data = new FormData()
+        let data = new FormData();
         data.append("lesson_id", lessonId);
-        data.append("semester", semesterSelect.value)
+        data.append("semester", semesterSelect.value);
         data.append("academic_year", academicYearSelect.value);
+
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Kontrol ediliyor...");
-        let classroomResult = fetch("/ajax/checkClassroomSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                if (data.status === "error") {
-                    console.error(data);
-                    return false;
-                } else {
-                    unavailableCells = data.unavailableCells;
-                    if (unavailableCells) {
-                        for (let i = 0; i <= 9; i++) {
-                            for (let cell in unavailableCells[i]) {
-                                if (unavailableCells[i][cell]) {
-                                    table.rows[i].cells[cell].classList.add("text-bg-danger")
-                                    table.rows[i].cells[cell].classList.add("unavailable-for-classroom");
-                                }
-                            }
-                        }
-                    }
 
-                    return true;
-                }
-            })
-        if (!classroomResult) {
-            toast.prepareToast("Hata", "uygun derslikler kontrol edilirken hata oluştu", "danger");
-        }
-        let lecturerResult = fetch("/ajax/checkLecturerSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                toast.closeToast()
-                if (data.status === "error") {
-                    console.error(data);
-                    return false;
-                } else {
-                    //todo tabloya yükleniyor efekti
-                    unavailableCells = data.unavailableCells;
-                    if (unavailableCells) {
-                        for (let i = 0; i <= 9; i++) {
-                            for (let cell in unavailableCells[i]) {
-                                table.rows[i].cells[cell].classList.add("text-bg-danger")
-                                table.rows[i].cells[cell].classList.add("unavailable-for-lecturer")
-                            }
-                        }
-                    }
-                    preferredCells = data.preferredCells;
-                    if (preferredCells) {
-                        for (let i = 0; i <= 9; i++) {
-                            for (let cell in preferredCells[i]) {
-                                table.rows[i].cells[cell].classList.add("text-bg-success")
-                            }
-                        }
-                    }
-                    return true;
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Hoca programı alınırken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-                return false;
+        try {
+            // Derslik kontrolü
+            let classroomResponse = await fetch("/ajax/checkClassroomSchedule", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data,
             });
-        if (!lecturerResult) {
-            toast.prepareToast("Hata", "Hoca programı kontrol edilirken hata oluştu", "danger");
+            let classroomData = await classroomResponse.json();
+
+            if (classroomData.status === "error") {
+                console.error(classroomData);
+            } else {
+                let unavailableCells = classroomData.unavailableCells;
+                if (unavailableCells) {
+                    for (let i = 0; i <= 9; i++) {
+                        for (let cell in unavailableCells[i]) {
+                            if (unavailableCells[i][cell]) {
+                                table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-classroom");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Hoca kontrolü
+            let lecturerResponse = await fetch("/ajax/checkLecturerSchedule", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data,
+            });
+            let lecturerData = await lecturerResponse.json();
+
+            toast.closeToast();
+
+            if (lecturerData.status === "error") {
+                console.error(lecturerData);
+            } else {
+                let unavailableCells = lecturerData.unavailableCells;
+                if (unavailableCells) {
+                    for (let i = 0; i <= 9; i++) {
+                        for (let cell in unavailableCells[i]) {
+                            table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-lecturer");
+                        }
+                    }
+                }
+
+                let preferredCells = lecturerData.preferredCells;
+                if (preferredCells) {
+                    for (let i = 0; i <= 9; i++) {
+                        for (let cell in preferredCells[i]) {
+                            table.rows[i].cells[cell].classList.add("text-bg-success");
+                        }
+                    }
+                }
+            }
+
+            return true; // işlem tamamlandı
+        } catch (error) {
+            new Toast().prepareToast("Hata", "Veriler alınırken hata oluştu", "danger");
+            console.error(error);
+            return false;
         }
     }
 
@@ -678,6 +673,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param event bırakma olayı
      */
     function dropHandler(element, event) {
+        isDragging=false;
         event.preventDefault();
         let removeLessonDropZones = document.querySelectorAll(".available-schedule-items.drop-zone")
         removeLessonDropZones.forEach((dropZone) => {
@@ -742,6 +738,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param event sürükleme olayı
      */
     function dragStartHandler(event) {
+        isDragging = true;
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.dropEffect = "move";
         // id bilgisi aktarılyor
@@ -762,12 +759,20 @@ document.addEventListener("DOMContentLoaded", function () {
             event.dataTransfer.setData("start_element", "table")
             let table = event.target.closest("table")
             let lessonID = event.target.dataset['lessonId'];
-            highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table).then(() => {
+                if (!isDragging) {
+                    clearCells(table);
+                }
+            });
         } else if (event.target.closest(".available-schedule-items")) {
             event.dataTransfer.setData("start_element", "list")
             let table = document.querySelector('table[data-semester-no="' + event.dataTransfer.getData("semesterNo") + '"]')
             let lessonID = event.target.dataset['lessonId'];
-            highlightUnavailableCells(lessonID, table);
+            highlightUnavailableCells(lessonID, table).then(() => {
+                if (!isDragging) {
+                    clearCells(table);
+                }
+            });
         }
     }
 
