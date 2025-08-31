@@ -159,10 +159,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     /*
     Tüm select elemanlarına arama özelliği eklemek için
-     */
-    let selectInputs = document.querySelectorAll(".tom-select")
+*/
+    let selectInputs = document.querySelectorAll(".tom-select");
+
     selectInputs.forEach((select) => {
-        new TomSelect(select, {placeholder: "Seçmek için yazın"});
-    })
+        let placeholder = select.getAttribute("placeholder") || "Seçmek için yazın";
+
+        new TomSelect(select, {
+            placeholder: placeholder
+        });
+    });
 
 });
