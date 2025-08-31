@@ -57,10 +57,11 @@ class UserController extends Controller
 
     /**
      * @return bool
+     * @throws Exception
      */
     public function isLoggedIn(): bool
     {
-        if (isset($_COOKIE[$_ENV["COOKIE_KEY"]]) || isset($_SESSION[$_ENV["SESSION_KEY"]])) return true; else
+        if ($this->getCurrentUser()) return true; else
             return false;
     }
 
@@ -331,6 +332,7 @@ class UserController extends Controller
     public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
     {
         $user = (new UserController)->getCurrentUser();
+        if(!$user) return false;
         $isOwner = false;
         if (!is_null($model)) {
             switch (get_class($model)) {
