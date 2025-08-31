@@ -35,7 +35,7 @@ class AuthRouter extends Router
         }
 
         // Ana sayfaya veya giriş sayfasına yönlendir
-        header("Location: /auth/login");
+        header("Location: /");
         exit;
     }
 
