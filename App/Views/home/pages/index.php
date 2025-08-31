@@ -123,7 +123,7 @@ use function App\Helpers\getSettingValue;
             </div>
             <!--end::Row-->
             <!--start::Row-->
-            <div class="row">
+            <div class="row  mb-3">
                 <div class="col-6">
                     <div class="card card-primary card-outline">
                         <!-- .card-header -->

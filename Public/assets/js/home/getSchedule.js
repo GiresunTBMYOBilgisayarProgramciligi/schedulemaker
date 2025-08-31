@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getSchedulesHTML(scheduleData = new FormData()) {
+        scheduleData.append("only_table",true)
         return fetch("/ajax/getScheduleHTML", {
             method: "POST",
             headers: {
