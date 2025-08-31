@@ -43,10 +43,11 @@ class HomeRouter extends Router
     public function IndexAction()
     {
         $userController = new UserController();
+        $this->assetManager->loadPageAssets("homeIndex");
         $this->view_data = array_merge($this->view_data, [
             "departments" => (new Department())->get()->all(),
             "classrooms" => (new Classroom())->get()->all(),
-            "lecturers" => $userController->getListByFilters(),
+            "lecturers" => $userController->getListByFilters(['!role'=>'admin']),
             "page_title" => "Anasayfa"]);
         $this->callView("home/index", $this->view_data);
         //$this->Redirect('/admin/');

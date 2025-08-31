@@ -113,7 +113,7 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="departmentAndProgramExport" id="departmentAndProgramExport"
+                                    <input class="btn btn-primary" type="button" name="departmentAndProgramScheduleButton" id="departmentAndProgramScheduleButton"
                                            value="Göster">
                                 </div>
                             </div>
@@ -141,8 +141,8 @@ use function App\Helpers\getSettingValue;
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="mb-3">
-                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" >
-                                            <option> Öğretim Üyesi / Görevlisi Seçiniz</option>
+                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
+                                            <option></option>
                                             <?php foreach ($lecturers as $lecturer): ?>
                                                 <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                             <?php endforeach; ?>
@@ -158,7 +158,7 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="lecturerExport" id="lecturerExport" value="Göster">
+                                    <input class="btn btn-primary" type="button" name="lecturerScheduleButton" id="lecturerScheduleButton" value="Göster">
                                 </div>
                             </div>
                         </div>
@@ -198,7 +198,7 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="classroomExport" id="classroomExport" value="Göster">
+                                    <input class="btn btn-primary" type="button" name="classroomScheduleButton" id="classroomScheduleButton" value="Göster">
                                 </div>
                             </div>
                         </div>
