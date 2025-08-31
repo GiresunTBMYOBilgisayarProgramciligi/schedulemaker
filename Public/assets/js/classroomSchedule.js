@@ -34,7 +34,8 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param draggedElement
      * @param selectedClassroom
      */
-    async function checkLessonCrash(dropZone, draggedElement, selectedClassroom){}
+    async function checkLessonCrash(dropZone, draggedElement, selectedClassroom) {
+    }
 
     /**
      * Belirtilen tabloda dersin hocasının dolu günleri vurgulanır
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param table
      * @returns {Promise<boolean>}
      */
-    function highlightUnavailableCells(lessonId, table){
+    function highlightUnavailableCells(lessonId, table) {
         clearCells(table);
         let data = new FormData()
         data.append("lesson_id", lessonId);
@@ -154,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         unavailableCells = null;
     }
 
-    async function saveSchedule(scheduleData){
+    async function saveSchedule(scheduleData) {
         let data = new FormData();
         // scheduleData içindeki tüm verileri otomatik olarak FormData'ya ekle
         Object.entries(scheduleData).forEach(([key, value]) => {
@@ -163,7 +164,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-    async function deleteSchedule(scheduleData){}
+    async function deleteSchedule(scheduleData) {
+        let data = new FormData();
+        // scheduleData içindeki tüm verileri otomatik olarak FormData'ya ekle
+        Object.entries(scheduleData).forEach(([key, value]) => {
+            data.append(key, value);
+        });
+
+        return fetch("/ajax/deleteSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log("Program Silindi")
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
 
     /**
      * Tablodan alınarak listeye geri bırakılan dersler için yapılan işlemler
@@ -172,11 +204,36 @@ document.addEventListener("DOMContentLoaded", function () {
      * @param dropZone
      * @returns {Promise<void>}
      */
-    async function dropTableToList(table, draggedElement, dropZone){}
+    async function dropTableToList(table, draggedElement, dropZone) {
+        console.log("Tablodan listeye bırakıldı");
+        console.log("table", table);
+        console.log("draggedElement", draggedElement);
+        console.log("dropZone", dropZone);
+        /* todo Bu kodlardan sonraki işlemlere daha sona devam edeceğim.
+        let deleteResult = await deleteSchedule(
+            {
+                "lesson_id": draggedElement.dataset.lessonId,
+                "lecturer_id": draggedElement.dataset.lecturerId,
+                "time": draggedElement.dataset.time, //dersin bulunduğu saat
+                "day_index": draggedElement.dataset.scheduleDay,
+                "semester_no": draggedElement.dataset.semesterNo,
+                "classroom_name": draggedElement.querySelector("span.badge").innerText,
+            });*/
+    }
 
-    async function dropTableToTable(table, draggedElement, dropZone){}
+    async function dropTableToTable(table, draggedElement, dropZone) {
+        console.log("Tablodan tabloya bırakıldı");
+        console.log("table", table);
+        console.log("draggedElement", draggedElement);
+        console.log("dropZone", dropZone);
+    }
 
-    async function dropListToTable(listElement, draggedElement, dropZone){}
+    async function dropListToTable(listElement, draggedElement, dropZone) {
+        console.log("Listeden Tabloya bırakıldı");
+        console.log("listElement", listElement);
+        console.log("draggedElement", draggedElement);
+        console.log("dropZone", dropZone);
+    }
 
     /**
      *
