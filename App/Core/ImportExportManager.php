@@ -228,6 +228,7 @@ class ImportExportManager
 
     /**
      * @throws Exception
+     * todo bu metodun çıktısı başlık=> filtre şeklinde bunu dizi olarak verip diziye başlık, tür (ders, hoca, derslik) şekilde kullanmak daha uygun olur. Bu sayede excel çıktıları türkerine göre daha kolay düzenlenir
      */
     private function generateScheduleFilters($filters): array
     {
@@ -490,7 +491,7 @@ class ImportExportManager
                 $row++;
             }
             // Her hücreye kenarlık ekle
-            $lastCell = "K" . $row - 1;
+            $lastCell = "K" . $row - 1; //todo maxDay Index e göre ayarlanmalı
             $this->sheet->getStyle($firstCell . ":" . $lastCell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
             //todo Cuma yada perşembe günü ders yoksa G sütünunda bitiyor. k olarak belirtilirse tüm hafta kenarlık oluyor
             $row += 2;//bir tablo bittikten sonra iki satır boşluk bırak

@@ -1,13 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>TMYO Ders-Sınav Programı Yapıcı</title>
-</head>
-<body>
-<?php include "pages/" . $this->view_page . ".php";?>
+<?php
+include "theme/head.php";
+?>
+<!--begin::Body-->
+<!--<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">-->
+<body class="layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded">
+<!--begin::App Wrapper-->
+<div class="app-wrapper">
+
+    <?php
+    /** @var \App\Controllers\UserController $userController
+     * @var \App\Models\User | false $currentUser Oturum açmış kullanıcı modeli. Oturum açılmamışsa false
+     * */
+    $currentUser = $userController->getCurrentUser();
+    include "theme/navbar.php";
+    include "theme/sidebar.php";
+    include "pages/" . $this->view_page . ".php";
+    include "theme/footer.php" ?>
+
+</div>
+<!--end::App Wrapper-->
+
+<?php
+include "theme/footer_scripts.php";
+if (isset($_SESSION['error'])) {
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function () {
+            new Toast().prepareToast("Hata","' . $_SESSION['error'] . '","danger");
+    });
+    </script>';
+    unset($_SESSION['error']);
+}
+?>
 </body>
 </html>

@@ -31,16 +31,15 @@ use function App\Helpers\isAuthorized;
 class AdminRouter extends Router
 {
     private $view_data = [];
-    private User $currentUser;
+    private User|false $currentUser = false;
     private AssetManager $assetManager;
 
     public function __construct()
     {
-        $this->beforeAction();
         $this->assetManager = new AssetManager();
         $this->view_data["userController"] = new UserController();
         $this->view_data["assetManager"] = $this->assetManager; // View'da kullanmak için
-        $this->currentUser = $this->view_data["userController"]->getCurrentUser();
+        $this->beforeAction();
     }
 
     /**
@@ -50,8 +49,9 @@ class AdminRouter extends Router
     private function beforeAction(): void
     {
         $userController = new UserController();
-        $this->view_data['currentUser'] = $userController->getCurrentUser();
-        if (!$userController->isLoggedIn()) {
+        $this->currentUser = $userController->getCurrentUser();
+        $this->view_data['currentUser'] = $this->currentUser;
+        if (!$this->currentUser) {
             //todo goback ön tanımlı olarak false olursa daha iyi olur gibi. ön tanımlı true olduğu için login redirect çalışmıyordu
             $this->Redirect('/auth/login', false);
         }
