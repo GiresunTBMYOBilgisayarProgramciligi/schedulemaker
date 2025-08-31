@@ -50,9 +50,11 @@ class AjaxRouter extends Router
             $this->Redirect("/admin");
         }
         $userController = new UserController();
-        if (!$userController->isLoggedIn()) {
-            throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın", 330);
-        } else $userController->getCurrentUser();
+        // todo burada oturum kontrolü yapmak ana sayfadaki oturumsuz işlemleri engelleyebiliyor. yapılmazsa ne olur?
+        //if (!$userController->isLoggedIn()) {
+        //  throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın", 330);
+        //} else $userController->getCurrentUser();
+        // todo ki zaten else kısmında getCurrent user ı tek başına çağırarak işe yaramadığını görmüş oluyorum ama düşünmek lazım
     }
 
     /**
