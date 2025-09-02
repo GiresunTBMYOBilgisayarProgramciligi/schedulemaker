@@ -102,8 +102,9 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="departmentAndProgramExport" id="departmentAndProgramExport"
-                                           value="Dışa aktar">
+                                    <button class="btn btn-primary" type="button"  id="departmentAndProgramExport">
+                                           Dışa aktar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -137,7 +138,9 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="lecturerExport" id="lecturerExport" value="Dışa aktar">
+                                    <button class="btn btn-primary" type="button" id="lecturerExport" >
+                                        Dışa aktar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -167,7 +170,9 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <input class="btn btn-primary" type="button" name="classroomExport" id="classroomExport" value="Dışa aktar">
+                                    <button class="btn btn-primary" type="button" id="classroomExport">
+                                        Dışa aktar
+                                    </button>
                                 </div>
                             </div>
                         </div>
