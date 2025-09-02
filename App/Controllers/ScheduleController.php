@@ -265,6 +265,10 @@ class ScheduleController extends Controller
                             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
                             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
                             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
+                            /**
+                             * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
+                             */
+                            $lessonName = in_array($filters['owner_type'], ['user','classroom']) ? $lesson->name . ' ('.$lesson->getProgram()->name.')' : $lesson->name;
                             $out .= '
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
@@ -281,7 +285,7 @@ class ScheduleController extends Controller
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i> 
                                         </a>
-                                        ' . $lesson->name . '
+                                        ' . $lessonName . '
                                     </div>
                                     <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '" >
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
@@ -313,6 +317,10 @@ class ScheduleController extends Controller
                         $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
                         $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
                         $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
+                        /**
+                         * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
+                         */
+                        $lessonName = in_array($filters['owner_type'], ['user','classroom']) ? $lesson->name . ' ('.$lesson->getProgram()->name.')' : $lesson->name;
                         $out .= '
                         <td class="drop-zone">
                             <div 
@@ -330,7 +338,7 @@ class ScheduleController extends Controller
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i>
                                         </a> 
-                                        ' . $lesson->name . '
+                                        ' . $lessonName. '
                                             
                                     </div>
                                     <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '">
