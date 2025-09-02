@@ -64,9 +64,6 @@ use function App\Helpers\getSettingValue;
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Bölüm seçilmezse tüm programlar dışa aktarılır
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -75,9 +72,7 @@ use function App\Helpers\getSettingValue;
                                         <select class="form-select" id="program_id" name="program_id">
                                             <option value="0">İlk olarak Bölüm seçiniz</option>
                                         </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Program seçilmezse tüm programlar dışa aktarılır
-                                        </div>
+
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -147,9 +142,7 @@ use function App\Helpers\getSettingValue;
                                                 <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Hoca seçilmezse tüm hoca programları dışa aktarılır
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -187,9 +180,7 @@ use function App\Helpers\getSettingValue;
                                                 <option value="<?= $classroom->id ?>"><?= $classroom->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Derslik seçilmezse tüm derslik programları dışa aktarılır
-                                        </div>
+
                                     </div>
                                 </div>
                             </div>

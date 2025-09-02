@@ -21,16 +21,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (programSelect.value > 0) {
                 data.append("owner_type", "program");
                 data.append("owner_id", programSelect.value);
-            } else if (departmentSelect.value > 0) {
-                data.append("owner_type", "department");
-                data.append("owner_id", departmentSelect.value);
+                spinner.showSpinner(document.getElementById("schedule_container"));
+                await getSchedulesHTML(data);
             } else {
-                data.append("owner_type", "program");
+                new Toast().prepareToast("Hata","Bir Program seçmelisiniz.","danger");
             }
-
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await getSchedulesHTML(data);
-
         });
     }
     if (lecturerScheduleButton) {
@@ -39,14 +34,16 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
+            data.append("semester_no","birleştir");
             if (lecturerSelect.value > 0) {
                 data.append("owner_type", "user");
                 data.append("owner_id", lecturerSelect.value);
+                spinner.showSpinner(document.getElementById("schedule_container"));
+                await getSchedulesHTML(data);
             } else {
-                data.append("owner_type", "user");
+                new Toast().prepareToast("Hata","Bir hoca seçmelisiniz.","danger");
             }
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await getSchedulesHTML(data);
+
         });
     }
     if (classroomScheduleButton) {
@@ -55,14 +52,16 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
+            data.append("semester_no","birleştir");
             if (classroomSelect.value > 0) {
                 data.append("owner_type", "classroom");
                 data.append("owner_id", classroomSelect.value);
+                spinner.showSpinner(document.getElementById("schedule_container"));
+                await getSchedulesHTML(data);
             } else {
-                data.append("owner_type", "classroom");
+                new Toast().prepareToast("Hata","Bir derslik seçmelisiniz.","danger");
             }
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await getSchedulesHTML(data);
+
         });
     }
 

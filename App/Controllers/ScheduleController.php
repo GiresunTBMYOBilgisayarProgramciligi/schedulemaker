@@ -501,6 +501,10 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSettingValue("academic_year");
         }
         $HTMLOUT = '';
+        // todo bueklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
+        if (key_exists("semester_no", $filters) and $filters['semester_no']=="birleştir") {
+            $filters['semester_no'] =['in' => getSemesterNumbers($filters['semester'])];
+        }
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
             $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
@@ -971,6 +975,7 @@ class ScheduleController extends Controller
     /**
      * todo
      * kullanılacağı alana göre filtrede olması gereken alanları kontrol edip fazlalıkları silip eksiklerde hata verir
+     * todo semester ve semester no bilgisinin gelip gelmediği birleştirilip birleştirilmeyeceği burada ayarlanmalı.
      * @param  $for string Filtrenin neresi için kullanılacağını belirtir
      * @param $filters
      * @return array
