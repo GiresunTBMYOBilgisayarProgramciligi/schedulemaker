@@ -94,6 +94,9 @@ class AssetManager
         'homeIndex'=> [
             'js' => [
                 [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
+                [
                     'path' => '/assets/js/home/getSchedule.js'
                 ],
                 [
@@ -102,6 +105,7 @@ class AssetManager
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
                 ],
+
             ],
             'css' => [
                 [
