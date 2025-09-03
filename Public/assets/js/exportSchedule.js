@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("owner_type", button.dataset.ownerType);
             data.append("owner_id", button.dataset.ownerId);
 
-            spinner.showSpinner(document.getElementById("schedule-card"));
+            spinner.showSpinner(document.getElementById("schedule_container"));
             await fetchExportSchedule(data);
         }
     });
