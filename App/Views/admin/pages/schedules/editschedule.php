@@ -40,10 +40,10 @@ use function App\Helpers\getSettingValue;
                 <div class="col-12">
                     <div class="card card-primary card-outline">
                         <!-- .card-header -->
-                        <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
                             <h3 class="card-title flex-fill">Bölüm ve Program Ders Programı</h3>
-                            <div class=" flex-fill">
-                                <div class="input-group ">
+                            <div class="flex-fill">
+                                <div class="input-group">
                                     <select class="form-select" id="academic_year" name="academic_year">
                                         <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
                                             <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
@@ -77,28 +77,35 @@ use function App\Helpers\getSettingValue;
                             <!--begin::Row-->
                             <div class="row">
                                 <div class="col-12 mb-3">
-                                    <div class="input-group">
-                                        <select class="form-select tom-select" id="department_id" name="department_id">
-                                            <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                            foreach ($departments as $department): ?>
-                                                <option value="<?= $department->id ?>">
-                                                    <?= $department->name ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <select class="form-select" id="program_id" name="program_id">
-                                            <option value="0">İlk olarak Bölüm seçiniz</option>
-                                        </select>
-                                        <button type="button" class="btn btn-primary"
-                                                id="departmentAndProgramScheduleButton">
-                                            Göster
-                                        </button>
+                                    <div class="row">
+                                        <div class="col-12 col-md-6">
+                                            <select class="form-select tom-select" id="department_id" name="department_id">
+                                                <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                                foreach ($departments as $department): ?>
+                                                    <option value="<?= $department->id ?>">
+                                                        <?= $department->name ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="input-group">
+                                                <select class="form-select" id="program_id" name="program_id">
+                                                    <option value="0">İlk olarak Bölüm seçiniz</option>
+                                                </select>
+                                                <button type="button" class="btn btn-primary"
+                                                        id="departmentAndProgramScheduleButton">
+                                                    Göster
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
+
                                 </div>
                             </div>
                             <!--end::Row-->
                             <div class="row">
-                                <div class="col-6">
+                                <div class="col-md-6">
                                     <div class=" input-group mb-3">
                                         <select class="form-select tom-select " id="lecturer_id" name="lecturer_id"
                                                 placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
@@ -112,7 +119,7 @@ use function App\Helpers\getSettingValue;
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-md-6">
                                     <div class="input-group mb-3">
                                         <select class="form-select" id="classroom_id" name="classroom_id">
                                             <option value="0">Derslik Seçiniz</option>
