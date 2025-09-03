@@ -149,7 +149,7 @@ class ImportExportManager
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
         foreach ($rows as $rowIndex => $row) {
-            $hasError=false;// her bir satıra hatasız başlanıyor
+            $hasError = false;// her bir satıra hatasız başlanıyor
             [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
                 return trim((string)($item ?? ''));
             }, $row);
@@ -185,7 +185,7 @@ class ImportExportManager
 
             // Eğer bu satırda hata varsa, bir sonraki satıra geç
             if (isset($hasError) && $hasError) {
-                $errors[] = "has_Error:".$hasError;
+                $errors[] = "has_Error:" . $hasError;
                 continue;
             }
             $lessonData = [
@@ -244,13 +244,18 @@ class ImportExportManager
                         // id numarası belirtilen program Modeli oluşturulur
                         $program = (new Program())->find($filters["owner_id"]); // Burada program_id yerine owner_id kullanılmalı
                         // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
-                            "semester_no" => $semester_no,
-                            'owner_type' => 'program',
-                            'owner_id' => $program->id,
-                            'type' => $filters["type"],
-                            'semester' => $filters["semester"],
-                            'academic_year' => $filters["academic_year"],
+                        $scheduleFilters[] = [
+                            'file_title' => $program->name .'Ders Programı',
+                            'title' => $program->name . " " . getClassFromSemesterNo($semester_no) . " Ders Programı",
+                            'type' => 'program',
+                            'filter' => [
+                                "semester_no" => $semester_no,
+                                'owner_type' => 'program',
+                                'owner_id' => $program->id,
+                                'type' => $filters["type"],
+                                'semester' => $filters["semester"],
+                                'academic_year' => $filters["academic_year"],
+                            ]
                         ];
                     }
                 } else {
@@ -258,14 +263,18 @@ class ImportExportManager
                     $programs = (new Program())->get()->all();
                     foreach ($programs as $program) {
                         foreach ($semesterNumbers as $semester_no) {
-                            // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
-                            $scheduleFilters[$program->name . " " . getClassFromSemesterNo($semester_no)] = [
-                                "semester_no" => $semester_no,
-                                'owner_type' => 'program',
-                                'owner_id' => $program->id,
-                                'type' => $filters["type"],
-                                'semester' => $filters["semester"],
-                                'academic_year' => $filters["academic_year"],
+                            $scheduleFilters[] = [
+                                'file_title' => "Tüm Programlar Ders Programı",
+                                'title' => $program->name . " " . getClassFromSemesterNo($semester_no) . " Ders Programı",
+                                'type' => 'program',
+                                'filter' => [
+                                    "semester_no" => $semester_no,
+                                    'owner_type' => 'program',
+                                    'owner_id' => $program->id,
+                                    'type' => $filters["type"],
+                                    'semester' => $filters["semester"],
+                                    'academic_year' => $filters["academic_year"],
+                                ]
                             ];
                         }
                     }
@@ -300,27 +309,35 @@ class ImportExportManager
                     // oluşturulan filtre $scheduleFilters dizisine eklenir
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $lecturer = (new User())->find($filters["owner_id"]);
-                    // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                    $scheduleFilters[$lecturer->getFullName() . " Ders Programı"] = [
-                        "semester_no" => ['in' => $semesterNumbers],
-                        'owner_type' => 'user',
-                        'owner_id' => $lecturer->id,
-                        'type' => $filters["type"],
-                        'semester' => $filters["semester"],
-                        'academic_year' => $filters["academic_year"],
-                    ];
-                } else {
-                    //id belirtilmemişse tüm hocalar için filtre oluşturulacak
-                    $lecturers = (new User())->get()->where(['!role' => 'user'])->all();
-                    foreach ($lecturers as $lecturer) {
-                        // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$lecturer->getFullName() . " Ders Programı"] = [
+                    $scheduleFilters[] = [
+                        'file_title' => $lecturer->getFullName() . " Ders Programı",
+                        'title' => $lecturer->getFullName() . " Ders Programı",
+                        'type' => 'user',
+                        'filter' => [
                             "semester_no" => ['in' => $semesterNumbers],
                             'owner_type' => 'user',
                             'owner_id' => $lecturer->id,
                             'type' => $filters["type"],
                             'semester' => $filters["semester"],
                             'academic_year' => $filters["academic_year"],
+                        ]
+                    ];
+                } else {
+                    //id belirtilmemişse tüm hocalar için filtre oluşturulacak
+                    $lecturers = (new User())->get()->where(['!role' => 'user'])->all();
+                    foreach ($lecturers as $lecturer) {
+                        $scheduleFilters[] = [
+                            'file_title' => "Tüm Hocalar Ders Programı",
+                            'title' =>  $lecturer->getFullName() . " Ders Programı",
+                            'type' => 'user',
+                            'filter' => [
+                                "semester_no" => ['in' => $semesterNumbers],
+                                'owner_type' => 'user',
+                                'owner_id' => $lecturer->id,
+                                'type' => $filters["type"],
+                                'semester' => $filters["semester"],
+                                'academic_year' => $filters["academic_year"],
+                            ]
                         ];
                     }
                 }
@@ -331,27 +348,35 @@ class ImportExportManager
                     // oluşturulan filtre $scheduleFilters dizisine eklenir
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $classroom = (new Classroom())->find($filters["owner_id"]);
-                    // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                    $scheduleFilters[$classroom->name . " Der Programı"] = [
-                        "semester_no" => ['in' => $semesterNumbers],
-                        'owner_type' => 'classroom',
-                        'owner_id' => $classroom->id,
-                        'type' => $filters["type"],
-                        'semester' => $filters["semester"],
-                        'academic_year' => $filters["academic_year"],
-                    ];
-                } else {
-                    //id belirtilmemişse tüm derslikler için filtre oluşturulacak
-                    $classrooms = (new Classroom())->get()->all();
-                    foreach ($classrooms as $classroom) {
-                        // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$classroom->name . " Der Programı"] = [
+                    $scheduleFilters[] = [
+                        'file_title' => $classroom->name . " Der Programı",
+                        'title' => $classroom->name . " Der Programı",
+                        'type' => 'classroom',
+                        'filter' => [
                             "semester_no" => ['in' => $semesterNumbers],
                             'owner_type' => 'classroom',
                             'owner_id' => $classroom->id,
                             'type' => $filters["type"],
                             'semester' => $filters["semester"],
                             'academic_year' => $filters["academic_year"],
+                        ]
+                    ];
+                } else {
+                    //id belirtilmemişse tüm derslikler için filtre oluşturulacak
+                    $classrooms = (new Classroom())->get()->all();
+                    foreach ($classrooms as $classroom) {
+                        $scheduleFilters[] = [
+                            'file_title' => "Tüm Derslikler Der Programı",
+                            'title' => $classroom->name . " Der Programı",
+                            'type' => 'classroom',
+                            'filter' => [
+                                "semester_no" => ['in' => $semesterNumbers],
+                                'owner_type' => 'classroom',
+                                'owner_id' => $classroom->id,
+                                'type' => $filters["type"],
+                                'semester' => $filters["semester"],
+                                'academic_year' => $filters["academic_year"],
+                            ]
                         ];
                     }
                 }
@@ -362,27 +387,35 @@ class ImportExportManager
                     // oluşturulan filtre $scheduleFilters dizisine eklenir
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $lesson = (new Lesson())->find($filters["owner_id"]);
-                    // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                    $scheduleFilters[$lesson->getFullName() . " Ders Programı"] = [
-                        "semester_no" => ['in' => $semesterNumbers],
-                        'owner_type' => 'lesson',
-                        'owner_id' => $lesson->id,
-                        'type' => $filters["type"],
-                        'semester' => $filters["semester"],
-                        'academic_year' => $filters["academic_year"],
-                    ];
-                } else {
-                    //id belirtilmemişse tüm dersler için filtre oluşturulacak
-                    $lessons = (new Lesson())->get()->all();
-                    foreach ($lessons as $lesson) {
-                        // anahtarı hoca adı ve yarıyılı olacak şekilde filtrelere eklenir
-                        $scheduleFilters[$lesson->getFullName() . " Ders Programı"] = [
+                    $scheduleFilters[] = [
+                        'file_title' => $lesson->getFullName() . " Ders Programı",
+                        'title' => $lesson->getFullName() . " Ders Programı",
+                        'type' => 'lesson',
+                        'filter' => [
                             "semester_no" => ['in' => $semesterNumbers],
                             'owner_type' => 'lesson',
                             'owner_id' => $lesson->id,
                             'type' => $filters["type"],
                             'semester' => $filters["semester"],
                             'academic_year' => $filters["academic_year"],
+                        ]
+                    ];
+                } else {
+                    //id belirtilmemişse tüm dersler için filtre oluşturulacak
+                    $lessons = (new Lesson())->get()->all();
+                    foreach ($lessons as $lesson) {
+                        $scheduleFilters[] = [
+                            'file_title' => "Tüm Hocalar Ders Programı",
+                            'title' => $lesson->getFullName() . " Ders Programı",
+                            'type' => 'lesson',
+                            'filter' => [
+                                "semester_no" => ['in' => $semesterNumbers],
+                                'owner_type' => 'lesson',
+                                'owner_id' => $lesson->id,
+                                'type' => $filters["type"],
+                                'semester' => $filters["semester"],
+                                'academic_year' => $filters["academic_year"],
+                            ]
                         ];
                     }
                 }
@@ -397,7 +430,8 @@ class ImportExportManager
     /**
      * @throws Exception
      */
-    #[NoReturn] public function exportSchedule($filters = []): void
+    #[NoReturn]
+    public function exportSchedule($filters = []): void
     {
         if (!key_exists("semester", $filters)) {
             $filters['semester'] = getSettingValue('semester');
@@ -412,12 +446,12 @@ class ImportExportManager
          */
         $row = $this->createFileTitle($filters);
 
-        foreach ($this->generateScheduleFilters($filters) as $title => $scheduleFilter) {
+        foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
             // programların her biri için tablo oluşturuluyor
-            $scheduleArray = $scheduleController->createScheduleExcelTable($scheduleFilter);// her bir elemanı bir satır olan bir dizi
+            $scheduleArray = $scheduleController->createScheduleExcelTable($scheduleFilter['filter']);// her bir elemanı bir satır olan bir dizi
             if (!$scheduleArray) continue; //Eğer programda ders yoksa geç
             //start::Program başlığını yaz
-            $this->sheet->setCellValue("A{$row}", $title);
+            $this->sheet->setCellValue("A{$row}", $scheduleFilter['title']);
             $this->sheet->getStyle("A{$row}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
                 ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
@@ -451,7 +485,7 @@ class ImportExportManager
                                 if (isset($groupLesson['lesson_id'])) {
                                     $lesson = (new Lesson())->find($groupLesson['lesson_id']);
                                     // ders bilgileri hücreye yazılır.
-                                    $lessons[] = $lesson->name."\n"."(".$lesson->getLecturer()->getFullName().")";
+                                    $lessons[] = $this->setExportLessonName($lesson, $scheduleFilter['type']);
                                 }
                                 if (isset($groupLesson['classroom_id'])) {
                                     $classroom = (new Classroom())->find($groupLesson['classroom_id']);
@@ -466,7 +500,7 @@ class ImportExportManager
                             if (isset($scheduleCell['lesson_id'])) {
                                 $lesson = (new Lesson())->find($scheduleCell['lesson_id']);
                                 // ders bilgileri hücreye yazılır.
-                                $cellValue = $lesson->name."\n"."(".$lesson->getLecturer()->getFullName().")";
+                                $cellValue = $this->setExportLessonName($lesson, $scheduleFilter['type']);;
                             }
                             if (isset($scheduleCell['classroom_id'])) {
                                 $classroom = (new Classroom())->find($scheduleCell['classroom_id']);
@@ -502,9 +536,22 @@ class ImportExportManager
         foreach (range('A', 'Z') as $columnID) {
             $this->sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
-        $exportFileName = $filters['academic_year'] ." ". $filters['semester'] . " ".$title.".xlsx";
+        $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . $scheduleFilter['file_title'] . ".xlsx";
         $this->downloadExportFile($exportFileName);
 
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function setExportLessonName(Lesson $lesson, $scheduleType)
+    {
+        return match ($scheduleType) {
+            'user' => $lesson->name . "\n (" . $lesson->getProgram()->name . ")",
+            'classroom' => $lesson->name . " (" . $lesson->getProgram()->name . ") \n (" . $lesson->getLecturer()->getFullName() . ")",
+            'program' => $lesson->name . " \n (" . $lesson->getLecturer()->getFullName() . ")",
+            default => $lesson->name,
+        };
     }
 
     public function createFileTitle($filters): int
@@ -528,7 +575,8 @@ class ImportExportManager
         return 6; //başlıktan sonra devam edilecek satır numarası
     }
 
-    #[NoReturn] private function downloadExportFile($fileName = "schedule.xlsx"): void
+    #[NoReturn]
+    private function downloadExportFile($fileName = "schedule.xlsx"): void
     {
         // Tarayıcıya çıktı olarak gönder
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8 ');
