@@ -583,12 +583,11 @@ class AdminRouter extends Router
         }
         $this->assetManager->loadPageAssets('editschedule');
         $userController = new UserController();
-        $currentUser = $userController->getCurrentUser();
         $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
             $departments = $departmentController->getDepartmentsList();
-        } elseif ($userController->canUserDoAction(7) and $currentUser->role == "department_head") {
-            $departments = [(new Department())->find($currentUser->department_id) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
+        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+            $departments = [(new Department())->find($this->currentUser->department_id) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -596,7 +595,11 @@ class AdminRouter extends Router
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "page_title" => "Takvim Düzenle",
+            "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
+        if ($this->currentUser->role == "department_head") {
+            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+        } else $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/schedules/editschedule", $this->view_data);
     }
 

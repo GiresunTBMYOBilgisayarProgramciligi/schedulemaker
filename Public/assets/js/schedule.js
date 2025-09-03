@@ -19,10 +19,10 @@ let isDragging = false;
  */
 document.addEventListener("DOMContentLoaded", function () {
     const programSelect = document.getElementById("program_id");
-    const programSelectButton = document.getElementById("programSelect");
+    const departmentAndProgramScheduleButton = document.getElementById("departmentAndProgramScheduleButton");
     const academicYearSelect = document.getElementById("academic_year");
     const semesterSelect = document.getElementById("semester");
-    programSelectButton.addEventListener("click", function () {
+    departmentAndProgramScheduleButton.addEventListener("click", function () {
         let promises = []; // Asenkron işlemleri takip etmek için bir dizi
         let data = new FormData();
         data.append("type", "lesson")

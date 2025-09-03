@@ -91,7 +91,7 @@ class AssetManager
     private array $pageAssets = [
         /*
          * */
-        'homeIndex'=> [
+        'homeIndex' => [
             'js' => [
                 [
                     'path' => '/assets/js/exportSchedule.js'
@@ -163,11 +163,17 @@ class AssetManager
                 ],
                 [
                     'path' => '/assets/js/schedule.js'
-                ]
+                ],
+                [//Select arama işlemi için
+                    'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
             ],
             'css' => [
                 [
                     'path' => "/assets/css/customCSS.css"
+                ],
+                [
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
                 ]
             ]
         ],
