@@ -2,10 +2,11 @@
  * Program Gösterme işlemleri
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
+// Yeni bir custom event oluştur
+const scheduleLoaded = new Event("scheduleLoaded");
 document.addEventListener("DOMContentLoaded", function () {
     const departmentSelect = document.getElementById("department_id")
     const programSelect = document.getElementById("program_id")
-    //todo buton isimlerini düzenle
     const departmentAndProgramScheduleButton = document.getElementById('departmentAndProgramScheduleButton')
     const lecturerScheduleButton = document.getElementById('lecturerScheduleButton')
     const lecturerSelect = document.getElementById("lecturer_id");
@@ -87,13 +88,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                         return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
                     })
+                    document.dispatchEvent(scheduleLoaded);
                 } else {
                     new Toast().prepareToast("Hata", data['msg'], "danger");
                     console.error(data['msg']);
                 }
             })
             .catch((error) => {
-                new Toast().prepareToast("Hata", "Uygun ders listesi oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                new Toast().prepareToast("Hata", "Ders programı oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
             });
     }

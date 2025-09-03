@@ -97,7 +97,7 @@ class AssetManager
                     'path' => '/assets/js/exportSchedule.js'
                 ],
                 [
-                    'path' => '/assets/js/home/getSchedule.js'
+                    'path' => '/assets/js/getSchedule.js'
                 ],
                 [
                     'path' => '/assets/js/formEvents.js'
@@ -162,7 +162,10 @@ class AssetManager
                     'path' => '/assets/js/formEvents.js'
                 ],
                 [
-                    'path' => '/assets/js/schedule.js'
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/editSchedule.js'
                 ],
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
