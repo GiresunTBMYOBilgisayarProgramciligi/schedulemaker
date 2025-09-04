@@ -282,6 +282,7 @@ class ScheduleController extends Controller
                             ' . $semester . '
                             ' . $popover . '
                             data-academic-year="' . $lesson->academic_year . '"
+                            data-classroom-id="' . $classroom->id . '"
                             >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
@@ -336,6 +337,7 @@ class ScheduleController extends Controller
                             ' . $semester . '
                             ' . $popover . '
                             data-academic-year="' . $lesson->academic_year . '"
+                            data-classroom-id="' . $classroom->id . '"
                             >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
@@ -423,6 +425,7 @@ class ScheduleController extends Controller
                           data-lesson-id=\"$lesson->id\"
                           data-lecturer-id=\"" . $lesson->getLecturer()->id . "\"
                           $popover
+                          data-lesson-hours=\"$lesson->hours\"
                         >
                             <div class=\"ms-2 me-auto\">
                               <div class=\"fw-bold lesson-title\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \">
