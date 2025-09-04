@@ -219,12 +219,14 @@ class ScheduleController extends Controller
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
         // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
+        // eğer dönem belirtilmemişse aktif dönem bilgisi alınır
         $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getSettingValue("semester") . '"';
 
         /**
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
          */
         $lessonHourCount = [];
+        //todo semester_no ve semester bilgisi card elementinde olacağı için burada olmasa da olur gibi
         $out =
             '
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
@@ -279,6 +281,7 @@ class ScheduleController extends Controller
                             data-schedule-day="' . $dayIndex . '"
                             ' . $semester . '
                             ' . $popover . '
+                            data-academic-year="' . $lesson->academic_year . '"
                             >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
@@ -332,6 +335,7 @@ class ScheduleController extends Controller
                             data-schedule-day="' . $dayIndex . '"
                             ' . $semester . '
                             ' . $popover . '
+                            data-academic-year="' . $lesson->academic_year . '"
                             >
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
@@ -390,6 +394,7 @@ class ScheduleController extends Controller
          * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
          */
         $semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
+        // todo schedule card elementinde semester_no bilgisi olacak burada tekrar olmasına gerek var mı
         $HTMLOut = '<div class="row available-schedule-items drop-zone small"
                                          data-semester-no="' . $semester_no . '"
                                          data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="data-bs-placement="left"">';
@@ -412,6 +417,8 @@ class ScheduleController extends Controller
                         <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
                           class=\"d-flex justify-content-between align-items-start mb-1 p-2 rounded $text_bg\"
                           data-semester-no=\"$lesson->semester_no\"
+                          data-semester=\"$lesson->semester\"
+                          data-academic-year=\"$lesson->academic_year\"
                           data-lesson-code=\"$lesson->code\"
                           data-lesson-id=\"$lesson->id\"
                           data-lecturer-id=\"" . $lesson->getLecturer()->id . "\"
@@ -449,15 +456,23 @@ class ScheduleController extends Controller
     {
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
         $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
-
+        $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
+        //todo setdataAttiribute fonksiyonu oluştur
         $HTMLOUT = '
                 <!--begin::Row Program Satırı-->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <div id="schedule-card" class="card card-outline card-primary">
+                        <div class="card card-outline card-primary"
+                        data-owner-type="' . $filters['owner_type'] . '"
+                        data-owner-id="' . $filters['owner_id'] . '"
+                        data-type="' . $filters['type'] . '"
+                        data-academic-year="' . $filters['academic_year'] . '"
+                        data-semester="' . $filters['semester'] . '"
+                        ' . $dataSemesterNo . '
+                        >
                             <div class="card-header">
                                 <h3 class="card-title">' . $cardTitle . '</h3>
-                                <div class="card-tools">
+                                <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
                                     <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
                                         <span>Excel\'e aktar</span> 
                                     </button>
@@ -478,8 +493,7 @@ class ScheduleController extends Controller
         $HTMLOUT .= '
                                 <!--begin::Row Schedule Table-->
                                 <div class="row">';
-        $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
-        $HTMLOUT .= '   <div class="schedule-table col-md-12" ' . $dataSemesterNo . '>';
+        $HTMLOUT .= '   <div class="schedule-table col-md-12" ' . $dataSemesterNo . '>'; //todo semester_no bilgisi card dan alınacak
         $HTMLOUT .= $this->createScheduleHTMLTable($filters);
         $HTMLOUT .= '
 
@@ -513,6 +527,7 @@ class ScheduleController extends Controller
         if (key_exists("semester_no", $filters) and $filters['semester_no']=="birleştir") {
             $filters['semester_no'] =['in' => getSemesterNumbers($filters['semester'])];
         }
+
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
             $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
@@ -984,11 +999,11 @@ class ScheduleController extends Controller
      * todo
      * kullanılacağı alana göre filtrede olması gereken alanları kontrol edip fazlalıkları silip eksiklerde hata verir
      * todo semester ve semester no bilgisinin gelip gelmediği birleştirilip birleştirilmeyeceği burada ayarlanmalı.
+     * @param array $filters
      * @param  $for string Filtrenin neresi için kullanılacağını belirtir
-     * @param $filters
      * @return array
      */
-    public function checkFilters($filters, $for): array
+    public function checkFilters(array $filters, string $for): array
     {
         /**
          * Ders programı için filtreleme seçeneklerini içeren dizi.
@@ -1022,6 +1037,9 @@ class ScheduleController extends Controller
             "lesson_hours", // int -> Dersin kaç saatlik olduğu
             "owners" // array[string] -> Ders programının ait olduğu birim türleri listesi
         ];
+        // ilk olarak gelen filtrelerin içinde allFilters dizisinde belirtilenler dışında bir veri var mı diye kontol et
+        // akademikyıl ve dönem bilgisini kontrol et yok ise ayarlardan ekle
+        // yapılacak işlem için zorunlu filtreleri kontrol et ve eksik durumunda hata ver.
         return [];
     }
 }
