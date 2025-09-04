@@ -94,7 +94,8 @@ use function App\Helpers\getSettingValue;
                                                     <option value="0">İlk olarak Bölüm seçiniz</option>
                                                 </select>
                                                 <button type="button" class="btn btn-primary"
-                                                        id="departmentAndProgramScheduleButton">
+                                                        id="departmentAndProgramScheduleButton"
+                                                        data-only-table="false">
                                                     Göster
                                                 </button>
                                             </div>
@@ -114,7 +115,7 @@ use function App\Helpers\getSettingValue;
                                                 <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button class="btn btn-primary" type="button" id="lecturerScheduleButton">
+                                        <button class="btn btn-primary" type="button" id="lecturerScheduleButton" data-only-table="false">
                                             Göster
                                         </button>
                                     </div>
@@ -127,7 +128,7 @@ use function App\Helpers\getSettingValue;
                                                 <option value="<?= $classroom->id ?>"><?= $classroom->name ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button class="btn btn-primary" type="button" id="classroomScheduleButton">
+                                        <button class="btn btn-primary" type="button" id="classroomScheduleButton" data-only-table="false">
                                             Göster
                                         </button>
                                     </div>

@@ -532,9 +532,9 @@ class AjaxRouter extends Router
     public function getScheduleHTMLAction(): void
     {
         $scheduleController = new ScheduleController();
-        $only_table=false;
+        $only_table = false;
         if (isset($this->data['only_table'])) {
-            $only_table = $this->data['only_table'] ?? false;
+            $only_table = $this->data['only_table'] === "true";
             unset($this->data['only_table']);
         }
         $schedulesHTML = $scheduleController->getSchedulesHTML($this->data, $only_table);
