@@ -1,0 +1,24 @@
+/**
+ * Öncesinde ScheduleCard yüklenmeli
+ */
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.addEventListener('scheduleLoaded', function () {
+        let scheduleCardElements = document.querySelectorAll("#schedule_container .card")
+        let scheduleCards = [];
+        scheduleCardElements.forEach((scheduleCardElement) => {
+            let scheduleCard = new ScheduleCard(scheduleCardElement)
+            scheduleCards.push(scheduleCard);
+        })
+        document.addEventListener("lessonDrop", (event)=>{
+            /**
+             * herhangi bir scheduleCard nesnesinde dropHandler çalıştığında tüm ScheduleCard nesnelerinin sürüklenen ders bilgileri sıfırlanıyor.
+             * Farklı tablolara bırakma işlemi yapıldığında scheduleCard nesnesindeki drop dinleyicisi tetiklenmiyor. Bu yüzden hepsinde sıfırlama yapılıyor
+             */
+            scheduleCards.forEach((scheduleCard)=>{
+                scheduleCard.resetDraggedLesson();
+                scheduleCard.clearCells();
+            })
+        })
+    })
+});

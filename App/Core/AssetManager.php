@@ -162,6 +162,9 @@ class AssetManager
                     'path' => '/assets/js/formEvents.js'
                 ],
                 [
+                    'path' => '/assets/js/getSchedule.js'
+                ],
+                [
                     'path' => '/assets/js/admin/ScheduleCard.js'
                 ],
                 [
