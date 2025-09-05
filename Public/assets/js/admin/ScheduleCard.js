@@ -349,7 +349,6 @@ class ScheduleCard {
 
     /**
      * Derslik programı düzenlenirken eklenecek ders saati miktarını seçmek için
-     * @param draggedLesson
      * @returns {Promise<unknown>}
      */
     selectHours() {
@@ -380,9 +379,11 @@ class ScheduleCard {
     }
 
     /**
-     * Ders programına eklenen dersin çakışma kontrolünü yapar
+     * bırakılan alanda başka ders olup olmadığını ve grup işlemlerini kontrol eder
+     * Bırakılan alandaki ders ile bırakılan derslerin gruplarının olup olmadığını varsa farklı olup olmadığını kontrol eder
+     * @param selectedHours kaç saat ders ekleneceğini belirtir
      */
-    checkCrash( selectedHours) {
+    checkCrash(selectedHours) {
         console.log("checkCrash");
         let checkedHours = 0; //drop-zone olmayan alanlar atlanacağından Kontrol edilen saatlerin sayısını takip ediyoruz
         let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
