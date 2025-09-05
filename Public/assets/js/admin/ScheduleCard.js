@@ -134,7 +134,6 @@ class ScheduleCard {
         Object.keys(this.draggedLesson).forEach(key => {
             this.draggedLesson[key] = null;
         });
-        console.log("reset")
     }
 
     setDraggedLesson(lessonElement) {
@@ -158,7 +157,6 @@ class ScheduleCard {
             this.draggedLesson.start_element = "list";
         }
         this.draggedLesson.HTMLElement = lessonElement;
-        console.log("set")
     }
 
     async highlightUnavailableCells() {
@@ -181,7 +179,6 @@ class ScheduleCard {
             let classroomData = await classroomResponse.json();
 
             if (classroomData.status === "error") {
-                console.error(classroomData);
             } else {
                 let unavailableCells = classroomData.unavailableCells;
                 if (unavailableCells) {
@@ -206,7 +203,6 @@ class ScheduleCard {
             toast.closeToast();
 
             if (lecturerData.status === "error") {
-                console.error(lecturerData);
             } else {
                 let unavailableCells = lecturerData.unavailableCells;
                 if (unavailableCells) {
@@ -254,7 +250,6 @@ class ScheduleCard {
     }
 
     async fetchAvailableClassrooms(classroomSelect, event) {
-        console.log("Derslikler alınıyor")
         let data = new FormData();
         data.append("hours", event.target.value);
         data.append("time", this.draggedLesson.time)
@@ -384,65 +379,61 @@ class ScheduleCard {
      * @param selectedHours kaç saat ders ekleneceğini belirtir
      */
     checkCrash(selectedHours) {
-        console.log("checkCrash");
-        let checkedHours = 0; //drop-zone olmayan alanlar atlanacağından Kontrol edilen saatlerin sayısını takip ediyoruz
-        let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
-        let droppedCellIndex = this.dropZone.cellIndex
-        // çakışmaları kontrol et
-        for (let i = 0; checkedHours < selectedHours; i++) {
-            //dersin bırakıldığı satırın tablo içindeki index numarası
-            let row = this.table.rows[droppedRowIndex + i];
-            if (!row) {
-                new Toast().prepareToast("Hata", "Eklelen ders saatleri programın dışına taşıyor.", "danger")
-                return;
-            }
-            let cell = row.cells[droppedCellIndex];
-            // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
-            if (!cell.classList.contains("drop-zone")) {
-                continue;
-            }
+        return new Promise((resolve, reject) => {
+            let checkedHours = 0;
+            let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
+            let droppedCellIndex = this.dropZone.cellIndex;
 
-            /*
-         * dersler "scheduleTable-" ile başlayan idler içerir
-         */
-            let lessons = this.dropZone.querySelectorAll('[id^=\"scheduleTable-\"]');
-            if (lessons.length !== 0) { // ders var mı ?
-                //eğer zeten iki grup eklenmişse
-                if (lessons.length > 1) { // birden fazla ders var mı ?
-                    new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
+            for (let i = 0; checkedHours < selectedHours; i++) {
+                let row = this.table.rows[droppedRowIndex + i];
+                if (!row) {
+                    reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
-                } else {
-                    let existLesson = this.dropZone.querySelector('[id^=\"scheduleTable-\"]')
-                    let existCode = existLesson.getAttribute("data-lesson-code")
-                    let currentCode = this.draggedLesson.lesson_code
-                    console.log(currentCode)
-                    let existMatch = existCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
-                    let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
+                }
 
-                    if (existMatch && currentMatch) {
-                        if (existMatch[1] === currentMatch[1]) {
-                            // eğer iki ders aynı ise
-                            console.log("İki ders aynı")
-                            new Toast().prepareToast("Hata", "Lütfen farklı bir ders seçin", "danger");
-                            return;
-                        }
-                        let existGroup = existMatch[2]; // Noktadan sonraki sayı
+                let cell = row.cells[droppedCellIndex];
+                if (!cell.classList.contains("drop-zone")) {
+                    continue; // öğle arası gibi drop-zone olmayan hücreleri atla
+                }
 
-                        let currentGroup = currentMatch[2]; // Noktadan sonraki sayı
-                        if (existGroup === currentGroup) {
-                            console.log("Gruplar aynı")
-                            new Toast().prepareToast("Hata", "Gruplar aynı olamaz", "danger");
-                            return;
-                        }
-                    } else {
-                        console.log("burada bir ders var ve gruplu değil, yada eklenen ders gruplu değil")
-                        new Toast().prepareToast("Hata", "Gruplu dersler, sadece gruplu ders ile aynı saate eklenebilir.", "danger");
+                let lessons = this.dropZone.querySelectorAll('[id^="scheduleTable-"]');
+                if (lessons.length !== 0) {
+                    if (lessons.length > 1) {
+                        reject("Bu alana ders ekleyemezsiniz.");
                         return;
+                    } else {
+                        let existLesson = this.dropZone.querySelector('[id^="scheduleTable-"]');
+                        let existCode = existLesson.getAttribute("data-lesson-code");
+                        let currentCode = this.draggedLesson.lesson_code;
+
+                        let existMatch = existCode.match(/^(.+)\.(\d+)$/);
+                        let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);
+
+                        if (existMatch && currentMatch) {
+                            if (existMatch[1] === currentMatch[1]) {
+                                reject("Lütfen farklı bir ders seçin.");
+                                return;
+                            }
+
+                            let existGroup = existMatch[2];
+                            let currentGroup = currentMatch[2];
+
+                            if (existGroup === currentGroup) {
+                                reject("Gruplar aynı olamaz.");
+                                return;
+                            }
+                        } else {
+                            reject("Çakışma var, bu alana ders eklenemez.");
+                            return;
+                        }
                     }
                 }
+
+                checkedHours++;
             }
-            checkedHours++
-        }
+
+            resolve(true); // hiçbir sorun yoksa başarıyla tamamla
+        });
     }
 
     dragStartHandler(event) {
@@ -515,7 +506,6 @@ class ScheduleCard {
     }
 
     async dropListToTable() {
-        console.log("listeden tabloya bırakıldı");
         /**
          * Liste içerisinde her ders bir frame içerisinde bulunuyor.
          */
@@ -529,19 +519,26 @@ class ScheduleCard {
         let time = this.table.rows[droppedRowIndex].cells[0].innerText;
         this.draggedLesson.time = time;
         if (this.owner_type !== 'classroom') {
-            /**
-             * {...değişken} yapısı değişkenin o anki değerlerin sabitlenmiş kopyasını oluşturur. Bu sayede veriler sonradan değişse de bu işlemi etkilemez.
-             */
             let {classroom, hours} = await this.selectClassroomAndHours();
-            console.log("Seçilen:", classroom, hours);
-            this.checkCrash(hours);
+            try {
+                await this.checkCrash(hours);
+                console.log("Çakışma yok, ders eklenebilir.");
+            } catch (errorMessage) {
+                new Toast().prepareToast("Hata", errorMessage, "danger");
+            }
         } else {
-            //todo derslik programı olduğu için derslik id'si doğrudan alınmalı
-            console.log("Derslik Programı")
             let {hours} = await this.selectHours();
-            console.log(hours)
-            this.checkCrash(hours);
+            try {
+                await this.checkCrash(hours);
+                console.log("Çakışma yok, ders eklenebilir.");
+                new Toast().prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
+            } catch (errorMessage) {
+                new Toast().prepareToast("Hata", errorMessage, "danger");
+            }
+
+
         }
+
         this.resetDraggedLesson();
     }
 
