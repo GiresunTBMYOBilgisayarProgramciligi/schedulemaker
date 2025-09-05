@@ -339,8 +339,40 @@ class ScheduleCard {
                     new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                     return;
                 }
-
+                scheduleModal.closeModal();
                 resolve({classroom: selectedClassroom, hours: selectedHours});
+            });
+        });
+    }
+
+    /**
+     * Derslik programı düzenlenirken eklenecek ders saati miktarını seçmek için
+     * @param draggedLesson
+     * @returns {Promise<unknown>}
+     */
+    selectHours(draggedLesson) {
+        return new Promise((resolve, reject) => {
+            let scheduleModal = new Modal();
+            let modalContentHTML = `
+            <form>
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="selected_hours" type="number" 
+                           value="${draggedLesson.lesson_hours}" 
+                           min=1 max=${draggedLesson.lesson_hours}>
+                    <label for="selected_hours">Eklenecek Ders Saati</label>
+                </div>
+            </form>`;
+
+            scheduleModal.prepareModal("Saat seçimi", modalContentHTML, true, false);
+            scheduleModal.showModal();
+
+            let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
+
+            scheduleModal.confirmButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                let selectedHours = selectedHoursInput.value;
+                scheduleModal.closeModal();
+                resolve({hours: selectedHours});
             });
         });
     }
@@ -436,10 +468,11 @@ class ScheduleCard {
              */
             let {classroom, hours} = await this.selectClassroomAndHours({...this.draggedLesson});
             console.log("Seçilen:", classroom, hours);
-        }else {
-            //todo sadece eklenecek saat için bir modal oluşturulmalı
+        } else {
             //todo derslik programı olduğu için derslik id'si doğrudan alınmalı
             console.log("Derslik Programı")
+            let {hours} = await this.selectHours({...this.draggedLesson});
+            console.log(hours)
         }
 
     }
