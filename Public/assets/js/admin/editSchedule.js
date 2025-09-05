@@ -10,14 +10,17 @@ document.addEventListener("DOMContentLoaded", function () {
             let scheduleCard = new ScheduleCard(scheduleCardElement)
             scheduleCards.push(scheduleCard);
         })
-        document.addEventListener("lessonDrop", (event)=>{
+        document.addEventListener("lessonDrop", (event) => {
             /**
              * herhangi bir scheduleCard nesnesinde dropHandler çalıştığında tüm ScheduleCard nesnelerinin sürüklenen ders bilgileri sıfırlanıyor.
              * Farklı tablolara bırakma işlemi yapıldığında scheduleCard nesnesindeki drop dinleyicisi tetiklenmiyor. Bu yüzden hepsinde sıfırlama yapılıyor
              */
-            scheduleCards.forEach((scheduleCard)=>{
-                scheduleCard.resetDraggedLesson();
-                scheduleCard.clearCells();
+            scheduleCards.forEach((scheduleCard) => {
+                if (scheduleCard.isDragging) {
+                    scheduleCard.isDragging = false;
+                    scheduleCard.resetDraggedLesson();
+                    scheduleCard.clearCells();
+                }
             })
         })
     })
