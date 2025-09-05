@@ -64,7 +64,7 @@ class ScheduleCard {
             'lesson_id': null,
             'lecturer_id': null,
             'time': null,
-            'schedule_day': null,
+            'day_index': null,
             'semester': null,
             'academic_year': null,
             'classroom_id': null,
@@ -253,7 +253,7 @@ class ScheduleCard {
         let data = new FormData();
         data.append("hours", event.target.value);
         data.append("time", this.draggedLesson.time)
-        data.append("day", "day" + this.draggedLesson.schedule_day)
+        data.append("day", "day" + this.draggedLesson.day_index)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
         data.append("semester", this.draggedLesson.semester)
@@ -282,7 +282,7 @@ class ScheduleCard {
                 } else {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
-                        option.value = classroom.name//todo value yerine id nasıl olur?
+                        option.value = classroom.id
                         option.innerText = classroom.name + " (" + classroom.class_size + ")"
                         classroomSelect.appendChild(option)
                     })
@@ -436,6 +436,43 @@ class ScheduleCard {
         });
     }
 
+    async saveSchedule(hours, classroom_id = null) {
+        let data = new FormData();
+        data.append("type", this.type);
+        data.append("lesson_id", this.draggedLesson.lesson_id);
+        data.append("time", this.draggedLesson.time);
+        data.append("lesson_hours", hours);
+        data.append("day_index", this.draggedLesson.day_index);
+        data.append("classroom_id", classroom_id ?? this.owner_id.toString());
+        data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
+        data.append("academic_year", this.academic_year);
+        data.append("semester", this.semester);
+        return fetch("/ajax/saveSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data && data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log('Program Kaydedildi')
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
+
     dragStartHandler(event) {
         this.isDragging = true;
         event.dataTransfer.effectAllowed = "move";
@@ -514,7 +551,7 @@ class ScheduleCard {
         //dersin bırakıldığı satırın tablo içindeki index numarası
         let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
         //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        this.draggedLesson.schedule_day = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
+        this.draggedLesson.day_index = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
         // dersin bırakıldığı saat örn. 08.00-08.50
         let time = this.table.rows[droppedRowIndex].cells[0].innerText;
         this.draggedLesson.time = time;
@@ -522,7 +559,11 @@ class ScheduleCard {
             let {classroom, hours} = await this.selectClassroomAndHours();
             try {
                 await this.checkCrash(hours);
-                console.log("Çakışma yok, ders eklenebilir.");
+                let saveScheduleToast = new Toast();
+                saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
+
+                let saveScheduleResult = await this.saveSchedule(hours, classroom);
+
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
@@ -530,13 +571,13 @@ class ScheduleCard {
             let {hours} = await this.selectHours();
             try {
                 await this.checkCrash(hours);
-                console.log("Çakışma yok, ders eklenebilir.");
-                new Toast().prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
+                let saveScheduleToast = new Toast();
+                saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
+                let saveScheduleResult = await this.saveSchedule(hours);
+
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
-
-
         }
 
         this.resetDraggedLesson();
