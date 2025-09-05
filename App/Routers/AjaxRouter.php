@@ -569,146 +569,94 @@ class AjaxRouter extends Router
      */
     public function saveScheduleAction(): void
     {
-        if (!key_exists("lesson_hours", $this->data) or !key_exists("time_start", $this->data)) {
-            throw new Exception("Ders saati yada program saati yok");
-        }
-        if (!key_exists("semester", $this->data)) {
-            $this->data['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $this->data)) {
-            $this->data['academic_year'] = getSettingValue("academic_year");
-        }
-        $filters = [
-            "type" => "lesson",// Programın türü lesson yada exam todo datadan al
-            "time_start" => $this->data['time_start'],
-            "day" => "day" . $this->data['day_index'],
-            "lesson_hours" => $this->data['lesson_hours'],
-            "semester_no" => trim($this->data['semester_no']),
-            "semester" => $this->data['semester'],
-            "academic_year" => $this->data['academic_year'],
-        ];
         $scheduleController = new ScheduleController();
-        if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $lecturer = $lesson->getLecturer();
-            $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
-            // bağlı dersleri alıyoruz
-            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-            //bağlı dersler listesine ana dersi ekliyoruz
-            array_unshift($lessons, $lesson);
 
-            $isCrashed = false;
+        $filters = $scheduleController->checkFilters($this->data, "saveSchedule");
+
+        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->getLecturer();
+        $classroom = (new Classroom())->find($this->data['classroom_id']);
+        // bağlı dersleri alıyoruz
+        $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+        //bağlı dersler listesine ana dersi ekliyoruz
+        array_unshift($lessons, $lesson);
+
+        $scheduleController->checkScheduleCrash($filters);
+
+        /**
+         * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
+         *
+         */
+        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time'], $this->data['lesson_hours']);
+        /*
+         * her bir saat için ayrı ekleme yapılacak
+         */
+        foreach ($timeArray as $time) {
+            if (count($lessons) > 1) {
+                if (!isAuthorized('submanager')) {
+                    throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
+                }
+            }
             foreach ($lessons as $child) {
-                /*
-                * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
-                */
-                $crashFilters = array_merge($filters, [
+                /**
+                 * @var Lesson $child
+                 */
+                $scheduleFilters = array_merge($filters, [
                     //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                     "owners" => [
                         "program" => $child->program_id,
-                        "user" => $lecturer->id,
                         "lesson" => $child->id
-                    ],//sıralama yetki kontrolü için önemli
+                    ],//sıralama yetki kontrolü için önemli);
                 ]);
                 /**
-                 * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+                 * Uzem Sınıfı değilse ve asıl ders ise çakışma kontrolüne dersliği de ekle
                  * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
                  */
-                if (!is_null($classroom) and $classroom->type != 3) {
-                    $crashFilters['owners']['classroom'] = $classroom->id;
+                if ($classroom->type != 3 and is_null($child->parent_lesson_id)) {
+                    $scheduleFilters['owners']['classroom'] = $classroom->id;
                 }
-
-                if ($scheduleController->checkScheduleCrash($crashFilters)) {
-                    $isCrashed = true;
-                } else {
-                    $isCrashed = false;
-                    break;
-                }
-            }
-
-            if ($isCrashed) {// çakışma yok ise
+                //sadece asıl dersin bilgisi kullanıcıya eklenecek
+                $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
                 /**
-                 * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
-                 *
+                 * veri tabanına eklenecek gün verisi
                  */
-                $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time_start'], $this->data['lesson_hours']);
-                /*
-                 * her bir saat için ayrı ekleme yapılacak
-                 */
-                foreach ($timeArray as $time) {
-                    if (count($lessons) > 1) {
-                        if (!isAuthorized('submanager')) {
-                            throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
-                        }
-                    }
-                    foreach ($lessons as $child) {
-                        /**
-                         * @var Lesson $child
-                         */
-                        $scheduleFilters = array_merge($filters, [
-                            //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                            "owners" => [
-                                "program" => $child->program_id,
-                                "lesson" => $child->id
-                            ],//sıralama yetki kontrolü için önemli);
-                        ]);
-                        /**
-                         * Uzem Sınıfı değilse ve asıl ders ise çakışma kontrolüne dersliği de ekle
-                         * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-                         */
-                        if ($classroom->type != 3 and is_null($child->parent_lesson_id)) {
-                            $scheduleFilters['owners']['classroom'] = $classroom->id;
-                        }
-                        //sadece asıl dersin bilgisi kullanıcıya eklenecek
-                        $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
-                        /**
-                         * veri tabanına eklenecek gün verisi
-                         */
-                        $day = [
-                            "lesson_id" => $child->id,
-                            "classroom_id" => $classroom->id,
-                            "lecturer_id" => $lecturer->id,
-                        ];
-                        if (!$child->IsScheduleComplete()) {
-                            $schedule = new Schedule();
-                            /*
-                             * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
-                             * Bu değerler için döngü oluşturuluyor
-                             */
-                            foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
-                                if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
-                                $schedule->fill([
-                                    "type" => "lesson",//todo datadan al
-                                    "owner_type" => $owner_type,
-                                    "owner_id" => $owner_id,
-                                    "day" . $this->data['day_index'] => $day,
-                                    "time" => $time,
-                                    "semester_no" => trim($this->data['semester_no']),
-                                    "semester" => $this->data['semester'],
-                                    "academic_year" => $this->data['academic_year'],
-                                ]);
-                                $savedId = $scheduleController->saveNew($schedule);
-                                if ($savedId == 0) {
-                                    throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
-                                } else
-                                    $this->response[$owner_type . "_result"] = $savedId;
-                            }
-                        } else {
-                            throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
-                        }
-                    }
-                }
-
-                $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
-            } else {
-                $this->response = [
-                    "msg" => "Programda Çakışma var",
-                    "status" => "error"
+                $day = [
+                    "lesson_id" => $child->id,
+                    "classroom_id" => $classroom->id,
+                    "lecturer_id" => $lecturer->id,
                 ];
+                if (!$child->IsScheduleComplete()) {
+                    $schedule = new Schedule();
+                    /*
+                     * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
+                     * Bu değerler için döngü oluşturuluyor
+                     */
+                    foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
+                        if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
+                        $schedule->fill([
+                            "type" => "lesson",//todo datadan al
+                            "owner_type" => $owner_type,
+                            "owner_id" => $owner_id,
+                            "day" . $filters['day_index'] => $day,
+                            "time" => $time,
+                            "semester_no" => trim($child->semester_no),
+                            "semester" => $filters['semester'],
+                            "academic_year" => $filters['academic_year'],
+                        ]);
+                        $savedId = $scheduleController->saveNew($schedule);
+                        if ($savedId == 0) {
+                            throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
+                        } else
+                            $this->response[$owner_type . "_result"] = $savedId;
+                    }
+                } else {
+                    throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
+                }
             }
-        } else {
-            throw new Exception("Kaydedilecek ders id numarası yok ");
         }
+
+        $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
+
         $this->sendResponse();
     }
 
