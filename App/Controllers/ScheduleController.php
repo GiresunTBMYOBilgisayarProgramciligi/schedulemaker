@@ -27,7 +27,7 @@ class ScheduleController extends Controller
      */
     private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -55,7 +55,7 @@ class ScheduleController extends Controller
         $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
-        for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {
+        for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
             $headerRow[] = $days[$i]; // Gün adı
             $headerRow[] = 'S';       // Sütun başlığı (Senin tablodaki "S")
         }
@@ -80,7 +80,7 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * Boş tablo oluşturmak için tablo satır verileri
@@ -207,10 +207,10 @@ class ScheduleController extends Controller
      */
     public function createScheduleHTMLTable(array $filters = []): string
     {
-        $createTableHeaders = function(): string {
+        $createTableHeaders = function (): string {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = '<th style="width: 7%;">#</th>';
-            for ($i = 0; $i <= getSettingValue('maxDayIndex',default: 4); $i++) {
+            for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
                 $headers .= '<th>' . $days[$i] . '</th>';
             }
             return $headers;
@@ -231,9 +231,9 @@ class ScheduleController extends Controller
             '
             <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
                                 <thead>
-                                <tr>'.
-                                    $createTableHeaders()
-                                .'</tr>
+                                <tr>' .
+            $createTableHeaders()
+            . '</tr>
                                 </thead>
                                 <tbody>';
         $times = array_keys($scheduleRows);
@@ -270,7 +270,7 @@ class ScheduleController extends Controller
                             /**
                              * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
                              */
-                            $lessonName = in_array($filters['owner_type'], ['user','classroom']) ? $lesson->name . ' ('.$lesson->getProgram()->name.')' : $lesson->name;
+                            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
                             $out .= '
                             <div 
                             id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
@@ -324,7 +324,7 @@ class ScheduleController extends Controller
                         /**
                          * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
                          */
-                        $lessonName = in_array($filters['owner_type'], ['user','classroom']) ? $lesson->name . ' ('.$lesson->getProgram()->name.')' : $lesson->name;
+                        $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
                         $out .= '
                         <td class="drop-zone">
                             <div 
@@ -344,7 +344,7 @@ class ScheduleController extends Controller
                                         <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
                                             <i class="bi bi-book"></i>
                                         </a> 
-                                        ' . $lessonName. '
+                                        ' . $lessonName . '
                                             
                                     </div>
                                     <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '">
@@ -527,8 +527,8 @@ class ScheduleController extends Controller
         }
         $HTMLOUT = '';
         // todo bueklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
-        if (key_exists("semester_no", $filters) and $filters['semester_no']=="birleştir") {
-            $filters['semester_no'] =['in' => getSemesterNumbers($filters['semester'])];
+        if (key_exists("semester_no", $filters) and $filters['semester_no'] == "birleştir") {
+            $filters['semester_no'] = ['in' => getSemesterNumbers($filters['semester'])];
         }
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
@@ -586,6 +586,7 @@ class ScheduleController extends Controller
      */
     public function availableClassrooms(array $filters = []): array
     {
+        //todo hoca programında derslikler geliyor ama Program programında gelmiyor
         $classroomFilters = [];
         if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
             throw new Exception("Missing hours and time");
@@ -634,77 +635,104 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Programa eklenmek isteyen ders için eklenecek tüm saatlerde çakışma kontrolü yapar
      * @param array $filters
      * @return bool
      * @throws Exception
-     * //todo hem back-end hem de front-end de kullanılıyor gereksiz kaynak tüketimi
      */
     public function checkScheduleCrash(array $filters = []): bool
     {
-        $times = $this->generateTimesArrayFromText($filters["time_start"], $filters["lesson_hours"]);
-        if (array_key_exists('owners', $filters)) {
-            foreach ($filters["owners"] as $owner_type => $owner_id) {
-                $ownerFilter = [
-                    "time" => ['in' => $times],
-                    "owner_type" => $owner_type,
-                    "owner_id" => $owner_id,
-                    "type" => $filters['type'],
-                    "semester" => $filters['semester'],
-                    "academic_year" => $filters['academic_year'],
-                ];
-                if ($owner_type == "program") {
-                    // sadece program için dönem numarası ekleniyor. Diğerlerinde diğer dönemlerle de çakışma kontrol edilmeli
-                    $ownerFilter["semester_no"] = $filters["semester_no"];
-                }
-                $schedules = (new Schedule())->get()->where($ownerFilter)->all();
-                foreach ($schedules as $schedule) {
-                    if ($schedule->{$filters["day"]}) {// belirtilen gün bilgisi null yada false değilse
-                        if (is_array($schedule->{$filters["day"]})) {
-                            if ($owner_type == "user") {
-                                //eğer hocanın o saatte dersi varsa program eklenemez
-                                throw new Exception("Hoca Programı uygun değil");
+        $filters = $this->checkFilters($filters, "checkScheduleCrash");
+        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->getLecturer();
+        $classroom = (new Classroom())->find($filters['classroom_id']);
+        // bağlı dersleri alıyoruz
+        $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+        //bağlı dersler listesine ana dersi ekliyoruz
+        array_unshift($lessons, $lesson);
+
+        foreach ($lessons as $child) {
+            /*
+            * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+            */
+            $filters = array_merge($filters, [
+                //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
+                "owners" => [
+                    "program" => $child->program_id,
+                    "user" => $lecturer->id,
+                    "lesson" => $child->id
+                ],//sıralama yetki kontrolü için önemli
+            ]);
+            /**
+             * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
+             * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
+             */
+            if (!is_null($classroom) and $classroom->type != 3) {
+                $filters['owners']['classroom'] = $classroom->id;
+            }
+        }
+
+        $times = $this->generateTimesArrayFromText($filters["time"], $filters["lesson_hours"]);
+
+        foreach ($filters["owners"] as $owner_type => $owner_id) {
+            $ownerFilter = [
+                "time" => ['in' => $times],
+                "owner_type" => $owner_type,
+                "owner_id" => $owner_id,
+                "type" => $filters['type'],
+                "semester" => $filters['semester'],
+                "academic_year" => $filters['academic_year'],
+            ];
+            if ($owner_type == "program") {
+                // sadece program için dönem numarası ekleniyor. Diğerlerinde diğer dönemlerle de çakışma kontrol edilmeli
+                $ownerFilter["semester_no"] = $lesson->semester_no;
+            }
+            $schedules = (new Schedule())->get()->where($ownerFilter)->all();
+            foreach ($schedules as $schedule) {
+                if ($schedule->{"day" . $filters["day_index"]}) {// belirtilen gün bilgisi null yada false değilse
+                    if (is_array($schedule->{"day" . $filters["day_index"]})) {
+                        if ($owner_type == "user") {
+                            //eğer hocanın o saatte dersi varsa program eklenemez
+                            throw new Exception("Hoca Programı uygun değil");
+                        }
+                        // belirtilen gün içerisinde bir veri varsa
+                        /**
+                         * var olan ders
+                         * @var Lesson $lesson
+                         */
+                        $lesson = (new Lesson())->find($schedule->{"day" . $filters["day_index"]}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
+                        /**
+                         * yeni eklenmek istenen ders
+                         * @var Lesson $newLesson
+                         */
+                        $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
+                        /*
+                         * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
+                         */
+                        if (preg_match('/\.\d+$/', $lesson->code) !== 1) {
+                            //var olan ders gruplı değil
+                            throw new Exception($lesson->name . "(" . $lesson->code . ") dersi ile çakışıyor");
+                        } else {
+                            // var olan ders gruplu
+                            if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
+                                // yeni eklenecek olan ders gruplu değil
+                                throw new Exception($lesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
                             }
-                            // belirtilen gün içerisinde bir veri varsa
-                            /**
-                             * var olan ders
-                             * @var Lesson $lesson
-                             */
-                            $lesson = (new Lesson())->find($schedule->{$filters["day"]}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
-                            /**
-                             * yeni eklenmek istenen ders
-                             * @var Lesson $newLesson
-                             */
-                            $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
-                            /*
-                             * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
-                             */
-                            if (preg_match('/\.\d+$/', $lesson->code) !== 1) {
-                                //var olan ders gruplı değil
-                                throw new Exception($lesson->name . "(" . $lesson->code . ") dersi ile çakışıyor");
-                            } else {
-                                // var olan ders gruplu
-                                if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
-                                    // yeni eklenecek olan ders gruplu değil
-                                    throw new Exception($lesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
-                                }
-                                //diğer durumda ekenecek olan ders de gruplu
-                                // grup uygunluğu kontrolü javascript ile yapılıyor
-                            }
-                            $classroom = (new Classroom())->find($schedule->{$filters["day"]}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
-                            if (isset($filters['owners']['classroom'])) {
-                                $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
-                                if ($classroom->name == $newClassroom->name) {
-                                    throw new Exception("Derslikler çakışıyor");
-                                }
+                            //diğer durumda ekenecek olan ders de gruplu
+                            // grup uygunluğu kontrolü javascript ile yapılıyor
+                        }
+                        $classroom = (new Classroom())->find($schedule->{"day" . $filters["day_index"]}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
+                        if (isset($filters['owners']['classroom'])) {
+                            $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
+                            if ($classroom->name == $newClassroom->name) {
+                                throw new Exception("Derslikler çakışıyor");
                             }
                         }
                     }
                 }
             }
-
-        } else {
-            throw new Exception("Owners bilgileri girilmemiş");
         }
+
         return true;
     }
 
@@ -1002,11 +1030,13 @@ class ScheduleController extends Controller
      * todo
      * kullanılacağı alana göre filtrede olması gereken alanları kontrol edip fazlalıkları silip eksiklerde hata verir
      * todo semester ve semester no bilgisinin gelip gelmediği birleştirilip birleştirilmeyeceği burada ayarlanmalı.
-     * @param array $filters
+     * @param array $data
      * @param  $for string Filtrenin neresi için kullanılacağını belirtir
+     * @param bool $acceptNull
      * @return array
+     * @throws Exception
      */
-    public function checkFilters(array $filters, string $for): array
+    public function checkFilters(array $data, string $for, bool $acceptNull = false): array
     {
         /**
          * Ders programı için filtreleme seçeneklerini içeren dizi.
@@ -1021,9 +1051,11 @@ class ScheduleController extends Controller
          *     time: string|string[], // Dersin zaman bilgisi (örneğin: "10.00 - 10.50")
          *     day_index: int, // Haftanın günü (0 = Pazar, 1 = Pazartesi, ...)
          *     day: array{lesson_id: int, lecturer_id: int, classroom_id: int}, // Gün bilgisi içeren dizi
-         *     time_start: string, // Dersin başlangıç saati (örn: "10:00")
+         *     time: string, // Dersin başlangıç saati (örn: "10:00")
          *     lesson_hours: int, // Dersin kaç saat süreceği
          *     owners: string[] // Ders programının ait olduğu birim türleri listesi
+         *     lesson_id: int, // İşlem yapılacak ders id numarsı
+         *     classroom_id: int, // Dersin yapılacağı dersliğin id numarası
          * ]
          */
         $allFilters = [
@@ -1036,13 +1068,40 @@ class ScheduleController extends Controller
             "time", // string | array -> Dersin saat aralığı (10.00 - 10.50)
             "day_index", // int -> Dersin gün index numarası (0 = Pazar, 1 = Pazartesi, ...)
             "day", // array -> Gün bilgisi içeren dizi (lesson_id, lecturer_id, classroom_id)
-            "time_start", // string -> Dersin başlangıç saati (örn: 10:00)
             "lesson_hours", // int -> Dersin kaç saatlik olduğu
-            "owners" // array[string] -> Ders programının ait olduğu birim türleri listesi
+            "owners", // array[string] -> Ders programının ait olduğu birim türleri listesi
+            "lesson_id", // İşlem yapılacak ders id numarsı
+            "classroom_id", // Dersin yapılacağı dersliğin id numarası
         ];
+        $mustFilters = [
+            "saveSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
+            "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
+        ];
+
         // ilk olarak gelen filtrelerin içinde allFilters dizisinde belirtilenler dışında bir veri var mı diye kontol et
+        foreach ($data as $k => $v) {
+            if (!in_array($k, $allFilters)) throw new Exception("$for işleminde geçersiz filtre tespit edildi $k => $v");
+        }
         // akademikyıl ve dönem bilgisini kontrol et yok ise ayarlardan ekle
+        if (!key_exists("semester", $data)) {
+            $data['semester'] = getSettingValue('semester');
+        }
+        if (!key_exists("academic_year", $data)) {
+            $data['academic_year'] = getSettingValue("academic_year");
+        }
         // yapılacak işlem için zorunlu filtreleri kontrol et ve eksik durumunda hata ver.
-        return [];
+        foreach ($mustFilters[$for] as $filter) {
+            if (!key_exists($filter, $data)) throw new Exception("$for işleminde eksik filtre tespit edildi: $filter");
+        }
+        $filters = [];
+        foreach ($mustFilters[$for] as $filter) {
+            $filters[$filter] = $data[$filter] ?? null;
+        }
+        if (!$acceptNull)
+            $filters = array_filter($filters, function ($value) {
+                return $value !== null && $value !== '' && $value !== "null";
+            });
+
+        return $filters;
     }
 }
