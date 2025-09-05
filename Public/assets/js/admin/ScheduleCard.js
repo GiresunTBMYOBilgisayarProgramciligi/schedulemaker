@@ -134,6 +134,7 @@ class ScheduleCard {
         Object.keys(this.draggedLesson).forEach(key => {
             this.draggedLesson[key] = null;
         });
+        console.log("reset")
     }
 
     setDraggedLesson(lessonElement) {
@@ -157,6 +158,7 @@ class ScheduleCard {
             this.draggedLesson.start_element = "list";
         }
         this.draggedLesson.HTMLElement = lessonElement;
+        console.log("set")
     }
 
     async highlightUnavailableCells() {
@@ -251,17 +253,17 @@ class ScheduleCard {
         }
     }
 
-    async fetchAvailableClassrooms(draggedLesson, classroomSelect, event) {
+    async fetchAvailableClassrooms(classroomSelect, event) {
         console.log("Derslikler alınıyor")
         let data = new FormData();
         data.append("hours", event.target.value);
-        data.append("time", draggedLesson.time)
-        data.append("day", "day" + draggedLesson.schedule_day)
+        data.append("time", this.draggedLesson.time)
+        data.append("day", "day" + this.draggedLesson.schedule_day)
         data.append("type", "lesson")
         data.append("owner_type", "classroom")
-        data.append("semester", draggedLesson.semester)
-        data.append("academic_year", draggedLesson.academic_year);
-        data.append("lesson_id", draggedLesson.lesson_id);
+        data.append("semester", this.draggedLesson.semester)
+        data.append("academic_year", this.draggedLesson.academic_year);
+        data.append("lesson_id", this.draggedLesson.lesson_id);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""></option>`;
 
@@ -297,15 +299,15 @@ class ScheduleCard {
             });
     }
 
-    selectClassroomAndHours(draggedLesson) {
+    selectClassroomAndHours() {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
             let modalContentHTML = `
             <form>
                 <div class="form-floating mb-3">
                     <input class="form-control" id="selected_hours" type="number" 
-                           value="${draggedLesson.lesson_hours}" 
-                           min=1 max=${draggedLesson.lesson_hours}>
+                           value="${this.draggedLesson.lesson_hours}" 
+                           min=1 max=${this.draggedLesson.lesson_hours}>
                     <label for="selected_hours">Eklenecek Ders Saati</label>
                 </div>
                 <div class="mb-3">
@@ -319,7 +321,7 @@ class ScheduleCard {
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
 
-            selectedHoursInput.addEventListener("change", this.fetchAvailableClassrooms.bind(this, draggedLesson, classroomSelect));
+            selectedHoursInput.addEventListener("change", this.fetchAvailableClassrooms.bind(this, classroomSelect));
             selectedHoursInput.dispatchEvent(new Event("change"));
 
             let classroomSelectForm = scheduleModal.body.querySelector("form");
@@ -350,15 +352,15 @@ class ScheduleCard {
      * @param draggedLesson
      * @returns {Promise<unknown>}
      */
-    selectHours(draggedLesson) {
+    selectHours() {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
             let modalContentHTML = `
             <form>
                 <div class="form-floating mb-3">
                     <input class="form-control" id="selected_hours" type="number" 
-                           value="${draggedLesson.lesson_hours}" 
-                           min=1 max=${draggedLesson.lesson_hours}>
+                           value="${this.draggedLesson.lesson_hours}" 
+                           min=1 max=${this.draggedLesson.lesson_hours}>
                     <label for="selected_hours">Eklenecek Ders Saati</label>
                 </div>
             </form>`;
@@ -375,6 +377,71 @@ class ScheduleCard {
                 resolve({hours: selectedHours});
             });
         });
+    }
+
+    /**
+     * Ders programına eklenen dersin çakışma kontrolünü yapar
+     */
+    checkCrash( selectedHours) {
+        console.log("checkCrash");
+        let checkedHours = 0; //drop-zone olmayan alanlar atlanacağından Kontrol edilen saatlerin sayısını takip ediyoruz
+        let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
+        let droppedCellIndex = this.dropZone.cellIndex
+        // çakışmaları kontrol et
+        for (let i = 0; checkedHours < selectedHours; i++) {
+            //dersin bırakıldığı satırın tablo içindeki index numarası
+            let row = this.table.rows[droppedRowIndex + i];
+            if (!row) {
+                new Toast().prepareToast("Hata", "Eklelen ders saatleri programın dışına taşıyor.", "danger")
+                return;
+            }
+            let cell = row.cells[droppedCellIndex];
+            // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
+            if (!cell.classList.contains("drop-zone")) {
+                continue;
+            }
+
+            /*
+         * dersler "scheduleTable-" ile başlayan idler içerir
+         */
+            let lessons = this.dropZone.querySelectorAll('[id^=\"scheduleTable-\"]');
+            if (lessons.length !== 0) { // ders var mı ?
+                //eğer zeten iki grup eklenmişse
+                if (lessons.length > 1) { // birden fazla ders var mı ?
+                    new Toast().prepareToast("Hata", "Bu alana ders ekleyemezsiniz", "danger");
+                    return;
+                } else {
+                    let existLesson = this.dropZone.querySelector('[id^=\"scheduleTable-\"]')
+                    let existCode = existLesson.getAttribute("data-lesson-code")
+                    let currentCode = this.draggedLesson.lesson_code
+                    console.log(currentCode)
+                    let existMatch = existCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
+                    let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);// 0=> tm kod 1=> noktadan öncesi 2=>noktasan sonrası
+
+                    if (existMatch && currentMatch) {
+                        if (existMatch[1] === currentMatch[1]) {
+                            // eğer iki ders aynı ise
+                            console.log("İki ders aynı")
+                            new Toast().prepareToast("Hata", "Lütfen farklı bir ders seçin", "danger");
+                            return;
+                        }
+                        let existGroup = existMatch[2]; // Noktadan sonraki sayı
+
+                        let currentGroup = currentMatch[2]; // Noktadan sonraki sayı
+                        if (existGroup === currentGroup) {
+                            console.log("Gruplar aynı")
+                            new Toast().prepareToast("Hata", "Gruplar aynı olamaz", "danger");
+                            return;
+                        }
+                    } else {
+                        console.log("burada bir ders var ve gruplu değil, yada eklenen ders gruplu değil")
+                        new Toast().prepareToast("Hata", "Gruplu dersler, sadece gruplu ders ile aynı saate eklenebilir.", "danger");
+                        return;
+                    }
+                }
+            }
+            checkedHours++
+        }
     }
 
     dragStartHandler(event) {
@@ -435,7 +502,6 @@ class ScheduleCard {
                 break;
         }
         document.dispatchEvent(lessonDrop);
-        this.resetDraggedLesson();
     }
 
     /**
@@ -457,8 +523,7 @@ class ScheduleCard {
         //dersin bırakıldığı satırın tablo içindeki index numarası
         let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
         //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        let droppedCellIndex = this.dropZone.cellIndex;
-        this.draggedLesson.schedule_day = droppedCellIndex
+        this.draggedLesson.schedule_day = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
         // dersin bırakıldığı saat örn. 08.00-08.50
         let time = this.table.rows[droppedRowIndex].cells[0].innerText;
         this.draggedLesson.time = time;
@@ -466,22 +531,28 @@ class ScheduleCard {
             /**
              * {...değişken} yapısı değişkenin o anki değerlerin sabitlenmiş kopyasını oluşturur. Bu sayede veriler sonradan değişse de bu işlemi etkilemez.
              */
-            let {classroom, hours} = await this.selectClassroomAndHours({...this.draggedLesson});
+            let {classroom, hours} = await this.selectClassroomAndHours();
             console.log("Seçilen:", classroom, hours);
+            this.checkCrash(hours);
         } else {
             //todo derslik programı olduğu için derslik id'si doğrudan alınmalı
             console.log("Derslik Programı")
-            let {hours} = await this.selectHours({...this.draggedLesson});
+            let {hours} = await this.selectHours();
             console.log(hours)
+            this.checkCrash(hours);
         }
-
+        this.resetDraggedLesson();
     }
 
     dropTableToList() {
         console.log("TAblodan Listeye bırakıldı")
+
+        this.resetDraggedLesson();
     }
 
     dropTableToTable() {
         console.log("TAblodan tabloya bırakıldı")
+
+        this.resetDraggedLesson();
     }
 }
