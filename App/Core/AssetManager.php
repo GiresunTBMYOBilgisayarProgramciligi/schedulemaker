@@ -234,9 +234,6 @@ class AssetManager
                 [
                     'path' => '/assets/js/exportSchedule.js'
                 ],
-                [
-                    'path' => '/assets/js/classroomSchedule.js'
-                ]
             ],
             'css' => [
                 [
