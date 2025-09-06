@@ -570,7 +570,6 @@ class AjaxRouter extends Router
     public function saveScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-
         $filters = $scheduleController->checkFilters($this->data, "saveSchedule");
 
         $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
@@ -933,72 +932,46 @@ class AjaxRouter extends Router
     public function deleteScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSettingValue("semester");
-        }
-        if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSettingValue("academic_year");
-        }
+        $filters = $scheduleController->checkFilters($this->data, "deleteScheduleAction");
 
-        if (!key_exists("owner_type", $this->data)) {
+        if (!key_exists("owner_type", $filters)) {
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
-            if (key_exists("lesson_id", $this->data) and key_exists("classroom_name", $this->data)) {
-                $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-                $lecturer = (new User())->find($this->data['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");
-                $classroom = (new Classroom())->get()->where(["name" => trim($this->data['classroom_name'])])->first();
-                // bağlı dersleri alıyoruz
-                $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-                //bağlı dersler listesine ana dersi ekliyoruz
-                array_unshift($lessons, $lesson);
-                foreach ($lessons as $child) {
-                    //set Owners
-                    $owners['program'] = $child->program_id;
-                    $owners["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
-                    $owners['lesson'] = $child->id;
-                    $owners["classroom"] = $classroom->id;
-                    $day = [
-                        "lesson_id" => $child->id,
-                        "classroom_id" => $classroom->id,
-                        "lecturer_id" => $lecturer->id,
+            $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+            $lecturer = (new User())->find($filters['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");
+            $classroom = (new Classroom())->find($filters["classroom_id"]);
+            // bağlı dersleri alıyoruz
+            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
+            //bağlı dersler listesine ana dersi ekliyoruz
+            array_unshift($lessons, $lesson);
+            foreach ($lessons as $child) {
+                //set Owners
+                $owners['program'] = $child->program_id;
+                $owners["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
+                $owners['lesson'] = $child->id;
+                $owners["classroom"] = $classroom->id;
+                $day = [
+                    "lesson_id" => $child->id,
+                    "classroom_id" => $classroom->id,
+                    "lecturer_id" => $lecturer->id,
+                ];
+                foreach ($owners as $owner_type => $owner_id) {
+                    if (is_null($owner_id)) continue; // child lesson ise owner_id null olduğundan atlanacak
+                    $filters = [
+                        "owner_type" => $owner_type,
+                        "owner_id" => $owner_id,
+                        "day_index" => $filters["day_index"],
+                        "day" => $day,
+                        "type" => $filters["type"],
+                        "time" => $filters['time'],
+                        "semester_no" => $lesson->semester_no,
+                        "semester" => $filters["semester"],
+                        "academic_year" => $filters['academic_year'],
                     ];
-                    foreach ($owners as $owner_type => $owner_id) {
-                        if (is_null($owner_id)) continue; // child lesson ise owner_id null olduğundan atlanacak
-                        $filters = [
-                            "owner_type" => $owner_type,
-                            "owner_id" => $owner_id,
-                            "day_index" => $this->data['day_index'],
-                            "day" => $day,
-                            "type" => "lesson",//todo bu da istekle gelmeli sınav programı için ayrı fonksiyonlar yazmadan halledilse iyi olur
-                            "time" => $this->data['time'],
-                            "semester_no" => $this->data['semester_no'],
-                            "semester" => $this->data["semester"],
-                            "academic_year" => $this->data['academic_year'],
-                        ];
-                        $scheduleController->deleteSchedule($filters);
-                    }
+                    $scheduleController->deleteSchedule($filters);
                 }
-            } else {
-                throw new Exception("Owner_type belirtilmediğinde lesson_id ve classroom_name belirtilmelidir");
             }
         } else {// owner_type belirtilmişse sadece o type için işlem yapılacak
-            /**
-             * Burada null coalescing operatörü (??) ile eksik dizin hatalarını önlüyoruz ve sonra array_filter ile boş değerleri temizliyoruz.
-             * todo buradaki yapı tüm filtrelere uygulanabilir
-             */
-            $filters = array_filter([
-                "owner_type" => $this->data["owner_type"] ?? null,
-                "owner_id" => $this->data["owner_id"] ?? null,
-                "semester" => $this->data["semester"] ?? null,
-                "academic_year" => $this->data["academic_year"] ?? null,
-                "semester_no" => $this->data["semester_no"] ?? null,
-                "type" => $this->data["type"] ?? null,
-                "time" => $this->data["time"] ?? null,
-                "day_index" => $this->data["day_index"] ?? null,
-                "day" => $this->data["day"] ?? null,
-            ], function ($value) {
-                return $value !== null && $value !== '';
-            });
             $scheduleController->deleteSchedule($filters);
         }
         $this->sendResponse();
