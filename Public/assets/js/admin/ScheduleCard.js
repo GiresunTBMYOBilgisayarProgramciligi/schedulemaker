@@ -457,6 +457,7 @@ class ScheduleCard {
             let lesson = this.draggedLesson.HTMLElement.cloneNode(true)
             lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
             lesson.dataset['time'] = this.draggedLesson.time;
+            lesson.dataset['classroomId'] = classroom.id
             lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
@@ -524,6 +525,45 @@ class ScheduleCard {
             });
     }
 
+    async deleteSchedule(classroom_id) {
+        //todo datalar düzenlenecek
+        let data = new FormData();
+        data.append("type", this.type);
+        data.append("lesson_id", this.draggedLesson.lesson_id);
+        data.append("lecturer_id", this.draggedLesson.lecturer_id);
+        data.append("time", this.draggedLesson.time);
+        data.append("day_index", this.draggedLesson.day_index);
+        data.append("classroom_id", classroom_id);
+        data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
+        data.append("academic_year", this.academic_year);
+        data.append("semester", this.semester);
+
+        return fetch("/ajax/deleteSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    console.log("Program Silindi")
+                    console.log(data)
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program Silinirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
+
     dragStartHandler(event) {
         this.isDragging = true;
         event.dataTransfer.effectAllowed = "move";
@@ -560,10 +600,6 @@ class ScheduleCard {
 
         this.dropZone = element;
         this.draggedLesson.end_element = this.dropZone;
-        this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
-        this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
-        //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
 
         switch (this.draggedLesson.start_element) {
             case "list":
@@ -571,6 +607,11 @@ class ScheduleCard {
                     // Listeden Listeye
                     return;
                 } else {
+                    this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
+                    this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
+                    //dersin bırakıldığı sütunun satır içerisindeki index numarası
+                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+
                     // Listeden Tabloya bırakma işlemleri
                     this.dropListToTable()
                 }
@@ -580,6 +621,11 @@ class ScheduleCard {
                     //Tablodan Listeye
                     this.dropTableToList()
                 } else {
+                    this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
+                    this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
+                    //dersin bırakıldığı sütunun satır içerisindeki index numarası
+                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+
                     //Tablodan Tabloya
                     this.dropTableToTable()
                 }
@@ -640,8 +686,33 @@ class ScheduleCard {
         this.resetDraggedLesson();
     }
 
-    dropTableToList() {
+    async dropTableToList() {
         console.log("TAblodan Listeye bırakıldı")
+
+        let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
+
+        if (deleteScheduleResult) {
+            let draggedElementIdInList = "available-lesson-" + this.draggedLesson.lesson_id;
+            //listede taşınan dersin varlığını kontrol et
+            if (this.dropZone.querySelector("#" + draggedElementIdInList)) {
+                // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
+                let lessonInlist = this.dropZone.querySelector("#" + draggedElementIdInList);
+                let hoursInList = lessonInlist.querySelector("span.badge").innerText
+                lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
+                this.draggedLesson.HTMLElement.remove()
+            } else {
+                //eğer listede yoksa o ders listeye eklenir
+                this.draggedLesson.HTMLElement.id = draggedElementIdInList
+                let draggedElementFrameDiv = document.createElement("div");
+                draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
+                this.list.appendChild(draggedElementFrameDiv)
+                draggedElementFrameDiv.appendChild(this.draggedLesson.HTMLElement)
+                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = 1
+                delete this.draggedLesson.HTMLElement.dataset.time
+                delete this.draggedLesson.HTMLElement.dataset.dayIndex
+                delete this.draggedLesson.HTMLElement.dataset.classroomId
+            }
+        }
 
         this.resetDraggedLesson();
     }
