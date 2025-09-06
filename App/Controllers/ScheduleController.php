@@ -278,7 +278,7 @@ class ScheduleController extends Controller
                             class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
                             data-time="' . $times[$i] . '"
-                            data-schedule-day="' . $dayIndex . '"
+                            data-day-index="' . $dayIndex . '"
                             ' . $semester . '
                             ' . $popover . '
                             data-academic-year="' . $lesson->academic_year . '"
@@ -333,7 +333,7 @@ class ScheduleController extends Controller
                             class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
                             data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
                             data-time="' . $times[$i] . '"
-                            data-schedule-day="' . $dayIndex . '"
+                            data-day-index="' . $dayIndex . '"
                             ' . $semester . '
                             ' . $popover . '
                             data-academic-year="' . $lesson->academic_year . '"
