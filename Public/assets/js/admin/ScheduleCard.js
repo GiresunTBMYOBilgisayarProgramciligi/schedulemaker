@@ -328,11 +328,12 @@ class ScheduleCard {
 
             classroomSelectForm.addEventListener("submit", function (event) {
                 event.preventDefault();
-
-                let selectedClassroom = classroomSelect.value;
+                // mevcut silinerek sadece derslik adı alınıyor
+                let classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
+                let selectedClassroom = {'id': classroomSelect.value, 'name': classroom_name};
                 let selectedHours = selectedHoursInput.value;
 
-                if (selectedClassroom === "") {
+                if (classroomSelect.value === "") {
                     new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                     return;
                 }
@@ -436,14 +437,14 @@ class ScheduleCard {
         });
     }
 
-    async saveSchedule(hours, classroom_id = null) {
+    async saveSchedule(hours, classroom = null) {
         let data = new FormData();
         data.append("type", this.type);
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("time", this.draggedLesson.time);
         data.append("lesson_hours", hours);
         data.append("day_index", this.draggedLesson.day_index);
-        data.append("classroom_id", classroom_id ?? this.owner_id.toString());
+        data.append("classroom_id", classroom.id ?? this.owner_id.toString());
         data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
         data.append("academic_year", this.academic_year);
         data.append("semester", this.semester);
@@ -563,8 +564,54 @@ class ScheduleCard {
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
 
                 let saveScheduleResult = await this.saveSchedule(hours, classroom);
+                if (saveScheduleResult) {
+                    saveScheduleToast.closeToast()
+                    //todo add yada append lesson to table gibi bir metod yazıp hem burada hem derslik kızmında kullanmak lazım yoksa çok tekrar olur gibi
+                    /**
+                     * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
+                     */
+                    let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
+                    for (let i = 0; addedHours < hours; i++) {
+                        let row = this.table.rows[droppedRowIndex + i];
+                        let cell = row.cells[this.dropZone.cellIndex];
+                        // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
+                        if (!cell.classList.contains("drop-zone")) {
+                            continue;
+                        }
+                        let lesson = this.draggedLesson.HTMLElement.cloneNode(true)
+                        lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
+                        lesson.dataset['time'] = this.draggedLesson.time;
+                        lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
+                                                                                <i class="bi bi-door-open"></i>${classroom.name}
+                                                                             </a>`;
+                        cell.appendChild(lesson);
 
+                        //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
+                        lesson.id = lesson.id.replace("available", "scheduleTable")
+                        let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
+                        lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
+                        //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
+                        lesson.addEventListener('dragstart', this.dragStartHandler);
+                        //ders kodu tooltip'i aktif ediliyor
+                        let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('.lesson-title'))
+                        addedHours++;
+                    }
+                    /*
+                        Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
+                    */
+                    if (this.draggedLesson.lesson_hours !== hours) {
+                        this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = this.draggedLesson.lesson_hours - hours;
+                    } else {
+                        //saatlerin tamamı bittiyse listeden sil
+                        this.draggedLesson.HTMLElement.remove();
+                        draggedElementFrameDiv.remove();
+                    }
+                } else {
+                    saveScheduleToast.closeToast();
+                    new Toast().prepareToast("Çakışma", "Ders programında çakışma var!", "danger");
+                }
             } catch (errorMessage) {
+                console.error(errorMessage)
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
         } else {
@@ -574,7 +621,9 @@ class ScheduleCard {
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
                 let saveScheduleResult = await this.saveSchedule(hours);
-
+                if (saveScheduleResult) {
+                    saveScheduleToast.closeToast()
+                }
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
