@@ -415,6 +415,10 @@ class ScheduleController extends Controller
             $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
             $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
+            /**
+             * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
+             */
+            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
             $HTMLOut .= "
                     <div class='frame col-md-4 p-0 ps-1 '>
                         <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
@@ -433,7 +437,7 @@ class ScheduleController extends Controller
                                 <a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'>
                                  <i class=\"bi bi-book\"></i>
                                 </a> 
-                                $lesson->name ($lesson->size)
+                                $lessonName ($lesson->size)
                               </div>
                               <div class=\"text-nowrap lecturer-title\" id=\"lecturer-$lesson->lecturer_id\">
                                 <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\">
@@ -870,19 +874,10 @@ class ScheduleController extends Controller
      * @param $filters array silinecek programın veri tabanında bulunması için gerekli veriler.
      * @return void
      * @throws Exception
-     * Gerekli veriler
-     * - owner_type
-     * - owner_id
-     * - day_index
-     * - day
-     * - type
-     * - time
-     * - semester_no
-     * - semester
-     * - academic_year
      */
     public function deleteSchedule($filters): void
     {
+        //todo checkFilter kullanarak düzenle
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
@@ -1081,9 +1076,12 @@ class ScheduleController extends Controller
             "owners", // array[string] -> Ders programının ait olduğu birim türleri listesi
             "lesson_id", // İşlem yapılacak ders id numarsı
             "classroom_id", // Dersin yapılacağı dersliğin id numarası
+            "lecturer_id", // Ders programının hoca id numarası
         ];
         $mustFilters = [
             "saveSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
+            "deleteScheduleAction" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id"],
+            "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id", "owner_type", "owner_id", "day"],
             "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
         ];
 
@@ -1100,7 +1098,7 @@ class ScheduleController extends Controller
         }
         // yapılacak işlem için zorunlu filtreleri kontrol et ve eksik durumunda hata ver.
         foreach ($mustFilters[$for] as $filter) {
-            if (!key_exists($filter, $data)) throw new Exception("$for işleminde eksik filtre tespit edildi: $filter");
+            if (!key_exists($filter, $data)) throw new Exception("$for işleminde eksik filtre tespit edildi:" . var_export($filter, true));
         }
         $filters = [];
         foreach ($mustFilters[$for] as $filter) {
