@@ -69,7 +69,9 @@ class ScheduleCard {
             'academic_year': null,
             'classroom_id': null,
             'HTMLElement': null,
-            'lesson_hours': null
+            'lesson_hours': null,
+            'dropped_row_index': null,
+            'dropped_cell_index': null
         };
         /**
          * Ders sürükleme işleminin devam edip etmediği bilgisini tutar
@@ -82,6 +84,12 @@ class ScheduleCard {
          */
         this.dropZone = null;
         this.removeLessonDropZone = null;
+        /**
+         * Ders Programının Sahibinin adı
+         * Daha çok derslik programında işe yarıyor.
+         * @type {string}
+         */
+        this.owner_name = null;
 
         if (scheduleCardElement) {
             this.initialize(scheduleCardElement)
@@ -99,13 +107,7 @@ class ScheduleCard {
         this.type = this.card.dataset.type ?? null;
         this.list = this.card.querySelector(".available-schedule-items");
         this.table = this.card.querySelector("table");
-        this.academic_year = this.card.dataset.academicYear ?? null;
-        this.semester = this.card.dataset.semester ?? null;
-        this.semester_no = parseInt(this.card.dataset.semesterNo);
-        this.owner_type = this.card.dataset.ownerType;
-        this.owner_id = parseInt(this.card.dataset.ownerId);
-
-
+        this.getDataSetValue(this, this.card);
         // draggable="true" olan tüm elementleri seç
         const dragableElements = this.card.querySelectorAll('[draggable="true"]');
         //drop-zone sınıfına sahip tüm elementler
@@ -136,21 +138,25 @@ class ScheduleCard {
         });
     }
 
-    setDraggedLesson(lessonElement) {
+    getDataSetValue(object, dataSetObject) {
         function toSnakeCase(str) {
             return str.replace(/[A-Z]/g, letter => "_" + letter.toLowerCase());
         }
 
-        this.resetDraggedLesson();
-
-        Object.keys(this.draggedLesson).forEach(key => {
+        Object.keys(object).forEach(key => {
             // dataset keylerini snake_case'e çevir
-            for (let dataKey in lessonElement.dataset) {
+            for (let dataKey in dataSetObject.dataset) {
                 if (toSnakeCase(dataKey) === key) {
-                    this.draggedLesson[key] = lessonElement.dataset[dataKey];
+                    object[key] = dataSetObject.dataset[dataKey];
                 }
             }
         });
+    }
+
+    setDraggedLesson(lessonElement) {
+        this.resetDraggedLesson();
+
+        this.getDataSetValue(this.draggedLesson, lessonElement);
         if (event.target.closest("table")) {
             this.draggedLesson.start_element = "table";
         } else if (event.target.closest(".available-schedule-items")) {
@@ -382,17 +388,15 @@ class ScheduleCard {
     checkCrash(selectedHours) {
         return new Promise((resolve, reject) => {
             let checkedHours = 0;
-            let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
-            let droppedCellIndex = this.dropZone.cellIndex;
 
             for (let i = 0; checkedHours < selectedHours; i++) {
-                let row = this.table.rows[droppedRowIndex + i];
+                let row = this.table.rows[this.draggedLesson.dropped_row_index + i];
                 if (!row) {
                     reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
                 }
 
-                let cell = row.cells[droppedCellIndex];
+                let cell = row.cells[this.draggedLesson.dropped_cell_index];
                 if (!cell.classList.contains("drop-zone")) {
                     continue; // öğle arası gibi drop-zone olmayan hücreleri atla
                 }
@@ -437,14 +441,61 @@ class ScheduleCard {
         });
     }
 
-    async saveSchedule(hours, classroom = null) {
+    moveLessonListToTable(classroom, hours) {
+        //todo hoca ve derslik programında bölüm adı eklemesi yapılmalı.
+        /**
+         * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
+         */
+        let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
+        for (let i = 0; addedHours < hours; i++) {
+            let row = this.table.rows[this.draggedLesson.dropped_row_index + i];
+            let cell = row.cells[this.draggedLesson.dropped_cell_index];
+            // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
+            if (!cell.classList.contains("drop-zone")) {
+                continue;
+            }
+            let lesson = this.draggedLesson.HTMLElement.cloneNode(true)
+            lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
+            lesson.dataset['time'] = this.draggedLesson.time;
+            lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
+                                                                                <i class="bi bi-door-open"></i>${classroom.name}
+                                                                             </a>`;
+            cell.appendChild(lesson);
+
+            //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
+            lesson.id = lesson.id.replace("available", "scheduleTable")
+            let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
+            lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
+            //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
+            lesson.addEventListener('dragstart', this.dragStartHandler);
+            //ders kodu tooltip'i aktif ediliyor
+            let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('.lesson-title'))
+            addedHours++;
+        }
+        /*
+            Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
+        */
+        if (this.draggedLesson.lesson_hours !== hours) {
+            this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = (this.draggedLesson.lesson_hours - hours).toString();
+        } else {
+            /**
+             * Liste içerisinde her ders bir frame içerisinde bulunuyor.
+             */
+            this.draggedLesson.HTMLElement.closest("div.frame").remove();
+            //saatlerin tamamı bittiyse listeden sil
+            this.draggedLesson.HTMLElement.remove();
+
+        }
+    }
+
+    async saveSchedule(hours, classroom) {
         let data = new FormData();
         data.append("type", this.type);
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("time", this.draggedLesson.time);
         data.append("lesson_hours", hours);
         data.append("day_index", this.draggedLesson.day_index);
-        data.append("classroom_id", classroom.id ?? this.owner_id.toString());
+        data.append("classroom_id", classroom.id);
         data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
         data.append("academic_year", this.academic_year);
         data.append("semester", this.semester);
@@ -462,8 +513,7 @@ class ScheduleCard {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
-                    console.log('Program Kaydedildi')
-                    console.log(data)
+                    new Toast().prepareToast("Başarılı", "Program Kaydedildi.", "success")
                     return true;
                 }
             })
@@ -510,6 +560,10 @@ class ScheduleCard {
 
         this.dropZone = element;
         this.draggedLesson.end_element = this.dropZone;
+        this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
+        this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
+        //dersin bırakıldığı sütunun satır içerisindeki index numarası
+        this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
 
         switch (this.draggedLesson.start_element) {
             case "list":
@@ -544,18 +598,8 @@ class ScheduleCard {
     }
 
     async dropListToTable() {
-        /**
-         * Liste içerisinde her ders bir frame içerisinde bulunuyor.
-         */
-        const draggedElementFrameDiv = this.draggedLesson.HTMLElement.closest("div.frame");
-
-        //dersin bırakıldığı satırın tablo içindeki index numarası
-        let droppedRowIndex = this.dropZone.closest("tr").rowIndex;
-        //dersin bırakıldığı sütunun satır içerisindeki index numarası
-        this.draggedLesson.day_index = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
         // dersin bırakıldığı saat örn. 08.00-08.50
-        let time = this.table.rows[droppedRowIndex].cells[0].innerText;
-        this.draggedLesson.time = time;
+        this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
         if (this.owner_type !== 'classroom') {
             let {classroom, hours} = await this.selectClassroomAndHours();
             try {
@@ -566,46 +610,7 @@ class ScheduleCard {
                 let saveScheduleResult = await this.saveSchedule(hours, classroom);
                 if (saveScheduleResult) {
                     saveScheduleToast.closeToast()
-                    //todo add yada append lesson to table gibi bir metod yazıp hem burada hem derslik kızmında kullanmak lazım yoksa çok tekrar olur gibi
-                    /**
-                     * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
-                     */
-                    let addedHours = 0; // drop-zone olmayan alanlar atlanacağından eklenen saatlerin sayısını takip ediyoruz
-                    for (let i = 0; addedHours < hours; i++) {
-                        let row = this.table.rows[droppedRowIndex + i];
-                        let cell = row.cells[this.dropZone.cellIndex];
-                        // Eğer hücre "drop-zone" sınıfına sahip değilse döngüyü atla öğle arası atlanıyor
-                        if (!cell.classList.contains("drop-zone")) {
-                            continue;
-                        }
-                        let lesson = this.draggedLesson.HTMLElement.cloneNode(true)
-                        lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
-                        lesson.dataset['time'] = this.draggedLesson.time;
-                        lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
-                                                                                <i class="bi bi-door-open"></i>${classroom.name}
-                                                                             </a>`;
-                        cell.appendChild(lesson);
-
-                        //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
-                        lesson.id = lesson.id.replace("available", "scheduleTable")
-                        let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
-                        lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
-                        //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
-                        lesson.addEventListener('dragstart', this.dragStartHandler);
-                        //ders kodu tooltip'i aktif ediliyor
-                        let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('.lesson-title'))
-                        addedHours++;
-                    }
-                    /*
-                        Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
-                    */
-                    if (this.draggedLesson.lesson_hours !== hours) {
-                        this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = this.draggedLesson.lesson_hours - hours;
-                    } else {
-                        //saatlerin tamamı bittiyse listeden sil
-                        this.draggedLesson.HTMLElement.remove();
-                        draggedElementFrameDiv.remove();
-                    }
+                    this.moveLessonListToTable(classroom, hours);
                 } else {
                     saveScheduleToast.closeToast();
                     new Toast().prepareToast("Çakışma", "Ders programında çakışma var!", "danger");
@@ -615,17 +620,20 @@ class ScheduleCard {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
         } else {
-            let {hours} = await this.selectHours();
             try {
+                let {hours} = await this.selectHours();
+                let classroom = {'id': this.owner_id, 'name': this.owner_name}
                 await this.checkCrash(hours);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
-                let saveScheduleResult = await this.saveSchedule(hours);
+                let saveScheduleResult = await this.saveSchedule(hours, classroom);
                 if (saveScheduleResult) {
                     saveScheduleToast.closeToast()
+                    this.moveLessonListToTable(classroom, hours);
                 }
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
+                console.error(errorMessage);
             }
         }
 
