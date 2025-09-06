@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Classroom;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\User;
 use Exception;
@@ -457,6 +458,13 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
+        $ownerName = match ($filters['owner_type']) {
+            'user' => (new User())->find($filters['owner_id'])->getFullName(),
+            'program' => (new Program())->find($filters['owner_id'])->name,
+            'classroom' => (new Classroom())->find($filters['owner_id'])->name,
+            'lesson' => (new Lesson())->find($filters['owner_id'])->getFullName(),
+            default => ""
+        };
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
         $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
@@ -472,6 +480,7 @@ class ScheduleController extends Controller
                         data-academic-year="' . $filters['academic_year'] . '"
                         data-semester="' . $filters['semester'] . '"
                         ' . $dataSemesterNo . '
+                        data-owner-name="' . $ownerName . '"
                         >
                             <div class="card-header">
                                 <h3 class="card-title">' . $cardTitle . '</h3>
