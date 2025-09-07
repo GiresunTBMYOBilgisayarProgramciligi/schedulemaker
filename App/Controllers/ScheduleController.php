@@ -437,7 +437,7 @@ class ScheduleController extends Controller
                                 <a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'>
                                  <i class=\"bi bi-book\"></i>
                                 </a> 
-                                $lessonName ($lesson->size)
+                                $lessonName
                               </div>
                               <div class=\"text-nowrap lecturer-title\" id=\"lecturer-$lesson->lecturer_id\">
                                 <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\">
