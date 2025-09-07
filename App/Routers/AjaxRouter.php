@@ -933,7 +933,6 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         $filters = $scheduleController->checkFilters($this->data, "deleteScheduleAction");
-
         if (!key_exists("owner_type", $filters)) {
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
@@ -957,7 +956,7 @@ class AjaxRouter extends Router
                 ];
                 foreach ($owners as $owner_type => $owner_id) {
                     if (is_null($owner_id)) continue; // child lesson ise owner_id null olduğundan atlanacak
-                    $filters = [
+                    $deleteFilters = [
                         "owner_type" => $owner_type,
                         "owner_id" => $owner_id,
                         "day_index" => $filters["day_index"],
@@ -968,11 +967,12 @@ class AjaxRouter extends Router
                         "semester" => $filters["semester"],
                         "academic_year" => $filters['academic_year'],
                     ];
-                    $scheduleController->deleteSchedule($filters);
+                    $this->response["deleteResult"][$deleteFilters['owner_type']] = $scheduleController->deleteSchedule($deleteFilters);
+
                 }
             }
         } else {// owner_type belirtilmişse sadece o type için işlem yapılacak
-            $scheduleController->deleteSchedule($filters);
+            $this->response["deleteResult"] = $scheduleController->deleteSchedule($filters);
         }
         $this->sendResponse();
     }
