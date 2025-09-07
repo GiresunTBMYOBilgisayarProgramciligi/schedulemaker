@@ -468,7 +468,7 @@ class ScheduleCard {
             let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
             lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
             //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
-            lesson.addEventListener('dragstart', this.dragStartHandler);
+            lesson.addEventListener('dragstart', this.dragStartHandler.bind(this));
             //ders kodu tooltip'i aktif ediliyor
             let codeTooltip = new bootstrap.Tooltip(lesson.querySelector('.lesson-title'))
             addedHours++;
@@ -699,6 +699,7 @@ class ScheduleCard {
                 let lessonInlist = this.dropZone.querySelector("#" + draggedElementIdInList);
                 let hoursInList = lessonInlist.querySelector("span.badge").innerText
                 lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
+                lessonInlist.dataset.lessonHours = (parseInt(lessonInlist.dataset.lessonHours) + 1).toString()
                 this.draggedLesson.HTMLElement.remove()
             } else {
                 //eğer listede yoksa o ders listeye eklenir
@@ -706,11 +707,14 @@ class ScheduleCard {
                 let draggedElementFrameDiv = document.createElement("div");
                 draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
                 this.list.appendChild(draggedElementFrameDiv)
-                draggedElementFrameDiv.appendChild(this.draggedLesson.HTMLElement)
                 this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = 1
                 delete this.draggedLesson.HTMLElement.dataset.time
                 delete this.draggedLesson.HTMLElement.dataset.dayIndex
                 delete this.draggedLesson.HTMLElement.dataset.classroomId
+                this.draggedLesson.HTMLElement.dataset.lessonHours = '1';
+                //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
+                this.draggedLesson.HTMLElement.addEventListener('dragstart', this.dragStartHandler.bind(this));
+                draggedElementFrameDiv.appendChild(this.draggedLesson.HTMLElement)
             }
         }
 
