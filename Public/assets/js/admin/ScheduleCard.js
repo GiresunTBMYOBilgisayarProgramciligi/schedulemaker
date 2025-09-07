@@ -442,7 +442,6 @@ class ScheduleCard {
     }
 
     moveLessonListToTable(classroom, hours) {
-        //todo hoca ve derslik programında bölüm adı eklemesi yapılmalı.
         /**
          * Eklenecek ders sayısı kadar döngü oluşturup dersleri hücerelere ekleyeceğiz
          */
@@ -514,6 +513,7 @@ class ScheduleCard {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
+                    console.info(data)
                     new Toast().prepareToast("Başarılı", "Program Kaydedildi.", "success")
                     return true;
                 }
@@ -526,7 +526,6 @@ class ScheduleCard {
     }
 
     async deleteSchedule(classroom_id) {
-        //todo datalar düzenlenecek
         let data = new FormData();
         data.append("type", this.type);
         data.append("lesson_id", this.draggedLesson.lesson_id);
@@ -552,8 +551,7 @@ class ScheduleCard {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
-                    console.log("Program Silindi")
-                    console.log(data)
+                    console.info(data)
                     return true;
                 }
             })
@@ -611,7 +609,8 @@ class ScheduleCard {
                     this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
                     //dersin bırakıldığı sütunun satır içerisindeki index numarası
                     this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
-
+                    // dersin bırakıldığı saat örn. 08.00-08.50
+                    this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
                     // Listeden Tabloya bırakma işlemleri
                     this.dropListToTable()
                 }
@@ -623,9 +622,6 @@ class ScheduleCard {
                 } else {
                     this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
                     this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
-                    //dersin bırakıldığı sütunun satır içerisindeki index numarası
-                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
-
                     //Tablodan Tabloya
                     this.dropTableToTable()
                 }
@@ -644,8 +640,6 @@ class ScheduleCard {
     }
 
     async dropListToTable() {
-        // dersin bırakıldığı saat örn. 08.00-08.50
-        this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
         if (this.owner_type !== 'classroom') {
             let {classroom, hours} = await this.selectClassroomAndHours();
             try {
@@ -687,7 +681,6 @@ class ScheduleCard {
     }
 
     async dropTableToList() {
-        console.log("TAblodan Listeye bırakıldı")
 
         let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
 
@@ -721,8 +714,28 @@ class ScheduleCard {
         this.resetDraggedLesson();
     }
 
-    dropTableToTable() {
-        console.log("TAblodan tabloya bırakıldı")
+    async dropTableToTable() {
+        let row = this.table.rows[this.draggedLesson.dropped_row_index];
+        let cell = row.cells[this.draggedLesson.dropped_cell_index];
+        try {
+            await this.checkCrash(1);
+            let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
+            if (deleteScheduleResult) {
+                this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+                // dersin bırakıldığı saat örn. 08.00-08.50
+                this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
+                let saveScheduleResult = await this.saveSchedule(1, {'id': this.draggedLesson.classroom_id});
+                if (saveScheduleResult) {
+                    //update dataset
+                    this.draggedLesson.HTMLElement.dataset.time = this.draggedLesson.time
+                    this.draggedLesson.HTMLElement.dataset.dayIndex = this.draggedLesson.day_index
+                    cell.appendChild(this.draggedLesson.HTMLElement);
+                } else console.error("Yeni ders Eklenemedi")
+            } else console.error("Eski ders Silinemedi");
+        } catch (errorMessage) {
+            console.error(errorMessage)
+            new Toast().prepareToast("Hata", errorMessage, "danger");
+        }
 
         this.resetDraggedLesson();
     }
