@@ -875,10 +875,10 @@ class ScheduleController extends Controller
      * @return void
      * @throws Exception
      */
-    public function deleteSchedule($filters): void
+    public function deleteSchedule(array $filters): void
     {
-        //todo checkFilter kullanarak düzenle
-        $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_name"]));// day ve day_index alanları çıkartılıyor
+        $filters= $this->checkFilters($filters,"deleteSchedule");
+        $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_id"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
             if ($classroom->type == 3) return; // uzaktan eğitim sınıfı ise programa kaydı yoktur
@@ -891,6 +891,7 @@ class ScheduleController extends Controller
         foreach ($schedules as $schedule) {
             /**
              * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
+             * todo semester no belirtilemeyen durumlar hangileriydi ?
              */
             if (!key_exists("semester_no", $filters)) {
                 $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -1081,7 +1082,7 @@ class ScheduleController extends Controller
         $mustFilters = [
             "saveSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
             "deleteScheduleAction" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id"],
-            "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id", "owner_type", "owner_id", "day"],
+            "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "owner_type", "owner_id", "day"],
             "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
         ];
 
