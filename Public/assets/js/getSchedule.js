@@ -12,21 +12,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const lecturerSelect = document.getElementById("lecturer_id");
     const classroomScheduleButton = document.getElementById('classroomScheduleButton')
     const classroomSelect = document.getElementById("classroom_id");
-
+    const toast = new Toast();
     if (departmentAndProgramScheduleButton) {
         departmentAndProgramScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
             data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("only_table",departmentAndProgramScheduleButton.dataset.onlyTable)
+            data.append("only_table", departmentAndProgramScheduleButton.dataset.onlyTable)
             if (programSelect.value > 0) {
                 data.append("owner_type", "program");
                 data.append("owner_id", programSelect.value);
-                spinner.showSpinner(document.getElementById("schedule_container"));
+                toast.prepareToast("Yükleniyor", "Ders Programı Yükleniyor...", "info", false)
                 await getSchedulesHTML(data);
             } else {
-                new Toast().prepareToast("Hata","Bir Program seçmelisiniz.","danger");
+                new Toast().prepareToast("Hata", "Bir Program seçmelisiniz.", "danger");
             }
         });
     }
@@ -36,15 +36,15 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no","birleştir");
-            data.append("only_table",lecturerScheduleButton.dataset.onlyTable)
+            data.append("semester_no", "birleştir");
+            data.append("only_table", lecturerScheduleButton.dataset.onlyTable)
             if (lecturerSelect.value > 0) {
                 data.append("owner_type", "user");
                 data.append("owner_id", lecturerSelect.value);
-                spinner.showSpinner(document.getElementById("schedule_container"));
+                toast.prepareToast("Yükleniyor", "Ders Programı Yükleniyor...", "info", false)
                 await getSchedulesHTML(data);
             } else {
-                new Toast().prepareToast("Hata","Bir hoca seçmelisiniz.","danger");
+                new Toast().prepareToast("Hata", "Bir hoca seçmelisiniz.", "danger");
             }
 
         });
@@ -55,21 +55,23 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", "lesson");
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no","birleştir");
-            data.append("only_table",classroomScheduleButton.dataset.onlyTable)
+            data.append("semester_no", "birleştir");
+            data.append("only_table", classroomScheduleButton.dataset.onlyTable)
             if (classroomSelect.value > 0) {
                 data.append("owner_type", "classroom");
                 data.append("owner_id", classroomSelect.value);
-                spinner.showSpinner(document.getElementById("schedule_container"));
+                toast.prepareToast("Yükleniyor", "Ders Programı Yükleniyor...", "info", false)
                 await getSchedulesHTML(data);
             } else {
-                new Toast().prepareToast("Hata","Bir derslik seçmelisiniz.","danger");
+                new Toast().prepareToast("Hata", "Bir derslik seçmelisiniz.", "danger");
             }
 
         });
     }
 
     function getSchedulesHTML(scheduleData = new FormData()) {
+        const container = document.getElementById('schedule_container');
+        container.innerHTML = "";
         return fetch("/ajax/getScheduleHTML", {
             method: "POST",
             headers: {
@@ -80,7 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then((data) => {
                 if (data['status'] !== 'error') {
-                    const container = document.getElementById('schedule_container');
                     container.innerHTML = data['HTML'];
                     /**
                      * Bağlı derslerde gösterilecek popoverları aktif etmek için eklendi.
@@ -90,9 +91,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                         return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
                     })
+                    toast.closeToast()
                     document.dispatchEvent(scheduleLoaded);
                 } else {
                     new Toast().prepareToast("Hata", data['msg'], "danger");
+                    toast.closeToast()
                     console.error(data['msg']);
                 }
             })
