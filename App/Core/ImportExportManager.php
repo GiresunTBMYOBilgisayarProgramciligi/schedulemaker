@@ -31,7 +31,7 @@ class ImportExportManager
     private $sheet;
     private array $formData = [];
 
-    public function __construct(array $uploadedFile = null, array $formData = [])
+    public function __construct(?array $uploadedFile = null, array $formData = [])
     {
         if (!is_null($uploadedFile)) {
             $this->prepareImportFile($uploadedFile['file']);

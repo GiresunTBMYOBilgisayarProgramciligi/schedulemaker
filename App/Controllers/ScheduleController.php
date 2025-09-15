@@ -26,7 +26,7 @@ class ScheduleController extends Controller
      * @return array
      * @throws Exception
      */
-    private function generateEmptyWeek(string $type = 'html', int $maxDayIndex = null): array
+    private function generateEmptyWeek(string $type = 'html', ?int $maxDayIndex = null): array
     {
         $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
         $emptyWeek = [];

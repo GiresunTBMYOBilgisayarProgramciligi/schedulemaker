@@ -103,7 +103,7 @@ class AdminRouter extends Router
     /**
      * @throws Exception
      */
-    public function AddUserAction(int $department_id = null, int $program_id = null)
+    public function AddUserAction(?int $department_id = null, int $program_id = null)
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $departmentFilters = [];

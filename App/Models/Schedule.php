@@ -89,7 +89,7 @@ class Schedule extends Model
      * @return array
      * @throws \Exception
      */
-    public function getWeek(string $type = 'html', int $maxDayIndex = null): array
+    public function getWeek(string $type = 'html', ?int $maxDayIndex = null): array
     {
         $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
         $week = [];

@@ -57,7 +57,7 @@ class Controller
      * @return array
      * @throws Exception
      */
-    public function getListByFilters(array $filters = null): array
+    public function getListByFilters(?array $filters = null): array
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
         if (!property_exists($this, 'modelName')) {
