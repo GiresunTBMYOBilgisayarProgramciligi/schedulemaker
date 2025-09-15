@@ -22,6 +22,7 @@ use App\Models\Program;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getSemesterNumbers;
+use function App\Helpers\getSettingValue;
 use function App\Helpers\isAuthorized;
 
 /**
@@ -235,7 +236,7 @@ class AdminRouter extends Router
                 ],
                 true
             ),
-            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id])->all(),
+            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id,'semester'=>getSettingValue('semester')])->all(),
         ]);
         $this->callView("admin/lessons/lesson", $this->view_data);
     }
