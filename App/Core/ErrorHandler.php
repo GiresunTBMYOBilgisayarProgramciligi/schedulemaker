@@ -112,7 +112,7 @@ class ErrorHandler
     private function logException($exception)
     {
         // Hata mesajını oluştur
-        $message = "Exception: " . mb_convert_encoding($exception->getMessage(), 'UTF-8', 'auto');
+        $message = "Exception: " . mb_convert_encoding($exception->getMessage(), 'UTF-8');
         $message .= " in " . $exception->getFile() . " on line " . $exception->getLine();
         $message .= "\nStack trace: " . $exception->getTraceAsString();
 
