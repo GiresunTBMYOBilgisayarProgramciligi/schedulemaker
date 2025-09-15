@@ -123,7 +123,7 @@ class Model
      * // Sonuç: `age` > :age_0 AND `status` != :status AND `price` <= :price_0
      * // AND `name` LIKE :name_0 AND `tags` IN (:tags_0, :tags_1, :tags_2) AND `priority` >= :priority_0
      */
-    public function where(array $filters = null, string $logicalOperator = "AND"): static
+    public function where(?array $filters = null, string $logicalOperator = "AND"): static
     {
         if (is_null($filters)) {
             return $this;
