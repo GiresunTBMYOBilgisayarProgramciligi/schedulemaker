@@ -413,20 +413,17 @@ class AjaxRouter extends Router
      */
     public function updateDepartmentAction(): void
     {
-        $departmentController = new DepartmentController();
-        $departmentData = $this->data;
-        $department = new Department();
-        $department->fill($departmentData);
+        $department = (new Department())->find($this->data['id']);
         if (!isAuthorized("submanager", false, $department)) {
             throw new Exception("Bölüm Güncelleme yetkiniz yok");
         }
 
-        $departmentController->updateDepartment($department);
+        $departmentController = new DepartmentController();
+        $departmentController->updateDepartment($this->data);
 
-        $this->response = array(
-            "msg" => "Bölüm başarıyla Güncellendi.",
-            "status" => "success",
-        );
+        $this->response["msg"] = "Bölüm başarıyla Güncellendi.";
+        $this->response["status"] = "success";
+
         $this->sendResponse();
     }
 

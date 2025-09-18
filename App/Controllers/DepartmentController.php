@@ -66,32 +66,12 @@ class DepartmentController extends Controller
      * @return int
      * @throws Exception
      */
-    public function updateDepartment(Department $department): int
+    public function updateDepartment(array $department_data): int
     {
         try {
-            $departmentData = $department->getArray(['table_name', 'database', 'id']);
-            // Sorgu ve parametreler için ayarlamalar
-            $columns = [];
-            $parameters = [];
-
-            foreach ($departmentData as $key => $value) {
-                $columns[] = "$key = :$key";
-                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
-            }
-
-            // WHERE koşulu için ID ekleniyor
-            $parameters["id"] = $department->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $department = new Department();
+            $department->fill($department_data);
+            $department->update();
             return $department->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
