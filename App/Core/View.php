@@ -56,11 +56,12 @@ class View
             //todo view içerisindeki hatalar bu şekilde gösteriliyor. ama hatalar sayfanın yüklenmesini engelleyebiliyor
             //todo bu şekilde bir form elemanı içerisinde çalıştırıldığı için hata gösterilmiyor
             error_log($exception->getMessage().$exception->getTraceAsString());
-            echo '<script>
-                    document.addEventListener("DOMContentLoaded", function () {
-                            alert("'. $exception->getMessage() . '");
+            echo "<script>
+                    console.error('".htmlentities($exception->getMessage())."')
+                    document.addEventListener('DOMContentLoaded', function () {
+                        alert('".html_entity_decode(htmlentities($exception->getMessage()))."'); 
                     });
-                </script>';
+                </script>";
         }
 
     }
