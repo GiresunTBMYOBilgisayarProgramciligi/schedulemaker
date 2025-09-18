@@ -516,7 +516,7 @@ class AjaxRouter extends Router
     public function getProgramsListAction($department_id): void
     {
         $programController = new ProgramController();
-        $programs = $programController->getProgramsList(['department_id' => $department_id]);
+        $programs = $programController->getProgramsList(['department_id' => $department_id,'active'=>true]);
         $this->response['status'] = "success";
         $this->response['programs'] = $programs;
         $this->sendResponse();
