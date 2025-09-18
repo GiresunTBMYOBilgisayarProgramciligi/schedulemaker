@@ -16,14 +16,15 @@ class ProgramController extends Controller
 
 
     /**
-     * @param int | null $department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir
+     * @param array $filters department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir
      * @return array
      * @throws Exception
      */
-    public function getProgramsList(?int $department_id = null): array
+    public function getProgramsList(array $filters = []): array
     {
-        $filters = [];
-        if (!is_null($department_id)) $filters["department_id"] = $department_id;
+        if (isset($filters["department_id"])) {
+            unset($filters["department_id"]);
+        }
         return $this->getListByFilters($filters);
     }
 

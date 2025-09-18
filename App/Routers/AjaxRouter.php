@@ -513,10 +513,13 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function getProgramsListAction($department_id): void
     {
         $programController = new ProgramController();
-        $programs = $programController->getProgramsList($department_id);
+        $programs = $programController->getProgramsList(['department_id' => $department_id]);
         $this->response['status'] = "success";
         $this->response['programs'] = $programs;
         $this->sendResponse();

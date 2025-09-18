@@ -432,7 +432,7 @@ class Model
             if (is_null($this->department_id)) {
                 $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
             } else {
-                $list = (new ProgramController())->getProgramsList($this->department_id);
+                $list = (new ProgramController())->getProgramsList(['department_id'=>$this->department_id]);
                 array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
             }
         } else $list = [];

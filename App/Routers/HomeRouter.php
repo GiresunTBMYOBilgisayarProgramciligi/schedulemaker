@@ -45,7 +45,7 @@ class HomeRouter extends Router
         $userController = new UserController();
         $this->assetManager->loadPageAssets("homeIndex");
         $this->view_data = array_merge($this->view_data, [
-            "departments" => (new Department())->get()->all(),
+            "departments" => (new Department())->get()->where(['active'=>true])->all(),
             "classrooms" => (new Classroom())->get()->all(),
             "lecturers" => $userController->getListByFilters(['!role'=>'admin']),
             "page_title" => "Anasayfa"]);

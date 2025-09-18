@@ -11,6 +11,7 @@ class Program extends Model
     public ?int $id = null;
     public ?string $name = null;
     public ?int $department_id = null;
+    public ?bool $active = null;
 
     protected string $table_name = "programs";
 
@@ -21,7 +22,7 @@ class Program extends Model
      */
     public function getDepartment(): Department|null
     {
-        return (new Department)->find($this->department_id);
+        return (new Department)->find($this->department_id) ;
 
     }
 

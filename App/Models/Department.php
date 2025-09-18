@@ -15,6 +15,8 @@ class Department extends Model
     public ?string $name = null;
     public ?int $chairperson_id = null;
 
+    public ?bool $active = null;
+
     protected string $table_name = "departments";
 
 

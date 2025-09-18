@@ -72,7 +72,7 @@ class AdminRouter extends Router
             "classroomController" => new ClassroomController(),
             "lessonController" => new LessonController(),
             "programController" => $programController,
-            "programs" => $programController->getProgramsList(),
+            "programs" => $programController->getProgramsList(['active' => true]),
             "page_title" => "Anasayfa"]);
         if (!is_null($user->program_id))
             $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $user->program_id, 'type' => 'lesson'], true);
@@ -103,7 +103,7 @@ class AdminRouter extends Router
     /**
      * @throws Exception
      */
-    public function AddUserAction(?int $department_id = null, int $program_id = null)
+    public function AddUserAction(?int $department_id = null, ?int $program_id = null)
     {
         // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
         $departmentFilters = [];
@@ -516,6 +516,7 @@ class AdminRouter extends Router
     /**
      * @param $department_id
      * @return void
+     * @throws Exception
      */
     public function ListProgramsAction($department_id = null): void
     {
@@ -526,7 +527,7 @@ class AdminRouter extends Router
         $programController = new ProgramController();
         $this->view_data = array_merge($this->view_data, [
             "programController" => $programController,
-            "programs" => $programController->getProgramsList($department_id),
+            "programs" => $programController->getProgramsList(['department_id'=>$department_id]),
             "page_title" => "Program Listesi",
         ]);
         $this->callView("admin/programs/listprograms", $this->view_data);
@@ -586,9 +587,9 @@ class AdminRouter extends Router
         $userController = new UserController();
         $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
-            $departments = $departmentController->getDepartmentsList();
+            $departments = $departmentController->getDepartmentsList(['active' => true]);
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
-            $departments = [(new Department())->find($this->currentUser->department_id) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok")];
+            $departments = $departmentController->getDepartmentsList(['active'=>true,'id'=>$this->currentUser->department_id]) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
