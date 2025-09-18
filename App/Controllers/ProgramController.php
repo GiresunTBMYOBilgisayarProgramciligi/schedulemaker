@@ -22,7 +22,7 @@ class ProgramController extends Controller
      */
     public function getProgramsList(array $filters = []): array
     {
-        if (isset($filters["department_id"])) {
+        if (!isset($filters["department_id"])) {
             unset($filters["department_id"]);
         }
         return $this->getListByFilters($filters);
