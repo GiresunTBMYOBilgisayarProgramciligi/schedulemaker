@@ -41,6 +41,7 @@
                             <th scope="col">İd</th>
                             <th scope="col">Adı</th>
                             <th scope="col" class="filterable">Bölüm</th>
+                            <th scope="col">Aktif</th>
                             <th scope="col" class="text-center">İşlemler</th>
                         </tr>
                         </thead>
@@ -50,6 +51,13 @@
                                 <td><?= $program->id ?></td>
                                 <td><?= $program->name ?></td>
                                 <td><?= $program->getDepartment()?->name ?></td>
+                                <td>
+                                    <div class="form-check form-switch ">
+                                        <input name="active" class="form-check-input" type="checkbox"
+                                               id="flexSwitchCheckChecked"
+                                                <?= $program->active ? "checked" : "" ?> disabled>
+                                    </div>
+                                </td>
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"

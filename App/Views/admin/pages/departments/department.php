@@ -67,6 +67,8 @@ use function App\Helpers\isAuthorized;
                                 <dd class="col-sm-8"><?= $department->getLecturerCount() ?></dd>
                                 <dt class="col-sm-4">Ders Sayısı</dt>
                                 <dd class="col-sm-8"><?= $department->getLessonCount() ?></dd>
+                                <dt class="col-sm-4">Durum</dt>
+                                <dd class="col-sm-8"><?= $department->active ? "Aktif":"Pasif" ?></dd>
                             </dl>
                         </div>
                         <!-- /.card-body -->

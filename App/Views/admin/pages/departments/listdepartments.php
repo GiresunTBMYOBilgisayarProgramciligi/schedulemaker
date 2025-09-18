@@ -41,6 +41,7 @@
                             <th>İd</th>
                             <th>Adı</th>
                             <th>Bölüm Başkanı</th>
+                            <th>Aktif</th>
                             <th class="text-center">İşlemler</th>
                         </tr>
                         </thead>
@@ -50,6 +51,13 @@
                                 <td><?= $department->id ?></td>
                                 <td><?= $department->name ?></td>
                                 <td><?= $department->getChairperson()->getFullName() ?></td>
+                                <td>
+                                    <div class="form-check form-switch ">
+                                        <input name="active" class="form-check-input" type="checkbox"
+                                               id="flexSwitchCheckChecked"
+                                                <?= $department->active ? "checked" : "" ?> disabled>
+                                    </div>
+                                </td>
                                 <td class="text-center">
                                     <div class="dropdown">
                                         <button type="button" class="btn btn-primary dropdown-toggle"
