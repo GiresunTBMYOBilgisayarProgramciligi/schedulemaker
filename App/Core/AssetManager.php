@@ -49,7 +49,7 @@ class AssetManager
             'path' => '/assets/node_modules/bootstrap-icons/font/bootstrap-icons.min.css'
         ],
         [//Required Plugin(AdminLTE)
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-beta3/dist/css/adminlte.min.css',
+            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/css/adminlte.min.css',
             'attributes' => [
                 'crossorigin' => 'anonymous'
             ]
@@ -74,7 +74,7 @@ class AssetManager
             'path' => '/assets/node_modules/bootstrap/dist/js/bootstrap.min.js'
         ],
         [
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-beta3/dist/js/adminlte.min.js',
+            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js',
             'attributes' => [
                 'crossorigin' => 'anonymous'
             ]
