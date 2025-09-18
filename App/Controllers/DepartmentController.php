@@ -62,7 +62,7 @@ class DepartmentController extends Controller
     }
 
     /**
-     * @param Department $department
+     * @param array $department_data
      * @return int
      * @throws Exception
      */

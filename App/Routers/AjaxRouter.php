@@ -478,16 +478,16 @@ class AjaxRouter extends Router
     {
         $programController = new ProgramController();
         $programData = $this->data;
-        $program = new Program();
-        $program->fill($programData);
+        $program = (new Program())->find($programData["id"]);
         if (!isAuthorized("submanager", false, $program)) {
             throw new Exception("Program güncelleme yetkiniz yok");
         }
 
-        $programId = $programController->updateProgram($program);
+        $programId = $programController->updateProgram($programData);
 
         $this->response = array(
             "msg" => "Program Başarıyla Güncellendi.",
+            "updatedID" => $programId,
             "status" => "success",
         );
         $this->sendResponse();

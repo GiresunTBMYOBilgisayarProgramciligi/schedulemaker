@@ -60,36 +60,16 @@ class ProgramController extends Controller
     }
 
     /**
-     * @param Program $program
+     * @param array $program_data
      * @return int
      * @throws Exception
      */
-    public function updateProgram(Program $program): int
+    public function updateProgram(array $program_data): int
     {
         try {
-            $programData = $program->getArray(['table_name', 'database', 'id']);
-            // Sorgu ve parametreler için ayarlamalar
-            $columns = [];
-            $parameters = [];
-
-            foreach ($programData as $key => $value) {
-                $columns[] = "$key = :$key";
-                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
-            }
-
-            // WHERE koşulu için ID ekleniyor
-            $parameters["id"] = $program->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $program= new Program();
+            $program->fill($program_data);
+            $program->update();
             return $program->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
