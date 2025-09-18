@@ -146,7 +146,7 @@ class LessonController extends Controller
     /**
      * @throws Exception
      */
-    public function combineLesson(int $parentLessonId = null, int $childLessonId = null): void
+    public function combineLesson(?int $parentLessonId = null, ?int $childLessonId = null): void
     {
         /**
          * @var Lesson $parentLesson
