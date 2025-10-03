@@ -349,8 +349,8 @@ class ImportExportManager
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $classroom = (new Classroom())->find($filters["owner_id"]);
                     $scheduleFilters[] = [
-                        'file_title' => $classroom->name . " Der Programı",
-                        'title' => $classroom->name . " Der Programı",
+                        'file_title' => $classroom->name . " Ders Programı",
+                        'title' => $classroom->name . " Ders Programı",
                         'type' => 'classroom',
                         'filter' => [
                             "semester_no" => ['in' => $semesterNumbers],
@@ -366,8 +366,8 @@ class ImportExportManager
                     $classrooms = (new Classroom())->get()->all();
                     foreach ($classrooms as $classroom) {
                         $scheduleFilters[] = [
-                            'file_title' => "Tüm Derslikler Der Programı",
-                            'title' => $classroom->name . " Der Programı",
+                            'file_title' => "Tüm Derslikler Ders Programı",
+                            'title' => $classroom->name . " Ders Programı",
                             'type' => 'classroom',
                             'filter' => [
                                 "semester_no" => ['in' => $semesterNumbers],
