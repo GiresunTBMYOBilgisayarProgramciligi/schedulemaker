@@ -245,7 +245,7 @@ class ImportExportManager
                         $program = (new Program())->find($filters["owner_id"]); // Burada program_id yerine owner_id kullanılmalı
                         // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
                         $scheduleFilters[] = [
-                            'file_title' => $program->name .'Ders Programı',
+                            'file_title' => $program->name . 'Ders Programı',
                             'title' => $program->name . " " . getClassFromSemesterNo($semester_no) . " Ders Programı",
                             'type' => 'program',
                             'filter' => [
@@ -328,7 +328,7 @@ class ImportExportManager
                     foreach ($lecturers as $lecturer) {
                         $scheduleFilters[] = [
                             'file_title' => "Tüm Hocalar Ders Programı",
-                            'title' =>  $lecturer->getFullName() . " Ders Programı",
+                            'title' => $lecturer->getFullName() . " Ders Programı",
                             'type' => 'user',
                             'filter' => [
                                 "semester_no" => ['in' => $semesterNumbers],
@@ -450,14 +450,15 @@ class ImportExportManager
             // programların her biri için tablo oluşturuluyor
             $scheduleArray = $scheduleController->createScheduleExcelTable($scheduleFilter['filter']);// her bir elemanı bir satır olan bir dizi
             if (!$scheduleArray) continue; //Eğer programda ders yoksa geç
+            $lastCellLetter = $scheduleFilter['type'] == "classroom" ? 'F' : 'K';
             //start::Program başlığını yaz
             $this->sheet->setCellValue("A{$row}", $scheduleFilter['title']);
             $this->sheet->getStyle("A{$row}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
                 ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-            $this->sheet->mergeCells("A{$row}:K{$row}");
-            $this->sheet->getStyle("A{$row}:K{$row}")->getFont()->setBold(true);
-            $this->sheet->getStyle("A{$row}:K{$row}")->getFill()
+            $this->sheet->mergeCells("A{$row}:{$lastCellLetter}{$row}");
+            $this->sheet->getStyle("A{$row}:{$lastCellLetter}{$row}")->getFont()->setBold(true);
+            $this->sheet->getStyle("A{$row}:{$lastCellLetter}{$row}")->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('ffbf00');
             //end::Program başlığını yaz
@@ -472,7 +473,7 @@ class ImportExportManager
                 foreach ($scheduleRow as $scheduleCell) {
                     // Mevcut hücre referansını alalım
                     $currentCell = $colNames[$colNameIndex] . "{$row}";
-
+                    $cellValue = "";
                     if (is_array($scheduleCell)) {
                         //bu hücrede ders var demektir
                         if (isset ($scheduleCell[0]) and is_array($scheduleCell[0])) {
@@ -487,7 +488,7 @@ class ImportExportManager
                                     // ders bilgileri hücreye yazılır.
                                     $lessons[] = $this->setExportLessonName($lesson, $scheduleFilter['type']);
                                 }
-                                if (isset($groupLesson['classroom_id'])) {
+                                if (isset($groupLesson['classroom_id']) and $scheduleFilter['type'] != "classroom") {
                                     $classroom = (new Classroom())->find($groupLesson['classroom_id']);
                                     // derslik bilgileri hücreye yazılır.
                                     $lessons[] = $classroom->name;
@@ -500,9 +501,9 @@ class ImportExportManager
                             if (isset($scheduleCell['lesson_id'])) {
                                 $lesson = (new Lesson())->find($scheduleCell['lesson_id']);
                                 // ders bilgileri hücreye yazılır.
-                                $cellValue = $this->setExportLessonName($lesson, $scheduleFilter['type']);;
+                                $cellValue = $this->setExportLessonName($lesson, $scheduleFilter['type']);
                             }
-                            if (isset($scheduleCell['classroom_id'])) {
+                            if (isset($scheduleCell['classroom_id']) and $scheduleFilter['type'] != "classroom") {
                                 $classroom = (new Classroom())->find($scheduleCell['classroom_id']);
                                 // derslik bilgileri hücreye yazılır.
                                 $cellValue = $classroom->name;
@@ -525,7 +526,7 @@ class ImportExportManager
                 $row++;
             }
             // Her hücreye kenarlık ekle
-            $lastCell = "K" . $row - 1; //todo maxDay Index e göre ayarlanmalı
+            $lastCell = $lastCellLetter . $row - 1; //todo maxDay Index e göre ayarlanmalı
             $this->sheet->getStyle($firstCell . ":" . $lastCell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
             //todo Cuma yada perşembe günü ders yoksa G sütünunda bitiyor. k olarak belirtilirse tüm hafta kenarlık oluyor
             $row += 2;//bir tablo bittikten sonra iki satır boşluk bırak
@@ -533,8 +534,9 @@ class ImportExportManager
 
 
         // Sütunları otomatik boyutlandır (içeriğe göre ayarla)
-        foreach (range('A', 'Z') as $columnID) {
-            $this->sheet->getColumnDimension($columnID)->setAutoSize(true);
+        foreach ($this->sheet->getColumnIterator('A','K') as $column) {
+            $colIndex = $column->getColumnIndex(); // A, B, C...
+            $this->sheet->getColumnDimension($colIndex)->setAutoSize(true);
         }
         $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . $scheduleFilter['file_title'] . ".xlsx";
         $this->downloadExportFile($exportFileName);
@@ -556,22 +558,23 @@ class ImportExportManager
 
     public function createFileTitle($filters): int
     {
+        $lastCellLetter = $filters['owner_type'] == "classroom" ? 'F' : 'K';
         // Üniversite ve dönem bilgileri
         $this->sheet->setCellValue('A2', 'GİRESUN ÜNİVERSİTESİ TİREBOLU MEHMET BAYRAK MESLEK YÜKSEKOKULU');
-        $this->sheet->mergeCells('A2:K2');
+        $this->sheet->mergeCells("A2:{$lastCellLetter}2");
         // Birleştirilmiş hücrede yazıyı ortalama (hem yatay hem dikey)
-        $this->sheet->getStyle('A2:K2')->getAlignment()
+        $this->sheet->getStyle("A2:{$lastCellLetter}2")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
             ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-        $this->sheet->getStyle('A2:K2')->getFont()->setBold(true);
+        $this->sheet->getStyle("A2:{$lastCellLetter}2")->getFont()->setBold(true);
 
         $this->sheet->setCellValue('A3', $filters['academic_year'] . ' AKADEMİK YILI ' . mb_strtoupper($filters['semester']) . ' DÖNEMİ HAFTALIK DERS PROGRAMI');
-        $this->sheet->mergeCells('A3:K3');
+        $this->sheet->mergeCells("A3:{$lastCellLetter}3");
         // Birleştirilmiş hücrede yazıyı ortalama (hem yatay hem dikey)
-        $this->sheet->getStyle('A3:K3')->getAlignment()
+        $this->sheet->getStyle("A3:{$lastCellLetter}3")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
             ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-        $this->sheet->getStyle('A3:K3')->getFont()->setBold(true);
+        $this->sheet->getStyle("A3:{$lastCellLetter}3")->getFont()->setBold(true);
         return 6; //başlıktan sonra devam edilecek satır numarası
     }
 

@@ -58,7 +58,8 @@ class ScheduleController extends Controller
 
         for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
             $headerRow[] = $days[$i]; // Gün adı
-            $headerRow[] = 'S';       // Sütun başlığı (Senin tablodaki "S")
+            if (isset($filters['owner_type']) and $filters['owner_type'] != 'classroom')
+                $headerRow[] = 'S';       // Sütun başlığı (Sınıf)
         }
 
         $scheduleArray[] = $headerRow;
@@ -83,6 +84,12 @@ class ScheduleController extends Controller
     {
         $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
         $schedules = (new Schedule())->get()->where($filters)->all();
+        /**
+         * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
+         */
+        if ($filters['owner_type'] == 'classroom') {
+            $type="html";
+        }
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
@@ -920,11 +927,10 @@ class ScheduleController extends Controller
                 if ($schedule->{"day" . $filters["day_index"]} == $filters['day']) {
                     //var olan gün ile belirtilen gün bilgisi aynı ise
                     $schedule->{"day" . $filters["day_index"]} = null; //gün boşaltıldı
-                    if ($this->isScheduleEmpty($schedule)){
+                    if ($this->isScheduleEmpty($schedule)) {
                         $schedule->delete();
                         return ['deletedSchedule_id' => $schedule->id];
-                    }
-                    else{
+                    } else {
                         $this->updateSchedule($schedule);
                         return ['updatedSchedule_id' => $schedule->id];
                     }
