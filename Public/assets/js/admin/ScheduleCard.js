@@ -166,6 +166,7 @@ class ScheduleCard {
 
     async highlightUnavailableCells() {
         this.clearCells();
+
         let data = new FormData();
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("semester", this.draggedLesson.semester);
@@ -175,76 +176,112 @@ class ScheduleCard {
         toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
 
         try {
-            // İki fetch işlemini aynı anda başlatıyoruz
-            let classroomPromise = fetch("/ajax/checkClassroomSchedule", {
-                method: "POST",
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                body: data,
-            }).then(res => res.json());
+            let classroomData = null;
+            let programData = null;
+            let lecturerData = null;
 
-            let lecturerPromise = fetch("/ajax/checkLecturerSchedule", {
-                method: "POST",
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                body: data,
-            }).then(res => res.json());
+            // 👇 owner_type'a göre sadece gerekli iki isteği oluştur
+            switch (this.owner_type) {
+                case 'user': {
+                    const [classroomRes, programRes] = await Promise.all([
+                        fetch("/ajax/checkClassroomSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        }),
+                        fetch("/ajax/checkProgramSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        })
+                    ]);
+                    classroomData = await classroomRes.json();
+                    programData = await programRes.json();
+                    break;
+                }
 
-            let programPromise = fetch("/ajax/checkProgramSchedule", {
-                method: "POST",
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                body: data,
-            }).then(res => res.json());
+                case 'program': {
+                    const [classroomRes, lecturerRes] = await Promise.all([
+                        fetch("/ajax/checkClassroomSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        }),
+                        fetch("/ajax/checkLecturerSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        })
+                    ]);
+                    classroomData = await classroomRes.json();
+                    lecturerData = await lecturerRes.json();
+                    break;
+                }
 
-            // İkisi de tamamlanana kadar bekliyoruz
-            let [classroomData, lecturerData, programData] = await Promise.all([classroomPromise, lecturerPromise, programPromise]);
+                case 'classroom': {
+                    const [programRes, lecturerRes] = await Promise.all([
+                        fetch("/ajax/checkProgramSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        }),
+                        fetch("/ajax/checkLecturerSchedule", {
+                            method: "POST",
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: data,
+                        })
+                    ]);
+                    programData = await programRes.json();
+                    lecturerData = await lecturerRes.json();
+                    break;
+                }
+            }
+
             toast.closeToast();
 
-            // Derslik kontrolü
-            if (classroomData.status !== "error" && classroomData.unavailableCells) {
-                let unavailableCells = classroomData.unavailableCells;
+            // === Derslik kontrolü ===
+            if (classroomData && classroomData.status !== "error" && classroomData.unavailableCells) {
                 for (let i = 0; i <= 9; i++) {
-                    for (let cell in unavailableCells[i]) {
-                        if (unavailableCells[i][cell]) {
+                    for (let cell in classroomData.unavailableCells[i]) {
+                        if (classroomData.unavailableCells[i][cell]) {
                             this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-classroom");
                         }
                     }
                 }
             }
 
-            // Hoca kontrolü
-            if (lecturerData.status !== "error") {
-                let unavailableCells = lecturerData.unavailableCells;
-                if (unavailableCells) {
+            // === Hoca kontrolü ===
+            if (lecturerData && lecturerData.status !== "error") {
+                if (lecturerData.unavailableCells) {
                     for (let i = 0; i <= 9; i++) {
-                        for (let cell in unavailableCells[i]) {
+                        for (let cell in lecturerData.unavailableCells[i]) {
                             this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-lecturer");
                         }
                     }
                 }
-
-                let preferredCells = lecturerData.preferredCells;
-                if (preferredCells) {
+                if (lecturerData.preferredCells) {
                     for (let i = 0; i <= 9; i++) {
-                        for (let cell in preferredCells[i]) {
+                        for (let cell in lecturerData.preferredCells[i]) {
                             this.table.rows[i].cells[cell].classList.add("text-bg-success");
                         }
                     }
                 }
             }
 
-            // Program kontrolü
-            if (programData.status !== "error" && programData.unavailableCells) {
-                let unavailableCells = programData.unavailableCells;
+            // === Program kontrolü ===
+            if (programData && programData.status !== "error" && programData.unavailableCells) {
                 for (let i = 0; i <= 9; i++) {
-                    for (let cell in unavailableCells[i]) {
-                        if (unavailableCells[i][cell]) {
+                    for (let cell in programData.unavailableCells[i]) {
+                        if (programData.unavailableCells[i][cell]) {
                             this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-program");
                         }
                     }
                 }
             }
 
-            return true; // işlem tamamlandı
+            return true;
         } catch (error) {
+            toast.closeToast();
             new Toast().prepareToast("Hata", "Veriler alınırken hata oluştu", "danger");
             console.error(error);
             return false;
