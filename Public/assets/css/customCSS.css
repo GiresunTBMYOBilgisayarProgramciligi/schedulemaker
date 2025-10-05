@@ -2,7 +2,7 @@
     min-height: 30px;
 }
 .unavailable-for-classroom::after {
-    content: "Derslik dolu";
+    content: "Uygun Derslik yok";
     color: #fff;
 }
 .unavailable-for-lecturer::after {
