@@ -188,8 +188,14 @@ class ScheduleCard {
                 body: data,
             }).then(res => res.json());
 
+            let programPromise = fetch("/ajax/checkProgramSchedule", {
+                method: "POST",
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                body: data,
+            }).then(res => res.json());
+
             // İkisi de tamamlanana kadar bekliyoruz
-            let [classroomData, lecturerData] = await Promise.all([classroomPromise, lecturerPromise]);
+            let [classroomData, lecturerData, programData] = await Promise.all([classroomPromise, lecturerPromise, programPromise]);
             toast.closeToast();
 
             // Derslik kontrolü
@@ -220,6 +226,18 @@ class ScheduleCard {
                     for (let i = 0; i <= 9; i++) {
                         for (let cell in preferredCells[i]) {
                             this.table.rows[i].cells[cell].classList.add("text-bg-success");
+                        }
+                    }
+                }
+            }
+
+            // Program kontrolü
+            if (programData.status !== "error" && programData.unavailableCells) {
+                let unavailableCells = programData.unavailableCells;
+                for (let i = 0; i <= 9; i++) {
+                    for (let cell in unavailableCells[i]) {
+                        if (unavailableCells[i][cell]) {
+                            this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-program");
                         }
                     }
                 }

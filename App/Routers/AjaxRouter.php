@@ -710,89 +710,21 @@ class AjaxRouter extends Router
     public function checkLecturerScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSettingValue("semester");
-        }
-        if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSettingValue("academic_year");
-        }
+        $filters = $scheduleController->checkFilters($this->data, "checkLecturerSchedule");
 
-        if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $lecturer = $lesson->getLecturer();
-            $filters = [
-                "owner_type" => "user",
-                "owner_id" => $lecturer->id,
-                "type" => "lesson",
-                "semester" => $this->data['semester'],
-                "academic_year" => $this->data['academic_year'],
-            ];
-            $lessonSchedules = $scheduleController->getListByFilters($filters);
-            if (count($lessonSchedules) > 0) {
-                $unavailableCells = [];
-                $preferredCells = [];
-                $tableRows = [
-                    "08.00 - 08.50",
-                    "09.00 - 09.50",
-                    "10.00 - 10.50",
-                    "11.00 - 11.50",
-                    "12.00 - 12.50",
-                    "13.00 - 13.50",
-                    "14.00 - 14.50",
-                    "15.00 - 15.50",
-                    "16.00 - 16.50"
-                ];
-                foreach ($lessonSchedules as $lessonSchedule) {
-                    $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                    if ($rowIndex === false) {
-                        continue; // bu saat tabloda yoksa atla
-                    }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                        if (!is_null($lessonSchedule->{"day" . $i})) {
-                            if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
-                                $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                            }
-                            if ($lessonSchedule->{"day" . $i} === true) {
-                                $preferredCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                            }
-                        }
-                    }
-                }
-
-                $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells, "preferredCells" => $preferredCells);
-            } else {
-                $this->response = [
-                    "msg" => "Hocanın tüm saatleri müsait",
-                    "status" => "success"
-                ];
-            }
-        }
-        $this->sendResponse();
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function checkClassroomScheduleAction(): void
-    {
-        $scheduleController = new ScheduleController();
-        if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSettingValue("semester");
-        }
-        if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSettingValue("academic_year");
-        }
-
-        if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
-
-            $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
-            $this->response["classrooms"] = $classrooms;
-            /**
-             * Hiç bir derslik için uygun olmayan hücreler
-             */
+        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->getLecturer();
+        $filters = [
+            "owner_type" => "user",
+            "owner_id" => $lecturer->id,
+            "type" => "lesson",
+            "semester" => $this->data['semester'],
+            "academic_year" => $this->data['academic_year'],
+        ];
+        $lessonSchedules = $scheduleController->getListByFilters($filters);
+        if (count($lessonSchedules) > 0) {
             $unavailableCells = [];
+            $preferredCells = [];
             $tableRows = [
                 "08.00 - 08.50",
                 "09.00 - 09.50",
@@ -804,60 +736,109 @@ class AjaxRouter extends Router
                 "15.00 - 15.50",
                 "16.00 - 16.50"
             ];
-            $classroomIds = [];
-            foreach ($classrooms as $classroom) {
-                $classroomIds[] = $classroom->id;
-                $filters = [
-                    "owner_type" => "classroom",
-                    "owner_id" => $classroom->id,
-                    "type" => "lesson",
-                    "semester" => $this->data['semester'],
-                    "academic_year" => $this->data['academic_year'],
-                ];
-                $classroomSchedules = $scheduleController->getListByFilters($filters);
-
-                if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
-                    foreach ($classroomSchedules as $classroomSchedule) {
-                        $rowIndex = array_search($classroomSchedule->time, $tableRows);
-                        if ($rowIndex === false) {
-                            continue; // bu saat tabloda yoksa atla
+            foreach ($lessonSchedules as $lessonSchedule) {
+                $rowIndex = array_search($lessonSchedule->time, $tableRows);
+                if ($rowIndex === false) {
+                    continue; // bu saat tabloda yoksa atla
+                }
+                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
+                    if (!is_null($lessonSchedule->{"day" . $i})) {
+                        if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
+                            $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                         }
-                        for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                            if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
-                                $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                            }
+                        if ($lessonSchedule->{"day" . $i} === true) {
+                            $preferredCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                         }
                     }
                 }
             }
-            $result = [];
 
-            foreach ($unavailableCells as $rowKey => $row) {
-                foreach ($row as $colKey => $classrooms) {
-                    $hasAllClassrooms = true;
-
-                    foreach ($classroomIds as $id) {
-                        if (!isset($classrooms[$id])) {
-                            $hasAllClassrooms = false;
-                            break;
-                        }
-                    }
-
-                    if ($hasAllClassrooms) {
-                        if (!isset($result[$rowKey])) {
-                            $result[$rowKey] = [];
-                        }
-                        $result[$rowKey][$colKey] = true;
-                    }
-                }
-            }
-
-            //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
-            $this->response["status"] = "success";
-            $this->response["msg"] = "";
-            $this->response["unavailableCells"] = $result;
-
+            $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells, "preferredCells" => $preferredCells);
         }
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function checkClassroomScheduleAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        $filters = $scheduleController->checkFilters($this->data, "checkClassroomSchedule");
+
+        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
+        $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
+
+        $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
+        /**
+         * Hiç bir derslik için uygun olmayan hücreler
+         */
+        $unavailableCells = [];
+        $tableRows = [
+            "08.00 - 08.50",
+            "09.00 - 09.50",
+            "10.00 - 10.50",
+            "11.00 - 11.50",
+            "12.00 - 12.50",
+            "13.00 - 13.50",
+            "14.00 - 14.50",
+            "15.00 - 15.50",
+            "16.00 - 16.50"
+        ];
+        $classroomIds = [];
+        foreach ($classrooms as $classroom) {
+            $classroomIds[] = $classroom->id;
+            $classroomScheduleFilters = [
+                "owner_type" => "classroom",
+                "owner_id" => $classroom->id,
+                "type" => "lesson",
+                "semester" => $filters['semester'],
+                "academic_year" => $filters['academic_year'],
+            ];
+            $classroomSchedules = $scheduleController->getListByFilters($classroomScheduleFilters);
+
+            if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
+                foreach ($classroomSchedules as $classroomSchedule) {
+                    $rowIndex = array_search($classroomSchedule->time, $tableRows);
+                    if ($rowIndex === false) {
+                        continue; // bu saat tabloda yoksa atla
+                    }
+                    for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
+                        if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
+                            $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+                        }
+                    }
+                }
+            }
+        }
+        $result = [];
+
+        foreach ($unavailableCells as $rowKey => $row) {
+            foreach ($row as $colKey => $classrooms) {
+                $hasAllClassrooms = true;
+
+                foreach ($classroomIds as $id) {
+                    if (!isset($classrooms[$id])) {
+                        $hasAllClassrooms = false;
+                        break;
+                    }
+                }
+
+                if ($hasAllClassrooms) {
+                    if (!isset($result[$rowKey])) {
+                        $result[$rowKey] = [];
+                    }
+                    $result[$rowKey][$colKey] = true;
+                }
+            }
+        }
+
+        //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
+        $this->response["status"] = "success";
+        $this->response["msg"] = "";
+        $this->response["unavailableCells"] = $result;
+
         $this->sendResponse();
     }
 
@@ -867,60 +848,48 @@ class AjaxRouter extends Router
     public function checkProgramScheduleAction()
     {
         $scheduleController = new ScheduleController();
-        if (!key_exists("semester", $this->data)) {
-            $this->data["semester"] = getSettingValue("semester");
-        }
-        if (!key_exists("academic_year", $this->data)) {
-            $this->data["academic_year"] = getSettingValue("academic_year");
-        }
+        $filters = $scheduleController->checkFilters($this->data, "checkProgramSchedule");
 
-        if (key_exists("lesson_id", $this->data)) {
-            $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $unavailableCells = [];
-            $program = $lesson->getProgram();
-            $filters = [
-                "owner_type" => "program",
-                "owner_id" => $program->id,
-                "type" => "lesson",
-                "semester" => $this->data['semester'],
-                "semester_no" => $lesson->semester_no,
-                "academic_year" => $this->data['academic_year'],
+        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $unavailableCells = [];
+        $program = $lesson->getProgram();
+        $programSchedulesFilters = [
+            "owner_type" => "program",
+            "owner_id" => $program->id,
+            "type" => "lesson",
+            "semester" => $filters['semester'],
+            "semester_no" => $lesson->semester_no,
+            "academic_year" => $filters['academic_year'],
+        ];
+        $programSchedules = $scheduleController->getListByFilters($programSchedulesFilters);
+        if (count($programSchedules) > 0) {
+            $tableRows = [
+                "08.00 - 08.50",
+                "09.00 - 09.50",
+                "10.00 - 10.50",
+                "11.00 - 11.50",
+                "12.00 - 12.50",
+                "13.00 - 13.50",
+                "14.00 - 14.50",
+                "15.00 - 15.50",
+                "16.00 - 16.50"
             ];
-            $programSchedules = $scheduleController->getListByFilters($filters);
-            if (count($programSchedules) > 0) {
-                $tableRows = [
-                    "08.00 - 08.50",
-                    "09.00 - 09.50",
-                    "10.00 - 10.50",
-                    "11.00 - 11.50",
-                    "12.00 - 12.50",
-                    "13.00 - 13.50",
-                    "14.00 - 14.50",
-                    "15.00 - 15.50",
-                    "16.00 - 16.50"
-                ];
-                foreach ($programSchedules as $lessonSchedule) {
-                    $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                    if ($rowIndex === false) {
-                        continue; // bu saat tabloda yoksa atla
-                    }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                        if (is_array($lessonSchedule->{"day" . $i})) {
-                            $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                        }
+            foreach ($programSchedules as $lessonSchedule) {
+                $rowIndex = array_search($lessonSchedule->time, $tableRows);
+                if ($rowIndex === false) {
+                    continue; // bu saat tabloda yoksa atla
+                }
+                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
+                    if (is_array($lessonSchedule->{"day" . $i})) {
+                        $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
                     }
                 }
             }
-
-            $this->response['status'] = "success";
-            $this->response["msg"] = "";
-            $this->response["unavailableCells"] = $unavailableCells;
-        } else {
-            $this->response = [
-                "msg" => "Programın tüm saatleri müsait",
-                "status" => "success"
-            ];
         }
+
+        $this->response['status'] = "success";
+        $this->response["msg"] = "";
+        $this->response["unavailableCells"] = $unavailableCells;
         $this->sendResponse();
     }
 

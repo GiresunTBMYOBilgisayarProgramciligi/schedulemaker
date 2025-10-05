@@ -88,7 +88,7 @@ class ScheduleController extends Controller
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
          */
         if ($filters['owner_type'] == 'classroom') {
-            $type="html";
+            $type = "html";
         }
         /**
          * Boş tablo oluşturmak için tablo satır verileri
@@ -1103,6 +1103,9 @@ class ScheduleController extends Controller
             "deleteScheduleAction" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id"],
             "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "owner_type", "owner_id", "day"],
             "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
+            "checkClassroomSchedule" => ["lesson_id", "semester", "academic_year"],
+            "checkProgramSchedule" => ["lesson_id", "semester", "academic_year"],
+            "checkLecturerSchedule" => ["lesson_id", "semester", "academic_year"],
         ];
 
         // ilk olarak gelen filtrelerin içinde allFilters dizisinde belirtilenler dışında bir veri var mı diye kontol et
