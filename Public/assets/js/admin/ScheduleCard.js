@@ -54,7 +54,6 @@ class ScheduleCard {
         /**
          * Programın düzenlenmesi sırasında sürüklenen ders elementi
          * @type {{}}
-         * todo sadece lesson id alında oradan diğer bilgiler çekilse ?
          */
         this.draggedLesson = {
             'start_element': null,
@@ -488,6 +487,41 @@ class ScheduleCard {
         }
     }
 
+    async checkCrashBackEnd(hours, classroom) {
+        let data = new FormData();
+        data.append("type", this.type);
+        data.append("lesson_id", this.draggedLesson.lesson_id);
+        data.append("time", this.draggedLesson.time);
+        data.append("lesson_hours", hours);
+        data.append("day_index", this.draggedLesson.day_index);
+        data.append("classroom_id", classroom.id);
+        data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
+        data.append("academic_year", this.academic_year);
+        data.append("semester", this.semester);
+        return fetch("/ajax/checkScheduleCrash", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data && data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return true;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+                console.error(error);
+                return false;
+            });
+    }
+
     async saveSchedule(hours, classroom) {
         let data = new FormData();
         data.append("type", this.type);
@@ -719,19 +753,51 @@ class ScheduleCard {
         let cell = row.cells[this.draggedLesson.dropped_cell_index];
         try {
             await this.checkCrash(1);
-            let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
-            if (deleteScheduleResult) {
-                this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+            /**
+             * Dersin alındığı hücrenin gün bilgisi. silme işlem için kullanılacak
+             * @type {null|*}
+             */
+            let temp_day_index = this.draggedLesson.day_index;
+            /**
+             * Dersin alındığı hücrenin saat bilgisi ders silinirken kullanılacak.
+             */
+            let temp_time = this.draggedLesson.time
+            /*
+             Dersin gün bilgisi bırakıldığı hücrenin gün bilgisi ile değiştiriliyor.
+             */
+            this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+            // dersin bırakıldığı saat örn. 08.00-08.50
+            this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
+            /*
+                Dersin bırakıldığı gün ve saat için çakışma olup olmadığı kontrol ediliyor.
+             */
+            let checkCrashBackEndResult = await this.checkCrashBackEnd(1, {'id': this.draggedLesson.classroom_id})
+
+            if (checkCrashBackEndResult) {
+                /*
+                Sürükleme işlemi başlatıldığında dersin bulunduğu hücrenin bilgileri silme işlemi için güncelleniyor.
+                 */
+                this.draggedLesson.day_index = temp_day_index
                 // dersin bırakıldığı saat örn. 08.00-08.50
-                this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
-                let saveScheduleResult = await this.saveSchedule(1, {'id': this.draggedLesson.classroom_id});
-                if (saveScheduleResult) {
-                    //update dataset
-                    this.draggedLesson.HTMLElement.dataset.time = this.draggedLesson.time
-                    this.draggedLesson.HTMLElement.dataset.dayIndex = this.draggedLesson.day_index
-                    cell.appendChild(this.draggedLesson.HTMLElement);
-                } else console.error("Yeni ders Eklenemedi")
-            } else console.error("Eski ders Silinemedi");
+                this.draggedLesson.time = temp_time;
+
+                let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
+                if (deleteScheduleResult) {
+                    /*
+                    Kaydetme işlemi için dersin bırakıldığı hücrenin gün ve saat bilgisi ayarlanıyor
+                     */
+                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
+                    // dersin bırakıldığı saat örn. 08.00-08.50
+                    this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
+                    let saveScheduleResult = await this.saveSchedule(1, {'id': this.draggedLesson.classroom_id});
+                    if (saveScheduleResult) {
+                        //update dataset
+                        this.draggedLesson.HTMLElement.dataset.time = this.draggedLesson.time
+                        this.draggedLesson.HTMLElement.dataset.dayIndex = this.draggedLesson.day_index
+                        cell.appendChild(this.draggedLesson.HTMLElement);
+                    } else console.error("Yeni ders Eklenemedi")
+                } else console.error("Eski ders Silinemedi");
+            }
         } catch (errorMessage) {
             console.error(errorMessage)
             new Toast().prepareToast("Hata", errorMessage, "danger");

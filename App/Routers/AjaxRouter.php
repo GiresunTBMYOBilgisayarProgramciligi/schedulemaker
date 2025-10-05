@@ -516,7 +516,7 @@ class AjaxRouter extends Router
     public function getProgramsListAction($department_id): void
     {
         $programController = new ProgramController();
-        $programs = $programController->getProgramsList(['department_id' => $department_id,'active'=>true]);
+        $programs = $programController->getProgramsList(['department_id' => $department_id, 'active' => true]);
         $this->response['status'] = "success";
         $this->response['programs'] = $programs;
         $this->sendResponse();
@@ -552,6 +552,19 @@ class AjaxRouter extends Router
         $classrooms = $scheduleController->availableClassrooms($this->data);
         $this->response['status'] = "success";
         $this->response['classrooms'] = $classrooms;
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function checkScheduleCrashAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        $filters = $scheduleController->checkFilters($this->data, "checkScheduleCrash");
+
+        $scheduleController->checkScheduleCrash($filters);
+        $this->response['status'] = "success";
         $this->sendResponse();
     }
 
@@ -916,18 +929,6 @@ class AjaxRouter extends Router
      * Ders programından veri silmek için gerekli kontrolleri yapar
      * @return void
      * @throws Exception
-     * Gerekli bilgiler
-     * - owner_type? (yoksa tüm tipler işleme alınır)
-     * - semester? (yoksa ayarlardan alınır)
-     * - academic_year? (yoksa ayarlardan alınır)
-     * - lesson_id
-     * - classroom_name //todo id ile işlem yapılmalı
-     * - lecturer_id
-     * - day_index
-     * - semester_no
-     * - time silinecek dersin bulunduğu saat
-     * - day_index dersin silineceği gün
-     * - type sınav(exam) yada ders(lesson) programı
      */
     public function deleteScheduleAction(): void
     {
