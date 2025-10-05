@@ -172,43 +172,40 @@ class ScheduleCard {
         data.append("academic_year", this.draggedLesson.academic_year);
 
         let toast = new Toast();
-        toast.prepareToast("Yükleniyor", "Kontrol ediliyor...");
+        toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
 
         try {
-            // Derslik kontrolü
-            let classroomResponse = await fetch("/ajax/checkClassroomSchedule", {
+            // İki fetch işlemini aynı anda başlatıyoruz
+            let classroomPromise = fetch("/ajax/checkClassroomSchedule", {
                 method: "POST",
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
                 body: data,
-            });
-            let classroomData = await classroomResponse.json();
+            }).then(res => res.json());
 
-            if (classroomData.status === "error") {
-            } else {
+            let lecturerPromise = fetch("/ajax/checkLecturerSchedule", {
+                method: "POST",
+                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                body: data,
+            }).then(res => res.json());
+
+            // İkisi de tamamlanana kadar bekliyoruz
+            let [classroomData, lecturerData] = await Promise.all([classroomPromise, lecturerPromise]);
+            toast.closeToast();
+
+            // Derslik kontrolü
+            if (classroomData.status !== "error" && classroomData.unavailableCells) {
                 let unavailableCells = classroomData.unavailableCells;
-                if (unavailableCells) {
-                    for (let i = 0; i <= 9; i++) {
-                        for (let cell in unavailableCells[i]) {
-                            if (unavailableCells[i][cell]) {
-                                this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-classroom");
-                            }
+                for (let i = 0; i <= 9; i++) {
+                    for (let cell in unavailableCells[i]) {
+                        if (unavailableCells[i][cell]) {
+                            this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-classroom");
                         }
                     }
                 }
             }
 
             // Hoca kontrolü
-            let lecturerResponse = await fetch("/ajax/checkLecturerSchedule", {
-                method: "POST",
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                body: data,
-            });
-            let lecturerData = await lecturerResponse.json();
-
-            toast.closeToast();
-
-            if (lecturerData.status === "error") {
-            } else {
+            if (lecturerData.status !== "error") {
                 let unavailableCells = lecturerData.unavailableCells;
                 if (unavailableCells) {
                     for (let i = 0; i <= 9; i++) {

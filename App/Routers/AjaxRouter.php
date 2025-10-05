@@ -888,7 +888,6 @@ class AjaxRouter extends Router
             ];
             $programSchedules = $scheduleController->getListByFilters($filters);
             if (count($programSchedules) > 0) {
-                $unavailableCells = [];
                 $tableRows = [
                     "08.00 - 08.50",
                     "09.00 - 09.50",
