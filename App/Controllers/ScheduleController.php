@@ -763,7 +763,7 @@ class ScheduleController extends Controller
                     $value = serialize($value);
                 }
             });
-            // Dinamik SQL sorgusu oluştur
+            // Dinamik SQL sorgusu oluştur//todo bunu yeni model yapısı ile oluştur
             $sql = $this->createInsertSQL($new_schedule_arr);
             // Hazırlama ve parametre bağlama
             $q = $this->database->prepare($sql);
