@@ -13,7 +13,8 @@
     "vlucas/phpdotenv": "^5.5",
     "ext-pdo": "*",
     "phpoffice/phpspreadsheet": "^4.0",
-    "ext-fileinfo": "*"
+    "ext-fileinfo": "*",
+    "monolog/monolog": "^3.9"
   },
   "autoload": {
     "psr-4": {
