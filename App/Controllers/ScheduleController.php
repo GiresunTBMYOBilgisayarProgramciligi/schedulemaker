@@ -499,14 +499,6 @@ class ScheduleController extends Controller
                                     <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
                                         <span>Excel\'e aktar</span> 
                                     </button>
-                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-tool" data-lte-toggle="card-maximize">
-                                        <i data-lte-icon="maximize" class="bi bi-fullscreen"></i>
-                                        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit"></i>
-                                    </button>
                                 </div>
                             </div>
                             <div class="card-body">';
@@ -546,7 +538,7 @@ class ScheduleController extends Controller
             $filters['academic_year'] = getSettingValue("academic_year");
         }
         $HTMLOUT = '';
-        // todo bueklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
+        // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
         if (key_exists("semester_no", $filters) and $filters['semester_no'] == "birleştir") {
             $filters['semester_no'] = ['in' => getSemesterNumbers($filters['semester'])];
         }
