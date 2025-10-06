@@ -49,7 +49,7 @@ class AssetManager
             'path' => '/assets/node_modules/bootstrap-icons/font/bootstrap-icons.min.css'
         ],
         [//Required Plugin(AdminLTE)
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/css/adminlte.min.css',
+            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/css/adminlte.min.css',
             'attributes' => [
                 'crossorigin' => 'anonymous'
             ]
@@ -74,7 +74,7 @@ class AssetManager
             'path' => '/assets/node_modules/bootstrap/dist/js/bootstrap.min.js'
         ],
         [
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc3/dist/js/adminlte.min.js',
+            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/js/adminlte.min.js',
             'attributes' => [
                 'crossorigin' => 'anonymous'
             ]
@@ -172,6 +172,9 @@ class AssetManager
                 ],
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
                 ],
             ],
             'css' => [
