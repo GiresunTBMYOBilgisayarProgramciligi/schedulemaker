@@ -718,7 +718,7 @@ class AjaxRouter extends Router
         $filters = [
             "owner_type" => "user",
             "owner_id" => $lecturer->id,
-            "type" => "lesson",
+            "type" => $filters["type"],
             "semester" => $this->data['semester'],
             "academic_year" => $this->data['academic_year'],
         ];
@@ -793,7 +793,7 @@ class AjaxRouter extends Router
             $classroomScheduleFilters = [
                 "owner_type" => "classroom",
                 "owner_id" => $classroom->id,
-                "type" => "lesson",
+                "type" => $filters["type"],
                 "semester" => $filters['semester'],
                 "academic_year" => $filters['academic_year'],
             ];
@@ -857,7 +857,7 @@ class AjaxRouter extends Router
         $programSchedulesFilters = [
             "owner_type" => "program",
             "owner_id" => $program->id,
-            "type" => "lesson",
+            "type" => $filters["type"],
             "semester" => $filters['semester'],
             "semester_no" => $lesson->semester_no,
             "academic_year" => $filters['academic_year'],

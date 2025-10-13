@@ -1184,9 +1184,9 @@ class ScheduleController extends Controller
             "deleteScheduleAction" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id"],
             "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "owner_type", "owner_id", "day"],
             "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
-            "checkClassroomSchedule" => ["lesson_id", "semester", "academic_year"],
-            "checkProgramSchedule" => ["lesson_id", "semester", "academic_year"],
-            "checkLecturerSchedule" => ["lesson_id", "semester", "academic_year"],
+            "checkClassroomSchedule" => ["lesson_id", "semester", "academic_year","type"],
+            "checkProgramSchedule" => ["lesson_id", "semester", "academic_year","type"],
+            "checkLecturerSchedule" => ["lesson_id", "semester", "academic_year","type"],
         ];
 
         // ilk olarak gelen filtrelerin içinde allFilters dizisinde belirtilenler dışında bir veri var mı diye kontol et
