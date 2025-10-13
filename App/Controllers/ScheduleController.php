@@ -167,7 +167,7 @@ class ScheduleController extends Controller
             }
             $lessonFilters = [];
             /**
-             *uygun ders listesi program için hazırlanıyor.
+             * uygun ders listesi program için hazırlanıyor.
              */
             if ($filters['owner_type'] == "program") {
                 if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
@@ -208,21 +208,78 @@ class ScheduleController extends Controller
                 ]);
             }
             $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
-            /**
-             * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-             * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-             */
-            foreach ($lessonsList as $lesson) {
-                if (!$lesson->IsScheduleComplete()) {
-                    //Ders Programı tamamlanmamışsa
-                    $lesson->lecturer_id = $lesson->getLecturer()->id;
-                    $lesson->hours -= $this->getCount([
-                        'owner_type' => 'lesson',
-                        'owner_id' => $lesson->id,
-                        "semester" => $filters['semester'],
-                        "academic_year" => $filters['academic_year'],
-                    ]);// programa eklenmiş olan saatlar çıkartılıyor.
-                    $available_lessons[] = $lesson;
+
+            // Sınav programı için farklı tamamlama mantığı: ders saatleri önemsiz, öğrenci mevcudu kadar yerleştirme yapılmalı
+            if (($filters['type'] ?? 'lesson') === 'exam') {
+                // İlgili dönem/yıl için sınıf sahibi (owner_type=classroom) exam kayıtlarını al ve ders bazında kapasite topla
+                $examSchedules = (new Schedule())->get()->where([
+                    'owner_type' => 'classroom',
+                    'type' => 'exam',
+                    'semester' => $filters['semester'],
+                    'academic_year' => $filters['academic_year'],
+                ])->all();
+
+                // Ders bazında yerleştirilen kapasite
+                $placedCapacityByLesson = [];
+                $classroomCache = [];
+                // maxExamDayIndex ayarı
+                $maxExamDayIndex = getSettingValue('maxExamDayIndex', default: 5);
+                foreach ($examSchedules as $schedule) {
+                    // owner_id derslik id'sidir (sınıf sahibi kayıt)
+                    $classroomId = $schedule->owner_id;
+                    if (!isset($classroomCache[$classroomId])) {
+                        $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
+                    }
+                    $examSize = (int)($classroomCache[$classroomId]->exam_size ?? 0);
+                    for ($i = 0; $i <= $maxExamDayIndex; $i++) {
+                        $day = $schedule->{"day" . $i};
+                        if (is_array($day)) {
+                            if (isset($day[0]) && is_array($day[0])) {
+                                foreach ($day as $grp) {
+                                    if (isset($grp['lesson_id'])) {
+                                        $lid = (int)$grp['lesson_id'];
+                                        $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
+                                    }
+                                }
+                            } else {
+                                if (isset($day['lesson_id'])) {
+                                    $lid = (int)$day['lesson_id'];
+                                    $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                foreach ($lessonsList as $lesson) {
+                    // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
+                    $placed = (int)($placedCapacityByLesson[$lesson->id] ?? 0);
+                    $remaining = max(0, (int)$lesson->size - $placed);
+                    if ($remaining > 0) {
+                        // Listede rozet ve data-lesson-hours için hours alanını kalan öğrenci olarak kullanıyoruz
+                        $lesson->lecturer_id = $lesson->getLecturer()->id;
+                        $lesson->hours = $remaining; // rozet olarak gösterilecek
+                        $available_lessons[] = $lesson;
+                    }
+                }
+            } else {
+                // Ders programı için mevcut saat bazlı mantık
+                /**
+                 * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
+                 */
+                foreach ($lessonsList as $lesson) {
+                    if (!$lesson->IsScheduleComplete()) {
+                        //Ders Programı tamamlanmamışsa
+                        $lesson->lecturer_id = $lesson->getLecturer()->id;
+                        $lesson->hours -= $this->getCount([
+                            'owner_type' => 'lesson',
+                            'owner_id' => $lesson->id,
+                            "semester" => $filters['semester'],
+                            "academic_year" => $filters['academic_year'],
+                        ]);// programa eklenmiş olan saatlar çıkartılıyor.
+                        $available_lessons[] = $lesson;
+                    }
                 }
             }
         } else {
