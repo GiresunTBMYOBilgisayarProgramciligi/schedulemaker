@@ -76,6 +76,20 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="col-form-label" for="settings[general][lesson_start_date][value]">Derslerin başlangıç tarihi</label>
+                                        <input type="hidden" name="settings[general][lesson_start_date][type]" value="string">
+                                        <input type="date" class="form-control" id="settings[general][lesson_start_date][value]" name="settings[general][lesson_start_date][value]" value="<?= htmlspecialchars(@$settings['general']['lesson_start_date'] ?? '') ?>">
+                                        <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="col-form-label" for="settings[general][lesson_end_date][value]">Derslerin bitiş tarihi</label>
+                                        <input type="hidden" name="settings[general][lesson_end_date][type]" value="string">
+                                        <input type="date" class="form-control" id="settings[general][lesson_end_date][value]" name="settings[general][lesson_end_date][value]" value="<?= htmlspecialchars(@$settings['general']['lesson_end_date'] ?? '') ?>">
+                                        <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Kaydet</button>

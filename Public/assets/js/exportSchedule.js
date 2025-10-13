@@ -80,6 +80,67 @@ document.addEventListener("DOMContentLoaded", function () {
             spinner.showSpinner(document.getElementById("schedule_container"));
             await fetchExportSchedule(data);
         }
+
+        // Bölüm/Program bazlı takvime kaydet
+        if (button.id === "departmentAndProgramCalendar") {
+            let data = new FormData();
+            data.append("type", "lesson");
+            data.append("semester", document.getElementById("semester").value);
+            data.append("academic_year", document.getElementById("academic_year").value);
+            if (programSelect && programSelect.value > 0) {
+                data.append("owner_type", "program");
+                data.append("owner_id", programSelect.value);
+            } else if (departmentSelect && departmentSelect.value > 0) {
+                data.append("owner_type", "department");
+                data.append("owner_id", departmentSelect.value);
+            } else {
+                data.append("owner_type", "program");
+            }
+            spinner.showSpinner(document.getElementById("schedule_container"));
+            await fetchExportIcs(data);
+        }
+
+        // Hoca bazlı takvime kaydet
+        if (button.id === "lecturerCalendar") {
+            let data = new FormData();
+            data.append("type", "lesson");
+            data.append("semester", document.getElementById("semester").value);
+            data.append("academic_year", document.getElementById("academic_year").value);
+            if (lecturerSelect && lecturerSelect.value > 0) {
+                data.append("owner_type", "user");
+                data.append("owner_id", lecturerSelect.value);
+            } else {
+                data.append("owner_type", "user");
+            }
+            spinner.showSpinner(document.getElementById("schedule_container"));
+            await fetchExportIcs(data);
+        }
+
+        // Derslik bazlı takvime kaydet
+        if (button.id === "classroomCalendar") {
+            let data = new FormData();
+            data.append("type", "lesson");
+            data.append("semester", document.getElementById("semester").value);
+            data.append("academic_year", document.getElementById("academic_year").value);
+            if (classroomSelect && classroomSelect.value > 0) {
+                data.append("owner_type", "classroom");
+                data.append("owner_id", classroomSelect.value);
+            } else {
+                data.append("owner_type", "classroom");
+            }
+            spinner.showSpinner(document.getElementById("schedule_container"));
+            await fetchExportIcs(data);
+        }
+
+        // Tek sayfa takvime kaydet (dinamik)
+        if (button.id === "singlePageCalendar") {
+            let data = new FormData();
+            data.append("type", "lesson");
+            data.append("owner_type", button.dataset.ownerType);
+            data.append("owner_id", button.dataset.ownerId);
+            spinner.showSpinner(document.getElementById("schedule_container"));
+            await fetchExportIcs(data);
+        }
     });
 
     // Export isteği gönderme ve indirme işlemi
@@ -127,6 +188,56 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast(
                     "Hata",
                     "Dışa aktarma sırasında hata oluştu. Detaylar için geliştirici konsoluna bakın",
+                    "danger"
+                );
+                console.error(error);
+            });
+    }
+
+    // ICS Export isteği gönderme ve indirme işlemi
+    function fetchExportIcs(data) {
+        return fetch("/ajax/exportScheduleIcs", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: data,
+        })
+            .then((response) => {
+                const disposition = response.headers.get("Content-Disposition");
+                let filename = "Ders Programı.ics"; // Varsayılan isim
+                if (disposition && disposition.includes("filename=")) {
+                    let matches = disposition.match(/filename=\"?(.+?)\"?(;|$)/);
+                    if (matches && matches[1]) {
+                        try {
+                            const decoder = new TextDecoder("utf-8");
+                            const bytes = new Uint8Array(
+                                matches[1].split("").map((c) => c.charCodeAt(0))
+                            );
+                            filename = decoder.decode(bytes);
+                        } catch (e) {
+                            filename = matches[1]; // fallback
+                        }
+                    }
+                }
+                return response.blob().then((blob) => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                spinner.removeSpinner();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch((error) => {
+                spinner.removeSpinner();
+                new Toast().prepareToast(
+                    "Hata",
+                    "Takvime kaydederken hata oluştu. Detaylar için geliştirici konsoluna bakın",
                     "danger"
                 );
                 console.error(error);

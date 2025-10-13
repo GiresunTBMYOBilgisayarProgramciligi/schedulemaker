@@ -590,4 +590,140 @@ class ImportExportManager
         $writer->save('php://output');
         exit;
     }
+    
+    /**
+     * Export schedules as ICS calendar file compatible with Google and Apple Calendar
+     * @throws Exception
+     */
+    #[NoReturn]
+    public function exportScheduleIcs($filters = []): void
+    {
+        if (!key_exists("semester", $filters)) {
+            $filters['semester'] = getSettingValue('semester');
+        }
+        if (!key_exists("academic_year", $filters)) {
+            $filters['academic_year'] = getSettingValue("academic_year");
+        }
+
+        $timezone = new \DateTimeZone('Europe/Istanbul');
+        $now = new \DateTime('now', $timezone);
+
+        // Akademik dönem için başlangıç ve bitiş tarihleri (ayarlar sayfasından)
+        $startDateStr = getSettingValue('lesson_start_date');
+        $endDateStr = getSettingValue('lesson_end_date');
+        $semesterStart = null;
+        $semesterEnd = null;
+        if (!empty($startDateStr) && !empty($endDateStr)) {
+            try {
+                $semesterStart = new \DateTime($startDateStr, $timezone);
+                $semesterEnd = new \DateTime($endDateStr, $timezone);
+            } catch (\Throwable $e) {
+                $semesterStart = null;
+                $semesterEnd = null;
+            }
+        }
+
+        $lines = [];
+        $lines[] = 'BEGIN:VCALENDAR';
+        $lines[] = 'VERSION:2.0';
+        $lines[] = 'PRODID:-//schedulemaker//TR MBMYO Ders Programı//TR';
+        $lines[] = 'CALSCALE:GREGORIAN';
+        $lines[] = 'METHOD:PUBLISH';
+
+        foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
+            // Fetch schedules matching the filter
+            $schedules = (new \App\Models\Schedule())->get()->where($scheduleFilter['filter'])->all();
+            if (count($schedules) === 0) continue;
+
+            foreach ($schedules as $schedule) {
+                // Parse start-end times from schedule time label like "08.00 - 08.50"
+                [$startText, $endText] = array_map('trim', explode('-', str_replace(' - ', '-', $schedule->time)));
+                $startText = str_replace('.', ':', trim($startText));
+                $endText = str_replace('.', ':', trim($endText));
+
+                for ($dayIndex = 0; $dayIndex <= getSettingValue('maxDayIndex', default: 4); $dayIndex++) {
+                    $day = $schedule->{"day{$dayIndex}"};
+                    if (is_null($day) || $day === false) continue;
+
+                    // Determine lessons: either single associative array or array of associative arrays (grouped)
+                    $entries = (isset($day[0]) && is_array($day[0])) ? $day : [$day];
+                    foreach ($entries as $entry) {
+                        if (!isset($entry['lesson_id'])) continue;
+                        $lesson = (new \App\Models\Lesson())->find($entry['lesson_id']);
+                        if (!$lesson) continue;
+                        $classroomName = '';
+                        if (isset($entry['classroom_id'])) {
+                            $classroom = (new \App\Models\Classroom())->find($entry['classroom_id']);
+                            if ($classroom) $classroomName = $classroom->name;
+                        }
+
+                        // Compute first occurrence date for this weekday based on settings
+                        $useRecurrence = ($semesterStart instanceof \DateTime) && ($semesterEnd instanceof \DateTime) && ($semesterEnd >= $semesterStart);
+                        if ($useRecurrence) {
+                            $targetDow = $dayIndex + 1; // 1=Mon ... 7=Sun
+                            $startDow = (int)$semesterStart->format('N');
+                            $delta = ($targetDow - $startDow + 7) % 7;
+                            $firstDate = (clone $semesterStart)->modify("+{$delta} days");
+                            $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
+                            $dtEnd = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
+                        } else {
+                            // Fallback: single reference week next Monday + dayIndex
+                            $anchor = new \DateTime('next monday', $timezone);
+                            if ((int)$now->format('N') === 1) { $anchor = new \DateTime('today', $timezone); }
+                            $eventDate = (clone $anchor)->modify("+{$dayIndex} day");
+                            $dtStart = new \DateTime($eventDate->format('Y-m-d') . ' ' . $startText, $timezone);
+                            $dtEnd = new \DateTime($eventDate->format('Y-m-d') . ' ' . $endText, $timezone);
+                        }
+
+                        // Build summary based on context
+                        $summary = $this->setExportLessonName($lesson, $scheduleFilter['type']);
+                        $location = $classroomName;
+                        $descriptionParts = [];
+                        $descriptionParts[] = $scheduleFilter['title'];
+                        $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
+                        $descriptionParts[] = 'Dönem: ' . $filters['semester'];
+                        $description = implode(' | ', array_filter($descriptionParts));
+
+                        $uid = uniqid('schedulemaker-', true) . '@schedulemaker';
+                        $dtstamp = $now->format('Ymd\THis');
+                        $dtstartLine = 'DTSTART;TZID=Europe/Istanbul:' . $dtStart->format('Ymd\THis');
+                        $dtendLine = 'DTEND;TZID=Europe/Istanbul:' . $dtEnd->format('Ymd\THis');
+
+                        $lines[] = 'BEGIN:VEVENT';
+                        $lines[] = 'UID:' . $uid;
+                        $lines[] = 'DTSTAMP:' . $dtstamp;
+                        $lines[] = $dtstartLine;
+                        $lines[] = $dtendLine;
+                        if ($useRecurrence) {
+                            $weekdayCodes = ['MO','TU','WE','TH','FR','SA','SU'];
+                            $byday = $weekdayCodes[$dayIndex] ?? 'MO';
+                            $untilLocal = (clone $semesterEnd)->setTime(23, 59, 59);
+                            $untilUtc = (clone $untilLocal)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
+                            $lines[] = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
+                        }
+                        $lines[] = 'SUMMARY:' . $this->escapeIcsText($summary);
+                        if ($location !== '') $lines[] = 'LOCATION:' . $this->escapeIcsText($location);
+                        if ($description !== '') $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
+                        $lines[] = 'END:VEVENT';
+                    }
+                }
+            }
+        }
+
+        $lines[] = 'END:VCALENDAR';
+        $content = implode("\r\n", $lines) . "\r\n";
+
+        $fileName = $filters['academic_year'] . ' ' . $filters['semester'] . ' ' . 'ders-programi.ics';
+        header('Content-Type: text/calendar; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        echo $content;
+        exit;
+    }
+
+    private function escapeIcsText(string $text): string
+    {
+        $text = str_replace(["\\", ",", ";", "\n", "\r"], ["\\\\", "\\,", "\\;", "\\n", ""], $text);
+        return $text;
+    }
 }

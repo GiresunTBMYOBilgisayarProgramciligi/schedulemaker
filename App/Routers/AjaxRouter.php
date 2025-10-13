@@ -962,6 +962,24 @@ class AjaxRouter extends Router
         $importExportManager->exportSchedule($filters);
     }
 
+    /**
+     * Takvim (ICS) dışa aktarma
+     * @throws Exception
+     */
+    public function exportScheduleIcsAction(): void
+    {
+        $filters = $this->data;
+        if (!key_exists('type', $filters)) {
+            // Varsayılan olarak ders programı
+            $filters['type'] = 'lesson';
+        }
+        if (!key_exists('owner_type', $filters)) {
+            throw new Exception("Dışa aktarma işlemi için ders programı sahibi seçilmemiş.");
+        }
+        $importExportManager = new ImportExportManager();
+        $importExportManager->exportScheduleIcs($filters);
+    }
+
     /*
      * Setting Actions
      */

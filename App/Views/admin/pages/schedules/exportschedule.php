@@ -102,9 +102,14 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <button class="btn btn-primary" type="button"  id="departmentAndProgramExport">
-                                           Dışa aktar
-                                    </button>
+                                    <div class="btn-group" role="group" aria-label="Dışa aktarma">
+                                        <button class="btn btn-primary" type="button"  id="departmentAndProgramExport">
+                                               Excel'e aktar
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" id="departmentAndProgramCalendar">
+                                               Takvime kaydet
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -138,9 +143,14 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <button class="btn btn-primary" type="button" id="lecturerExport" >
-                                        Dışa aktar
-                                    </button>
+                                    <div class="btn-group" role="group" aria-label="Hoca dışa aktarma">
+                                        <button class="btn btn-primary" type="button" id="lecturerExport" >
+                                            Excel'e aktar
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" id="lecturerCalendar" >
+                                            Takvime kaydet
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -170,9 +180,14 @@ use function App\Helpers\getSettingValue;
                         <div class="card-footer card-primary">
                             <div class="row">
                                 <div class="text-end">
-                                    <button class="btn btn-primary" type="button" id="classroomExport">
-                                        Dışa aktar
-                                    </button>
+                                    <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
+                                        <button class="btn btn-primary" type="button" id="classroomExport">
+                                            Excel'e aktar
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
+                                            Takvime kaydet
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

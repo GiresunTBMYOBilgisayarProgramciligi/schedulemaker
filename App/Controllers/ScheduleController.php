@@ -496,9 +496,14 @@ class ScheduleController extends Controller
                             <div class="card-header">
                                 <h3 class="card-title">' . $cardTitle . '</h3>
                                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
-                                    <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
-                                        <span>Excel\'e aktar</span> 
-                                    </button>
+                                    <div class="btn-group" role="group" aria-label="Dışa aktarma">
+                                        <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
+                                            <span>Excel\'e aktar</span>
+                                        </button>
+                                        <button id="singlePageCalendar" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-secondary btn-sm" >
+                                            <span>Takvime kaydet</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-body">';
