@@ -90,6 +90,23 @@
                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                     </div>
                                 </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="col-form-label" for="settings[general][maxExamDayIndex][value]">Sınav Programının Son Günü</label>
+                                        <input type="hidden" name="settings[general][maxExamDayIndex][type]" id="settings[general][maxExamDayIndex][type]" value="integer">
+                                        <select class="form-select" id="settings[general][maxExamDayIndex][value]" name="settings[general][maxExamDayIndex][value]">
+                                            <?php $maxExam = isset($settings['general']["maxExamDayIndex"]) ? (int)$settings['general']["maxExamDayIndex"] : 5; ?>
+                                            <option value="0" <?= ($maxExam === 0) ? 'selected' : '' ?>>Pazartesi</option>
+                                            <option value="1" <?= ($maxExam === 1) ? 'selected' : '' ?>>Salı</option>
+                                            <option value="2" <?= ($maxExam === 2) ? 'selected' : '' ?>>Çarşamba</option>
+                                            <option value="3" <?= ($maxExam === 3) ? 'selected' : '' ?>>Perşembe</option>
+                                            <option value="4" <?= ($maxExam === 4) ? 'selected' : '' ?>>Cuma</option>
+                                            <option value="5" <?= ($maxExam === 5) ? 'selected' : '' ?>>Cumartesi</option>
+                                            <option value="6" <?= ($maxExam === 6) ? 'selected' : '' ?>>Pazar</option>
+                                        </select>
+                                        <div class="form-text">Sınav takviminde haftanın dahil edileceği son günü belirler. Varsayılan: Cumartesi.</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Kaydet</button>
