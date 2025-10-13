@@ -141,7 +141,9 @@ use function App\Helpers\getSettingValue;
                                 <select id="classroom_options_template">
                                     <option value="">Derslik Seçiniz</option>
                                     <?php foreach ($classrooms as $classroom): ?>
-                                        <option value="<?= $classroom->id ?>"><?= $classroom->name ?> (<?= $classroom->class_size ?? '' ?>)</option>
+                                        <option value="<?= $classroom->id ?>" data-exam-size="<?= htmlspecialchars($classroom->exam_size ?? '', ENT_QUOTES) ?>">
+                                            <?= $classroom->name ?> (<?= htmlspecialchars($classroom->exam_size ?? '', ENT_QUOTES) ?>)
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                                 <select id="lecturer_options_template">
