@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (departmentAndProgramScheduleButton) {
         departmentAndProgramScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            data.append("type", "lesson");
+            const scheduleType = departmentAndProgramScheduleButton?.dataset?.scheduleType || "lesson";
+            data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("only_table", departmentAndProgramScheduleButton.dataset.onlyTable)
@@ -33,7 +34,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lecturerScheduleButton) {
         lecturerScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            data.append("type", "lesson");
+            const scheduleType = lecturerScheduleButton?.dataset?.scheduleType || "lesson";
+            data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("semester_no", "birleştir");
@@ -52,7 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (classroomScheduleButton) {
         classroomScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            data.append("type", "lesson");
+            const scheduleType = classroomScheduleButton?.dataset?.scheduleType || "lesson";
+            data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("semester_no", "birleştir");
