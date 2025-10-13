@@ -605,6 +605,33 @@ class AdminRouter extends Router
         $this->callView("admin/schedules/editschedule", $this->view_data);
     }
 
+    public function EditExamScheduleAction($department_id = null)
+    {
+        if (!isAuthorized("department_head")) {
+            throw new Exception("Sınav programı düzenleme yetkiniz yok");
+        }
+        $this->assetManager->loadPageAssets('editschedule');
+        $userController = new UserController();
+        $departmentController = new DepartmentController();
+        if ($userController->canUserDoAction(8)) {
+            $departments = $departmentController->getDepartmentsList(['active' => true]);
+        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+            $departments = $departmentController->getDepartmentsList(['active'=>true,'id'=>$this->currentUser->department_id]) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
+        } else {
+            throw new Exception("Bu işlem için yetkiniz yok");
+        }
+        $this->view_data = array_merge($this->view_data, [
+            "scheduleController" => new ScheduleController(),
+            "departments" => $departments,
+            "page_title" => "Sınav Programını Düzenle",
+            "classrooms" => (new ClassroomController())->getClassroomsList()
+        ]);
+        if ($this->currentUser->role == "department_head") {
+            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+        } else $this->view_data['lecturers'] = $userController->getListByFilters();
+        $this->callView("admin/schedules/editexamschedule", $this->view_data);
+    }
+
     /**
      * @throws Exception
      */
