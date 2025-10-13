@@ -586,7 +586,8 @@ class AjaxRouter extends Router
         $filters = $scheduleController->checkFilters($this->data, "saveSchedule");
 
         $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        $lecturer = $lesson->getLecturer();
+        //sınav programında gözetmen lecturer_id ile belirtiliyor.
+        $lecturer = isset($this->data['lecturer_id']) ? ((new User())->find($this->data['lecturer_id']) ?: $lesson->getLecturer()) : $lesson->getLecturer();
         $classroom = (new Classroom())->find($this->data['classroom_id']);
         // bağlı dersleri alıyoruz
         $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
@@ -646,7 +647,7 @@ class AjaxRouter extends Router
                     foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
                         if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
                         $schedule->fill([
-                            "type" => "lesson",//todo datadan al
+                            "type" => $filters['type'],
                             "owner_type" => $owner_type,
                             "owner_id" => $owner_id,
                             "day" . $filters['day_index'] => $day,
