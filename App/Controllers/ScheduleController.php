@@ -56,7 +56,10 @@ class ScheduleController extends Controller
         $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
-        for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
+        $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
+            ? getSettingValue('maxExamDayIndex', default: 5)
+            : getSettingValue('maxDayIndex', default: 4);
+        for ($i = 0; $i <= $maxDayIndex; $i++) {
             $headerRow[] = $days[$i]; // Gün adı
             if (isset($filters['owner_type']) and $filters['owner_type'] != 'classroom')
                 $headerRow[] = 'S';       // Sütun başlığı (Sınıf)
@@ -82,7 +85,15 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
+        /*
+         * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
+         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxExamDayIndex kullanılır.
+         */
+        if ($maxDayIndex === null) {
+            $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
+                ? getSettingValue('maxExamDayIndex', default: 5)
+                : getSettingValue('maxDayIndex', default: 4);
+        }
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
@@ -93,24 +104,37 @@ class ScheduleController extends Controller
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
-        $scheduleRows = [
-            "08.00 - 08.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "09.00 - 09.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "10.00 - 10.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "11.00 - 11.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "12.00 - 12.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "13.00 - 13.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "14.00 - 14.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "15.00 - 15.50" => $this->generateEmptyWeek($type, $maxDayIndex),
-            "16.00 - 16.50" => $this->generateEmptyWeek($type, $maxDayIndex)
-        ];
-
+        $scheduleRows = [];
+        if (($filters['type'] ?? 'lesson') === 'exam') {
+            // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
+            $start = new \DateTime('08:00');
+            $end = new \DateTime('17:00');
+            while ($start < $end) {
+                $slotStart = clone $start;
+                $slotEnd = (clone $start)->modify('+30 minutes');
+                $rowKey = $slotStart->format('H.i') . ' - ' . $slotEnd->format('H.i');
+                $scheduleRows[$rowKey] = $this->generateEmptyWeek($type, $maxDayIndex);
+                $start = $slotEnd;
+            }
+        } else {
+            // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
+            $start = new \DateTime('08:00');
+            $end = new \DateTime('17:00');
+            while ($start < $end) {
+                $slotStart = clone $start;
+                $slotEnd = (clone $start)->modify('+50 minutes');
+                $rowKey = $slotStart->format('H.i') . ' - ' . $slotEnd->format('H.i');
+                $scheduleRows[$rowKey] = $this->generateEmptyWeek($type, $maxDayIndex);
+                $slotEnd = $slotEnd->modify('+10 minutes'); // tenefüs arası
+                $start = $slotEnd;
+            }
+        }
 
         /*
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
          */
         foreach ($schedules as $schedule) {
-            $week = $schedule->getWeek($type);
+            $week = $schedule->getWeek($type, $maxDayIndex);
             foreach ($week as $day => $value) {
                 if (!is_null($value)) {
                     if ($value === true and is_array($scheduleRows[$schedule->time][$day])) {
@@ -215,10 +239,13 @@ class ScheduleController extends Controller
      */
     public function createScheduleHTMLTable(array $filters = []): string
     {
-        $createTableHeaders = function (): string {
+        $createTableHeaders = function () use ($filters): string {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = '<th style="width: 7%;">#</th>';
-            for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
+            $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
+                ? getSettingValue('maxExamDayIndex', default: 5)
+                : getSettingValue('maxDayIndex', default: 4);
+            for ($i = 0; $i <= $maxDayIndex; $i++) {
                 $headers .= '<th>' . $days[$i] . '</th>';
             }
             return $headers;
