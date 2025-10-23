@@ -37,7 +37,16 @@ class Lesson extends Model
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
     public ?int $parent_lesson_id = null;
-
+    /**
+     * Ders programına eklemeye uygun olmayan saat miktarı. Bu saatler zaten programa eklenmiş
+     * @var int|null
+     */
+    public ?int $placed_hours = 0;
+    /**
+     * Sınav programına eklemeye uygun olmayan mevcut. Bu mevcut zaten programa eklenmiş
+     * @var int|null
+     */
+    public ?int $placed_size = 0;
     protected string $table_name = "lessons";
 
     /**
@@ -111,32 +120,84 @@ class Lesson extends Model
 
     /**
      * Ders saati ile ders adına kayıtlı schedule sayısı aynı ise ders ders programı tamamlanmıştır.
+     * @param string $type schedule type
      * @return bool true if complete
      * @throws Exception
      */
-    public function IsScheduleComplete(): bool
+    public function IsScheduleComplete(string $type = "lesson"): bool
     {
         $result = false;
-        //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
-        $schedules = (new Schedule())->get()->where([
-            'owner_id' => $this->id,
-            'semester_no' => $this->semester_no,
-            'owner_type' => 'lesson',
-            'academic_year' => $this->academic_year,
-            'type' => 'lesson',
-            'semester' => $this->semester
-        ])->all();
-        $hours = 0;
-        foreach ($schedules as $schedule) {
-            for($i = 0; $i<=getSettingValue('maxDayIndex',default: 4); $i++) {
-                if(!is_null($schedule->{"day$i"})) {
-                    $hours++;
+        if ($type == "lesson") {
+            //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+            $schedules = (new Schedule())->get()->where([
+                'owner_id' => $this->id,
+                'semester_no' => $this->semester_no,
+                'owner_type' => 'lesson',
+                'academic_year' => $this->academic_year,
+                'type' => 'lesson',
+                'semester' => $this->semester
+            ])->all();
+            $this->placed_hours = 0;
+            foreach ($schedules as $schedule) {
+                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
+                    if (!is_null($schedule->{"day$i"})) {
+                        $this->placed_hours++;
+                    }
                 }
             }
+
+            if ($this->placed_hours == $this->hours) {
+                $result = true;
+            }
+        } elseif ($type == "exam") {
+            // İlgili dönem/yıl için sınıf sahibi (owner_type=classroom) exam kayıtlarını al ve ders bazında kapasite topla
+            $examSchedules = (new Schedule())->get()->where([
+                'owner_type' => 'classroom',
+                'type' => 'exam',
+                'semester' => $this->semester,
+                'academic_year' => $this->academic_year,
+            ])->all();
+
+            // Ders bazında yerleştirilen kapasite
+            $placedCapacityByLesson = [];
+            $classroomCache = [];
+            // maxExamDayIndex ayarı
+            $maxExamDayIndex = getSettingValue('maxExamDayIndex', default: 5);
+            foreach ($examSchedules as $schedule) {
+                // owner_id derslik id'sidir (sınıf sahibi kayıt)
+                $classroomId = $schedule->owner_id;
+                if (!isset($classroomCache[$classroomId])) {
+                    $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
+                }
+                $examSize = (int)($classroomCache[$classroomId]->exam_size ?? 0);
+                for ($i = 0; $i <= $maxExamDayIndex; $i++) {
+                    $day = $schedule->{"day" . $i};
+                    if (is_array($day)) {
+                        if (isset($day[0]) && is_array($day[0])) {
+                            foreach ($day as $grp) {
+                                if (isset($grp['lesson_id'])) {
+                                    $lid = (int)$grp['lesson_id'];
+                                    $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
+                                }
+                            }
+                        } else {
+                            if (isset($day['lesson_id'])) {
+                                $lid = (int)$day['lesson_id'];
+                                $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
+            $this->placed_size = (int)($placedCapacityByLesson[$this->id] ?? 0);
+            $remaining = max(0, (int)$this->size - $this->placed_size);
+            if ($remaining <= 0) {
+                $result = true;
+            }
         }
-        if ($hours == $this->hours) {
-            $result = true;
-        }
+
         return $result;
     }
 }
