@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -18,6 +19,12 @@ class ScheduleController extends Controller
 
     protected string $table_name = 'schedule';
     protected string $modelName = "App\Models\Schedule";
+
+    public FilterValidator $validator;
+    public function __construct(){
+        parent::__construct();
+        $this->validator= new FilterValidator();
+    }
 
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
@@ -46,6 +53,7 @@ class ScheduleController extends Controller
      */
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
+        $filters= $this->validator->validate($filters, "createScheduleExcelTable");
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0) return false; // program boş ise false dön
 
@@ -742,7 +750,7 @@ class ScheduleController extends Controller
      */
     public function checkScheduleCrash(array $filters = []): bool
     {
-        $filters = $this->checkFilters($filters, "checkScheduleCrash");
+        $filters = $this->validator->validate($filters, "checkScheduleCrash");
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         $lecturer = $lesson->getLecturer();
         $classroom = (new Classroom())->find($filters['classroom_id']);
@@ -964,7 +972,7 @@ class ScheduleController extends Controller
      */
     public function deleteSchedule(array $filters): array
     {
-        $filters = $this->checkFilters($filters, "deleteSchedule");
+        $filters = $this->validator->validate($filters, "deleteSchedule");
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_id"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
@@ -979,6 +987,7 @@ class ScheduleController extends Controller
             /**
              * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
              * todo semester no belirtilemeyen durumlar hangileriydi ?
+             * todo bu işlem filter validate içerisinde default olarak işlenebilir mi?
              */
             if (!key_exists("semester_no", $filters)) {
                 $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -1001,6 +1010,7 @@ class ScheduleController extends Controller
      */
     private function checkAndDeleteSchedule($schedule, $filters): array
     {
+        $filters = $this->validator->validate($filters, "checkAndDeleteSchedule");
         //belirtilen günde bir ders var ise
         if (is_array($schedule->{"day" . $filters["day_index"]})) {
             if (key_exists("lesson_id", $schedule->{"day" . $filters["day_index"]})) {
@@ -1129,90 +1139,5 @@ class ScheduleController extends Controller
             }
         }
         return $schedule_filters;
-    }
-
-    /**
-     * todo
-     * kullanılacağı alana göre filtrede olması gereken alanları kontrol edip fazlalıkları silip eksiklerde hata verir
-     * todo semester ve semester no bilgisinin gelip gelmediği birleştirilip birleştirilmeyeceği burada ayarlanmalı.
-     * @param array $data
-     * @param  $for string Filtrenin neresi için kullanılacağını belirtir
-     * @param bool $acceptNull
-     * @return array
-     * @throws Exception
-     */
-    public function checkFilters(array $data, string $for, bool $acceptNull = false): array
-    {
-        /**
-         * Ders programı için filtreleme seçeneklerini içeren dizi.
-         *
-         * @var array $allFilters [
-         *     type: string|string[], // Ders programı türü (örneğin: "exam", "lesson")
-         *     owner_type: string|string[], // Ders programının ait olduğu birim türü (örneğin: "user", "lesson", "classroom", "program")
-         *     owner_id: int|int[], // Ders programının ait olduğu birimin ID numarası
-         *     semester: string|string[], // Ders programının ait olduğu dönem (örneğin: "Güz", "Bahar")
-         *     academic_year: string|string[], // Akademik yıl bilgisi (örneğin: "2024 - 2025")
-         *     semester_no: int|int[], // Dersin ait olduğu yarıyıl numarası
-         *     time: string|string[], // Dersin zaman bilgisi (örneğin: "10.00 - 10.50")
-         *     day_index: int, // Haftanın günü (0 = Pazar, 1 = Pazartesi, ...)
-         *     day: array{lesson_id: int, lecturer_id: int, classroom_id: int}, // Gün bilgisi içeren dizi
-         *     time: string, // Dersin başlangıç saati (örn: "10:00")
-         *     lesson_hours: int, // Dersin kaç saat süreceği
-         *     owners: string[] // Ders programının ait olduğu birim türleri listesi
-         *     lesson_id: int, // İşlem yapılacak ders id numarsı
-         *     classroom_id: int, // Dersin yapılacağı dersliğin id numarası
-         * ]
-         */
-        $allFilters = [
-            "type", // string | array -> Ders programı türünü belirtir (exam, lesson)
-            "owner_type", // string | array -> Ders programının ait olduğu birimi belirtir (user, lesson, classroom, program)
-            "owner_id", // int | array -> Ders programının ait olduğu birimin ID numarası
-            "semester", // string | array -> Ders programının ait olduğu dönem (Güz, Bahar)
-            "academic_year", // string | array -> Ders programının ait olduğu akademik yıl (2024 - 2025)
-            "semester_no", // int | array -> Dersin ait olduğu yarıyıl numarası
-            "time", // string | array -> Dersin saat aralığı (10.00 - 10.50)
-            "day_index", // int -> Dersin gün index numarası (0 = Pazar, 1 = Pazartesi, ...)
-            "day", // array -> Gün bilgisi içeren dizi (lesson_id, lecturer_id, classroom_id)
-            "lesson_hours", // int -> Dersin kaç saatlik olduğu
-            "owners", // array[string] -> Ders programının ait olduğu birim türleri listesi
-            "lesson_id", // İşlem yapılacak ders id numarsı
-            "classroom_id", // Dersin yapılacağı dersliğin id numarası
-            "lecturer_id", // Ders programının hoca id numarası
-        ];
-        $mustFilters = [
-            "saveSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
-            "deleteScheduleAction" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "lesson_id", "classroom_id", "lecturer_id"],
-            "deleteSchedule" => ["type", "semester", "academic_year", "semester_no", "time", "day_index", "owner_type", "owner_id", "day"],
-            "checkScheduleCrash" => ["type", "semester", "academic_year", "time", "day_index", "lesson_hours", "lesson_id", "classroom_id"],
-            "checkClassroomSchedule" => ["lesson_id", "semester", "academic_year","type"],
-            "checkProgramSchedule" => ["lesson_id", "semester", "academic_year","type"],
-            "checkLecturerSchedule" => ["lesson_id", "semester", "academic_year","type"],
-        ];
-
-        // ilk olarak gelen filtrelerin içinde allFilters dizisinde belirtilenler dışında bir veri var mı diye kontol et
-        foreach ($data as $k => $v) {
-            if (!in_array($k, $allFilters)) throw new Exception("$for işleminde geçersiz filtre tespit edildi $k => $v");
-        }
-        // akademikyıl ve dönem bilgisini kontrol et yok ise ayarlardan ekle
-        if (!key_exists("semester", $data)) {
-            $data['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $data)) {
-            $data['academic_year'] = getSettingValue("academic_year");
-        }
-        // yapılacak işlem için zorunlu filtreleri kontrol et ve eksik durumunda hata ver.
-        foreach ($mustFilters[$for] as $filter) {
-            if (!key_exists($filter, $data)) throw new Exception("$for işleminde eksik filtre tespit edildi:" . var_export($filter, true));
-        }
-        $filters = [];
-        foreach ($mustFilters[$for] as $filter) {
-            $filters[$filter] = $data[$filter] ?? null;
-        }
-        if (!$acceptNull)
-            $filters = array_filter($filters, function ($value) {
-                return $value !== null && $value !== '' && $value !== "null";
-            });
-
-        return $filters;
     }
 }

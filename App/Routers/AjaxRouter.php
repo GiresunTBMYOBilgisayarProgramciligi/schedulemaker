@@ -561,9 +561,8 @@ class AjaxRouter extends Router
     public function checkScheduleCrashAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "checkScheduleCrash");
+        $scheduleController->checkScheduleCrash($this->data);
 
-        $scheduleController->checkScheduleCrash($filters);
         $this->response['status'] = "success";
         $this->sendResponse();
     }
@@ -583,7 +582,7 @@ class AjaxRouter extends Router
     public function saveScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "saveSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "saveScheduleAction");
 
         $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         //sınav programında gözetmen lecturer_id ile belirtiliyor.
@@ -711,7 +710,7 @@ class AjaxRouter extends Router
     public function checkLecturerScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "checkLecturerSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "checkLecturerScheduleAction");
 
         $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         $lecturer = $lesson->getLecturer();
@@ -765,7 +764,7 @@ class AjaxRouter extends Router
     public function checkClassroomScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "checkClassroomSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "checkClassroomScheduleAction");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
@@ -849,7 +848,7 @@ class AjaxRouter extends Router
     public function checkProgramScheduleAction()
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "checkProgramSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "checkProgramSchedule");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         $unavailableCells = [];
@@ -902,12 +901,12 @@ class AjaxRouter extends Router
     public function deleteScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->checkFilters($this->data, "deleteScheduleAction");
+        $filters = $scheduleController->validator->validate($this->data, "deleteScheduleAction");
         if (!key_exists("owner_type", $filters)) {
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];
             $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $lecturer = (new User())->find($filters['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");
+            $lecturer = (new User())->find($filters['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");//todo dersten alınması ile bu şekilde alınması arasında fark var mı ?
             $classroom = (new Classroom())->find($filters["classroom_id"]);
             // bağlı dersleri alıyoruz
             $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
