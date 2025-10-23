@@ -160,7 +160,7 @@ class AdminRouter extends Router
                     'owner_type' => 'user',
                     'owner_id' => $user->id,
                     'type' => 'lesson',
-                    'semester_no' => ['in' => getSemesterNumbers()]
+                    'semester_no' => getSemesterNumbers()
                 ]
 
             ),
@@ -232,7 +232,7 @@ class AdminRouter extends Router
                     'owner_type' => 'lesson',
                     'owner_id' => $lesson->id,
                     'type' => 'lesson',
-                    'semester_no' => ['in' => getSemesterNumbers()]
+                    'semester_no' => getSemesterNumbers()
                 ],
                 true
             ),
@@ -348,7 +348,7 @@ class AdminRouter extends Router
                     'owner_type' => 'classroom',
                     'owner_id' => $classroom->id,
                     'type' => 'lesson',
-                    'semester_no' => ['in' => getSemesterNumbers()]
+                    'semester_no' => getSemesterNumbers()
                 ]),
         ]);
         $this->callView("admin/classrooms/classroom", $this->view_data);
