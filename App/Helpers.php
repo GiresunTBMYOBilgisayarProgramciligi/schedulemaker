@@ -133,9 +133,11 @@ class FilterValidator
      * @var array
      */
     private $operationRules = [];
+    public $schema = "";
 
     public function __construct()
     {
+
         // 1. Tüm olası filtreleri ve türlerini tanımla
         $this->masterSchema = [
             'type' => ['type' => 'string'],//Ders programı türünü belirtir (exam, lesson)
@@ -181,22 +183,41 @@ class FilterValidator
                 'optional' => ["day"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "checkLecturerScheduleAction"=> [
-                'required' => ["type","lesson_id"],
+            "checkLecturerScheduleAction" => [
+                'required' => ["type", "lesson_id"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "checkClassroomScheduleAction"=>[
-                'required' => ["type","lesson_id"],
+            "checkClassroomScheduleAction" => [
+                'required' => ["type", "lesson_id"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "checkProgramScheduleAction"=>[
-                'required' => ["type","lesson_id"],
+            "checkProgramScheduleAction" => [
+                'required' => ["type", "lesson_id"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
-
+            "getSchedulesHTML" => [
+                'required' => ["type", "owner_type", "owner_id"],
+                'optional' => ["semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "prepareScheduleCard" => [
+                'required' => ["type", "owner_type", "owner_id"],
+                'optional' => ["semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "createAvailableLessonsHTML" => [
+                'required' => ["type", "owner_type", "owner_id","semester_no"],
+                'optional' => [],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "availableLessons" => [
+                'required' => ["type", "owner_type", "owner_id", "semester_no"],
+                'optional' => [],
+                'defaults' => ['semester', 'academic_year']
+            ],
 
             'createScheduleExcelTable' => [
                 'required' => ['type'],
@@ -218,6 +239,7 @@ class FilterValidator
      */
     public function validate(array $data, string $for): array
     {
+        $this->schema = $for;
         if (!isset($this->operationRules[$for])) {
             throw new \Exception("'$for' için tanımlanmış bir doğrulama kuralı yok.");
         }
@@ -338,7 +360,7 @@ class FilterValidator
         // Hiçbiri eşleşmedi
         $actualType = is_object($value) ? get_class($value) : gettype($value);
         throw new \InvalidArgumentException(
-            "'$key' filtresi için geçersiz veri türü. Beklenen: '$expectedType', Gelen: '$actualType'"
+            "$this->schema işleminde '$key' filtresi için geçersiz veri türü. Beklenen: '$expectedType', Gelen: '$actualType'"
         );
     }
 

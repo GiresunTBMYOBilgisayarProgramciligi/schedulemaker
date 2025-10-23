@@ -21,9 +21,11 @@ class ScheduleController extends Controller
     protected string $modelName = "App\Models\Schedule";
 
     public FilterValidator $validator;
-    public function __construct(){
+
+    public function __construct()
+    {
         parent::__construct();
-        $this->validator= new FilterValidator();
+        $this->validator = new FilterValidator();
     }
 
     /**
@@ -53,7 +55,7 @@ class ScheduleController extends Controller
      */
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
-        $filters= $this->validator->validate($filters, "createScheduleExcelTable");
+        $filters = $this->validator->validate($filters, "createScheduleExcelTable");
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0) return false; // program boş ise false dön
 
@@ -165,134 +167,52 @@ class ScheduleController extends Controller
      */
     public function availableLessons(array $filters = []): array
     {
+        $filters = $this->validator->validate($filters, "availableLessons");
         $available_lessons = [];
-        if (key_exists('owner_type', $filters) and key_exists('owner_id', $filters)) {
-            if (!key_exists("semester", $filters)) {
-                $filters['semester'] = getSettingValue('semester');
-            }
-            if (!key_exists("academic_year", $filters)) {
-                $filters['academic_year'] = getSettingValue("academic_year");
-            }
-            $lessonFilters = [];
-            /**
-             * uygun ders listesi program için hazırlanıyor.
-             */
-            if ($filters['owner_type'] == "program") {
-                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
-                    $lessonFilters['semester_no'] = $filters['semester_no'];
-                } else {
-                    throw new Exception("Yarıyıl bilgisi yok");
-                }
-                $lessonFilters = array_merge($lessonFilters, [
-                    'program_id' => $filters['owner_id'],
-                    'semester' => $filters['semester'],
-                    'academic_year' => $filters['academic_year'],
-                    '!type' => 4// staj dersleri dahil değil
-                ]);
-            } elseif ($filters['owner_type'] == "classroom") {
-                $classroom = (new Classroom())->find($filters['owner_id']);
-                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
-                    $lessonFilters['semester_no'] = $filters['semester_no'];
-                } else {
-                    throw new Exception("Yarıyıl bilgisi yok");
-                }
-                $lessonFilters = array_merge($lessonFilters, [
-                    'classroom_type' => $classroom->type,
-                    'semester' => $filters['semester'],
-                    'academic_year' => $filters['academic_year'],
-                    '!type' => 4// staj dersleri dahil değil
-                ]);
-            } elseif ($filters['owner_type'] == "user") {
-                if (array_key_exists("semester_no", $filters)) {//todo her zaman olması gerekmiyor mu?
-                    $lessonFilters['semester_no'] = $filters['semester_no'];
-                } else {
-                    throw new Exception("Yarıyıl bilgisi yok");
-                }
-                $lessonFilters = array_merge($lessonFilters, [
-                    'lecturer_id' => $filters['owner_id'],
-                    'semester' => $filters['semester'],
-                    'academic_year' => $filters['academic_year'],
-                    '!type' => 4// staj dersleri dahil değil
-                ]);
-            }
-            $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
 
-            // Sınav programı için farklı tamamlama mantığı: ders saatleri önemsiz, öğrenci mevcudu kadar yerleştirme yapılmalı
-            if (($filters['type'] ?? 'lesson') === 'exam') {
-                // İlgili dönem/yıl için sınıf sahibi (owner_type=classroom) exam kayıtlarını al ve ders bazında kapasite topla
-                $examSchedules = (new Schedule())->get()->where([
-                    'owner_type' => 'classroom',
-                    'type' => 'exam',
-                    'semester' => $filters['semester'],
-                    'academic_year' => $filters['academic_year'],
-                ])->all();
+        $lessonFilters = [
+            'semester_no' => is_array($filters['semester_no']) ? ['in' => $filters['semester_no']] : $filters['semester_no'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+            '!type' => 4// staj dersleri dahil değil
+        ];
 
-                // Ders bazında yerleştirilen kapasite
-                $placedCapacityByLesson = [];
-                $classroomCache = [];
-                // maxExamDayIndex ayarı
-                $maxExamDayIndex = getSettingValue('maxExamDayIndex', default: 5);
-                foreach ($examSchedules as $schedule) {
-                    // owner_id derslik id'sidir (sınıf sahibi kayıt)
-                    $classroomId = $schedule->owner_id;
-                    if (!isset($classroomCache[$classroomId])) {
-                        $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
-                    }
-                    $examSize = (int)($classroomCache[$classroomId]->exam_size ?? 0);
-                    for ($i = 0; $i <= $maxExamDayIndex; $i++) {
-                        $day = $schedule->{"day" . $i};
-                        if (is_array($day)) {
-                            if (isset($day[0]) && is_array($day[0])) {
-                                foreach ($day as $grp) {
-                                    if (isset($grp['lesson_id'])) {
-                                        $lid = (int)$grp['lesson_id'];
-                                        $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                                    }
-                                }
-                            } else {
-                                if (isset($day['lesson_id'])) {
-                                    $lid = (int)$day['lesson_id'];
-                                    $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                foreach ($lessonsList as $lesson) {
-                    // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
-                    $placed = (int)($placedCapacityByLesson[$lesson->id] ?? 0);
-                    $remaining = max(0, (int)$lesson->size - $placed);
-                    if ($remaining > 0) {
-                        // Listede rozet ve data-lesson-hours için hours alanını kalan öğrenci olarak kullanıyoruz
-                        $lesson->lecturer_id = $lesson->getLecturer()->id;
-                        $lesson->hours = $remaining; // rozet olarak gösterilecek
-                        $available_lessons[] = $lesson;
-                    }
-                }
-            } else {
-                // Ders programı için mevcut saat bazlı mantık
-                /**
-                 * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-                 * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-                 */
-                foreach ($lessonsList as $lesson) {
-                    if (!$lesson->IsScheduleComplete()) {
-                        //Ders Programı tamamlanmamışsa
-                        $lesson->lecturer_id = $lesson->getLecturer()->id;
-                        $lesson->hours -= $this->getCount([
-                            'owner_type' => 'lesson',
-                            'owner_id' => $lesson->id,
-                            "semester" => $filters['semester'],
-                            "academic_year" => $filters['academic_year'],
-                        ]);// programa eklenmiş olan saatlar çıkartılıyor.
-                        $available_lessons[] = $lesson;
-                    }
-                }
-            }
-        } else {
-            throw new Exception("Owner_type ve/veya owner id yok");
+        if ($filters['owner_type'] == "program") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'program_id' => $filters['owner_id'],
+            ]);
+        } elseif ($filters['owner_type'] == "classroom") {
+            $classroom = (new Classroom())->find($filters['owner_id']);
+            $lessonFilters = array_merge($lessonFilters, [
+                'classroom_type' => $classroom->type,
+            ]);
+        } elseif ($filters['owner_type'] == "user") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'lecturer_id' => $filters['owner_id'],
+            ]);
         }
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
+
+
+        // Ders programı için mevcut saat bazlı mantık
+        /**
+         * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+         * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
+         */
+        foreach ($lessonsList as $lesson) {
+            if (!$lesson->IsScheduleComplete($filters['type'])) {
+                //Ders Programı tamamlanmamışsa
+                $lesson->lecturer_id = $lesson->getLecturer()->id;
+                if ($filters['type'] == 'lesson') {
+                    $lesson->hours -= $lesson->placed_hours;
+                } elseif ($filters['type'] == 'exam') {
+                    $lesson->hours = $lesson->size - $lesson->placed_size;
+                }
+
+                $available_lessons[] = $lesson;
+            }
+        }
+
         return $available_lessons;
     }
 
@@ -489,9 +409,8 @@ class ScheduleController extends Controller
      */
     public function createAvailableLessonsHTML(array $filters = []): string
     {
-        if (!key_exists('semester_no', $filters)) {
-            throw new Exception("Dönem numarası belirtilmelidir");
-        }
+        $filters = $this->validator->validate($filters, "createAvailableLessonsHTML");
+
         /*
          * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
          */
@@ -561,6 +480,7 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
+        $filters = $this->validator->validate($filters, "prepareScheduleCard");
         $ownerName = match ($filters['owner_type']) {
             'user' => (new User())->find($filters['owner_id'])->getFullName(),
             'program' => (new Program())->find($filters['owner_id'])->name,
@@ -628,16 +548,12 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSettingValue("academic_year");
-        }
+        $filters = $this->validator->validate($filters, "getSchedulesHTML");
+
         $HTMLOUT = '';
         // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
-        if (key_exists("semester_no", $filters) and $filters['semester_no'] == "birleştir") {
-            $filters['semester_no'] = ['in' => getSemesterNumbers($filters['semester'])];
+        if (key_exists("semester_no", $filters) and $filters['semester_no'] == 0) {
+            $filters['semester_no'] = getSemesterNumbers($filters['semester']);
         }
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
