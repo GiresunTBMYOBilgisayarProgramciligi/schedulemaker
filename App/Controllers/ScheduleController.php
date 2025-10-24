@@ -95,12 +95,13 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
+        $filters = $this->validator->validate($filters, "prepareScheduleRows");
         /*
          * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
          * Ders (lesson) için maxDayIndex, Sınav (exam) için maxExamDayIndex kullanılır.
          */
         if ($maxDayIndex === null) {
-            $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
+            $maxDayIndex = ($filters['type'] === 'exam')
                 ? getSettingValue('maxExamDayIndex', default: 5)
                 : getSettingValue('maxDayIndex', default: 4);
         }
@@ -115,7 +116,7 @@ class ScheduleController extends Controller
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [];
-        if (($filters['type'] ?? 'lesson') === 'exam') {
+        if ($filters['type'] === 'exam') {
             // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
@@ -224,10 +225,12 @@ class ScheduleController extends Controller
      */
     public function createScheduleHTMLTable(array $filters = []): string
     {
+        $filters = $this->validator->validate($filters, "createScheduleHTMLTable");
+
         $createTableHeaders = function () use ($filters): string {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = '<th style="width: 7%;">#</th>';
-            $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
+            $maxDayIndex = ($filters['type'] === 'exam')
                 ? getSettingValue('maxExamDayIndex', default: 5)
                 : getSettingValue('maxDayIndex', default: 4);
             for ($i = 0; $i <= $maxDayIndex; $i++) {
@@ -240,7 +243,7 @@ class ScheduleController extends Controller
         // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
         $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
         // eğer dönem belirtilmemişse aktif dönem bilgisi alınır
-        $semester = isset($filters['semester']) ? 'data-semester="' . $filters['semester'] . '"' : 'data-semester="' . getSettingValue("semester") . '"';
+        $semester = 'data-semester="' . $filters['semester'] . '"';
 
         /**
          * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar

@@ -209,7 +209,7 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "createAvailableLessonsHTML" => [
-                'required' => ["type", "owner_type", "owner_id","semester_no"],
+                'required' => ["type", "owner_type", "owner_id", "semester_no"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
@@ -218,6 +218,18 @@ class FilterValidator
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
+            "createScheduleHTMLTable" => [
+                'required' => ["type","owner_type","owner_id"],
+                'optional' => ["semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "prepareScheduleRows"=> [
+                'required' => ["type", "owner_type","owner_id"],
+                'optional' => ["semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+
+
 
             'createScheduleExcelTable' => [
                 'required' => ['type'],
