@@ -11,6 +11,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\ImportExportManager;
 use App\Core\Router;
+use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
@@ -951,13 +952,8 @@ class AjaxRouter extends Router
      */
     public function exportScheduleAction(): void
     {
-        $filters = $this->data;
-        if (!key_exists('type', $filters)) {
-            throw new Exception("Dışarı aktarma işlemi için tür seçilmemiş.");
-        }
-        if (!key_exists('owner_type', $filters)) {
-            throw new Exception("Dışarı aktarma işlemi için ders programı sahibi seçilmemiş.");
-        }
+        $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
+
         $importExportManager = new ImportExportManager();
         $importExportManager->exportSchedule($filters);
     }

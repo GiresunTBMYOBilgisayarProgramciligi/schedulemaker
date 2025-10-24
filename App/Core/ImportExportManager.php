@@ -8,6 +8,7 @@ use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\UserController;
+use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -232,6 +233,7 @@ class ImportExportManager
      */
     private function generateScheduleFilters($filters): array
     {
+        $filters = (new FilterValidator())->validate($filters, "exportScheduleAction");
         $scheduleFilters = [];
         $semesterNumbers = getSemesterNumbers($filters["semester"]);
 
@@ -433,12 +435,7 @@ class ImportExportManager
     #[NoReturn]
     public function exportSchedule($filters = []): void
     {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSettingValue("academic_year");
-        }
+        $filters = (new FilterValidator())->validate($filters, "exportScheduleAction");
 
         $scheduleController = new ScheduleController();
         /**
@@ -534,7 +531,7 @@ class ImportExportManager
 
 
         // Sütunları otomatik boyutlandır (içeriğe göre ayarla)
-        foreach ($this->sheet->getColumnIterator('A','K') as $column) {
+        foreach ($this->sheet->getColumnIterator('A', 'K') as $column) {
             $colIndex = $column->getColumnIndex(); // A, B, C...
             $this->sheet->getColumnDimension($colIndex)->setAutoSize(true);
         }
@@ -590,7 +587,7 @@ class ImportExportManager
         $writer->save('php://output');
         exit;
     }
-    
+
     /**
      * Export schedules as ICS calendar file compatible with Google and Apple Calendar
      * @throws Exception
@@ -669,7 +666,9 @@ class ImportExportManager
                         } else {
                             // Fallback: single reference week next Monday + dayIndex
                             $anchor = new \DateTime('next monday', $timezone);
-                            if ((int)$now->format('N') === 1) { $anchor = new \DateTime('today', $timezone); }
+                            if ((int)$now->format('N') === 1) {
+                                $anchor = new \DateTime('today', $timezone);
+                            }
                             $eventDate = (clone $anchor)->modify("+{$dayIndex} day");
                             $dtStart = new \DateTime($eventDate->format('Y-m-d') . ' ' . $startText, $timezone);
                             $dtEnd = new \DateTime($eventDate->format('Y-m-d') . ' ' . $endText, $timezone);
@@ -695,7 +694,7 @@ class ImportExportManager
                         $lines[] = $dtstartLine;
                         $lines[] = $dtendLine;
                         if ($useRecurrence) {
-                            $weekdayCodes = ['MO','TU','WE','TH','FR','SA','SU'];
+                            $weekdayCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
                             $byday = $weekdayCodes[$dayIndex] ?? 'MO';
                             $untilLocal = (clone $semesterEnd)->setTime(23, 59, 59);
                             $untilUtc = (clone $untilLocal)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');

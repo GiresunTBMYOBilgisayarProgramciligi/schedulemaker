@@ -228,14 +228,28 @@ class FilterValidator
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
-
-
-
             'createScheduleExcelTable' => [
-                'required' => ['type'],
-                'optional' => ['owner_id'],
+                'required' => ['type', "owner_type"],
+                'optional' => ['owner_id',],
                 'defaults' => ['semester', 'academic_year']
-            ]
+            ],
+            "exportScheduleAction"=>[
+                'required' => ["type", "owner_type"],
+                'optional' => ["owner_id"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "exportSchedule"=>[
+                'required' => ["type", "owner_type"],
+                'optional' => ["owner_id"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "generateScheduleFilters" => [
+                'required' => ["type", "owner_type"],
+                'optional' => ["owner_id"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+
+
             // ... diğer metodlarınız için kurallar
         ];
     }
