@@ -238,44 +238,33 @@ class ScheduleCard {
 
             toast.closeToast();
 
-            // === Derslik kontrolü ===
-            if (classroomData && classroomData.status !== "error" && classroomData.unavailableCells) {
-                for (let i = 0; i <= 9; i++) {
-                    for (let cell in classroomData.unavailableCells[i]) {
-                        if (classroomData.unavailableCells[i][cell]) {
-                            this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-classroom");
-                        }
+            const applyCells = (map, classes = []) => {
+                if (!map) return;
+                Object.keys(map).forEach(rowKey => {
+                    const r = parseInt(rowKey, 10);
+                    if (!isNaN(r) && this.table.rows[r]) {
+                        Object.keys(map[rowKey]).forEach(colKey => {
+                            const c = parseInt(colKey, 10);
+                            if (!isNaN(c) && this.table.rows[r].cells[c]) {
+                                this.table.rows[r].cells[c].classList.add(...classes);
+                            }
+                        });
                     }
-                }
-            }
+                });
+            };
 
-            // === Hoca kontrolü ===
+            // Derslik
+            if (classroomData && classroomData.status !== "error") {
+                applyCells(classroomData.unavailableCells, ["text-bg-danger", "unavailable-for-classroom"]);
+            }
+            // Hoca
             if (lecturerData && lecturerData.status !== "error") {
-                if (lecturerData.unavailableCells) {
-                    for (let i = 0; i <= 9; i++) {
-                        for (let cell in lecturerData.unavailableCells[i]) {
-                            this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-lecturer");
-                        }
-                    }
-                }
-                if (lecturerData.preferredCells) {
-                    for (let i = 0; i <= 9; i++) {
-                        for (let cell in lecturerData.preferredCells[i]) {
-                            this.table.rows[i].cells[cell].classList.add("text-bg-success");
-                        }
-                    }
-                }
+                applyCells(lecturerData.unavailableCells, ["text-bg-danger", "unavailable-for-lecturer"]);
+                applyCells(lecturerData.preferredCells, ["text-bg-success"]);
             }
-
-            // === Program kontrolü ===
-            if (programData && programData.status !== "error" && programData.unavailableCells) {
-                for (let i = 0; i <= 9; i++) {
-                    for (let cell in programData.unavailableCells[i]) {
-                        if (programData.unavailableCells[i][cell]) {
-                            this.table.rows[i].cells[cell].classList.add("text-bg-danger", "unavailable-for-program");
-                        }
-                    }
-                }
+            // Program
+            if (programData && programData.status !== "error") {
+                applyCells(programData.unavailableCells, ["text-bg-danger", "unavailable-for-program"]);
             }
 
             return true;
