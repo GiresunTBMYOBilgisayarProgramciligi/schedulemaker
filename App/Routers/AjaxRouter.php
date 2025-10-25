@@ -545,6 +545,10 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * Ders programı seçiminde Eklenen derse uygun olan sınıf listesini hazırlar.
+     * @throws Exception
+     */
     public function getAvailableClassroomForScheduleAction(): void
     {
         if (!isAuthorized("department_head")) {

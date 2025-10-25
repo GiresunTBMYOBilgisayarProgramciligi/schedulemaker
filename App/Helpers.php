@@ -141,6 +141,7 @@ class FilterValidator
         // 1. Tüm olası filtreleri ve türlerini tanımla
         $this->masterSchema = [
             'type' => ['type' => 'string'],//Ders programı türünü belirtir (exam, lesson)
+            'hours' => ['type' => 'int'],// Derslik kontrolü yapılırken kaç saat ekleneceği bilgisi
             'owner_type' => ['type' => 'string'],//Ders programının ait olduğu birimi belirtir (user, lesson, classroom, program)
             'owner_id' => ['type' => 'int'],//Ders programının ait olduğu birimin ID numarası
             'time' => ['type' => 'string'], // Dersin saat aralığı "10:00-10:50" formatında olabilir
@@ -219,12 +220,12 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "createScheduleHTMLTable" => [
-                'required' => ["type","owner_type","owner_id"],
+                'required' => ["type", "owner_type", "owner_id"],
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "prepareScheduleRows"=> [
-                'required' => ["type", "owner_type","owner_id"],
+            "prepareScheduleRows" => [
+                'required' => ["type", "owner_type", "owner_id"],
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
@@ -233,12 +234,12 @@ class FilterValidator
                 'optional' => ['owner_id',],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "exportScheduleAction"=>[
+            "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
                 'optional' => ["owner_id"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "exportSchedule"=>[
+            "exportSchedule" => [
                 'required' => ["type", "owner_type"],
                 'optional' => ["owner_id"],
                 'defaults' => ['semester', 'academic_year']
@@ -246,6 +247,11 @@ class FilterValidator
             "generateScheduleFilters" => [
                 'required' => ["type", "owner_type"],
                 'optional' => ["owner_id"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "availableClassrooms" => [
+                'required' => ["type", 'hours', "time", "lesson_id", "day"],
+                'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
 

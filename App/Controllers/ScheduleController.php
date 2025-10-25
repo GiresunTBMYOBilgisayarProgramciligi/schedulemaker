@@ -621,16 +621,9 @@ class ScheduleController extends Controller
      */
     public function availableClassrooms(array $filters = []): array
     {
+        $filters= $this->validator->validate($filters,"availableClassrooms");
+
         $classroomFilters = [];
-        if (!key_exists("hours", $filters) or !key_exists("time", $filters)) {
-            throw new Exception("Missing hours and time");
-        }
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSettingValue("academic_year");
-        }
         if (key_exists("lesson_id", $filters)) {
             $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
             unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
@@ -639,33 +632,26 @@ class ScheduleController extends Controller
         }
         $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
         $unavailable_classroom_ids = [];
-        if (array_key_exists('owner_type', $filters)) {
-            if ($filters['owner_type'] == "classroom") {
-                $classroomSchedules = $this->getListByFilters(
-                    [
-                        "time" => ['in' => $times],
-                        "owner_type" => $filters['owner_type'],
-                        "semester" => $filters['semester'],
-                        "academic_year" => $filters['academic_year'],
-                    ]
-                );
-                foreach ($classroomSchedules as $classroomSchedule) {
-                    if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
-                        // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
-                        $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
-                    }
-                }
-                // Anahtarları diziye dönüştürüyoruz.
-                $unavailable_classroom_ids = array_keys($unavailable_classroom_ids);
-                $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
-                $available_classrooms = (new ClassroomController())->getListByFilters($classroomFilters);
-            } else {
-                throw new Exception("owner_type classroom değil");
+        $classroomSchedules = $this->getListByFilters(
+            [
+                "time" => ['in' => $times],
+                "owner_type" => 'classroom',
+                "semester" => $filters['semester'],
+                "academic_year" => $filters['academic_year'],
+                "type"=>$filters['type']
+            ]
+        );
+        foreach ($classroomSchedules as $classroomSchedule) {
+            if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
+                // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
+                $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
             }
-        } else {
-            throw new Exception("owner_type belirtilmemiş");
         }
-        return $available_classrooms;
+        // Anahtarları diziye dönüştürüyoruz.
+        $unavailable_classroom_ids = array_keys($unavailable_classroom_ids);
+        $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
+
+        return (new ClassroomController())->getListByFilters($classroomFilters);
     }
 
     /**

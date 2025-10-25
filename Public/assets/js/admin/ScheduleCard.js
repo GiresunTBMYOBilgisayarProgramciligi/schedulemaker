@@ -171,6 +171,7 @@ class ScheduleCard {
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("semester", this.draggedLesson.semester);
         data.append("academic_year", this.draggedLesson.academic_year);
+        data.append("type", this.type);
 
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
@@ -199,7 +200,6 @@ class ScheduleCard {
                     programData = await programRes.json();
                     break;
                 }
-
                 case 'program': {
                     const [classroomRes, lecturerRes] = await Promise.all([
                         fetch("/ajax/checkClassroomSchedule", {
@@ -217,7 +217,6 @@ class ScheduleCard {
                     lecturerData = await lecturerRes.json();
                     break;
                 }
-
                 case 'classroom': {
                     const [programRes, lecturerRes] = await Promise.all([
                         fetch("/ajax/checkProgramSchedule", {
@@ -312,7 +311,6 @@ class ScheduleCard {
         data.append("time", this.draggedLesson.time)
         data.append("day", "day" + this.draggedLesson.day_index)
         data.append("type", "lesson")
-        data.append("owner_type", "classroom")
         data.append("semester", this.draggedLesson.semester)
         data.append("academic_year", this.draggedLesson.academic_year);
         data.append("lesson_id", this.draggedLesson.lesson_id);
