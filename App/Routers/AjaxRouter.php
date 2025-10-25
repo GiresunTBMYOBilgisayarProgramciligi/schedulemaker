@@ -528,6 +528,7 @@ class AjaxRouter extends Router
      */
 
     /**
+     * Gelen verilere göre Program HTML çıktısını oluşturur
      * @throws Exception
      */
     public function getScheduleHTMLAction(): void

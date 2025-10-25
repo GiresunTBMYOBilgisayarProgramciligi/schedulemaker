@@ -105,6 +105,13 @@ class ScheduleController extends Controller
                 ? getSettingValue('maxExamDayIndex', default: 5)
                 : getSettingValue('maxDayIndex', default: 4);
         }
+        /**
+         * Veri tabanında yapılacak sorguda dizi verisi in ile birlikte verilmeli.
+         */
+        if (is_array($filters['semester_no'])) {
+            $filters['semester_no'] = ['in' => $filters['semester_no']];
+        }
+
         $schedules = (new Schedule())->get()->where($filters)->all();
         /**
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
@@ -554,7 +561,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
 
         $HTMLOUT = '';
-        // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim Bu işleme bir düzen getirilmeli
+        // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim
         if (key_exists("semester_no", $filters) and $filters['semester_no'] == 0) {
             $filters['semester_no'] = getSemesterNumbers($filters['semester']);
         }
