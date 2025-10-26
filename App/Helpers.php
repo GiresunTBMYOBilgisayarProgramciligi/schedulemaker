@@ -166,7 +166,7 @@ class FilterValidator
             ],
             'checkScheduleCrash' => [
                 'required' => ["type", "lesson_id", "classroom_id", "time", "lesson_hours", "day_index"],
-                'optional' => ["semester_no"],
+                'optional' => ["semester_no", "lecturer_id"],
                 'defaults' => ['semester', 'academic_year']
             ],
             'deleteScheduleAction' => [

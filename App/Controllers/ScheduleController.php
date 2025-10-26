@@ -621,7 +621,7 @@ class ScheduleController extends Controller
      */
     public function availableClassrooms(array $filters = []): array
     {
-        $filters= $this->validator->validate($filters,"availableClassrooms");
+        $filters = $this->validator->validate($filters, "availableClassrooms");
 
         $classroomFilters = [];
         if (key_exists("lesson_id", $filters)) {
@@ -638,7 +638,7 @@ class ScheduleController extends Controller
                 "owner_type" => 'classroom',
                 "semester" => $filters['semester'],
                 "academic_year" => $filters['academic_year'],
-                "type"=>$filters['type']
+                "type" => $filters['type']
             ]
         );
         foreach ($classroomSchedules as $classroomSchedule) {
@@ -664,7 +664,10 @@ class ScheduleController extends Controller
     {
         $filters = $this->validator->validate($filters, "checkScheduleCrash");
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        $lecturer = $lesson->getLecturer();
+        /*
+         * Filtrede hoca id bilgisi varsa dersin hocası ile farklı bir hoca olma durumu olduğundan onu ayrı işlemek gerekiyor. Ayrıca sınav programında hoca id değeri gözetmen id olarak kullanılacak
+         */
+        $lecturer = isset($filters['lecturer_id']) ? (new User())->find($filters['lecturer_id']) : $lesson->getLecturer();
         $classroom = (new Classroom())->find($filters['classroom_id']);
         // bağlı dersleri alıyoruz
         $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
