@@ -250,7 +250,7 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
-                'required' => ["type", 'hours', "time", "lesson_id", "day"],
+                'required' => ["type", 'hours', "time", "lesson_id", "day_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],

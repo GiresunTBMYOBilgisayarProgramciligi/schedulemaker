@@ -69,6 +69,7 @@ class ScheduleCard {
             'classroom_id': null,
             'HTMLElement': null,
             'lesson_hours': null,
+            'observer_id': null,//todo observer_id olarak ayrı bir id tanımlamaya gerek yok bence. Sınav programına eklenen hoca id si zaten gözetmen id si olacak dersin hocasının bilgisi alınacaksa zaten ders üzerinden alınır. Program hocası ile dersin hocası birbirinden ayrı düşünülmeli.
             'dropped_row_index': null,
             'dropped_cell_index': null
         };
@@ -298,7 +299,7 @@ class ScheduleCard {
         let data = new FormData();
         data.append("hours", event.target.value);
         data.append("time", this.draggedLesson.time)
-        data.append("day", "day" + this.draggedLesson.day_index)
+        data.append("day_index", this.draggedLesson.day_index)
         data.append("type", "lesson")
         data.append("semester", this.draggedLesson.semester)
         data.append("academic_year", this.draggedLesson.academic_year);
@@ -383,6 +384,59 @@ class ScheduleCard {
                 }
                 scheduleModal.closeModal();
                 resolve({classroom: selectedClassroom, hours: selectedHours});
+            });
+        });
+    }
+
+    selectClassroomAndObserver() {
+        return new Promise((resolve, reject) => {
+            let scheduleModal = new Modal();
+            let modalContentHTML = `
+            <form>
+                <div class="mb-3">
+                    <label class="form-label">Derslik Seçin</label>
+                    <select id="classroom" class="form-select" required></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Gözetmen Seçin</label>
+                    <select id="observer" class="form-select" required></select>
+                </div>
+            </form>`;
+
+            scheduleModal.prepareModal("Derslik ve Gözetmen Seçimi", modalContentHTML, true, false);
+            scheduleModal.showModal();
+
+            let classroomSelect = scheduleModal.body.querySelector("#classroom");
+            let observerSelect = scheduleModal.body.querySelector("#observer");
+
+            // populate options from hidden templates in page
+            const classroomTemplate = document.getElementById("classroom_options_template");
+            const lecturerTemplate = document.getElementById("lecturer_options_template");
+            if (classroomTemplate) {
+                classroomSelect.innerHTML = classroomTemplate.innerHTML;
+            }
+            if (lecturerTemplate) {
+                observerSelect.innerHTML = lecturerTemplate.innerHTML;
+            }
+
+            const formEl = scheduleModal.body.querySelector("form");
+            scheduleModal.confirmButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                formEl.dispatchEvent(new SubmitEvent("submit", {cancelable: true}));
+            });
+
+            formEl.addEventListener("submit", function (event) {
+                event.preventDefault();
+                if (!classroomSelect.value || !observerSelect.value) {
+                    new Toast().prepareToast("Dikkat", "Derslik ve gözetmen seçmelisiniz.", "danger");
+                    return;
+                }
+                const classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
+                const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
+                const selectedClassroom = {id: classroomSelect.value, name: classroom_name, exam_size: examSize};
+                const selectedObserver = {id: observerSelect.value};
+                scheduleModal.closeModal();
+                resolve({classroom: selectedClassroom, observer: selectedObserver});
             });
         });
     }
@@ -495,6 +549,9 @@ class ScheduleCard {
             lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
             lesson.dataset['time'] = this.draggedLesson.time;
             lesson.dataset['classroomId'] = classroom.id
+            if (this.type === 'exam' && this.draggedLesson.observer_id) {
+                lesson.dataset['lecturerId'] = this.draggedLesson.observer_id;
+            }
             lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
@@ -513,16 +570,29 @@ class ScheduleCard {
         /*
             Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
         */
-        if (this.draggedLesson.lesson_hours !== hours) {
-            this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = (this.draggedLesson.lesson_hours - hours).toString();
+        if (this.type === 'exam') {
+            const currentRemaining = parseInt(this.draggedLesson.HTMLElement.querySelector("span.badge").innerText) || parseInt(this.draggedLesson.lesson_hours) || 0;
+            const decrement = parseInt(classroom.exam_size || 0);
+            const newRemaining = Math.max(0, currentRemaining - (isNaN(decrement) ? 0 : decrement));
+            if (newRemaining > 0) {
+                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = newRemaining.toString();
+                this.draggedLesson.HTMLElement.dataset.lessonHours = newRemaining.toString();
+            } else {
+                this.draggedLesson.HTMLElement.closest("div.frame")?.remove();
+                this.draggedLesson.HTMLElement.remove();
+            }
         } else {
-            /**
-             * Liste içerisinde her ders bir frame içerisinde bulunuyor.
-             */
-            this.draggedLesson.HTMLElement.closest("div.frame").remove();
-            //saatlerin tamamı bittiyse listeden sil
-            this.draggedLesson.HTMLElement.remove();
+            if (this.draggedLesson.lesson_hours !== hours) {
+                this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = (this.draggedLesson.lesson_hours - hours).toString();
+            } else {
+                /**
+                 * Liste içerisinde her ders bir frame içerisinde bulunuyor.
+                 */
+                this.draggedLesson.HTMLElement.closest("div.frame").remove();
+                //saatlerin tamamı bittiyse listeden sil
+                this.draggedLesson.HTMLElement.remove();
 
+            }
         }
     }
 
@@ -569,6 +639,9 @@ class ScheduleCard {
         data.append("lesson_hours", hours);
         data.append("day_index", this.draggedLesson.day_index);
         data.append("classroom_id", classroom.id);
+        if (this.type === 'exam' && this.draggedLesson.observer_id) {
+            data.append("lecturer_id", this.draggedLesson.observer_id);
+        }
         data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
         data.append("academic_year", this.academic_year);
         data.append("semester", this.semester);
@@ -714,7 +787,18 @@ class ScheduleCard {
 
     async dropListToTable() {
         if (this.owner_type !== 'classroom') {
-            let {classroom, hours} = await this.selectClassroomAndHours();
+            let classroom, hours, observer;
+            if (this.type === 'exam') {
+                const result = await this.selectClassroomAndObserver();
+                classroom = result.classroom;
+                observer = result.observer;
+                this.draggedLesson.observer_id = observer.id;
+                hours = 1; // sınav için saat birimi slot bazında
+            } else {
+                const result = await this.selectClassroomAndHours();
+                classroom = result.classroom;
+                hours = result.hours;
+            }
             try {
                 await this.checkCrash(hours);
                 let saveScheduleToast = new Toast();
