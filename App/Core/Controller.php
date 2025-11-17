@@ -29,7 +29,7 @@ class Controller
      * Standard logging context used across controllers.
      * Adds current user, caller method, URL and IP.
      */
-    protected function ctx(array $extra = []): array
+    protected function logContext(array $extra = []): array
     {
         $username = null;
         $userId = null;
