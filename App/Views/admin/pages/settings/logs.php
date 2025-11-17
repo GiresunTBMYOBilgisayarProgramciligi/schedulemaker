@@ -20,16 +20,16 @@
             <div class="card card-outline card-primary">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="logsTable" class="table table-striped table-hover data-tables">
+                        <table id="logsTable" class="table table-striped table-hover dataTable">
                             <thead>
                             <tr>
                                 <th>Tarih</th>
-                                <th>Kullanıcı</th>
-                                <th>Seviye</th>
+                                <th class="filterable">Kullanıcı</th>
+                                <th class="filterable">Seviye</th>
                                 <th>Mesaj</th>
                                 <th>Kaynak</th>
                                 <th>URL</th>
-                                <th>IP</th>
+                                <th class="filterable">IP</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -37,7 +37,9 @@
                                 <tr>
                                     <td><?= htmlspecialchars($log->created_at) ?></td>
                                     <td><?= htmlspecialchars($log->username ?: ('#' . ($log->user_id ?? '-'))) ?></td>
-                                    <td><span class="badge bg-danger"><?= htmlspecialchars($log->level) ?></span></td>
+                                    <td>
+                                        <span class="badge bg-<?= mb_strtolower(htmlspecialchars($log->level)) == "error" ? "danger" : mb_strtolower(htmlspecialchars($log->level)) ?>"><?= htmlspecialchars($log->level) ?></span>
+                                    </td>
                                     <td class="text-wrap" style="max-width: 420px; white-space: normal;">
                                         <?= htmlspecialchars($log->message) ?>
                                         <?php if (!empty($log->trace)): ?>
