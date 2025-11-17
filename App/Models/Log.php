@@ -40,7 +40,11 @@ class Log extends Model
     public function getLevelHtml(): string
     {
         $this->level = htmlspecialchars($this->level);
-        $levelText = mb_strtolower($this->level) == "error" ? "danger" : mb_strtolower($this->level);
+        $levelText = match ($this->level) {
+            'ERROR' => 'danger',
+            'DEBUG' => 'secondary',
+            default => mb_strtolower($this->level)
+        };
         return '<span class="badge bg-' . $levelText . '">' . $this->level . '</span>';
     }
 
