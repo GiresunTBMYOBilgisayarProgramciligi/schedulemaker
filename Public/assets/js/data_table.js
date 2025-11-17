@@ -50,14 +50,27 @@ let dataTable = new DataTable('.dataTable', {
                 // Eşsiz sütun verilerini ekle
                 column.data().unique().sort().each(function (d) {
                     if (d) {
+                        // 💡 DÜZELTME: HTML etiketlerini temizle
+                        // Veriyi temizlemek için geçici bir DOM öğesi oluşturuyoruz.
+                        let tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = d;
+                        let cleanData = tempDiv.textContent || tempDiv.innerText || d;
+
                         let li = document.createElement('li');
                         let a = document.createElement('a');
                         a.classList.add('dropdown-item');
                         a.href = "#";
-                        a.textContent = d;
+
+                        // Menüde görünen değer temizlenmiş değer olmalı
+                        a.textContent = cleanData;
+
                         a.addEventListener('click', function (e) {
                             e.preventDefault();
-                            column.search('^' + d + '$', true, false).draw();
+
+                            // 💡 DÜZELTME: Filtreleme işlemi de temizlenmiş değerle yapılmalı
+                            // DataTable'ın filtreleme fonksiyonu olan search() içerisindeki değeri de
+                            // temizlenmiş veri (cleanData) ile eşleştirmeliyiz.
+                            column.search('^' + cleanData + '$', true, false).draw();
                         });
                         li.appendChild(a);
                         dropdownMenu.appendChild(li);
