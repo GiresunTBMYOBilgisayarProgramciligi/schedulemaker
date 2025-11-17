@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Core\LoggerFactory;
 use App\Models\Department;
 use App\Models\Schedule;
 use Exception;
@@ -15,34 +14,6 @@ class DepartmentController extends Controller
 {
     protected string $table_name = "departments";
     protected string $modelName = "App\\Models\\Department";
-
-    private function logger()
-    {
-        return LoggerFactory::getLogger();
-    }
-
-    private function ctx(array $extra = []): array
-    {
-        $username = null;
-        $userId = null;
-        try {
-            $user = (new UserController())->getCurrentUser();
-            if ($user) {
-                $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
-                $userId = $user->id;
-            }
-        } catch (\Throwable $t) {
-            // ignore
-        }
-        return array_merge([
-            'username' => $username,
-            'user_id' => $userId,
-            'class' => __CLASS__,
-            'method' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['function'] ?? null,
-            'url' => $_SERVER['REQUEST_URI'] ?? null,
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-        ], $extra);
-    }
 
     /**
      * @param array $filters

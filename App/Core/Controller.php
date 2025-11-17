@@ -4,6 +4,7 @@ namespace App\Core;
 
 use Exception;
 use PDO;
+use Monolog\Logger;
 
 class Controller
 {
@@ -14,6 +15,44 @@ class Controller
         $this->database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], [
             PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
         ]);
+    }
+
+    /**
+     * Shared application logger for all controllers.
+     */
+    protected function logger(): Logger
+    {
+        return LoggerFactory::getLogger();
+    }
+
+    /**
+     * Standard logging context used across controllers.
+     * Adds current user, caller method, URL and IP.
+     */
+    protected function ctx(array $extra = []): array
+    {
+        $username = null;
+        $userId = null;
+        try {
+            $user = (new \App\Controllers\UserController())->getCurrentUser();
+            if ($user) {
+                $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
+                $userId = $user->id;
+            }
+        } catch (\Throwable $t) {
+            // ignore user detection failures
+        }
+        // Try to detect caller function
+        $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $caller = $bt[1]['function'] ?? null;
+        return array_merge([
+            'username' => $username,
+            'user_id' => $userId,
+            'class' => static::class,
+            'method' => $caller,
+            'url' => $_SERVER['REQUEST_URI'] ?? null,
+            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+        ], $extra);
     }
 
     /**
