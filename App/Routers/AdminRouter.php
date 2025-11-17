@@ -678,6 +678,20 @@ class AdminRouter extends Router
         $this->callView("admin/settings/settings", $this->view_data);
     }
 
+    public function LogsAction()
+    {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Kayıtlara erişim yetkiniz yok");
+        }
+        $this->assetManager->loadPageAssets('listpages');
+        $logs = (new \App\Models\Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
+        $this->view_data = array_merge($this->view_data, [
+            "page_title" => "Kayıtlar",
+            "logs" => $logs,
+        ]);
+        $this->callView("admin/settings/logs", $this->view_data);
+    }
+
     /**
      * @throws Exception
      */

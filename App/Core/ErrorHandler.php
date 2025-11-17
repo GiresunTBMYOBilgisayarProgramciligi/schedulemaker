@@ -111,17 +111,53 @@ class ErrorHandler
      */
     private function logException($exception)
     {
-        // Hata mesajını oluştur
-        $message = "Exception: " . mb_convert_encoding($exception->getMessage(), 'UTF-8');
-        $message .= " in " . $exception->getFile() . " on line " . $exception->getLine();
-        $message .= "\nStack trace: " . $exception->getTraceAsString();
+        try {
+            $logger = LoggerFactory::getLogger();
+            // Kullanıcı bilgisi
+            $username = null;
+            $userId = null;
+            try {
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    // Basit kullanıcı tespiti: UserController üzerinden oturum kullanıcısını al
+                    $userController = new \App\Controllers\UserController();
+                    $user = $userController->getCurrentUser();
+                    if ($user) {
+                        $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
+                        $userId = $user->id;
+                    }
+                }
+            } catch (\Throwable $t) {
+                // ignore user detection failures
+            }
 
-        // PHP'nin varsayılan hata loglama mekanizmasını kullan
-        // Bu genellikle error_log dosyasına veya syslog'a yazdırır
-        error_log($message);
+            // İstek bilgileri
+            $url = $_SERVER['REQUEST_URI'] ?? null;
+            $ip = $_SERVER['REMOTE_ADDR'] ?? null;
 
-        // İsterseniz burada başka loglama mekanizmaları da kullanabilirsiniz
-        // Örneğin: veritabanına kaydetme, harici bir servis kullanma vb.
+            // Trace & kaynak
+            $trace = $exception->getTrace();
+            $first = $trace[0] ?? [];
+            $context = [
+                'username' => $username,
+                'user_id' => $userId,
+                'class' => $first['class'] ?? null,
+                'method' => $first['function'] ?? null,
+                'function' => $first['function'] ?? null,
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'url' => $url,
+                'ip' => $ip,
+                'trace' => $exception->getTraceAsString(),
+            ];
+
+            $logger->error($exception->getMessage(), $context);
+        } catch (\Throwable $t) {
+            // Son çare olarak PHP error_log'a yaz
+            $message = "Exception: " . mb_convert_encoding($exception->getMessage(), 'UTF-8');
+            $message .= " in " . $exception->getFile() . " on line " . $exception->getLine();
+            $message .= "\nStack trace: " . $exception->getTraceAsString();
+            error_log($message);
+        }
     }
 
     /**

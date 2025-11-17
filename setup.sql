@@ -7,6 +7,32 @@ GRANT ALL PRIVILEGES ON schedule_maker.* TO 'kullanici_adi'@'localhost';
 #GRANT ALL PRIVILEGES ON schedule_maker.* TO 'kullanici_adi'@'%';
 FLUSH PRIVILEGES;
 use schedule_maker;
+
+-- Application logs
+create table if not exists logs
+(
+    id         int auto_increment primary key,
+    created_at timestamp default current_timestamp,
+    username   varchar(100) null,
+    user_id    int          null,
+    level      varchar(20)  not null,
+    channel    varchar(50)  null,
+    message    text         not null,
+    class      varchar(255) null,
+    method     varchar(255) null,
+    `function` varchar(255) null,
+    `file`     varchar(255) null,
+    line       int          null,
+    url        text         null,
+    ip         varchar(45)  null,
+    trace      longtext     null,
+    context    json         null,
+    extra      json         null,
+    index (created_at),
+    index (level),
+    index (user_id)
+) ENGINE = INNODB;
+
 create table if not exists schedule
 (
     id            int AUTO_INCREMENT,

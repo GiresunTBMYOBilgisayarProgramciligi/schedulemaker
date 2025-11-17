@@ -306,13 +306,30 @@ use function App\Helpers\isAuthorized;
                 <!-- /Takvim -->
                 <!-- Ayarlar -->
                 <?php if (isAuthorized("submanager")): ?>
-                    <li class="nav-item">
-                        <a href="/admin/settings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link">
                             <i class="nav-icon bi bi-sliders"></i>
                             <p>
                                 Ayarlar
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
                         </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="/admin/settings"
+                                   class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) && !str_contains($_SERVER["REQUEST_URI"], 'settingslogs') ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-gear"></i>
+                                    <p>Genel</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/admin/logs"
+                                   class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'logs')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-journal-text"></i>
+                                    <p>Kayıtlar</p>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 <?php endif; ?>
                 <!-- /Ayarlar -->
