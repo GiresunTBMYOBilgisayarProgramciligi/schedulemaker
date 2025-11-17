@@ -77,6 +77,7 @@ create table if not exists departments
     id             int AUTO_INCREMENT,
     name           varchar(100),
     chairperson_id int,
+    active tinyint(1) default 0,
     primary key (id),
     unique (name),
     foreign key (chairperson_id) references users (id) on delete set null on update cascade
@@ -99,6 +100,7 @@ create table if not exists programs
     id            int AUTO_INCREMENT,
     name          varchar(100) not null,
     department_id int,
+    active tinyint(1) default 0,
     primary key (id),
     unique (name),
     foreign key (department_id) references departments (id) on delete set null
