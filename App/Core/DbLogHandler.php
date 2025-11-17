@@ -17,7 +17,7 @@ class DbLogHandler extends AbstractProcessingHandler
     public function __construct($level = \Monolog\Level::Debug, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
-        // Create dedicated PDO to avoid relying on Controller/Model constructors
+        // Create a dedicated PDO to avoid relying on Controller/Model constructors
         $dsn = "mysql:host=" . ($_ENV['DB_HOST'] ?? 'localhost') . ";dbname=" . ($_ENV['DB_NAME'] ?? '');
         $user = $_ENV['DB_USER'] ?? '';
         $pass = $_ENV['DB_PASS'] ?? '';
@@ -27,69 +27,6 @@ class DbLogHandler extends AbstractProcessingHandler
         ]);
         // Ensure utf8mb4
         $this->pdo->exec("SET NAMES utf8mb4");
-        // Optionally ensure logs table exists in dev or when explicitly enabled
-        $autoCreate = (defined('DEBUG_MODE') && DEBUG_MODE) || filter_var($_ENV['LOGS_AUTO_CREATE'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
-        if ($autoCreate) {
-            $this->ensureLogsTable();
-        }
-    }
-
-    private function ensureLogsTable(): void
-    {
-        try {
-            $sqlJson = "CREATE TABLE IF NOT EXISTS logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                username VARCHAR(100) NULL,
-                user_id INT NULL,
-                level VARCHAR(20) NOT NULL,
-                channel VARCHAR(50) NULL,
-                message TEXT NOT NULL,
-                class VARCHAR(255) NULL,
-                method VARCHAR(255) NULL,
-                `function` VARCHAR(255) NULL,
-                `file` VARCHAR(255) NULL,
-                line INT NULL,
-                url TEXT NULL,
-                ip VARCHAR(45) NULL,
-                trace LONGTEXT NULL,
-                context JSON NULL,
-                extra JSON NULL,
-                INDEX (created_at),
-                INDEX (level),
-                INDEX (user_id)
-            ) ENGINE=INNODB";
-            $this->pdo->exec($sqlJson);
-        } catch (\Throwable $e1) {
-            // Fallback for older MySQL/MariaDB without JSON type support
-            try {
-                $sqlText = "CREATE TABLE IF NOT EXISTS logs (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    username VARCHAR(100) NULL,
-                    user_id INT NULL,
-                    level VARCHAR(20) NOT NULL,
-                    channel VARCHAR(50) NULL,
-                    message TEXT NOT NULL,
-                    class VARCHAR(255) NULL,
-                    method VARCHAR(255) NULL,
-                    `function` VARCHAR(255) NULL,
-                    `file` VARCHAR(255) NULL,
-                    line INT NULL,
-                    url TEXT NULL,
-                    ip VARCHAR(45) NULL,
-                    trace LONGTEXT NULL,
-                    context LONGTEXT NULL,
-                    extra LONGTEXT NULL,
-                    INDEX (created_at),
-                    INDEX (level),
-                    INDEX (user_id)
-                ) ENGINE=INNODB";
-                $this->pdo->exec($sqlText);
-            } catch (\Throwable $e2) {
-                error_log('[DbLogHandler] ensureLogsTable failed (fallback): ' . $e2->getMessage());
-            }
-        }
     }
 
     protected function write(LogRecord $record): void
