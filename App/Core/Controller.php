@@ -17,29 +17,6 @@ class Controller
     }
 
     /**
-     * todo silinecek. Model yapısı bu işleri üstleniyor artık
-     * @param $data
-     * @return string
-     */
-    public function createInsertSQL($data): string
-    {
-        // Dinamik sütunlar ve parametreler oluştur
-        $columns = array_keys($data);
-        $placeholders = array_map(fn($col) => ":$col", $columns);
-
-        // Sütun isimlerini ` backtick içine al
-        $columns = array_map(fn($col) => "`$col`", $columns);
-
-        // Dinamik SQL sorgusu oluştur
-        return sprintf(
-            "INSERT INTO %s (%s) VALUES (%s)",
-            $this->table_name, // Sorguyu çalıştıran sınıftan alınır.
-            implode(", ", $columns),
-            implode(", ", $placeholders)
-        );
-    }
-
-    /**
      * filtre ile belirtilen koşullara uyan veri sayısını döner
      * @param array|null $filters
      * @return int

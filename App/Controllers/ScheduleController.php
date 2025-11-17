@@ -11,6 +11,7 @@ use App\Models\Schedule;
 use App\Models\User;
 use Exception;
 use PDOException;
+use function App\Helpers\find_key_starting_with;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 
@@ -641,8 +642,10 @@ class ScheduleController extends Controller
                 "type" => $filters['type']
             ]
         );
+        //todo yukaıdaki getListByFilters metoduna day.day_index != null parametresi eklenerek alttaki döngüde isnul
+        // "!day" . $filters['day_index'] => null denedim olmadı
         foreach ($classroomSchedules as $classroomSchedule) {
-            if (!is_null($classroomSchedule->{$filters["day"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
+            if (!is_null($classroomSchedule->{"day" . $filters["day_index"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
                 // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
                 $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
             }
@@ -761,65 +764,57 @@ class ScheduleController extends Controller
 
     /**
      * Schedule tablosuna yeni kayıt ekler
-     * @param Schedule $new_schedule
+     * @param array $schedule_arr Yeni schedule verileri
      * @return int Son eklenen verinin id numarasını döner
      * @throws Exception
      */
-    public function saveNew(Schedule $new_schedule): int
+    public function saveNew(array $schedule_arr): int
     {
         try {
-            $new_schedule_arr = $new_schedule->getArray(['table_name', 'database', 'id']);
-            //dizi türündeki veriler serialize ediliyor
-            array_walk($new_schedule_arr, function (&$value) {
-                if (is_array($value)) {
-                    $value = serialize($value);
-                }
-            });
-            // Dinamik SQL sorgusu oluştur//todo bunu yeni model yapısı ile oluştur
-            $sql = $this->createInsertSQL($new_schedule_arr);
-            // Hazırlama ve parametre bağlama
-            $q = $this->database->prepare($sql);
-            $q->execute($new_schedule_arr);
-            return $this->database->lastInsertId();
+            $new_schedule = new Schedule();
+            $new_schedule->fill($schedule_arr);
+            $new_schedule->create();
+            return $new_schedule->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası) program var gün güncellenecek
-                $updatingSchedule = $this->getListByFilters($new_schedule->getArray(
-                    ['table_name', 'database', 'id', 'day0', 'day1', 'day2', 'day3', 'day4', 'day5']))[0];
-                // Yeni eklenecek gün bilgisinin hangi gün olduğunu bilmediğimden tüm günler için döngü oluşturulyor
-                for ($i = 0; $i < 6; $i++) {
-                    //yeni eklenecek dersin boş günlerini geçiyoruz. sadece dolu olanlar kaydedilecek
-                    if (!is_null($new_schedule->{"day" . $i})) {
-                        // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
-                        if (is_array($updatingSchedule->{"day" . $i})) {
-                            /**
-                             * Var olan dersin kodu
-                             */
-                            $lesson = (new Lesson())->find($updatingSchedule->{"day" . $i}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
-                            /**
-                             * Yeni eklenecek dersin kodu
-                             */
-                            $newLesson = (new Lesson())->find($new_schedule->{"day" . $i}['lesson_id']) ?: throw new Exception("Eklenecek ders ders bulunamadı");
-                            // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
-                            // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
-                            if (preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1) {
-                                $dayData = [];
-                                $dayData[] = $updatingSchedule->{"day" . $i};
-                                $dayData[] = $new_schedule->{"day" . $i};
+                /**
+                 * Yeni eklenen programda ekleme yapılan gün bilgisini tutan anahtar
+                 */
+                $day_key = find_key_starting_with($schedule_arr, "day");
+                /**
+                 * gün bilgisi çıkartılarak program aranıyor.
+                 */
+                $updatingSchedule = (new Schedule())->get()->where(array_diff_key($schedule_arr, [$day_key => null]))->first();
 
-                                $updatingSchedule->{"day" . $i} = $dayData;
-                            } else {
-                                throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
-                            }
-                        } else {
-                            // Gün verisi dizi değilse null, true yada false olabilir.
-                            if ($updatingSchedule->{"day" . $i} === false) {
-                                throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
-                            } else {
-                                // ders normal şekilde güncellenecek
-                                $updatingSchedule->{"day" . $i} = $new_schedule->{"day" . $i};
-                            }
-                        }
+                // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
+                if (is_array($updatingSchedule->{$day_key})) {
+                    /**
+                     * Var olan dersin kodu
+                     */
+                    $lesson = (new Lesson())->find($updatingSchedule->{$day_key}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
+                    /**
+                     * Yeni eklenecek dersin kodu
+                     */
+                    $newLesson = (new Lesson())->find($new_schedule->{$day_key}['lesson_id']) ?: throw new Exception("Eklenecek ders ders bulunamadı");
+                    // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
+                    // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
+                    if (preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1) {
+                        $dayData = [];
+                        $dayData[] = $updatingSchedule->{$day_key};
+                        $dayData[] = $new_schedule->{$day_key};
+
+                        $updatingSchedule->{$day_key} = $dayData;
+                    } else {
+                        throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
+                    }
+                } else {
+                    // Gün verisi dizi değilse null, true yada false olabilir.
+                    if ($updatingSchedule->{$day_key} === false) {
+                        throw new Exception("Belirtilen gün için ders eklenmesine izin verilmemiş");
+                    } else {
+                        // ders normal şekilde güncellenecek
+                        $updatingSchedule->{$day_key} = $new_schedule->{$day_key};
                     }
                 }
                 return $this->updateSchedule($updatingSchedule);
@@ -901,8 +896,7 @@ class ScheduleController extends Controller
         foreach ($schedules as $schedule) {
             /**
              * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
-             * todo semester no belirtilemeyen durumlar hangileriydi ?
-             * todo bu işlem filter validate içerisinde default olarak işlenebilir mi?
+             * todo semester no belirtilemeyen durumlar hangileriydi ? Kullanıcı tercihlerinde silme işleminde semester no yok
              */
             if (!key_exists("semester_no", $filters)) {
                 $currentSemesters = getSemesterNumbers($filters["semester"]);

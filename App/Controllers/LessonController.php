@@ -213,7 +213,7 @@ class LessonController extends Controller
             $owners["lesson"] = $childLesson->id;
             $owners["program"] = $childLesson->getProgram()->id;
             foreach ($owners as $owner_type => $owner_id) {
-                $scheduleData = [
+                $savedId = $scheduleController->saveNew([
                     "type" => "lesson",
                     "owner_type" => $owner_type,
                     "owner_id" => $owner_id,
@@ -222,10 +222,7 @@ class LessonController extends Controller
                     "semester_no" => $parentSchedule->semester_no,
                     "semester" => $parentSchedule->semester,
                     "academic_year" => $parentSchedule->academic_year,
-                ];
-                $childSchedule = new Schedule();
-                $childSchedule->fill($scheduleData);
-                $savedId = $scheduleController->saveNew($childSchedule);
+                ]);
             }
         }
 

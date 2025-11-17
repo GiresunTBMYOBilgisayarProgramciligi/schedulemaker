@@ -98,6 +98,24 @@ function isAuthorized(string $role, bool $reverse = false, $model = null): bool
 
 }
 
+/**
+ * bir dizi içerisinde belirtilen string ile başlayan ilk anahtarı döner. Yoksa null döner
+ * @param array $array
+ * @param string $prefix
+ * @return string|null
+ */
+function find_key_starting_with(array $array, string $prefix): ?string
+{
+    foreach ($array as $key => $value) {
+        if (str_starts_with($key, $prefix)) {
+            // Anahtar bulundu, tam adını döndür.
+            return $key;
+        }
+    }
+    // Anahtar bulunamadı.
+    return null;
+}
+
 
 /**
  * Class FilterValidator

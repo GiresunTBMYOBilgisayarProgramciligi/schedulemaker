@@ -651,7 +651,7 @@ class AjaxRouter extends Router
                      */
                     foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
                         if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
-                        $schedule->fill([
+                        $savedId = $scheduleController->saveNew([
                             "type" => $filters['type'],
                             "owner_type" => $owner_type,
                             "owner_id" => $owner_id,
@@ -661,7 +661,6 @@ class AjaxRouter extends Router
                             "semester" => $filters['semester'],
                             "academic_year" => $filters['academic_year'],
                         ]);
-                        $savedId = $scheduleController->saveNew($schedule);
                         if ($savedId == 0) {
                             throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
                         } else
@@ -696,9 +695,8 @@ class AjaxRouter extends Router
          */
         foreach ($currentSemesters as $semester_no) {
             $filters['semester_no'] = $semester_no;
-            $schedule = new Schedule();
-            $schedule->fill($filters);
-            $savedId = $scheduleController->saveNew($schedule);
+            $this->response['filters'] = $filters;
+            $savedId = $scheduleController->saveNew($filters);
             if ($savedId == 0) {
                 throw new Exception("Hoca tercihi kaydedilemedi");
             } else {
