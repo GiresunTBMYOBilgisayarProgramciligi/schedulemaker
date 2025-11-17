@@ -1,5 +1,8 @@
 # Ders Programı Hazırlama Projesi
 
+## Gereksinimler
+
+- PHP 8.0+
 ## Kod Dökümantasyonu
 
 ### Kurulum
