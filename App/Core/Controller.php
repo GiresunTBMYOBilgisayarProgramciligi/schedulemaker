@@ -2,6 +2,7 @@
 
 namespace App\Core;
 
+use App\Controllers\UserController;
 use Exception;
 use PDO;
 use Monolog\Logger;
@@ -34,7 +35,7 @@ class Controller
         $username = null;
         $userId = null;
         try {
-            $user = (new \App\Controllers\UserController())->getCurrentUser();
+            $user = (new UserController())->getCurrentUser();
             if ($user) {
                 $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
                 $userId = $user->id;
@@ -48,8 +49,6 @@ class Controller
         return array_merge([
             'username' => $username,
             'user_id' => $userId,
-            'class' => static::class,
-            'method' => $caller,
             'url' => $_SERVER['REQUEST_URI'] ?? null,
             'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
         ], $extra);

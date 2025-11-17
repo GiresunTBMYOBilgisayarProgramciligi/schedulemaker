@@ -18,6 +18,7 @@ use App\Core\Router;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
+use App\Models\Log;
 use App\Models\Program;
 use App\Models\User;
 use Exception;
@@ -684,7 +685,7 @@ class AdminRouter extends Router
             throw new Exception("Kayıtlara erişim yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('listpages');
-        $logs = (new \App\Models\Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
+        $logs = (new Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kayıtlar",
             "logs" => $logs,

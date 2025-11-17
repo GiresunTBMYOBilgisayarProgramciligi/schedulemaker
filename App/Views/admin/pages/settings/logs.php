@@ -30,6 +30,7 @@
                                 <th>Kaynak</th>
                                 <th>URL</th>
                                 <th class="filterable">IP</th>
+                                <th>Context</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -38,7 +39,7 @@
                                     <td><?= htmlspecialchars($log->created_at) ?></td>
                                     <td><?= htmlspecialchars($log->username ?: ('#' . ($log->user_id ?? '-'))) ?></td>
                                     <td>
-                                        <span class="badge bg-<?= mb_strtolower(htmlspecialchars($log->level)) == "error" ? "danger" : mb_strtolower(htmlspecialchars($log->level)) ?>"><?= htmlspecialchars($log->level) ?></span>
+                                        <?= $log->getLevelHtml() ?>
                                     </td>
                                     <td class="text-wrap" style="max-width: 420px; white-space: normal;">
                                         <?= htmlspecialchars($log->message) ?>
@@ -51,18 +52,13 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php
-                                        $src = [];
-                                        if (!empty($log->file)) $src[] = basename($log->file) . ':' . $log->line;
-                                        if (!empty($log->class)) $src[] = $log->class;
-                                        if (!empty($log->method)) $src[] = $log->method;
-                                        echo htmlspecialchars(implode(' | ', $src));
-                                        ?>
+                                        <?= $log->getSource() ?>
                                     </td>
                                     <td class="text-break" style="max-width: 240px;">
                                         <?= htmlspecialchars((string)$log->url) ?>
                                     </td>
                                     <td><?= htmlspecialchars((string)$log->ip) ?></td>
+                                    <td><?= $log->getContextHtml() ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             </tbody>

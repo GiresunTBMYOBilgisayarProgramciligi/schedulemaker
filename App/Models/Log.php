@@ -26,4 +26,57 @@ class Log extends Model
     public ?string $trace = null;
     public $context = null; // JSON/LONGTEXT
     public $extra = null;   // JSON/LONGTEXT
+
+    public function getSource(): string
+    {
+        $src = [];
+        if (!empty($this->file)) $src[] = basename($this->file) . ':' . $this->line;
+        if (!empty($this->class)) $src[] = $this->class;
+        if (!empty($this->method)) $src[] = $this->method;
+
+        return htmlspecialchars(implode(' | ', $src));
+    }
+
+    public function getLevelHtml(): string
+    {
+        $this->level = htmlspecialchars($this->level);
+        $levelText = mb_strtolower($this->level) == "error" ? "danger" : mb_strtolower($this->level);
+        return '<span class="badge bg-' . $levelText . '">' . $this->level . '</span>';
+    }
+
+    public function getContextHtml(): ?string
+    {
+        $output = '<!-- Button trigger modal -->
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#contextModal-' . $this->id . '">
+                  Göster
+                </button>
+                
+                <!-- Modal -->
+                <div class="modal fade" id="contextModal-' . $this->id . '" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="contextModal-' . $this->id . 'ModalLabel">Modal title</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        ';
+        foreach (json_decode($this->context) as $key => $value) {
+            $output .= '<p><strong>' . $key . '</strong>: <pre>' . var_export($value, true) . '</pre></p>';
+        }
+        $output .= '
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                ';
+
+        $output .= '</details>';
+        return $output;
+
+
+    }
 }
