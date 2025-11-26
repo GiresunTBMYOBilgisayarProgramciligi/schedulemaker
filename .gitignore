@@ -120,3 +120,12 @@ db
 .env
 build
 Public/assets/node_modules
+.idea/data_source_mapping.xml
+.idea/dataSources.xml
+.idea/jsLibraryMappings.xml
+.idea/phpspec.xml
+.idea/sqldialects.xml
+.junie/guidelines.md
+.vscode/settings.json
+reset.sql
+insert.sql
