@@ -23,7 +23,7 @@ class Controller
      */
     protected function logger(): Logger
     {
-        return LoggerFactory::getLogger();
+        return Log::logger();
     }
 
     /**
@@ -32,26 +32,7 @@ class Controller
      */
     protected function logContext(array $extra = []): array
     {
-        $username = null;
-        $userId = null;
-        try {
-            $user = (new UserController())->getCurrentUser();
-            if ($user) {
-                $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
-                $userId = $user->id;
-            }
-        } catch (\Throwable $t) {
-            // ignore user detection failures
-        }
-        // Try to detect caller function
-        $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $caller = $bt[1]['function'] ?? null;
-        return array_merge([
-            'username' => $username,
-            'user_id' => $userId,
-            'url' => $_SERVER['REQUEST_URI'] ?? null,
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-        ], $extra);
+        return Log::context($this, $extra);
     }
 
     /**

@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Core;
+
+use App\Controllers\UserController;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+
+/**
+ * Centralized logging helper for the whole application.
+ * Provides a shared logger instance and a unified context builder.
+ */
+class Log
+{
+    /** @var Logger|null */
+    private static ?Logger $logger = null;
+
+    /**
+     * Get the shared Monolog logger instance.
+     */
+    public static function logger(): Logger
+    {
+        if (self::$logger instanceof Logger) {
+            return self::$logger;
+        }
+
+        // Build the logger here so the project doesn't depend on LoggerFactory
+        $channel = 'app';
+        $logger = new Logger($channel);
+
+        // DB handler: write everything from Debug and above
+        $dbHandler = new DbLogHandler(Level::Debug, true);
+        $logger->pushHandler($dbHandler);
+
+        // Optional fallback to file in DEBUG
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            $logPath = $_ENV['LOG_PATH'] . '/app.log';
+            @mkdir(dirname($logPath), 0777, true);
+            $logger->pushHandler(new StreamHandler($logPath, Level::Debug));
+        }
+
+        self::$logger = $logger;
+        return self::$logger;
+    }
+
+    /**
+     * Build a standard logging context used across the project.
+     *
+     * Fields: username, user_id, class, method, function, file, line, url, ip, [table]
+     *
+     * @param object|null $self The current object ($this) if available to better infer class/table.
+     * @param array $extra Extra context fields to merge.
+     * @return array
+     */
+    public static function context(object $self = null, array $extra = []): array
+    {
+        $username = null;
+        $userId = null;
+        try {
+            $user = (new UserController())->getCurrentUser();
+            if ($user) {
+                $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
+                $userId = $user->id;
+            }
+        } catch (\Throwable $t) {
+            // ignore user detection failures
+        }
+
+        // Backtrace to infer caller
+        $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+        $callerFunc = $bt[1]['function'] ?? null;
+        $callerClass = $bt[1]['class'] ?? ($self ? get_class($self) : null);
+        $file = $bt[0]['file'] ?? null;
+        $line = $bt[0]['line'] ?? null;
+
+        $ctx = [
+            'username' => $username,
+            'user_id' => $userId,
+            'class' => $callerClass,
+            'method' => $callerFunc,
+            'function' => $callerFunc,
+            'file' => $file,
+            'line' => $line,
+            'url' => $_SERVER['REQUEST_URI'] ?? null,
+            'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+        ];
+
+        // If the caller is a Model that defines table_name, include it
+        if ($self && property_exists($self, 'table_name')) {
+            /** @var mixed $self */
+            try {
+                $ctx['table'] = $self->table_name ?? null;
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
+        return array_merge($ctx, $extra);
+    }
+}

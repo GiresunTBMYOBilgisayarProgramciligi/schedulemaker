@@ -112,7 +112,7 @@ class ErrorHandler
     private function logException($exception)
     {
         try {
-            $logger = LoggerFactory::getLogger();
+            $logger = Log::logger();
             // Kullanıcı bilgisi
             $username = null;
             $userId = null;

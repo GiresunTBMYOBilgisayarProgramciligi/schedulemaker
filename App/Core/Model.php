@@ -6,9 +6,26 @@ namespace App\Core;
 use Exception;
 use PDO;
 use App\Controllers\ProgramController;
+use Monolog\Logger;
 
 class Model
 {
+    /**
+     * Shared application logger for all models.
+     */
+    protected function logger(): Logger
+    {
+        return Log::logger();
+    }
+
+    /**
+     * Standard logging context used across models.
+     * Adds current user, caller, URL, IP and table name.
+     */
+    protected function logContext(array $extra = []): array
+    {
+        return Log::context($this, $extra);
+    }
     protected string $table_name = "";
     private static ?PDO $database = null;
     protected ?string $whereClause = null;
@@ -557,7 +574,10 @@ class Model
         $statement->bindValue(':id', $this->id);
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
-        } else return true;
+        } else {
+            $this->logger()->info("Veri Silindi");
+            return true;
+        }
 
     }
 
