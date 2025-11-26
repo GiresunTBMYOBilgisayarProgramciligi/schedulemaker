@@ -192,7 +192,7 @@ class ErrorHandler
                 ];
 
                 // Geliştirme ortamında daha fazla detay göster
-                if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                if ($_ENV['DEBUG'] === 'true') {
                     $errorData['file'] = $exception->getFile();
                     $errorData['line'] = $exception->getLine();
                     $errorData['trace'] = $exception->getTraceAsString();
@@ -233,7 +233,7 @@ class ErrorHandler
         }*/
 
         // Geliştirme ortamında daha fazla detay göster
-        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+        if ($_ENV['DEBUG'] === 'true') {
             $response['debug'] = [
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),

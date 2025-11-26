@@ -30,11 +30,12 @@ class Log
         $logger = new Logger($channel);
 
         // DB handler: write everything from Debug and above
-        $dbHandler = new DbLogHandler(Level::Debug, true);
+        $dbLevel = ($_ENV['DEBUG'] ?? 'false') === 'true' ? Level::Debug : Level::Info;
+        $dbHandler = new DbLogHandler($dbLevel, true);
         $logger->pushHandler($dbHandler);
 
         // Optional fallback to file in DEBUG
-        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+        if ($_ENV['DEBUG'] === 'true') {
             $logPath = $_ENV['LOG_PATH'] . '/app.log';
             @mkdir(dirname($logPath), 0777, true);
             $logger->pushHandler(new StreamHandler($logPath, Level::Debug));
