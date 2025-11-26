@@ -54,7 +54,7 @@ class Log
      * @param array $extra Extra context fields to merge.
      * @return array
      */
-    public static function context(object $self = null, array $extra = []): array
+    public static function context(?object $self = null, array $extra = []): array
     {
         $username = null;
         $userId = null;
