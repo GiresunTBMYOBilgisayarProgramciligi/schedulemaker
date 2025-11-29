@@ -79,11 +79,17 @@ class Log
         }
 
         // Backtrace to infer caller
-        $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
-        $callerFunc = $bt[1]['function'] ?? null;
-        $callerClass = $bt[1]['class'] ?? ($self ? get_class($self) : null);
-        $file = $bt[0]['file'] ?? null;
-        $line = $bt[0]['line'] ?? null;
+        $bt = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
+
+        $idx = 0;
+        if (isset($bt[1]['function']) && $bt[1]['function'] === 'logContext') {
+            $idx = 1;
+        }
+
+        $callerFunc = $bt[$idx + 1]['function'] ?? null;
+        $callerClass = $bt[$idx + 1]['class'] ?? ($self ? get_class($self) : null);
+        $file = $bt[$idx]['file'] ?? null;
+        $line = $bt[$idx]['line'] ?? null;
 
         $ctx = [
             'username' => $username,
