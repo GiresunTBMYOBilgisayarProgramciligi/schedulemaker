@@ -36,9 +36,19 @@ class Log
 
         // Optional fallback to file in DEBUG
         if ($_ENV['DEBUG'] === 'true') {
-            $logPath = $_ENV['LOG_PATH'] . '/app.log';
-            @mkdir(dirname($logPath), 0777, true);
-            $logger->pushHandler(new StreamHandler($logPath, Level::Debug));
+            $logDir = $_ENV['LOG_PATH'];
+            if (!is_dir($logDir)) {
+                @mkdir($logDir, 0777, true);
+            }
+
+            // Debug log: captures everything (Debug and above)
+            $logger->pushHandler(new StreamHandler($logDir . '/debug.log', Level::Debug));
+
+            // Info log: captures Info and above
+            $logger->pushHandler(new StreamHandler($logDir . '/info.log', Level::Info));
+
+            // Error log: captures Error and above
+            $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error));
         }
 
         self::$logger = $logger;
