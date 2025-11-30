@@ -58,7 +58,8 @@ class ScheduleController extends Controller
     {
         $filters = $this->validator->validate($filters, "createScheduleExcelTable");
         $schedules = (new Schedule())->get()->where($filters)->all();
-        if (count($schedules) == 0) return false; // program boş ise false dön
+        if (count($schedules) == 0)
+            return false; // program boş ise false dön
 
         $scheduleRows = $this->prepareScheduleRows($filters, 'excel');
         $scheduleArray = [];
@@ -286,7 +287,7 @@ class ScheduleController extends Controller
                         //gün içerisinde iki ders var
                         $out .= '<td class="drop-zone">';
                         foreach ($day as $column) {
-                            $column = (object)$column; // Array'i objeye dönüştür
+                            $column = (object) $column; // Array'i objeye dönüştür
                             $lesson = (new Lesson())->find($column->lesson_id) ?: throw new Exception("Ders bulunamdı");
                             $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                             $lecturer = (new User())->find($column->lecturer_id);
@@ -339,7 +340,7 @@ class ScheduleController extends Controller
                         $out .= '</td>';
                     } else {
                         // Eğer day bir array ise bilgileri yazdır
-                        $day = (object)$day; // Array'i objeye dönüştür
+                        $day = (object) $day; // Array'i objeye dönüştür
                         $lesson = (new Lesson())->find($day->lesson_id) ?: throw new Exception("Ders bulunamdı");
                         $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
                         $lecturer = (new User())->find($day->lecturer_id);
@@ -481,7 +482,8 @@ class ScheduleController extends Controller
                   </div>
                     ";
         }
-        $HTMLOut .= '</div><!--end::available-schedule-items-->';;
+        $HTMLOut .= '</div><!--end::available-schedule-items-->';
+        ;
         return $HTMLOut;
     }
 
@@ -592,7 +594,7 @@ class ScheduleController extends Controller
 
         // Başlangıç ve bitiş saatlerini ayır
         [$start, $end] = explode(" - ", $startTimeRange);
-        $startHour = (int)explode(".", $start)[0]; // Saat kısmını al
+        $startHour = (int) explode(".", $start)[0]; // Saat kısmını al
 
         for ($i = 0; $i < $hours; $i++) {
             // Eğer saat 12'ye geldiyse öğle arası için atla
@@ -679,8 +681,8 @@ class ScheduleController extends Controller
 
         foreach ($lessons as $child) {
             /*
-            * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
-            */
+             * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
+             */
             $filters = array_merge($filters, [
                 //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
                 "owners" => [
@@ -831,6 +833,7 @@ class ScheduleController extends Controller
      */
     public function updateSchedule(Schedule $schedule): int
     {
+        //todo bu fonksiyon yeni model yapısına göre düzenlenecek
         try {
             $scheduleData = $schedule->getArray(['table_name', 'database', 'id'], true);
             //dizi türündeki veriler serialize ediliyor
@@ -861,6 +864,7 @@ class ScheduleController extends Controller
             $stmt = $this->database->prepare($query);
             $stmt->execute($parameters);
             if ($stmt->rowCount() > 0) {
+                $this->logger()->info("Program Güncellendi", $this->logContext(["schedule" => $schedule]));
                 return $schedule->id;
             } else {
                 throw new Exception("Program Güncellenemedi");
@@ -886,33 +890,65 @@ class ScheduleController extends Controller
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_id"]));// day ve day_index alanları çıkartılıyor
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
-            if ($classroom->type == 3) return []; // uzaktan eğitim sınıfı ise programa kaydı yoktur
+            if ($classroom->type == 3)
+                return []; // uzaktan eğitim sınıfı ise programa kaydı yoktur
         }
         $schedules = (new Schedule())->get()->where($scheduleData)->all();
 
         if (!$schedules) {
             throw new Exception("Silinecek ders programı bulunamadı");
         }
+        $results = [];
         foreach ($schedules as $schedule) {
+            $this->logger()->debug("Program silinecek", $this->logContext([
+                "filters" => $filters,
+                "schedules" => $schedules,
+                "schedule" => $schedule
+            ]));
             /**
              * Eğer dönem numarası belirtilmediyse aktif dönem numaralarınsaki tüm dönemler silinir.
              * todo semester no belirtilemeyen durumlar hangileriydi ? Kullanıcı tercihlerinde silme işleminde semester no yok
              */
             if (!key_exists("semester_no", $filters)) {
+                $this->logger()->debug("semester_no tanımlanmamış döneme göre yarıyıl bilgisi alınacak", $this->logContext([
+                    "filters" => $filters,
+                    "schedules" => $schedules,
+                    "schedule" => $schedule
+                ]));
                 $currentSemesters = getSemesterNumbers($filters["semester"]);
                 foreach ($currentSemesters as $currentSemester) {
                     $filters["semester_no"] = $currentSemester;
-                    return $this->checkAndDeleteSchedule($schedule, $filters);
+                    $result = $this->checkAndDeleteSchedule($schedule, $filters);
+                    if (!empty($result))
+                        $results[] = $result;
                 }
             } else {
-                return $this->checkAndDeleteSchedule($schedule, $filters);
+                $this->logger()->debug("semester_no tanımlı ", $this->logContext([
+                    "filters" => $filters,
+                    "schedules" => $schedules,
+                    "schedule" => $schedule,
+                ]));
+                $result = $this->checkAndDeleteSchedule($schedule, $filters);
+                if (!empty($result))
+                    $results[] = $result;
             }
         }
-        return ["silme işlemi çalışmadı"];
+        if (empty($results)) {
+            $this->logger()->debug("Silme işlemi çalışmadı ", $this->logContext([
+                "filters" => $filters,
+            ]));
+            return ["silme işlemi çalışmadı"];
+        }
+        $this->logger()->info("Program silme işlemi yapıldı", $this->logContext([
+            "filters" => $filters,
+            "results" => $results
+        ]));
+        return $results;
     }
 
     /**
-     * @param $schedule
+     * 
+     * @param Schedule $schedule 
      * @param $filters
      * @return array
      * @throws Exception
@@ -965,7 +1001,7 @@ class ScheduleController extends Controller
                 return ['updatedSchedule_id' => $schedule->id];
             }
         } else {
-            throw new Exception("Silmek için belirtilen gün boş!");
+            return [];//silinecek program bulunamadı
         }
         return ["koşullar sağlanmadı" => ["schedule" => $schedule, "filters" => $filters]];
     }
