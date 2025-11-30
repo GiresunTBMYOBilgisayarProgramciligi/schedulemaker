@@ -27,6 +27,7 @@ class Model
         return Log::context($this, $extra);
     }
     protected string $table_name = "";
+    public ?int $id = null;
     private static ?PDO $database = null;
     protected ?string $whereClause = null;
     protected array $parameters = [];
@@ -338,9 +339,9 @@ class Model
         if (!empty($this->relations) && !empty($results)) {
             $results = $this->loadRelations($results);
         }
-        if ($this->selectedFields != ['*']){
+        if ($this->selectedFields != ['*']) {
             return $results;
-        }else{
+        } else {
             $models = [];
             foreach ($results as $result) {
                 $model = new $this();
@@ -447,12 +448,13 @@ class Model
     {
         if (property_exists($this, 'department_id')) {
             if (is_null($this->department_id)) {
-                $list = [(object)["id" => 0, "name" => "Program Seçiniz"]];
+                $list = [(object) ["id" => 0, "name" => "Program Seçiniz"]];
             } else {
-                $list = (new ProgramController())->getProgramsList(['department_id'=>$this->department_id]);
-                array_unshift($list, (object)["id" => 0, "name" => "Program Seçiniz"]);
+                $list = (new ProgramController())->getProgramsList(['department_id' => $this->department_id]);
+                array_unshift($list, (object) ["id" => 0, "name" => "Program Seçiniz"]);
             }
-        } else $list = [];
+        } else
+            $list = [];
         return $list;
     }
 
@@ -497,8 +499,8 @@ class Model
     public function create(): void
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
-            throw new Exception('Model düzgün oluşturulmamış');
+        if (empty($this->table_name)) {
+            throw new Exception('Model düzgün oluşturulmamış: Tablo adı eksik.');
         }
         $data = $this->getArray(['id', "register_date", "last_login"]);
         //dizi türündeki veriler serialize ediliyor
@@ -524,6 +526,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
+            $this->logger()->info("Veri Eklendi",$this->logContext());
         }
     }
 
@@ -534,8 +537,8 @@ class Model
     public function update(): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
-            throw new Exception('Model düzgün oluşturulmamış');
+        if (empty($this->table_name) || empty($this->id)) {
+            throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
         }
         $data = $this->getArray(['id'], true);
         $setStatements = array_map(function ($field) {
@@ -550,7 +553,7 @@ class Model
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
-
+        $this->logger()->info("Veri Güncellendi",$this->logContext());
         return $statement->execute();
     }
 
@@ -562,8 +565,8 @@ class Model
     public function delete(): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (!property_exists($this, 'table_name') and !property_exists($this, 'id')) {
-            throw new Exception('Model düzgün oluşturulmamış');
+        if (empty($this->table_name) || empty($this->id)) {
+            throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
         }
 
         if ($this->table_name == "users" and $this->id == 1) {
@@ -575,7 +578,7 @@ class Model
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
-            $this->logger()->info("Veri Silindi");
+            $this->logger()->info("Veri Silindi",$this->logContext());
             return true;
         }
 
@@ -597,7 +600,7 @@ class Model
         $statement->execute($query['parameters']);
         $result = $statement->fetch(PDO::FETCH_OBJ);
 
-        return isset($result->count) ? (int)$result->count : 0;
+        return isset($result->count) ? (int) $result->count : 0;
     }
 
     public function sum(string $column): float
@@ -611,6 +614,6 @@ class Model
         $statement->execute($query['parameters']);
         $result = $statement->fetch(PDO::FETCH_OBJ);
 
-        return isset($result->total) ? (float)$result->total : 0.0;
+        return isset($result->total) ? (float) $result->total : 0.0;
     }
 }
