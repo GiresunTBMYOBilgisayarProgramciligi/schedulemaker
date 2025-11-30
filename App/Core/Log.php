@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Controllers\UserController;
+use Monolog\Handler\FilterHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
@@ -41,14 +42,16 @@ class Log
                 @mkdir($logDir, 0777, true);
             }
 
-            // Debug log: captures everything (Debug and above)
-            $logger->pushHandler(new StreamHandler($logDir . '/debug.log', Level::Debug));
+            // Debug log: captures ONLY Debug level
+            $debugHandler = new StreamHandler($logDir . '/debug.log', Level::Debug);
+            $logger->pushHandler(new FilterHandler($debugHandler, Level::Debug, Level::Debug));
 
-            // Info log: captures Info and above
-            $logger->pushHandler(new StreamHandler($logDir . '/info.log', Level::Info));
+            // Info log: captures ONLY Info level
+            $infoHandler = new StreamHandler($logDir . '/info.log', Level::Info);
+            $logger->pushHandler(new FilterHandler($infoHandler, Level::Info, Level::Info));
 
             // Error log: captures Error and above
-            $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error));
+            $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error, false));
         }
 
         self::$logger = $logger;
