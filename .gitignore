@@ -129,3 +129,6 @@ Public/assets/node_modules
 .vscode/settings.json
 reset.sql
 insert.sql
+Logs/debug.log
+Logs/error.log
+Logs/info.log
