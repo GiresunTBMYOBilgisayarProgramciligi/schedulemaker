@@ -25,7 +25,6 @@ class DepartmentController extends Controller
         if (!isAuthorized("submanager")) {
             $filters['id'] = (new UserController())->getCurrentUser()->department_id;
         }
-        $this->logger()->info('Department list requested', $this->logContext(['filters' => $filters]));
         return $this->getListByFilters($filters);
     }
 
