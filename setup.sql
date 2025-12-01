@@ -51,7 +51,7 @@ create table if not exists schedule
     semester      varchar(20),
     academic_year varchar(12),
     primary key (id),
-    unique (owner_type, owner_id, time, semester_no, semester, academic_year)
+    unique (owner_type, owner_id, time, semester_no, semester, academic_year, type)
 ) ENGINE = INNODB;
 
 create table if not exists users
