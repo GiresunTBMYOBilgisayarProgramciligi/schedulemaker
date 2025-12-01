@@ -683,20 +683,15 @@ class AjaxRouter extends Router
     public function saveSchedulePreferenceAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = [
-            "type" => "lesson",
-            "semester" => getSettingValue("semester"),
-            "academic_year" => getSettingValue("academic_year"),
-        ];
-        $filters = array_merge($filters, $this->data);
+        $filters= $scheduleController->validator->validate($this->data, "saveSchedulePreferenceAction");
         $currentSemesters = getSemesterNumbers($filters["semester"]);
         /**
          * Her iki dönem için de tercih kaydediliyor.
          */
         foreach ($currentSemesters as $semester_no) {
             $filters['semester_no'] = $semester_no;
-            $this->response['filters'] = $filters;
-            $savedId = $scheduleController->saveNew($filters);
+            $filters['day'.$filters['day_index']] = $filters['day'][0];
+            $savedId = $scheduleController->saveNew(array_diff_key($filters, array_flip(["day_index", "day"])));
             if ($savedId == 0) {
                 throw new Exception("Hoca tercihi kaydedilemedi");
             } else {

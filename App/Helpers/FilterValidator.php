@@ -160,9 +160,13 @@ class FilterValidator
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
+            "saveSchedulePreferenceAction" => [
+                'required' => ["type", "owner_type", "owner_id","time","day_index","day"],
+                'optional' => ["semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ]
 
 
-            // ... diğer metodlarınız için kurallar
         ];
     }
 
