@@ -4,10 +4,27 @@ namespace App\Core;
 
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
+use Monolog\Logger;
 
 class Router
 {
     protected $view;
+    /**
+     * Shared application logger for all controllers.
+     */
+    protected function logger(): Logger
+    {
+        return Log::logger();
+    }
+
+    /**
+     * Standard logging context used across controllers.
+     * Adds current user, caller method, URL and IP.
+     */
+    protected function logContext(array $extra = []): array
+    {
+        return Log::context($this, $extra);
+    }
 
     /**
      * Belirtilen view dosyasını render eder
