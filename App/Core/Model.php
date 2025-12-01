@@ -526,7 +526,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-            $this->logger()->info("Veri Eklendi",$this->logContext());
+            $this->logger()->info("Veri Eklendi",$this->logContext([$this]));
         }
     }
 

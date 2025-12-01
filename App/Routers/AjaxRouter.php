@@ -64,7 +64,8 @@ class AjaxRouter extends Router
      */
     public function checkAjax(): bool
     {
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        if (
+            isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
         ) {
             $this->data = $_POST;
@@ -303,7 +304,8 @@ class AjaxRouter extends Router
                 "status" => "success",
                 "redirect" => "self"
             );
-        } else throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        } else
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
 
         $this->sendResponse();
     }
@@ -324,7 +326,8 @@ class AjaxRouter extends Router
                 "status" => "success",
                 "redirect" => "self"
             );
-        } else throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
+        } else
+            throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
 
         $this->sendResponse();
     }
@@ -589,7 +592,7 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         $filters = $scheduleController->validator->validate($this->data, "saveScheduleAction");
-
+        $this->logger()->debug("Save ScheduleAction Filters: ", ['filters' => $filters]);
         $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         //sınav programında gözetmen lecturer_id ile belirtiliyor.
         $lecturer = isset($this->data['lecturer_id']) ? ((new User())->find($this->data['lecturer_id']) ?: $lesson->getLecturer()) : $lesson->getLecturer();
@@ -598,14 +601,15 @@ class AjaxRouter extends Router
         $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
         //bağlı dersler listesine ana dersi ekliyoruz
         array_unshift($lessons, $lesson);
-
+        $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $lessons]);
         $scheduleController->checkScheduleCrash($filters);
 
         /**
          * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
          *
          */
-        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time'], $this->data['lesson_hours']);
+        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time'], $this->data['lesson_hours'], $filters['type']);
+        $this->logger()->debug("Save ScheduleAction Time Array: ", ['timeArray' => $timeArray]);
         /*
          * her bir saat için ayrı ekleme yapılacak
          */
@@ -616,6 +620,7 @@ class AjaxRouter extends Router
                 }
             }
             foreach ($lessons as $child) {
+                $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $child]);
                 /**
                  * @var Lesson $child
                  */
@@ -643,14 +648,16 @@ class AjaxRouter extends Router
                     "classroom_id" => $classroom->id,
                     "lecturer_id" => $lecturer->id,
                 ];
-                if (!$child->IsScheduleComplete()) {
+                $this->logger()->debug("Save ScheduleAction Schedule Filters: ", ['scheduleFilters' => $scheduleFilters]);
+                if (!$child->IsScheduleComplete($scheduleFilters['type'])) {
                     $schedule = new Schedule();
                     /*
                      * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
                      * Bu değerler için döngü oluşturuluyor
                      */
                     foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
-                        if (is_null($owner_id)) continue;// child lesson ise owner_id null olduğundan atlanacak
+                        if (is_null($owner_id))
+                            continue;// child lesson ise owner_id null olduğundan atlanacak
                         $savedId = $scheduleController->saveNew([
                             "type" => $filters['type'],
                             "owner_type" => $owner_type,
@@ -683,14 +690,14 @@ class AjaxRouter extends Router
     public function saveSchedulePreferenceAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters= $scheduleController->validator->validate($this->data, "saveSchedulePreferenceAction");
+        $filters = $scheduleController->validator->validate($this->data, "saveSchedulePreferenceAction");
         $currentSemesters = getSemesterNumbers($filters["semester"]);
         /**
          * Her iki dönem için de tercih kaydediliyor.
          */
         foreach ($currentSemesters as $semester_no) {
             $filters['semester_no'] = $semester_no;
-            $filters['day'.$filters['day_index']] = $filters['day'][0];
+            $filters['day' . $filters['day_index']] = $filters['day'][0];
             $savedId = $scheduleController->saveNew(array_diff_key($filters, array_flip(["day_index", "day"])));
             if ($savedId == 0) {
                 throw new Exception("Hoca tercihi kaydedilemedi");
@@ -923,7 +930,8 @@ class AjaxRouter extends Router
                     "lecturer_id" => $lecturer->id,
                 ];
                 foreach ($owners as $owner_type => $owner_id) {
-                    if (is_null($owner_id)) continue; // child lesson ise owner_id null olduğundan atlanacak
+                    if (is_null($owner_id))
+                        continue; // child lesson ise owner_id null olduğundan atlanacak
                     $deleteFilters = [
                         "owner_type" => $owner_type,
                         "owner_id" => $owner_id,

@@ -588,29 +588,35 @@ class ScheduleController extends Controller
      * @param int $hours
      * @return array
      */
-    public function generateTimesArrayFromText(string $startTimeRange, int $hours): array
+    public function generateTimesArrayFromText(string $startTimeRange, int $hours, string $type = 'lesson'): array
     {
         $schedule = [];
 
         // Başlangıç ve bitiş saatlerini ayır
-        [$start, $end] = explode(" - ", $startTimeRange);
-        $startHour = (int) explode(".", $start)[0]; // Saat kısmını al
+        [$start, $end] = explode("-", $startTimeRange);
+        $currentTime = \DateTime::createFromFormat('H.i', trim($start));
 
         for ($i = 0; $i < $hours; $i++) {
-            // Eğer saat 12'ye geldiyse öğle arası için atla
-            if ($startHour == 12) {
-                $startHour = 13;
+            // Eğer ders ise ve saat 12 ise öğle arası için atla
+            if ($type === 'lesson' && $currentTime->format('H') == '12') {
+                $currentTime->modify('+1 hour');
             }
 
-            // Yeni başlangıç ve bitiş saatlerini oluştur
-            $newStart = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".00";
-            $newEnd = str_pad($startHour, 2, "0", STR_PAD_LEFT) . ".50";
+            $startFormatted = $currentTime->format('H.i');
 
-            // Listeye ekle
-            $schedule[] = "$newStart - $newEnd";
-
-            // Saat bilgisi bir sonraki saat için güncellenir
-            $startHour++;
+            if ($type === 'exam') {
+                $endTime = clone $currentTime;
+                $endTime->modify('+30 minutes');
+                $endFormatted = $endTime->format('H.i');
+                $schedule[] = "$startFormatted - $endFormatted";
+                $currentTime = $endTime;
+            } else {
+                $endTime = clone $currentTime;
+                $endTime->modify('+50 minutes');
+                $endFormatted = $endTime->format('H.i');
+                $schedule[] = "$startFormatted - $endFormatted";
+                $currentTime = $endTime->modify('+10 minutes');
+            }
         }
 
         return $schedule;
@@ -633,7 +639,7 @@ class ScheduleController extends Controller
             if ($lesson->classroom_type != 4) // karma sınıf için tür filtresi ekleme
                 $classroomFilters["type"] = $lesson->classroom_type;
         }
-        $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"]);
+        $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
         $unavailable_classroom_ids = [];
         $classroomSchedules = $this->getListByFilters(
             [
@@ -668,6 +674,7 @@ class ScheduleController extends Controller
     public function checkScheduleCrash(array $filters = []): bool
     {
         $filters = $this->validator->validate($filters, "checkScheduleCrash");
+        $this->logger()->debug("Check Schedule Crash Filters: ", $this->logContext($filters));
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         /*
          * Filtrede hoca id bilgisi varsa dersin hocası ile farklı bir hoca olma durumu olduğundan onu ayrı işlemek gerekiyor. Ayrıca sınav programında hoca id değeri gözetmen id olarak kullanılacak
@@ -699,8 +706,8 @@ class ScheduleController extends Controller
                 $filters['owners']['classroom'] = $classroom->id;
             }
         }
-
-        $times = $this->generateTimesArrayFromText($filters["time"], $filters["lesson_hours"]);
+        $this->logger()->debug('Check Schedule Crash Filters2', $this->logContext($filters));
+        $times = $this->generateTimesArrayFromText($filters["time"], $filters["lesson_hours"], $filters["type"]);
 
         foreach ($filters["owners"] as $owner_type => $owner_id) {
             $ownerFilter = [
@@ -716,6 +723,7 @@ class ScheduleController extends Controller
                 $ownerFilter["semester_no"] = $lesson->semester_no;
             }
             $schedules = (new Schedule())->get()->where($ownerFilter)->all();
+            $this->logger()->debug('Check Schedule Crash Schedules', $this->logContext($schedules));
             foreach ($schedules as $schedule) {
                 if ($schedule->{"day" . $filters["day_index"]}) {// belirtilen gün bilgisi null yada false değilse
                     if (is_array($schedule->{"day" . $filters["day_index"]})) {
@@ -788,7 +796,7 @@ class ScheduleController extends Controller
                  * gün bilgisi çıkartılarak program aranıyor.
                  */
                 $updatingSchedule = (new Schedule())->get()->where(array_diff_key($schedule_arr, [$day_key => null]))->first();
-
+                $this->logger()->debug(" Updating Schedule: ", $this->logContext(["updatingSchedule" => $updatingSchedule]));
                 // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
                 if (is_array($updatingSchedule->{$day_key})) {
                     /**
