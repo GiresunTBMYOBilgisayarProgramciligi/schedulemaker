@@ -110,7 +110,7 @@ class ScheduleController extends Controller
         /**
          * Veri tabanında yapılacak sorguda dizi verisi in ile birlikte verilmeli.
          */
-        if (is_array($filters['semester_no'])) {
+        if (isset($filters['semester_no']) and is_array($filters['semester_no'])) {
             $filters['semester_no'] = ['in' => $filters['semester_no']];
         }
 

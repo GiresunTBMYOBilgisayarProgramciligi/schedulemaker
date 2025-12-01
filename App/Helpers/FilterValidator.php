@@ -142,17 +142,17 @@ class FilterValidator
             ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id"],
+                'optional' => ["owner_id","semester_no"],
+                'defaults' => ['semester', 'academic_year']
+            ],
+            "generateScheduleFilters"=> [
+                'required' => ["type", "owner_type"],
+                'optional' => ["owner_id","semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportSchedule" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id"],
-                'defaults' => ['semester', 'academic_year']
-            ],
-            "generateScheduleFilters" => [
-                'required' => ["type", "owner_type"],
-                'optional' => ["owner_id"],
+                'optional' => ["owner_id", "semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
@@ -164,8 +164,12 @@ class FilterValidator
                 'required' => ["type", "owner_type", "owner_id","time","day_index","day"],
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
+            ],
+            "exportScheduleIcsAction" => [
+                'required' => ["owner_type"],
+                'optional' => ["semester_no","owner_id"],
+                'defaults' => ['semester', 'academic_year',"type"]
             ]
-
 
         ];
     }
@@ -251,6 +255,8 @@ class FilterValidator
                 $validatedFilters[$key] = getSettingValue('semester'); // 'getSettingValue' fonksiyonunuzu varsayıyorum
             } elseif ($key === 'academic_year') {
                 $validatedFilters[$key] = getSettingValue('academic_year');
+            } elseif ($key === 'type') {
+                $validatedFilters[$key] = 'lesson';
             }
         }
 

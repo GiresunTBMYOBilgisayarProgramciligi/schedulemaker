@@ -14,6 +14,7 @@ use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
 use Exception;
+use Monolog\Logger;
 use JetBrains\PhpStorm\NoReturn;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -41,6 +42,22 @@ class ImportExportManager
             $this->prepareExportFile();
         }
 
+    }
+    /**
+     * Shared application logger for all controllers.
+     */
+    protected function logger(): Logger
+    {
+        return Log::logger();
+    }
+
+    /**
+     * Standard logging context used across controllers.
+     * Adds current user, caller method, URL and IP.
+     */
+    protected function logContext(array $extra = []): array
+    {
+        return Log::context($this, $extra);
     }
 
     private function prepareExportFile(): void
@@ -81,7 +98,7 @@ class ImportExportManager
         }
         foreach ($rows as $index => $row) {
             [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
-                return trim((string)($item ?? ''));
+                return trim((string) ($item ?? ''));
             }, $row);
 
             if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
@@ -152,7 +169,7 @@ class ImportExportManager
         foreach ($rows as $rowIndex => $row) {
             $hasError = false;// her bir satıra hatasız başlanıyor
             [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
-                return trim((string)($item ?? ''));
+                return trim((string) ($item ?? ''));
             }, $row);
 
             // Değişkenleri bir diziye topla
@@ -233,7 +250,7 @@ class ImportExportManager
      */
     private function generateScheduleFilters($filters): array
     {
-        $filters = (new FilterValidator())->validate($filters, "exportScheduleAction");
+        $filters = (new FilterValidator())->validate($filters, "generateScheduleFilters");
         $scheduleFilters = [];
         $semesterNumbers = getSemesterNumbers($filters["semester"]);
 
@@ -446,7 +463,8 @@ class ImportExportManager
         foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
             // programların her biri için tablo oluşturuluyor
             $scheduleArray = $scheduleController->createScheduleExcelTable($scheduleFilter['filter']);// her bir elemanı bir satır olan bir dizi
-            if (!$scheduleArray) continue; //Eğer programda ders yoksa geç
+            if (!$scheduleArray)
+                continue; //Eğer programda ders yoksa geç
             $lastCellLetter = $scheduleFilter['type'] == "classroom" ? 'F' : 'K';
             //start::Program başlığını yaz
             $this->sheet->setCellValue("A{$row}", $scheduleFilter['title']);
@@ -473,7 +491,7 @@ class ImportExportManager
                     $cellValue = "";
                     if (is_array($scheduleCell)) {
                         //bu hücrede ders var demektir
-                        if (isset ($scheduleCell[0]) and is_array($scheduleCell[0])) {
+                        if (isset($scheduleCell[0]) and is_array($scheduleCell[0])) {
                             // bu alanda gruplu iki ders var demektir.
                             /**
                              * Hücre içerisine yazdırılacak derslerin bilgilerinin dizisi
@@ -595,13 +613,6 @@ class ImportExportManager
     #[NoReturn]
     public function exportScheduleIcs($filters = []): void
     {
-        if (!key_exists("semester", $filters)) {
-            $filters['semester'] = getSettingValue('semester');
-        }
-        if (!key_exists("academic_year", $filters)) {
-            $filters['academic_year'] = getSettingValue("academic_year");
-        }
-
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now = new \DateTime('now', $timezone);
 
@@ -630,9 +641,13 @@ class ImportExportManager
         foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
             // Fetch schedules matching the filter
             $schedules = (new \App\Models\Schedule())->get()->where($scheduleFilter['filter'])->all();
-            if (count($schedules) === 0) continue;
+            if (count($schedules) === 0)
+                continue;
 
             foreach ($schedules as $schedule) {
+                $this->logger()->debug("Schedule time: ", ['schedule' => $schedule]);
+                if (empty($schedule->time))
+                    continue;
                 // Parse start-end times from schedule time label like "08.00 - 08.50"
                 [$startText, $endText] = array_map('trim', explode('-', str_replace(' - ', '-', $schedule->time)));
                 $startText = str_replace('.', ':', trim($startText));
@@ -640,25 +655,29 @@ class ImportExportManager
 
                 for ($dayIndex = 0; $dayIndex <= getSettingValue('maxDayIndex', default: 4); $dayIndex++) {
                     $day = $schedule->{"day{$dayIndex}"};
-                    if (is_null($day) || $day === false) continue;
+                    if (is_null($day) || $day === false)
+                        continue;
 
                     // Determine lessons: either single associative array or array of associative arrays (grouped)
                     $entries = (isset($day[0]) && is_array($day[0])) ? $day : [$day];
                     foreach ($entries as $entry) {
-                        if (!isset($entry['lesson_id'])) continue;
+                        if (!isset($entry['lesson_id']))
+                            continue;
                         $lesson = (new \App\Models\Lesson())->find($entry['lesson_id']);
-                        if (!$lesson) continue;
+                        if (!$lesson)
+                            continue;
                         $classroomName = '';
                         if (isset($entry['classroom_id'])) {
                             $classroom = (new \App\Models\Classroom())->find($entry['classroom_id']);
-                            if ($classroom) $classroomName = $classroom->name;
+                            if ($classroom)
+                                $classroomName = $classroom->name;
                         }
 
                         // Compute first occurrence date for this weekday based on settings
                         $useRecurrence = ($semesterStart instanceof \DateTime) && ($semesterEnd instanceof \DateTime) && ($semesterEnd >= $semesterStart);
                         if ($useRecurrence) {
                             $targetDow = $dayIndex + 1; // 1=Mon ... 7=Sun
-                            $startDow = (int)$semesterStart->format('N');
+                            $startDow = (int) $semesterStart->format('N');
                             $delta = ($targetDow - $startDow + 7) % 7;
                             $firstDate = (clone $semesterStart)->modify("+{$delta} days");
                             $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
@@ -666,7 +685,7 @@ class ImportExportManager
                         } else {
                             // Fallback: single reference week next Monday + dayIndex
                             $anchor = new \DateTime('next monday', $timezone);
-                            if ((int)$now->format('N') === 1) {
+                            if ((int) $now->format('N') === 1) {
                                 $anchor = new \DateTime('today', $timezone);
                             }
                             $eventDate = (clone $anchor)->modify("+{$dayIndex} day");
@@ -701,8 +720,10 @@ class ImportExportManager
                             $lines[] = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
                         }
                         $lines[] = 'SUMMARY:' . $this->escapeIcsText($summary);
-                        if ($location !== '') $lines[] = 'LOCATION:' . $this->escapeIcsText($location);
-                        if ($description !== '') $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
+                        if ($location !== '')
+                            $lines[] = 'LOCATION:' . $this->escapeIcsText($location);
+                        if ($description !== '')
+                            $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
                         $lines[] = 'END:VEVENT';
                     }
                 }
