@@ -368,14 +368,14 @@ class ScheduleCard {
 
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
-                classroomSelectForm.dispatchEvent(new SubmitEvent("submit", {cancelable: true}));
+                classroomSelectForm.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
             });
 
             classroomSelectForm.addEventListener("submit", function (event) {
                 event.preventDefault();
                 // mevcut silinerek sadece derslik adı alınıyor
                 let classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
-                let selectedClassroom = {'id': classroomSelect.value, 'name': classroom_name};
+                let selectedClassroom = { 'id': classroomSelect.value, 'name': classroom_name };
                 let selectedHours = selectedHoursInput.value;
 
                 if (classroomSelect.value === "") {
@@ -383,7 +383,7 @@ class ScheduleCard {
                     return;
                 }
                 scheduleModal.closeModal();
-                resolve({classroom: selectedClassroom, hours: selectedHours});
+                resolve({ classroom: selectedClassroom, hours: selectedHours });
             });
         });
     }
@@ -422,7 +422,7 @@ class ScheduleCard {
             const formEl = scheduleModal.body.querySelector("form");
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
-                formEl.dispatchEvent(new SubmitEvent("submit", {cancelable: true}));
+                formEl.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
             });
 
             formEl.addEventListener("submit", function (event) {
@@ -433,10 +433,10 @@ class ScheduleCard {
                 }
                 const classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
                 const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
-                const selectedClassroom = {id: classroomSelect.value, name: classroom_name, exam_size: examSize};
-                const selectedObserver = {id: observerSelect.value};
+                const selectedClassroom = { id: classroomSelect.value, name: classroom_name, exam_size: examSize };
+                const selectedObserver = { id: observerSelect.value };
                 scheduleModal.closeModal();
-                resolve({classroom: selectedClassroom, observer: selectedObserver});
+                resolve({ classroom: selectedClassroom, observer: selectedObserver });
             });
         });
     }
@@ -467,7 +467,7 @@ class ScheduleCard {
                 event.preventDefault();
                 let selectedHours = selectedHoursInput.value;
                 scheduleModal.closeModal();
-                resolve({hours: selectedHours});
+                resolve({ hours: selectedHours });
             });
         });
     }
@@ -493,13 +493,13 @@ class ScheduleCard {
                     continue; // öğle arası gibi drop-zone olmayan hücreleri atla
                 }
 
-                let lessons = this.dropZone.querySelectorAll('[id^="scheduleTable-"]');
+                let lessons = cell.querySelectorAll('[id^="scheduleTable-"]');
                 if (lessons.length !== 0) {
                     if (lessons.length > 1) {
                         reject("Bu alana ders ekleyemezsiniz.");
                         return;
                     } else {
-                        let existLesson = this.dropZone.querySelector('[id^="scheduleTable-"]');
+                        let existLesson = cell.querySelector('[id^="scheduleTable-"]');
                         let existCode = existLesson.getAttribute("data-lesson-code");
                         let currentCode = this.draggedLesson.lesson_code;
 
@@ -818,8 +818,8 @@ class ScheduleCard {
             }
         } else {
             try {
-                let {hours} = await this.selectHours();
-                let classroom = {'id': this.owner_id, 'name': this.owner_name}
+                let { hours } = await this.selectHours();
+                let classroom = { 'id': this.owner_id, 'name': this.owner_name }
                 await this.checkCrash(hours);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
@@ -894,7 +894,7 @@ class ScheduleCard {
             /*
                 Dersin bırakıldığı gün ve saat için çakışma olup olmadığı kontrol ediliyor.
              */
-            let checkCrashBackEndResult = await this.checkCrashBackEnd(1, {'id': this.draggedLesson.classroom_id})
+            let checkCrashBackEndResult = await this.checkCrashBackEnd(1, { 'id': this.draggedLesson.classroom_id })
 
             if (checkCrashBackEndResult) {
                 /*
@@ -912,7 +912,7 @@ class ScheduleCard {
                     this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
                     // dersin bırakıldığı saat örn. 08.00-08.50
                     this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
-                    let saveScheduleResult = await this.saveSchedule(1, {'id': this.draggedLesson.classroom_id});
+                    let saveScheduleResult = await this.saveSchedule(1, { 'id': this.draggedLesson.classroom_id });
                     if (saveScheduleResult) {
                         //update dataset
                         this.draggedLesson.HTMLElement.dataset.time = this.draggedLesson.time
