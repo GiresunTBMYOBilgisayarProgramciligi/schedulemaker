@@ -477,9 +477,12 @@ class ScheduleCard {
      * Bırakılan alandaki ders ile bırakılan derslerin gruplarının olup olmadığını varsa farklı olup olmadığını kontrol eder
      * @param selectedHours kaç saat ders ekleneceğini belirtir
      */
-    checkCrash(selectedHours) {
+    checkCrash(selectedHours, classroom = null) {
         return new Promise((resolve, reject) => {
             let checkedHours = 0;
+            const newLessonCode = this.draggedLesson.lesson_code;
+            const newClassroomId = classroom ? classroom.id : this.draggedLesson.classroom_id;
+            const newLecturerId = this.draggedLesson.observer_id || this.draggedLesson.lecturer_id;
 
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = this.table.rows[this.draggedLesson.dropped_row_index + i];
@@ -495,33 +498,66 @@ class ScheduleCard {
 
                 let lessons = cell.querySelectorAll('[id^="scheduleTable-"]');
                 if (lessons.length !== 0) {
-                    if (lessons.length > 1) {
-                        reject("Bu alana ders ekleyemezsiniz.");
-                        return;
+                    if (this.type === 'exam') {
+                        // Sınav Programı Kuralları
+                        for (let existingLesson of lessons) {
+                            const existCode = existingLesson.getAttribute("data-lesson-code");
+                            const existClassroomId = existingLesson.getAttribute("data-classroom-id");
+                            const existLecturerId = existingLesson.getAttribute("data-lecturer-id");
+
+                            // 1. Aynı ders kontrolü (Base code kontrolü)
+                            let existMatch = existCode.match(/^(.+)\.(\d+)$/);
+                            let currentMatch = newLessonCode.match(/^(.+)\.(\d+)$/);
+                            let existBase = existMatch ? existMatch[1] : existCode;
+                            let currentBase = currentMatch ? currentMatch[1] : newLessonCode;
+
+                            if (existBase !== currentBase) {
+                                reject("Sınav programında aynı saate farklı dersler konulamaz.");
+                                return;
+                            }
+
+                            // 2. Farklı Derslik Kontrolü
+                            if (existClassroomId == newClassroomId) {
+                                reject("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
+                                return;
+                            }
+
+                            // 3. Farklı Gözetmen Kontrolü
+                            if (existLecturerId == newLecturerId) {
+                                reject("Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz.");
+                                return;
+                            }
+                        }
                     } else {
-                        let existLesson = cell.querySelector('[id^="scheduleTable-"]');
-                        let existCode = existLesson.getAttribute("data-lesson-code");
-                        let currentCode = this.draggedLesson.lesson_code;
-
-                        let existMatch = existCode.match(/^(.+)\.(\d+)$/);
-                        let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);
-
-                        if (existMatch && currentMatch) {
-                            if (existMatch[1] === currentMatch[1]) {
-                                reject("Lütfen farklı bir ders seçin.");
-                                return;
-                            }
-
-                            let existGroup = existMatch[2];
-                            let currentGroup = currentMatch[2];
-
-                            if (existGroup === currentGroup) {
-                                reject("Gruplar aynı olamaz.");
-                                return;
-                            }
-                        } else {
-                            reject("Çakışma var, bu alana ders eklenemez.");
+                        // Ders Programı Kuralları
+                        if (lessons.length > 1) {
+                            reject("Bu alana ders ekleyemezsiniz.");
                             return;
+                        } else {
+                            let existLesson = cell.querySelector('[id^="scheduleTable-"]');
+                            let existCode = existLesson.getAttribute("data-lesson-code");
+                            let currentCode = this.draggedLesson.lesson_code;
+
+                            let existMatch = existCode.match(/^(.+)\.(\d+)$/);
+                            let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);
+
+                            if (existMatch && currentMatch) {
+                                if (existMatch[1] === currentMatch[1]) {
+                                    reject("Lütfen farklı bir ders seçin.");
+                                    return;
+                                }
+
+                                let existGroup = existMatch[2];
+                                let currentGroup = currentMatch[2];
+
+                                if (existGroup === currentGroup) {
+                                    reject("Gruplar aynı olamaz.");
+                                    return;
+                                }
+                            } else {
+                                reject("Çakışma var, bu alana ders eklenemez.");
+                                return;
+                            }
                         }
                     }
                 }
@@ -800,7 +836,7 @@ class ScheduleCard {
                 hours = result.hours;
             }
             try {
-                await this.checkCrash(hours);
+                await this.checkCrash(hours, classroom);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
 
@@ -820,7 +856,7 @@ class ScheduleCard {
             try {
                 let { hours } = await this.selectHours();
                 let classroom = { 'id': this.owner_id, 'name': this.owner_name }
-                await this.checkCrash(hours);
+                await this.checkCrash(hours, classroom);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
                 let saveScheduleResult = await this.saveSchedule(hours, classroom);

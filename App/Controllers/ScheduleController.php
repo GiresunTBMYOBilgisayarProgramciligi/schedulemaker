@@ -727,41 +727,74 @@ class ScheduleController extends Controller
             foreach ($schedules as $schedule) {
                 if ($schedule->{"day" . $filters["day_index"]}) {// belirtilen gün bilgisi null yada false değilse
                     if (is_array($schedule->{"day" . $filters["day_index"]})) {
-                        if ($owner_type == "user") {
-                            //eğer hocanın o saatte dersi varsa program eklenemez
-                            throw new Exception("Hoca Programı uygun değil");
-                        }
-                        // belirtilen gün içerisinde bir veri varsa
-                        /**
-                         * var olan ders
-                         * @var Lesson $lesson
-                         */
-                        $lesson = (new Lesson())->find($schedule->{"day" . $filters["day_index"]}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
-                        /**
-                         * yeni eklenmek istenen ders
-                         * @var Lesson $newLesson
-                         */
-                        $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
-                        /*
-                         * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
-                         */
-                        if (preg_match('/\.\d+$/', $lesson->code) !== 1) {
-                            //var olan ders gruplı değil
-                            throw new Exception($lesson->name . "(" . $lesson->code . ") dersi ile çakışıyor");
-                        } else {
-                            // var olan ders gruplu
-                            if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
-                                // yeni eklenecek olan ders gruplu değil
-                                throw new Exception($lesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
+                        $dayData = $schedule->{"day" . $filters["day_index"]};
+                        // Normalize to list of lessons
+                        $existingLessonsList = (isset($dayData[0]) && is_array($dayData[0])) ? $dayData : [$dayData];
+
+                        foreach ($existingLessonsList as $existingLessonData) {
+                            if ($owner_type == "user") {
+                                //eğer hocanın/gözetmenin o saatte dersi varsa program eklenemez
+                                $msg = ($filters['type'] == 'exam') ? "Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz." : "Hoca Programı uygun değil";
+                                throw new Exception($msg);
                             }
-                            //diğer durumda ekenecek olan ders de gruplu
-                            // grup uygunluğu kontrolü javascript ile yapılıyor
-                        }
-                        $classroom = (new Classroom())->find($schedule->{"day" . $filters["day_index"]}['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
-                        if (isset($filters['owners']['classroom'])) {
-                            $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
-                            if ($classroom->name == $newClassroom->name) {
-                                throw new Exception("Derslikler çakışıyor");
+
+                            /**
+                             * var olan ders
+                             * @var Lesson $existingLesson
+                             */
+                            $existingLesson = (new Lesson())->find($existingLessonData['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
+                            /**
+                             * yeni eklenmek istenen ders
+                             * @var Lesson $newLesson
+                             */
+                            $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
+
+                            if ($filters['type'] === 'exam') {
+                                // 1. Aynı ders kontrolü (Base code kontrolü)
+                                $existingBase = preg_replace('/\.\d+$/', '', $existingLesson->code);
+                                $newBase = preg_replace('/\.\d+$/', '', $newLesson->code);
+
+                                if ($existingBase !== $newBase) {
+                                    throw new Exception("Sınav programında aynı saate farklı dersler konulamaz.");
+                                }
+
+                                // 2. Farklı Derslik Kontrolü
+                                if (isset($filters['owners']['classroom']) && $existingLessonData['classroom_id'] == $filters['owners']['classroom']) {
+                                    throw new Exception("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
+                                }
+
+                                // 3. Farklı Gözetmen Kontrolü (User owner_type kontrolü yukarıda yapıldı ama program/derslik kontrolünde de bakılmalı mı? 
+                                // Hayır, çünkü gözetmen çakışması owner_type='user' döngüsünde yakalanır. 
+                                // Ancak burada mevcut dersin gözetmeni ile yeni dersin gözetmeni aynı mı diye bakmıyoruz, 
+                                // çünkü owner_type='user' değilse (örn program) mevcut dersin gözetmeni başkası olabilir.
+                                // Fakat biz yeni ders için atanan gözetmeni kontrol ediyoruz.
+                                // Eğer owner_type='program' ise ve mevcut dersin gözetmeni X ise, ve biz Y atıyorsak sorun yok.
+                                // Eğer X atıyorsak, X'in programı owner_type='user' da kontrol edilecek.
+                            } else {
+                                // Ders Programı Kuralları
+                                /*
+                                 * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
+                                 */
+                                if (preg_match('/\.\d+$/', $existingLesson->code) !== 1) {
+                                    //var olan ders gruplı değil
+                                    throw new Exception($existingLesson->name . "(" . $existingLesson->code . ") dersi ile çakışıyor");
+                                } else {
+                                    // var olan ders gruplu
+                                    if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
+                                        // yeni eklenecek olan ders gruplu değil
+                                        throw new Exception($existingLesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
+                                    }
+                                    //diğer durumda ekenecek olan ders de gruplu
+                                    // grup uygunluğu kontrolü javascript ile yapılıyor
+                                }
+
+                                if (isset($filters['owners']['classroom'])) {
+                                    $existingClassroom = (new Classroom())->find($existingLessonData['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
+                                    $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
+                                    if ($existingClassroom->name == $newClassroom->name) {
+                                        throw new Exception("Derslikler çakışıyor");
+                                    }
+                                }
                             }
                         }
                     }
@@ -796,25 +829,39 @@ class ScheduleController extends Controller
                  * gün bilgisi çıkartılarak program aranıyor.
                  */
                 $updatingSchedule = (new Schedule())->get()->where(array_diff_key($schedule_arr, [$day_key => null]))->first();
-                $this->logger()->debug(" Updating Schedule: ", $this->logContext(["updatingSchedule" => $updatingSchedule]));
+                $this->logger()->debug(" Updating Schedule: ", ["updatingSchedule" => $updatingSchedule]);
                 // yeni bilgi eklenecek alanın verisinin dizi olup olmadığına bakıyoruz. dizi ise bir ders vardır.
                 if (is_array($updatingSchedule->{$day_key})) {
+                    $currentData = $updatingSchedule->{$day_key};
+                    // Eğer veri listesi ise (birden fazla ders varsa) ilkini al
+                    $existingLessonData = isset($currentData[0]) ? $currentData[0] : $currentData;
+
                     /**
                      * Var olan dersin kodu
                      */
-                    $lesson = (new Lesson())->find($updatingSchedule->{$day_key}['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
+                    $lesson = (new Lesson())->find($existingLessonData['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
                     /**
                      * Yeni eklenecek dersin kodu
                      */
                     $newLesson = (new Lesson())->find($new_schedule->{$day_key}['lesson_id']) ?: throw new Exception("Eklenecek ders ders bulunamadı");
                     // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
                     // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
-                    if (preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1) {
-                        $dayData = [];
-                        $dayData[] = $updatingSchedule->{$day_key};
-                        $dayData[] = $new_schedule->{$day_key};
+                    $isExam = isset($schedule_arr['type']) && $schedule_arr['type'] === 'exam';
+                    $bothGrouped = preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1;
 
-                        $updatingSchedule->{$day_key} = $dayData;
+                    if ($isExam || $bothGrouped) {
+                        $currentData = $updatingSchedule->{$day_key};
+                        if (isset($currentData[0])) {
+                            // Zaten birden fazla ders varsa listeye ekle
+                            $currentData[] = $new_schedule->{$day_key};
+                            $updatingSchedule->{$day_key} = $currentData;
+                        } else {
+                            // Tek ders varsa listeye dönüştür
+                            $dayData = [];
+                            $dayData[] = $currentData;
+                            $dayData[] = $new_schedule->{$day_key};
+                            $updatingSchedule->{$day_key} = $dayData;
+                        }
                     } else {
                         throw new Exception("Dersler gruplu değil bu şekilde kaydedilemez");
                     }
