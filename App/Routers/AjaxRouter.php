@@ -639,7 +639,7 @@ class AjaxRouter extends Router
                     $scheduleFilters['owners']['classroom'] = $classroom->id;
                 }
                 //sadece asıl dersin bilgisi kullanıcıya eklenecek
-                $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lesson->getLecturer()->id : null;
+                $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
                 /**
                  * veri tabanına eklenecek gün verisi
                  */
@@ -908,6 +908,7 @@ class AjaxRouter extends Router
     {
         $scheduleController = new ScheduleController();
         $filters = $scheduleController->validator->validate($this->data, "deleteScheduleAction");
+        $this->logger()->debug("Delete ScheduleAction Filters: ", ["filters" => $filters]);
         if (!key_exists("owner_type", $filters)) {
             //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
             $owners = [];

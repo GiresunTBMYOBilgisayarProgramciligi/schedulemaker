@@ -942,7 +942,9 @@ class ScheduleController extends Controller
     public function deleteSchedule(array $filters): array
     {
         $filters = $this->validator->validate($filters, "deleteSchedule");
+        $this->logger()->debug("Delete Schedule Filters: ", ["filters" => $filters]);
         $scheduleData = array_diff_key($filters, array_flip(["day", "day_index", "classroom_id"]));// day ve day_index alanları çıkartılıyor
+        $this->logger()->debug("Delete Schedule ScheduleData: ", ["scheduleData" => $scheduleData]);
         if ($scheduleData['owner_type'] == "classroom") {
             $classroom = (new Classroom())->find($scheduleData['owner_id']) ?: throw new Exception("Derslik Bulunamadı");
             if ($classroom->type == 3)
