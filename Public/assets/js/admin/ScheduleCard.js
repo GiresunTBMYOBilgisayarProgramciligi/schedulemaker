@@ -295,12 +295,12 @@ class ScheduleCard {
         }
     }
 
-    async fetchAvailableClassrooms(classroomSelect, event) {
+    async fetchAvailableClassrooms(classroomSelect, hours) {
         let data = new FormData();
-        data.append("hours", event.target.value);
+        data.append("hours", hours);
         data.append("time", this.draggedLesson.time)
         data.append("day_index", this.draggedLesson.day_index)
-        data.append("type", "lesson")
+        data.append("type", this.type)
         data.append("semester", this.draggedLesson.semester)
         data.append("academic_year", this.draggedLesson.academic_year);
         data.append("lesson_id", this.draggedLesson.lesson_id);
@@ -329,6 +329,7 @@ class ScheduleCard {
                         let option = document.createElement("option")
                         option.value = classroom.id
                         option.innerText = classroom.name + " (" + classroom.class_size + ")"
+                        option.dataset.examSize = classroom.exam_size;
                         classroomSelect.appendChild(option)
                     })
                 }
@@ -361,7 +362,7 @@ class ScheduleCard {
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
 
-            selectedHoursInput.addEventListener("change", this.fetchAvailableClassrooms.bind(this, classroomSelect));
+            selectedHoursInput.addEventListener("change", this.fetchAvailableClassrooms.bind(this, classroomSelect, selectedHoursInput.value));
             selectedHoursInput.dispatchEvent(new Event("change"));
 
             let classroomSelectForm = scheduleModal.body.querySelector("form");
@@ -410,15 +411,11 @@ class ScheduleCard {
             let observerSelect = scheduleModal.body.querySelector("#observer");
 
             // populate options from hidden templates in page
-            const classroomTemplate = document.getElementById("classroom_options_template");
             const lecturerTemplate = document.getElementById("lecturer_options_template");
-            if (classroomTemplate) {
-                classroomSelect.innerHTML = classroomTemplate.innerHTML;
-            }
             if (lecturerTemplate) {
                 observerSelect.innerHTML = lecturerTemplate.innerHTML;
             }
-
+            this.fetchAvailableClassrooms(classroomSelect,1);
             const formEl = scheduleModal.body.querySelector("form");
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();

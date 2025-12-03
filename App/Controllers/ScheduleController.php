@@ -633,13 +633,13 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "availableClassrooms");
 
         $classroomFilters = [];
-        if (key_exists("lesson_id", $filters)) {
-            $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
-            unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
-            if ($lesson->classroom_type != 4) // karma sınıf için tür filtresi ekleme
-                $classroomFilters["type"] = $lesson->classroom_type;
-        }
+        
+        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
+        unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
+        if (!($lesson->classroom_type == 4 or $filters['type'] =='exam')) // karma sınıf ve sınav programı için tür filtresi ekleme
+            $classroomFilters["type"] = $lesson->classroom_type;
         $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
+        
         $unavailable_classroom_ids = [];
         $classroomSchedules = $this->getListByFilters(
             [
@@ -650,8 +650,7 @@ class ScheduleController extends Controller
                 "type" => $filters['type']
             ]
         );
-        //todo yukaıdaki getListByFilters metoduna day.day_index != null parametresi eklenerek alttaki döngüde isnul
-        // "!day" . $filters['day_index'] => null denedim olmadı
+        
         foreach ($classroomSchedules as $classroomSchedule) {
             if (!is_null($classroomSchedule->{"day" . $filters["day_index"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
                 // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
