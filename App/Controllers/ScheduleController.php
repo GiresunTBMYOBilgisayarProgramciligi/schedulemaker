@@ -214,9 +214,9 @@ class ScheduleController extends Controller
                 //Ders Programı tamamlanmamışsa
                 $lesson->lecturer_id = $lesson->getLecturer()->id;
                 if ($filters['type'] == 'lesson') {
-                    $lesson->hours -= $lesson->placed_hours;
+                    $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
                 } elseif ($filters['type'] == 'exam') {
-                    $lesson->hours = $lesson->size - $lesson->placed_size;
+                    $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
                 }
 
                 $available_lessons[] = $lesson;
@@ -449,6 +449,7 @@ class ScheduleController extends Controller
              * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
              */
             $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
+            $badgeText = $filters['type'] == 'lesson' ? $lesson->hours : $lesson->size;
             $HTMLOut .= "
                     <div class='frame col-md-4 p-0 ps-1 '>
                         <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
@@ -461,6 +462,7 @@ class ScheduleController extends Controller
                           data-lecturer-id=\"" . $lesson->getLecturer()->id . "\"
                           $popover
                           data-lesson-hours=\"$lesson->hours\"
+                          data-size=\"" . ($lesson->size ?? 0) . "\"
                         >
                             <div class=\"ms-2 me-auto\">
                               <div class=\"fw-bold lesson-title\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \">
@@ -477,7 +479,7 @@ class ScheduleController extends Controller
                               </div>
                               
                             </div>
-                            <span class=\"badge $badgeCSS rounded-pill\">$lesson->hours</span>
+                            <span class=\"badge $badgeCSS rounded-pill\">$badgeText</span>
                       </div>
                   </div>
                     ";

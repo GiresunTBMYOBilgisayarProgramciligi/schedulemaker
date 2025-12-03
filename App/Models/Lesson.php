@@ -47,6 +47,7 @@ class Lesson extends Model
      * @var int|null
      */
     public ?int $placed_size = 0;
+    public ?int $remaining_size = 0;
     protected string $table_name = "lessons";
 
     /**
@@ -192,8 +193,8 @@ class Lesson extends Model
 
             // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
             $this->placed_size = (int)($placedCapacityByLesson[$this->id] ?? 0);
-            $remaining = max(0, (int)$this->size - $this->placed_size);
-            if ($remaining <= 0) {
+            $this->remaining_size = max(0, (int)$this->size - $this->placed_size);
+            if ($this->remaining_size <= 0) {
                 $result = true;
             }
         }

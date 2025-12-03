@@ -71,7 +71,8 @@ class ScheduleCard {
             'lesson_hours': null,
             'observer_id': null,//todo observer_id olarak ayrı bir id tanımlamaya gerek yok bence. Sınav programına eklenen hoca id si zaten gözetmen id si olacak dersin hocasının bilgisi alınacaksa zaten ders üzerinden alınır. Program hocası ile dersin hocası birbirinden ayrı düşünülmeli.
             'dropped_row_index': null,
-            'dropped_cell_index': null
+            'dropped_cell_index': null,
+            'size': null,
         };
         /**
          * Ders sürükleme işleminin devam edip etmediği bilgisini tutar
@@ -328,7 +329,7 @@ class ScheduleCard {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
                         option.value = classroom.id
-                        option.innerText = classroom.name + " (" + classroom.class_size + ")"
+                        option.innerText = classroom.name + " (" + (this.type === 'exam' ? classroom.exam_size : classroom.class_size) + ")"
                         option.dataset.examSize = classroom.exam_size;
                         classroomSelect.appendChild(option)
                     })
@@ -340,7 +341,7 @@ class ScheduleCard {
             });
     }
 
-    async fetchAvailableObservers(observerSelect,hours) {
+    async fetchAvailableObservers(observerSelect, hours) {
         let data = new FormData();
         data.append("hours", hours); // Sınavlar genelde 1 saatlik bloklar halinde eklenir veya kontrol edilir
         data.append("time", this.draggedLesson.time)
@@ -371,7 +372,6 @@ class ScheduleCard {
                     console.error(data.msg)
                 } else {
                     data.observers.forEach((observer) => {
-                        console.log(observer)
                         let option = document.createElement("option")
                         option.value = observer.id
                         option.innerText = observer.title + " " + observer.name + " " + observer.last_name;
@@ -439,6 +439,12 @@ class ScheduleCard {
             let scheduleModal = new Modal();
             let modalContentHTML = `
             <form>
+                <div class="form-floating mb-3">
+                    <input class="form-control" id="selected_hours" type="number" 
+                           value="1" 
+                           min=1 max=${this.draggedLesson.size}>
+                    <label for="selected_hours">Sınav Süresi (Saat)</label>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Derslik Seçin</label>
                     <select id="classroom" class="form-select" required></select>
@@ -452,11 +458,20 @@ class ScheduleCard {
             scheduleModal.prepareModal("Derslik ve Gözetmen Seçimi", modalContentHTML, true, false);
             scheduleModal.showModal();
 
+            let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
             let observerSelect = scheduleModal.body.querySelector("#observer");
 
-            this.fetchAvailableClassrooms(classroomSelect, 1);
-            this.fetchAvailableObservers(observerSelect, 1);
+            const updateLists = () => {
+                this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
+                this.fetchAvailableObservers(observerSelect, selectedHoursInput.value);
+            };
+
+            selectedHoursInput.addEventListener("change", updateLists);
+
+            // Initial fetch
+            updateLists();
+
             const formEl = scheduleModal.body.querySelector("form");
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
@@ -472,9 +487,10 @@ class ScheduleCard {
                 const classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
                 const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
                 const selectedClassroom = { id: classroomSelect.value, name: classroom_name, exam_size: examSize };
-                const selectedObserver = { id: observerSelect.value };
+                const selectedObserver = { id: observerSelect.value, full_name: observerSelect.selectedOptions[0].text };
+                const selectedHours = selectedHoursInput.value;
                 scheduleModal.closeModal();
-                resolve({ classroom: selectedClassroom, observer: selectedObserver });
+                resolve({ classroom: selectedClassroom, observer: selectedObserver, hours: selectedHours });
             });
         });
     }
@@ -630,7 +646,13 @@ class ScheduleCard {
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
             cell.appendChild(lesson);
-
+            if (this.type === 'exam') {
+                let lecturer_title_div = lesson.querySelector(".lecturer-title");
+                lecturer_title_div.innerHTML = `<a href="/admin/profile/${this.draggedLesson.observer_id}" class="link-light link-underline-opacity-0" target="_blank">
+                                                                                <i class="bi bi-person-square"></i>${this.draggedLesson.observer_full_name}
+                                                                             </a>`;
+                lecturer_title_div.id = "lecturer-" + this.draggedLesson.observer_id;
+            }
             //id kısmına ders saatini de ekliyorum aksi halde aynı id değerine sahip birden fazla element olur.
             lesson.id = lesson.id.replace("available", "scheduleTable")
             let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
@@ -645,12 +667,12 @@ class ScheduleCard {
             Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
         */
         if (this.type === 'exam') {
-            const currentRemaining = parseInt(this.draggedLesson.HTMLElement.querySelector("span.badge").innerText) || parseInt(this.draggedLesson.lesson_hours) || 0;
+            const currentRemaining = parseInt(this.draggedLesson.size || 0);
             const decrement = parseInt(classroom.exam_size || 0);
-            const newRemaining = Math.max(0, currentRemaining - (isNaN(decrement) ? 0 : decrement));
+            const newRemaining = Math.max(0, currentRemaining - decrement);
             if (newRemaining > 0) {
                 this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = newRemaining.toString();
-                this.draggedLesson.HTMLElement.dataset.lessonHours = newRemaining.toString();
+                this.draggedLesson.HTMLElement.dataset.size = newRemaining.toString();
             } else {
                 this.draggedLesson.HTMLElement.closest("div.frame")?.remove();
                 this.draggedLesson.HTMLElement.remove();
@@ -866,8 +888,10 @@ class ScheduleCard {
                 const result = await this.selectClassroomAndObserver();
                 classroom = result.classroom;
                 observer = result.observer;
+                console.log(classroom, observer)
                 this.draggedLesson.observer_id = observer.id;
-                hours = 1; // sınav için saat birimi slot bazında
+                this.draggedLesson.observer_full_name = observer.full_name;
+                hours = result.hours;
             } else {
                 const result = await this.selectClassroomAndHours();
                 classroom = result.classroom;
