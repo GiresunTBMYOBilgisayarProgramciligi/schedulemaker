@@ -340,6 +340,51 @@ class ScheduleCard {
             });
     }
 
+    async fetchAvailableObservers(observerSelect,hours) {
+        let data = new FormData();
+        data.append("hours", hours); // Sınavlar genelde 1 saatlik bloklar halinde eklenir veya kontrol edilir
+        data.append("time", this.draggedLesson.time)
+        data.append("day_index", this.draggedLesson.day_index)
+        data.append("type", this.type)
+        data.append("semester", this.draggedLesson.semester)
+        data.append("academic_year", this.draggedLesson.academic_year);
+
+        //clear observerSelect
+        observerSelect.innerHTML = `<option value=""></option>`;
+
+        let spiner = new Spinner();
+        spiner.showSpinner(observerSelect.querySelector("option"))
+
+        await fetch("/ajax/getAvailableObserversForSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                spiner.removeSpinner();
+                observerSelect.innerHTML = `<option value=""> Bir Gözetmen Seçin</option>`;
+                if (data.status === "error") {
+                    new Toast().prepareToast("Hata", "Uygun gözetmen listesi alınırken hata oluştu", "danger");
+                    console.error(data.msg)
+                } else {
+                    data.observers.forEach((observer) => {
+                        console.log(observer)
+                        let option = document.createElement("option")
+                        option.value = observer.id
+                        option.innerText = observer.title + " " + observer.name + " " + observer.last_name;
+                        observerSelect.appendChild(option)
+                    })
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Uygun gözetmen listesi alınırken hata oluştu", "danger");
+                console.error(error);
+            });
+    }
+
     selectClassroomAndHours() {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
@@ -410,12 +455,8 @@ class ScheduleCard {
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
             let observerSelect = scheduleModal.body.querySelector("#observer");
 
-            // populate options from hidden templates in page
-            const lecturerTemplate = document.getElementById("lecturer_options_template");
-            if (lecturerTemplate) {
-                observerSelect.innerHTML = lecturerTemplate.innerHTML;
-            }
-            this.fetchAvailableClassrooms(classroomSelect,1);
+            this.fetchAvailableClassrooms(classroomSelect, 1);
+            this.fetchAvailableObservers(observerSelect, 1);
             const formEl = scheduleModal.body.querySelector("form");
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();

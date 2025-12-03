@@ -565,6 +565,22 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Ders programı seçiminde Eklenen derse uygun olan gözetmen listesini hazırlar.
+     * @throws Exception
+     */
+    public function getAvailableObserversForScheduleAction(): void
+    {
+        if (!isAuthorized("department_head")) {
+            throw new Exception("Uygun gözetmen listesini almak için yetkiniz yok");
+        }
+        $scheduleController = new ScheduleController();
+        $observers = $scheduleController->availableObservers($this->data);
+        $this->response['status'] = "success";
+        $this->response['observers'] = $observers;
+        $this->sendResponse();
+    }
+
+    /**
      * @throws Exception
      */
     public function checkScheduleCrashAction(): void

@@ -633,13 +633,13 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "availableClassrooms");
 
         $classroomFilters = [];
-        
+
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
         unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
-        if (!($lesson->classroom_type == 4 or $filters['type'] =='exam')) // karma sınıf ve sınav programı için tür filtresi ekleme
+        if (!($lesson->classroom_type == 4 or $filters['type'] == 'exam')) // karma sınıf ve sınav programı için tür filtresi ekleme
             $classroomFilters["type"] = $lesson->classroom_type;
         $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
-        
+
         $unavailable_classroom_ids = [];
         $classroomSchedules = $this->getListByFilters(
             [
@@ -650,7 +650,7 @@ class ScheduleController extends Controller
                 "type" => $filters['type']
             ]
         );
-        
+
         foreach ($classroomSchedules as $classroomSchedule) {
             if (!is_null($classroomSchedule->{"day" . $filters["day_index"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
                 // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
@@ -662,6 +662,49 @@ class ScheduleController extends Controller
         $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
 
         return (new ClassroomController())->getListByFilters($classroomFilters);
+    }
+
+    /**
+     * Belirtilen filtrelere uygun gözetmenlerin listesini döndürür
+     * @param array $filters
+     * @return array
+     * @throws Exception
+     */
+    public function availableObservers(array $filters = []): array
+    {
+        $filters = $this->validator->validate($filters, "availableObservers");
+
+        $observerFilters = ['role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]];
+
+        $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
+        $unavailable_observer_ids = [];
+
+        // O saatte herhangi bir programı olan kullanıcıları bul (owner_type = user)
+        $userSchedules = $this->getListByFilters(
+            [
+                "time" => ['in' => $times],
+                "owner_type" => 'user',
+                "semester" => $filters['semester'],
+                "academic_year" => $filters['academic_year'],
+                "type" => $filters['type']
+            ]
+        );
+
+        foreach ($userSchedules as $schedule) {
+            if (!is_null($schedule->{"day" . $filters["day_index"]})) {
+                $unavailable_observer_ids[$schedule->owner_id] = true;
+            }
+        }
+
+        // Anahtarları diziye dönüştürüyoruz.
+        $unavailable_observer_ids = array_keys($unavailable_observer_ids);
+
+        // Eğer hariç tutulacaklar varsa filtreye ekle
+        if (!empty($unavailable_observer_ids)) {
+            $observerFilters["!id"] = ['in' => $unavailable_observer_ids];
+        }
+
+        return (new UserController())->getListByFilters($observerFilters);
     }
 
     /**

@@ -160,6 +160,11 @@ class FilterValidator
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
+            "availableObservers" => [
+                'required' => ["type", 'hours', "time", "day_index"],
+                'optional' => [],
+                'defaults' => ['semester', 'academic_year']
+            ],
             "saveSchedulePreferenceAction" => [
                 'required' => ["type", "owner_type", "owner_id","time","day_index","day"],
                 'optional' => ["semester_no"],
