@@ -73,6 +73,8 @@ class ScheduleCard {
             'dropped_row_index': null,
             'dropped_cell_index': null,
             'size': null,
+            'classroom_exam_size': null,
+            'classroom_size': null,
         };
         /**
          * Ders sürükleme işleminin devam edip etmediği bilgisini tutar
@@ -108,7 +110,7 @@ class ScheduleCard {
         this.type = this.card.dataset.type ?? null;
         this.list = this.card.querySelector(".available-schedule-items");
         this.table = this.card.querySelector("table");
-        this.getDataSetValue(this, this.card);
+        this.getDatasetValue(this, this.card);
         // draggable="true" olan tüm elementleri seç
         const dragableElements = this.card.querySelectorAll('[draggable="true"]');
         //drop-zone sınıfına sahip tüm elementler
@@ -139,28 +141,30 @@ class ScheduleCard {
         });
     }
 
-    getDataSetValue(object, dataSetObject) {
+    getDatasetValue(setObject, getObject) {
+        /**
+         * dataset keylerini snake_case'e çevirir
+         * */ 
         function toSnakeCase(str) {
             return str.replace(/[A-Z]/g, letter => "_" + letter.toLowerCase());
         }
 
-        Object.keys(object).forEach(key => {
-            // dataset keylerini snake_case'e çevir
-            for (let dataKey in dataSetObject.dataset) {
+        Object.keys(setObject).forEach(key => {
+            for (let dataKey in getObject.dataset) {
                 if (toSnakeCase(dataKey) === key) {
-                    object[key] = dataSetObject.dataset[dataKey];
+                    setObject[key] = getObject.dataset[dataKey];
                 }
             }
         });
     }
 
-    setDraggedLesson(lessonElement) {
+    setDraggedLesson(lessonElement, dragEvent) {
         this.resetDraggedLesson();
 
-        this.getDataSetValue(this.draggedLesson, lessonElement);
-        if (event.target.closest("table")) {
+        this.getDatasetValue(this.draggedLesson, lessonElement);
+        if (dragEvent.target.closest("table")) {
             this.draggedLesson.start_element = "table";
-        } else if (event.target.closest(".available-schedule-items")) {
+        } else if (dragEvent.target.closest(".available-schedule-items")) {
             this.draggedLesson.start_element = "list";
         }
         this.draggedLesson.HTMLElement = lessonElement;
@@ -331,7 +335,9 @@ class ScheduleCard {
                         option.value = classroom.id
                         option.innerText = classroom.name + " (" + (this.type === 'exam' ? classroom.exam_size : classroom.class_size) + ")"
                         option.dataset.examSize = classroom.exam_size;
+                        option.dataset.size = classroom.class_size;
                         classroomSelect.appendChild(option)
+                        
                     })
                 }
             })
@@ -486,7 +492,8 @@ class ScheduleCard {
                 }
                 const classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
                 const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
-                const selectedClassroom = { id: classroomSelect.value, name: classroom_name, exam_size: examSize };
+                const size = parseInt(classroomSelect.selectedOptions[0].dataset.size || '0'); // classroom size
+                const selectedClassroom = { id: classroomSelect.value, name: classroom_name, exam_size: examSize, size: size };
                 const selectedObserver = { id: observerSelect.value, full_name: observerSelect.selectedOptions[0].text };
                 const selectedHours = selectedHoursInput.value;
                 scheduleModal.closeModal();
@@ -639,13 +646,15 @@ class ScheduleCard {
             lesson.dataset['dayIndex'] = this.draggedLesson.day_index;
             lesson.dataset['time'] = this.draggedLesson.time;
             lesson.dataset['classroomId'] = classroom.id
+            lesson.dataset['classroomExamSize'] = classroom.exam_size;
+            lesson.dataset['classroomSize'] = classroom.size;
             if (this.type === 'exam' && this.draggedLesson.observer_id) {
                 lesson.dataset['lecturerId'] = this.draggedLesson.observer_id;
             }
             lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
-            cell.appendChild(lesson);
+            
             if (this.type === 'exam') {
                 let lecturer_title_div = lesson.querySelector(".lecturer-title");
                 lecturer_title_div.innerHTML = `<a href="/admin/profile/${this.draggedLesson.observer_id}" class="link-light link-underline-opacity-0" target="_blank">
@@ -657,6 +666,7 @@ class ScheduleCard {
             lesson.id = lesson.id.replace("available", "scheduleTable")
             let existLessonInTableCount = this.table.querySelectorAll('[id^=\"' + lesson.id + '\"]').length
             lesson.id = lesson.id + '-' + (existLessonInTableCount) // bu ekleme ders saati birimini gösteriyor. scheduleTable-lesson-1-1 scheduleTable-lesson-1-2 ...
+            cell.appendChild(lesson);
             //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
             lesson.addEventListener('dragstart', this.dragStartHandler.bind(this));
             //ders kodu tooltip'i aktif ediliyor
@@ -809,7 +819,7 @@ class ScheduleCard {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.dropEffect = "move";
         let lessonElement = event.target.closest('[draggable="true"]');
-        this.setDraggedLesson(lessonElement)
+        this.setDraggedLesson(lessonElement, event)
         if (this.draggedLesson.start_element === "table") {
             /*
             * silmek için buraya sürükleyin yazısını göstermek için
@@ -888,7 +898,6 @@ class ScheduleCard {
                 const result = await this.selectClassroomAndObserver();
                 classroom = result.classroom;
                 observer = result.observer;
-                console.log(classroom, observer)
                 this.draggedLesson.observer_id = observer.id;
                 this.draggedLesson.observer_full_name = observer.full_name;
                 hours = result.hours;
@@ -941,13 +950,18 @@ class ScheduleCard {
 
         if (deleteScheduleResult) {
             let draggedElementIdInList = "available-lesson-" + this.draggedLesson.lesson_id;
+            let lessonInList = this.dropZone.querySelector("#" + draggedElementIdInList)
             //listede taşınan dersin varlığını kontrol et
-            if (this.dropZone.querySelector("#" + draggedElementIdInList)) {
-                // Eğer sürüklenen dersten tabloda varsa ders saati bir arttırılır
-                let lessonInlist = this.dropZone.querySelector("#" + draggedElementIdInList);
-                let hoursInList = lessonInlist.querySelector("span.badge").innerText
-                lessonInlist.querySelector("span.badge").innerText = parseInt(hoursInList) + 1
-                lessonInlist.dataset.lessonHours = (parseInt(lessonInlist.dataset.lessonHours) + 1).toString()
+            if (lessonInList) {
+                let badgeText = '';
+                if (this.type=='exam') {
+                    lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();    
+                    badgeText = lessonInList.dataset.size;
+                }else{
+                    lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString();
+                    badgeText = lessonInList.dataset.lessonHours;
+                }
+                lessonInList.querySelector("span.badge").innerText = badgeText;
                 this.draggedLesson.HTMLElement.remove()
             } else {
                 //eğer listede yoksa o ders listeye eklenir
@@ -955,11 +969,20 @@ class ScheduleCard {
                 let draggedElementFrameDiv = document.createElement("div");
                 draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
                 this.list.appendChild(draggedElementFrameDiv)
-                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = 1
+                let badgeText = '';
+                if (this.type=='exam') {
+                    this.draggedLesson.HTMLElement.dataset.size = this.draggedLesson.classroom_exam_size    
+                    badgeText = this.draggedLesson.HTMLElement.dataset.size;
+                }else{
+                    this.draggedLesson.HTMLElement.dataset.lessonHours = 1;
+                    badgeText = this.draggedLesson.HTMLElement.dataset.lessonHours;
+                }
+                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = badgeText
                 delete this.draggedLesson.HTMLElement.dataset.time
                 delete this.draggedLesson.HTMLElement.dataset.dayIndex
                 delete this.draggedLesson.HTMLElement.dataset.classroomId
-                this.draggedLesson.HTMLElement.dataset.lessonHours = '1';
+                delete this.draggedLesson.HTMLElement.dataset.classroomExamSize
+                delete this.draggedLesson.HTMLElement.dataset.classroomSize
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
                 this.draggedLesson.HTMLElement.addEventListener('dragstart', this.dragStartHandler.bind(this));
                 draggedElementFrameDiv.appendChild(this.draggedLesson.HTMLElement)
