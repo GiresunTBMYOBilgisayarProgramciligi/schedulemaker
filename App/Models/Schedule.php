@@ -91,7 +91,7 @@ class Schedule extends Model
      */
     public function getWeek(string $type = 'html', ?int $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex',default: 4);
+        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', 'lesson', 4);
         $week = [];
         foreach (range(0, $maxDayIndex) as $dayIndex) {
             if ($type === 'excel') {
@@ -119,7 +119,8 @@ class Schedule extends Model
                     $week["classroom{$dayIndex}"] = null;// sınıf bilgileri
                 }
 
-            } else $week["day{$dayIndex}"] = $this->{"day{$dayIndex}"};
+            } else
+                $week["day{$dayIndex}"] = $this->{"day{$dayIndex}"};
         }
         return $week;
     }

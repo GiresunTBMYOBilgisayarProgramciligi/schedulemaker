@@ -617,8 +617,8 @@ class ImportExportManager
         $now = new \DateTime('now', $timezone);
 
         // Akademik dönem için başlangıç ve bitiş tarihleri (ayarlar sayfasından)
-        $startDateStr = getSettingValue('lesson_start_date');
-        $endDateStr = getSettingValue('lesson_end_date');
+        $startDateStr = getSettingValue('lesson_start_date', 'lesson');
+        $endDateStr = getSettingValue('lesson_end_date', 'lesson');
         $semesterStart = null;
         $semesterEnd = null;
         if (!empty($startDateStr) && !empty($endDateStr)) {
@@ -653,7 +653,7 @@ class ImportExportManager
                 $startText = str_replace('.', ':', trim($startText));
                 $endText = str_replace('.', ':', trim($endText));
 
-                for ($dayIndex = 0; $dayIndex <= getSettingValue('maxDayIndex', default: 4); $dayIndex++) {
+                for ($dayIndex = 0; $dayIndex <= getSettingValue('maxDayIndex', 'lesson', 4); $dayIndex++) {
                     $day = $schedule->{"day{$dayIndex}"};
                     if (is_null($day) || $day === false)
                         continue;

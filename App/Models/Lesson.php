@@ -140,7 +140,7 @@ class Lesson extends Model
             ])->all();
             $this->placed_hours = 0;
             foreach ($schedules as $schedule) {
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {
+                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {
                     if (!is_null($schedule->{"day$i"})) {
                         $this->placed_hours++;
                     }
@@ -163,27 +163,28 @@ class Lesson extends Model
             $placedCapacityByLesson = [];
             $classroomCache = [];
             // maxExamDayIndex ayarı
-            $maxExamDayIndex = getSettingValue('maxExamDayIndex', default: 5);
+            $maxExamDayIndex = getSettingValue('maxExamDayIndex', 'exam', 5);
+
             foreach ($examSchedules as $schedule) {
                 // owner_id derslik id'sidir (sınıf sahibi kayıt)
                 $classroomId = $schedule->owner_id;
                 if (!isset($classroomCache[$classroomId])) {
                     $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
                 }
-                $examSize = (int)($classroomCache[$classroomId]->exam_size ?? 0);
+                $examSize = (int) ($classroomCache[$classroomId]->exam_size ?? 0);
                 for ($i = 0; $i <= $maxExamDayIndex; $i++) {
                     $day = $schedule->{"day" . $i};
                     if (is_array($day)) {
                         if (isset($day[0]) && is_array($day[0])) {
                             foreach ($day as $grp) {
                                 if (isset($grp['lesson_id'])) {
-                                    $lid = (int)$grp['lesson_id'];
+                                    $lid = (int) $grp['lesson_id'];
                                     $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
                                 }
                             }
                         } else {
                             if (isset($day['lesson_id'])) {
-                                $lid = (int)$day['lesson_id'];
+                                $lid = (int) $day['lesson_id'];
                                 $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
                             }
                         }
@@ -192,8 +193,8 @@ class Lesson extends Model
             }
 
             // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
-            $this->placed_size = (int)($placedCapacityByLesson[$this->id] ?? 0);
-            $this->remaining_size = max(0, (int)$this->size - $this->placed_size);
+            $this->placed_size = (int) ($placedCapacityByLesson[$this->id] ?? 0);
+            $this->remaining_size = max(0, (int) $this->size - $this->placed_size);
             if ($this->remaining_size <= 0) {
                 $result = true;
             }

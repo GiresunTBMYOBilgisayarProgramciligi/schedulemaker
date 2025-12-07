@@ -69,8 +69,8 @@ class ScheduleController extends Controller
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
         $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
-            ? getSettingValue('maxExamDayIndex', default: 5)
-            : getSettingValue('maxDayIndex', default: 4);
+            ? getSettingValue('maxExamDayIndex', 'exam', 5)
+            : getSettingValue('maxDayIndex', 'lesson', 4);
         for ($i = 0; $i <= $maxDayIndex; $i++) {
             $headerRow[] = $days[$i]; // Gün adı
             if (isset($filters['owner_type']) and $filters['owner_type'] != 'classroom')
@@ -104,8 +104,8 @@ class ScheduleController extends Controller
          */
         if ($maxDayIndex === null) {
             $maxDayIndex = ($filters['type'] === 'exam')
-                ? getSettingValue('maxExamDayIndex', default: 5)
-                : getSettingValue('maxDayIndex', default: 4);
+                ? getSettingValue('maxExamDayIndex', 'exam', 5)
+                : getSettingValue('maxDayIndex', 'lesson', 4);
         }
         /**
          * Veri tabanında yapılacak sorguda dizi verisi in ile birlikte verilmeli.
@@ -240,8 +240,8 @@ class ScheduleController extends Controller
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = '<th style="width: 7%;">#</th>';
             $maxDayIndex = ($filters['type'] === 'exam')
-                ? getSettingValue('maxExamDayIndex', default: 5)
-                : getSettingValue('maxDayIndex', default: 4);
+                ? getSettingValue('maxExamDayIndex', 'exam', 5)
+                : getSettingValue('maxDayIndex', 'lesson', 4);
             for ($i = 0; $i <= $maxDayIndex; $i++) {
                 $headers .= '<th>' . $days[$i] . '</th>';
             }

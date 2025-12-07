@@ -763,7 +763,7 @@ class AjaxRouter extends Router
                 if ($rowIndex === false) {
                     continue; // bu saat tabloda yoksa atla
                 }
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
+                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {//day0-4
                     if (!is_null($lessonSchedule->{"day" . $i})) {
                         if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
                             $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
