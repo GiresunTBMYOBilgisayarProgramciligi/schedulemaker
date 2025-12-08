@@ -171,6 +171,11 @@ class ErrorHandler
      */
     private function renderErrorView($view, $exception, $statusCode)
     {
+        // Önceki çıktı tamponlarını temizle (Yarım kalmış sayfaların üzerine yazmamak için)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         // HTTP durum kodunu ayarla
         http_response_code($statusCode);
 

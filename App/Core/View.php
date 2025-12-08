@@ -35,34 +35,21 @@ class View
      */
     public function Render(): void
     {
-        try {
-            $this->view_folder = $_ENV['VIEWS_PATH'] . '/' . strtolower($this->view_folder);
-            if (is_dir($this->view_folder)) {
-                /**
-                 * view_page dosyası theme.php içerisinde yüklenecek
-                 */
-                if (file_exists($this->view_folder . '/pages/' . $this->view_page . '.php')) {
-                    extract($this->view_data);
-                    ob_start();
-                    include $this->view_folder . '/' . 'theme.php';
-                    ob_end_flush();
-                } else {
-                    throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
-                }
+        $this->view_folder = $_ENV['VIEWS_PATH'] . '/' . strtolower($this->view_folder);
+        if (is_dir($this->view_folder)) {
+            /**
+             * view_page dosyası theme.php içerisinde yüklenecek
+             */
+            if (file_exists($this->view_folder . '/pages/' . $this->view_page . '.php')) {
+                extract($this->view_data);
+                ob_start();
+                include $this->view_folder . '/' . 'theme.php';
+                ob_end_flush();
             } else {
-                throw new Exception('View folder does not exist');
+                throw new Exception($this->view_folder . '/pages/' . $this->view_page . '.php' . "View dosyası mevcut değil ");
             }
-        } catch (Exception $exception) {
-            //todo view içerisindeki hatalar bu şekilde gösteriliyor. ama hatalar sayfanın yüklenmesini engelleyebiliyor
-            //todo bu şekilde bir form elemanı içerisinde çalıştırıldığı için hata gösterilmiyor
-            error_log($exception->getMessage().$exception->getTraceAsString());
-            echo "<script>
-                    console.error('".htmlentities($exception->getMessage())."')
-                    document.addEventListener('DOMContentLoaded', function () {
-                        alert('".html_entity_decode(htmlentities($exception->getMessage()))."'); 
-                    });
-                </script>";
+        } else {
+            throw new Exception('View folder does not exist');
         }
-
     }
 }
