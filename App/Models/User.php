@@ -24,6 +24,92 @@ class User extends Model
     public ?int $program_id = null;
     public ?\DateTime $register_date = null;
     public ?\DateTime $last_login = null;
+
+    public ?Department $department = null;
+    public ?Program $program = null;
+    public array $schedules = [];
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getSchedulesRelation(array $results): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $schedules = (new Schedule())->get()
+            ->where([
+                'owner_type' => 'user',
+                'owner_id' => ['in' => $ids]
+            ])->all();
+
+        $schedulesGrouped = [];
+        foreach ($schedules as $schedule) {
+            $schedulesGrouped[$schedule->owner_id][] = $schedule;
+        }
+
+        foreach ($results as &$row) {
+            $row['schedules'] = $schedulesGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getDepartmentRelation(array $results): array
+    {
+        $departmentIds = array_unique(array_column($results, 'department_id'));
+        if (empty($departmentIds))
+            return $results;
+
+        $departments = (new Department())->get()->where(['id' => ['in' => $departmentIds]])->all();
+        $departmentsKeyed = [];
+        foreach ($departments as $dept) {
+            $departmentsKeyed[$dept->id] = $dept;
+        }
+
+        foreach ($results as &$userRow) {
+            if (isset($userRow['department_id']) && isset($departmentsKeyed[$userRow['department_id']])) {
+                $userRow['department'] = $departmentsKeyed[$userRow['department_id']];
+            } else {
+                $userRow['department'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getProgramRelation(array $results): array
+    {
+        $programIds = array_unique(array_column($results, 'program_id'));
+        if (empty($programIds))
+            return $results;
+
+        $programs = (new Program())->get()->where(['id' => ['in' => $programIds]])->all();
+        $programsKeyed = [];
+        foreach ($programs as $prog) {
+            $programsKeyed[$prog->id] = $prog;
+        }
+
+        foreach ($results as &$userRow) {
+            if (isset($userRow['program_id']) && isset($programsKeyed[$userRow['program_id']])) {
+                $userRow['program'] = $programsKeyed[$userRow['program_id']];
+            } else {
+                $userRow['program'] = null;
+            }
+        }
+        return $results;
+    }
     /**
      * Model sınıfındaki fill metodunda hangi alanların datetime olduğunu bellirtmek için kullanılır
      * @var array|string[]

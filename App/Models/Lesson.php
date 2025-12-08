@@ -48,6 +48,174 @@ class Lesson extends Model
      */
     public ?int $placed_size = 0;
     public ?int $remaining_size = 0;
+
+    public ?User $lecturer = null;
+    public ?Department $department = null;
+    public ?Program $program = null;
+    public ?Lesson $parentLesson = null;
+    public array $childLessons = [];
+    public array $schedules = [];
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getSchedulesRelation(array $results): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $schedules = (new Schedule())->get()
+            ->where([
+                'owner_type' => 'lesson',
+                'owner_id' => ['in' => $ids]
+            ])->all();
+
+        $schedulesGrouped = [];
+        foreach ($schedules as $schedule) {
+            $schedulesGrouped[$schedule->owner_id][] = $schedule;
+        }
+
+        foreach ($results as &$row) {
+            $row['schedules'] = $schedulesGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getLecturerRelation(array $results): array
+    {
+        $userIds = array_unique(array_column($results, 'lecturer_id'));
+        if (empty($userIds))
+            return $results;
+
+        $users = (new User())->get()->where(['id' => ['in' => $userIds]])->all();
+        $usersKeyed = [];
+        foreach ($users as $user) {
+            $usersKeyed[$user->id] = $user;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['lecturer_id']) && isset($usersKeyed[$row['lecturer_id']])) {
+                $row['lecturer'] = $usersKeyed[$row['lecturer_id']];
+            } else {
+                $row['lecturer'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getDepartmentRelation(array $results): array
+    {
+        $deptIds = array_unique(array_column($results, 'department_id'));
+        if (empty($deptIds))
+            return $results;
+
+        $departments = (new Department())->get()->where(['id' => ['in' => $deptIds]])->all();
+        $departmentsKeyed = [];
+        foreach ($departments as $dept) {
+            $departmentsKeyed[$dept->id] = $dept;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['department_id']) && isset($departmentsKeyed[$row['department_id']])) {
+                $row['department'] = $departmentsKeyed[$row['department_id']];
+            } else {
+                $row['department'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getProgramRelation(array $results): array
+    {
+        $progIds = array_unique(array_column($results, 'program_id'));
+        if (empty($progIds))
+            return $results;
+
+        $programs = (new Program())->get()->where(['id' => ['in' => $progIds]])->all();
+        $programsKeyed = [];
+        foreach ($programs as $prog) {
+            $programsKeyed[$prog->id] = $prog;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['program_id']) && isset($programsKeyed[$row['program_id']])) {
+                $row['program'] = $programsKeyed[$row['program_id']];
+            } else {
+                $row['program'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getParentLessonRelation(array $results): array
+    {
+        $parentIds = array_unique(array_column($results, 'parent_lesson_id'));
+        // remove nulls
+        $parentIds = array_filter($parentIds);
+        if (empty($parentIds))
+            return $results;
+
+        $lessons = (new Lesson())->get()->where(['id' => ['in' => $parentIds]])->all();
+        $lessonsKeyed = [];
+        foreach ($lessons as $lesson) {
+            $lessonsKeyed[$lesson->id] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['parent_lesson_id']) && isset($lessonsKeyed[$row['parent_lesson_id']])) {
+                $row['parentLesson'] = $lessonsKeyed[$row['parent_lesson_id']];
+            } else {
+                $row['parentLesson'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getChildLessonsRelation(array $results): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $lessons = (new Lesson())->get()->where(['parent_lesson_id' => ['in' => $ids]])->all();
+        $lessonsGrouped = [];
+        foreach ($lessons as $lesson) {
+            $lessonsGrouped[$lesson->parent_lesson_id][] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            $row['childLessons'] = $lessonsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
     protected string $table_name = "lessons";
 
     /**

@@ -17,6 +17,107 @@ class Department extends Model
 
     public ?bool $active = null;
 
+    public ?User $chairperson = null;
+    public array $programs = [];
+    public array $users = [];
+    public array $lessons = [];
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getChairpersonRelation(array $results): array
+    {
+        $userIds = array_unique(array_column($results, 'chairperson_id'));
+        if (empty($userIds))
+            return $results;
+
+        $users = (new User())->get()->where(['id' => ['in' => $userIds]])->all();
+        $usersKeyed = [];
+        foreach ($users as $user) {
+            $usersKeyed[$user->id] = $user;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['chairperson_id']) && isset($usersKeyed[$row['chairperson_id']])) {
+                $row['chairperson'] = $usersKeyed[$row['chairperson_id']];
+            } else {
+                $row['chairperson'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getProgramsRelation(array $results): array
+    {
+        $deptIds = array_column($results, 'id');
+        if (empty($deptIds))
+            return $results;
+
+        $programs = (new Program())->get()->where(['department_id' => ['in' => $deptIds]])->all();
+        $programsGrouped = [];
+        foreach ($programs as $prog) {
+            $programsGrouped[$prog->department_id][] = $prog;
+        }
+
+        foreach ($results as &$row) {
+            $row['programs'] = $programsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getUsersRelation(array $results): array
+    {
+        $deptIds = array_column($results, 'id');
+        if (empty($deptIds))
+            return $results;
+
+        $users = (new User())->get()->where(['department_id' => ['in' => $deptIds]])->all();
+        $usersGrouped = [];
+        foreach ($users as $user) {
+            $usersGrouped[$user->department_id][] = $user;
+        }
+
+        foreach ($results as &$row) {
+            $row['users'] = $usersGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws Exception
+     */
+    public function getLessonsRelation(array $results): array
+    {
+        $deptIds = array_column($results, 'id');
+        if (empty($deptIds))
+            return $results;
+
+        $lessons = (new Lesson())->get()->where(['department_id' => ['in' => $deptIds]])->all();
+        $lessonsGrouped = [];
+        foreach ($lessons as $lesson) {
+            $lessonsGrouped[$lesson->department_id][] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            $row['lessons'] = $lessonsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
     protected string $table_name = "departments";
 
 
@@ -35,7 +136,7 @@ class Department extends Model
 
     public function getProgramCount(): int
     {
-        return (new Program())->get()->where(['department_id'=>$this->id])->count();
+        return (new Program())->get()->where(['department_id' => $this->id])->count();
     }
 
     /**
@@ -44,7 +145,7 @@ class Department extends Model
      */
     public function getPrograms(): array
     {
-        return (new Program())->get()->where(['department_id'=>$this->id])->all();
+        return (new Program())->get()->where(['department_id' => $this->id])->all();
     }
 
     /**
@@ -53,7 +154,7 @@ class Department extends Model
      */
     public function getLecturers(): array
     {
-        return (new User())->get()->where(['department_id'=>$this->id,'!role'=>'user'])->all();
+        return (new User())->get()->where(['department_id' => $this->id, '!role' => 'user'])->all();
     }
 
     /**
@@ -62,7 +163,7 @@ class Department extends Model
      */
     public function getLecturerCount(): mixed
     {
-        return (new User())->get()->where(['department_id'=>$this->id,'!role'=>'user'])->count();
+        return (new User())->get()->where(['department_id' => $this->id, '!role' => 'user'])->count();
     }
 
     /**
@@ -71,7 +172,7 @@ class Department extends Model
      */
     public function getLessons(): array
     {
-        return (new Lesson())->get()->where(['department_id'=>$this->id])->all();
+        return (new Lesson())->get()->where(['department_id' => $this->id])->all();
     }
 
     /**
@@ -80,6 +181,6 @@ class Department extends Model
      */
     public function getLessonCount(): mixed
     {
-        return (new Lesson())->get()->where(['department_id'=>$this->id])->count();
+        return (new Lesson())->get()->where(['department_id' => $this->id])->count();
     }
 }
