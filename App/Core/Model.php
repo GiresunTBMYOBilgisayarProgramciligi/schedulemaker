@@ -302,25 +302,28 @@ class Model
 
     /**
      * İlişkili verileri yükler
-     * @param array $results Ana sorgu sonuçları
+     * @param array $results Ana sorgu sonuçları [ ['id'=>1, ...], ['id'=>2, ...] ]
      * @return array İlişkili verilerle birleştirilmiş sonuçlar
      */
     protected function loadRelations(array $results): array
     {
-        //todo
-        // Bu fonksiyon implementasyonu veritabanı yapınıza göre değişecektir
-        // Burada sadece temel yapı verilmiştir
-
+        // $this->relations dizisi, user tarafından with(['items', 'lecturer']) gibi çağrıldığında dolar.
         foreach ($this->relations as $relation) {
-            // İlişki tipine göre yükleme işlemi
-            // Örnek: hasMany, belongsTo vb.
-
+            
+            // İlişki metodu ismi oluşturuluyor. Örn: 'items' -> 'getItemsRelation'
             $relationMethod = "get" . ucfirst($relation) . "Relation";
+            
             if (method_exists($this, $relationMethod)) {
+                // Metot varsa çalıştırılır ve $results dizisi güncellenip döner.
+                // Bu metot, sonuç dizisine ilgili ilişkiyi 'key' olarak eklemelidir.
                 $results = $this->$relationMethod($results);
+            } else {
+                // Geliştirme aşamasında hata ayıklamak için log düşülebilir
+                if ($_ENV['DEBUG'] ?? false) {
+                     $this->logger()->error("Model ilişkisi bulunamadı: " . get_class($this) . "::" . $relationMethod,$this->logContext());
+                }
             }
         }
-
         return $results;
     }
 
