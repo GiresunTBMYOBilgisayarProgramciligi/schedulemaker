@@ -179,27 +179,71 @@ class ErrorHandler
             // API istekleri için JSON formatında hata döndür
             $this->renderJsonError($exception, $statusCode);
             return;
-        } else {
-            $_SESSION['error'] = $exception->getMessage();
-            header("Location: /admin");
+        }
+
+        // Hata verilerini hazırla
+        $view_data = [
+            'code' => $statusCode,
+            'message' => $exception->getMessage(),
+            'page_title' => "Hata " . $statusCode
+        ];
+
+        // Debug modu aktifse detayları ekle
+        if ($_ENV['DEBUG'] === 'true') {
+            $view_data['file'] = $exception->getFile();
+            $view_data['line'] = $exception->getLine();
+            $view_data['trace'] = $exception->getTraceAsString();
+        }
+
+        // Tema için gerekli verileri hazırla
+        try {
+            // UserController'ı başlat ve userController değişkenini view'a gönder (theme.php için gerekli)
+            $userController = new \App\Controllers\UserController();
+            $view_data['userController'] = $userController;
+
+            // currentUser'ı da ekleyelim, garanti olsun (theme.php bazen direkt kullanabilir)
+            $view_data['currentUser'] = $userController->getCurrentUser();
+
+            // AssetManager'ı da ekleyelim (router tarafından normalde ekleniyordu)
+            $view_data['assetManager'] = new AssetManager();
+
+        } catch (\Throwable $t) {
+            // Kullanıcı/Oturum hatası olursa, yine de sayfayı göstermeye çalış
+            // Boş bir userController mock'u gerekebilir veya theme.php'de kontrol şart
+            // Şimdilik loglayıp devam edelim
+            error_log("ErrorHandler: UserController başlatılamadı: " . $t->getMessage());
+        }
+
+        // View'ı render et
+        try {
+            // View sınıfını kullanarak render et
+            // admin/errors/error sayfasını kullan
+            // $view argümanı 'error' ise 'errors/error' yolunu kullanacağız
+            $viewName = "admin/errors/error";
+
+            // Eğer $view farklı bir şey gelirse (örn: custom view), onu kullanmayı deneyebiliriz
+            // Ancak şuanlık oluşturduğumuz tek view 'admin/errors/error'
+
+            // Router::callView mantığına benzer işi burada manuel yapıyoruz veya View sınıfını direkt kullanıyoruz
+            // View construct: $view_folder, $view_page, $view_data
+            // Router'da: admin/pages/errors/error şeklinde 
+            // Theme.php pages/ altında arıyor.
+            // Dosyamız: App/Views/admin/pages/errors/error.php
+            // View sınıfı: $view_folder="admin", $view_page="errors/error"
+
+            $viewObj = new View("admin", "errors/error", $view_data);
+            $viewObj->Render();
+            exit();
+
+        } catch (\Throwable $t) {
+            // View render edilemezse fallback
+            echo "<h1>Hata " . $statusCode . "</h1>";
+            echo "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
+            if ($_ENV['DEBUG'] === 'true') {
+                echo "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
+            }
             exit();
         }
-        /*
-                // Görünüm için hata verilerini hazırla
-                $errorData = [
-                    'message' => $exception->getMessage(),
-                    'code' => $statusCode
-                ];
-
-                // Geliştirme ortamında daha fazla detay göster
-                if ($_ENV['DEBUG'] === 'true') {
-                    $errorData['file'] = $exception->getFile();
-                    $errorData['line'] = $exception->getLine();
-                    $errorData['trace'] = $exception->getTraceAsString();
-                }
-
-                // Hata şablonunu include et ve göster
-                include_once __DIR__ . "/../views/errors/{$view}.php";*/
     }
 
     /**
@@ -253,7 +297,8 @@ class ErrorHandler
      */
     private function isAjax()
     {
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        if (
+            isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
         ) {
             return true;
