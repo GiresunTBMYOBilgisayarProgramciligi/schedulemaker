@@ -30,6 +30,40 @@ class Schedule extends Model
     public ?string $semester = null;
     public ?string $academic_year = null;
 
+    /**
+     * @var ScheduleItem[]
+     */
+    public array $items = [];
+
+    /**
+     * @param array $results
+     * @return array
+     * @throws \Exception
+     */
+    public function getItemsRelation(array $results): array
+    {
+        $scheduleIds = array_column($results, 'id');
+        if (empty($scheduleIds))
+            return $results;
+
+        $itemsRaw = (new ScheduleItem())
+            ->get()
+            ->where(['schedule_id' => ['in' => $scheduleIds]])
+            ->all();
+
+        $itemsByScheduleId = [];
+        foreach ($itemsRaw as $item) {
+            $itemsByScheduleId[$item->schedule_id][] = $item;
+        }
+
+        foreach ($results as &$scheduleRow) {
+            $scheduleId = $scheduleRow['id'];
+            $scheduleRow['items'] = $itemsByScheduleId[$scheduleId] ?? [];
+        }
+
+        return $results;
+    }
+
     public function getdayName($dayString): string
     {
         $days = [
