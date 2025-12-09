@@ -37,19 +37,25 @@ class Schedule extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws \Exception
      */
-    public function getItemsRelation(array $results): array
+    public function getItemsRelation(array $results, array $options = []): array
     {
         $scheduleIds = array_column($results, 'id');
         if (empty($scheduleIds))
             return $results;
 
-        $itemsRaw = (new ScheduleItem())
+        $query = (new ScheduleItem())
             ->get()
-            ->where(['schedule_id' => ['in' => $scheduleIds]])
-            ->all();
+            ->where(['schedule_id' => ['in' => $scheduleIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $itemsRaw = $query->all();
 
         $itemsByScheduleId = [];
         foreach ($itemsRaw as $item) {

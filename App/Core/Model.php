@@ -252,9 +252,17 @@ class Model
     public function with(array|string $relations): static
     {
         if (is_string($relations)) {
-            $this->relations[] = $relations;
+            $this->relations[$relations] = [];
         } elseif (is_array($relations)) {
-            $this->relations = array_merge($this->relations, $relations);
+            foreach ($relations as $key => $value) {
+                if (is_int($key)) {
+                    // ['relationName'] format
+                    $this->relations[$value] = [];
+                } else {
+                    // ['relationName' => ['option' => 'value']] format
+                    $this->relations[$key] = $value;
+                }
+            }
         }
         return $this;
     }
@@ -307,20 +315,21 @@ class Model
      */
     protected function loadRelations(array $results): array
     {
-        // $this->relations dizisi, user tarafından with(['items', 'lecturer']) gibi çağrıldığında dolar.
-        foreach ($this->relations as $relation) {
-            
+        // $this->relations structure: ['relationName' => ['options'], 'otherRelation' => []]
+        foreach ($this->relations as $relation => $options) {
+
             // İlişki metodu ismi oluşturuluyor. Örn: 'items' -> 'getItemsRelation'
             $relationMethod = "get" . ucfirst($relation) . "Relation";
-            
+
             if (method_exists($this, $relationMethod)) {
                 // Metot varsa çalıştırılır ve $results dizisi güncellenip döner.
                 // Bu metot, sonuç dizisine ilgili ilişkiyi 'key' olarak eklemelidir.
-                $results = $this->$relationMethod($results);
+                // Options parametresi eklendi
+                $results = $this->$relationMethod($results, $options);
             } else {
                 // Geliştirme aşamasında hata ayıklamak için log düşülebilir
                 if ($_ENV['DEBUG'] ?? false) {
-                     $this->logger()->error("Model ilişkisi bulunamadı: " . get_class($this) . "::" . $relationMethod,$this->logContext());
+                    $this->logger()->error("Model ilişkisi bulunamadı: " . get_class($this) . "::" . $relationMethod, $this->logContext());
                 }
             }
         }
@@ -529,7 +538,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-            $this->logger()->info("Veri Eklendi",$this->logContext([$this]));
+            $this->logger()->info("Veri Eklendi", $this->logContext([$this]));
         }
     }
 
@@ -556,7 +565,7 @@ class Model
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
-        $this->logger()->info("Veri Güncellendi",$this->logContext());
+        $this->logger()->info("Veri Güncellendi", $this->logContext());
         return $statement->execute();
     }
 
@@ -581,7 +590,7 @@ class Model
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
-            $this->logger()->info("Veri Silindi",$this->logContext());
+            $this->logger()->info("Veri Silindi", $this->logContext());
             return true;
         }
 

@@ -15,25 +15,28 @@ class Program extends Model
 
     public ?Department $department = null;
     public array $users = [];
+    public array $lecturers = [];
     public array $lessons = [];
     public array $schedules = [];
+    protected string $table_name = "programs";
 
-    /**
-     * @param array $results
-     * @return array
-     * @throws Exception
-     */
-    public function getSchedulesRelation(array $results): array
+    public function getSchedulesRelation(array $results, array $options = []): array
     {
         $ids = array_column($results, 'id');
         if (empty($ids))
             return $results;
 
-        $schedules = (new Schedule())->get()
+        $query = (new Schedule())->get()
             ->where([
                 'owner_type' => 'program',
                 'owner_id' => ['in' => $ids]
-            ])->all();
+            ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $schedules = $query->all();
 
         $schedulesGrouped = [];
         foreach ($schedules as $schedule) {
@@ -48,16 +51,23 @@ class Program extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getDepartmentRelation(array $results): array
+    public function getDepartmentRelation(array $results, array $options = []): array
     {
         $deptIds = array_unique(array_column($results, 'department_id'));
         if (empty($deptIds))
             return $results;
 
-        $departments = (new Department())->get()->where(['id' => ['in' => $deptIds]])->all();
+        $query = (new Department())->get()->where(['id' => ['in' => $deptIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $departments = $query->all();
         $departmentsKeyed = [];
         foreach ($departments as $dept) {
             $departmentsKeyed[$dept->id] = $dept;
@@ -75,16 +85,23 @@ class Program extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getUsersRelation(array $results): array
+    public function getUsersRelation(array $results, array $options = []): array
     {
         $progIds = array_column($results, 'id');
         if (empty($progIds))
             return $results;
 
-        $users = (new User())->get()->where(['program_id' => ['in' => $progIds]])->all();
+        $query = (new User())->get()->where(['program_id' => ['in' => $progIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $users = $query->all();
         $usersGrouped = [];
         foreach ($users as $user) {
             $usersGrouped[$user->program_id][] = $user;
@@ -98,16 +115,53 @@ class Program extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getLessonsRelation(array $results): array
+    public function getLecturersRelation(array $results, array $options = []): array
     {
         $progIds = array_column($results, 'id');
         if (empty($progIds))
             return $results;
 
-        $lessons = (new Lesson())->get()->where(['program_id' => ['in' => $progIds]])->all();
+        $query = (new User())->get()->where(['program_id' => ['in' => $progIds], '!role' => 'user']);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $users = $query->all();
+        $usersGrouped = [];
+        foreach ($users as $user) {
+            $usersGrouped[$user->program_id][] = $user;
+        }
+
+        foreach ($results as &$row) {
+            $row['lecturers'] = $usersGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getLessonsRelation(array $results, array $options = []): array
+    {
+        $progIds = array_column($results, 'id');
+        if (empty($progIds))
+            return $results;
+
+        $query = (new Lesson())->get()->where(['program_id' => ['in' => $progIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
         $lessonsGrouped = [];
         foreach ($lessons as $lesson) {
             $lessonsGrouped[$lesson->program_id][] = $lesson;
@@ -119,67 +173,12 @@ class Program extends Model
         return $results;
     }
 
-    protected string $table_name = "programs";
-
-
-    /**
-     * @return Department|null
-     * @throws Exception
-     */
-    public function getDepartment(): Department|null
+    public function getActiveLabel(): string
     {
-        return (new Department)->find($this->department_id);
-
-    }
-
-    /**
-     * @return array
-     * @throws Exception
-     */
-    public function getLecturers(): array
-    {
-        $userModel = new User();
-        return $userModel->get()->where(['program_id' => $this->id])->all();
-    }
-
-    /**
-     * @return mixed
-     * @throws Exception
-     */
-    public function getLecturerCount(): mixed
-    {
-        $userModel = new User();
-        return $userModel->get()->where(['program_id' => $this->id])->count();
-    }
-
-    /**
-     * @return mixed
-     * @throws Exception
-     */
-    public function getLessonCount(): mixed
-    {
-        $lessonModel = new Lesson();
-        return $lessonModel->get()->where(['program_id' => $this->id])->count();
-    }
-
-    /**
-     * Program bünyesindeki derslerin listesini döner
-     * @return array
-     * @throws Exception
-     */
-    public function getLessons(): array
-    {
-        $lessonModel = new Lesson();
-        return $lessonModel->get()->where(['program_id' => $this->id])->all();
-    }
-
-    /**
-     * @return mixed
-     * @throws Exception
-     */
-    public function getStudentCount(): mixed
-    {
-        $lessonModel = new Lesson();
-        return $lessonModel->get()->where(['program_id' => $this->id])->sum("size");
+        if ($this->active) {
+            return "<span class='badge bg-success'>Aktif</span>";
+        } else {
+            return "<span class='badge bg-danger'>Pasif</span>";
+        }
     }
 }

@@ -55,23 +55,31 @@ class Lesson extends Model
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
     public array $schedules = [];
+    protected string $table_name = "lessons";
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getSchedulesRelation(array $results): array
+    public function getSchedulesRelation(array $results, array $options = []): array
     {
         $ids = array_column($results, 'id');
         if (empty($ids))
             return $results;
 
-        $schedules = (new Schedule())->get()
+        $query = (new Schedule())->get()
             ->where([
                 'owner_type' => 'lesson',
                 'owner_id' => ['in' => $ids]
-            ])->all();
+            ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $schedules = $query->all();
 
         $schedulesGrouped = [];
         foreach ($schedules as $schedule) {
@@ -86,16 +94,23 @@ class Lesson extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getLecturerRelation(array $results): array
+    public function getLecturerRelation(array $results, array $options = []): array
     {
         $userIds = array_unique(array_column($results, 'lecturer_id'));
         if (empty($userIds))
             return $results;
 
-        $users = (new User())->get()->where(['id' => ['in' => $userIds]])->all();
+        $query = (new User())->get()->where(['id' => ['in' => $userIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $users = $query->all();
         $usersKeyed = [];
         foreach ($users as $user) {
             $usersKeyed[$user->id] = $user;
@@ -113,16 +128,23 @@ class Lesson extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getDepartmentRelation(array $results): array
+    public function getDepartmentRelation(array $results, array $options = []): array
     {
         $deptIds = array_unique(array_column($results, 'department_id'));
         if (empty($deptIds))
             return $results;
 
-        $departments = (new Department())->get()->where(['id' => ['in' => $deptIds]])->all();
+        $query = (new Department())->get()->where(['id' => ['in' => $deptIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $departments = $query->all();
         $departmentsKeyed = [];
         foreach ($departments as $dept) {
             $departmentsKeyed[$dept->id] = $dept;
@@ -140,16 +162,23 @@ class Lesson extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getProgramRelation(array $results): array
+    public function getProgramRelation(array $results, array $options = []): array
     {
         $progIds = array_unique(array_column($results, 'program_id'));
         if (empty($progIds))
             return $results;
 
-        $programs = (new Program())->get()->where(['id' => ['in' => $progIds]])->all();
+        $query = (new Program())->get()->where(['id' => ['in' => $progIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $programs = $query->all();
         $programsKeyed = [];
         foreach ($programs as $prog) {
             $programsKeyed[$prog->id] = $prog;
@@ -167,10 +196,11 @@ class Lesson extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getParentLessonRelation(array $results): array
+    public function getParentLessonRelation(array $results, array $options = []): array
     {
         $parentIds = array_unique(array_column($results, 'parent_lesson_id'));
         // remove nulls
@@ -178,7 +208,13 @@ class Lesson extends Model
         if (empty($parentIds))
             return $results;
 
-        $lessons = (new Lesson())->get()->where(['id' => ['in' => $parentIds]])->all();
+        $query = (new Lesson())->get()->where(['id' => ['in' => $parentIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
         $lessonsKeyed = [];
         foreach ($lessons as $lesson) {
             $lessonsKeyed[$lesson->id] = $lesson;
@@ -196,16 +232,23 @@ class Lesson extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getChildLessonsRelation(array $results): array
+    public function getChildLessonsRelation(array $results, array $options = []): array
     {
         $ids = array_column($results, 'id');
         if (empty($ids))
             return $results;
 
-        $lessons = (new Lesson())->get()->where(['parent_lesson_id' => ['in' => $ids]])->all();
+        $query = (new Lesson())->get()->where(['parent_lesson_id' => ['in' => $ids]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
         $lessonsGrouped = [];
         foreach ($lessons as $lesson) {
             $lessonsGrouped[$lesson->parent_lesson_id][] = $lesson;
@@ -216,58 +259,10 @@ class Lesson extends Model
         }
         return $results;
     }
-    protected string $table_name = "lessons";
 
     /**
-     * @return User|null
-     * @throws Exception
+     * @return string
      */
-    public function getLecturer(): User|null
-    {
-        if (is_null($this->lecturer_id)) {
-            return new User(); //hoca tanımlı değilse boş kullanıcı dön
-        }
-        return (new User())->find($this->lecturer_id);
-    }
-
-    /**
-     * Dersin ait olduğu Bölüm/Department sınıfını döndürür
-     * @return Department|null
-     * @throws Exception
-     */
-    public function getDepartment(): Department|null
-    {
-        return (new Department())->find($this->department_id);
-    }
-
-    /**
-     * Dersin ait olduğu program modelini döndürür
-     * @return Program|null
-     * @throws Exception
-     */
-    public function getProgram(): Program|null
-    {
-        return (new Program())->find($this->program_id);
-    }
-
-    /**
-     * @return Lesson|null
-     * @throws Exception
-     */
-    public function getParentLesson(): Lesson|null
-    {
-        return (new Lesson())->find($this->parent_lesson_id);
-
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function getChildLessonList(): array
-    {
-        return (new Lesson())->get()->where(["parent_lesson_id" => $this->id])->all();
-    }
-
     public function getFullName(): string
     {
         return trim($this->name . " (" . $this->code . ")");
@@ -288,6 +283,7 @@ class Lesson extends Model
     }
 
     /**
+     * todo yeni veritabanına göre düzenlenecek
      * Ders saati ile ders adına kayıtlı schedule sayısı aynı ise ders ders programı tamamlanmıştır.
      * @param string $type schedule type
      * @return bool true if complete
@@ -305,17 +301,15 @@ class Lesson extends Model
                 'academic_year' => $this->academic_year,
                 'type' => 'lesson',
                 'semester' => $this->semester
-            ])->all();
+            ])->with(['items'])->all();
+
             $this->placed_hours = 0;
             foreach ($schedules as $schedule) {
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {
-                    if (!is_null($schedule->{"day$i"})) {
-                        $this->placed_hours++;
-                    }
-                }
+                // Her bir schedule item bir ders saatini temsil eder
+                $this->placed_hours += count($schedule->items);
             }
 
-            if ($this->placed_hours == $this->hours) {
+            if ($this->placed_hours >= $this->hours) {
                 $result = true;
             }
         } elseif ($type == "exam") {

@@ -2,12 +2,9 @@
 /**
  * @var \App\Models\User $user
  * @var \App\Controllers\UserController $userController
- * @var \App\Models\Lesson $lesson Hocaya ait ders listesi oluşturulurken kullanılıyor
- * @var \App\Controllers\ScheduleController $scheduleController
  * @var array $departments
  * @var string $page_title
  * @var string $scheduleHTML
- * @var array $lesson_list
  */
 
 use function App\Helpers\isAuthorized;
@@ -59,19 +56,19 @@ use function App\Helpers\isAuthorized;
                                     <div class="ms-3 me-auto">
                                         <b>Ders</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getLessonCount() ?></span>
+                                    <span class="badge text-bg-primary "><?= count($user->lessons) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
                                         <b>Öğrenci sayısı</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getTotalStudentCount() ?></span>
+                                    <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->size ?? 0), 0) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
                                         <b>Ders Saati</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getTotalLessonHours() ?></span>
+                                    <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->hours ?? 0), 0) ?></span>
                                 </li>
                             </ul>
 
@@ -238,7 +235,7 @@ use function App\Helpers\isAuthorized;
                         <div class="card-body">
                             <!-- Burada dersler listelenecek -->
                             <div class="row">
-                                <?php foreach ($lesson_list as $lesson): ?>
+                                <?php foreach ($user->lessons as $lesson): ?>
                                     <div class="col-md-4">
                                         <a href="/admin/lesson/<?= $lesson->id ?>" class="link-underline link-underline-opacity-0">
                                             <div class="info-box text-bg-primary">
@@ -246,9 +243,8 @@ use function App\Helpers\isAuthorized;
                                                 <div class="info-box-content">
                                                     <span class="info-box-text"><?= $lesson->code ?></span>
                                                     <span class="info-box-number"> <?= $lesson->name ?></span>
-                                                    <!--<span class=""> <?php /*= $lesson->getDepartment()->name ." - ". $lesson->getProgam()->name*/?> </span>-->
-                                                    <span class=""><?= $lesson->getDepartment()->name?? "-"?> </span>
-                                                    <span class=""><?= $lesson->getProgram()->name?? "-" ?> </span>
+                                                    <span class=""><?= $lesson->department->name ?? "-"?> </span>
+                                                    <span class=""><?= $lesson->program->name ?? "-" ?> </span>
                                                 </div>
                                                 <!-- /.info-box-content -->
                                             </div>

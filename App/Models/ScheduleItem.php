@@ -22,10 +22,11 @@ class ScheduleItem extends Model
 
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws \Exception
      */
-    public function getScheduleRelation(array $results): array
+    public function getScheduleRelation(array $results, array $options = []): array
     {
         $scheduleIds = array_column($results, 'schedule_id');
         $scheduleIds = array_unique($scheduleIds);
@@ -33,10 +34,15 @@ class ScheduleItem extends Model
         if (empty($scheduleIds))
             return $results;
 
-        $schedules = (new Schedule())
+        $query = (new Schedule())
             ->get()
-            ->where(['id' => ['in' => $scheduleIds]])
-            ->all();
+            ->where(['id' => ['in' => $scheduleIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $schedules = $query->all();
 
         $schedulesKeyed = [];
         foreach ($schedules as $schedule) {

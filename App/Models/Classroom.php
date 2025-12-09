@@ -23,23 +23,30 @@ class Classroom extends Model
     public ?string $type = null;
 
     public array $schedules = [];
-
+    protected string $table_name = "classrooms";
     /**
      * @param array $results
+     * @param array $options
      * @return array
      * @throws Exception
      */
-    public function getSchedulesRelation(array $results): array
+    public function getSchedulesRelation(array $results, array $options = []): array
     {
         $ids = array_column($results, 'id');
         if (empty($ids))
             return $results;
 
-        $schedules = (new Schedule())->get()
+        $query = (new Schedule())->get()
             ->where([
                 'owner_type' => 'classroom',
                 'owner_id' => ['in' => $ids]
-            ])->all();
+            ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $schedules = $query->all();
 
         $schedulesGrouped = [];
         foreach ($schedules as $schedule) {
@@ -51,8 +58,6 @@ class Classroom extends Model
         }
         return $results;
     }
-    protected string $table_name = "classrooms";
-
 
     /**
      * @return string

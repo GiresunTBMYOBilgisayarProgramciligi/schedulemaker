@@ -19,7 +19,9 @@
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0">Başlangıç</h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0">Başlangıç</h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
@@ -110,7 +112,7 @@
             </div>
             <!-- /.row -->
             <?php if (\App\Helpers\isAuthorized("manager", true)): ?>
-                <h4><?= $currentUser->getProgramName()?> Ders Programı</h4>
+                <h4><?= $currentUser->program->name ?? '' ?> Ders Programı</h4>
                 <?= $scheduleHTML ?>
             <?php else: ?>
                 <h4>Programlar</h4>
@@ -120,7 +122,7 @@
                         <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
                             <div class="card d-flex flex-fill mb-3">
                                 <div class="card-header text-muted border-bottom-0">
-                                    <?= $program->getDepartment()->name ?>
+                                    <?= $program->department->name ?? '' ?>
                                 </div>
                                 <div class="card-body pt-0">
                                     <div class="row">
@@ -129,27 +131,28 @@
 
                                             <ul class="list-group list-group-flush text-muted mt-2">
                                                 <li class="list-group-item small">
-                                                <span class="">
-                                                    <i class="bi bi-mortarboard"></i>
-                                                </span>
+                                                    <span class="">
+                                                        <i class="bi bi-mortarboard"></i>
+                                                    </span>
                                                     <strong>Bölüm Başkan:</strong>
-                                                    <a href="/admin/profile/<?= $program->getDepartment()->getChairperson()->id ?>">
-                                                        <?= $program->getDepartment()->getChairperson()->getFullName() ?>
+                                                    <a
+                                                        href="/admin/profile/<?= $program->department->chairperson?->id ?? '#' ?>">
+                                                        <?= $program->department->chairperson?->getFullName() ?? '' ?>
                                                     </a>
                                                 </li>
                                                 <li class="list-group-item small">
-                                                <span class="">
-                                                    <i class="bi bi-person-vcard"></i>
-                                                </span>
+                                                    <span class="">
+                                                        <i class="bi bi-person-vcard"></i>
+                                                    </span>
                                                     <strong>Akademisyen Sayısı:</strong>
-                                                    <?= $program->getLecturerCount() ?>
+                                                    <?= count($program->lecturers ?? []) ?>
                                                 </li>
                                                 <li class="list-group-item small">
-                                                <span class="">
-                                                    <i class="bi bi-book"></i>
-                                                </span>
+                                                    <span class="">
+                                                        <i class="bi bi-book"></i>
+                                                    </span>
                                                     <strong>Ders Sayısı:</strong>
-                                                    <?= $program->getLessonCount() ?>
+                                                    <?= count($program->lessons ?? []) ?>
                                                 </li>
                                             </ul>
                                         </div>
@@ -157,12 +160,11 @@
                                 </div>
                                 <div class="card-footer">
                                     <div class="text-end">
-                                        <a href="/admin/department/<?= $program->getDepartment()->id ?>"
-                                           class="btn btn-sm btn-primary">
+                                        <a href="/admin/department/<?= $program->department->id ?? '#' ?>"
+                                            class="btn btn-sm btn-primary">
                                             Bölüm Detayları
                                         </a>
-                                        <a href="/admin/program/<?= $program->id ?>"
-                                           class="btn btn-sm btn-primary">
+                                        <a href="/admin/program/<?= $program->id ?>" class="btn btn-sm btn-primary">
                                             Detaylar
                                         </a>
                                     </div>
