@@ -125,7 +125,7 @@ class Program extends Model
         if (empty($progIds))
             return $results;
 
-        $query = (new User())->get()->where(['program_id' => ['in' => $progIds], '!role' => 'user']);
+        $query = (new User())->get()->where(['program_id' => ['in' => $progIds], '!role' => ['in' => ['user', 'admin']]]);
 
         if (isset($options['with'])) {
             $query->with($options['with']);

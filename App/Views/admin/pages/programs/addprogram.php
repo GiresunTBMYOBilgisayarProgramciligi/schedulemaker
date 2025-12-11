@@ -1,7 +1,7 @@
 <?php
 /**
  * @var int $department_id
- * @var array $departments \App\Models\Department->getDepartmentsList())
+ * @var array $departments
  * @var \App\Models\Department $department
  * @var string $page_title
  */
