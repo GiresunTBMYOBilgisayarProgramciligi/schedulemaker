@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\DepartmentController $departmentController
  * @var \App\Models\Department $department
  * @var string $page_title
  * @var array $departments
@@ -50,7 +49,7 @@
                             <tr>
                                 <td><?= $department->id ?></td>
                                 <td><?= $department->name ?></td>
-                                <td><?= $department->getChairperson()->getFullName() ?></td>
+                                <td><?= $department->chairperson->getFullName() ?? '' ?></td>
                                 <td>
                                     <div class="form-check form-switch ">
                                         <input name="active" class="form-check-input" type="checkbox"

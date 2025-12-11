@@ -18,7 +18,9 @@ use function App\Helpers\isAuthorized;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0"><?= $page_title ?></h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -59,16 +61,18 @@ use function App\Helpers\isAuthorized;
                                 <dd class="col-sm-8"><?= $department->name ?></dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
                                 <dd class="col-sm-8">
-                                    <a href="/admin/profile/<?= $department->getChairperson()->id ?>"><?= $department->getChairperson()->getFullName() ?></a>
+                                    <a href="/admin/profile/<?= $department->chairperson?->id ?? '#' ?>">
+                                        <?= $department->chairperson?->getFullName() ?? '' ?>
+                                    </a>
                                 </dd>
                                 <dt class="col-sm-4">Program Sayısı</dt>
-                                <dd class="col-sm-8"><?= $department->getProgramCount() ?></dd>
+                                <dd class="col-sm-8"><?= count($department->programs ?? []) ?></dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>
-                                <dd class="col-sm-8"><?= $department->getLecturerCount() ?></dd>
+                                <dd class="col-sm-8"><?= count($department->users ?? []) ?></dd>
                                 <dt class="col-sm-4">Ders Sayısı</dt>
-                                <dd class="col-sm-8"><?= $department->getLessonCount() ?></dd>
+                                <dd class="col-sm-8"><?= count($department->lessons ?? []) ?></dd>
                                 <dt class="col-sm-4">Durum</dt>
-                                <dd class="col-sm-8"><?= $department->active ? "Aktif":"Pasif" ?></dd>
+                                <dd class="col-sm-8"><?= $department->active ? "Aktif" : "Pasif" ?></dd>
                             </dl>
                         </div>
                         <!-- /.card-body -->
@@ -83,9 +87,8 @@ use function App\Helpers\isAuthorized;
                                 <a href="/admin/adduser/<?= $department->id ?>" class="btn btn-success">Hoca Ekle</a>
                             <?php endif; ?>
                             <?php if (isAuthorized("submanager")): ?>
-                                <form action="/ajax/deletedepartment/<?= $department->id ?>"
-                                      class="ajaxFormDelete d-inline"
-                                      id="deleteProgram-<?= $department->id ?>" method="post">
+                                <form action="/ajax/deletedepartment/<?= $department->id ?>" class="ajaxFormDelete d-inline"
+                                    id="deleteProgram-<?= $department->id ?>" method="post">
                                     <input type="hidden" name="id" value="<?= $department->id ?>">
                                     <input type="submit" class="btn btn-danger" value="Sil" role="button">
                                 </form>
@@ -111,60 +114,57 @@ use function App\Helpers\isAuthorized;
                         <div class="card-body">
                             <table class="table table-bordered table-striped dataTable">
                                 <thead>
-                                <tr>
-                                    <th scope="col">İd</th>
-                                    <th scope="col">Adı</th>
-                                    <th scope="col">Bölüm</th>
-                                    <th scope="col">İşlemler</th>
-                                </tr>
+                                    <tr>
+                                        <th scope="col">İd</th>
+                                        <th scope="col">Adı</th>
+                                        <th scope="col">Bölüm</th>
+                                        <th scope="col">İşlemler</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <?php foreach ($department->getPrograms() as $program): ?>
-                                    <tr>
-                                        <td><?= $program->id ?></td>
-                                        <td><?= $program->name ?></td>
-                                        <td><?= $program->getDepartment()->name ?></td>
-                                        <td>
-                                            <?php if (isAuthorized("department_head", false, $program)): ?>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn btn-primary dropdown-toggle"
+                                    <?php foreach ($department->programs as $program): ?>
+                                        <tr>
+                                            <td><?= $program->id ?></td>
+                                            <td><?= $program->name ?></td>
+                                            <td><?= $program->department?->name ?? '' ?></td>
+                                            <td>
+                                                <?php if (isAuthorized("department_head", false, $program)): ?>
+                                                    <div class="dropdown">
+                                                        <button type="button" class="btn btn-primary dropdown-toggle"
                                                             data-bs-toggle="dropdown" aria-expanded="false">
-                                                        İşlemler
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <?php if (isAuthorized("submanager", false, $program)): ?>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                   href="/admin/program/<?= $program->id ?>">Gör</a>
-                                                            </li>
-                                                        <?php endif; ?>
-                                                        <?php if (isAuthorized("submanager")): ?>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                   href="/admin/editprogram/<?= $program->id ?>">Düzenle</a>
-                                                            </li>
-                                                            <li>
-                                                                <hr class="dropdown-divider">
-                                                            </li>
-                                                            <li>
-                                                                <form action="/ajax/deleteprogram/<?= $program->id ?>"
-                                                                      class="ajaxFormDelete"
-                                                                      id="deleteProgram-<?= $program->id ?>"
-                                                                      method="post">
-                                                                    <input type="hidden" name="id"
-                                                                           value="<?= $program->id ?>">
-                                                                    <input type="submit" class="dropdown-item"
-                                                                           value="Sil">
-                                                                </form>
-                                                            </li>
-                                                        <?php endif; ?>
-                                                    </ul>
-                                                </div>
-                                            <?php endif; ?>
-                                        </td>
+                                                            İşlemler
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <?php if (isAuthorized("submanager", false, $program)): ?>
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                        href="/admin/program/<?= $program->id ?>">Gör</a>
+                                                                </li>
+                                                            <?php endif; ?>
+                                                            <?php if (isAuthorized("submanager")): ?>
+                                                                <li>
+                                                                    <a class="dropdown-item"
+                                                                        href="/admin/editprogram/<?= $program->id ?>">Düzenle</a>
+                                                                </li>
+                                                                <li>
+                                                                    <hr class="dropdown-divider">
+                                                                </li>
+                                                                <li>
+                                                                    <form action="/ajax/deleteprogram/<?= $program->id ?>"
+                                                                        class="ajaxFormDelete"
+                                                                        id="deleteProgram-<?= $program->id ?>" method="post">
+                                                                        <input type="hidden" name="id" value="<?= $program->id ?>">
+                                                                        <input type="submit" class="dropdown-item" value="Sil">
+                                                                    </form>
+                                                                </li>
+                                                            <?php endif; ?>
+                                                        </ul>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
 
-                                    </tr>
-                                <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -192,59 +192,56 @@ use function App\Helpers\isAuthorized;
                         <div class="card-body">
                             <table id="user-list-table" class="table table-bordered table-striped dataTable ">
                                 <thead>
-                                <tr>
-                                    <th>Ünvanı Adı Soyadı</th>
-                                    <th>e-Posta</th>
-                                    <th>Program</th>
-                                    <?php if (isAuthorized("department_head")): ?>
-                                        <th>İşlemler</th>
-                                    <?php endif; ?>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($department->getLecturers() as $lecturer): ?>
                                     <tr>
-                                        <td><?= $lecturer->getFullName() ?></td>
-                                        <td><?= $lecturer->mail ?></td>
-                                        <td><?= $lecturer->getProgramName() ?></td>
+                                        <th>Ünvanı Adı Soyadı</th>
+                                        <th>e-Posta</th>
+                                        <th>Program</th>
                                         <?php if (isAuthorized("department_head")): ?>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn btn-primary dropdown-toggle"
-                                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                                        İşlemler
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                               href="/admin/profile/<?= $lecturer->id ?>">Gör</a>
-                                                        </li>
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                               href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
-                                                        </li>
-                                                        <?php if (isAuthorized("submanager")): ?>
-                                                            <li>
-                                                                <hr class="dropdown-divider">
-                                                            </li>
-                                                            <li>
-                                                                <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
-                                                                      class="ajaxFormDelete"
-                                                                      id="deleteUser-<?= $lecturer->id ?>"
-                                                                      method="post">
-                                                                    <input type="hidden" name="id"
-                                                                           value="<?= $lecturer->id ?>">
-                                                                    <input type="submit" class="dropdown-item"
-                                                                           value="Sil">
-                                                                </form>
-                                                            </li>
-                                                        <?php endif; ?>
-                                                    </ul>
-                                                </div>
-                                            </td>
+                                            <th>İşlemler</th>
                                         <?php endif; ?>
                                     </tr>
-                                <?php endforeach; ?>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($department->users as $lecturer): ?>
+                                        <tr>
+                                            <td><?= $lecturer->getFullName() ?></td>
+                                            <td><?= $lecturer->mail ?></td>
+                                            <td><?= $lecturer->program?->name ?? '' ?></td>
+                                            <?php if (isAuthorized("department_head")): ?>
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button type="button" class="btn btn-primary dropdown-toggle"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            İşlemler
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="/admin/profile/<?= $lecturer->id ?>">Gör</a>
+                                                            </li>
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
+                                                            </li>
+                                                            <?php if (isAuthorized("submanager")): ?>
+                                                                <li>
+                                                                    <hr class="dropdown-divider">
+                                                                </li>
+                                                                <li>
+                                                                    <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
+                                                                        class="ajaxFormDelete" id="deleteUser-<?= $lecturer->id ?>"
+                                                                        method="post">
+                                                                        <input type="hidden" name="id" value="<?= $lecturer->id ?>">
+                                                                        <input type="submit" class="dropdown-item" value="Sil">
+                                                                    </form>
+                                                                </li>
+                                                            <?php endif; ?>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            <?php endif; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -269,69 +266,66 @@ use function App\Helpers\isAuthorized;
                         <div class="card-body">
                             <table class="table table-bordered table-striped dataTable">
                                 <thead>
-                                <tr>
-                                    <th scope="col">Kodu</th>
-                                    <th scope="col">Adı</th>
-                                    <th scope="col">Türü</th>
-                                    <th scope="col">Saati</th>
-                                    <th scope="col" class="filterable">Yarıyılı</th>
-                                    <th scope="col" class="filterable">Dönemi</th>
-                                    <th scope="col" class="filterable">Yıl</th>
-                                    <th scope="col" class="filterable">Hocası</th>
-                                    <th scope="col" class="filterable">Program</th>
-                                    <th scope="col">İşlemler</th>
-                                </tr>
+                                    <tr>
+                                        <th scope="col">Kodu</th>
+                                        <th scope="col">Adı</th>
+                                        <th scope="col">Türü</th>
+                                        <th scope="col">Saati</th>
+                                        <th scope="col" class="filterable">Yarıyılı</th>
+                                        <th scope="col" class="filterable">Dönemi</th>
+                                        <th scope="col" class="filterable">Yıl</th>
+                                        <th scope="col" class="filterable">Hocası</th>
+                                        <th scope="col" class="filterable">Program</th>
+                                        <th scope="col">İşlemler</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <?php foreach ($department->getLessons() as $lesson): ?>
-                                    <tr>
-                                        <td><?= $lesson->code ?></td>
-                                        <td><?= $lesson->name ?></td>
-                                        <td><?= $lesson->getTypeName() ?></td>
-                                        <td><?= $lesson->hours ?></td>
-                                        <td><?= $lesson->semester_no ?></td>
-                                        <td><?= $lesson->semester ?></td>
-                                        <td><?= $lesson->academic_year ?></td>
-                                        <td><?= $lesson->getLecturer()->getFullName() ?></td>
-                                        <td><?= $lesson->getProgram()->name ?></td>
-                                        <td>
-                                            <?php if (isAuthorized("submanager", false, $lesson)): ?>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn btn-primary dropdown-toggle"
+                                    <?php foreach ($department->lessons as $lesson): ?>
+                                        <tr>
+                                            <td><?= $lesson->code ?></td>
+                                            <td><?= $lesson->name ?></td>
+                                            <td><?= $lesson->getTypeName() ?></td>
+                                            <td><?= $lesson->hours ?></td>
+                                            <td><?= $lesson->semester_no ?></td>
+                                            <td><?= $lesson->semester ?></td>
+                                            <td><?= $lesson->academic_year ?></td>
+                                            <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
+                                            <td><?= $lesson->program?->name ?? '' ?></td>
+                                            <td>
+                                                <?php if (isAuthorized("submanager", false, $lesson)): ?>
+                                                    <div class="dropdown">
+                                                        <button type="button" class="btn btn-primary dropdown-toggle"
                                                             data-bs-toggle="dropdown" aria-expanded="false">
-                                                        İşlemler
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                               href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
-                                                        </li>
-                                                        <li>
-                                                            <a class="dropdown-item"
-                                                               href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
-                                                        </li>
-                                                        <?php if (isAuthorized("submanager", false, $lesson) and $currentUser->id == $lesson->getDepartment()->chairperson_id): ?>
+                                                            İşlemler
+                                                        </button>
+                                                        <ul class="dropdown-menu">
                                                             <li>
-                                                                <hr class="dropdown-divider">
+                                                                <a class="dropdown-item"
+                                                                    href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
                                                             </li>
                                                             <li>
-                                                                <form action="/ajax/deletelesson/<?= $lesson->id ?>"
-                                                                      class="ajaxFormDelete"
-                                                                      id="deleteLesson-<?= $lesson->id ?>"
-                                                                      method="post">
-                                                                    <input type="hidden" name="id"
-                                                                           value="<?= $lesson->id ?>">
-                                                                    <input type="submit" class="dropdown-item"
-                                                                           value="Sil">
-                                                                </form>
+                                                                <a class="dropdown-item"
+                                                                    href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
                                                             </li>
-                                                        <?php endif; ?>
-                                                    </ul>
-                                                </div>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
+                                                            <?php if (isAuthorized("submanager", false, $lesson) and $currentUser->id == $department->chairperson_id): ?>
+                                                                <li>
+                                                                    <hr class="dropdown-divider">
+                                                                </li>
+                                                                <li>
+                                                                    <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                                                        class="ajaxFormDelete" id="deleteLesson-<?= $lesson->id ?>"
+                                                                        method="post">
+                                                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                                                        <input type="submit" class="dropdown-item" value="Sil">
+                                                                    </form>
+                                                                </li>
+                                                            <?php endif; ?>
+                                                        </ul>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
                                 </tbody>
                             </table>
                         </div>
