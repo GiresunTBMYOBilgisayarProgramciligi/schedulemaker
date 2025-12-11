@@ -15,18 +15,6 @@ class DepartmentController extends Controller
     protected string $table_name = "departments";
     protected string $modelName = "App\\Models\\Department";
 
-    /**
-     * @param array $filters
-     * @return array
-     * @throws Exception
-     */
-    public function getDepartmentsList(array $filters = []): array
-    {
-        if (!isAuthorized("submanager")) {
-            $filters['id'] = (new UserController())->getCurrentUser()->department_id;
-        }
-        return $this->getListByFilters($filters);
-    }
 
     /**
      * @param string $name
@@ -67,7 +55,7 @@ class DepartmentController extends Controller
                 throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
                 $this->logger()->error('Department create failed: ' . $e->getMessage(), $this->logContext(['exception_code' => $e->getCode()]));
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -93,7 +81,7 @@ class DepartmentController extends Controller
                 throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
                 $this->logger()->error('Department update failed: ' . $e->getMessage(), $this->logContext(['department_id' => $department_data['id'] ?? null, 'exception_code' => $e->getCode()]));
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
