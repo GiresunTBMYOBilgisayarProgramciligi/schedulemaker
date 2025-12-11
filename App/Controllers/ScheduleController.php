@@ -212,7 +212,7 @@ class ScheduleController extends Controller
         foreach ($lessonsList as $lesson) {
             if (!$lesson->IsScheduleComplete($filters['type'])) {
                 //Ders Programı tamamlanmamışsa
-                $lesson->lecturer_id = $lesson->getLecturer()->id;
+
                 if ($filters['type'] == 'lesson') {
                     $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
                 } elseif ($filters['type'] == 'exam') {
@@ -452,11 +452,11 @@ class ScheduleController extends Controller
             $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
             $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
             $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
-            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
+            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez."';
             /**
              * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
              */
-            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
+            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')' : $lesson->name;
             $badgeText = $filters['type'] == 'lesson' ? $lesson->hours : $lesson->size;
             $HTMLOut .= "
                     <div class='frame col-md-4 p-0 ps-1 '>
@@ -467,7 +467,7 @@ class ScheduleController extends Controller
                           data-academic-year=\"$lesson->academic_year\"
                           data-lesson-code=\"$lesson->code\"
                           data-lesson-id=\"$lesson->id\"
-                          data-lecturer-id=\"" . $lesson->getLecturer()->id . "\"
+                          data-lecturer-id=\"" . $lesson->lecturer_id . "\"
                           $popover
                           data-lesson-hours=\"$lesson->hours\"
                           data-size=\"" . ($lesson->size ?? 0) . "\"
@@ -483,7 +483,7 @@ class ScheduleController extends Controller
                                 <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\">
                                 <i class=\"bi bi-person-square\"></i>
                               </a>
-                              " . $lesson->getLecturer()->getFullName() . "
+                              " . $lesson->lecturer?->getFullName() . "
                               </div>
                               
                             </div>
@@ -1170,8 +1170,8 @@ class ScheduleController extends Controller
 
             $owners = array_filter([
                 "lesson" => $lesson->id ?? null,
-                "user" => $lesson->getLecturer()?->id ?? null,
-                "program" => $lesson->getProgram()?->id ?? null,
+                "user" => $lesson->lecturer_id ?? null,
+                "program" => $lesson->program_id ?? null,
                 "classroom" => $classroom?->id ?? null,
             ], function ($value) {
                 return $value !== null && $value !== '';
