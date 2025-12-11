@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\View;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
@@ -27,6 +28,7 @@ class ScheduleController extends Controller
     {
         parent::__construct();
         $this->validator = new FilterValidator();
+
     }
 
     /**
@@ -235,192 +237,14 @@ class ScheduleController extends Controller
     public function createScheduleHTMLTable(array $filters = []): string
     {
         $filters = $this->validator->validate($filters, "createScheduleHTMLTable");
-
-        $createTableHeaders = function () use ($filters): string {
-            $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-            $headers = '<th style="width: 7%;">#</th>';
-            $maxDayIndex = ($filters['type'] === 'exam')
-                ? getSettingValue('maxExamDayIndex', 'exam', 5)
-                : getSettingValue('maxDayIndex', 'lesson', 4);
-            for ($i = 0; $i <= $maxDayIndex; $i++) {
-                $headers .= '<th>' . $days[$i] . '</th>';
-            }
-            return $headers;
-        };
-
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
-        // eğer semerser_no dizi ise dönemler birleştirilmiş demektir.
-        $semester_no = (isset($filters['semester_no']) and !is_array($filters['semester_no'])) ? 'data-semester-no="' . $filters['semester_no'] . '"' : "";
-        // eğer dönem belirtilmemişse aktif dönem bilgisi alınır
-        $semester = 'data-semester="' . $filters['semester'] . '"';
 
-        /**
-         * Dersin saatlari ayrı ayrı eklendiği için ve her ders parçasının ayrı bir id değerinin olması için dersin saat sayısı bilgisini tutar
-         */
-        $lessonHourCount = [];
-        //todo semester_no ve semester bilgisi card elementinde olacağı için burada olmasa da olur gibi
-        $out =
-            '
-            <table class="table table-bordered table-sm small" ' . $semester_no . ' ' . $semester . '>
-                                <thead>
-                                <tr>' .
-            $createTableHeaders()
-            . '</tr>
-                                </thead>
-                                <tbody>';
-        $times = array_keys($scheduleRows);
-        for ($i = 0; $i < count($times); $i++) {
-            $tableRow = $scheduleRows[$times[$i]];
-            $out .=
-                '
-                <tr>
-                    <td>
-                    ' . $times[$i] . '
-                    </td>';
-            $dayIndex = 0;
-            foreach ($tableRow as $day) {
-                /*
-                 * Eğer bir ders kaydedilmişse day true yada false değildir. Dizi olarak ders sınıf ve hoca bilgisini tutar
-                 */
-                if (is_array($day)) {
-                    if (isset($day[0]) and is_array($day[0])) {
-                        //gün içerisinde iki ders var
-                        $out .= '<td class="drop-zone">';
-                        foreach ($day as $column) {
-                            $column = (object) $column; // Array'i objeye dönüştür
-                            $lesson = (new Lesson())->find($column->lesson_id) ?: throw new Exception("Ders bulunamdı");
-                            $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                            $lecturer = (new User())->find($column->lecturer_id);
-                            $classroom = (new Classroom())->find($column->classroom_id);
-                            $draggable = "true";
-                            if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
-                                $draggable = "false";
-                            }
-                            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
-                            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
-                            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
-                            /**
-                             * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
-                             */
-                            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
-                            $out .= '
-                            <div 
-                            id="scheduleTable-lesson-' . $column->lesson_id . '-' . $lessonHourCount[$lesson->id] . '"
-                            draggable="' . $draggable . '" 
-                            class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
-                            data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
-                            data-time="' . $times[$i] . '"
-                            data-day-index="' . $dayIndex . '"
-                            ' . $semester . '
-                            ' . $popover . '
-                            data-academic-year="' . $lesson->academic_year . '"
-                            data-classroom-id="' . $classroom->id . '"
-                            data-lesson-hours="' . $lesson->hours . '" 
-                            data-size="' . ($lesson->size ?? 0) . '"
-                            data-classroom-exam-size="' . ($classroom->exam_size ?? 0) . '"
-                            data-classroom-size="' . ($classroom->size ?? 0) . '"
-                            >
-                                <div class="ms-2 me-auto">
-                                    <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
-                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
-                                            <i class="bi bi-book"></i> 
-                                        </a>
-                                        ' . $lessonName . '
-                                    </div>
-                                    <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '" >
-                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
-                                            <i class="bi bi-person-square"></i>
-                                        </a>
-                                        ' . $lecturer->getFullName() . '
-                                    </div>
-                                </div>
-                                <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
-                                    <span  id="classroom-' . $classroom->id . '" class="badge bg-info rounded-pill">
-                                        <i class="bi bi-door-open"></i> ' . $classroom->name . '
-                                    </span>
-                                </a>
-                            </div>';
-                        }
-                        $out .= '</td>';
-                    } else {
-                        // Eğer day bir array ise bilgileri yazdır
-                        $day = (object) $day; // Array'i objeye dönüştür
-                        $lesson = (new Lesson())->find($day->lesson_id) ?: throw new Exception("Ders bulunamdı");
-                        $lessonHourCount[$lesson->id] = !isset($lessonHourCount[$lesson->id]) ? 1 : $lessonHourCount[$lesson->id] + 1;
-                        $lecturer = (new User())->find($day->lecturer_id);
-                        $classroom = (new Classroom)->find($day->classroom_id);
-                        $draggable = "true";
-                        if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
-                            $draggable = "false";
-                        }
-                        $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
-                        $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
-                        $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
-                        $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . $parentLesson->getProgram()->name . ') dersine bağlı olduğu için düzenlenemez."';
-                        /**
-                         * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
-                         */
-                        $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . $lesson->getProgram()->name . ')' : $lesson->name;
-                        $out .= '
-                        <td class="drop-zone">
-                            <div 
-                            id="scheduleTable-lesson-' . $lesson->id . '-' . $lessonHourCount[$lesson->id] . '"
-                            draggable="' . $draggable . '" 
-                            class="d-flex justify-content-between align-items-start mb-1 p-2 rounded ' . $text_bg . '"
-                            data-lesson-code="' . $lesson->code . '" data-semester-no="' . $lesson->semester_no . '" data-lesson-id="' . $lesson->id . '" data-lecturer-id="' . $lecturer->id . '"
-                            data-time="' . $times[$i] . '"
-                            data-day-index="' . $dayIndex . '"
-                            ' . $semester . '
-                            ' . $popover . '
-                            data-academic-year="' . $lesson->academic_year . '"
-                            data-classroom-id="' . $classroom->id . '"
-                            data-lesson-hours="' . $lesson->hours . '" 
-                            data-size="' . ($lesson->size ?? 0) . '"
-                            data-classroom-exam-size="' . ($classroom->exam_size ?? 0) . '"
-                            data-classroom-size="' . ($classroom->size ?? 0) . '"
-                            >
-                                <div class="ms-2 me-auto">
-                                    <div class="fw-bold lesson-title" data-bs-toggle="tooltip" data-bs-placement="left" title="' . $lesson->code . '">
-                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/lesson/' . $lesson->id . '\">
-                                            <i class="bi bi-book"></i>
-                                        </a> 
-                                        ' . $lessonName . '
-                                            
-                                    </div>
-                                    <div class="text-nowrap lecturer-title" id="lecturer-' . $lecturer->id . '">
-                                        <a class="link-light link-underline-opacity-0" target="_blank" href="/admin/profile/' . $lecturer->id . '\">
-                                            <i class="bi bi-person-square"></i>
-                                        </a>
-                                        ' . $lecturer->getFullName() . '
-                                    </div>
-                                </div>
-                                <a href="/admin/classroom/' . $classroom->id . '" class="link-light link-underline-opacity-0" target="_blank">
-                                    <span id="classroom-' . $classroom->id . '" class="badge ' . $badgeCSS . ' rounded-pill">
-                                        <i class="bi bi-door-open"></i> ' . $classroom->name . '
-                                    </span>
-                                </a>
-                            </div>
-                        </td>';
-                    }
-                } elseif (is_null($day)) {
-                    // Eğer null veya true ise boş dropzone ekle
-                    $out .= ($times[$i] === "12.00 - 12.50")
-                        ? '<td class="bg-danger"></td>' // Öğle saatinde kırmızı hücre
-                        : '<td class="drop-zone"></td>';
-                } elseif ($day === true) {
-                    $out .= '<td class="bg-success"></td>';
-                } else {
-                    // Eğer false ise kırmızı vurgulu hücre ekle
-                    $out .= '<td class="bg-danger"></td>';
-                }
-                $dayIndex++;
-            }
-        }
-        $out .= '</tbody>
-               </table>';
-
-        return $out;
+        return \App\Core\View::renderPartial('admin', 'schedules', 'table', [
+            'filters' => $filters,
+            'scheduleRows' => $scheduleRows
+        ]);
     }
+
 
     /**
      * AvailableLessons metodunun hazırladığı Ders programı için uygun derslerin html çıktısını hazırlar
@@ -430,71 +254,12 @@ class ScheduleController extends Controller
     public function createAvailableLessonsHTML(array $filters = []): string
     {
         $filters = $this->validator->validate($filters, "createAvailableLessonsHTML");
-
-        /*
-         * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
-         */
-        $semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
-        // todo schedule card elementinde semester_no bilgisi olacak burada tekrar olmasına gerek var mı
-        $HTMLOut = '<div class="row available-schedule-items drop-zone small"
-                                         data-semester-no="' . $semester_no . '"
-                                         data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="data-bs-placement="left"">';
         $availableLessons = $this->availableLessons($filters);
-        foreach ($availableLessons as $lesson) {
-            /**
-             * @var Lesson $lesson
-             * @var Lesson $parentLesson
-             */
-            $draggable = "true";
-            if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
-                $draggable = "false";
-            }
-            $text_bg = is_null($lesson->parent_lesson_id) ? "text-bg-primary" : "text-bg-secondary";
-            $badgeCSS = is_null($lesson->parent_lesson_id) ? "bg-info" : "bg-light text-dark";
-            $parentLesson = is_null($lesson->parent_lesson_id) ? null : (new Lesson())->find($lesson->parent_lesson_id);
-            $popover = is_null($lesson->parent_lesson_id) ? "" : 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez."';
-            /**
-             * Eğer hoca yada derslik programı ise Ders adının sonuna program bilgisini ekle
-             */
-            $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')' : $lesson->name;
-            $badgeText = $filters['type'] == 'lesson' ? $lesson->hours : $lesson->size;
-            $HTMLOut .= "
-                    <div class='frame col-md-4 p-0 ps-1 '>
-                        <div id=\"available-lesson-$lesson->id\" draggable=\"$draggable\" 
-                          class=\"d-flex justify-content-between align-items-start mb-1 p-2 rounded $text_bg\"
-                          data-semester-no=\"$lesson->semester_no\"
-                          data-semester=\"$lesson->semester\"
-                          data-academic-year=\"$lesson->academic_year\"
-                          data-lesson-code=\"$lesson->code\"
-                          data-lesson-id=\"$lesson->id\"
-                          data-lecturer-id=\"" . $lesson->lecturer_id . "\"
-                          $popover
-                          data-lesson-hours=\"$lesson->hours\"
-                          data-size=\"" . ($lesson->size ?? 0) . "\"
-                        >
-                            <div class=\"ms-2 me-auto\">
-                              <div class=\"fw-bold lesson-title\" data-bs-toggle=\"tooltip\" data-bs-placement=\"left\" title=\" $lesson->code \">
-                                <a class='link-light link-underline-opacity-0' target='_blank' href='/admin/lesson/$lesson->id'>
-                                 <i class=\"bi bi-book\"></i>
-                                </a> 
-                                $lessonName
-                              </div>
-                              <div class=\"text-nowrap lecturer-title\" id=\"lecturer-$lesson->lecturer_id\">
-                                <a class=\"link-light link-underline-opacity-0\" target='_blank' href=\"/admin/profile/$lesson->lecturer_id\">
-                                <i class=\"bi bi-person-square\"></i>
-                              </a>
-                              " . $lesson->lecturer?->getFullName() . "
-                              </div>
-                              
-                            </div>
-                            <span class=\"badge $badgeCSS rounded-pill\">$badgeText</span>
-                      </div>
-                  </div>
-                    ";
-        }
-        $HTMLOut .= '</div><!--end::available-schedule-items-->';
-        ;
-        return $HTMLOut;
+
+        return \App\Core\View::renderPartial('admin', 'schedules', 'available_lessons', [
+            'filters' => $filters,
+            'availableLessons' => $availableLessons
+        ]);
     }
 
     /**

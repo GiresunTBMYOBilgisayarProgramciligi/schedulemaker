@@ -80,7 +80,7 @@ class AdminRouter extends Router
             $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
         else
             $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
-        $this->callView("admin/index", $this->view_data);
+        $this->callView("admin/index/index", $this->view_data);
     }
 
     /*
@@ -167,7 +167,7 @@ class AdminRouter extends Router
 
             ),
         ]);
-        $this->callView("admin/profile", $this->view_data);
+        $this->callView("admin/users/profile", $this->view_data);
     }
 
     /**

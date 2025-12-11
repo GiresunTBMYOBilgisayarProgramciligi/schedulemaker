@@ -236,8 +236,8 @@ class ErrorHandler
             // Dosyamız: App/Views/admin/pages/errors/error.php
             // View sınıfı: $view_folder="admin", $view_page="errors/error"
 
-            $viewObj = new View("admin", "errors/error", $view_data);
-            $viewObj->Render();
+            $viewObj = new View("admin", "errors", "error");
+            $viewObj->Render($view_data);
             exit();
 
         } catch (\Throwable $t) {

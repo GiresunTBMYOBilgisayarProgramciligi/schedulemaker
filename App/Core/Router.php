@@ -33,20 +33,25 @@ class Router
      * @return void
      * @throws Exception
      */
+    /**
+     * Belirtilen view dosyasını render eder
+     * @param string $view_path örn: admin/lessons/lesson (folder/page/file)
+     * @param array $data view'e aktarılan veriler
+     * @return void
+     * @throws Exception
+     */
     public function callView(string $view_path, array $data = []): void
     {
         // Tüm parçaları "/" işaretine göre ayır
         $path_parts = explode("/", $view_path);
 
-        // İlk eleman klasör adıdır
-        $view_folder = array_shift($path_parts);
-
-        // Geriye kalanları dosya yolu olarak birleştir
-        $view_file = implode("/", $path_parts);
+        $folder = $path_parts[0] ?? 'admin'; // Default fallback?
+        $page = $path_parts[1] ?? 'index';
+        $file = $path_parts[2] ?? 'index';
 
         // View nesnesini oluştur ve render et
-        $this->view = new View($view_folder, $view_file, $data);
-        $this->view->Render();
+        $this->view = new View($folder, $page, $file);
+        $this->view->Render($data);
     }
 
     /**
