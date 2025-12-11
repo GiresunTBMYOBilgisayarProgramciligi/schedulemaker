@@ -67,18 +67,19 @@ class AdminRouter extends Router
     public function IndexAction(): void
     {
         $programController = new ProgramController();
-        $user = (new UserController())->getCurrentUser();
         $this->view_data = array_merge($this->view_data, [
             "departmentController" => new DepartmentController(),
             "classroomController" => new ClassroomController(),
             "lessonController" => new LessonController(),
             "programController" => $programController,
-            "programs" => $programController->getProgramsList(['active' => true]),
-            "page_title" => "Anasayfa"]);
-        if (!is_null($user->program_id))
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $user->program_id, 'type' => 'lesson'], true);
+            "programs" => (new Program())->get()->where(['active' => true])->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])->all(),
+            "page_title" => "Anasayfa"
+        ]);
+        //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
+        if (!is_null($this->currentUser->program_id))
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
         else
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $user->id, 'type' => 'lesson'], true);
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
         $this->callView("admin/index", $this->view_data);
     }
 
@@ -91,13 +92,13 @@ class AdminRouter extends Router
             throw new Exception("Kullanıcı listesini görme yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('listpages');
-        $userController = new UserController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Listesi",
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['users'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else$this->view_data['users'] = $userController->getListByFilters();
+            $this->view_data['users'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id])->with(['department', 'program'])->all();
+        } else
+            $this->view_data['users'] = (new User())->get()->with(['department', 'program'])->all();
         $this->callView("admin/users/listusers", $this->view_data);
     }
 
@@ -106,14 +107,13 @@ class AdminRouter extends Router
      */
     public function AddUserAction(?int $department_id = null, ?int $program_id = null)
     {
-        // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli
-        $departmentFilters = [];
+        // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli 
+        // GET metodu ile yapılabilir
         if ($department_id) {
             $department = (new Department())->find($department_id) ?: throw new Exception("Bölüm Bulunamadı");
             if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
                 throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
             }
-            //$departmentFilters["id"] = $department_id; //todo otomatik seçim olmayında sadece tek bir bölüm gösterilmesinin çok anlamı yok
         }
         if ($program_id) {
             $program = (new Program())->find($program_id) ?: throw new Exception("Program bulunamadı");
@@ -129,7 +129,7 @@ class AdminRouter extends Router
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList($departmentFilters),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
         ]);
 
         $this->callView("admin/users/adduser", $this->view_data);
@@ -140,12 +140,14 @@ class AdminRouter extends Router
      */
     public function ProfileAction($id = null)
     {
-        $userController = new UserController();
         if (is_null($id)) {
-            $user = $userController->getCurrentUser();
+            $user = $this->currentUser;
         } else {
-            $user = (new User())->find($id) ?: throw new Exception("Kullanıcı bulunamadı");
+            $user = (new User())->get()->where(['id' => $id])->with(['department', 'program', 'lessons' => ['with' => ['department', 'program']], 'schedules' => ['with' => ['items']]])->first();
+            if (!$user)
+                throw new Exception("Kullanıcı bulunamadı");
         }
+
         if (!isAuthorized("submanager", false, $user)) {
             throw new Exception("Bu profili görme yetkiniz yok");
         }
@@ -154,8 +156,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
-            "lesson_list" => $user->getLessonsList(),
-            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
                     'owner_type' => 'user',
@@ -187,8 +188,9 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
-            "programController" => new ProgramController()]);
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "programController" => new ProgramController()
+        ]);
         $this->callView("admin/users/edituser", $this->view_data);
     }
 
@@ -217,7 +219,7 @@ class AdminRouter extends Router
             /**
              * @var Lesson $lesson
              */
-            $lesson = (new Lesson())->find($id) ?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department'])->first() ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
@@ -237,7 +239,7 @@ class AdminRouter extends Router
                 ],
                 true
             ),
-            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id,'semester'=>getSettingValue('semester')])->all(),
+            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester')])->all(),
         ]);
         $this->callView("admin/lessons/lesson", $this->view_data);
     }
@@ -254,8 +256,9 @@ class AdminRouter extends Router
             "page_title" => "Ders Listesi"
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lessons'] = $lessonController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else $this->view_data['lessons'] = $lessonController->getListByFilters();
+            $this->view_data['lessons'] = (new Lesson())->get()->where(['department_id' => $this->currentUser->department_id])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
+        } else
+            $this->view_data['lessons'] = (new Lesson())->get()->where(['semester' => getSettingValue('semester')])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
         $this->callView("admin/lessons/listlessons", $this->view_data);
     }
 
@@ -268,13 +271,14 @@ class AdminRouter extends Router
         $userController = new UserController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ders Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
             "lessonController" => new LessonController(),
             "classroomTypes" => (new ClassroomController())->getTypeList()
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else $this->view_data['lecturers'] = $userController->getListByFilters();
+        } else
+            $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/lessons/addlesson", $this->view_data);
     }
 
@@ -297,7 +301,7 @@ class AdminRouter extends Router
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName() . " Düzenle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
             "programController" => new ProgramController(),
             "classroomTypes" => (new ClassroomController())->getTypeList()
         ]);
@@ -308,7 +312,8 @@ class AdminRouter extends Router
             $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } elseif ($this->currentUser->role == "lecturer") {
             $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
-        } else$this->view_data['lecturers'] = $userController->getListByFilters();
+        } else
+            $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/lessons/editlesson", $this->view_data);
     }
 
@@ -336,7 +341,7 @@ class AdminRouter extends Router
             throw new Exception("Derslik sayfasını görme yetkiniz yok");
         }
         if (!is_null($id)) {
-            $classroom = (new Classroom())->find($id) ?: throw new Exception("Derslik bulunamadı");
+            $classroom = (new Classroom())->where(['id' => $id])->with(['schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Derslik bulunamadı");
         } else {
             throw new Exception("Derslik id Numarası belirtilmemiş");
         }
@@ -350,7 +355,8 @@ class AdminRouter extends Router
                     'owner_id' => $classroom->id,
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
-                ]),
+                ]
+            ),
         ]);
         $this->callView("admin/classrooms/classroom", $this->view_data);
     }
@@ -415,7 +421,7 @@ class AdminRouter extends Router
     {
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = (new Department())->find($id) ?: throw new Exception("Bölüm bulunamadı");
+            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program']], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -437,10 +443,8 @@ class AdminRouter extends Router
             throw new Exception("Bölümler listesini görmek için yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('listpages');
-        $departmentController = new DepartmentController();
         $this->view_data = array_merge($this->view_data, [
-            "departmentController" => $departmentController,
-            "departments" => $departmentController->getDepartmentsList(),
+            "departments" => (new Department())->get()->with(["chairperson"])->all(),
             "page_title" => "Bölüm Listesi"
         ]);
         $this->callView("admin/departments/listdepartments", $this->view_data);
@@ -454,7 +458,7 @@ class AdminRouter extends Router
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Bölüm Ekle",
-            "lecturers" => $this->view_data["userController"]->getLecturerList(),
+            "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all()
         ]);
         $this->callView("admin/departments/adddepartment", $this->view_data);
     }
@@ -478,7 +482,7 @@ class AdminRouter extends Router
             "departmentController" => $departmentController,
             "department" => $department,
             "page_title" => $department->name ?? "" . " Düzenle",
-            "lecturers" => $this->view_data["userController"]->getLecturerList(),
+            "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all(),
         ]);
         $this->callView("admin/departments/editdepartment", $this->view_data);
     }
@@ -491,12 +495,8 @@ class AdminRouter extends Router
      */
     public function programAction($id = null)
     {
-        $programController = new ProgramController();
         if (!is_null($id)) {
-            $program = (new Program())->find($id) ?: throw new Exception("Program bulunamadı");
-            if (!$program) {
-                throw new Exception("Belirtilen Program bulunamadı");
-            }
+            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer']],'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }
@@ -515,20 +515,17 @@ class AdminRouter extends Router
     }
 
     /**
-     * @param $department_id
      * @return void
      * @throws Exception
      */
-    public function ListProgramsAction($department_id = null): void
+    public function ListProgramsAction(): void
     {
         if (!isAuthorized("submanager")) {
             throw new Exception("Programlar listesini görmek için yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('listpages');
-        $programController = new ProgramController();
         $this->view_data = array_merge($this->view_data, [
-            "programController" => $programController,
-            "programs" => $programController->getProgramsList(['department_id'=>$department_id]),
+            "programs" => (new Program())->get()->with(['department'])->all(),
             "page_title" => "Program Listesi",
         ]);
         $this->callView("admin/programs/listprograms", $this->view_data);
@@ -542,7 +539,7 @@ class AdminRouter extends Router
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Program Ekle",
-            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
             "department_id" => $department_id
         ]);
         $this->callView("admin/programs/addprogram", $this->view_data);
@@ -566,7 +563,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "programController" => $programController,
             "program" => $program,
-            "departments" => (new DepartmentController())->getDepartmentsList(),
+            "departments" => (new Department())->get()->where(['active' => true])->all(),
             "page_title" => $program->name ?? "" . " Düzenle",
         ]);
         $this->callView("admin/programs/editprogram", $this->view_data);
@@ -588,9 +585,9 @@ class AdminRouter extends Router
         $userController = new UserController();
         $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
-            $departments = $departmentController->getDepartmentsList(['active' => true]);
+            $departments = (new Department())->get()->where(['active' => true])->all();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
-            $departments = $departmentController->getDepartmentsList(['active'=>true,'id'=>$this->currentUser->department_id]) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
+            $departments = (new Department())->get()->where(['active' => true, 'id' => $this->currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -602,7 +599,8 @@ class AdminRouter extends Router
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else $this->view_data['lecturers'] = $userController->getListByFilters();
+        } else
+            $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/schedules/editschedule", $this->view_data);
     }
 
@@ -615,9 +613,9 @@ class AdminRouter extends Router
         $userController = new UserController();
         $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
-            $departments = $departmentController->getDepartmentsList(['active' => true]);
+            $departments = (new Department())->get()->where(['active' => true])->all();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
-            $departments = $departmentController->getDepartmentsList(['active'=>true,'id'=>$this->currentUser->department_id]) ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
+            $departments = (new Department())->get()->where(['active' => true, 'id' => $this->currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -629,7 +627,8 @@ class AdminRouter extends Router
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else $this->view_data['lecturers'] = $userController->getListByFilters();
+        } else
+            $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/schedules/editexamschedule", $this->view_data);
     }
 
@@ -643,9 +642,8 @@ class AdminRouter extends Router
         }
         $userController = new UserController();
         $this->assetManager->loadPageAssets('exportschedule');
-        $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
-            $departments = $departmentController->getDepartmentsList();
+            $departments = (new Department())->get()->where(['active' => true])->all();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
             $departments = [(new Department())->find($this->currentUser->department_id)] ?: throw new Exception("Bölüm bulunamadı");
         } else {
@@ -659,7 +657,8 @@ class AdminRouter extends Router
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
-        } else $this->view_data['lecturers'] = $userController->getListByFilters();
+        } else
+            $this->view_data['lecturers'] = $userController->getListByFilters();
         $this->callView("admin/schedules/exportschedule", $this->view_data);
     }
 
