@@ -36,10 +36,9 @@ class UserController extends Controller
     public function getCurrentUser(): User|false
     {
         $user = false;
-        if (isset($_SESSION[$_ENV["SESSION_KEY"]])) {
-            $user = (new User())->find($_SESSION[$_ENV["SESSION_KEY"]]) ?? false;
-        } elseif (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-            $user = (new User())->find($_COOKIE[$_ENV["COOKIE_KEY"]]) ?? false;
+        $id = $_SESSION[$_ENV["SESSION_KEY"]] ?? $_COOKIE[$_ENV["COOKIE_KEY"]] ?? null;
+        if ($id) {
+            $user = (new User())->get()->where(['id' => $id])->with(['department', 'program','lessons'])->first() ?: false;
         }
         return $user;
     }
@@ -61,7 +60,9 @@ class UserController extends Controller
      */
     public function isLoggedIn(): bool
     {
-        if ($this->getCurrentUser()) return true; else
+        if ($this->getCurrentUser())
+            return true;
+        else
             return false;
     }
 
@@ -73,7 +74,7 @@ class UserController extends Controller
      */
     public function login(array $loginData): void
     {
-        $loginData = (object)$loginData;
+        $loginData = (object) $loginData;
         $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
         $stmt->bindParam(':mail', $loginData->mail);
         $stmt->execute();
@@ -92,9 +93,12 @@ class UserController extends Controller
                             'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
                         ]);
                     }
-                } else throw new Exception("Şifre Yanlış");
-            } else throw new Exception("Kullanıcı kayıtlı değil");
-        } else throw new Exception("Hiçbir kullanıcı kayıtlı değil");
+                } else
+                    throw new Exception("Şifre Yanlış");
+            } else
+                throw new Exception("Kullanıcı kayıtlı değil");
+        } else
+            throw new Exception("Hiçbir kullanıcı kayıtlı değil");
         // Update las login date
         $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
         $stmt = $this->database->prepare($sql);
@@ -121,9 +125,9 @@ class UserController extends Controller
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -183,33 +187,11 @@ class UserController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int)$e->getCode(), $e);
+                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
-    }
-
-    /**
-     * tüm kullanıcıların User Modeli şeklinde oluşturulmuş listesini döner
-     * @return array
-     * @throws Exception
-     */
-    public function getUsersList(): array
-    {
-        return $this->getListByFilters();
-    }
-
-    /**
-     * Rolü kullanıcı dışında olan kullanıcıların listesi
-     * @param array $filter
-     * @return array
-     * @throws Exception
-     */
-    public function getLecturerList(array $filter = []): array
-    {
-        $filter = array_merge($filter, ["!role" => ['in' => ["user", "admin"]]]);
-        return $this->getListByFilters($filter);
     }
 
     /**
@@ -332,7 +314,8 @@ class UserController extends Controller
     public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
     {
         $user = (new UserController)->getCurrentUser();
-        if(!$user) return false;
+        if (!$user)
+            return false;
         $isOwner = false;
         if (!is_null($model)) {
             switch (get_class($model)) {
@@ -342,7 +325,7 @@ class UserController extends Controller
                      * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
                      */
                     $department = (new Department())->find($model->department_id);
-                    $isOwner = ($user->id == $model->id or $user->id == $department?->chairperson_id);
+                    $isOwner = ($user->id == $model->id or ($department && $user->id == $department->chairperson_id));
                     break;
 
                 case "App\Models\Lesson":
@@ -351,7 +334,7 @@ class UserController extends Controller
                      * Aktif kullanıcı Dersin bölüm başkanı ise
                      */
                     $department = (new Department())->find($model->department_id);
-                    $isOwner = ($model->lecturer_id == $user->id or $user->id == $department?->chairperson_id);
+                    $isOwner = ($model->lecturer_id == $user->id or ($department && $user->id == $department->chairperson_id));
                     break;
 
                 case "App\Models\Program":
@@ -359,7 +342,7 @@ class UserController extends Controller
                      * Aktif kullanıcı Programın bölüm başkanı ise
                      */
                     $department = (new Department())->find($model->department_id);
-                    $isOwner = ($user->id == $department?->chairperson_id or $user->program_id == $model->id);
+                    $isOwner = (($department && $user->id == $department->chairperson_id) or $user->program_id == $model->id);
                     break;
 
                 case "App\Models\Department":
@@ -375,23 +358,35 @@ class UserController extends Controller
                      */
                     switch ($model->owner_type) {
                         case "program":
-                            $program = (new Program())->find($model->owner_id);
-                            $isOwner = $program?->getDepartment()?->chairperson_id == $user->id;
+                            $program = (new Program())->where(["id" => $model->owner_id])->with(['department'])->first();
+                            if ($program) {
+                                $isOwner = ($program->department->chairperson_id == $user->id);
+                            } else {
+                                $isOwner = false;
+                            }
                             break;
 
                         case "user":
-                            $ScheduleUser = (new User())->find($model->owner_id);
-                            $ScheduleUserDepartment = $ScheduleUser?->getDepartment();
-                            if (is_null($ScheduleUserDepartment)) {
-                                $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
+                            $ScheduleUser = (new User())->where(["id" => $model->owner_id])->with(['department'])->first();
+                            if ($ScheduleUser) {
+                                
+                                if (!$ScheduleUser->department) {
+                                    $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
+                                } else {
+                                    $isOwner = ($ScheduleUser->department->chairperson_id == $user->id or $ScheduleUser->id == $user->id);
+                                }
                             } else {
-                                $isOwner = ($ScheduleUser?->getDepartment()?->chairperson_id == $user->id or $ScheduleUser?->id == $user->id);
+                                $isOwner = false;
                             }
                             break;
 
                         case "lesson":
-                            $lesson = (new Lesson())->find($model->owner_id);
-                            $isOwner = $lesson?->getDepartment()?->chairperson_id == $user->id;
+                            $lesson = (new Lesson())->where(["id" => $model->owner_id])->with(['department'])->first();
+                            if ($lesson) {
+                                $isOwner = ($lesson->department->chairperson_id == $user->id);
+                            } else {
+                                $isOwner = false;
+                            }
                             break;
 
                         case "classroom":
