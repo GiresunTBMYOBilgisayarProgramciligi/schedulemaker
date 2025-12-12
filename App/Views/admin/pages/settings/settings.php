@@ -228,13 +228,13 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label class="col-form-label"
-                                                    for="settings[exam][maxExamDayIndex][value]">Sınav Programının Son
+                                                    for="settings[exam][maxDayIndex][value]">Sınav Programının Son
                                                     Günü</label>
-                                                <input type="hidden" name="settings[exam][maxExamDayIndex][type]"
-                                                    id="settings[exam][maxExamDayIndex][type]" value="integer">
-                                                <select class="form-select" id="settings[exam][maxExamDayIndex][value]"
-                                                    name="settings[exam][maxExamDayIndex][value]">
-                                                    <?php $maxExam = isset($settings['exam']["maxExamDayIndex"]) ? (int) $settings['exam']["maxExamDayIndex"] : 5; ?>
+                                                <input type="hidden" name="settings[exam][maxDayIndex][type]"
+                                                    id="settings[exam][maxDayIndex][type]" value="integer">
+                                                <select class="form-select" id="settings[exam][maxDayIndex][value]"
+                                                    name="settings[exam][maxDayIndex][value]">
+                                                    <?php $maxExam = isset($settings['exam']["maxDayIndex"]) ? (int) $settings['exam']["maxDayIndex"] : 5; ?>
                                                     <option value="0" <?= ($maxExam === 0) ? 'selected' : '' ?>>Pazartesi
                                                     </option>
                                                     <option value="1" <?= ($maxExam === 1) ? 'selected' : '' ?>>Salı

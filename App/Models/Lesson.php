@@ -324,8 +324,8 @@ class Lesson extends Model
             // Ders bazında yerleştirilen kapasite
             $placedCapacityByLesson = [];
             $classroomCache = [];
-            // maxExamDayIndex ayarı
-            $maxExamDayIndex = getSettingValue('maxExamDayIndex', 'exam', 5);
+            // maxDayIndex ayarı
+            $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 5);
 
             foreach ($examSchedules as $schedule) {
                 // owner_id derslik id'sidir (sınıf sahibi kayıt)
@@ -334,7 +334,7 @@ class Lesson extends Model
                     $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
                 }
                 $examSize = (int) ($classroomCache[$classroomId]->exam_size ?? 0);
-                for ($i = 0; $i <= $maxExamDayIndex; $i++) {
+                for ($i = 0; $i <= $maxDayIndex; $i++) {
                     $day = $schedule->{"day" . $i};
                     if (is_array($day)) {
                         if (isset($day[0]) && is_array($day[0])) {

@@ -19,7 +19,7 @@ use function App\Helpers\getSettingValue;
 class ScheduleController extends Controller
 {
 
-    protected string $table_name = 'schedule';
+    protected string $table_name = 'schedules';//todo artık tek tablo değil bu tablo adı nerelerde kullanılacak? 
     protected string $modelName = "App\Models\Schedule";
 
     public FilterValidator $validator;
@@ -28,7 +28,6 @@ class ScheduleController extends Controller
     {
         parent::__construct();
         $this->validator = new FilterValidator();
-
     }
 
     /**
@@ -40,7 +39,8 @@ class ScheduleController extends Controller
      */
     private function generateEmptyWeek(string $type = 'html', ?int $maxDayIndex = null): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', default: 4);
+
+        if($maxDayIndex === null) throw new Exception("maxDayIndex belirtilmelidir");
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -51,7 +51,8 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir dizi döner
+     * todo yeni tablo düzenine göre düzenlenecek
+     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmuş bir dizi döner
      * @param array $filters
      * @return array|bool
      * @throws Exception
@@ -59,6 +60,7 @@ class ScheduleController extends Controller
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
         $filters = $this->validator->validate($filters, "createScheduleExcelTable");
+        
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0)
             return false; // program boş ise false dön
@@ -71,7 +73,7 @@ class ScheduleController extends Controller
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
         $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
-            ? getSettingValue('maxExamDayIndex', 'exam', 5)
+            ? getSettingValue('maxDayIndex', 'exam', 5)
             : getSettingValue('maxDayIndex', 'lesson', 4);
         for ($i = 0; $i <= $maxDayIndex; $i++) {
             $headerRow[] = $days[$i]; // Gün adı
@@ -95,28 +97,26 @@ class ScheduleController extends Controller
 
     /**
      * Ders programı tablosunun verilerini oluşturur
+     * Sadece tek bir tablo için veri oluşturur. Farklı dönem numaraları birleştirilecekse bu işlem sonradan yapılmalı.
      * @throws Exception
+     * @return array
      */
     private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
     {
         $filters = $this->validator->validate($filters, "prepareScheduleRows");
         /*
          * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
-         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxExamDayIndex kullanılır.
+         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
          */
         if ($maxDayIndex === null) {
             $maxDayIndex = ($filters['type'] === 'exam')
-                ? getSettingValue('maxExamDayIndex', 'exam', 5)
+                ? getSettingValue('maxDayIndex', 'exam', 5)
                 : getSettingValue('maxDayIndex', 'lesson', 4);
         }
-        /**
-         * Veri tabanında yapılacak sorguda dizi verisi in ile birlikte verilmeli.
-         */
-        if (isset($filters['semester_no']) and is_array($filters['semester_no'])) {
-            $filters['semester_no'] = ['in' => $filters['semester_no']];
-        }
-
-        $schedules = (new Schedule())->get()->where($filters)->all();
+        
+        $schedule = (new Schedule())->get()->where($filters)->with('items')->first();
+        $this->logger()->debug("Prepare Schedule Rows için Schedule alındı", $this->logContext(['filters' => $filters, 'schedule' => $schedule]));
+        
         /**
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
          */
@@ -151,10 +151,10 @@ class ScheduleController extends Controller
                 $start = $slotEnd;
             }
         }
-
+        //todo scheduleItems e göre scheduleRows doldurulacak
         /*
          * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
-         */
+         
         foreach ($schedules as $schedule) {
             $week = $schedule->getWeek($type, $maxDayIndex);
             foreach ($week as $day => $value) {
@@ -168,6 +168,7 @@ class ScheduleController extends Controller
                 }
             }
         }
+        */
         return $scheduleRows;
     }
 
@@ -239,7 +240,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "createScheduleHTMLTable");
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
 
-        return \App\Core\View::renderPartial('admin', 'schedules', 'table', [
+        return \App\Core\View::renderPartial('admin', 'schedules', 'scheduleTable', [
             'filters' => $filters,
             'scheduleRows' => $scheduleRows
         ]);
@@ -256,7 +257,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "createAvailableLessonsHTML");
         $availableLessons = $this->availableLessons($filters);
 
-        return \App\Core\View::renderPartial('admin', 'schedules', 'available_lessons', [
+        return \App\Core\View::renderPartial('admin', 'schedules', 'availableLessons', [
             'filters' => $filters,
             'availableLessons' => $availableLessons
         ]);
