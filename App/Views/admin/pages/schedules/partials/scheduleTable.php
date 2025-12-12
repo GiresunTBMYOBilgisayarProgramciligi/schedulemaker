@@ -17,7 +17,7 @@
 
                 <!-- Pazartesi -->
                 <td class="drop-zone">
-                    <div class="lesson-card lesson-normal">
+                    <div class="lesson-card lesson-type-normal">
                         <span class="lesson-name">Matematik-101</span>
                         <div class="lesson-meta">
                             <span class="lesson-lecturer"><i class="fas fa-user-tie"></i> Dr. A. Yılmaz</span>
@@ -33,7 +33,7 @@
 
                 <!-- Çarşamba (Parent Örneği) -->
                 <td class="drop-zone">
-                    <div class="lesson-card lesson-parent">
+                    <div class="lesson-card lesson-type-parent">
                         <span class="lesson-name">Fizik-101 (Ana Ders)</span>
                         <div class="lesson-meta">
                             <span class="lesson-lecturer">Dr. B. Kaya</span>
@@ -46,7 +46,7 @@
                 <td class="drop-zone">
                     <div class="lesson-group-container">
                         <!-- Grup A (Lab) -->
-                        <div class="lesson-card lesson-lab">
+                        <div class="lesson-card lesson-type-lab lesson-group-a">
                             <span class="lesson-name" title="Fizik Lab - Grup A">Fizik Lab (A)</span>
                             <div class="lesson-meta">
                                 <span class="lesson-lecturer">Dr. B. Kaya</span>
@@ -54,7 +54,7 @@
                             </div>
                         </div>
                         <!-- Grup B (Farklı Renk - Normal/Group) -->
-                        <div class="lesson-card lesson-group">
+                        <div class="lesson-card lesson-type-normal lesson-group-b">
                             <span class="lesson-name" title="Fizik Lab - Grup B">Fizik Lab (B)</span>
                             <div class="lesson-meta">
                                 <span class="lesson-lecturer">Arş. Gör. Ali</span>
@@ -66,7 +66,7 @@
 
                 <!-- Cuma (UZEM Örneği) -->
                 <td class="drop-zone">
-                    <div class="lesson-card lesson-uzem">
+                    <div class="lesson-card lesson-type-uzem">
                         <span class="lesson-name">Tarih (UZEM)</span>
                         <div class="lesson-meta">
                             <span class="lesson-lecturer">Dr. C. Demir</span>
@@ -82,7 +82,7 @@
 
                 <!-- Pazartesi (Blok Ders Örneği) -->
                 <td class="drop-zone">
-                    <div class="lesson-card lesson-normal">
+                    <div class="lesson-card lesson-type-normal">
                         <span class="lesson-name">Matematik-101</span>
                         <div class="lesson-meta">
                             <span class="lesson-lecturer">Dr. A. Yılmaz</span>
@@ -93,16 +93,22 @@
 
                 <!-- Diğer günler... -->
                 <td class="drop-zone">
-                    <div class="empty-slot">-</div>
+                    <div class="empty-slot">
+                        -
+                        <!-- Not İkonu (Örnek) -->
+                        <div class="note-icon" data-note="Bu saatte Lab temizliği yapılacak." title="Notu Oku">
+                            <i class="bi bi-chat-square-text-fill"></i>
+                        </div>
+                    </div>
+                </td>
+                <td class="drop-zone">
+                    <div class="empty-slot slot-preferred">-</div>
                 </td>
                 <td class="drop-zone">
                     <div class="empty-slot">-</div>
                 </td>
                 <td class="drop-zone">
-                    <div class="empty-slot">-</div>
-                </td>
-                <td class="drop-zone">
-                    <div class="empty-slot">-</div>
+                    <div class="empty-slot slot-unavailable">-</div>
                 </td>
             </tr>
 
