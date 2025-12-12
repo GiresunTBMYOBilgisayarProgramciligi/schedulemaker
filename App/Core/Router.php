@@ -100,11 +100,9 @@ class Router
         // Action adı: settingsAction -> settings
         $page = strtolower(str_replace("Action", "", $action));
         
-        // Dosya adı: Parametre varsa ilki, yoksa index
-        $file = 'index';
-        $this->logger()->debug("Default action", ["folder"=> $folder,'page'=>$page,'file'=>$file]);
+        $this->logger()->debug("Default action", ["folder"=> $folder,'page'=>$page]);
         if (!empty($params) && isset($params[0])) {
-            $fileCandidate = $params[0];
+            $file = $params[0];
             // Güvenlik veya format kontrolü yapılabilir
             // Dosyanın varlığını View sınıfı kontrol edecek, biz sadece path oluşturuyoruz
             
@@ -112,7 +110,7 @@ class Router
             // View sınıfına bırakmak daha doğru olabilir veya Application'daki mantığı buraya taşıyoruz.
             // Önce parametreli yolu deneyelim:
             
-            $viewPath = "$folder/$page/$fileCandidate";
+            $viewPath = "$folder/$page/$file";
             // Bu dosyanın varlığını kontrol etmek için View'in exception atmasını yakalayabiliriz
             // Ancak Router içinde olduğumuz için callView zaten exception fırlatıyor.
             
@@ -124,7 +122,7 @@ class Router
             // 1. Parametreyi dosya adı olarak kabul edip render etmeyi dene.
             // 2. Başarısız olursa varsayılan index dosyasını dene.
             $this->logger()->debug("Default action", ["viewPath"=> $viewPath]);
-            $this->view_data["page_title"] = $file . "Sayfası";
+            $this->view_data["page_title"] = $file . " Sayfası";
             $this->view_data = array_merge($this->view_data, $params);
             $this->callView($viewPath);
             return;
