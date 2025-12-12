@@ -364,4 +364,39 @@ class Lesson extends Model
 
         return $result;
     }
+
+    public function getScheduleCSSClass(): string
+    {
+        $isChild = !is_null($this->parent_lesson_id);
+
+        // 1. Ders Türü Belirleme
+        $typeClass = "lesson-type-normal"; // Varsayılan
+        if ($isChild) {
+            $typeClass = "lesson-type-child";
+        } elseif ($this->classroom_type == 2) {
+            $typeClass = "lesson-type-lab";
+        } elseif ($this->classroom_type == 3) {
+            $typeClass = "lesson-type-uzem";
+        }
+
+        // 2. Grup Belirleme (Opsiyonel Ek Sınıf)
+        $groupClass = "";
+        $this->logger()->debug('Lesson Code: ', ['lessonCode' => $this->code,'lesson'=>$this]);
+        // Grup Kontrolü (Koddan Tespit: ".1", ".2" vb.)
+        if (preg_match('/\.(\d+)$/', $this->code, $matches)) {
+            $groupNum = (int) $matches[1];
+            $groupMap = [1 => 'a', 2 => 'b', 3 => 'c', 4 => 'd'];
+
+            if (isset($groupMap[$groupNum])) {
+                $groupClass = "lesson-group-" . $groupMap[$groupNum];
+            } else {
+                $groupClass = "lesson-group-a";
+            }
+        }
+
+        // Nihai Sınıf Listesi
+        $finalClass = trim("$typeClass $groupClass");
+
+        return $finalClass;
+    }
 }

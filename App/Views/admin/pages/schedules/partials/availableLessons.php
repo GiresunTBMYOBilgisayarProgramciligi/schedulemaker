@@ -15,7 +15,7 @@ use function App\Helpers\getSettingValue;
 $semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
 ?>
 <div class="row available-schedule-items drop-zone small" data-semester-no="<?= $semester_no ?>"
-    data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-trigger="hover" data-bs-placement="left">
+    data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-placement="left" data-bs-trigger="none">
     <?php foreach ($availableLessons as $lesson): ?>
         <?php
         /**

@@ -40,7 +40,8 @@ class ScheduleController extends Controller
     private function generateEmptyWeek(string $type = 'html', ?int $maxDayIndex = null): array
     {
 
-        if($maxDayIndex === null) throw new Exception("maxDayIndex belirtilmelidir");
+        if ($maxDayIndex === null)
+            throw new Exception("maxDayIndex belirtilmelidir");
         $emptyWeek = [];
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
@@ -60,7 +61,7 @@ class ScheduleController extends Controller
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
         $filters = $this->validator->validate($filters, "createScheduleExcelTable");
-        
+
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0)
             return false; // program boş ise false dön
@@ -113,10 +114,7 @@ class ScheduleController extends Controller
                 ? getSettingValue('maxDayIndex', 'exam', 5)
                 : getSettingValue('maxDayIndex', 'lesson', 4);
         }
-        
-        $schedule = (new Schedule())->get()->where($filters)->with('items')->first();
-        $this->logger()->debug("Prepare Schedule Rows için Schedule alındı", $this->logContext(['filters' => $filters, 'schedule' => $schedule]));
-        
+
         /**
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
          */
@@ -132,43 +130,70 @@ class ScheduleController extends Controller
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
             while ($start < $end) {
-                $slotStart = clone $start;
-                $slotEnd = (clone $start)->modify('+30 minutes');
-                $rowKey = $slotStart->format('H.i') . ' - ' . $slotEnd->format('H.i');
-                $scheduleRows[$rowKey] = $this->generateEmptyWeek($type, $maxDayIndex);
-                $start = $slotEnd;
+                $slotStartTime = clone $start;
+                $slotEndTime = (clone $start)->modify('+30 minutes');
+                $scheduleRows[] = [
+                    'slotStartTime' => $slotStartTime,
+                    'slotEndTime' => $slotEndTime,
+                    'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                ];
+
+                $start = $slotEndTime;
             }
         } else {
             // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
             while ($start < $end) {
-                $slotStart = clone $start;
-                $slotEnd = (clone $start)->modify('+50 minutes');
-                $rowKey = $slotStart->format('H.i') . ' - ' . $slotEnd->format('H.i');
-                $scheduleRows[$rowKey] = $this->generateEmptyWeek($type, $maxDayIndex);
-                $slotEnd = $slotEnd->modify('+10 minutes'); // tenefüs arası
-                $start = $slotEnd;
+                $slotStartTime = clone $start;
+                $slotEndTime = (clone $start)->modify('+50 minutes');
+                $scheduleRows[] = [
+                    'slotStartTime' => $slotStartTime,
+                    'slotEndTime' => $slotEndTime,
+                    'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                ];
+                $slotEndTime = $slotEndTime->modify('+10 minutes'); // tenefüs arası
+                $start = $slotEndTime;
             }
         }
-        //todo scheduleItems e göre scheduleRows doldurulacak
-        /*
-         * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
-         
-        foreach ($schedules as $schedule) {
-            $week = $schedule->getWeek($type, $maxDayIndex);
-            foreach ($week as $day => $value) {
-                if (!is_null($value)) {
-                    if ($value === true and is_array($scheduleRows[$schedule->time][$day])) {
-                        // value değeri true ise hocanın tercih ettiği saat demek. aynı zamanda o saat bir dizi ise o saate atama yapılmış demek.
-                        // bu durumda atama yapılmış dersin gözükmesi için saat bilgisi değiştirilmiyor.
-                        continue;
+
+        $schedule = (new Schedule())->get()->where($filters)->with('items')->first();
+        if ($schedule) {
+            $this->logger()->debug("Prepare Schedule Rows için Schedule alındı", ['schedule' => $schedule, 'scheduleItems' => $schedule->items]);
+            /*
+             * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
+             */
+            foreach ($schedule->items as $scheduleItem) {
+                // $this->logger()->debug("Schedule Item alındı", ['scheduleItem' => $scheduleItem]);
+                $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $scheduleItem->end_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->end_time);
+
+                if (!$itemStart || !$itemEnd)
+                    continue;
+
+                foreach ($scheduleRows as &$row) {
+                    $slotStart = $row['slotStartTime'];
+
+                    if ($slotStart->format('H:i') >= $itemStart->format('H:i') && $slotStart->format('H:i') < $itemEnd->format('H:i')) {
+                        $dayKey = 'day' . $scheduleItem->day_index;
+
+                        if (array_key_exists($dayKey, $row['days'])) {
+                            if ($row['days'][$dayKey] === null) {
+                                $row['days'][$dayKey] = $scheduleItem;
+                            } else {
+                                if (!is_array($row['days'][$dayKey])) {
+                                    $row['days'][$dayKey] = [$row['days'][$dayKey]];
+                                }
+                                $row['days'][$dayKey][] = $scheduleItem;
+                            }
+                        }
                     }
-                    $scheduleRows[$schedule->time][$day] = $value;
                 }
             }
+        } else {
+            $this->logger()->debug("Prepare Schedule Rows için Schedule bulunamadı", ['filters' => $filters]);
         }
-        */
+        $this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows'=> $scheduleRows]);
         return $scheduleRows;
     }
 
@@ -204,7 +229,7 @@ class ScheduleController extends Controller
                 'lecturer_id' => $filters['owner_id'],
             ]);
         }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->all();
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
 
 
         // Ders programı için mevcut saat bazlı mantık
@@ -240,7 +265,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "createScheduleHTMLTable");
         $scheduleRows = $this->prepareScheduleRows($filters, "html");
 
-        return \App\Core\View::renderPartial('admin', 'schedules', 'scheduleTable', [
+        return View::renderPartial('admin', 'schedules', 'scheduleTable', [
             'filters' => $filters,
             'scheduleRows' => $scheduleRows
         ]);
@@ -257,7 +282,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "createAvailableLessonsHTML");
         $availableLessons = $this->availableLessons($filters);
 
-        return \App\Core\View::renderPartial('admin', 'schedules', 'availableLessons', [
+        return View::renderPartial('admin', 'schedules', 'availableLessons', [
             'filters' => $filters,
             'availableLessons' => $availableLessons
         ]);
