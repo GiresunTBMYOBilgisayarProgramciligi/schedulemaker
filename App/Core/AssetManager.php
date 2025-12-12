@@ -110,6 +110,9 @@ class AssetManager
             'css' => [
                 [
                     'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
+                ],
+                [
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
 
@@ -179,10 +182,10 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
                 ],
                 [
-                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ],
@@ -212,6 +215,11 @@ class AssetManager
                 [
                     'path' => '/assets/js/exportSchedule.js'
                 ],
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/css/schedule.css"
+                ]
             ]
         ],
         'singlepages' => [
@@ -225,7 +233,7 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ],
@@ -240,7 +248,7 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ]

@@ -13,7 +13,7 @@ $createTableHeaders = function () use ($filters): string {
     $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     $headers = '<th style="width: 7%;">#</th>';
     $maxDayIndex = ($filters['type'] === 'exam')
-        ? getSettingValue('maxExamDayIndex', 'exam', 5)
+        ? getSettingValue('maxDayIndex', 'exam', 5)
         : getSettingValue('maxDayIndex', 'lesson', 4);
     for ($i = 0; $i <= $maxDayIndex; $i++) {
         $headers .= '<th>' . $days[$i] . '</th>';
