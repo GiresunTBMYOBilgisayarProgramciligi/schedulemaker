@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
  * @var \App\Controllers\LessonController $lessonController
  * @var \App\Models\Lesson $lesson
  * @var array $lessons

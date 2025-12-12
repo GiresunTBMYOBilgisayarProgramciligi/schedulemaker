@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $lecturer
  * @var string $page_title
  * @var array $lecturers

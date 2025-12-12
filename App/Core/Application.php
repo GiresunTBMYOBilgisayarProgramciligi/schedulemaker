@@ -44,7 +44,8 @@ class Application
         if (method_exists($this->router, $this->action)) {
             call_user_func_array([$this->router, $this->action], $this->parameters);
         } else {
-            throw new Exception("Böyle Bir Action Yok. | " . $this->action);
+            // Action yoksa Router'ın defaultAction metodunu devreye sok
+            $this->router->defaultAction($this->action, $this->parameters);
         }
     }
 

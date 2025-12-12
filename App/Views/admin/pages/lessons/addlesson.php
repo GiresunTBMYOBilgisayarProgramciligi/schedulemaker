@@ -2,7 +2,6 @@
 /**
  * @var array $departments \App\Models\Department->getDepartments())
  * @var \App\Models\Department $department
- * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $lecturer
  * @var \App\Controllers\LessonController $lessonController
  * @var string $page_title

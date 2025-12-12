@@ -32,15 +32,12 @@ use function App\Helpers\isAuthorized;
  */
 class AdminRouter extends Router
 {
-    private $view_data = [];
+
     private User|false $currentUser = false;
-    private AssetManager $assetManager;
 
     public function __construct()
     {
-        $this->assetManager = new AssetManager();
-        $this->view_data["userController"] = new UserController();
-        $this->view_data["assetManager"] = $this->assetManager; // View'da kullanmak için
+        parent::__construct();
         $this->beforeAction();
     }
 
@@ -66,12 +63,12 @@ class AdminRouter extends Router
      */
     public function IndexAction(): void
     {
-        $programController = new ProgramController();
         $this->view_data = array_merge($this->view_data, [
             "departmentController" => new DepartmentController(),
             "classroomController" => new ClassroomController(),
             "lessonController" => new LessonController(),
-            "programController" => $programController,
+            "programController" => new ProgramController(),
+            'userController' => new UserController(),
             "programs" => (new Program())->get()->where(['active' => true])->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])->all(),
             "page_title" => "Anasayfa"
         ]);
@@ -80,7 +77,7 @@ class AdminRouter extends Router
             $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
         else
             $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
-        $this->callView("admin/index/index", $this->view_data);
+        $this->callView("admin/index/index");
     }
 
     /*
@@ -99,7 +96,7 @@ class AdminRouter extends Router
             $this->view_data['users'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id])->with(['department', 'program'])->all();
         } else
             $this->view_data['users'] = (new User())->get()->with(['department', 'program'])->all();
-        $this->callView("admin/users/listusers", $this->view_data);
+        $this->callView("admin/users/listusers");
     }
 
     /**
@@ -129,10 +126,11 @@ class AdminRouter extends Router
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Ekle",
+            "userController" => new UserController(),
             "departments" => (new Department())->get()->where(['active' => true])->all(),
         ]);
 
-        $this->callView("admin/users/adduser", $this->view_data);
+        $this->callView("admin/users/adduser");
     }
 
     /**
@@ -156,6 +154,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
+            "userController" => new UserController(),
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
@@ -167,7 +166,7 @@ class AdminRouter extends Router
 
             ),
         ]);
-        $this->callView("admin/users/profile", $this->view_data);
+        $this->callView("admin/users/profile");
     }
 
     /**
@@ -189,9 +188,10 @@ class AdminRouter extends Router
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
-            "programController" => new ProgramController()
+            "programController" => new ProgramController(),
+            "userController" => new UserController(),
         ]);
-        $this->callView("admin/users/edituser", $this->view_data);
+        $this->callView("admin/users/edituser");
     }
 
     public function importUsersAction()
@@ -203,7 +203,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "page_title" => " Kullanıcı İçe aktar",
         ]);
-        $this->callView("admin/users/importusers", $this->view_data);
+        $this->callView("admin/users/importusers");
     }
 
 
@@ -241,7 +241,7 @@ class AdminRouter extends Router
             ),
             'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester')])->all(),
         ]);
-        $this->callView("admin/lessons/lesson", $this->view_data);
+        $this->callView("admin/lessons/lesson");
     }
 
     public function ListLessonsAction()
@@ -259,7 +259,7 @@ class AdminRouter extends Router
             $this->view_data['lessons'] = (new Lesson())->get()->where(['department_id' => $this->currentUser->department_id])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
         } else
             $this->view_data['lessons'] = (new Lesson())->get()->where(['semester' => getSettingValue('semester')])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
-        $this->callView("admin/lessons/listlessons", $this->view_data);
+        $this->callView("admin/lessons/listlessons");
     }
 
     public function AddLessonAction()
@@ -279,7 +279,7 @@ class AdminRouter extends Router
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
         } else
             $this->view_data['lecturers'] = $userController->getListByFilters();
-        $this->callView("admin/lessons/addlesson", $this->view_data);
+        $this->callView("admin/lessons/addlesson");
     }
 
     /**
@@ -314,7 +314,7 @@ class AdminRouter extends Router
             $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } else
             $this->view_data['lecturers'] = $userController->getListByFilters();
-        $this->callView("admin/lessons/editlesson", $this->view_data);
+        $this->callView("admin/lessons/editlesson");
     }
 
     public function importLessonsAction()
@@ -326,7 +326,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "page_title" => " Ders İçe aktar",
         ]);
-        $this->callView("admin/lessons/importlessons", $this->view_data);
+        $this->callView("admin/lessons/importlessons");
     }
 
     /*
@@ -358,7 +358,7 @@ class AdminRouter extends Router
                 ]
             ),
         ]);
-        $this->callView("admin/classrooms/classroom", $this->view_data);
+        $this->callView("admin/classrooms/classroom");
     }
 
     public function ListClassroomsAction()
@@ -373,7 +373,7 @@ class AdminRouter extends Router
             "classrooms" => $classroomController->getClassroomsList(),
             "page_title" => "Derslik Listesi"
         ]);
-        $this->callView("admin/classrooms/listclassrooms", $this->view_data);
+        $this->callView("admin/classrooms/listclassrooms");
     }
 
     public function AddClassroomAction()
@@ -387,7 +387,7 @@ class AdminRouter extends Router
             "page_title" => "Derslik Ekle",
             "classroomTypes" => $classroomController->getTypeList()
         ]);
-        $this->callView("admin/classrooms/addclassroom", $this->view_data);
+        $this->callView("admin/classrooms/addclassroom");
     }
 
     /**
@@ -411,7 +411,7 @@ class AdminRouter extends Router
             "classroomTypes" => $classroomController->getTypeList(),
             "page_title" => $classroom->name . "Düzenle",
         ]);
-        $this->callView("admin/classrooms/editclassroom", $this->view_data);
+        $this->callView("admin/classrooms/editclassroom");
     }
 
     /*
@@ -434,7 +434,7 @@ class AdminRouter extends Router
             "department" => $department,
             "page_title" => $department->name . " Sayfası"
         ]);
-        $this->callView("admin/departments/department", $this->view_data);
+        $this->callView("admin/departments/department");
     }
 
     public function ListDepartmentsAction()
@@ -447,7 +447,7 @@ class AdminRouter extends Router
             "departments" => (new Department())->get()->with(["chairperson"])->all(),
             "page_title" => "Bölüm Listesi"
         ]);
-        $this->callView("admin/departments/listdepartments", $this->view_data);
+        $this->callView("admin/departments/listdepartments");
     }
 
     public function AddDepartmentAction()
@@ -460,7 +460,7 @@ class AdminRouter extends Router
             "page_title" => "Bölüm Ekle",
             "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all()
         ]);
-        $this->callView("admin/departments/adddepartment", $this->view_data);
+        $this->callView("admin/departments/adddepartment");
     }
 
     /**
@@ -484,7 +484,7 @@ class AdminRouter extends Router
             "page_title" => $department->name ?? "" . " Düzenle",
             "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all(),
         ]);
-        $this->callView("admin/departments/editdepartment", $this->view_data);
+        $this->callView("admin/departments/editdepartment");
     }
 
     /*
@@ -496,7 +496,7 @@ class AdminRouter extends Router
     public function programAction($id = null)
     {
         if (!is_null($id)) {
-            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer']],'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
+            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer']], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }
@@ -511,7 +511,7 @@ class AdminRouter extends Router
             "page_title" => $program->name . " Sayfası",
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $program->id, 'type' => 'lesson'], true),
         ]);
-        $this->callView("admin/programs/program", $this->view_data);
+        $this->callView("admin/programs/program");
     }
 
     /**
@@ -528,7 +528,7 @@ class AdminRouter extends Router
             "programs" => (new Program())->get()->with(['department'])->all(),
             "page_title" => "Program Listesi",
         ]);
-        $this->callView("admin/programs/listprograms", $this->view_data);
+        $this->callView("admin/programs/listprograms");
     }
 
     public function AddProgramAction($department_id = null)
@@ -542,7 +542,7 @@ class AdminRouter extends Router
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "department_id" => $department_id
         ]);
-        $this->callView("admin/programs/addprogram", $this->view_data);
+        $this->callView("admin/programs/addprogram");
     }
 
     public function editProgramAction($id = null)
@@ -566,7 +566,7 @@ class AdminRouter extends Router
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "page_title" => $program->name ?? "" . " Düzenle",
         ]);
-        $this->callView("admin/programs/editprogram", $this->view_data);
+        $this->callView("admin/programs/editprogram");
     }
 
     /*
@@ -601,7 +601,7 @@ class AdminRouter extends Router
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
         } else
             $this->view_data['lecturers'] = $userController->getListByFilters();
-        $this->callView("admin/schedules/editschedule", $this->view_data);
+        $this->callView("admin/schedules/editschedule");
     }
 
     public function EditExamScheduleAction($department_id = null)
@@ -629,7 +629,7 @@ class AdminRouter extends Router
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
         } else
             $this->view_data['lecturers'] = $userController->getListByFilters();
-        $this->callView("admin/schedules/editexamschedule", $this->view_data);
+        $this->callView("admin/schedules/editexamschedule");
     }
 
     /**
@@ -659,7 +659,7 @@ class AdminRouter extends Router
             $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
         } else
             $this->view_data['lecturers'] = $userController->getListByFilters();
-        $this->callView("admin/schedules/exportschedule", $this->view_data);
+        $this->callView("admin/schedules/exportschedule");
     }
 
     /*
@@ -675,7 +675,7 @@ class AdminRouter extends Router
             "page_title" => "Ayarlar",
             "settings" => (new SettingsController())->getSettings()
         ]);
-        $this->callView("admin/settings/settings", $this->view_data);
+        $this->callView("admin/settings/settings");
     }
 
     public function LogsAction()
@@ -689,7 +689,7 @@ class AdminRouter extends Router
             "page_title" => "Kayıtlar",
             "logs" => $logs,
         ]);
-        $this->callView("admin/settings/logs", $this->view_data);
+        $this->callView("admin/settings/logs");
     }
 
     /**

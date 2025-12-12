@@ -2,8 +2,6 @@
 
 namespace App\Routers;
 
-use App\Controllers\ClassroomController;
-use App\Controllers\DepartmentController;
 use App\Controllers\UserController;
 use App\Core\AssetManager;
 use App\Core\Router;
@@ -14,16 +12,12 @@ use Exception;
 
 class HomeRouter extends Router
 {
-    private $view_data = [];
     private User|false $currentUser = false;
-    private AssetManager $assetManager;
 
     public function __construct()
     {
+        parent::__construct();
         $this->beforeAction();
-        $this->assetManager = new AssetManager();
-        $this->view_data["userController"] = new UserController();
-        $this->view_data["assetManager"] = $this->assetManager; // View'da kullanmak için
     }
 
     /**
@@ -49,7 +43,7 @@ class HomeRouter extends Router
             "classrooms" => (new Classroom())->get()->all(),
             "lecturers" => $userController->getListByFilters(['!role'=>'admin']),
             "page_title" => "Anasayfa"]);
-        $this->callView("home/index", $this->view_data);
+        $this->callView("home/index");
         //$this->Redirect('/admin/');
     }
 }

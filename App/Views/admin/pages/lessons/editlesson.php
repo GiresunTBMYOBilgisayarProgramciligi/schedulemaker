@@ -3,7 +3,6 @@
  * @var \App\Models\Program $program
  * @var array $departments \App\Models\Department->getDepartments())
  * @var \App\Models\Department $department
- * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $lecturer
  * @var \App\Models\Lesson $lesson
  * @var \App\Controllers\LessonController $lessonController

@@ -35,8 +35,7 @@ class AuthRouter extends Router
         }
 
         // Ana sayfaya veya giriş sayfasına yönlendir
-        header("Location: /");
-        exit;
+        $this->Redirect("/");
     }
 
     public function ajaxloginAction()

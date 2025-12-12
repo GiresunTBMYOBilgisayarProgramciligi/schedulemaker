@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  * @var string $page_title
  * @var array $users
