@@ -152,8 +152,7 @@ class ScheduleController extends Controller
                     'slotEndTime' => $slotEndTime,
                     'days' => $this->generateEmptyWeek($type, $maxDayIndex)
                 ];
-                $slotEndTime = $slotEndTime->modify('+10 minutes'); // tenefüs arası
-                $start = $slotEndTime;
+                $start = (clone $slotEndTime)->modify('+10 minutes'); // tenefüs arası
             }
         }
 
@@ -193,7 +192,7 @@ class ScheduleController extends Controller
         } else {
             $this->logger()->debug("Prepare Schedule Rows için Schedule bulunamadı", ['filters' => $filters]);
         }
-        $this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows'=> $scheduleRows]);
+        $this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows' => $scheduleRows]);
         return $scheduleRows;
     }
 
