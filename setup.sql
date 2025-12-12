@@ -54,7 +54,7 @@ create table if not exists schedule_items
     week_index    int,
     start_time    varchar(20),
     end_time      varchar(20),
-    status        ENUM('enable','disable','group','single') NOT NULL DEFAULT 'enable',
+    status        ENUM('preferred','unavailable','group','single'),
     data          TEXT,
     description   TEXT,
     primary key (id),
