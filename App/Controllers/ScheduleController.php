@@ -102,15 +102,14 @@ class ScheduleController extends Controller
      * @throws Exception
      * @return array
      */
-    private function prepareScheduleRows(array $filters = [], $type = "html", $maxDayIndex = null): array
+    private function prepareScheduleRows(Schedule $schedule, $type = "html", $maxDayIndex = null): array
     {
-        $filters = $this->validator->validate($filters, "prepareScheduleRows");
         /*
          * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
          * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
          */
         if ($maxDayIndex === null) {
-            $maxDayIndex = ($filters['type'] === 'exam')
+            $maxDayIndex = ($schedule->type === 'exam')
                 ? getSettingValue('maxDayIndex', 'exam', 5)
                 : getSettingValue('maxDayIndex', 'lesson', 4);
         }
@@ -118,14 +117,14 @@ class ScheduleController extends Controller
         /**
          * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
          */
-        if ($filters['owner_type'] == 'classroom') {
+        if ($schedule->owner_type == 'classroom') {
             $type = "html";
         }
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [];
-        if ($filters['type'] === 'exam') {
+        if ($schedule->type === 'exam') {
             // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
@@ -156,42 +155,37 @@ class ScheduleController extends Controller
             }
         }
 
-        $schedule = (new Schedule())->get()->where($filters)->with('items')->first();
-        if ($schedule) {
-            $this->logger()->debug("Prepare Schedule Rows için Schedule alındı", ['schedule' => $schedule, 'scheduleItems' => $schedule->items]);
-            /*
-             * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
-             */
-            foreach ($schedule->items as $scheduleItem) {
-                // $this->logger()->debug("Schedule Item alındı", ['scheduleItem' => $scheduleItem]);
-                $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
-                $itemEnd = \DateTime::createFromFormat('H:i:s', $scheduleItem->end_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->end_time);
+        /*
+         * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
+         */
+        foreach ($schedule->items as $scheduleItem) {
+            // $this->logger()->debug("Schedule Item alındı", ['scheduleItem' => $scheduleItem]);
+            $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
+            $itemEnd = \DateTime::createFromFormat('H:i:s', $scheduleItem->end_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->end_time);
 
-                if (!$itemStart || !$itemEnd)
-                    continue;
+            if (!$itemStart || !$itemEnd)
+                continue;
 
-                foreach ($scheduleRows as &$row) {
-                    $slotStart = $row['slotStartTime'];
+            foreach ($scheduleRows as &$row) {
+                $slotStart = $row['slotStartTime'];
 
-                    if ($slotStart->format('H:i') >= $itemStart->format('H:i') && $slotStart->format('H:i') < $itemEnd->format('H:i')) {
-                        $dayKey = 'day' . $scheduleItem->day_index;
+                if ($slotStart->format('H:i') >= $itemStart->format('H:i') && $slotStart->format('H:i') < $itemEnd->format('H:i')) {
+                    $dayKey = 'day' . $scheduleItem->day_index;
 
-                        if (array_key_exists($dayKey, $row['days'])) {
-                            if ($row['days'][$dayKey] === null) {
-                                $row['days'][$dayKey] = $scheduleItem;
-                            } else {
-                                if (!is_array($row['days'][$dayKey])) {
-                                    $row['days'][$dayKey] = [$row['days'][$dayKey]];
-                                }
-                                $row['days'][$dayKey][] = $scheduleItem;
+                    if (array_key_exists($dayKey, $row['days'])) {
+                        if ($row['days'][$dayKey] === null) {
+                            $row['days'][$dayKey] = $scheduleItem;
+                        } else {
+                            if (!is_array($row['days'][$dayKey])) {
+                                $row['days'][$dayKey] = [$row['days'][$dayKey]];
                             }
+                            $row['days'][$dayKey][] = $scheduleItem;
                         }
                     }
                 }
             }
-        } else {
-            $this->logger()->debug("Prepare Schedule Rows için Schedule bulunamadı", ['filters' => $filters]);
         }
+
         $this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows' => $scheduleRows]);
         return $scheduleRows;
     }
@@ -202,30 +196,29 @@ class ScheduleController extends Controller
      * @return array
      * @throws Exception
      */
-    public function availableLessons(array $filters = []): array
+    public function availableLessons(Schedule $schedule): array
     {
-        $filters = $this->validator->validate($filters, "availableLessons");
         $available_lessons = [];
 
         $lessonFilters = [
-            'semester_no' => is_array($filters['semester_no']) ? ['in' => $filters['semester_no']] : $filters['semester_no'],
-            'semester' => $filters['semester'],
-            'academic_year' => $filters['academic_year'],
+            'semester_no' => $schedule->semester_no,
+            'semester' => $schedule->semester,
+            'academic_year' => $schedule->academic_year,
             '!type' => 4// staj dersleri dahil değil
         ];
 
-        if ($filters['owner_type'] == "program") {
+        if ($schedule->owner_type == "program") {
             $lessonFilters = array_merge($lessonFilters, [
-                'program_id' => $filters['owner_id'],
+                'program_id' => $schedule->owner_id,
             ]);
-        } elseif ($filters['owner_type'] == "classroom") {
-            $classroom = (new Classroom())->find($filters['owner_id']);
+        } elseif ($schedule->owner_type == "classroom") {
+            $classroom = (new Classroom())->find($schedule->owner_id);
             $lessonFilters = array_merge($lessonFilters, [
                 'classroom_type' => $classroom->type,
             ]);
-        } elseif ($filters['owner_type'] == "user") {
+        } elseif ($schedule->owner_type == "user") {
             $lessonFilters = array_merge($lessonFilters, [
-                'lecturer_id' => $filters['owner_id'],
+                'lecturer_id' => $schedule->owner_id,
             ]);
         }
         $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
@@ -237,12 +230,12 @@ class ScheduleController extends Controller
          * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
          */
         foreach ($lessonsList as $lesson) {
-            if (!$lesson->IsScheduleComplete($filters['type'])) {
+            if (!$lesson->IsScheduleComplete($schedule->type)) {
                 //Ders Programı tamamlanmamışsa
 
-                if ($filters['type'] == 'lesson') {
+                if ($schedule->type == 'lesson') {
                     $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
-                } elseif ($filters['type'] == 'exam') {
+                } elseif ($schedule->type == 'exam') {
                     $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
                 }
 
@@ -254,46 +247,84 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmış bir HTML tablo döner
-     * @param array $filters Where koşulunda kullanılmak üzere belirlenmiş alanlardan oluşan bir dizi
-     * @return string
-     * @throws Exception
-     */
-    public function createScheduleHTMLTable(array $filters = []): string
-    {
-        $filters = $this->validator->validate($filters, "createScheduleHTMLTable");
-        $scheduleRows = $this->prepareScheduleRows($filters, "html");
-
-        return View::renderPartial('admin', 'schedules', 'scheduleTable', [
-            'filters' => $filters,
-            'scheduleRows' => $scheduleRows
-        ]);
-    }
-
-
-    /**
-     * AvailableLessons metodunun hazırladığı Ders programı için uygun derslerin html çıktısını hazırlar
-     * @throws Exception
-     * todo html çıktı hazırlayan fonksiyonlar kaldırılıp view içerisinde hazırlanmalı
-     */
-    public function createAvailableLessonsHTML(array $filters = []): string
-    {
-        $filters = $this->validator->validate($filters, "createAvailableLessonsHTML");
-        $availableLessons = $this->availableLessons($filters);
-
-        return View::renderPartial('admin', 'schedules', 'availableLessons', [
-            'filters' => $filters,
-            'availableLessons' => $availableLessons
-        ]);
-    }
-
-    /**
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
+        $this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
+        /**
+         * filters a göre schedule bulunacak. bu nedenle "type", "owner_type", "owner_id","semester_no","semester", "academic_year" gerekli 
+         * schedule semester_no'ya göre birden fazla olabilir. yani birleştirilmiş (hoca ve derslik programları)
+         * prepareScheduleCard'a sadece schedule bilgisi gerekli. bu sadece id ile de aktarılabilir. yada schedule nesnesi aktarılabilir.
+         * semester_no bilgisine göre yapılacak birleştirme işlemi bu metodda yapılacak diğer metodlar tek bir semester_no ile işlem yapacak YAda PrepareScheduleCard metodun bu işlem için daha uygun gibi
+         */
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
+        if (is_array($filters['semester_no'])) {
+            $this->logger()->debug('Prepare Schedule Card için Semester No dizi alındı', ['filters' => $filters]);
+            $availableLessons = [];
+            $scheduleRows = [];
+
+            foreach ($filters['semester_no'] as $semester_no) {
+                $scheduleFilters = $filters;
+                $scheduleFilters['semester_no'] = $semester_no;
+                $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                $availableLessons = $only_table ? [] : array_merge($availableLessons, $this->availableLessons($schedule));
+                /**
+                 * birden fazla schedule row içindeki bilgileri birleştiriyoruz.
+                 * Gemini yaptı. biraz karışık ama iş görüyor.
+                 */
+                $currentRows = $this->prepareScheduleRows($schedule, "html");
+
+                if (empty($scheduleRows)) {
+                    $scheduleRows = $currentRows;
+                } else {
+                    foreach ($currentRows as $rowIndex => $row) {
+                        if (!isset($scheduleRows[$rowIndex])) {
+                            $scheduleRows[$rowIndex] = $row;
+                            continue;
+                        }
+
+                        foreach ($row['days'] as $dayIndex => $dayContent) {
+                            if (empty($dayContent)) {
+                                continue;
+                            }
+
+                            if (empty($scheduleRows[$rowIndex]['days'][$dayIndex])) {
+                                $scheduleRows[$rowIndex]['days'][$dayIndex] = $dayContent;
+                            } else {
+                                // Hedefin dizi olduğundan emin ol
+                                if (!is_array($scheduleRows[$rowIndex]['days'][$dayIndex])) {
+                                    $scheduleRows[$rowIndex]['days'][$dayIndex] = [$scheduleRows[$rowIndex]['days'][$dayIndex]];
+                                }
+
+                                // Kaynağı birleştir
+                                if (is_array($dayContent)) {
+                                    $scheduleRows[$rowIndex]['days'][$dayIndex] = array_merge($scheduleRows[$rowIndex]['days'][$dayIndex], $dayContent);
+                                } else {
+                                    $scheduleRows[$rowIndex]['days'][$dayIndex][] = $dayContent; // Tek öğe ekle
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            $schedule = (new Schedule())->firstOrCreate($filters);
+            $availableLessons = $only_table ? [] : $this->availableLessons($schedule);
+            $scheduleRows = $this->prepareScheduleRows($schedule, "html");
+        }
+
+        $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
+            'filters' => $filters,
+            'availableLessons' => $availableLessons
+        ]);
+
+        $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
+            'filters' => $filters,
+            'scheduleRows' => $scheduleRows
+        ]);
+
         $ownerName = match ($filters['owner_type']) {
             'user' => (new User())->find($filters['owner_id'])->getFullName(),
             'program' => (new Program())->find($filters['owner_id'])->name,
@@ -301,55 +332,19 @@ class ScheduleController extends Controller
             'lesson' => (new Lesson())->find($filters['owner_id'])->getFullName(),
             default => ""
         };
+
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
         $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
-        //todo setdataAttiribute fonksiyonu oluştur
-        $HTMLOUT = '
-                <!--begin::Row Program Satırı-->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="card card-outline card-primary"
-                        data-owner-type="' . $filters['owner_type'] . '"
-                        data-owner-id="' . $filters['owner_id'] . '"
-                        data-type="' . $filters['type'] . '"
-                        data-academic-year="' . $filters['academic_year'] . '"
-                        data-semester="' . $filters['semester'] . '"
-                        ' . $dataSemesterNo . '
-                        data-owner-name="' . $ownerName . '"
-                        >
-                            <div class="card-header">
-                                <h3 class="card-title">' . $cardTitle . '</h3>
-                                <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
-                                    <div class="btn-group" role="group" aria-label="Dışa aktarma">
-                                        <button id="singlePageExport" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-primary btn-sm" >
-                                            <span>Excel\'e aktar</span>
-                                        </button>
-                                        <button id="singlePageCalendar" data-owner-type="' . $filters["owner_type"] . '" data-owner-id="' . $filters["owner_id"] . '" type="button" class="btn btn-outline-secondary btn-sm" >
-                                            <span>Takvime kaydet</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body">';
-        if (!($only_table)) {
-            $HTMLOUT .= $this->createAvailableLessonsHTML($filters);
-        }
-        $HTMLOUT .= '
-                                <!--begin::Row Schedule Table-->
-                                <div class="row">';
-        $HTMLOUT .= '   <div class="schedule-table col-md-12" ' . $dataSemesterNo . '>'; //todo semester_no bilgisi card dan alınacak
-        $HTMLOUT .= $this->createScheduleHTMLTable($filters);
-        $HTMLOUT .= '
 
-                                    </div><!--end::schedule-table-->
-                                </div><!--end::Row-->
-                            </div><!--end::card-body-->
-                        </div><!--end::Card-->
-                    </div>
-                </div><!--end::Row-->
-            ';
-        return $HTMLOUT;
+        return View::renderPartial('admin', 'schedules', 'scheduleCard', [
+            'filters' => $filters,
+            'availableLessonsHTML' => $availableLessonsHTML,
+            'scheduleTableHTML' => $scheduleTableHTML,
+            'ownerName' => $ownerName,
+            'cardTitle' => $cardTitle,
+            'dataSemesterNo' => $dataSemesterNo
+        ]);
     }
 
     /**
@@ -362,8 +357,7 @@ class ScheduleController extends Controller
     public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
     {
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
-
-        $HTMLOUT = '';
+        $HTMLOut = "";
         // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim
         if (key_exists("semester_no", $filters) and $filters['semester_no'] == 0) {
             $filters['semester_no'] = getSemesterNumbers($filters['semester']);
@@ -371,15 +365,16 @@ class ScheduleController extends Controller
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
-            $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
         } else {
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
                 $filters['semester_no'] = $semester_no;
-                $HTMLOUT .= $this->prepareScheduleCard($filters, $only_table);
+                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
             }
         }
-        return $HTMLOUT;
+
+        return $HTMLOut;
     }
 
     /**
