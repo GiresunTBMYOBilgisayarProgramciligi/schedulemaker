@@ -1,8 +1,7 @@
+let lessonDrop = new Event("lessonDrop");
 /**
  * Ders Programı düzenleme sayfasında Programı temsil eden sınıf.
  */
-let lessonDrop = new Event("lessonDrop");
-
 class ScheduleCard {
 
     constructor(scheduleCardElement = null) {
@@ -11,6 +10,11 @@ class ScheduleCard {
          * @type {HTMLElement}
          */
         this.card = null;
+        /**
+         * Ders programının id numarası schedule_id
+         * @type {int}
+         */
+        this.id = null;
         /**
          * Ders programının gösterildiği tablo elementi
          * @type {HTMLElement}
@@ -105,12 +109,17 @@ class ScheduleCard {
      * Ders programı kartı yüklendikten sonra çalıştırılarak kart nesnesinin verilerini oluşturur
      * @param scheduleCardElement
      */
-    initialize(scheduleCardElement) {
+    async initialize(scheduleCardElement) {
         this.card = scheduleCardElement;
-        this.type = this.card.dataset.type ?? null;
+        this.id = this.card.dataset.scheduleId ?? null;
+        let schedule = await this.getSchedule();
         this.list = this.card.querySelector(".available-schedule-items");
         this.table = this.card.querySelector("table");
-        this.getDatasetValue(this, this.card);
+
+        Object.keys(schedule).forEach((key)=>{
+            this[key] = schedule[key];
+        })
+
         // draggable="true" olan tüm elementleri seç
         const dragableElements = this.card.querySelectorAll('[draggable="true"]');
         //drop-zone sınıfına sahip tüm elementler
@@ -125,13 +134,36 @@ class ScheduleCard {
             element.addEventListener("dragover", this.dragOverHandler.bind(this)) // bu olmadan çalışmıyor
         });
 
-        //Cardiçerisindeki tüm tooltiplerin aktif edilmesi için
-        var tooltipTriggerList = [].slice.call(this.card.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        });
-
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
+    }
+    async getSchedule() {
+        if (!this.id) return null;
+
+        let data = new FormData();
+        data.append("id", this.id);
+
+        return fetch("/ajax/getSchedule", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data && data.status === "error") {
+                    console.error(data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return data.schedule;
+                }
+            })
+            .catch((error) => {
+                new Toast().prepareToast("Hata", "Program bilgisi alınırken hata oluştu.", "danger");
+                console.error(error);
+                return false;
+            });
     }
 
     resetDraggedLesson() {

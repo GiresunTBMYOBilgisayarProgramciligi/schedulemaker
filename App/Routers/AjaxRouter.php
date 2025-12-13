@@ -593,6 +593,35 @@ class AjaxRouter extends Router
     }
 
     /**
+     * ID değerine göre program bilgisini döndürür
+     * @return void
+     * @throws Exception
+     */
+    public function getScheduleAction(): void
+    {
+        if (key_exists('id', $this->data)) {
+            $schedule = (new Schedule())->find($this->data['id']);
+            if ($schedule) {
+                $this->response = array(
+                    "status" => "success",
+                    "schedule" => $schedule->getArray()
+                );
+            } else {
+                $this->response = array(
+                    "status" => "error",
+                    "msg" => "Program bulunamadı"
+                );
+            }
+        } else {
+            $this->response = array(
+                "status" => "error",
+                "msg" => "ID belirtilmedi"
+            );
+        }
+        $this->sendResponse();
+    }
+
+    /**
      * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
      * "lesson_id" Programa eklenen dersin id numarası
      * "time_start" programa eklenen dersin başlangıç saati

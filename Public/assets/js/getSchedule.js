@@ -104,11 +104,17 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((data) => {
                 if (data['status'] !== 'error') {
                     container.innerHTML = data['HTML'];
+                    //Cardiçerisindeki tüm tooltiplerin aktif edilmesi için
+                    var tooltipTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    });
+
                     /**
                      * Bağlı derslerde gösterilecek popoverları aktif etmek için eklendi.
                      * @type {*[]}
                      */
-                    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                    var popoverTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="popover"]'))
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
                         return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' })
                     })
