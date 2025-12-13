@@ -185,6 +185,13 @@ class Model
                     }
                     $operator = $isNotCondition ? 'NOT IN' : 'IN';
                     $conditions[] = "`$column` $operator (" . implode(", ", $placeholders) . ")";
+                } elseif (isset($value['between']) && is_array($value['between']) && count($value['between']) == 2) {
+                    $placeholder1 = ":{$column}_min_" . count($this->parameters);
+                    $placeholder2 = ":{$column}_max_" . count($this->parameters);
+                    $operator = $isNotCondition ? 'NOT BETWEEN' : 'BETWEEN';
+                    $conditions[] = "`$column` $operator $placeholder1 AND $placeholder2";
+                    $this->parameters[$placeholder1] = $value['between'][0];
+                    $this->parameters[$placeholder2] = $value['between'][1];
                 } // Karşılaştırma operatörleri için kontrol
                 else {
                     foreach ($value as $operator => $operandValue) {
@@ -581,23 +588,35 @@ class Model
     public function delete(): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (empty($this->table_name) || empty($this->id)) {
-            throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
+        if (empty($this->table_name)) {
+            throw new Exception('Model düzgün oluşturulmamış: Tablo adı eksik.');
         }
 
         if ($this->table_name == "users" and $this->id == 1) {
             throw new Exception("Birincil yönetici hesabı silinemez.");
         }
 
-        $statement = self::$database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
-        $statement->bindValue(':id', $this->id);
+        if ($this->id) {
+            $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
+            $statement = self::$database->prepare($sql);
+            $statement->bindValue(':id', $this->id);
+        } elseif ($this->whereClause) {
+            $sql = "DELETE FROM {$this->table_name} WHERE " . $this->whereClause;
+            $statement = self::$database->prepare($sql);
+            // Parametreleri bağla
+            foreach ($this->parameters as $key => $value) {
+                $statement->bindValue($key, $value);
+            }
+        } else {
+            throw new Exception('Silinecek kayıt belirtilmemiş. ID yok veya where koşulu sağlanmamış.');
+        }
+
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
             $this->logger()->info("Veri Silindi", $this->logContext());
             return true;
         }
-
     }
 
     /**
