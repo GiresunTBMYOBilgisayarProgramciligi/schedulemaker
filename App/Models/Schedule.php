@@ -8,6 +8,7 @@ use function App\Helpers\getSettingValue;
 class Schedule extends Model
 {
     protected string $table_name = "schedules";
+    protected array $excludeFromDb = ['items'];  
 
     public ?int $id = null;
     /**
@@ -92,5 +93,28 @@ class Schedule extends Model
             "classroom" => "Derslik",
         ];
         return $names[$this->owner_type];
+    }
+
+    /**
+     * Belirtilen özelliklere sahip kaydı getirir, yoksa oluşturur.
+     * @param array $attributes
+     * @return Schedule
+     * @throws \Exception
+     */
+    public function firstOrCreate(array $attributes): Schedule
+    {
+        // Mevcut kaydı ara
+        $instance = (new self())->get()->where($attributes)->with("items")->first();
+
+        if ($instance) {
+            return $instance;
+        }
+
+        // Yoksa yeni oluştur
+        $instance = new self();
+        $instance->fill($attributes);
+        $instance->create();
+
+        return $instance;
     }
 }

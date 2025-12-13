@@ -36,6 +36,7 @@ class Model
     protected ?string $limit = null;
     protected ?string $offset = null;
     protected array $selectedFields = ['*'];
+    protected array $excludeFromDb = [];
 
     public function __construct()
     {
@@ -478,6 +479,9 @@ class Model
      */
     public function getArray(array $excludedProperties = [], bool $acceptNull = false): array
     {
+        // Exclude edilenleri birleştir
+        $excludedProperties = array_merge($excludedProperties, $this->excludeFromDb);
+
         // ReflectionClass kullanarak sadece public özellikleri alın
         $reflection = new \ReflectionClass($this);
         $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);

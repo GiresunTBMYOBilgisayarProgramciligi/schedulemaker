@@ -55,6 +55,7 @@ class Lesson extends Model
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
     public array $schedules = [];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules'];
     protected string $table_name = "lessons";
 
     /**
@@ -381,7 +382,7 @@ class Lesson extends Model
 
         // 2. Grup Belirleme (Opsiyonel Ek Sınıf)
         $groupClass = "";
-        $this->logger()->debug('Lesson Code: ', ['lessonCode' => $this->code,'lesson'=>$this]);
+        $this->logger()->debug('Lesson Code: ', ['lessonCode' => $this->code, 'lesson' => $this]);
         // Grup Kontrolü (Koddan Tespit: ".1", ".2" vb.)
         if (preg_match('/\.(\d+)$/', $this->code, $matches)) {
             $groupNum = (int) $matches[1];

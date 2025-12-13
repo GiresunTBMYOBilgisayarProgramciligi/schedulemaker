@@ -30,6 +30,7 @@ class User extends Model
     public array $schedules = [];
     public array $lessons = [];
     protected array $dateFields = ['register_date', 'last_login'];
+    protected array $excludeFromDb = ['department', 'program', 'schedules', 'lessons'];
     protected string $table_name = "users";
 
     /**

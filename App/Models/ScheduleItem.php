@@ -7,6 +7,7 @@ use App\Core\Model;
 class ScheduleItem extends Model
 {
     protected string $table_name = "schedule_items";
+    protected array $excludeFromDb = ['schedule'];
 
     public ?int $id = null;
     public ?int $schedule_id = null;
@@ -63,56 +64,61 @@ class ScheduleItem extends Model
         return $results;
     }
 
-    public function getLessons(){
+    public function getLessons()
+    {
         $lessons = [];
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
             $lessons[] = (new Lesson()->get()->where(['id' => $dayData['lesson_id']]))->first();
         }
-        $this->logger()->debug('Lessons: ', ['lessons'=> $lessons]);
+        $this->logger()->debug('Lessons: ', ['lessons' => $lessons]);
         return $lessons;
     }
 
-    public function getLecturers(){
+    public function getLecturers()
+    {
         $lecturers = [];
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
             $lecturers[] = (new User()->get()->where(['id' => $dayData['lecturer_id']]))->first();
         }
-        $this->logger()->debug('Lecturers: ', ['lecturers'=> $lecturers]);
+        $this->logger()->debug('Lecturers: ', ['lecturers' => $lecturers]);
         return $lecturers;
     }
 
-    public function getClassrooms(){
+    public function getClassrooms()
+    {
         $classrooms = [];
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
             $classrooms[] = (new Classroom()->get()->where(['id' => $dayData['classroom_id']]))->first();
         }
-        $this->logger()->debug('Classrooms: ', ['classrooms'=> $classrooms]);
+        $this->logger()->debug('Classrooms: ', ['classrooms' => $classrooms]);
         return $classrooms;
     }
-    public function getSlotDatas(){
+    public function getSlotDatas()
+    {
         $slotDatas = [];
         if ($this->data == null) {
             return $slotDatas;
-        }   
+        }
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
-            $slotDatas[] = (object)[
+            $slotDatas[] = (object) [
                 'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->first(),
                 'lecturer' => (new User())->get()->where(['id' => $dayData['lecturer_id']])->first(),
                 'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
             ];
         }
-        $this->logger()->debug('SlotDatas: ', ['slotDatas'=> $slotDatas]);
-        return $slotDatas; 
-    }  
-    public function getSlotCSSClass(){
+        $this->logger()->debug('SlotDatas: ', ['slotDatas' => $slotDatas]);
+        return $slotDatas;
+    }
+    public function getSlotCSSClass()
+    {
         switch ($this->status) {
             case 'preferred':
                 return 'slot-preferred';
@@ -120,6 +126,6 @@ class ScheduleItem extends Model
                 return 'slot-unavailable';
             default:
                 return '';
-        }   
-    } 
+        }
+    }
 }

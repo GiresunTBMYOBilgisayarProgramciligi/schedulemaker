@@ -23,6 +23,7 @@ class Classroom extends Model
     public ?string $type = null;
 
     public array $schedules = [];
+    protected array $excludeFromDb = ['schedules'];
     protected string $table_name = "classrooms";
     /**
      * @param array $results

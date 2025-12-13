@@ -18,6 +18,7 @@ class Program extends Model
     public array $lecturers = [];
     public array $lessons = [];
     public array $schedules = [];
+    protected array $excludeFromDb = ['department', 'users', 'lecturers', 'lessons', 'schedules'];
     protected string $table_name = "programs";
 
     public function getSchedulesRelation(array $results, array $options = []): array

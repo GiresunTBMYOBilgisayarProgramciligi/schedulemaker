@@ -21,6 +21,7 @@ class Department extends Model
     public array $programs = [];
     public array $users = [];
     public array $lessons = [];
+    protected array $excludeFromDb = ['chairperson', 'programs', 'users', 'lessons'];
     protected string $table_name = "departments";
 
     /**
