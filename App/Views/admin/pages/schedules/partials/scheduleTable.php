@@ -11,11 +11,9 @@ use App\Core\Log;
         <thead>
             <tr>
                 <th class="time-slot">Saat</th>
-                <th>Pazartesi</th>
-                <th>Salı</th>
-                <th>Çarşamba</th>
-                <th>Perşembe</th>
-                <th>Cuma</th>
+                <?php foreach ($dayHeaders as $dayHeader): ?>
+                    <?= $dayHeader ?>
+                <?php endforeach; ?>
             </tr>
         </thead>
         <tbody>
@@ -26,7 +24,7 @@ use App\Core\Log;
                         <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                             <?= $scheduleRow['slotEndTime']->modify('+10 minutes')->format('H:i') ?>
                         </td>
-                        <td colspan="<?= count($scheduleRow['days']) ?>"
+                        <td colspan="<?= count($dayHeaders) ?>"
                             style="text-align: center; color: #888; font-weight: bold; letter-spacing: 2px;">ÖĞLE
                             ARASI
                         </td>

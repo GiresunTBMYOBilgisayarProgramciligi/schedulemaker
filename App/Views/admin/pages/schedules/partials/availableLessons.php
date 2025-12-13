@@ -1,29 +1,24 @@
 <?php
 use App\Models\Lesson;
-use App\Models\User;
-use App\Models\Classroom;
+use App\Models\Schedule;
 use function App\Helpers\getSettingValue;
 
 /**
  * @var array $availableLessons
- * @var array $filters
+ * @var Schedule $schedule
  */
-
-/*
- * Semester no dizi olarak gelmişse sınıflar birleştirilmiş demektir. Bu da Tekil sayfalarda kullanılıyor (Hoca,ders,derslik)
- */
-$semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
 ?>
-<div class="row available-schedule-items drop-zone small" data-semester-no="<?= $semester_no ?>"
+<div class="row available-schedule-items drop-zone small"
     data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-placement="left" data-bs-trigger="none">
     <?php foreach ($availableLessons as $lesson): ?>
         <?php
         /**
          * @var Lesson $lesson
          * @var Lesson $parentLesson
+         * todo ayarlardaki akademik yıl ve dönem schedule yıl ve dönemi ile eşleşmiyorsa sürükleme olmamalı
          */
         $draggable = "true";
-        if (!is_null($lesson->parent_lesson_id) or getSettingValue("academic_year") != $filters['academic_year'] or getSettingValue("semester") != $filters['semester']) {
+        if (!is_null($lesson->parent_lesson_id)) {
             $draggable = "false";
         }
 
@@ -60,9 +55,9 @@ $semester_no = is_array($filters["semester_no"]) ? "" : $filters["semester_no"];
         $parentLesson = $isChild ? (new Lesson())->find($lesson->parent_lesson_id) : null;
         $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
 
-        $lessonName = in_array($filters['owner_type'], ['user', 'classroom']) ? $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')' : $lesson->name;
+        $lessonName = in_array($schedule->owner_type, ['user', 'classroom']) ? $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')' : $lesson->name;
         // Badge yerine sağ alta gelecek metin
-        $infoText = $filters['type'] == 'lesson' ? $lesson->hours . ' Saat' : $lesson->size . ' Kişi';
+        $infoText = $schedule->type == 'lesson' ? $lesson->hours . ' Saat' : $lesson->size . ' Kişi';
         ?>
         <div class='frame col-md-4 p-1'>
             <div id="available-lesson-<?= $lesson->id ?>" draggable="<?= $draggable ?>"

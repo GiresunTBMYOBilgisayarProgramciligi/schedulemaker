@@ -66,18 +66,22 @@ class ScheduleController extends Controller
         if (count($schedules) == 0)
             return false; // program boş ise false dön
 
-        $scheduleRows = $this->prepareScheduleRows($filters, 'excel');
+        $scheduleRows = $this->prepareScheduleRows($schedules[0], 'excel');
         $scheduleArray = [];
 
         // Günler dinamik olarak oluşturuluyor
         $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
         $headerRow = ['']; // ilk hücre boş olacak (saat için)
 
-        $maxDayIndex = (($filters['type'] ?? 'lesson') === 'exam')
-            ? getSettingValue('maxDayIndex', 'exam', 5)
-            : getSettingValue('maxDayIndex', 'lesson', 4);
+        /*
+         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
+         */
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $type = in_array($filters['type'], $examTypes) ? 'exam' : 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+        //todo aşağıdaki kodlar geçersiz. iki haftalık düzen için yapay zekanın düzenlemesi. Ama o şekilde kullanılmayacak
         for ($i = 0; $i <= $maxDayIndex; $i++) {
-            $headerRow[] = $days[$i]; // Gün adı
+            $headerRow[] = $days[$i % 7]; // Gün adı
             if (isset($filters['owner_type']) and $filters['owner_type'] != 'classroom')
                 $headerRow[] = 'S';       // Sütun başlığı (Sınıf)
         }
@@ -109,9 +113,9 @@ class ScheduleController extends Controller
          * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
          */
         if ($maxDayIndex === null) {
-            $maxDayIndex = ($schedule->type === 'exam')
-                ? getSettingValue('maxDayIndex', 'exam', 5)
-                : getSettingValue('maxDayIndex', 'lesson', 4);
+            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+            $type = in_array($schedule->type, $examTypes) ? 'exam' : 'lesson';
+            $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
         }
 
         /**
@@ -124,7 +128,8 @@ class ScheduleController extends Controller
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [];
-        if ($schedule->type === 'exam') {
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        if (in_array($schedule->type, $examTypes)) {
             // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
@@ -235,7 +240,7 @@ class ScheduleController extends Controller
 
                 if ($schedule->type == 'lesson') {
                     $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
-                } elseif ($schedule->type == 'exam') {
+                } elseif (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
                     $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
                 }
 
@@ -316,13 +321,26 @@ class ScheduleController extends Controller
         }
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
-            'filters' => $filters,
-            'availableLessons' => $availableLessons
+            'availableLessons' => $availableLessons,
+            'schedule'=> $schedule
         ]);
 
+        $createTableHeaders = function () use ($filters): array {
+            $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+            $headers = [];
+            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+            $type = in_array($filters['type'], $examTypes) ? 'exam' : 'lesson';
+            $this->logger()->debug("Schedule Table Headers için Type alındı", ['type' => $type]);
+            $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+            for ($i = 0; $i <= $maxDayIndex; $i++) {
+                $headers[] = '<th>' . $days[$i] . '</th>';
+            }
+            return $headers;
+        };
+
         $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
-            'filters' => $filters,
-            'scheduleRows' => $scheduleRows
+            'scheduleRows' => $scheduleRows,
+            'dayHeaders' => $createTableHeaders()
         ]);
 
         $ownerName = match ($filters['owner_type']) {
@@ -399,7 +417,7 @@ class ScheduleController extends Controller
 
             $startFormatted = $currentTime->format('H.i');
 
-            if ($type === 'exam') {
+            if (in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
                 $endTime = clone $currentTime;
                 $endTime->modify('+30 minutes');
                 $endFormatted = $endTime->format('H.i');
@@ -431,7 +449,7 @@ class ScheduleController extends Controller
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
         unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
-        if (!($lesson->classroom_type == 4 or $filters['type'] == 'exam')) // karma sınıf ve sınav programı için tür filtresi ekleme
+        if (!($lesson->classroom_type == 4 or in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']))) // karma sınıf ve sınav programı için tür filtresi ekleme
             $classroomFilters["type"] = $lesson->classroom_type;
         $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
 
@@ -571,7 +589,7 @@ class ScheduleController extends Controller
                         foreach ($existingLessonsList as $existingLessonData) {
                             if ($owner_type == "user") {
                                 //eğer hocanın/gözetmenin o saatte dersi varsa program eklenemez
-                                $msg = ($filters['type'] == 'exam') ? "Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz." : "Hoca Programı uygun değil";
+                                $msg = (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) ? "Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz." : "Hoca Programı uygun değil";
                                 throw new Exception($msg);
                             }
 
@@ -586,7 +604,7 @@ class ScheduleController extends Controller
                              */
                             $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
 
-                            if ($filters['type'] === 'exam') {
+                            if (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) {
                                 // 1. Aynı ders kontrolü (Base code kontrolü)
                                 $existingBase = preg_replace('/\.\d+$/', '', $existingLesson->code);
                                 $newBase = preg_replace('/\.\d+$/', '', $newLesson->code);
@@ -683,7 +701,7 @@ class ScheduleController extends Controller
                     $newLesson = (new Lesson())->find($new_schedule->{$day_key}['lesson_id']) ?: throw new Exception("Eklenecek ders ders bulunamadı");
                     // Derslerin ikisinin de kodunun son kısmında . ve bir sayı varsa gruplu bir derstir. Bu durumda aynı güne eklenebilir.
                     // grupların farklı olup olmadığının kontrolü javascript tarafında yapılıyor.
-                    $isExam = isset($schedule_arr['type']) && $schedule_arr['type'] === 'exam';
+                    $isExam = isset($schedule_arr['type']) && in_array($schedule_arr['type'], ['midterm-exam', 'final-exam', 'makeup-exam']);
                     $bothGrouped = preg_match('/\.\d+$/', $lesson->code) === 1 and preg_match('/\.\d+$/', $newLesson->code) === 1;
 
                     if ($isExam || $bothGrouped) {

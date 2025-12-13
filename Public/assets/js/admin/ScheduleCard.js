@@ -144,7 +144,7 @@ class ScheduleCard {
     getDatasetValue(setObject, getObject) {
         /**
          * dataset keylerini snake_case'e çevirir
-         * */ 
+         * */
         function toSnakeCase(str) {
             return str.replace(/[A-Z]/g, letter => "_" + letter.toLowerCase());
         }
@@ -333,11 +333,12 @@ class ScheduleCard {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
                         option.value = classroom.id
-                        option.innerText = classroom.name + " (" + (this.type === 'exam' ? classroom.exam_size : classroom.class_size) + ")"
+                        const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+                        option.innerText = classroom.name + " (" + (examTypes.includes(this.type) ? classroom.exam_size : classroom.class_size) + ")"
                         option.dataset.examSize = classroom.exam_size;
                         option.dataset.size = classroom.class_size;
                         classroomSelect.appendChild(option)
-                        
+
                     })
                 }
             })
@@ -559,7 +560,8 @@ class ScheduleCard {
 
                 let lessons = cell.querySelectorAll('[id^="scheduleTable-"]');
                 if (lessons.length !== 0) {
-                    if (this.type === 'exam') {
+                    const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+                    if (examTypes.includes(this.type)) {
                         // Sınav Programı Kuralları
                         for (let existingLesson of lessons) {
                             const existCode = existingLesson.getAttribute("data-lesson-code");
@@ -648,14 +650,15 @@ class ScheduleCard {
             lesson.dataset['classroomId'] = classroom.id
             lesson.dataset['classroomExamSize'] = classroom.exam_size;
             lesson.dataset['classroomSize'] = classroom.size;
-            if (this.type === 'exam' && this.draggedLesson.observer_id) {
+            const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+            if (examTypes.includes(this.type) && this.draggedLesson.observer_id) {
                 lesson.dataset['lecturerId'] = this.draggedLesson.observer_id;
             }
             lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
-            
-            if (this.type === 'exam') {
+
+            if (examTypes.includes(this.type)) {
                 let lecturer_title_div = lesson.querySelector(".lecturer-title");
                 lecturer_title_div.innerHTML = `<a href="/admin/profile/${this.draggedLesson.observer_id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-person-square"></i>${this.draggedLesson.observer_full_name}
@@ -676,7 +679,7 @@ class ScheduleCard {
         /*
             Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
         */
-        if (this.type === 'exam') {
+        if (examTypes.includes(this.type)) {
             const currentRemaining = parseInt(this.draggedLesson.size || 0);
             const decrement = parseInt(classroom.exam_size || 0);
             const newRemaining = Math.max(0, currentRemaining - decrement);
@@ -745,7 +748,8 @@ class ScheduleCard {
         data.append("lesson_hours", hours);
         data.append("day_index", this.draggedLesson.day_index);
         data.append("classroom_id", classroom.id);
-        if (this.type === 'exam' && this.draggedLesson.observer_id) {
+        const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        if (examTypes.includes(this.type) && this.draggedLesson.observer_id) {
             data.append("lecturer_id", this.draggedLesson.observer_id);
         }
         data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
@@ -954,10 +958,10 @@ class ScheduleCard {
             //listede taşınan dersin varlığını kontrol et
             if (lessonInList) {
                 let badgeText = '';
-                if (this.type=='exam') {
-                    lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();    
+                if (this.type == 'exam') {
+                    lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();
                     badgeText = lessonInList.dataset.size;
-                }else{
+                } else {
                     lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString();
                     badgeText = lessonInList.dataset.lessonHours;
                 }
@@ -970,10 +974,10 @@ class ScheduleCard {
                 draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
                 this.list.appendChild(draggedElementFrameDiv)
                 let badgeText = '';
-                if (this.type=='exam') {
-                    this.draggedLesson.HTMLElement.dataset.size = this.draggedLesson.classroom_exam_size    
+                if (this.type == 'exam') {
+                    this.draggedLesson.HTMLElement.dataset.size = this.draggedLesson.classroom_exam_size
                     badgeText = this.draggedLesson.HTMLElement.dataset.size;
-                }else{
+                } else {
                     this.draggedLesson.HTMLElement.dataset.lessonHours = 1;
                     badgeText = this.draggedLesson.HTMLElement.dataset.lessonHours;
                 }

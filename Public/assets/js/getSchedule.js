@@ -16,7 +16,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (departmentAndProgramScheduleButton) {
         departmentAndProgramScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = departmentAndProgramScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = departmentAndProgramScheduleButton?.dataset?.scheduleType || "lesson";
+            if (scheduleType === 'exam') {
+                const examTypeSelect = document.getElementById('exam_type');
+                if (examTypeSelect) {
+                    scheduleType = examTypeSelect.value;
+                }
+            }
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -34,7 +40,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lecturerScheduleButton) {
         lecturerScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = lecturerScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = lecturerScheduleButton?.dataset?.scheduleType || "lesson";
+            if (scheduleType === 'exam') {
+                const examTypeSelect = document.getElementById('exam_type');
+                if (examTypeSelect) {
+                    scheduleType = examTypeSelect.value;
+                }
+            }
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -54,7 +66,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (classroomScheduleButton) {
         classroomScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = classroomScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = classroomScheduleButton?.dataset?.scheduleType || "lesson";
+            if (scheduleType === 'exam') {
+                const examTypeSelect = document.getElementById('exam_type');
+                if (examTypeSelect) {
+                    scheduleType = examTypeSelect.value;
+                }
+            }
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -92,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
                      */
                     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                        return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
+                        return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' })
                     })
                     toast.closeToast()
                     document.dispatchEvent(scheduleLoaded);
