@@ -389,6 +389,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek Buna artık gerek yok gibi
      * Başlangıç saatine ve ders saat miktarına göre saat dizisi oluşturur
      * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
      * @param int $hours
@@ -429,6 +430,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür
      * @param array $filters
      * @return array
@@ -471,6 +473,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * Belirtilen filtrelere uygun gözetmenlerin listesini döndürür
      * @param array $filters
      * @return array
@@ -514,6 +517,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * Programa eklenmek isteyen ders için eklenecek tüm saatlerde çakışma kontrolü yapar
      * @param array $filters
      * @return bool
@@ -654,6 +658,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * Schedule tablosuna yeni kayıt ekler
      * @param array $schedule_arr Yeni schedule verileri
      * @return int Son eklenen verinin id numarasını döner
@@ -730,6 +735,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * @param Schedule $schedule
      * @return int
      * @throws Exception
@@ -783,6 +789,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek
      * @param $filters array silinecek programın veri tabanında bulunması için gerekli veriler.
      * @return array
      * @throws Exception
@@ -852,7 +859,7 @@ class ScheduleController extends Controller
     }
 
     /**
-     * 
+     * todo yeni tablo düzenine göre düzenlenecek
      * @param Schedule $schedule 
      * @param $filters
      * @return array
@@ -912,6 +919,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek buna artık gerek yok gibi 
      * Parametre olarak verilen programın günlerinin boş olup olmadığını döner
      * @param Schedule $schedule
      * @return bool
@@ -928,6 +936,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yeni tablo düzenine göre düzenlenecek Buna artık gerek yok 
      * Bir ders ile bağlantılı tüm Ders programlarının dizisini döener
      * @param $filter ["lesson_id","semester_no","semester","academic_year","type"] alanları olmalı
      * @return array
