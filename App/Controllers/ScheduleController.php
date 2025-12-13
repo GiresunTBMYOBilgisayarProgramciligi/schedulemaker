@@ -463,10 +463,8 @@ class ScheduleController extends Controller
         $classrooms = (new Classroom())->get()->where(["type" => ['in' => $classroom_type]])->all();
 
         $availableClassrooms = [];
-        
         $startTime = new \DateTime($filters['startTime']);
-        $endTime = $startTime->modify('+' . $this->lessonHourToMinute($schedule->type, $filters['hours']) . ' minutes');
-        $this->logger()->debug("startTime: " . $startTime->format('H:i') . " endTime: " . $endTime->format('H:i'));
+        $endTime = (clone $startTime)->modify('+' . $this->lessonHourToMinute($schedule->type, $filters['hours']) . ' minutes');
 
         foreach ($classrooms as $classroom) {
             $classroomSchedule = (new Schedule())->firstOrCreate([
