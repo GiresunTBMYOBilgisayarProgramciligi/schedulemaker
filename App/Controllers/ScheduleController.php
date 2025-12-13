@@ -9,6 +9,7 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
+use App\Models\ScheduleItem;
 use App\Models\User;
 use Exception;
 use PDOException;
@@ -315,7 +316,7 @@ class ScheduleController extends Controller
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
-            'schedule'=> $schedule
+            'schedule' => $schedule
         ]);
 
         $createTableHeaders = function () use ($filters): array {
@@ -333,7 +334,8 @@ class ScheduleController extends Controller
 
         $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
             'scheduleRows' => $scheduleRows,
-            'dayHeaders' => $createTableHeaders()
+            'dayHeaders' => $createTableHeaders(),
+            'schedule' => $schedule
         ]);
 
         $ownerName = match ($filters['owner_type']) {
@@ -429,6 +431,14 @@ class ScheduleController extends Controller
         return $schedule;
     }
 
+    public function lessonHourToMinute($scheduleType, $hours) : int {
+        if ($scheduleType === 'lesson') {
+            return $hours * 60;
+        } elseif ($scheduleType === 'midterm-exam' || $scheduleType === 'final-exam' || $scheduleType === 'makeup-exam') {
+            return $hours * 30;
+        }
+    }
+
     /**
      * todo yeni tablo düzenine göre düzenlenecek
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür
@@ -439,37 +449,46 @@ class ScheduleController extends Controller
     public function availableClassrooms(array $filters = []): array
     {
         $filters = $this->validator->validate($filters, "availableClassrooms");
+        $schedule = (new Schedule())->where(["id" => $filters['schedule_id']])->with("items")->first() ?: throw new Exception("Uygun derslikleri berlirlemek için Program bulunamadı");
 
-        $classroomFilters = [];
-
+        /**
+         * dersin derslik türü ile aynı türdeki bütün derslikler scheduleları ile birlikte çağırılacak. ama schedule'ları henüz oluşturulmamış olabileceğinden bütün derslikler alınacak ve owner_type classroom olanve diğer bilgileri gelen schedule ile aynı olan schedule'ler firstOrCreate ile çağırılacak
+         * filters['startTime'] ve filters['hours'] bilgisine göre endTime hesaplanacak
+         * bütün dersliklerin schedule itemleri arasında belirtilen bağlangıç saati ve hesaplanan bitiş saati arasında bir schedule item varsa o derslik uygun olmayacaktır.
+         * bu schedule'lerin 
+         */
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
-        unset($filters['lesson_id']);// sonraki sorgularda sorun çıkartmaması için lesson id siliniyor.
-        if (!($lesson->classroom_type == 4 or in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']))) // karma sınıf ve sınav programı için tür filtresi ekleme
-            $classroomFilters["type"] = $lesson->classroom_type;
-        $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
+        //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
+        $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
+        $classrooms = (new Classroom())->get()->where(["type" => ['in' => $classroom_type]])->all();
 
-        $unavailable_classroom_ids = [];
-        $classroomSchedules = $this->getListByFilters(
-            [
-                "time" => ['in' => $times],
-                "owner_type" => 'classroom',
-                "semester" => $filters['semester'],
-                "academic_year" => $filters['academic_year'],
-                "type" => $filters['type']
-            ]
-        );
+        $availableClassrooms = [];
+        
+        $startTime = new \DateTime($filters['startTime']);
+        $endTime = $startTime->modify('+' . $this->lessonHourToMinute($schedule->type, $filters['hours']) . ' minutes');
+        $this->logger()->debug("startTime: " . $startTime->format('H:i') . " endTime: " . $endTime->format('H:i'));
 
-        foreach ($classroomSchedules as $classroomSchedule) {
-            if (!is_null($classroomSchedule->{"day" . $filters["day_index"]})) {// derslik programında belirtilen gün boş değilse derslik uygun değildir
-                // ID'yi anahtar olarak kullanarak otomatik olarak yinelemeyi önleriz
-                $unavailable_classroom_ids[$classroomSchedule->owner_id] = true;
+        foreach ($classrooms as $classroom) {
+            $classroomSchedule = (new Schedule())->firstOrCreate([
+                'type' => $schedule->type,
+                'owner_type' => 'classroom',
+                'owner_id' => $classroom->id,
+                'semester_no' => $schedule->semester_no,
+                'semester' => $schedule->semester,
+                'academic_year' => $schedule->academic_year
+            ]);
+
+            $count = (new ScheduleItem())->where([
+                'schedule_id' => $classroomSchedule->id,
+                'day_index' => $filters['day_index'],
+                'start_time' => ['between' => [$startTime->format('H:i'), $endTime->format('H:i')]]
+            ])->count();
+            if ($count > 0) {
+                continue;
             }
+            $availableClassrooms[] = $classroom;
         }
-        // Anahtarları diziye dönüştürüyoruz.
-        $unavailable_classroom_ids = array_keys($unavailable_classroom_ids);
-        $classroomFilters["!id"] = ['in' => $unavailable_classroom_ids];
-
-        return (new ClassroomController())->getListByFilters($classroomFilters);
+        return $availableClassrooms;
     }
 
     /**

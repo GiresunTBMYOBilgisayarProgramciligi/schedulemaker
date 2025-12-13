@@ -1,9 +1,12 @@
 <?php
 
 use App\Core\Log;
+use App\Models\Schedule;
+use function App\Helpers\getSettingValue;
 
 /**
  * @var array $scheduleRows
+ * @var Schedule $schedule
  */
 ?>
 <div class="schedule-table-container">
@@ -34,16 +37,39 @@ use App\Core\Log;
                         <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                             <?= $scheduleRow['slotEndTime']->format('H:i') ?>
                         </td>
-
+                <!-- 
+                <div 
+                id="scheduleTable-lesson-755-1" 
+                data-lesson-code="BILP-113"
+                data-semester-no="1" 
+                data-lesson-id="755"
+                data-lecturer-id="154"
+                data-time="10.00 - 10.50"
+                data-day-index="0"
+                data-semester="Güz"
+                data-academic-year="2025 - 2026"
+                data-classroom-id="7"
+                data-lesson-hours="2"
+                data-size="0"
+                data-classroom-exam-size="35"
+                data-classroom-size="0"
+                >
+        
+                -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                             <?php if ($scheduleItem): ?>
-                                <td class="drop-zone">
+                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
                                         <?php endif; ?>
                                         <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
-                                            <?php foreach ($scheduleItem->getSlotDatas() as $slotData): ?>
-                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>">
+                                            <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                                $draggable = "true";
+                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester')) {
+                                                    $draggable = "false";
+                                                }
+                                                ?>
+                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>" draggable="<?= $draggable ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
                                                     <span class="lesson-name"><?= $slotData->lesson->name ?></span>
                                                     <div class="lesson-meta">
                                                         <span class="lesson-lecturer"><i class="fas fa-user-tie"></i>
@@ -69,7 +95,7 @@ use App\Core\Log;
                                     <?php endif; ?>
                                 </td>
                             <?php else: ?>
-                                <td class="drop-zone">
+                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
                                     <div class="empty-slot"></div>
                                 </td>
                             <?php endif; ?>

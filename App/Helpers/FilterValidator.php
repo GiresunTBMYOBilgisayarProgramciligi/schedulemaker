@@ -50,7 +50,7 @@ class FilterValidator
             'hours' => ['type' => 'int'],// Derslik kontrolü yapılırken kaç saat ekleneceği bilgisi
             'owner_type' => ['type' => 'string'],//Ders programının ait olduğu birimi belirtir (user, lesson, classroom, program)
             'owner_id' => ['type' => 'int'],//Ders programının ait olduğu birimin ID numarası
-            'time' => ['type' => 'string'], // Dersin saat aralığı "10:00-10:50" formatında olabilir
+            'time' => ['type' => 'string'], // Dersin saat aralığı "10:00-10:50" formatında olabilir TODO buna ihtiyaç kalmayacak gibi görünüyor
             'semester_no' => ['type' => 'int|int[]'], //Dersin ait olduğu yarıyıl numarası 1 veya [1, 3]
             'semester' => ['type' => 'string'],//Ders programının ait olduğu dönem (Güz, Bahar)
             'academic_year' => ['type' => 'string'],//Ders programının ait olduğu akademik yıl (2024 - 2025)
@@ -61,6 +61,8 @@ class FilterValidator
             'lecturer_id' => ['type' => 'int'],//Ders programının hoca id numarası
             'day' => ['type' => 'array'],//Gün bilgisi içeren dizi (lesson_id, lecturer_id, classroom_id)
             'owners' => ['type' => 'array'], //Ders programının ait olduğu birim türleri listesi
+            'schedule_id' => ['type' => 'int'],//Ders programının id numarası
+            'startTime' => ['type' => 'string'],//Dersin başlangıç saati
         ];
 
         // 2. Her işlem için kuralları tanımla
@@ -146,7 +148,7 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
-                'required' => ["type", 'hours', "time", "lesson_id", "day_index"],
+                'required' => ["schedule_id", 'hours', "startTime", "lesson_id", "day_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],

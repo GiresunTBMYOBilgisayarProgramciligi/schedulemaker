@@ -52,30 +52,28 @@ class ScheduleCard {
         this.owner_id = null;
         /**
          * Programının türü. Örn. lesson yada exam
-         * @type {string} lesson, exam
+         * @type {string} lesson, midterm-exam, final-exam, makeup-exam
          */
         this.type = null;
+        /**
+         * Sınav programının türü. Örn. midterm-exam, final-exam, makeup-exam
+         * @type {Array}
+         */
+        this.examTypes = ['midterm-exam', 'final-exam', 'makeup-exam']
         /**
          * Programın düzenlenmesi sırasında sürüklenen ders elementi
          * @type {{}}
          */
         this.draggedLesson = {
-            'start_element': null,
+            'start_element': null,// table, list
             'end_element': null,
-            'semester_no': null,
-            'lesson_code': null,
+            'schedule_item_id': null,
             'lesson_id': null,
-            'lecturer_id': null,
-            'time': null,
             'day_index': null,
-            'semester': null,
-            'academic_year': null,
             'classroom_id': null,
             'HTMLElement': null,
             'lesson_hours': null,
-            'observer_id': null,//todo observer_id olarak ayrı bir id tanımlamaya gerek yok bence. Sınav programına eklenen hoca id si zaten gözetmen id si olacak dersin hocasının bilgisi alınacaksa zaten ders üzerinden alınır. Program hocası ile dersin hocası birbirinden ayrı düşünülmeli.
-            'dropped_row_index': null,
-            'dropped_cell_index': null,
+            'observer_id': null,
             'size': null,
             'classroom_exam_size': null,
             'classroom_size': null,
@@ -136,6 +134,7 @@ class ScheduleCard {
 
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
     }
+
     async getSchedule() {
         if (!this.id) return null;
 
@@ -203,6 +202,7 @@ class ScheduleCard {
     }
 
     async highlightUnavailableCells() {
+        return;
         this.clearCells();
 
         let data = new FormData();
@@ -334,12 +334,10 @@ class ScheduleCard {
 
     async fetchAvailableClassrooms(classroomSelect, hours) {
         let data = new FormData();
+        data.append("schedule_id", this.id);
         data.append("hours", hours);
-        data.append("time", this.draggedLesson.time)
-        data.append("day_index", this.draggedLesson.day_index)
-        data.append("type", this.type)
-        data.append("semester", this.draggedLesson.semester)
-        data.append("academic_year", this.draggedLesson.academic_year);
+        data.append("startTime", this.draggedLesson.end_element.dataset.startTime)
+        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex)
         data.append("lesson_id", this.draggedLesson.lesson_id);
         //clear classroomSelect
         classroomSelect.innerHTML = `<option value=""></option>`;
@@ -365,8 +363,7 @@ class ScheduleCard {
                     data.classrooms.forEach((classroom) => {
                         let option = document.createElement("option")
                         option.value = classroom.id
-                        const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-                        option.innerText = classroom.name + " (" + (examTypes.includes(this.type) ? classroom.exam_size : classroom.class_size) + ")"
+                        option.innerText = classroom.name + " (" + (this.examTypes.includes(this.type) ? classroom.exam_size : classroom.class_size) + ")"
                         option.dataset.examSize = classroom.exam_size;
                         option.dataset.size = classroom.class_size;
                         classroomSelect.appendChild(option)
@@ -592,8 +589,7 @@ class ScheduleCard {
 
                 let lessons = cell.querySelectorAll('[id^="scheduleTable-"]');
                 if (lessons.length !== 0) {
-                    const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-                    if (examTypes.includes(this.type)) {
+                    if (this.examTypes.includes(this.type)) {
                         // Sınav Programı Kuralları
                         for (let existingLesson of lessons) {
                             const existCode = existingLesson.getAttribute("data-lesson-code");
@@ -682,15 +678,14 @@ class ScheduleCard {
             lesson.dataset['classroomId'] = classroom.id
             lesson.dataset['classroomExamSize'] = classroom.exam_size;
             lesson.dataset['classroomSize'] = classroom.size;
-            const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-            if (examTypes.includes(this.type) && this.draggedLesson.observer_id) {
+            if (this.examTypes.includes(this.type) && this.draggedLesson.observer_id) {
                 lesson.dataset['lecturerId'] = this.draggedLesson.observer_id;
             }
             lesson.querySelector("span.badge").innerHTML = `<a href="/admin/classroom/${classroom.id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-door-open"></i>${classroom.name}
                                                                              </a>`;
 
-            if (examTypes.includes(this.type)) {
+            if (this.examTypes.includes(this.type)) {
                 let lecturer_title_div = lesson.querySelector(".lecturer-title");
                 lecturer_title_div.innerHTML = `<a href="/admin/profile/${this.draggedLesson.observer_id}" class="link-light link-underline-opacity-0" target="_blank">
                                                                                 <i class="bi bi-person-square"></i>${this.draggedLesson.observer_full_name}
@@ -711,7 +706,7 @@ class ScheduleCard {
         /*
             Dersin tamamının eklenip eklenmediğini kontrol edip duruma göre ders listede güncellenir
         */
-        if (examTypes.includes(this.type)) {
+        if (this.examTypes.includes(this.type)) {
             const currentRemaining = parseInt(this.draggedLesson.size || 0);
             const decrement = parseInt(classroom.exam_size || 0);
             const newRemaining = Math.max(0, currentRemaining - decrement);
@@ -780,8 +775,7 @@ class ScheduleCard {
         data.append("lesson_hours", hours);
         data.append("day_index", this.draggedLesson.day_index);
         data.append("classroom_id", classroom.id);
-        const examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        if (examTypes.includes(this.type) && this.draggedLesson.observer_id) {
+        if (this.examTypes.includes(this.type) && this.draggedLesson.observer_id) {
             data.append("lecturer_id", this.draggedLesson.observer_id);
         }
         data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
@@ -856,6 +850,7 @@ class ScheduleCard {
         event.dataTransfer.dropEffect = "move";
         let lessonElement = event.target.closest('[draggable="true"]');
         this.setDraggedLesson(lessonElement, event)
+        console.log('dragStartHandler', {...this.draggedLesson})
         if (this.draggedLesson.start_element === "table") {
             /*
             * silmek için buraya sürükleyin yazısını göstermek için
@@ -886,19 +881,14 @@ class ScheduleCard {
 
         this.dropZone = element;
         this.draggedLesson.end_element = this.dropZone;
-
+        console.log('dropHandler', {...this.draggedLesson})
         switch (this.draggedLesson.start_element) {
             case "list":
                 if (this.dropZone.classList.contains("available-schedule-items")) {
                     // Listeden Listeye
                     return;
                 } else {
-                    this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
-                    this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
-                    //dersin bırakıldığı sütunun satır içerisindeki index numarası
-                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
-                    // dersin bırakıldığı saat örn. 08.00-08.50
-                    this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
+                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
                     // Listeden Tabloya bırakma işlemleri
                     this.dropListToTable()
                 }
@@ -908,8 +898,7 @@ class ScheduleCard {
                     //Tablodan Listeye
                     this.dropTableToList()
                 } else {
-                    this.draggedLesson.dropped_row_index = this.dropZone.closest("tr").rowIndex;
-                    this.draggedLesson.dropped_cell_index = this.dropZone.cellIndex;
+                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1 // ilk sütun saat bilgisi çıkartılıyor
                     //Tablodan Tabloya
                     this.dropTableToTable()
                 }
@@ -928,9 +917,11 @@ class ScheduleCard {
     }
 
     async dropListToTable() {
+        console.log('dropListToTable', {...this.draggedLesson})
         if (this.owner_type !== 'classroom') {
             let classroom, hours, observer;
-            if (this.type === 'exam') {
+            if (this.examTypes.includes(this.type)) {
+                // todo 
                 const result = await this.selectClassroomAndObserver();
                 classroom = result.classroom;
                 observer = result.observer;

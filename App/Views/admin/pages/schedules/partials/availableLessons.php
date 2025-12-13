@@ -60,11 +60,12 @@ use App\Core\Log;
         ?>
         <div class='frame col-md-4 p-1'>
             <div id="available-lesson-<?= $lesson->id ?>" draggable="<?= $draggable ?>"
-                class="lesson-card w-100 <?= $finalClass ?>" data-semester-no="<?= $lesson->semester_no ?>"
-                data-semester="<?= $lesson->semester ?>" data-academic-year="<?= $lesson->academic_year ?>"
-                data-lesson-code="<?= $lesson->code ?>" data-lesson-id="<?= $lesson->id ?>"
-                data-lecturer-id="<?= $lesson->lecturer_id ?>" <?= $popover ?> data-lesson-hours="<?= $lesson->hours ?>"
-                data-size="<?= ($lesson->size ?? 0) ?>">
+                class="lesson-card w-100 <?= $finalClass ?>" 
+                data-lesson-id="<?= $lesson->id ?>"
+                data-lesson-hours="<?= $lesson->hours ?>"
+                data-size="<?= ($lesson->size ?? 0) ?>"
+                <?= $popover ?>
+                >
 
                 <span class="lesson-name" title="<?= $lesson->code ?>">
                     <a class='text-decoration-none' target='_blank' style="color: inherit;"
