@@ -2,15 +2,7 @@
 <!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="card card-outline card-primary"
-        data-owner-type="<?= $filters['owner_type'] ?>"
-        data-owner-id="<?= $filters['owner_id'] ?>"
-        data-type="<?= $filters['type'] ?>"
-        data-academic-year="<?= $filters['academic_year'] ?>"
-        data-semester="<?= $filters['semester'] ?>"
-        <?= $dataSemesterNo ?>
-        data-owner-name="<?= $ownerName ?>"
-        >
+        <div class="card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>">
             <div class="card-header">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
@@ -28,7 +20,7 @@
                 <?= $availableLessonsHTML ?>
                 <!--begin::Row Schedule Table-->
                 <div class="row">
-                    <div class="schedule-table col-md-12" <?= $dataSemesterNo ?>>
+                    <div class="schedule-table col-md-12">
                         <?= $scheduleTableHTML ?>
                     </div><!--end::schedule-table-->
                 </div><!--end::Row-->

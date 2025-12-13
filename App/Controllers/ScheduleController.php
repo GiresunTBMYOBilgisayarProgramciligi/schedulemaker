@@ -258,15 +258,8 @@ class ScheduleController extends Controller
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
         $this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
-        /**
-         * filters a göre schedule bulunacak. bu nedenle "type", "owner_type", "owner_id","semester_no","semester", "academic_year" gerekli 
-         * schedule semester_no'ya göre birden fazla olabilir. yani birleştirilmiş (hoca ve derslik programları)
-         * prepareScheduleCard'a sadece schedule bilgisi gerekli. bu sadece id ile de aktarılabilir. yada schedule nesnesi aktarılabilir.
-         * semester_no bilgisine göre yapılacak birleştirme işlemi bu metodda yapılacak diğer metodlar tek bir semester_no ile işlem yapacak YAda PrepareScheduleCard metodun bu işlem için daha uygun gibi
-         */
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
         if (is_array($filters['semester_no'])) {
-            $this->logger()->debug('Prepare Schedule Card için Semester No dizi alındı', ['filters' => $filters]);
             $availableLessons = [];
             $scheduleRows = [];
 
@@ -356,7 +349,7 @@ class ScheduleController extends Controller
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
 
         return View::renderPartial('admin', 'schedules', 'scheduleCard', [
-            'filters' => $filters,
+            'schedule' => $schedule,
             'availableLessonsHTML' => $availableLessonsHTML,
             'scheduleTableHTML' => $scheduleTableHTML,
             'ownerName' => $ownerName,
