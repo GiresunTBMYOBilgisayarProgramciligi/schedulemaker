@@ -1,4 +1,12 @@
-<!--  owner_type, owner id gibi bilgileri buraya doldurmak yerine sadece schedule id kullanmak nasıl olur? -->
+<?php
+use App\Models\Schedule;
+/**
+ * @var Schedule $schedule
+ * @var string $cardTitle
+ * @var string $availableLessonsHTML
+ * @var string $scheduleTableHTML
+ */
+?>
 <!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">

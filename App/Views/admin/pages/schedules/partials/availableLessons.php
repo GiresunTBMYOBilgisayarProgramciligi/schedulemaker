@@ -2,7 +2,7 @@
 use App\Models\Lesson;
 use App\Models\Schedule;
 use function App\Helpers\getSettingValue;
-use App\Core\Log
+use App\Core\Log;
 /**
  * @var array $availableLessons
  * @var Schedule $schedule
@@ -15,7 +15,6 @@ use App\Core\Log
         /**
          * @var Lesson $lesson
          * @var Lesson $parentLesson
-         * 
          */
         $draggable = "true";
         if (!is_null($lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester')) {
