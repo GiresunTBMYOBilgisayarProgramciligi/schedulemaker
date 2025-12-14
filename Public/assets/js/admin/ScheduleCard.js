@@ -588,7 +588,10 @@ class ScheduleCard {
                 }
 
                 let cell = row.cells[this.draggedLesson.end_element.cellIndex];
-                if (!cell.classList.contains("drop-zone")) {
+                if (!cell || !cell.classList.contains("drop-zone") || cell.querySelector('.slot-unavailable')) {
+                    if(cell.querySelector('.slot-unavailable')) {
+                        new Toast().prepareToast("Dikkat", "Uygun olmayan ders saatleri atlandı.", "danger");
+                    }
                     continue; // öğle arası gibi drop-zone olmayan hücreleri atla
                 }
 
@@ -766,6 +769,7 @@ class ScheduleCard {
 
     async saveSchedule(hours, classroom) {
         let data = new FormData();
+
         data.append("type", this.type);
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("time", this.draggedLesson.time);

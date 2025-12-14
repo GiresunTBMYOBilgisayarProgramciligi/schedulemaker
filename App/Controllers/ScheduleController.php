@@ -437,6 +437,7 @@ class ScheduleController extends Controller
         } elseif ($scheduleType === 'midterm-exam' || $scheduleType === 'final-exam' || $scheduleType === 'makeup-exam') {
             return $hours * 30;
         }
+        return 0;
     }
 
     /**
