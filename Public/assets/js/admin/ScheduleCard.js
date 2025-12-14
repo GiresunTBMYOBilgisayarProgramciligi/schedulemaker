@@ -69,6 +69,9 @@ class ScheduleCard {
             'end_element': null,
             'schedule_item_id': null,
             'lesson_id': null,
+            'lesson_code': null,
+            'lecturer_id': null,
+            'group_no': null,
             'day_index': null,
             'classroom_id': null,
             'HTMLElement': null,
@@ -202,6 +205,7 @@ class ScheduleCard {
     }
 
     async highlightUnavailableCells() {
+        //todo
         return;
         this.clearCells();
 
@@ -572,24 +576,25 @@ class ScheduleCard {
         return new Promise((resolve, reject) => {
             let checkedHours = 0;
             const newLessonCode = this.draggedLesson.lesson_code;
+            const newGroupNo = this.draggedLesson.group_no;
             const newClassroomId = classroom ? classroom.id : this.draggedLesson.classroom_id;
-            const newLecturerId = this.draggedLesson.observer_id || this.draggedLesson.lecturer_id;
-
+            const newLecturerId = this.draggedLesson.observer_id || this.draggedLesson.lecturer_id; //todo gözetmen ve hoca farkı düşünülmeli
+            console.log('newLessonCode', newLessonCode, 'newClassroomId', newClassroomId, 'newLecturerId', newLecturerId);
             for (let i = 0; checkedHours < selectedHours; i++) {
-                let row = this.table.rows[this.draggedLesson.dropped_row_index + i];
+                let row = this.table.rows[this.draggedLesson.end_element.closest("tr").rowIndex + i];
                 if (!row) {
                     reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
                 }
 
-                let cell = row.cells[this.draggedLesson.dropped_cell_index];
+                let cell = row.cells[this.draggedLesson.end_element.cellIndex];
                 if (!cell.classList.contains("drop-zone")) {
                     continue; // öğle arası gibi drop-zone olmayan hücreleri atla
                 }
 
-                let lessons = cell.querySelectorAll('[id^="scheduleTable-"]');
+                let lessons = cell.querySelectorAll('.lesson-card');
                 if (lessons.length !== 0) {
-                    if (this.examTypes.includes(this.type)) {
+                    if (this.examTypes.includes(this.type)) { //todo sınav çakışması kontrolü yapılacak
                         // Sınav Programı Kuralları
                         for (let existingLesson of lessons) {
                             const existCode = existingLesson.getAttribute("data-lesson-code");
@@ -621,34 +626,26 @@ class ScheduleCard {
                         }
                     } else {
                         // Ders Programı Kuralları
-                        if (lessons.length > 1) {
+                        let isGroup = Boolean(cell.querySelector('.lesson-group-container'));
+
+                        if (!isGroup) {
                             reject("Bu alana ders ekleyemezsiniz.");
                             return;
-                        } else {
-                            let existLesson = cell.querySelector('[id^="scheduleTable-"]');
-                            let existCode = existLesson.getAttribute("data-lesson-code");
-                            let currentCode = this.draggedLesson.lesson_code;
-
-                            let existMatch = existCode.match(/^(.+)\.(\d+)$/);
-                            let currentMatch = currentCode.match(/^(.+)\.(\d+)$/);
-
-                            if (existMatch && currentMatch) {
-                                if (existMatch[1] === currentMatch[1]) {
+                        }else{
+                            lessons.forEach((lesson)=>{
+                                if (lesson.dataset.lessonCode === newLessonCode) {
                                     reject("Lütfen farklı bir ders seçin.");
                                     return;
                                 }
+                            })
 
-                                let existGroup = existMatch[2];
-                                let currentGroup = currentMatch[2];
-
-                                if (existGroup === currentGroup) {
-                                    reject("Gruplar aynı olamaz.");
+                            lessons.forEach((lesson)=>{
+                                if (lesson.dataset.groupNo === newGroupNo) {
+                                    reject("Grup numaraları aynı olamaz.");
                                     return;
                                 }
-                            } else {
-                                reject("Çakışma var, bu alana ders eklenemez.");
-                                return;
-                            }
+                            })
+
                         }
                     }
                 }

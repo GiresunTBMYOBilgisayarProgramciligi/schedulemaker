@@ -57,7 +57,8 @@ use function App\Helpers\getSettingValue;
         
                 -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
-                            <?php if ($scheduleItem): ?>
+                            <?php if ($scheduleItem): 
+                                Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);?>
                                 <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
@@ -69,7 +70,14 @@ use function App\Helpers\getSettingValue;
                                                     $draggable = "false";
                                                 }
                                                 ?>
-                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>" draggable="<?= $draggable ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>" 
+                                                draggable="<?= $draggable ?>" 
+                                                data-schedule-item-id="<?= $scheduleItem->id ?>" 
+                                                data-group-no="<?= $slotData->lesson->group_no ?>"
+                                                data-lesson-id="<?= $slotData->lesson->id ?>"
+                                                data-lesson-code="<?= $slotData->lesson->code ?>"
+                                                data-lecturer-id="<?= $slotData->lecturer->id ?>"
+                                                >
                                                     <span class="lesson-name"><?= $slotData->lesson->name ?></span>
                                                     <div class="lesson-meta">
                                                         <span class="lesson-lecturer"><i class="fas fa-user-tie"></i>

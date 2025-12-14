@@ -64,6 +64,9 @@ use App\Core\Log;
                 data-lesson-id="<?= $lesson->id ?>"
                 data-lesson-hours="<?= $lesson->hours ?>"
                 data-size="<?= ($lesson->size ?? 0) ?>"
+                data-group-no="<?= $lesson->group_no ?>"
+                data-lesson-code="<?= $lesson->code ?>"
+                data-lecturer-id="<?= $lesson->lecturer_id ?>"
                 <?= $popover ?>
                 >
 
