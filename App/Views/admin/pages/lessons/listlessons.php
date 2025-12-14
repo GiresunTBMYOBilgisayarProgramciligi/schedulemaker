@@ -40,6 +40,7 @@
                         <tr>
                             <th scope="col">İd</th>
                             <th scope="col">Kodu</th>
+                            <th scope="col">Grup No</th>
                             <th scope="col" class="filterable">Adı</th>
                             <th scope="col" class="filterable">Türü</th>
                             <th scope="col">Mevcudu</th>
@@ -60,6 +61,7 @@
                             <tr>
                                 <td><?= $lesson->id ?></td>
                                 <td><?= $lesson->code ?></td>
+                                <td><?= $lesson->group_no ?></td>
                                 <td
                                     <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName().'('.$lesson->parentLesson->program->name.') Dersine bağlı"' : '' ?>
                                 ><?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?></td>

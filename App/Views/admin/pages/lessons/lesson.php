@@ -56,38 +56,30 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <div class="card-body">
                             <dl class="row">
-                                <dt class="col-sm-2">Ders Kodu</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->code, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Ders Kodu - Grup No</dt>
+                                <dd class="col-sm-4"><?= $lesson->code ?> - <?= $lesson->group_no ?></dd>
                                 <dt class="col-sm-2">Ders Adı</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->name ?></dd>
                                 <dt class="col-sm-2">Ders Türü</dt>
-                                <dd class="col-sm-4">
-                                    <?= htmlspecialchars($lesson->getTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->getTypeName() ?></dd>
                                 <dt class="col-sm-2">Saat</dt>
                                 <dd class="col-sm-4"><?= $lesson->hours ?></dd>
                                 <dt class="col-sm-2">Yarıyılı</dt>
-                                <dd class="col-sm-4">
-                                    <?= htmlspecialchars($lesson->semester_no . ". Yarıyıl", ENT_QUOTES, 'UTF-8') ?>
-                                </dd>
+                                <dd class="col-sm-4"><?= $lesson->semester_no . ". Yarıyıl" ?></dd>
                                 <dt class="col-sm-2">Bölüm</dt>
                                 <dd class="col-sm-4">
-                                    <a
-                                        href="/admin/department/<?= $lesson->department_id ?>"><?= htmlspecialchars($lesson->department->name ?? '', ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a href="/admin/department/<?= $lesson->department_id ?>"><?= $lesson->department->name ?></a>
                                 </dd>
                                 <dt class="col-sm-2">Program</dt>
                                 <dd class="col-sm-4">
-                                    <a
-                                        href="/admin/program/<?= $lesson->program_id ?>"><?= htmlspecialchars($lesson->program->name ?? '', ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a href="/admin/program/<?= $lesson->program_id ?>"><?= $lesson->program->name ?></a>
                                 </dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
-                                <dd class="col-sm-4">
-                                    <?= htmlspecialchars($lesson->getClassroomTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
                                 <dt class="col-sm-2">Akademik yıl ve Dönem</dt>
-                                <dd class="col-sm-4">
-                                    <?= htmlspecialchars($lesson->academic_year . " " . $lesson->semester, ENT_QUOTES, 'UTF-8') ?>
-                                </dd>
+                                <dd class="col-sm-4"><?= $lesson->academic_year . " " . $lesson->semester ?></dd>
                                 <dt class="col-sm-2">Mevcudu</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->size, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->size ?></dd>
                                 <?php
                                 if ($lesson->parentLesson):
                                     ?>
@@ -95,7 +87,7 @@ use function App\Helpers\isAuthorized;
                                     <dd class="col-sm-10 p-0">
                                         <a class="link-dark link-underline-opacity-0"
                                             href="/admin/lesson/<?= $lesson->parentLesson->id ?>">
-                                            <?= htmlspecialchars($lesson->parentLesson->getFullName() . "-" . ($lesson->parentLesson->program->name ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                            <?= $lesson->parentLesson->getFullName() . "-" . ($lesson->parentLesson->program->name ?? '') ?>
                                         </a>
                                         <form action="/ajax/deleteParentLesson" method="post"
                                             class="d-inline ajaxDeleteParentLesson">

@@ -12,6 +12,7 @@ class Lesson extends Model
 {
     public ?int $id = null;
     public ?string $code = null;
+    public ?int $group_no = null;
     public ?string $name = null;
     public ?int $size = null;
     public ?int $hours = null;
@@ -55,7 +56,7 @@ class Lesson extends Model
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
     public array $schedules = [];
-    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules'];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
     protected string $table_name = "lessons";
 
     /**

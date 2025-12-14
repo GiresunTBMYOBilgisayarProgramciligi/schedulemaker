@@ -157,7 +157,7 @@ class ImportExportManager
         $headers = array_shift($rows);
         $headers = array_map('trim', $headers);
         $expectedHeaders =
-            ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
+            ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
 
 
         if ($headers !== $expectedHeaders) {
@@ -168,12 +168,12 @@ class ImportExportManager
         }
         foreach ($rows as $rowIndex => $row) {
             $hasError = false;// her bir satıra hatasız başlanıyor
-            [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
+            [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
                 return trim((string) ($item ?? ''));
             }, $row);
 
             // Değişkenleri bir diziye topla
-            $data = [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+            $data = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type];
 
             // Her bir değeri kontrol et
             foreach ($data as $dataIndex => $value) {
@@ -208,6 +208,7 @@ class ImportExportManager
             }
             $lessonData = [
                 'code' => $code,
+                'group_no' => $group_no,
                 'name' => $name,
                 'size' => $size,
                 'hours' => $hours,
