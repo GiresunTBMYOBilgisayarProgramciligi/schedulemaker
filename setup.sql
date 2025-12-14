@@ -58,7 +58,8 @@ create table if not exists schedule_items
     data          TEXT,
     description   TEXT,
     primary key (id),
-    unique (schedule_id,day_index,week_index,start_time,end_time)
+    unique (schedule_id,day_index,week_index,start_time,end_time),
+    foreign key (schedule_id) references schedules (id) on delete cascade
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -128,8 +129,9 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
+    group_no       int NOT NULL DEFAULT 0,
     primary key (id),
-    unique (code, program_id),
+    unique (code, program_id, group_no),
     foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null,
     foreign key (program_id) references programs (id) on delete set null
