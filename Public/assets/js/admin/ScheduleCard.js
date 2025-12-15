@@ -582,6 +582,7 @@ class ScheduleCard {
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = this.table.rows[this.draggedLesson.end_element.closest("tr").rowIndex + i];
                 if (!row) {
+                    console.error("Eklenen ders saatleri programın dışına taşıyor.")
                     reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
                 }
@@ -631,11 +632,18 @@ class ScheduleCard {
                         let isGroup = Boolean(cell.querySelector('.lesson-group-container'));
 
                         if (!isGroup) {
+                            console.error("Bu alana ders ekleyemezsiniz.")
                             reject("Bu alana ders ekleyemezsiniz.");
                             return;
                         } else {
                             lessons.forEach((lesson) => {
+                                if(this.draggedLesson.group_no < 1 ){
+                                    console.error("Eklenen ders gruplu değil, bu alana eklenemez")
+                                    reject("Eklenen ders gruplu değil, bu alana eklenemez");
+                                    return;
+                                }
                                 if (lesson.dataset.lessonCode === newLessonCode) {
+                                    console.error("Lütfen farklı bir ders seçin.")
                                     reject("Lütfen farklı bir ders seçin.");
                                     return;
                                 }
@@ -643,6 +651,7 @@ class ScheduleCard {
 
                             lessons.forEach((lesson) => {
                                 if (lesson.dataset.groupNo === newGroupNo) {
+                                    console.error("Grup numaraları aynı olamaz.")
                                     reject("Grup numaraları aynı olamaz.");
                                     return;
                                 }
@@ -864,8 +873,6 @@ class ScheduleCard {
 
         console.log('Generated Schedule Items:', scheduleItems);
 
-        console.log('Generated Schedule Items:', scheduleItems);
-
         // Perform save operation for all items at once
         let data = new FormData();
         data.append('items', JSON.stringify(scheduleItems));
@@ -1035,7 +1042,7 @@ class ScheduleCard {
                     //todo     this.moveLessonListToTable(classroom, hours);
                 } else {
                     saveScheduleToast.closeToast();
-                    new Toast().prepareToast("Çakışma", "Ders programında çakışma var!", "danger");
+                    new Toast().prepareToast("Çakışma", "Kayıt yapılamadı!", "danger");
                 }
             } catch (errorMessage) {
                 console.error(errorMessage)
