@@ -115,9 +115,9 @@ class ScheduleCard {
         this.id = this.card.dataset.scheduleId ?? null;
         let schedule = await this.getSchedule();
         this.list = this.card.querySelector(".available-schedule-items");
-        this.table = this.card.querySelector("table");
+        this.table = this.card.querySelector("table.active");
 
-        Object.keys(schedule).forEach((key)=>{
+        Object.keys(schedule).forEach((key) => {
             this[key] = schedule[key];
         })
 
@@ -579,7 +579,6 @@ class ScheduleCard {
             const newGroupNo = this.draggedLesson.group_no;
             const newClassroomId = classroom ? classroom.id : this.draggedLesson.classroom_id;
             const newLecturerId = this.draggedLesson.observer_id || this.draggedLesson.lecturer_id; //todo gözetmen ve hoca farkı düşünülmeli
-            console.log('newLessonCode', newLessonCode, 'newClassroomId', newClassroomId, 'newLecturerId', newLecturerId);
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = this.table.rows[this.draggedLesson.end_element.closest("tr").rowIndex + i];
                 if (!row) {
@@ -589,8 +588,8 @@ class ScheduleCard {
 
                 let cell = row.cells[this.draggedLesson.end_element.cellIndex];
                 if (!cell || !cell.classList.contains("drop-zone") || cell.querySelector('.slot-unavailable')) {
-                    if(cell.querySelector('.slot-unavailable')) {
-                        new Toast().prepareToast("Dikkat", "Uygun olmayan ders saatleri atlandı.", "danger");
+                    if (cell && cell.querySelector('.slot-unavailable')) {
+                        new Toast().prepareToast("Dikkat", "Uygun olmayan ders saatleri atlandı.", "info");
                     }
                     continue; // öğle arası gibi drop-zone olmayan hücreleri atla
                 }
@@ -634,15 +633,15 @@ class ScheduleCard {
                         if (!isGroup) {
                             reject("Bu alana ders ekleyemezsiniz.");
                             return;
-                        }else{
-                            lessons.forEach((lesson)=>{
+                        } else {
+                            lessons.forEach((lesson) => {
                                 if (lesson.dataset.lessonCode === newLessonCode) {
                                     reject("Lütfen farklı bir ders seçin.");
                                     return;
                                 }
                             })
 
-                            lessons.forEach((lesson)=>{
+                            lessons.forEach((lesson) => {
                                 if (lesson.dataset.groupNo === newGroupNo) {
                                     reject("Grup numaraları aynı olamaz.");
                                     return;
@@ -768,8 +767,11 @@ class ScheduleCard {
     }
 
     async saveSchedule(hours, classroom) {
+        return;
         let data = new FormData();
-
+        /**
+         * uygun olmayan slotlar atlanacak
+         */
         data.append("type", this.type);
         data.append("lesson_id", this.draggedLesson.lesson_id);
         data.append("time", this.draggedLesson.time);
@@ -806,6 +808,135 @@ class ScheduleCard {
                 console.error(error);
                 return false;
             });
+    }
+
+    lessonHourToMinute(hours) {
+        if (this.type === 'lesson') {
+            return hours * 50;
+        } else if (this.examTypes.includes(this.type)) {
+            return hours * 30;
+        }
+        return 0;
+    }
+
+    addMinutes(timeStr, minutes) {
+        let [h, m] = timeStr.split(':').map(Number);
+        let date = new Date();
+        date.setHours(h, m, 0, 0);
+        date.setMinutes(date.getMinutes() + minutes);
+        return date.toTimeString().slice(0, 5);
+    }
+
+    async saveScheduleItems(hours, classroom) {
+        let scheduleItems = [];
+        let currentItem = null;
+        let addedHours = 0;
+        let i = 0;
+        let breakTime = this.examTypes.includes(this.type) ? 0 : 10;
+        let scheduleItemData = {
+            "lesson_id": this.draggedLesson.lesson_id,
+            "lecturer_id": this.draggedLesson.lecturer_id,
+            "classroom_id": classroom.id
+        }
+        let status = this.draggedLesson.group_no > 0 ? "group" : "single";
+
+        // Loop until we have filled required hours or ran out of rows
+        while (addedHours < hours) {
+            // Calculate row index based on drop position + offset
+            let rowIndex = this.draggedLesson.end_element.closest("tr").rowIndex + i;
+
+            // Boundary check: Stop if we go past the last row
+            if (rowIndex >= this.table.rows.length) {
+                break;
+            }
+
+            let row = this.table.rows[rowIndex];
+            let cell = row.cells[this.draggedLesson.end_element.cellIndex];
+
+            // Validate slot: Must be a drop-zone and not marked unavailable
+            let isValid = cell && cell.classList.contains("drop-zone") && !cell.querySelector('.slot-unavailable');
+
+            if (isValid) {
+                if (!currentItem) {
+                    // Start a new schedule item block
+                    currentItem = {
+                        'id': null,
+                        'schedule_id': this.id,
+                        'day_index': this.draggedLesson.end_element.dataset.dayIndex,
+                        'week_index': this.table.dataset.weekIndex,
+                        'start_time': cell.dataset.startTime,
+                        'end_time': null,
+                        'status': status,
+                        'data': scheduleItemData,
+                        'detail': null
+                    };
+
+                    // Check if merging with an existing item ID (if applicable)
+                    if (cell.dataset.scheduleItemId) {
+                        currentItem.id = cell.dataset.scheduleItemId;
+                    }
+                }
+
+                // Extend the current item's end time
+                let slotDuration = this.lessonHourToMinute(1);
+
+                if (currentItem.end_time) {
+                    // Subsequent slot: add break time + slot duration
+                    currentItem.end_time = this.addMinutes(currentItem.end_time, slotDuration + breakTime);
+                } else {
+                    // First slot: add only slot duration
+                    currentItem.end_time = this.addMinutes(currentItem.start_time, slotDuration);
+                }
+
+                addedHours++;
+            } else {
+                // Gap encountered (unavailable slot or break)
+                if (currentItem) {
+                    // Finalize and push the current block
+                    scheduleItems.push(currentItem);
+                    currentItem = null;
+                }
+                // Continue scanning next slots without incrementing addedHours
+            }
+            i++;
+        }
+
+        // Push the last item if it exists
+        if (currentItem) {
+            scheduleItems.push(currentItem);
+        }
+
+        console.log('Generated Schedule Items:', scheduleItems);
+
+        console.log('Generated Schedule Items:', scheduleItems);
+
+        // Perform save operation for all items at once
+        let data = new FormData();
+        data.append('items', JSON.stringify(scheduleItems));
+
+        return fetch("/ajax/saveScheduleItem", {
+            method: "POST",
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: data
+        })
+        .then(response => response.json())
+        .then((data) => {
+            if (data.status === "error") {
+                console.error(data.msg);
+                new Toast().prepareToast("Hata", data.msg, "danger")
+                return false;
+            } else {
+                console.info(data)
+                return true;
+            }
+        })
+        .catch((error) => {
+            new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
+            console.error(error);
+            return false;
+        });
     }
 
     async deleteSchedule(classroom_id) {
@@ -851,7 +982,7 @@ class ScheduleCard {
         event.dataTransfer.dropEffect = "move";
         let lessonElement = event.target.closest('[draggable="true"]');
         this.setDraggedLesson(lessonElement, event)
-        console.log('dragStartHandler', {...this.draggedLesson})
+        console.log('dragStartHandler', { ...this.draggedLesson })
         if (this.draggedLesson.start_element === "table") {
             /*
             * silmek için buraya sürükleyin yazısını göstermek için
@@ -882,7 +1013,7 @@ class ScheduleCard {
 
         this.dropZone = element;
         this.draggedLesson.end_element = this.dropZone;
-        console.log('dropHandler', {...this.draggedLesson})
+        console.log('dropHandler', { ...this.draggedLesson })
         switch (this.draggedLesson.start_element) {
             case "list":
                 if (this.dropZone.classList.contains("available-schedule-items")) {
@@ -918,7 +1049,7 @@ class ScheduleCard {
     }
 
     async dropListToTable() {
-        console.log('dropListToTable', {...this.draggedLesson})
+        console.log('dropListToTable', { ...this.draggedLesson })
         if (this.owner_type !== 'classroom') {
             let classroom, hours, observer;
             if (this.examTypes.includes(this.type)) {
@@ -939,10 +1070,13 @@ class ScheduleCard {
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
 
-                let saveScheduleResult = await this.saveSchedule(hours, classroom);
-                if (saveScheduleResult) {
+                /**
+                 * saveScheduleItems
+                 */
+                let saveResult = await this.saveScheduleItems(hours, classroom);
+                if (saveResult) {
                     saveScheduleToast.closeToast()
-                    this.moveLessonListToTable(classroom, hours);
+                    //todo     this.moveLessonListToTable(classroom, hours);
                 } else {
                     saveScheduleToast.closeToast();
                     new Toast().prepareToast("Çakışma", "Ders programında çakışma var!", "danger");

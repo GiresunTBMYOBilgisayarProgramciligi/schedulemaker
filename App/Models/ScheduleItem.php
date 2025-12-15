@@ -20,7 +20,7 @@ class ScheduleItem extends Model
      */
     public ?string $status = null;
     public ?array $data = null;
-    public ?string $description = null;
+    public ?string $detail = null;
 
     public ?Schedule $schedule = null;
 
