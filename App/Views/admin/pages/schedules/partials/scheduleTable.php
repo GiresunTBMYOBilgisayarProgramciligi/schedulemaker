@@ -10,7 +10,7 @@ use function App\Helpers\getSettingValue;
  */
 ?>
 <div class="schedule-table-container">
-    <table class="schedule-table">
+    <table class="schedule-table active" data-week-index="0"><!-- todo week index düzenlemesi yapılacak -->
         <thead>
             <tr>
                 <th class="time-slot">Saat</th>
@@ -39,27 +39,20 @@ use function App\Helpers\getSettingValue;
                         </td>
                 <!-- 
                 <div 
-                id="scheduleTable-lesson-755-1" 
                 data-lesson-code="BILP-113"
-                data-semester-no="1" 
-                data-lesson-id="755"
-                data-lecturer-id="154"
-                data-time="10.00 - 10.50"
-                data-day-index="0"
                 data-semester="Güz"
-                data-academic-year="2025 - 2026"
                 data-classroom-id="7"
                 data-lesson-hours="2"
                 data-size="0"
                 data-classroom-exam-size="35"
                 data-classroom-size="0"
                 >
-        
                 -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                             <?php if ($scheduleItem): 
-                                Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);?>
-                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
+                                Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
+                                $dropZone= $scheduleItem->status ==='unavailable' ? '' : 'drop-zone'; ?>
+                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
                                         <?php endif; ?>
@@ -89,9 +82,9 @@ use function App\Helpers\getSettingValue;
                                             <?php endforeach ?>
                                         <?php else: ?>
                                             <div class="empty-slot <?= $scheduleItem->getSlotCSSClass() ?>">
-                                                <?php if ($scheduleItem->description): ?>
+                                                <?php if ( is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
                                                     <div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
-                                                        data-bs-trigger="hover" data-bs-content="<?= $scheduleItem->description ?>"
+                                                        data-bs-trigger="hover" data-bs-content="<?= $scheduleItem->detail['description'] ?>"
                                                         data-bs-original-title="Açıklama">
                                                         <i class="bi bi-chat-square-text-fill"></i>
                                                     </div>
