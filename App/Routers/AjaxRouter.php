@@ -565,6 +565,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo 
      * Ders programı seçiminde Eklenen derse uygun olan gözetmen listesini hazırlar.
      * @throws Exception
      */
@@ -581,6 +582,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function checkScheduleCrashAction(): void
@@ -620,8 +622,27 @@ class AjaxRouter extends Router
         }
         $this->sendResponse();
     }
+    /**
+     * gelen item verilerine göre ilk olarak çakışan item kontrol edilir
+     * çakışan item'in prefered olup olmadığı kontrol edilir. 
+     * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
+     * çakışan kısım prefered değil ise çakışma hatası verilir.
+     * çakışan kısım yoksa item kaydedilir.
+     */   
+    public function saveScheduleItemAction(): void
+    {
+        
+        $this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
+        $this->response = array(
+            "status" => "error",
+            "msg" => "Program kaydedilemedi.",
+            "schedule" => var_export($this->data, true)
+        );
+        $this->sendResponse();
+    }
 
     /**
+     * todo silinecek
      * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
      * "lesson_id" Programa eklenen dersin id numarası
      * "time_start" programa eklenen dersin başlangıç saati
@@ -730,6 +751,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function saveSchedulePreferenceAction(): void
@@ -754,6 +776,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void
      * @throws Exception
@@ -810,6 +833,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function checkClassroomScheduleAction(): void
@@ -894,6 +918,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function checkProgramScheduleAction()
@@ -945,6 +970,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * Ders programından veri silmek için gerekli kontrolleri yapar
      * @return void
      * @throws Exception
@@ -1000,6 +1026,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function exportScheduleAction(): void
@@ -1011,6 +1038,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * Takvim (ICS) dışa aktarma
      * @throws Exception
      */
