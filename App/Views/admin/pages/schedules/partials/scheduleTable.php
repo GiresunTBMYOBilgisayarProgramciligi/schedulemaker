@@ -52,7 +52,7 @@ use function App\Helpers\getSettingValue;
                             <?php if ($scheduleItem): 
                                 Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
                                 $dropZone= $scheduleItem->status ==='unavailable' ? '' : 'drop-zone'; ?>
-                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
+                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
                                         <?php endif; ?>

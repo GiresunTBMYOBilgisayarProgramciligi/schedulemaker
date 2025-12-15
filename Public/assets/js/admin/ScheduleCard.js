@@ -825,7 +825,7 @@ class ScheduleCard {
                 if (!currentItem) {
                     // Start a new schedule item block
                     currentItem = {
-                        'id': null,
+                        'id': this.draggedLesson.schedule_item_id,
                         'schedule_id': this.id,
                         'day_index': this.draggedLesson.end_element.dataset.dayIndex,
                         'week_index': this.table.dataset.weekIndex,
