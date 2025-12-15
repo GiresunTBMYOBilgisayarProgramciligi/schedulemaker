@@ -766,50 +766,6 @@ class ScheduleCard {
             });
     }
 
-    async saveSchedule(hours, classroom) {
-        return;
-        let data = new FormData();
-        /**
-         * uygun olmayan slotlar atlanacak
-         */
-        data.append("type", this.type);
-        data.append("lesson_id", this.draggedLesson.lesson_id);
-        data.append("time", this.draggedLesson.time);
-        data.append("lesson_hours", hours);
-        data.append("day_index", this.draggedLesson.day_index);
-        data.append("classroom_id", classroom.id);
-        if (this.examTypes.includes(this.type) && this.draggedLesson.observer_id) {
-            data.append("lecturer_id", this.draggedLesson.observer_id);
-        }
-        data.append("semester_no", isNaN(this.semester_no) ? null : this.semester_no);
-        data.append("academic_year", this.academic_year);
-        data.append("semester", this.semester);
-        return fetch("/ajax/saveSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                if (data && data.status === "error") {
-                    console.error(data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
-                    return false;
-                } else {
-                    console.info(data)
-                    new Toast().prepareToast("Başarılı", "Program Kaydedildi.", "success")
-                    return true;
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Program kaydedilirken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
-                console.error(error);
-                return false;
-            });
-    }
-
     lessonHourToMinute(hours) {
         if (this.type === 'lesson') {
             return hours * 50;
