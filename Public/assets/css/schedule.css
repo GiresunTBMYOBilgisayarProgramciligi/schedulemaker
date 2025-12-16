@@ -254,30 +254,34 @@
     /* Grup rengi border'ı ezmez, sadece background gradient ve opsiyonel text rengi ekler */
 
     /* Grup A (Indigo) */
-    .lesson-group-a {
+    .lesson-group-1 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #e8eaf6 100%);
+        /*--border-color: #3f51b5;*/
         /* Grup olduğunu belli etmek için border değişsin mi? 
            Kullanıcı "türünü de anlayalım" dediği için border'ı TÜR renginde bırakmak daha iyi.
            Ama sağ alt köşe rengi gruba işaret ediyor. */
     }
 
-    .lesson-group-a .lesson-name {
+    .lesson-group-1 .lesson-name {
         /* Başlık rengini biraz daha koyulaştırabiliriz veya tür rengini koruyabiliriz. 
            Okunabilirlik için tür rengini korumak daha güvenli, fakat grup tonu da eklenebilir. 
            Şimdilik tür rengi baskın kalsın. */
     }
 
     /* Grup B (Pink) */
-    .lesson-group-b {
+    .lesson-group-2 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #fce4ec 100%);
+        /*--border-color: #e91e63;*/
     }
 
     /* Grup C (Deep Purple) */
-    .lesson-group-c {
+    .lesson-group-3 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #ede7f6 100%);
+        /*--border-color: #673ab7;*/
     }
 
     /* Grup D (Cyan) */
-    .lesson-group-d {
+    .lesson-group-4 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #e0f7fa 100%);
+        /*--border-color: #009688;*/
     }

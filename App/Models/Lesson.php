@@ -383,17 +383,8 @@ class Lesson extends Model
 
         // 2. Grup Belirleme (Opsiyonel Ek Sınıf)
         $groupClass = "";
-        $this->logger()->debug('Lesson Code: ', ['lessonCode' => $this->code, 'lesson' => $this]);
-        // Grup Kontrolü (Koddan Tespit: ".1", ".2" vb.)
-        if (preg_match('/\.(\d+)$/', $this->code, $matches)) {
-            $groupNum = (int) $matches[1];
-            $groupMap = [1 => 'a', 2 => 'b', 3 => 'c', 4 => 'd'];
-
-            if (isset($groupMap[$groupNum])) {
-                $groupClass = "lesson-group-" . $groupMap[$groupNum];
-            } else {
-                $groupClass = "lesson-group-a";
-            }
+        if ($this->group_no > 0) {
+            $groupClass = "lesson-group-" . $this->group_no;
         }
 
         // Nihai Sınıf Listesi
