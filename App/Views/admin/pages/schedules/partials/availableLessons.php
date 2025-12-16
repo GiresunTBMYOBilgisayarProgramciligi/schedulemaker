@@ -23,34 +23,6 @@ use App\Core\Log;
 
         $isChild = !is_null($lesson->parent_lesson_id);
 
-        // 1. Ders Türü Belirleme
-        $typeClass = "lesson-type-normal"; // Varsayılan
-        if ($isChild) {
-            $typeClass = "lesson-type-child";
-        } elseif ($lesson->classroom_type == 2) {
-            $typeClass = "lesson-type-lab";
-        } elseif ($lesson->classroom_type == 3) {
-            $typeClass = "lesson-type-uzem";
-        }
-
-        // 2. Grup Belirleme (Opsiyonel Ek Sınıf)
-        $groupClass = "";
-
-        // Grup Kontrolü (Koddan Tespit: ".1", ".2" vb.)
-        if (preg_match('/\.(\d+)$/', $lesson->code, $matches)) {
-            $groupNum = (int) $matches[1];
-            $groupMap = [1 => 'a', 2 => 'b', 3 => 'c', 4 => 'd'];
-
-            if (isset($groupMap[$groupNum])) {
-                $groupClass = "lesson-group-" . $groupMap[$groupNum];
-            } else {
-                $groupClass = "lesson-group-a";
-            }
-        }
-
-        // Nihai Sınıf Listesi
-        $finalClass = trim("$typeClass $groupClass");
-
         $parentLesson = $isChild ? (new Lesson())->find($lesson->parent_lesson_id) : null;
         $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
 
@@ -60,7 +32,7 @@ use App\Core\Log;
         ?>
         <div class='frame col-md-4 p-1'>
             <div id="available-lesson-<?= $lesson->id ?>" draggable="<?= $draggable ?>"
-                class="lesson-card w-100 <?= $finalClass ?>" 
+                class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?>" 
                 data-lesson-id="<?= $lesson->id ?>"
                 data-lesson-hours="<?= $lesson->hours ?>"
                 data-size="<?= ($lesson->size ?? 0) ?>"
