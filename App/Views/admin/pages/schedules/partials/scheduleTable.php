@@ -69,14 +69,29 @@ use function App\Helpers\getSettingValue;
                                                 data-group-no="<?= $slotData->lesson->group_no ?>"
                                                 data-lesson-id="<?= $slotData->lesson->id ?>"
                                                 data-lesson-code="<?= $slotData->lesson->code ?>"
+                                                data-size="<?= $slotData->lesson->size ?>"
                                                 data-lecturer-id="<?= $slotData->lecturer->id ?>"
+                                                data-classroom-id="<?= $slotData->classroom->id ?>"
+                                                data-classroom-size="<?= $slotData->classroom->class_size ?>"
+                                                data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
                                                 >
-                                                    <span class="lesson-name"><?= $slotData->lesson->name ?></span>
+                                                    <span class="lesson-name">
+                                                        <a class='text-decoration-none' target='_blank' style="color: inherit;"
+                                                            href='/admin/lesson/<?= $slotData->lesson->id ?>'>
+                                                            <?= $slotData->lesson->name ?>
+                                                        </a>
+                                                    </span>
                                                     <div class="lesson-meta">
-                                                        <span class="lesson-lecturer"><i class="fas fa-user-tie"></i>
-                                                            <?= $slotData->lecturer->getFullName() ?></span>
-                                                        <span class="lesson-classroom"><i class="fas fa-door-open"></i>
-                                                            <?= $slotData->classroom->name ?></span>
+                                                        <span class="lesson-lecturer">
+                                                            <a class='text-decoration-none' target='_blank' style="color: inherit;"
+                                                            href='/admin/profile/<?= $slotData->lecturer->id ?>'>
+                                                            <?= $slotData->lecturer->getFullName() ?></a>
+                                                        </span>
+                                                        <span class="lesson-classroom">
+                                                            <a class='text-decoration-none' target='_blank' style="color: inherit;"
+                                                            href='/admin/classroom/<?= $slotData->classroom->id ?>'>
+                                                            <?= $slotData->classroom->name ?></a>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             <?php endforeach ?>
