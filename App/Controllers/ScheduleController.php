@@ -207,7 +207,6 @@ class ScheduleController extends Controller
         $available_lessons = [];
 
         $lessonFilters = [
-            'semester_no' => $schedule->semester_no,
             'semester' => $schedule->semester,
             'academic_year' => $schedule->academic_year,
             '!type' => 4// staj dersleri dahil değil
@@ -226,6 +225,15 @@ class ScheduleController extends Controller
             $lessonFilters = array_merge($lessonFilters, [
                 'lecturer_id' => $schedule->owner_id,
             ]);
+        } elseif ($schedule->owner_type == "lesson") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'id' => $schedule->owner_id,
+            ]);
+        }
+
+        // Eğer program (curriculum) schedule'ı ise semester_no filtresini ekle
+        if ($schedule->semester_no !== null) {
+            $lessonFilters['semester_no'] = $schedule->semester_no;
         }
         $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
 
@@ -260,6 +268,12 @@ class ScheduleController extends Controller
     {
         $this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
+
+        // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
+        if (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
+            $filters['semester_no'] = null;
+        }
+
         if (is_array($filters['semester_no'])) {
             $availableLessons = [];
             $scheduleRows = [];
@@ -371,13 +385,13 @@ class ScheduleController extends Controller
     {
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
-        // todo bu eklemeyi homeIndex de hoca ve derslik programlarını birleştirmek için ekledim
-        if (key_exists("semester_no", $filters) and $filters['semester_no'] == 0) {
-            $filters['semester_no'] = getSemesterNumbers($filters['semester']);
-        }
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
+        } elseif (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
+            // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
+            $filters['semester_no'] = null;
             $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
         } else {
             $currentSemesters = getSemesterNumbers($filters["semester"]);
@@ -431,7 +445,8 @@ class ScheduleController extends Controller
         return $schedule;
     }
 
-    public function lessonHourToMinute($scheduleType, $hours) : int {
+    public function lessonHourToMinute($scheduleType, $hours): int
+    {
         if ($scheduleType === 'lesson') {
             return $hours * 60;
         } elseif ($scheduleType === 'midterm-exam' || $scheduleType === 'final-exam' || $scheduleType === 'makeup-exam') {
@@ -472,7 +487,7 @@ class ScheduleController extends Controller
                 'type' => $schedule->type,
                 'owner_type' => 'classroom',
                 'owner_id' => $classroom->id,
-                'semester_no' => $schedule->semester_no,
+                'semester_no' => null, // Derslik programları dönemden bağımsızdır
                 'semester' => $schedule->semester,
                 'academic_year' => $schedule->academic_year
             ]);
@@ -535,8 +550,7 @@ class ScheduleController extends Controller
     }
 
     /**
-     * todo yeni tablo düzenine göre düzenlenecek
-     * Programa eklenmek isteyen ders için eklenecek tüm saatlerde çakışma kontrolü yapar
+     * Programa eklenmek isteyen itemler için çakışma kontrolü yapar
      * @param array $filters
      * @return bool
      * @throws Exception
@@ -545,134 +559,169 @@ class ScheduleController extends Controller
     {
         $filters = $this->validator->validate($filters, "checkScheduleCrash");
         $this->logger()->debug("Check Schedule Crash Filters: ", $this->logContext($filters));
-        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        /*
-         * Filtrede hoca id bilgisi varsa dersin hocası ile farklı bir hoca olma durumu olduğundan onu ayrı işlemek gerekiyor. Ayrıca sınav programında hoca id değeri gözetmen id olarak kullanılacak
-         */
-        $lecturer = isset($filters['lecturer_id']) ? (new User())->find($filters['lecturer_id']) : $lesson->getLecturer();
-        $classroom = (new Classroom())->find($filters['classroom_id']);
-        // bağlı dersleri alıyoruz
-        $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-        //bağlı dersler listesine ana dersi ekliyoruz
-        array_unshift($lessons, $lesson);
 
-        foreach ($lessons as $child) {
-            /*
-             * Ders çakışmalarını kontrol etmek için kullanılacak olan filtreler
-             */
-            $filters = array_merge($filters, [
-                //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                "owners" => [
-                    "program" => $child->program_id,
-                    "user" => $lecturer->id,
-                    "lesson" => $child->id
-                ],//sıralama yetki kontrolü için önemli
-            ]);
-            /**
-             * Uzem Sınıfı değilse çakışma kontrolüne dersliği de ekle
-             * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-             */
-            if (!is_null($classroom) and $classroom->type != 3) {
-                $filters['owners']['classroom'] = $classroom->id;
-            }
+        $items = json_decode($filters['items'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("Geçersiz JSON verisi");
         }
-        $this->logger()->debug('Check Schedule Crash Filters2', $this->logContext($filters));
-        $times = $this->generateTimesArrayFromText($filters["time"], $filters["lesson_hours"], $filters["type"]);
 
-        foreach ($filters["owners"] as $owner_type => $owner_id) {
-            $ownerFilter = [
-                "time" => ['in' => $times],
-                "owner_type" => $owner_type,
-                "owner_id" => $owner_id,
-                "type" => $filters['type'],
-                "semester" => $filters['semester'],
-                "academic_year" => $filters['academic_year'],
+        foreach ($items as $itemData) {
+            $this->checkItemConflict($itemData);
+        }
+
+        return true;
+    }
+
+    /**
+     * Tek bir item için tüm olasılıkları (Hoca, Sınıf, Program, Ders) kontrol eder
+     * İlgili schedule ve itemleri bulup çakışma kontrolüne gönderir
+     * @param array $itemData
+     * @throws Exception
+     */
+    private function checkItemConflict(array $itemData): void
+    {
+        $lessonId = $itemData['data']['lesson_id'];
+        $lecturerId = $itemData['data']['lecturer_id'];
+        $classroomId = $itemData['data']['classroom_id'];
+        $dayIndex = $itemData['day_index'];
+        $startTime = $itemData['start_time'];
+        $endTime = $itemData['end_time'];
+
+        $lesson = (new Lesson())->find($lessonId);
+        if (!$lesson)
+            throw new Exception("Ders bulunamadı");
+
+        // Kontrol edilecek schedule sahipleri
+        $owners = [
+            'user' => $lecturerId,
+            'classroom' => $classroomId,
+            'program' => $lesson->program_id,
+            'lesson' => $lesson->id
+        ];
+
+        // Item'in ekleneceği Schedule'ı bul (Dönem ve Yıl bilgisi için)
+        $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+        if (!$targetSchedule)
+            throw new Exception("Hedef Program bulunamadı");
+
+        $semester = $targetSchedule->semester;
+        $academicYear = $targetSchedule->academic_year;
+
+        foreach ($owners as $ownerType => $ownerId) {
+            if (!$ownerId)
+                continue;
+
+            $scheduleFilters = [
+                'owner_type' => $ownerType,
+                'owner_id' => $ownerId,
+                'semester' => $semester,
+                'academic_year' => $academicYear,
+                'type' => $targetSchedule->type
             ];
-            if ($owner_type == "program") {
-                // sadece program için dönem numarası ekleniyor. Diğerlerinde diğer dönemlerle de çakışma kontrol edilmeli
-                $ownerFilter["semester_no"] = $lesson->semester_no;
+
+            if ($ownerType == 'program') {
+                $scheduleFilters['semester_no'] = $lesson->semester_no;
             }
-            $schedules = (new Schedule())->get()->where($ownerFilter)->all();
-            $this->logger()->debug('Check Schedule Crash Schedules', $this->logContext($schedules));
-            foreach ($schedules as $schedule) {
-                if ($schedule->{"day" . $filters["day_index"]}) {// belirtilen gün bilgisi null yada false değilse
-                    if (is_array($schedule->{"day" . $filters["day_index"]})) {
-                        $dayData = $schedule->{"day" . $filters["day_index"]};
-                        // Normalize to list of lessons
-                        $existingLessonsList = (isset($dayData[0]) && is_array($dayData[0])) ? $dayData : [$dayData];
 
-                        foreach ($existingLessonsList as $existingLessonData) {
-                            if ($owner_type == "user") {
-                                //eğer hocanın/gözetmenin o saatte dersi varsa program eklenemez
-                                $msg = (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) ? "Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz." : "Hoca Programı uygun değil";
-                                throw new Exception($msg);
-                            }
+            $relatedSchedules = (new Schedule())->get()->where($scheduleFilters)->all();
 
-                            /**
-                             * var olan ders
-                             * @var Lesson $existingLesson
-                             */
-                            $existingLesson = (new Lesson())->find($existingLessonData['lesson_id']) ?: throw new Exception("Var olan ders bulunamadı");
-                            /**
-                             * yeni eklenmek istenen ders
-                             * @var Lesson $newLesson
-                             */
-                            $newLesson = (new Lesson())->find($filters['owners']['lesson']) ?: throw new Exception("yeni ders bulunamadı");
+            foreach ($relatedSchedules as $relatedSchedule) {
+                // İlgili schedule ve gün için itemları getir
+                $dayItems = (new ScheduleItem())->get()->where([
+                    'schedule_id' => $relatedSchedule->id,
+                    'day_index' => $dayIndex
+                ])->all();
 
-                            if (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-                                // 1. Aynı ders kontrolü (Base code kontrolü)
-                                $existingBase = preg_replace('/\.\d+$/', '', $existingLesson->code);
-                                $newBase = preg_replace('/\.\d+$/', '', $newLesson->code);
-
-                                if ($existingBase !== $newBase) {
-                                    throw new Exception("Sınav programında aynı saate farklı dersler konulamaz.");
-                                }
-
-                                // 2. Farklı Derslik Kontrolü
-                                if (isset($filters['owners']['classroom']) && $existingLessonData['classroom_id'] == $filters['owners']['classroom']) {
-                                    throw new Exception("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
-                                }
-
-                                // 3. Farklı Gözetmen Kontrolü (User owner_type kontrolü yukarıda yapıldı ama program/derslik kontrolünde de bakılmalı mı? 
-                                // Hayır, çünkü gözetmen çakışması owner_type='user' döngüsünde yakalanır. 
-                                // Ancak burada mevcut dersin gözetmeni ile yeni dersin gözetmeni aynı mı diye bakmıyoruz, 
-                                // çünkü owner_type='user' değilse (örn program) mevcut dersin gözetmeni başkası olabilir.
-                                // Fakat biz yeni ders için atanan gözetmeni kontrol ediyoruz.
-                                // Eğer owner_type='program' ise ve mevcut dersin gözetmeni X ise, ve biz Y atıyorsak sorun yok.
-                                // Eğer X atıyorsak, X'in programı owner_type='user' da kontrol edilecek.
-                            } else {
-                                // Ders Programı Kuralları
-                                /*
-                                 * ders kodlarının sonu .1 .2 gibi nokta ve bir sayı ile bitmiyorsa çakışma var demektir.
-                                 */
-                                if (preg_match('/\.\d+$/', $existingLesson->code) !== 1) {
-                                    //var olan ders gruplı değil
-                                    throw new Exception($existingLesson->name . "(" . $existingLesson->code . ") dersi ile çakışıyor");
-                                } else {
-                                    // var olan ders gruplu
-                                    if (preg_match('/\.\d+$/', $newLesson->code) !== 1) {
-                                        // yeni eklenecek olan ders gruplu değil
-                                        throw new Exception($existingLesson->getFullName() . " dersinin yanına sadece gruplu bir ders eklenebilir.");
-                                    }
-                                    //diğer durumda ekenecek olan ders de gruplu
-                                    // grup uygunluğu kontrolü javascript ile yapılıyor
-                                }
-
-                                if (isset($filters['owners']['classroom'])) {
-                                    $existingClassroom = (new Classroom())->find($existingLessonData['classroom_id']) ?: throw new Exception("Derslik Bulunamadı");
-                                    $newClassroom = (new Classroom())->find($filters['owners']['classroom']) ?: throw new Exception("Derslik Bulunamadı");
-                                    if ($existingClassroom->name == $newClassroom->name) {
-                                        throw new Exception("Derslikler çakışıyor");
-                                    }
-                                }
-                            }
-                        }
+                foreach ($dayItems as $existingItem) {
+                    // Zaman çakışması kontrolü
+                    if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
+                        $this->resolveConflict($itemData, $existingItem, $lesson);
                     }
                 }
             }
         }
+    }
 
-        return true;
+    /**
+     * İki zaman aralığının çakışıp çakışmadığını kontrol eder
+     * Mantık: (Start1 < End2) && (Start2 < End1)
+     * @param string $start1 Birinci aralık başlangıç (H:i)
+     * @param string $end1 Birinci aralık bitiş (H:i)
+     * @param string $start2 İkinci aralık başlangıç (H:i)
+     * @param string $end2 İkinci aralık bitiş (H:i)
+     * @return bool Çakışma varsa true döner
+     */
+    private function checkOverlap(string $start1, string $end1, string $start2, string $end2): bool
+    {
+        return ($start1 < $end2) && ($start2 < $end1);
+    }
+
+    /**
+     * Zaman çakışması tespit edildiğinde, Items status durumuna göre bunun bir hata olup olmadığına karar verir.
+     * Status: unavailable ve single -> Hata
+     * Status: group -> Grup kurallarına uyuyorsa Hata Yok, uymuyorsa Hata
+     * Status: preferred -> Hata Yok
+     * @param array $newItemData Yeni eklenecek item verisi
+     * @param ScheduleItem $existingItem Mevcut çakışan item
+     * @param Lesson $newLesson Yeni eklenen ders
+     * @throws Exception Çakışma kuralı ihlal edilirse
+     */
+    private function resolveConflict(array $newItemData, ScheduleItem $existingItem, Lesson $newLesson): void
+    {
+        // Kendi kendisiyle çakışıyorsa (update durumu vs) yoksay
+        if (isset($newItemData['id']) && $newItemData['id'] == $existingItem->id) {
+            return;
+        }
+
+        // Status Kontrolü
+        switch ($existingItem->status) {
+            case 'unavailable':
+                throw new Exception("Bu saat aralığı uygun değil.");
+            case 'single':
+                // Single ders varsa üzerine ders eklenemez
+                throw new Exception("Bu saatte zaten bir ders mevcut: " . $this->getLessonNameFromItem($existingItem));
+            case 'group':
+                // Grup mantığı
+                // Yeni ders aynı zamanda grup dersi olmalı (Lesson group_no > 0)
+                if ($newLesson->group_no < 1) {
+                    throw new Exception("Grup dersi üzerine normal ders eklenemez.");
+                }
+
+                // Dersler farklı olmalı
+                $existingLessonId = $existingItem->data['lesson_id'] ?? null;
+                if ($existingLessonId == $newLesson->id) {
+                    throw new Exception("Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).");
+                }
+
+                // Grup numaraları farklı olmalı (Bunu Lesson modelinden kontrol edebiliriz eğer item data içinde group_no yoksa)
+                // Existing item'in dersini bulalım
+                $existingLesson = (new Lesson())->find($existingLessonId);
+                if ($existingLesson && $existingLesson->group_no == $newLesson->group_no) {
+                    throw new Exception("Aynı grup numarasına sahip dersler çakışamaz.");
+                }
+
+                // Buraya geldiyse uygundur (Farklı ders, farklı grup, ikisi de grup)
+                break;
+            case 'preferred':
+                // Tercih edilen saat, çakışma yok
+                break;
+            default:
+                throw new Exception("Bilinmeyen durum: " . $existingItem->status);
+        }
+    }
+
+    /**
+     * Hata mesajlarında göstermek için Item içindeki lesson_id'den ders adını bulur
+     * @param ScheduleItem $item
+     * @return string Ders Adı (Kodu) veya Bilinmeyen
+     */
+    private function getLessonNameFromItem(ScheduleItem $item): string
+    {
+        if (isset($item->data['lesson_id'])) {
+            $l = (new Lesson())->find($item->data['lesson_id']);
+            return $l ? $l->getFullName() : "Bilinmeyen Ders";
+        }
+        return "Bilinmeyen Öğe";
     }
 
     /**

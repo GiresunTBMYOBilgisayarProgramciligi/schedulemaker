@@ -50,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no", 0);
             data.append("only_table", lecturerScheduleButton.dataset.onlyTable)
             if (lecturerSelect.value > 0) {
                 data.append("owner_type", "user");
@@ -76,7 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no", 0);
             data.append("only_table", classroomScheduleButton.dataset.onlyTable)
             if (classroomSelect.value > 0) {
                 data.append("owner_type", "classroom");

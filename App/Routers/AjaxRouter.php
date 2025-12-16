@@ -623,7 +623,7 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
     /**
-     * gelen item verilerine göre ilk olarak çakışan item kontrol edilir
+     * gelen item verilerine göre ilk olarak çakışan item kontrol edilir checkScheduleCrashAction ile yapılan yeterli olmaz preferred item kontrolü ve düzenlemesi burada yapılmalı
      * çakışan item'in prefered olup olmadığı kontrol edilir. 
      * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
      * çakışan kısım prefered değil ise çakışma hatası verilir.

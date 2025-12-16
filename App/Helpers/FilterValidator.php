@@ -63,6 +63,7 @@ class FilterValidator
             'owners' => ['type' => 'array'], //Ders programının ait olduğu birim türleri listesi
             'schedule_id' => ['type' => 'int'],//Ders programının id numarası
             'startTime' => ['type' => 'string'],//Dersin başlangıç saati
+            'items' => ['type' => 'string'],//JSON formatında schedule items
         ];
 
         // 2. Her işlem için kuralları tanımla
@@ -73,9 +74,9 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             'checkScheduleCrash' => [
-                'required' => ["type", "lesson_id", "classroom_id", "time", "lesson_hours", "day_index"],
-                'optional' => ["semester_no", "lecturer_id"],
-                'defaults' => ['semester', 'academic_year']
+                'required' => ["items"],
+                'optional' => [],
+                'defaults' => []
             ],
             'deleteScheduleAction' => [
                 'required' => ["type", "time"],
@@ -113,8 +114,8 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "prepareScheduleCard" => [
-                'required' => ["type", "owner_type", "owner_id","semester_no"],
-                'optional' => [],
+                'required' => ["type", "owner_type", "owner_id"],
+                'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableLessons" => [
@@ -123,7 +124,7 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "prepareScheduleRows" => [
-                'required' => ["type", "owner_type", "owner_id","semester_no"],
+                'required' => ["type", "owner_type", "owner_id", "semester_no"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
@@ -134,12 +135,12 @@ class FilterValidator
             ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id","semester_no"],
+                'optional' => ["owner_id", "semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "generateScheduleFilters"=> [
+            "generateScheduleFilters" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id","semester_no"],
+                'optional' => ["owner_id", "semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportSchedule" => [
@@ -158,14 +159,14 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "saveSchedulePreferenceAction" => [
-                'required' => ["type", "owner_type", "owner_id","time","day_index","day"],
+                'required' => ["type", "owner_type", "owner_id", "time", "day_index", "day"],
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportScheduleIcsAction" => [
                 'required' => ["owner_type"],
-                'optional' => ["semester_no","owner_id"],
-                'defaults' => ['semester', 'academic_year',"type"]
+                'optional' => ["semester_no", "owner_id"],
+                'defaults' => ['semester', 'academic_year', "type"]
             ]
 
         ];

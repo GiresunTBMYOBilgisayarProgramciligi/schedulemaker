@@ -1037,6 +1037,7 @@ class ScheduleCard {
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
                 let scheduleItems = this.generateScheduleItems(hours, classroom);
                 let crashResult = await this.checkCrashBackEnd(scheduleItems);
+                console.log('crashResult', crashResult)
                 if(crashResult){
                     let saveResult = await this.saveScheduleItems(scheduleItems);
                     if (saveResult) {
@@ -1044,6 +1045,7 @@ class ScheduleCard {
                         //todo     this.moveLessonListToTable(classroom, hours);
                     } else {
                         saveScheduleToast.closeToast();
+                        console.error('saveResult', saveResult)
                         new Toast().prepareToast("Çakışma", "Kayıt yapılamadı!", "danger");
                     }
                 }
