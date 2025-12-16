@@ -628,16 +628,35 @@ class AjaxRouter extends Router
      * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
      * çakışan kısım prefered değil ise çakışma hatası verilir.
      * çakışan kısım yoksa item kaydedilir.
-     */   
+     */
     public function saveScheduleItemAction(): void
     {
-        
         $this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
-        $this->response = array(
-            "status" => "error",
-            "msg" => "Program kaydedilemedi.",
-            "schedule" => var_export($this->data, true)
-        );
+
+        $scheduleController = new ScheduleController();
+        $items = json_decode($this->data['items'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = array(
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            );
+            $this->sendResponse();
+            return;
+        }
+
+        try {
+            if ($scheduleController->saveScheduleItems($items)) {
+                $this->response = array(
+                    "status" => "success",
+                    "msg" => "Program başarıyla kaydedildi."
+                );
+            }
+        } catch (Exception $e) {
+            $this->response = array(
+                "status" => "error",
+                "msg" => $e->getMessage()
+            );
+        }
         $this->sendResponse();
     }
 

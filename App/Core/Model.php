@@ -204,10 +204,15 @@ class Model
                 }
             } // Basit eşitlik kontrolü
             else {
-                $placeholder = ":{$column}";
-                $operator = $isNotCondition ? '!=' : '=';
-                $conditions[] = "`$column` $operator $placeholder";
-                $this->parameters[$placeholder] = $value;
+                if (is_null($value)) {
+                    $operator = $isNotCondition ? 'IS NOT' : 'IS';
+                    $conditions[] = "`$column` $operator NULL";
+                } else {
+                    $placeholder = ":{$column}";
+                    $operator = $isNotCondition ? '!=' : '=';
+                    $conditions[] = "`$column` $operator $placeholder";
+                    $this->parameters[$placeholder] = $value;
+                }
             }
         }
         $this->whereClause = count($conditions) > 0 ? implode(" " . $logicalOperator . " ", $conditions) : "";

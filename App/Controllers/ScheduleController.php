@@ -725,6 +725,166 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
+     * @param array $itemsData JSON decode edilmiş items dizisi
+     * @return bool
+     * @throws Exception
+     */
+    public function saveScheduleItems(array $itemsData): bool
+    {
+        $this->database->beginTransaction();
+        try {
+            foreach ($itemsData as $itemData) {
+                // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
+                $lessonId = $itemData['data']['lesson_id'];
+                $lecturerId = $itemData['data']['lecturer_id'];
+                $classroomId = $itemData['data']['classroom_id'];
+                $dayIndex = $itemData['day_index'];
+                $startTime = $itemData['start_time'];
+                $endTime = $itemData['end_time'];
+
+                $lesson = (new Lesson())->find($lessonId);
+                // Kontrol edilecek schedule sahipleri
+                $owners = [
+                    'user' => $lecturerId,
+                    'classroom' => $classroomId,
+                    'program' => $lesson->program_id,
+                    'lesson' => $lesson->id // Kullanıcı isteği üzerine eklendi
+                ];
+
+                // Item'in ekleneceği Schedule'ı bul
+                $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+                $semester = $targetSchedule->semester;
+                $academicYear = $targetSchedule->academic_year;
+
+                $targetSchedules = []; // Kayıt yapılacak schedule listesi
+
+                // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
+                foreach ($owners as $ownerType => $ownerId) {
+                    if (!$ownerId)
+                        continue;
+
+                    $scheduleFilters = [
+                        'owner_type' => $ownerType,
+                        'owner_id' => $ownerId,
+                        'semester' => $semester,
+                        'academic_year' => $academicYear,
+                        'type' => $targetSchedule->type
+                    ];
+
+                    // Program için semester_no önemli (Diğerleri için null)
+                    if ($ownerType == 'program') {
+                        $scheduleFilters['semester_no'] = $lesson->semester_no;
+                    } else {
+                        $scheduleFilters['semester_no'] = null;
+                    }
+
+                    // İlgili schedule'ı bul veya oluştur
+                    $relatedSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                    $targetSchedules[] = $relatedSchedule;
+
+                    $existingItems = (new ScheduleItem())->get()->where([
+                        'schedule_id' => $relatedSchedule->id,
+                        'day_index' => $dayIndex
+                    ])->all();
+
+                    foreach ($existingItems as $existingItem) {
+                        if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
+                            // Çakışma Var: Çözümle
+                            if ($existingItem->status == 'preferred') {
+                                $this->resolvePreferredConflict($startTime, $endTime, $existingItem);
+                            } else {
+                                // preferred değilse standart conflict check (hata fırlatabilir)
+                                $this->resolveConflict($itemData, $existingItem, $lesson);
+                            }
+                        }
+                    }
+                }
+
+                // 2. Yeni Item'i Tüm İlgili Schedule'lara Kaydet
+                foreach ($targetSchedules as $schedule) {
+                    $newItem = new ScheduleItem();
+                    $newItem->schedule_id = $schedule->id;
+                    $newItem->day_index = $itemData['day_index'];
+                    $newItem->start_time = $itemData['start_time'];
+                    $newItem->end_time = $itemData['end_time'];
+                    $newItem->status = $itemData['status']; // muhtemelen 'single' veya 'group'
+
+                    // ScheduleItem modelinde data bir liste olarak tutulur (örn: [ ['lesson_id'=>1], ['lesson_id'=>2] ])
+                    // Frontend'den gelen veri tek bir obje olabilir, bu yüzden diziye çeviriyoruz.
+                    if (isset($itemData['data']['lesson_id'])) { // Tek bir ders verisi gelmişse
+                        $newItem->data = [$itemData['data']];
+                    } else {
+                        $newItem->data = $itemData['data'];
+                    }
+
+                    if (isset($itemData['detail']) && !array_is_list($itemData['detail'])) {
+                        $newItem->detail = [$itemData['detail']];
+                    } else {
+                        $newItem->detail = $itemData['detail'] ?? null;
+                    }
+
+                    $newItem->create();
+                }
+            }
+            $this->database->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->database->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Preferred item ile çakışma durumunda preferred item'i günceller (kısaltır veya böler)
+     */
+    private function resolvePreferredConflict(string $newStart, string $newEnd, ScheduleItem $preferredItem): void
+    {
+        $prefStart = $preferredItem->start_time;
+        $prefEnd = $preferredItem->end_time;
+
+        // Durum 1: Yeni item preferred item'i tamamen kapsıyor -> Sil
+        if ($newStart <= $prefStart && $newEnd >= $prefEnd) {
+            $preferredItem->delete();
+            return;
+        }
+
+        // Durum 2: Yeni item son taraftan örtüşüyor (Örn: Pref 10-12, New 11-13 -> Pref 10-11)
+        if ($newStart > $prefStart && $newStart < $prefEnd && $newEnd >= $prefEnd) {
+            $preferredItem->end_time = $newStart;
+            $preferredItem->update();
+            return;
+        }
+
+        // Durum 3: Yeni item baş taraftan örtüşüyor (Örn: Pref 10-12, New 09-11 -> Pref 11-12)
+        if ($newStart <= $prefStart && $newEnd > $prefStart && $newEnd < $prefEnd) {
+            $preferredItem->start_time = $newEnd;
+            $preferredItem->update();
+            return;
+        }
+
+        // Durum 4: Yeni item ortada (Örn: Pref 10-14, New 11-12 -> Pref 10-11 VE Pref 12-14)
+        if ($newStart > $prefStart && $newEnd < $prefEnd) {
+            // Mevcutu kısalt (Sol parça)
+            $preferredItem->end_time = $newStart;
+            $preferredItem->update();
+
+            // Yeni parça oluştur (Sağ parça)
+            $rightPart = new ScheduleItem();
+            $rightPart->schedule_id = $preferredItem->schedule_id;
+            $rightPart->day_index = $preferredItem->day_index;
+            $rightPart->start_time = $newEnd;
+            $rightPart->end_time = $prefEnd;
+            $rightPart->status = 'preferred';
+            // data ve detail kopyalanıyor
+            $rightPart->data = $preferredItem->data;
+            $rightPart->detail = $preferredItem->detail;
+            $rightPart->create();
+            return;
+        }
+    }
+
+    /**
      * todo yeni tablo düzenine göre düzenlenecek
      * Schedule tablosuna yeni kayıt ekler
      * @param array $schedule_arr Yeni schedule verileri
