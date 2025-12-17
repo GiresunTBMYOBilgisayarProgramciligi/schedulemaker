@@ -138,6 +138,120 @@ class ScheduleCard {
         });
 
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
+
+        this.initStickyHeaders();
+    }
+
+    initStickyHeaders() {
+        const availableList = this.card.querySelector('.available-schedule-items');
+        const table = this.card.querySelector('.schedule-table');
+        const thead = table.querySelector('thead');
+
+        if (!availableList || !table || !thead) return;
+
+        // Create a wrapper for sticky elements
+        const stickyWrapper = document.createElement('div');
+        stickyWrapper.className = 'sticky-header-wrapper';
+        stickyWrapper.style.position = 'fixed';
+
+        // Calculate offset dynamically
+        const navbar = document.querySelector('.app-header') || document.querySelector('.main-header') || document.querySelector('nav.navbar');
+        const isNavbarFixed = navbar && (getComputedStyle(navbar).position === 'fixed' || document.body.classList.contains('layout-navbar-fixed'));
+        const topOffset = isNavbarFixed ? navbar.offsetHeight : 0;
+
+        stickyWrapper.style.top = topOffset + 'px';
+        stickyWrapper.style.zIndex = '1039'; // High z-index but below modals
+        stickyWrapper.style.display = 'none';
+        stickyWrapper.style.width = this.card.offsetWidth + 'px';
+        stickyWrapper.style.backgroundColor = '#fff';
+        stickyWrapper.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+        // Clone Available List
+        const listClone = availableList.cloneNode(true);
+        listClone.id = ''; // Remove ID to avoid conflicts
+        listClone.classList.add('sticky-list-clone');
+        // Ensure inputs/events work in clone if needed, but for drag/drop might need re-binding. 
+        // For now, let's assume it's visual reference mainly, but user might want to drag from it.
+        // Re-binding drag events to clone:
+        const dragableElements = listClone.querySelectorAll('[draggable="true"]');
+        dragableElements.forEach(element => {
+            element.addEventListener('dragstart', this.dragStartHandler.bind(this));
+        });
+
+        stickyWrapper.appendChild(listClone);
+
+        // Clone Table Header
+        const tableClone = document.createElement('table');
+        tableClone.className = table.className;
+        tableClone.style.marginBottom = '0';
+
+        const theadClone = thead.cloneNode(true);
+        tableClone.appendChild(theadClone);
+
+        // Wrap table clone in a container to match structure if needed
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'schedule-table-container mb-0';
+        tableContainer.style.overflow = 'hidden'; // Hide scrollbars on clone
+        tableContainer.appendChild(tableClone);
+
+        stickyWrapper.appendChild(tableContainer);
+
+        this.card.appendChild(stickyWrapper);
+
+        // Sync Widths Function
+        const syncWidths = () => {
+            const originalThs = thead.querySelectorAll('th');
+            const cloneThs = theadClone.querySelectorAll('th');
+
+            originalThs.forEach((th, index) => {
+                if (cloneThs[index]) {
+                    cloneThs[index].style.width = th.offsetWidth + 'px';
+                    cloneThs[index].style.minWidth = th.offsetWidth + 'px'; // Force min-width
+                    cloneThs[index].style.boxSizing = 'border-box';
+                }
+            });
+
+            stickyWrapper.style.width = this.card.offsetWidth + 'px';
+            // Sync horizontal scroll
+            tableContainer.scrollLeft = this.table.parentElement.scrollLeft;
+        };
+
+        // Scroll Event Listener
+        window.addEventListener('scroll', () => {
+            const cardRect = this.card.getBoundingClientRect();
+
+            // Re-calculate offset in case of resize/dynamic changes
+            const navbar = document.querySelector('.app-header') || document.querySelector('.main-header') || document.querySelector('nav.navbar');
+            const isNavbarFixed = navbar && (getComputedStyle(navbar).position === 'fixed' || document.body.classList.contains('layout-navbar-fixed'));
+            const offset = isNavbarFixed ? navbar.offsetHeight : 0;
+
+            // Adjust trigger point slightly to avoid flicker
+            if (cardRect.top < offset && cardRect.bottom > offset + availableList.offsetHeight + thead.offsetHeight) {
+                stickyWrapper.style.display = 'block';
+                stickyWrapper.style.left = cardRect.left + 'px';
+                stickyWrapper.style.top = offset + 'px'; // Ensure update if navbar changes height
+
+                // Hide original available list visibility (not display:none to keep space)
+                availableList.style.visibility = 'hidden';
+                thead.style.visibility = 'hidden';
+
+                syncWidths();
+            } else {
+                stickyWrapper.style.display = 'none';
+                availableList.style.visibility = 'visible';
+                thead.style.visibility = 'visible';
+            }
+        });
+
+        // Sync horizontal scroll
+        const originalTableContainer = this.table.parentElement;
+        originalTableContainer.addEventListener('scroll', (e) => {
+            if (stickyWrapper.style.display === 'block') {
+                tableContainer.scrollLeft = ignored_var = e.target.scrollLeft;
+            }
+        });
+
+        window.addEventListener('resize', syncWidths);
     }
 
     async getSchedule() {
