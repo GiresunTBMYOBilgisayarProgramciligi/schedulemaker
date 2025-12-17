@@ -652,6 +652,7 @@ class AjaxRouter extends Router
                 );
             }
         } catch (Exception $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
             $this->response = array(
                 "status" => "error",
                 "msg" => $e->getMessage()

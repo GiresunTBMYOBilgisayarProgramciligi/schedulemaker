@@ -492,15 +492,22 @@ class ScheduleController extends Controller
                 'academic_year' => $schedule->academic_year
             ]);
 
-            $count = (new ScheduleItem())->where([
+            $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $classroomSchedule->id,
-                'day_index' => $filters['day_index'],
-                'start_time' => ['between' => [$startTime->format('H:i'), $endTime->format('H:i')]]
-            ])->count();
-            if ($count > 0) {
-                continue;
+                'day_index' => $filters['day_index']
+            ])->all();
+
+            $isAvailable = true;
+            foreach ($items as $item) {
+                if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
+                    $isAvailable = false;
+                    break;
+                }
             }
-            $availableClassrooms[] = $classroom;
+
+            if ($isAvailable) {
+                $availableClassrooms[] = $classroom;
+            }
         }
         return $availableClassrooms;
     }
@@ -803,28 +810,45 @@ class ScheduleController extends Controller
 
                 // 2. Yeni Item'i Tüm İlgili Schedule'lara Kaydet
                 foreach ($targetSchedules as $schedule) {
-                    $newItem = new ScheduleItem();
-                    $newItem->schedule_id = $schedule->id;
-                    $newItem->day_index = $itemData['day_index'];
-                    $newItem->start_time = $itemData['start_time'];
-                    $newItem->end_time = $itemData['end_time'];
-                    $newItem->status = $itemData['status']; // muhtemelen 'single' veya 'group'
-
-                    // ScheduleItem modelinde data bir liste olarak tutulur (örn: [ ['lesson_id'=>1], ['lesson_id'=>2] ])
-                    // Frontend'den gelen veri tek bir obje olabilir, bu yüzden diziye çeviriyoruz.
-                    if (isset($itemData['data']['lesson_id'])) { // Tek bir ders verisi gelmişse
-                        $newItem->data = [$itemData['data']];
+                    // Data formatını hazırla (Tekil array içinde array yapısı)
+                    $validData = [];
+                    if (isset($itemData['data']['lesson_id'])) {
+                        $validData = [$itemData['data']];
                     } else {
-                        $newItem->data = $itemData['data'];
+                        $validData = $itemData['data'];
                     }
 
-                    if (isset($itemData['detail']) && !array_is_list($itemData['detail'])) {
-                        $newItem->detail = [$itemData['detail']];
-                    } else {
-                        $newItem->detail = $itemData['detail'] ?? null;
+                    $validDetail = null;
+                    if (isset($itemData['detail'])) {
+                        if (!array_is_list($itemData['detail'])) {
+                            $validDetail = [$itemData['detail']];
+                        } else {
+                            $validDetail = $itemData['detail'];
+                        }
                     }
 
-                    $newItem->create();
+                    if ($itemData['status'] === 'group') {
+                        // Group statusunde ise merge/split işlemi yap
+                        $this->processGroupItemSaving(
+                            $schedule,
+                            $itemData['day_index'],
+                            $itemData['start_time'],
+                            $itemData['end_time'],
+                            $validData,
+                            $validDetail
+                        );
+                    } else {
+                        // Diğer durumlar (single, preferred, unavailable) için direkt create
+                        $newItem = new ScheduleItem();
+                        $newItem->schedule_id = $schedule->id;
+                        $newItem->day_index = $itemData['day_index'];
+                        $newItem->start_time = $itemData['start_time'];
+                        $newItem->end_time = $itemData['end_time'];
+                        $newItem->status = $itemData['status'];
+                        $newItem->data = $validData;
+                        $newItem->detail = $validDetail;
+                        $newItem->create();
+                    }
                 }
             }
             $this->database->commit();
@@ -1225,5 +1249,142 @@ class ScheduleController extends Controller
             }
         }
         return $schedule_filters;
+    }
+    /**
+     * Group statusundaki itemleri birleştirip yeniden oluşturur.
+     * Çakışan zaman dilimlerinde verileri birleştirir, diğer dilimlerde ayırır.
+     */
+    private function processGroupItemSaving(Schedule $schedule, int $dayIndex, string $startTime, string $endTime, array $newData, ?array $newDetail): void
+    {
+        // 1. İlgili günün tüm 'group' itemlerini çek
+        $allDayItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $schedule->id,
+            'day_index' => $dayIndex,
+            'status' => 'group'
+        ])->all();
+
+        // Sadece tarih aralığı çakışanları filtrele
+        $involvedItems = array_filter($allDayItems, function ($item) use ($startTime, $endTime) {
+            return $this->checkOverlap($startTime, $endTime, $item->start_time, $item->end_time);
+        });
+
+        // Eğer hiç çakışma yoksa direkt oluştur
+        if (empty($involvedItems)) {
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $schedule->id;
+            $newItem->day_index = $dayIndex;
+            $newItem->start_time = $startTime;
+            $newItem->end_time = $endTime;
+            $newItem->status = 'group';
+            $newItem->data = $newData;
+            $newItem->detail = $newDetail;
+            $newItem->create();
+            return;
+        }
+
+        // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
+        // Tüm başlangıç ve bitiş noktalarını topla
+        $points = [$startTime, $endTime];
+        foreach ($involvedItems as $item) {
+            $points[] = $item->start_time;
+            $points[] = $item->end_time;
+        }
+        $points = array_unique($points);
+        sort($points);
+
+        // 3. Aralıkları yeniden oluştur (Rebuild Intervals)
+        $pendingItems = [];
+
+        for ($i = 0; $i < count($points) - 1; $i++) {
+            $pStart = $points[$i];
+            $pEnd = $points[$i + 1];
+
+            // Aralık uzunluğu kontrolü (Hatalı nokta ihtimaline karşı)
+            if ($pStart >= $pEnd)
+                continue;
+
+            $mergedData = [];
+            $mergedDetail = [];
+
+            // Yeni veri bu aralığı kapsıyor mu?
+            if ($startTime <= $pStart && $endTime >= $pEnd) {
+                $mergedData = array_merge($mergedData, $newData);
+                if ($newDetail) {
+                    $mergedDetail = array_merge($mergedDetail, $newDetail);
+                }
+            }
+
+            // Mevcut itemler bu aralığı kapsıyor mu?
+            foreach ($involvedItems as $item) {
+                if ($item->start_time <= $pStart && $item->end_time >= $pEnd) {
+                    $itemData = is_string($item->data) ? json_decode($item->data, true) : $item->data;
+                    if (is_array($itemData)) {
+                        $mergedData = array_merge($mergedData, $itemData);
+                    }
+
+                    $itemDetail = is_string($item->detail) ? json_decode($item->detail, true) : $item->detail;
+                    if (is_array($itemDetail)) {
+                        $mergedDetail = array_merge($mergedDetail, $itemDetail);
+                    }
+                }
+            }
+
+            // Data varsa listeye ekle
+            if (!empty($mergedData)) {
+                // Duplicate lesson'ları temizle (lesson_id bazlı)
+                $uniqueData = [];
+                $seenLessonIds = [];
+                foreach ($mergedData as $d) {
+                    $lid = $d['lesson_id'] ?? null;
+                    if ($lid && !in_array($lid, $seenLessonIds)) {
+                        $seenLessonIds[] = $lid;
+                        $uniqueData[] = $d;
+                    } elseif (!$lid) {
+                        $uniqueData[] = $d;
+                    }
+                }
+
+                // Optimization: Eğer bir önceki item ile datalar ve detail aynı ise zaman aralığını uzat
+                $lastIdx = count($pendingItems) - 1;
+                if ($lastIdx >= 0) {
+                    $lastItem = &$pendingItems[$lastIdx];
+                    if (
+                        $lastItem['end'] == $pStart &&
+                        json_encode($lastItem['data']) === json_encode($uniqueData) &&
+                        json_encode($lastItem['detail']) === json_encode($mergedDetail)
+                    ) {
+
+                        $lastItem['end'] = $pEnd;
+                        continue;
+                    }
+                }
+
+                $pendingItems[] = [
+                    'start' => $pStart,
+                    'end' => $pEnd,
+                    'data' => $uniqueData,
+                    'detail' => $mergedDetail
+                ];
+            }
+        }
+
+        // 4. Veritabanı İşlemleri
+        // Eski itemleri sil
+        foreach ($involvedItems as $item) {
+            $item->delete();
+        }
+
+        // Yeni itemleri oluştur
+        foreach ($pendingItems as $pItem) {
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $schedule->id;
+            $newItem->day_index = $dayIndex;
+            $newItem->start_time = $pItem['start'];
+            $newItem->end_time = $pItem['end'];
+            $newItem->status = 'group';
+            $newItem->data = $pItem['data'];
+            $newItem->detail = !empty($pItem['detail']) ? $pItem['detail'] : null;
+            $newItem->create();
+        }
     }
 }
