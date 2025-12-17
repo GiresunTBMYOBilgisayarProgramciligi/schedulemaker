@@ -113,6 +113,8 @@ class ScheduleCard {
     async initialize(scheduleCardElement) {
         this.card = scheduleCardElement;
         this.id = this.card.dataset.scheduleId ?? null;
+        this.duration = parseInt(this.card.dataset.duration) || 50;
+        this.breakDuration = parseInt(this.card.dataset.break) || 0;
         let schedule = await this.getSchedule();
         this.list = this.card.querySelector(".available-schedule-items");
         this.table = this.card.querySelector("table.active");
@@ -669,12 +671,7 @@ class ScheduleCard {
     }
 
     lessonHourToMinute(hours) {
-        if (this.type === 'lesson') {
-            return hours * 50;
-        } else if (this.examTypes.includes(this.type)) {
-            return hours * 30;
-        }
-        return 0;
+        return hours * this.duration;
     }
 
     addMinutes(timeStr, minutes) {
@@ -690,7 +687,7 @@ class ScheduleCard {
         let currentItem = null;
         let addedHours = 0;
         let i = 0;
-        let breakTime = this.examTypes.includes(this.type) ? 0 : 10;
+        let breakTime = this.breakDuration;
         let scheduleItemData = {
             "lesson_id": this.draggedLesson.lesson_id,
             "lecturer_id": this.draggedLesson.lecturer_id,

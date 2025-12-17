@@ -10,15 +10,17 @@ use App\Models\Schedule;
 <!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>">
+        <div class="card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>"
+            data-schedule-id="<?= $schedule->id ?>" data-duration="<?= $duration ?? 50 ?>"
+            data-break="<?= $break ?? 10 ?>">
             <div class="card-header">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
                     <div class="btn-group" role="group" aria-label="Dışa aktarma">
-                        <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm" >
+                        <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm">
                             <span>Excel\'e aktar</span>
                         </button>
-                        <button id="singlePageCalendar" type="button" class="btn btn-outline-secondary btn-sm" >
+                        <button id="singlePageCalendar" type="button" class="btn btn-outline-secondary btn-sm">
                             <span>Takvime kaydet</span>
                         </button>
                     </div>

@@ -144,6 +144,32 @@
                                                 <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                             </div>
                                         </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label"
+                                                    for="settings[lesson][duration][value]">Ders Süresi (Dakika)</label>
+                                                <input type="hidden" name="settings[lesson][duration][type]"
+                                                    value="integer">
+                                                <input type="number" class="form-control"
+                                                    id="settings[lesson][duration][value]"
+                                                    name="settings[lesson][duration][value]"
+                                                    value="<?= @$settings['lesson']['duration'] ?? 50 ?>">
+                                                <div class="form-text">Bir ders saatinin kaç dakika süreceğini belirler.
+                                                    varsayılan 50</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label"
+                                                    for="settings[lesson][break][value]">Tenefüs Süresi (Dakika)</label>
+                                                <input type="hidden" name="settings[lesson][break][type]"
+                                                    value="integer">
+                                                <input type="number" class="form-control"
+                                                    id="settings[lesson][break][value]"
+                                                    name="settings[lesson][break][value]"
+                                                    value="<?= @$settings['lesson']['break'] ?? 10 ?>">
+                                                <div class="form-text">Dersler arası molanın kaç dakika süreceğini
+                                                    belirler. Varsayılan 10</div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <!-- Exam Settings Tab -->
                                     <div class="tab-pane fade" id="exam" role="tabpanel" aria-labelledby="exam-tab">
@@ -252,6 +278,31 @@
                                                 </select>
                                                 <div class="form-text">Sınav takviminde haftanın dahil edileceği son
                                                     günü belirler. Varsayılan: Cumartesi.</div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label"
+                                                    for="settings[exam][duration][value]">Sınav Süresi (Dakika)</label>
+                                                <input type="hidden" name="settings[exam][duration][type]"
+                                                    value="integer">
+                                                <input type="number" class="form-control"
+                                                    id="settings[exam][duration][value]"
+                                                    name="settings[exam][duration][value]"
+                                                    value="<?= @$settings['exam']['duration'] ?? 30 ?>">
+                                                <div class="form-text">Bir sınavın kaç dakika süreceğini belirler (slot
+                                                    aralığı). Varsayılan 30</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[exam][break][value]">Sınav
+                                                    Arası (Dakika)</label>
+                                                <input type="hidden" name="settings[exam][break][type]" value="integer">
+                                                <input type="number" class="form-control"
+                                                    id="settings[exam][break][value]"
+                                                    name="settings[exam][break][value]"
+                                                    value="<?= @$settings['exam']['break'] ?? 0 ?>">
+                                                <div class="form-text">Sınavlar arası molanın kaç dakika süreceğini
+                                                    belirler. Varsayılan 0</div>
                                             </div>
                                         </div>
                                     </div>

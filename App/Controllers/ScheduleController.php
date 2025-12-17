@@ -131,33 +131,37 @@ class ScheduleController extends Controller
         $scheduleRows = [];
         $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
         if (in_array($schedule->type, $examTypes)) {
-            // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
+            $duration = getSettingValue('duration', 'exam', 30);
+            $break = getSettingValue('break', 'exam', 0);
+            // 08:00–17:00 arası 
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
             while ($start < $end) {
                 $slotStartTime = clone $start;
-                $slotEndTime = (clone $start)->modify('+30 minutes');
+                $slotEndTime = (clone $start)->modify("+$duration minutes");
                 $scheduleRows[] = [
                     'slotStartTime' => $slotStartTime,
                     'slotEndTime' => $slotEndTime,
                     'days' => $this->generateEmptyWeek($type, $maxDayIndex)
                 ];
 
-                $start = $slotEndTime;
+                $start = (clone $slotEndTime)->modify("+$break minutes");
             }
         } else {
-            // 08:00–17:00 arası 30 dk slotlar (12:00–13:00 DAHIL)
+            $duration = getSettingValue('duration', 'lesson', 50);
+            $break = getSettingValue('break', 'lesson', 10);
+            // 08:00–17:00 arası
             $start = new \DateTime('08:00');
             $end = new \DateTime('17:00');
             while ($start < $end) {
                 $slotStartTime = clone $start;
-                $slotEndTime = (clone $start)->modify('+50 minutes');
+                $slotEndTime = (clone $start)->modify("+$duration minutes");
                 $scheduleRows[] = [
                     'slotStartTime' => $slotStartTime,
                     'slotEndTime' => $slotEndTime,
                     'days' => $this->generateEmptyWeek($type, $maxDayIndex)
                 ];
-                $start = (clone $slotEndTime)->modify('+10 minutes'); // tenefüs arası
+                $start = (clone $slotEndTime)->modify("+$break minutes"); // tenefüs arası
             }
         }
 
@@ -364,13 +368,23 @@ class ScheduleController extends Controller
         $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
         $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
 
+        if (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+            $duration = getSettingValue('duration', 'exam', 30);
+            $break = getSettingValue('break', 'exam', 0);
+        } else {
+            $duration = getSettingValue('duration', 'lesson', 50);
+            $break = getSettingValue('break', 'lesson', 10);
+        }
+
         return View::renderPartial('admin', 'schedules', 'scheduleCard', [
             'schedule' => $schedule,
             'availableLessonsHTML' => $availableLessonsHTML,
             'scheduleTableHTML' => $scheduleTableHTML,
             'ownerName' => $ownerName,
             'cardTitle' => $cardTitle,
-            'dataSemesterNo' => $dataSemesterNo
+            'dataSemesterNo' => $dataSemesterNo,
+            'duration' => $duration,
+            'break' => $break
         ]);
     }
 
@@ -428,17 +442,21 @@ class ScheduleController extends Controller
             $startFormatted = $currentTime->format('H.i');
 
             if (in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                $duration = getSettingValue('duration', 'exam', 30);
+                $break = getSettingValue('break', 'exam', 0);
                 $endTime = clone $currentTime;
-                $endTime->modify('+30 minutes');
+                $endTime->modify("+$duration minutes");
                 $endFormatted = $endTime->format('H.i');
                 $schedule[] = "$startFormatted - $endFormatted";
-                $currentTime = $endTime;
+                $currentTime = $endTime->modify("+$break minutes");
             } else {
+                $duration = getSettingValue('duration', 'lesson', 50);
+                $break = getSettingValue('break', 'lesson', 10);
                 $endTime = clone $currentTime;
-                $endTime->modify('+50 minutes');
+                $endTime->modify("+$duration minutes");
                 $endFormatted = $endTime->format('H.i');
                 $schedule[] = "$startFormatted - $endFormatted";
-                $currentTime = $endTime->modify('+10 minutes');
+                $currentTime = $endTime->modify("+$break minutes");
             }
         }
 
@@ -448,9 +466,13 @@ class ScheduleController extends Controller
     public function lessonHourToMinute($scheduleType, $hours): int
     {
         if ($scheduleType === 'lesson') {
-            return $hours * 60;
+            $duration = getSettingValue('duration', 'lesson', 50);
+            $break = getSettingValue('break', 'lesson', 10);
+            return $hours * ($duration + $break);
         } elseif ($scheduleType === 'midterm-exam' || $scheduleType === 'final-exam' || $scheduleType === 'makeup-exam') {
-            return $hours * 30;
+            $duration = getSettingValue('duration', 'exam', 30);
+            $break = getSettingValue('break', 'exam', 0);
+            return $hours * ($duration + $break);
         }
         return 0;
     }
