@@ -56,7 +56,7 @@ create table if not exists schedule_items
     end_time      TIME,
     status        ENUM('preferred','unavailable','group','single'),
     data          TEXT,
-    description   TEXT,
+    detail        TEXT,
     primary key (id),
     unique (schedule_id,day_index,week_index,start_time,end_time),
     foreign key (schedule_id) references schedules (id) on delete cascade
