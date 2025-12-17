@@ -150,35 +150,24 @@ class ScheduleCard {
         if (!availableList || !table || !thead) return;
 
         // Create a wrapper for sticky elements
-        const stickyWrapper = document.createElement('div');
-        stickyWrapper.className = 'sticky-header-wrapper';
-        stickyWrapper.style.position = 'fixed';
+        this.stickyWrapper = document.createElement('div'); // Make it a class property
+        this.stickyWrapper.className = 'sticky-header-wrapper';
+        this.stickyWrapper.style.position = 'fixed';
 
         // Calculate offset dynamically
         const navbar = document.querySelector('.app-header') || document.querySelector('.main-header') || document.querySelector('nav.navbar');
         const isNavbarFixed = navbar && (getComputedStyle(navbar).position === 'fixed' || document.body.classList.contains('layout-navbar-fixed'));
         const topOffset = isNavbarFixed ? navbar.offsetHeight : 0;
 
-        stickyWrapper.style.top = topOffset + 'px';
-        stickyWrapper.style.zIndex = '1039'; // High z-index but below modals
-        stickyWrapper.style.display = 'none';
-        stickyWrapper.style.width = this.card.offsetWidth + 'px';
-        stickyWrapper.style.backgroundColor = '#fff';
-        stickyWrapper.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        this.stickyWrapper.style.top = topOffset + 'px';
+        this.stickyWrapper.style.zIndex = '1039'; // High z-index but below modals
+        this.stickyWrapper.style.display = 'none';
+        this.stickyWrapper.style.width = this.card.offsetWidth + 'px';
+        this.stickyWrapper.style.backgroundColor = '#fff';
+        this.stickyWrapper.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
 
-        // Clone Available List
-        const listClone = availableList.cloneNode(true);
-        listClone.id = ''; // Remove ID to avoid conflicts
-        listClone.classList.add('sticky-list-clone');
-        // Ensure inputs/events work in clone if needed, but for drag/drop might need re-binding. 
-        // For now, let's assume it's visual reference mainly, but user might want to drag from it.
-        // Re-binding drag events to clone:
-        const dragableElements = listClone.querySelectorAll('[draggable="true"]');
-        dragableElements.forEach(element => {
-            element.addEventListener('dragstart', this.dragStartHandler.bind(this));
-        });
-
-        stickyWrapper.appendChild(listClone);
+        // Initial content population
+        this.updateStickyList();
 
         // Clone Table Header
         const tableClone = document.createElement('table');
@@ -194,9 +183,9 @@ class ScheduleCard {
         tableContainer.style.overflow = 'hidden'; // Hide scrollbars on clone
         tableContainer.appendChild(tableClone);
 
-        stickyWrapper.appendChild(tableContainer);
+        this.stickyWrapper.appendChild(tableContainer);
 
-        this.card.appendChild(stickyWrapper);
+        this.card.appendChild(this.stickyWrapper);
 
         // Sync Widths Function
         const syncWidths = () => {
@@ -211,7 +200,7 @@ class ScheduleCard {
                 }
             });
 
-            stickyWrapper.style.width = this.card.offsetWidth + 'px';
+            this.stickyWrapper.style.width = this.card.offsetWidth + 'px';
             // Sync horizontal scroll
             tableContainer.scrollLeft = this.table.parentElement.scrollLeft;
         };
@@ -227,9 +216,13 @@ class ScheduleCard {
 
             // Adjust trigger point slightly to avoid flicker
             if (cardRect.top < offset && cardRect.bottom > offset + availableList.offsetHeight + thead.offsetHeight) {
-                stickyWrapper.style.display = 'block';
-                stickyWrapper.style.left = cardRect.left + 'px';
-                stickyWrapper.style.top = offset + 'px'; // Ensure update if navbar changes height
+                if (this.stickyWrapper.style.display !== 'block') {
+                    this.updateStickyList();
+                }
+
+                this.stickyWrapper.style.display = 'block';
+                this.stickyWrapper.style.left = cardRect.left + 'px';
+                this.stickyWrapper.style.top = offset + 'px'; // Ensure update if navbar changes height
 
                 // Hide original available list visibility (not display:none to keep space)
                 availableList.style.visibility = 'hidden';
@@ -237,7 +230,7 @@ class ScheduleCard {
 
                 syncWidths();
             } else {
-                stickyWrapper.style.display = 'none';
+                this.stickyWrapper.style.display = 'none';
                 availableList.style.visibility = 'visible';
                 thead.style.visibility = 'visible';
             }
@@ -246,12 +239,37 @@ class ScheduleCard {
         // Sync horizontal scroll
         const originalTableContainer = this.table.parentElement;
         originalTableContainer.addEventListener('scroll', (e) => {
-            if (stickyWrapper.style.display === 'block') {
-                tableContainer.scrollLeft = ignored_var = e.target.scrollLeft;
+            if (this.stickyWrapper.style.display === 'block') {
+                tableContainer.scrollLeft = e.target.scrollLeft;
             }
         });
 
         window.addEventListener('resize', syncWidths);
+    }
+
+    updateStickyList() {
+        if (!this.stickyWrapper) return;
+        const availableList = this.list; // Original list
+        if (!availableList) return;
+
+        const oldList = this.stickyWrapper.querySelector('.sticky-list-clone');
+        if (oldList) oldList.remove();
+
+        const listClone = availableList.cloneNode(true);
+        listClone.id = ''; // Remove ID to avoid conflicts
+        listClone.classList.add('sticky-list-clone');
+        listClone.style.visibility = 'visible'; // Ensure it's visible even if original is hidden
+
+        // Remove IDs from children to prevent duplicate IDs in DOM
+        listClone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+
+        // Re-bind drag events
+        const dragableElements = listClone.querySelectorAll('[draggable="true"]');
+        dragableElements.forEach(element => {
+            element.addEventListener('dragstart', this.dragStartHandler.bind(this));
+        });
+
+        this.stickyWrapper.prepend(listClone);
     }
 
     async getSchedule() {
@@ -991,36 +1009,51 @@ class ScheduleCard {
         });
 
         // Available List Güncelleme Logic'i
+
+        // Target the ORIGINAL element for updates, regardless of which one was dragged
+        let targetElement = this.draggedLesson.HTMLElement;
+
+        // If dragged element is in sticky wrapper, find the original in main list
+        if (targetElement.closest('.sticky-header-wrapper')) {
+            const lessonId = this.draggedLesson.lesson_id;
+            // Original items have 'data-lesson-id' set (assuming structure). 
+            // Or if we stripped IDs but kept dataset, we look up by dataset.
+            targetElement = this.list.querySelector(`[data-lesson-id="${lessonId}"]`);
+
+            if (!targetElement) {
+                console.error('Original lesson element not found for update!', lessonId);
+                // Fallback to dragged element if original not found (should not happen)
+                targetElement = this.draggedLesson.HTMLElement;
+            }
+        }
+
         if (this.examTypes.includes(this.type)) {
             const currentRemaining = parseInt(this.draggedLesson.size || 0);
             const decrement = parseInt(classroom.exam_size || 0);
-            // newRemaining calculation logic might depend on how many slots we filled vs students placed?
-            // The previous logic used classroom.exam_size * 1 (single drop).
-            // But if we dropped multiple hours, does it mean multiple capacities? 
-            // Usually exams are 1 session. If addedHours > 1, it's just duration. 
-            // Capacity decrement happens once per exam session usually.
-            // Assuming 1 drop = 1 exam session (regardless of duration).
             const newRemaining = Math.max(0, currentRemaining - decrement);
 
             if (newRemaining > 0) {
-                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerText = newRemaining.toString();
-                this.draggedLesson.HTMLElement.dataset.size = newRemaining.toString();
+                targetElement.querySelector(".lesson-classroom").innerText = newRemaining.toString();
+                targetElement.dataset.size = newRemaining.toString();
+                // Update draggedLesson info potentially for consistency
             } else {
-                this.draggedLesson.HTMLElement.closest("div.frame")?.remove();
-                this.draggedLesson.HTMLElement.remove();
+                targetElement.closest("div.frame")?.remove();
+                targetElement.remove();
             }
         } else {
             // Lesson Types: addedHours corresponds to hours deducted
             if (this.draggedLesson.lesson_hours > addedHours) {
                 let newHours = this.draggedLesson.lesson_hours - addedHours;
-                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerHTML = newHours.toString()+ " Saat";
+                targetElement.querySelector(".lesson-classroom").innerHTML = newHours.toString() + " Saat";
                 this.draggedLesson.lesson_hours = newHours; // Update local state if needed
-                this.draggedLesson.HTMLElement.dataset.lessonHours = newHours;
+                targetElement.dataset.lessonHours = newHours;
             } else {
-                this.draggedLesson.HTMLElement.closest("div.frame")?.remove();
-                this.draggedLesson.HTMLElement.remove();
+                targetElement.closest("div.frame")?.remove();
+                targetElement.remove();
             }
         }
+
+        this.updateStickyList(); // Refresh the sticky view
     }
     /**
      * tablodan tabloya aktarımda  silme işlemi yapıldıktan sonra kaydetme işleminde çakışma olduğunda ders silinmiş oluyor. Önce çakışma kontrolü yapılmalı. 
@@ -1262,7 +1295,9 @@ class ScheduleCard {
 
         if (deleteScheduleResult) {
             let draggedElementIdInList = "available-lesson-" + this.draggedLesson.lesson_id;
-            let lessonInList = this.dropZone.querySelector("#" + draggedElementIdInList)
+            // Always look in the ORIGINAL list
+            let lessonInList = this.list.querySelector("#" + draggedElementIdInList);
+
             //listede taşınan dersin varlığını kontrol et
             if (lessonInList) {
                 let badgeText = '';
@@ -1274,31 +1309,56 @@ class ScheduleCard {
                     badgeText = lessonInList.dataset.lessonHours;
                 }
                 lessonInList.querySelector(".lesson-classroom").innerText = badgeText;
+
+                // If we were dragging a sticky element, remove it (it will be recreated by updateStickyList)
+                // Actually we dragged the "ghost". logic implies we remove the dragged element from where it came from?
+                // But the logic here is: we took it from TABLE and put it in LIST.
+                // The `draggedLesson.HTMLElement` is the one from the Table?
+                // No, in dropTableToList, we are dragging FROM table TO list.
+                // So `draggedLesson.HTMLElement` is the table element? 
+                // Wait, `dropTableToTable` line 1353 does `cell.appendChild`.
+                // Here we do `this.draggedLesson.HTMLElement.remove()` (line 1277 in original).
+                // Yes, removing the element from the Table.
                 this.draggedLesson.HTMLElement.remove()
             } else {
                 //eğer listede yoksa o ders listeye eklenir
-                this.draggedLesson.HTMLElement.id = draggedElementIdInList
+                // Create new element for the ORIGINAL list
+                let newElement = this.draggedLesson.HTMLElement.cloneNode(true);
+                // Reset attributes
+                newElement.id = draggedElementIdInList;
+                newElement.classList.remove('lesson-card'); // If it had it?
+                // Original logic followed below:
+
                 let draggedElementFrameDiv = document.createElement("div");
                 draggedElementFrameDiv.classList.add("frame", "col-md-4", "p-0", "ps-1");
                 this.list.appendChild(draggedElementFrameDiv)
+
                 let badgeText = '';
                 if (this.type == 'exam') {
-                    this.draggedLesson.HTMLElement.dataset.size = this.draggedLesson.classroom_exam_size
-                    badgeText = this.draggedLesson.HTMLElement.dataset.size;
+                    newElement.dataset.size = this.draggedLesson.classroom_exam_size
+                    badgeText = newElement.dataset.size;
                 } else {
-                    this.draggedLesson.HTMLElement.dataset.lessonHours = 1;
-                    badgeText = this.draggedLesson.HTMLElement.dataset.lessonHours;
+                    newElement.dataset.lessonHours = 1;
+                    badgeText = newElement.dataset.lessonHours;
                 }
-                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerText = badgeText
-                delete this.draggedLesson.HTMLElement.dataset.time
-                delete this.draggedLesson.HTMLElement.dataset.dayIndex
-                delete this.draggedLesson.HTMLElement.dataset.classroomId
-                delete this.draggedLesson.HTMLElement.dataset.classroomExamSize
-                delete this.draggedLesson.HTMLElement.dataset.classroomSize
+                newElement.querySelector(".lesson-classroom").innerText = badgeText
+
+                delete newElement.dataset.time
+                delete newElement.dataset.dayIndex
+                delete newElement.dataset.classroomId
+                delete newElement.dataset.classroomExamSize
+                delete newElement.dataset.classroomSize
+                newElement.dataset.scheduleItemId = ''; // Clear sched item id if present
+
                 //klonlanan yeni elemente de drag start olay dinleyicisi ekleniyor.
-                this.draggedLesson.HTMLElement.addEventListener('dragstart', this.dragStartHandler.bind(this));
-                draggedElementFrameDiv.appendChild(this.draggedLesson.HTMLElement)
+                newElement.addEventListener('dragstart', this.dragStartHandler.bind(this));
+                draggedElementFrameDiv.appendChild(newElement);
+
+                // Remove the one from table
+                this.draggedLesson.HTMLElement.remove();
             }
+
+            this.updateStickyList(); // Refresh sticky list
         }
 
         this.resetDraggedLesson();
