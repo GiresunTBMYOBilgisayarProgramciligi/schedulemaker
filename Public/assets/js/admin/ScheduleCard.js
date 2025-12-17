@@ -964,7 +964,7 @@ class ScheduleCard {
                     // Update Classroom Name in View
                     let classroomSpan = lessonCard.querySelector('.lesson-classroom');
                     if (classroomSpan) {
-                        classroomSpan.innerHTML = `<i class="fas fa-door-open"></i> ${classroom.name}`;
+                        classroomSpan.innerHTML = `${classroom.name}`;
                     }
 
                     // Tooltip'i yeniden tanımla (klonlandığı için)
@@ -1003,7 +1003,7 @@ class ScheduleCard {
             const newRemaining = Math.max(0, currentRemaining - decrement);
 
             if (newRemaining > 0) {
-                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = newRemaining.toString();
+                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerText = newRemaining.toString();
                 this.draggedLesson.HTMLElement.dataset.size = newRemaining.toString();
             } else {
                 this.draggedLesson.HTMLElement.closest("div.frame")?.remove();
@@ -1013,7 +1013,7 @@ class ScheduleCard {
             // Lesson Types: addedHours corresponds to hours deducted
             if (this.draggedLesson.lesson_hours > addedHours) {
                 let newHours = this.draggedLesson.lesson_hours - addedHours;
-                this.draggedLesson.HTMLElement.querySelector("span.badge").innerHTML = newHours.toString();
+                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerHTML = newHours.toString()+ " Saat";
                 this.draggedLesson.lesson_hours = newHours; // Update local state if needed
                 this.draggedLesson.HTMLElement.dataset.lessonHours = newHours;
             } else {
@@ -1273,7 +1273,7 @@ class ScheduleCard {
                     lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString();
                     badgeText = lessonInList.dataset.lessonHours;
                 }
-                lessonInList.querySelector("span.badge").innerText = badgeText;
+                lessonInList.querySelector(".lesson-classroom").innerText = badgeText;
                 this.draggedLesson.HTMLElement.remove()
             } else {
                 //eğer listede yoksa o ders listeye eklenir
@@ -1289,7 +1289,7 @@ class ScheduleCard {
                     this.draggedLesson.HTMLElement.dataset.lessonHours = 1;
                     badgeText = this.draggedLesson.HTMLElement.dataset.lessonHours;
                 }
-                this.draggedLesson.HTMLElement.querySelector("span.badge").innerText = badgeText
+                this.draggedLesson.HTMLElement.querySelector(".lesson-classroom").innerText = badgeText
                 delete this.draggedLesson.HTMLElement.dataset.time
                 delete this.draggedLesson.HTMLElement.dataset.dayIndex
                 delete this.draggedLesson.HTMLElement.dataset.classroomId
