@@ -293,78 +293,68 @@ class Lesson extends Model
      */
     public function IsScheduleComplete(string $type = "lesson"): bool
     {
-        $result = false;
-        if ($type == "lesson") {
-            //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
-            $schedules = (new Schedule())->get()->where([
-                'owner_id' => $this->id,
-                'semester_no' => $this->semester_no,
-                'owner_type' => 'lesson',
-                'academic_year' => $this->academic_year,
-                'type' => 'lesson',
-                'semester' => $this->semester
-            ])->with(['items'])->all();
+        /**
+         * derse ait schedule bulunur
+         * bu schedule a ait schedule itemler bulunur.
+         * schedule itemi yoksa $this->remaining_size = $this->size; yapılır ve false dönülür.
+         * item varsa status bilgisi unavailable ve preferred olmayanların ders saat sayısı ayarlardan gelen ders saat süresine göre hesaplanır.
+         * itemde hesaplanan saat sayısı $this->placed_size olarak kaydedilir.
+         * $this->remaining_size = $this->size - $this->placed_size; ile kalan saat sayısı hesaplanır.
+         * kalan saat 0 ise true döndürülür.
+         *
+         * sınav programları için itemlerin getSlotDatas metodu kullanılarak dersliklerin sınav mevcudu toplanarak ddersin mevcudunu karşılayıp karşılamadığına bakılır.
+         */
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'lesson',
+            'owner_id' => $this->id,
+            'type' => $type
+        ])->with('items')->all();
 
-            $this->placed_hours = 0;
-            foreach ($schedules as $schedule) {
-                // Her bir schedule item bir ders saatini temsil eder
-                $this->placed_hours += count($schedule->items);
-            }
-
-            if ($this->placed_hours >= $this->hours) {
-                $result = true;
-            }
-        } elseif ($type == "exam") {
-            // İlgili dönem/yıl için sınıf sahibi (owner_type=classroom) exam kayıtlarını al ve ders bazında kapasite topla
-            $examSchedules = (new Schedule())->get()->where([
-                'owner_type' => 'classroom',
-                'type' => 'exam',
-                'semester' => $this->semester,
-                'academic_year' => $this->academic_year,
-            ])->all();
-
-            // Ders bazında yerleştirilen kapasite
-            $placedCapacityByLesson = [];
-            $classroomCache = [];
-            // maxDayIndex ayarı
-            $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 5);
-
-            foreach ($examSchedules as $schedule) {
-                // owner_id derslik id'sidir (sınıf sahibi kayıt)
-                $classroomId = $schedule->owner_id;
-                if (!isset($classroomCache[$classroomId])) {
-                    $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
-                }
-                $examSize = (int) ($classroomCache[$classroomId]->exam_size ?? 0);
-                for ($i = 0; $i <= $maxDayIndex; $i++) {
-                    $day = $schedule->{"day" . $i};
-                    if (is_array($day)) {
-                        if (isset($day[0]) && is_array($day[0])) {
-                            foreach ($day as $grp) {
-                                if (isset($grp['lesson_id'])) {
-                                    $lid = (int) $grp['lesson_id'];
-                                    $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                                }
-                            }
-                        } else {
-                            if (isset($day['lesson_id'])) {
-                                $lid = (int) $day['lesson_id'];
-                                $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
-            $this->placed_size = (int) ($placedCapacityByLesson[$this->id] ?? 0);
-            $this->remaining_size = max(0, (int) $this->size - $this->placed_size);
-            if ($this->remaining_size <= 0) {
-                $result = true;
+        $items = [];
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->items as $item) {
+                $items[] = $item;
             }
         }
 
-        return $result;
+        $targetSize = ($type == 'lesson' && isset($this->hours)) ? $this->hours : $this->size;
+        $this->placed_size = 0;
+
+        if (empty($items)) {
+            $this->remaining_size = $targetSize;
+            $this->placed_hours = 0;
+            return false;
+        }
+
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        if (in_array($type, $examTypes)) {
+            foreach ($items as $item) {
+                foreach ($item->getSlotDatas() as $data) {
+                    if (isset($data->classroom)) {
+                        $this->placed_size += $data->classroom->exam_size;
+                    }
+                }
+            }
+        } else {
+            $lessonDuration = getSettingValue('duration', 'lesson', 50);
+            foreach ($items as $item) {
+                if ($item->status === 'unavailable' || $item->status === 'preferred') {
+                    continue;
+                }
+                $start = \DateTime::createFromFormat('H:i:s', $item->start_time) ?: \DateTime::createFromFormat('H:i', $item->start_time);
+                $end = \DateTime::createFromFormat('H:i:s', $item->end_time) ?: \DateTime::createFromFormat('H:i', $item->end_time);
+
+                if ($start && $end) {
+                    $diffMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
+                    $this->placed_size += round($diffMinutes / $lessonDuration);
+                }
+            }
+            $this->placed_hours = $this->placed_size;
+        }
+
+        $this->remaining_size = $targetSize - $this->placed_size;
+
+        return $this->remaining_size <= 0;
     }
 
     public function getScheduleCSSClass(): string
