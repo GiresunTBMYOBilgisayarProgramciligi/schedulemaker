@@ -581,7 +581,9 @@ class ScheduleCard {
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
 
-            selectedHoursInput.addEventListener("change", this.fetchAvailableClassrooms.bind(this, classroomSelect, selectedHoursInput.value));
+            selectedHoursInput.addEventListener("change", (event) => {
+                this.fetchAvailableClassrooms(classroomSelect, event.target.value);
+            });
             selectedHoursInput.dispatchEvent(new Event("change"));
 
             let classroomSelectForm = scheduleModal.body.querySelector("form");
