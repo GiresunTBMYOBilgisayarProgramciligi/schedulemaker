@@ -854,7 +854,7 @@ class AjaxRouter extends Router
     }
 
     /**
-     * todo
+     * 
      * @throws Exception
      */
     public function checkClassroomScheduleAction(): void
@@ -888,8 +888,8 @@ class AjaxRouter extends Router
          */
         $classroomOccupancy = [];
         $classroomIds = array_column($classrooms, 'id');
-        $this->logger()->debug("Classroom IDs: " ,["classroomIds"=> $classroomIds]);
-        
+        $this->logger()->debug("Classroom IDs: ", ["classroomIds" => $classroomIds]);
+
         $schedules = (new Schedule())->get()->where([
             'owner_type' => 'classroom',
             'owner_id' => ['in' => $classroomIds],
@@ -897,22 +897,22 @@ class AjaxRouter extends Router
             'semester' => $filters['semester'],
             'academic_year' => $filters['academic_year'],
         ])->with(['items'])->all();
-        $this->logger()->debug("Schedules: ",['schedules' => $schedules]);
-        
-        foreach ($schedules as $schedule) {
-            $this->logger()->debug("Schedule Items: ",['scheduleItems' => $schedule->items]);
-            foreach ($schedule->items as $item) {
-                    $itemStart = substr($item->start_time, 0, 5);
-                    $itemEnd = substr($item->end_time, 0, 5);
+        $this->logger()->debug("Schedules: ", ['schedules' => $schedules]);
 
-                    foreach ($slots as $rowIndex => $slot) {
-                        // Çakışma kontrolü: (itemStart < slotEnd) && (slotStart < itemEnd)
-                        if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
-                            // Bu slot ve bu günde bu derslik dolu
-                            $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
-                        }
+        foreach ($schedules as $schedule) {
+            $this->logger()->debug("Schedule Items: ", ['scheduleItems' => $schedule->items]);
+            foreach ($schedule->items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    // Çakışma kontrolü: (itemStart < slotEnd) && (slotStart < itemEnd)
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        // Bu slot ve bu günde bu derslik dolu
+                        $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
                     }
                 }
+            }
         }
 
         // Eğer bir hücrede TÜM derslikler doluysa o hücreyi "unavailable" (kullanılamaz) işaretle
@@ -950,51 +950,62 @@ class AjaxRouter extends Router
      * todo
      * @throws Exception
      */
-    public function checkProgramScheduleAction()
+    public function checkProgramScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkProgramSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "checkProgramScheduleAction");
 
-        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $lesson = (new Lesson())->where([
+            'id' => $filters['lesson_id'],
+        ])->with(['program'])->first() ?: throw new Exception("Ders bulunamadı");
+        $program = $lesson->program;
+
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
         $unavailableCells = [];
-        $program = $lesson->getProgram();
-        $programSchedulesFilters = [
-            "owner_type" => "program",
-            "owner_id" => $program->id,
-            "type" => $filters["type"],
-            "semester" => $filters['semester'],
-            "semester_no" => $lesson->semester_no,
-            "academic_year" => $filters['academic_year'],
-        ];
-        $programSchedules = $scheduleController->getListByFilters($programSchedulesFilters);
-        if (count($programSchedules) > 0) {
-            $tableRows = [
-                "08.00 - 08.50",
-                "09.00 - 09.50",
-                "10.00 - 10.50",
-                "11.00 - 11.50",
-                "12.00 - 12.50",
-                "13.00 - 13.50",
-                "14.00 - 14.50",
-                "15.00 - 15.50",
-                "16.00 - 16.50"
-            ];
-            foreach ($programSchedules as $lessonSchedule) {
-                $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                if ($rowIndex === false) {
-                    continue; // bu saat tabloda yoksa atla
-                }
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                    if (is_array($lessonSchedule->{"day" . $i})) {
-                        $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+
+        // Programın o dönemdeki TÜM programlarını (ders, sınav vb.) kontrol et
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'program',
+            'owner_id' => $program->id,
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+            'semester_no' => $lesson->semester_no
+        ])->all();
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                     }
                 }
             }
         }
 
-        $this->response['status'] = "success";
-        $this->response["msg"] = "";
-        $this->response["unavailableCells"] = $unavailableCells;
+        $this->response = [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $unavailableCells
+        ];
         $this->sendResponse();
     }
 
