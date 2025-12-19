@@ -807,49 +807,61 @@ class AjaxRouter extends Router
         $scheduleController = new ScheduleController();
         $filters = $scheduleController->validator->validate($this->data, "checkLecturerScheduleAction");
 
-        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        $lecturer = $lesson->getLecturer();
-        $filters = [
-            "owner_type" => "user",
-            "owner_id" => $lecturer->id,
-            "type" => $filters["type"],
-            "semester" => $this->data['semester'],
-            "academic_year" => $this->data['academic_year'],
-        ];
-        $lessonSchedules = $scheduleController->getListByFilters($filters);
-        if (count($lessonSchedules) > 0) {
-            $unavailableCells = [];
-            $preferredCells = [];
-            $tableRows = [
-                "08.00 - 08.50",
-                "09.00 - 09.50",
-                "10.00 - 10.50",
-                "11.00 - 11.50",
-                "12.00 - 12.50",
-                "13.00 - 13.50",
-                "14.00 - 14.50",
-                "15.00 - 15.50",
-                "16.00 - 16.50"
-            ];
-            foreach ($lessonSchedules as $lessonSchedule) {
-                $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                if ($rowIndex === false) {
-                    continue; // bu saat tabloda yoksa atla
-                }
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {//day0-4
-                    if (!is_null($lessonSchedule->{"day" . $i})) {
-                        if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
-                            $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                        }
-                        if ($lessonSchedule->{"day" . $i} === true) {
-                            $preferredCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+        $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
+            ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->lecturer;
+
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
+        $unavailableCells = [];
+        $preferredCells = [];
+
+        // Hocaya ait o dönemdeki TÜM programları (ders, sınav, tercih vb.) kontrol et
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'user',
+            'owner_id' => $lecturer->id,
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->with(['items'])->all();
+
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        if ($item->status === 'preferred') {
+                            $preferredCells[$rowIndex + 1][$item->day_index + 1] = true;
+                        } else {
+                            // unavailable, single, group vb. durumlar hoca için "dolu/uygun değil" demektir
+                            $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                         }
                     }
                 }
             }
-
-            $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells, "preferredCells" => $preferredCells);
         }
+
+        $this->response = [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $unavailableCells,
+            "preferredCells" => $preferredCells
+        ];
         $this->sendResponse();
     }
 
