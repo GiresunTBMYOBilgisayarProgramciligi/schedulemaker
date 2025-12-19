@@ -682,6 +682,12 @@ class ScheduleController extends Controller
      */
     private function checkOverlap(string $start1, string $end1, string $start2, string $end2): bool
     {
+        // Zamanları H:i formatına normalize et (veritabanından H:i:s gelebilir)
+        $start1 = substr($start1, 0, 5);
+        $end1 = substr($end1, 0, 5);
+        $start2 = substr($start2, 0, 5);
+        $end2 = substr($end2, 0, 5);
+
         return ($start1 < $end2) && ($start2 < $end1);
     }
 
@@ -788,6 +794,9 @@ class ScheduleController extends Controller
 
                 $targetSchedules = []; // Kayıt yapılacak schedule listesi
 
+                // Her yeni item için tercih edilen alan çakışması bayrağı
+                $hasPreferredConflict = false;
+
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
                 foreach ($owners as $ownerType => $ownerId) {
                     if (!$ownerId)
@@ -822,11 +831,21 @@ class ScheduleController extends Controller
                             // Çakışma Var: Çözümle
                             if ($existingItem->status == 'preferred') {
                                 $this->resolvePreferredConflict($startTime, $endTime, $existingItem);
+                                $hasPreferredConflict = true;
                             } else {
                                 // preferred değilse standart conflict check (hata fırlatabilir)
                                 $this->resolveConflict($itemData, $existingItem, $lesson);
                             }
                         }
+                    }
+                }
+
+                // Eğer tercih edilen alan çakışması varsa detail bilgisini güncelle
+                if ($hasPreferredConflict) {
+                    if (!isset($itemData['detail']) || is_null($itemData['detail'])) {
+                        $itemData['detail'] = ['preferred' => true];
+                    } else {
+                        $itemData['detail']['preferred'] = true;
                     }
                 }
 
@@ -886,8 +905,11 @@ class ScheduleController extends Controller
      */
     private function resolvePreferredConflict(string $newStart, string $newEnd, ScheduleItem $preferredItem): void
     {
-        $prefStart = $preferredItem->start_time;
-        $prefEnd = $preferredItem->end_time;
+        // Zamanları H:i formatına normalize et
+        $newStart = substr($newStart, 0, 5);
+        $newEnd = substr($newEnd, 0, 5);
+        $prefStart = substr($preferredItem->start_time, 0, 5);
+        $prefEnd = substr($preferredItem->end_time, 0, 5);
 
         // Durum 1: Yeni item preferred item'i tamamen kapsıyor -> Sil
         if ($newStart <= $prefStart && $newEnd >= $prefEnd) {
@@ -898,14 +920,24 @@ class ScheduleController extends Controller
         // Durum 2: Yeni item son taraftan örtüşüyor (Örn: Pref 10-12, New 11-13 -> Pref 10-11)
         if ($newStart > $prefStart && $newStart < $prefEnd && $newEnd >= $prefEnd) {
             $preferredItem->end_time = $newStart;
-            $preferredItem->update();
+            // Eğer süre sıfıra indiyse sil
+            if (substr($preferredItem->start_time, 0, 5) >= substr($preferredItem->end_time, 0, 5)) {
+                $preferredItem->delete();
+            } else {
+                $preferredItem->update();
+            }
             return;
         }
 
         // Durum 3: Yeni item baş taraftan örtüşüyor (Örn: Pref 10-12, New 09-11 -> Pref 11-12)
         if ($newStart <= $prefStart && $newEnd > $prefStart && $newEnd < $prefEnd) {
             $preferredItem->start_time = $newEnd;
-            $preferredItem->update();
+            // Eğer süre sıfıra indiyse sil
+            if (substr($preferredItem->start_time, 0, 5) >= substr($preferredItem->end_time, 0, 5)) {
+                $preferredItem->delete();
+            } else {
+                $preferredItem->update();
+            }
             return;
         }
 
