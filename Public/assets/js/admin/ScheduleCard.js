@@ -423,8 +423,12 @@ class ScheduleCard {
                     if (!isNaN(r) && this.table.rows[r]) {
                         Object.keys(map[rowKey]).forEach(colKey => {
                             const c = parseInt(colKey, 10);
-                            if (!isNaN(c) && this.table.rows[r].cells[c]) {
-                                this.table.rows[r].cells[c].classList.add(...classes);
+                            const cell = this.table.rows[r].cells[c];
+                            if (!isNaN(c) && cell) {
+                                const emptySlot = cell.querySelector('.empty-slot');
+                                if (emptySlot) {
+                                    emptySlot.classList.add(...classes);
+                                }
                             }
                         });
                     }
@@ -433,16 +437,16 @@ class ScheduleCard {
 
             // Derslik
             if (classroomData && classroomData.status !== "error") {
-                applyCells(classroomData.unavailableCells, ["text-bg-danger", "unavailable-for-classroom"]);
+                applyCells(classroomData.unavailableCells, ["slot-unavailable", "unavailable-for-classroom"]);
             }
             // Hoca
             if (lecturerData && lecturerData.status !== "error") {
-                applyCells(lecturerData.unavailableCells, ["text-bg-danger", "unavailable-for-lecturer"]);
-                applyCells(lecturerData.preferredCells, ["text-bg-success"]);
+                applyCells(lecturerData.unavailableCells, ["slot-unavailable", "unavailable-for-lecturer"]);
+                applyCells(lecturerData.preferredCells, ["slot-preferred"]);
             }
             // Program
             if (programData && programData.status !== "error") {
-                applyCells(programData.unavailableCells, ["text-bg-danger", "unavailable-for-program"]);
+                applyCells(programData.unavailableCells, ["slot-unavailable", "unavailable-for-program"]);
             }
 
             return true;
@@ -461,13 +465,16 @@ class ScheduleCard {
     clearCells() {
         for (let i = 0; i < this.table.rows.length; i++) {
             for (let j = 0; j < this.table.rows[i].cells.length; j++) {
-                /*
-                Öğle arası bg-danger ile vurgulandığı için bu işlem o saatlari etkilemiyor
-                 */
-                this.table.rows[i].cells[j].classList.remove("text-bg-danger")
-                this.table.rows[i].cells[j].classList.remove("text-bg-success")
-                this.table.rows[i].cells[j].classList.remove("unavailable-for-lecturer")
-                this.table.rows[i].cells[j].classList.remove("unavailable-for-classroom")
+                const emptySlot = this.table.rows[i].cells[j].querySelector('.empty-slot');
+                if (emptySlot) {
+                    emptySlot.classList.remove(
+                        "slot-unavailable",
+                        "slot-preferred",
+                        "unavailable-for-lecturer",
+                        "unavailable-for-classroom",
+                        "unavailable-for-program"
+                    );
+                }
             }
         }
     }

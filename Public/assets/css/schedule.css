@@ -6,19 +6,82 @@
         margin-bottom: 15px;
     }
 
+    /* --- Slot Durumları ve Vurgular --- */
+
+    .slot-unavailable {
+        background-color: #fff5f5;
+        border: 1px dashed #feb2b2;
+        opacity: 0.85;
+        cursor: not-allowed;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .slot-unavailable::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: repeating-linear-gradient(45deg,
+                rgba(255, 255, 255, 0.5),
+                rgba(255, 255, 255, 0.5) 10px,
+                rgba(254, 178, 178, 0.1) 10px,
+                rgba(254, 178, 178, 0.1) 20px);
+        pointer-events: none;
+    }
+
+    .slot-unavailable::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 4px 10px;
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        color: #e53e3e;
+        z-index: 5;
+    }
+
     .unavailable-for-classroom::after {
-        content: "Uygun Derslik yok";
-        color: #fff;
+        content: "Uygun Derslik Yok";
     }
 
     .unavailable-for-lecturer::after {
-        content: "Hoca dolu";
-        color: #fff;
+        content: "Hoca Dolu";
     }
 
     .unavailable-for-program::after {
-        content: "Program dolu";
-        color: #fff;
+        content: "Program Çakışması";
+    }
+
+    /* Tercih Edilen Saatler */
+    .slot-preferred {
+        background-color: #f0fff4;
+        border: 1px dashed #9ae6b4;
+        position: relative;
+    }
+
+    .slot-preferred::after {
+        content: "Tercih Edilen";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 2px 8px;
+        border-radius: 12px;
+        color: #38a169;
+        white-space: nowrap;
     }
 
     /* Temel Tablo Stilleri */
