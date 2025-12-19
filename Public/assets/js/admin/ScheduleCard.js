@@ -337,16 +337,18 @@ class ScheduleCard {
         }
         this.draggedLesson.HTMLElement = lessonElement;
     }
-
+    /**
+     * Bu metod düzenlenen program türüne göre sürükleme işlemi başlatıldığında uygun olan yada olmayan hüceleri vurgular
+     * @returns 
+     */
     async highlightUnavailableCells() {
         //todo
-        return;
         this.clearCells();
 
         let data = new FormData();
         data.append("lesson_id", this.draggedLesson.lesson_id);
-        data.append("semester", this.draggedLesson.semester);
-        data.append("academic_year", this.draggedLesson.academic_year);
+        data.append("semester", this.semester);
+        data.append("academic_year", this.academic_year);
         data.append("type", this.type);
 
         let toast = new Toast();

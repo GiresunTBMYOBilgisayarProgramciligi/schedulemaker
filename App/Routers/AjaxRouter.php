@@ -17,6 +17,7 @@ use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
+use App\Models\ScheduleItem;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
@@ -862,65 +863,74 @@ class AjaxRouter extends Router
         $filters = $scheduleController->validator->validate($this->data, "checkClassroomScheduleAction");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
-
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
-        /**
-         * Hiç bir derslik için uygun olmayan hücreler
-         */
-        $unavailableCells = [];
-        $tableRows = [
-            "08.00 - 08.50",
-            "09.00 - 09.50",
-            "10.00 - 10.50",
-            "11.00 - 11.50",
-            "12.00 - 12.50",
-            "13.00 - 13.50",
-            "14.00 - 14.50",
-            "15.00 - 15.50",
-            "16.00 - 16.50"
-        ];
-        $classroomIds = [];
-        foreach ($classrooms as $classroom) {
-            $classroomIds[] = $classroom->id;
-            $classroomScheduleFilters = [
-                "owner_type" => "classroom",
-                "owner_id" => $classroom->id,
-                "type" => $filters["type"],
-                "semester" => $filters['semester'],
-                "academic_year" => $filters['academic_year'],
-            ];
-            $classroomSchedules = $scheduleController->getListByFilters($classroomScheduleFilters);
 
-            if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
-                foreach ($classroomSchedules as $classroomSchedule) {
-                    $rowIndex = array_search($classroomSchedule->time, $tableRows);
-                    if ($rowIndex === false) {
-                        continue; // bu saat tabloda yoksa atla
-                    }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                        if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
-                            $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
+        /**
+         * Hangi hücrede hangi dersliğin DOLU olduğunu takip eder
+         * $classroomOccupancy[rowIndex][dayIndex][classroomId] = true
+         */
+        $classroomOccupancy = [];
+        $classroomIds = array_column($classrooms, 'id');
+        $this->logger()->debug("Classroom IDs: " ,["classroomIds"=> $classroomIds]);
+        
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'classroom',
+            'owner_id' => ['in' => $classroomIds],
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->with(['items'])->all();
+        $this->logger()->debug("Schedules: ",['schedules' => $schedules]);
+        
+        foreach ($schedules as $schedule) {
+            $this->logger()->debug("Schedule Items: ",['scheduleItems' => $schedule->items]);
+            foreach ($schedule->items as $item) {
+                    $itemStart = substr($item->start_time, 0, 5);
+                    $itemEnd = substr($item->end_time, 0, 5);
+
+                    foreach ($slots as $rowIndex => $slot) {
+                        // Çakışma kontrolü: (itemStart < slotEnd) && (slotStart < itemEnd)
+                        if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                            // Bu slot ve bu günde bu derslik dolu
+                            $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
                         }
                     }
                 }
-            }
         }
-        $result = [];
 
-        foreach ($unavailableCells as $rowKey => $row) {
-            foreach ($row as $colKey => $classrooms) {
-                $hasAllClassrooms = true;
+        // Eğer bir hücrede TÜM derslikler doluysa o hücreyi "unavailable" (kullanılamaz) işaretle
+        $result = [];
+        foreach ($slots as $rowIndex => $slot) {
+            $rowKey = $rowIndex + 1;
+            for ($dayIndex = 0; $dayIndex <= $maxDayIndex; $dayIndex++) {
+                $colKey = $dayIndex + 1;
+                $hasAvailable = false;
 
                 foreach ($classroomIds as $id) {
-                    if (!isset($classrooms[$id])) {
-                        $hasAllClassrooms = false;
+                    if (!isset($classroomOccupancy[$rowKey][$colKey][$id])) {
+                        $hasAvailable = true;
                         break;
                     }
                 }
 
-                if ($hasAllClassrooms) {
+                if (!$hasAvailable) {
                     if (!isset($result[$rowKey])) {
                         $result[$rowKey] = [];
                     }
@@ -929,7 +939,6 @@ class AjaxRouter extends Router
             }
         }
 
-        //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
         $this->response["status"] = "success";
         $this->response["msg"] = "";
         $this->response["unavailableCells"] = $result;
