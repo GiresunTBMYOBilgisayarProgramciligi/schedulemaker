@@ -792,10 +792,8 @@ class ScheduleController extends Controller
                 $semester = $targetSchedule->semester;
                 $academicYear = $targetSchedule->academic_year;
 
-                $targetSchedules = []; // Kayıt yapılacak schedule listesi
-
-                // Her yeni item için tercih edilen alan çakışması bayrağı
-                $hasPreferredConflict = false;
+                // Tercih edilen alan çakışması yaşanan programların ID listesi
+                $preferredConflictScheduleIds = [];
 
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
                 foreach ($owners as $ownerType => $ownerId) {
@@ -831,7 +829,7 @@ class ScheduleController extends Controller
                             // Çakışma Var: Çözümle
                             if ($existingItem->status == 'preferred') {
                                 $this->resolvePreferredConflict($startTime, $endTime, $existingItem);
-                                $hasPreferredConflict = true;
+                                $preferredConflictScheduleIds[] = $relatedSchedule->id;
                             } else {
                                 // preferred değilse standart conflict check (hata fırlatabilir)
                                 $this->resolveConflict($itemData, $existingItem, $lesson);
@@ -840,17 +838,18 @@ class ScheduleController extends Controller
                     }
                 }
 
-                // Eğer tercih edilen alan çakışması varsa detail bilgisini güncelle
-                if ($hasPreferredConflict) {
-                    if (!isset($itemData['detail']) || is_null($itemData['detail'])) {
-                        $itemData['detail'] = ['preferred' => true];
-                    } else {
-                        $itemData['detail']['preferred'] = true;
-                    }
-                }
-
                 // 2. Yeni Item'i Tüm İlgili Schedule'lara Kaydet
                 foreach ($targetSchedules as $schedule) {
+                    // Bu programa özel metadata kontrolü
+                    $currentDetail = $itemData['detail'] ?? null;
+                    if (in_array($schedule->id, $preferredConflictScheduleIds)) {
+                        if (is_null($currentDetail)) {
+                            $currentDetail = ['preferred' => true];
+                        } elseif (is_array($currentDetail)) {
+                            $currentDetail['preferred'] = true;
+                        }
+                    }
+
                     // Data formatını hazırla (Tekil array içinde array yapısı)
                     $validData = [];
                     if (isset($itemData['data']['lesson_id'])) {
@@ -860,11 +859,11 @@ class ScheduleController extends Controller
                     }
 
                     $validDetail = null;
-                    if (isset($itemData['detail'])) {
-                        if (!array_is_list($itemData['detail'])) {
-                            $validDetail = [$itemData['detail']];
+                    if (!is_null($currentDetail)) {
+                        if (!array_is_list($currentDetail)) {
+                            $validDetail = [$currentDetail];
                         } else {
-                            $validDetail = $itemData['detail'];
+                            $validDetail = $currentDetail;
                         }
                     }
 
