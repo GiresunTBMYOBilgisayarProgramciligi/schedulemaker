@@ -603,206 +603,179 @@ class ScheduleCard {
         }
     }
 
+    /**
+     * Generic method to fetch options for a select element
+     */
+    async fetchOptions(url, targetSelect, data, defaultText = "Seçiniz") {
+        targetSelect.innerHTML = `<option value="">${defaultText}</option>`;
+        let spinner = new Spinner();
+        spinner.showSpinner(targetSelect.querySelector("option"));
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data
+            });
+            const resData = await response.json();
+            spinner.removeSpinner();
+            targetSelect.innerHTML = `<option value="">${defaultText}</option>`;
+
+            if (resData.status === "error") {
+                new Toast().prepareToast("Hata", resData.msg || "Liste alınırken hata oluştu", "danger");
+                console.error(resData.msg);
+                return;
+            }
+
+            // Standardize response to array
+            const items = resData.classrooms || resData.observers || [];
+            items.forEach(item => {
+                let option = document.createElement("option");
+                option.value = item.id;
+
+                if (item.class_size !== undefined) {
+                    // Classroom
+                    const size = this.examTypes.includes(this.type) ? (item.exam_size || 0) : item.class_size;
+                    option.innerText = `${item.name} (${size})`;
+                    option.dataset.size = item.class_size;
+                    option.dataset.examSize = item.exam_size;
+                } else {
+                    // Observer
+                    option.innerText = `${item.title} ${item.name} ${item.last_name}`;
+                }
+                targetSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            new Toast().prepareToast("Hata", "Liste alınırken hata oluştu", "danger");
+            console.error(error);
+        }
+    }
+
     async fetchAvailableClassrooms(classroomSelect, hours) {
         let data = new FormData();
         data.append("schedule_id", this.id);
         data.append("hours", hours);
-        data.append("startTime", this.draggedLesson.end_element.dataset.startTime)
-        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex)
+        data.append("startTime", this.draggedLesson.end_element.dataset.startTime);
+        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
         data.append("lesson_id", this.draggedLesson.lesson_id);
-        //clear classroomSelect
-        classroomSelect.innerHTML = `<option value=""></option>`;
 
-        let spiner = new Spinner();
-        spiner.showSpinner(classroomSelect.querySelector("option"))
-
-        await fetch("/ajax/getAvailableClassroomForSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                spiner.removeSpinner();
-                classroomSelect.innerHTML = `<option value=""> Bir Sınıf Seçin</option>`;
-                if (data.status === "error") {
-                    new Toast().prepareToast("Hata", "Uygun ders listesi alınırken hata oluştu", "danger");
-                    console.error(data.msg)
-                } else {
-                    data.classrooms.forEach((classroom) => {
-                        let option = document.createElement("option")
-                        option.value = classroom.id
-                        option.innerText = classroom.name + " (" + (this.examTypes.includes(this.type) ? classroom.exam_size : classroom.class_size) + ")"
-                        option.dataset.examSize = classroom.exam_size;
-                        option.dataset.size = classroom.class_size;
-                        classroomSelect.appendChild(option)
-
-                    })
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Uygun ders listesi alınırken hata oluştu", "danger");
-                console.error(error);
-            });
+        await this.fetchOptions("/ajax/getAvailableClassroomForSchedule", classroomSelect, data, "Bir Sınıf Seçin");
     }
 
     async fetchAvailableObservers(observerSelect, hours) {
         let data = new FormData();
-        data.append("hours", hours); // Sınavlar genelde 1 saatlik bloklar halinde eklenir veya kontrol edilir
-        data.append("time", this.draggedLesson.time)
-        data.append("day_index", this.draggedLesson.day_index)
-        data.append("type", this.type)
-        data.append("semester", this.draggedLesson.semester)
+        data.append("hours", hours);
+        data.append("time", this.draggedLesson.time);
+        data.append("day_index", this.draggedLesson.day_index);
+        data.append("type", this.type);
+        data.append("semester", this.draggedLesson.semester);
         data.append("academic_year", this.draggedLesson.academic_year);
 
-        //clear observerSelect
-        observerSelect.innerHTML = `<option value=""></option>`;
-
-        let spiner = new Spinner();
-        spiner.showSpinner(observerSelect.querySelector("option"))
-
-        await fetch("/ajax/getAvailableObserversForSchedule", {
-            method: "POST",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: data,
-        })
-            .then(response => response.json())
-            .then((data) => {
-                spiner.removeSpinner();
-                observerSelect.innerHTML = `<option value=""> Bir Gözetmen Seçin</option>`;
-                if (data.status === "error") {
-                    new Toast().prepareToast("Hata", "Uygun gözetmen listesi alınırken hata oluştu", "danger");
-                    console.error(data.msg)
-                } else {
-                    data.observers.forEach((observer) => {
-                        let option = document.createElement("option")
-                        option.value = observer.id
-                        option.innerText = observer.title + " " + observer.name + " " + observer.last_name;
-                        observerSelect.appendChild(option)
-                    })
-                }
-            })
-            .catch((error) => {
-                new Toast().prepareToast("Hata", "Uygun gözetmen listesi alınırken hata oluştu", "danger");
-                console.error(error);
-            });
+        await this.fetchOptions("/ajax/getAvailableObserversForSchedule", observerSelect, data, "Bir Gözetmen Seçin");
     }
 
-    selectClassroomAndHours() {
+    /**
+     * Unified modal for selecting details (Hours, Classroom, Observer)
+     */
+    openAssignmentModal(options = {}) {
+        const { includeObserver = false, title = "Seçim Yapın" } = options;
+
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
+            let maxHours = includeObserver ? this.draggedLesson.size : this.draggedLesson.lesson_hours;
+            let initialHours = includeObserver ? 1 : this.draggedLesson.lesson_hours;
+
             let modalContentHTML = `
             <form>
                 <div class="form-floating mb-3">
                     <input class="form-control" id="selected_hours" type="number" 
-                           value="${this.draggedLesson.lesson_hours}" 
-                           min=1 max=${this.draggedLesson.lesson_hours}>
-                    <label for="selected_hours">Eklenecek Ders Saati</label>
-                </div>
-                <div class="mb-3">
-                    <select id="classroom" class="form-select" required></select>
-                </div>
-            </form>`;
-
-            scheduleModal.prepareModal("Sınıf ve Saat seçimi", modalContentHTML, true, false);
-            scheduleModal.showModal();
-
-            let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
-            let classroomSelect = scheduleModal.body.querySelector("#classroom");
-
-            selectedHoursInput.addEventListener("change", (event) => {
-                this.fetchAvailableClassrooms(classroomSelect, event.target.value);
-            });
-            selectedHoursInput.dispatchEvent(new Event("change"));
-
-            let classroomSelectForm = scheduleModal.body.querySelector("form");
-
-            scheduleModal.confirmButton.addEventListener("click", (event) => {
-                event.preventDefault();
-                classroomSelectForm.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
-            });
-
-            classroomSelectForm.addEventListener("submit", function (event) {
-                event.preventDefault();
-                // mevcut silinerek sadece derslik adı alınıyor
-                let classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
-                let selectedClassroom = { 'id': classroomSelect.value, 'name': classroom_name };
-                let selectedHours = selectedHoursInput.value;
-
-                if (classroomSelect.value === "") {
-                    new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
-                    return;
-                }
-                scheduleModal.closeModal();
-                resolve({ classroom: selectedClassroom, hours: selectedHours });
-            });
-        });
-    }
-
-    selectClassroomAndObserver() {
-        return new Promise((resolve, reject) => {
-            let scheduleModal = new Modal();
-            let modalContentHTML = `
-            <form>
-                <div class="form-floating mb-3">
-                    <input class="form-control" id="selected_hours" type="number" 
-                           value="1" 
-                           min=1 max=${this.draggedLesson.size}>
-                    <label for="selected_hours">Sınav Süresi (Saat)</label>
+                           value="${initialHours}" 
+                           min=1 max=${maxHours}>
+                    <label for="selected_hours">Süre (Saat)</label>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Derslik Seçin</label>
                     <select id="classroom" class="form-select" required></select>
                 </div>
+                ${includeObserver ? `
                 <div class="mb-3">
                     <label class="form-label">Gözetmen Seçin</label>
                     <select id="observer" class="form-select" required></select>
-                </div>
+                </div>` : ''}
             </form>`;
 
-            scheduleModal.prepareModal("Derslik ve Gözetmen Seçimi", modalContentHTML, true, false);
+            scheduleModal.prepareModal(title, modalContentHTML, true, false);
             scheduleModal.showModal();
 
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
-            let observerSelect = scheduleModal.body.querySelector("#observer");
+            let observerSelect = includeObserver ? scheduleModal.body.querySelector("#observer") : null;
 
             const updateLists = () => {
                 this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
-                this.fetchAvailableObservers(observerSelect, selectedHoursInput.value);
+                if (includeObserver) {
+                    this.fetchAvailableObservers(observerSelect, selectedHoursInput.value);
+                }
             };
 
             selectedHoursInput.addEventListener("change", updateLists);
+            updateLists(); // Initial fetch
 
-            // Initial fetch
-            updateLists();
+            let formEl = scheduleModal.body.querySelector("form");
 
-            const formEl = scheduleModal.body.querySelector("form");
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
                 formEl.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
             });
 
-            formEl.addEventListener("submit", function (event) {
+            formEl.addEventListener("submit", (event) => {
                 event.preventDefault();
-                if (!classroomSelect.value || !observerSelect.value) {
-                    new Toast().prepareToast("Dikkat", "Derslik ve gözetmen seçmelisiniz.", "danger");
+
+                if (!classroomSelect.value) {
+                    new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                     return;
                 }
-                const classroom_name = classroomSelect.selectedOptions[0].text.replace(/\s*\(.*\)$/, "");
+                if (includeObserver && !observerSelect.value) {
+                    new Toast().prepareToast("Dikkat", "Bir gözetmen seçmelisiniz.", "danger");
+                    return;
+                }
+
+                const classroomName = classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, "");
                 const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
-                const size = parseInt(classroomSelect.selectedOptions[0].dataset.size || '0'); // classroom size
-                const selectedClassroom = { id: classroomSelect.value, name: classroom_name, exam_size: examSize, size: size };
-                const selectedObserver = { id: observerSelect.value, full_name: observerSelect.selectedOptions[0].text };
-                const selectedHours = selectedHoursInput.value;
+                const size = parseInt(classroomSelect.selectedOptions[0].dataset.size || '0');
+
+                const selectedClassroom = {
+                    id: classroomSelect.value,
+                    name: classroomName,
+                    exam_size: examSize,
+                    size: size
+                };
+
+                const result = {
+                    classroom: selectedClassroom,
+                    hours: selectedHoursInput.value
+                };
+
+                if (includeObserver) {
+                    result.observer = {
+                        id: observerSelect.value,
+                        full_name: observerSelect.selectedOptions[0].innerText
+                    };
+                }
+
                 scheduleModal.closeModal();
-                resolve({ classroom: selectedClassroom, observer: selectedObserver, hours: selectedHours });
+                resolve(result);
             });
         });
+    }
+
+    selectClassroomAndHours() {
+        return this.openAssignmentModal({ includeObserver: false, title: "Sınıf ve Saat Seçimi" });
+    }
+
+    selectClassroomAndObserver() {
+        return this.openAssignmentModal({ includeObserver: true, title: "Derslik ve Gözetmen Seçimi" });
     }
 
     /**
@@ -1508,8 +1481,8 @@ class ScheduleCard {
                 await this.checkCrash(hours, classroom);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
-                let scheduleItems = this.generateScheduleItems(hours, classroom); // Added this line
-                let saveScheduleResult = await this.saveSchedule(hours, classroom);
+                let scheduleItems = this.generateScheduleItems(hours, classroom);
+                let saveScheduleResult = await this.saveScheduleItems(scheduleItems);
                 if (saveScheduleResult) {
                     saveScheduleToast.closeToast()
                     this.moveLessonListToTable(scheduleItems, classroom);
@@ -1599,58 +1572,53 @@ class ScheduleCard {
     }
     //todo
     async dropTableToTable() {
-        let row = this.table.rows[this.draggedLesson.dropped_row_index];
-        let cell = row.cells[this.draggedLesson.dropped_cell_index];
+        const row = this.table.rows[this.draggedLesson.dropped_row_index];
+
+        // 1. Prepare Data
+        const hours = this.draggedLesson.lesson_hours || 1;
+        const oldId = this.draggedLesson.schedule_item_id;
+
+        const classroomNameSpan = this.draggedLesson.HTMLElement.querySelector('.lesson-classroom');
+        const classroomName = classroomNameSpan ? classroomNameSpan.innerText : "";
+
+        const classroom = {
+            id: this.draggedLesson.classroom_id,
+            name: classroomName,
+            size: this.draggedLesson.HTMLElement.dataset.classroomSize,
+            exam_size: this.draggedLesson.HTMLElement.dataset.classroomExamSize
+        };
+
+        // 2. Visual Check
         try {
-            await this.checkCrash(1);
-            /**
-             * Dersin alındığı hücrenin gün bilgisi. silme işlem için kullanılacak
-             * @type {null|*}
-             */
-            let temp_day_index = this.draggedLesson.day_index;
-            /**
-             * Dersin alındığı hücrenin saat bilgisi ders silinirken kullanılacak.
-             */
-            let temp_time = this.draggedLesson.time
-            /*
-             Dersin gün bilgisi bırakıldığı hücrenin gün bilgisi ile değiştiriliyor.
-             */
-            this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
-            // dersin bırakıldığı saat örn. 08.00-08.50
-            this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
-            /*
-                Dersin bırakıldığı gün ve saat için çakışma olup olmadığı kontrol ediliyor.
-             */
-            let checkCrashBackEndResult = await this.checkCrashBackEnd(1, { 'id': this.draggedLesson.classroom_id })
-
-            if (checkCrashBackEndResult) {
-                /*
-                Sürükleme işlemi başlatıldığında dersin bulunduğu hücrenin bilgileri silme işlemi için güncelleniyor.
-                 */
-                this.draggedLesson.day_index = temp_day_index
-                // dersin bırakıldığı saat örn. 08.00-08.50
-                this.draggedLesson.time = temp_time;
-
-                let deleteScheduleResult = await this.deleteSchedule(this.draggedLesson.classroom_id);
-                if (deleteScheduleResult) {
-                    /*
-                    Kaydetme işlemi için dersin bırakıldığı hücrenin gün ve saat bilgisi ayarlanıyor
-                     */
-                    this.draggedLesson.day_index = this.draggedLesson.dropped_cell_index - 1 // ilk sütun saat bilgisi çıkartılıyor
-                    // dersin bırakıldığı saat örn. 08.00-08.50
-                    this.draggedLesson.time = this.table.rows[this.draggedLesson.dropped_row_index].cells[0].innerText;
-                    let saveScheduleResult = await this.saveSchedule(1, { 'id': this.draggedLesson.classroom_id });
-                    if (saveScheduleResult) {
-                        //update dataset
-                        this.draggedLesson.HTMLElement.dataset.time = this.draggedLesson.time
-                        this.draggedLesson.HTMLElement.dataset.dayIndex = this.draggedLesson.day_index
-                        cell.appendChild(this.draggedLesson.HTMLElement);
-                    } else console.error("Yeni ders Eklenemedi")
-                } else console.error("Eski ders Silinemedi");
-            }
+            await this.checkCrash(hours, classroom);
         } catch (errorMessage) {
-            console.error(errorMessage)
             new Toast().prepareToast("Hata", errorMessage, "danger");
+            return;
+        }
+
+        // 3. Generate New Items
+        // Temporarily clear ID so generateScheduleItems creates new item structure (for Insert)
+        this.draggedLesson.schedule_item_id = null;
+        const newItems = this.generateScheduleItems(hours, classroom);
+        this.draggedLesson.schedule_item_id = oldId; // Restore for delete
+
+        // 4. Backend Crash Check
+        if (await this.checkCrashBackEnd(newItems)) {
+            // 5. Delete Old
+            if (await this.deleteSchedule(oldId)) {
+                // 6. Save New
+                if (await this.saveScheduleItems(newItems)) {
+                    // 7. Update DOM
+                    this.draggedLesson.HTMLElement.remove(); // Remove old
+                    this.moveLessonListToTable(newItems, classroom); // Add new
+                    console.info("Ders başarıyla taşındı.");
+                } else {
+                    console.error("Yeni ders kaydedilemedi (Eski ders silindi!)");
+                    new Toast().prepareToast("Hata", "Ders taşınırken sorun oluştu (Kaydetme)", "danger");
+                }
+            } else {
+                console.error("Eski ders silinemedi");
+            }
         }
 
         this.resetDraggedLesson();
