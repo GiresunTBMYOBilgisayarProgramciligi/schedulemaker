@@ -342,7 +342,6 @@ class ScheduleCard {
      * @returns 
      */
     async highlightUnavailableCells() {
-        //todo
         this.clearCells();
 
         let data = new FormData();
@@ -1129,7 +1128,7 @@ class ScheduleCard {
                 return false;
             });
     }
-
+    //todo
     async deleteSchedule(classroom_id) {
         let data = new FormData();
         data.append("type", this.type);

@@ -478,7 +478,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * todo yeni tablo düzenine göre düzenlenecek
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür
      * @param array $filters
      * @return array

@@ -228,7 +228,6 @@
         display: flex;
         gap: 4px;
         height: 100%;
-        min-height: 80px;
     }
 
     .lesson-group-container .lesson-card {
@@ -251,7 +250,6 @@
 
     .lesson-group-container .lesson-meta {
         font-size: 0.75rem;
-        flex-direction: column;
     }
 
     .lesson-group-container .lesson-lecturer,
