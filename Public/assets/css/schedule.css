@@ -138,11 +138,36 @@
         transition: all 0.2s ease;
         margin-bottom: 4px;
         font-size: 0.9rem;
+        position: relative;
+        /* Checkbox için eklendi */
     }
 
     .lesson-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toplu işlem checkbox stilleri */
+    .lesson-bulk-checkbox {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        z-index: 15;
+        opacity: 0.4;
+        transition: opacity 0.2s;
+    }
+
+    .lesson-card:hover .lesson-bulk-checkbox,
+    .lesson-bulk-checkbox:checked {
+        opacity: 1;
+    }
+
+    .lesson-card.selected-lesson {
+        outline: 2px solid #2196f3;
+        box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
     }
 
     /* Ders Bilgileri */

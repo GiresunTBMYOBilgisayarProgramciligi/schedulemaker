@@ -37,7 +37,7 @@ use function App\Helpers\getSettingValue;
                         <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                             <?= $scheduleRow['slotEndTime']->format('H:i') ?>
                         </td>
-                <!-- 
+                        <!-- 
                 <div 
                 data-lesson-code="BILP-113"
                 data-semester="Güz"
@@ -49,10 +49,12 @@ use function App\Helpers\getSettingValue;
                 >
                 -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
-                            <?php if ($scheduleItem): 
+                            <?php if ($scheduleItem):
                                 Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
-                                $dropZone= $scheduleItem->status ==='unavailable' ? '' : 'drop-zone'; ?>
-                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                $dropZone = $scheduleItem->status === 'unavailable' ? '' : 'drop-zone'; ?>
+                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
+                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
+                                    data-schedule-item-id="<?= $scheduleItem->id ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
                                         <?php endif; ?>
@@ -63,18 +65,16 @@ use function App\Helpers\getSettingValue;
                                                     $draggable = "false";
                                                 }
                                                 ?>
-                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>" 
-                                                draggable="<?= $draggable ?>" 
-                                                data-schedule-item-id="<?= $scheduleItem->id ?>" 
-                                                data-group-no="<?= $slotData->lesson->group_no ?>"
-                                                data-lesson-id="<?= $slotData->lesson->id ?>"
-                                                data-lesson-code="<?= $slotData->lesson->code ?>"
-                                                data-size="<?= $slotData->lesson->size ?>"
-                                                data-lecturer-id="<?= $slotData->lecturer->id ?>"
-                                                data-classroom-id="<?= $slotData->classroom->id ?>"
-                                                data-classroom-size="<?= $slotData->classroom->class_size ?>"
-                                                data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
-                                                >
+                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>"
+                                                    draggable="<?= $draggable ?>" data-schedule-item-id="<?= $scheduleItem->id ?>"
+                                                    data-group-no="<?= $slotData->lesson->group_no ?>"
+                                                    data-lesson-id="<?= $slotData->lesson->id ?>"
+                                                    data-lesson-code="<?= $slotData->lesson->code ?>" data-size="<?= $slotData->lesson->size ?>"
+                                                    data-lecturer-id="<?= $slotData->lecturer->id ?>"
+                                                    data-classroom-id="<?= $slotData->classroom->id ?>"
+                                                    data-classroom-size="<?= $slotData->classroom->class_size ?>"
+                                                    data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>">
+                                                    <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                     <span class="lesson-name">
                                                         <a class='text-decoration-none' target='_blank' style="color: inherit;"
                                                             href='/admin/lesson/<?= $slotData->lesson->id ?>'>
@@ -84,20 +84,20 @@ use function App\Helpers\getSettingValue;
                                                     <div class="lesson-meta">
                                                         <span class="lesson-lecturer">
                                                             <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                                                            href='/admin/profile/<?= $slotData->lecturer->id ?>'>
-                                                            <?= $slotData->lecturer->getFullName() ?></a>
+                                                                href='/admin/profile/<?= $slotData->lecturer->id ?>'>
+                                                                <?= $slotData->lecturer->getFullName() ?></a>
                                                         </span>
                                                         <span class="lesson-classroom">
                                                             <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                                                            href='/admin/classroom/<?= $slotData->classroom->id ?>'>
-                                                            <?= $slotData->classroom->name ?></a>
+                                                                href='/admin/classroom/<?= $slotData->classroom->id ?>'>
+                                                                <?= $slotData->classroom->name ?></a>
                                                         </span>
                                                     </div>
                                                 </div>
                                             <?php endforeach ?>
                                         <?php else: ?>
                                             <div class="empty-slot <?= $scheduleItem->getSlotCSSClass() ?>">
-                                                <?php if ( is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
+                                                <?php if (is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
                                                     <div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
                                                         data-bs-trigger="hover" data-bs-content="<?= $scheduleItem->detail['description'] ?>"
                                                         data-bs-original-title="Açıklama">
@@ -111,7 +111,8 @@ use function App\Helpers\getSettingValue;
                                     <?php endif; ?>
                                 </td>
                             <?php else: ?>
-                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>" data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
+                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
+                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
                                     <div class="empty-slot"></div>
                                 </td>
                             <?php endif; ?>
