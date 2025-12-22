@@ -180,9 +180,10 @@ class LessonController extends Controller
         $scheduleController = new ScheduleController();
         
         /**
+         * todo 
          * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
          * @var Schedule $parentSchedule
-         */
+        
         $parentSchedules = (new Schedule())->get()->where(['owner_type' => "lesson", "owner_id" => $parentLesson->id])->all();
         foreach ($parentSchedules as $parentSchedule) {
             //Ders programı gününü bul
@@ -208,6 +209,7 @@ class LessonController extends Controller
                 ]);
             }
         }
+             */
 
 
     }
