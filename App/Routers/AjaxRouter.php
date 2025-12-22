@@ -662,114 +662,6 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    /**
-     * todo silinecek
-     * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
-     * "lesson_id" Programa eklenen dersin id numarası
-     * "time_start" programa eklenen dersin başlangıç saati
-     * "lesson_hours" programa eklenen dersin kaç saat eklendiği
-     * "day_index", programa eklenecek dersin eklendiği günün index numarası
-     * "classroom_name"
-     * "semester_no"
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function saveScheduleAction(): void
-    {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "saveScheduleAction");
-        $this->logger()->debug("Save ScheduleAction Filters: ", ['filters' => $filters]);
-        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        //sınav programında gözetmen lecturer_id ile belirtiliyor.
-        $lecturer = isset($this->data['lecturer_id']) ? ((new User())->find($this->data['lecturer_id']) ?: $lesson->getLecturer()) : $lesson->getLecturer();
-        $classroom = (new Classroom())->find($this->data['classroom_id']);
-        // bağlı dersleri alıyoruz
-        $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-        //bağlı dersler listesine ana dersi ekliyoruz
-        array_unshift($lessons, $lesson);
-        $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $lessons]);
-        $scheduleController->checkScheduleCrash($filters);
-
-        /**
-         * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
-         *
-         */
-        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time'], $this->data['lesson_hours'], $filters['type']);
-        $this->logger()->debug("Save ScheduleAction Time Array: ", ['timeArray' => $timeArray]);
-        /*
-         * her bir saat için ayrı ekleme yapılacak
-         */
-        foreach ($timeArray as $time) {
-            if (count($lessons) > 1) {
-                if (!isAuthorized('submanager')) {
-                    throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
-                }
-            }
-            foreach ($lessons as $child) {
-                $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $child]);
-                /**
-                 * @var Lesson $child
-                 */
-                $scheduleFilters = array_merge($filters, [
-                    //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                    "owners" => [
-                        "program" => $child->program_id,
-                        "lesson" => $child->id
-                    ],//sıralama yetki kontrolü için önemli);
-                ]);
-                /**
-                 * Uzem Sınıfı değilse ve asıl ders ise çakışma kontrolüne dersliği de ekle
-                 * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-                 */
-                if ($classroom->type != 3 and is_null($child->parent_lesson_id)) {
-                    $scheduleFilters['owners']['classroom'] = $classroom->id;
-                }
-                //sadece asıl dersin bilgisi kullanıcıya eklenecek
-                $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
-                /**
-                 * veri tabanına eklenecek gün verisi
-                 */
-                $day = [
-                    "lesson_id" => $child->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                $this->logger()->debug("Save ScheduleAction Schedule Filters: ", ['scheduleFilters' => $scheduleFilters]);
-                if (!$child->IsScheduleComplete($scheduleFilters['type'])) {
-                    $schedule = new Schedule();
-                    /*
-                     * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
-                     * Bu değerler için döngü oluşturuluyor
-                     */
-                    foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
-                        if (is_null($owner_id))
-                            continue;// child lesson ise owner_id null olduğundan atlanacak
-                        $savedId = $scheduleController->saveNew([
-                            "type" => $filters['type'],
-                            "owner_type" => $owner_type,
-                            "owner_id" => $owner_id,
-                            "day" . $filters['day_index'] => $day,
-                            "time" => $time,
-                            "semester_no" => trim($child->semester_no),
-                            "semester" => $filters['semester'],
-                            "academic_year" => $filters['academic_year'],
-                        ]);
-                        if ($savedId == 0) {
-                            throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
-                        } else
-                            $this->response[$owner_type . "_result"] = $savedId;
-                    }
-                } else {
-                    throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
-                }
-            }
-        }
-
-        $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
-
-        $this->sendResponse();
-    }
 
     /**
      * todo
@@ -797,7 +689,6 @@ class AjaxRouter extends Router
     }
 
     /**
-     * todo
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void
      * @throws Exception
@@ -959,7 +850,6 @@ class AjaxRouter extends Router
     }
 
     /**
-     * todo
      * @throws Exception
      */
     public function checkProgramScheduleAction(): void

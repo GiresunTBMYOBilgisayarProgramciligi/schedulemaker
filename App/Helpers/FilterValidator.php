@@ -68,11 +68,6 @@ class FilterValidator
 
         // 2. Her işlem için kuralları tanımla
         $this->operationRules = [
-            'saveScheduleAction' => [
-                'required' => ["type", "lesson_id", "classroom_id", "time", "lesson_hours", "day_index"],
-                'optional' => ['lecturer_id'],
-                'defaults' => ['semester', 'academic_year']
-            ],
             'checkScheduleCrash' => [
                 'required' => ["items"],
                 'optional' => [],
