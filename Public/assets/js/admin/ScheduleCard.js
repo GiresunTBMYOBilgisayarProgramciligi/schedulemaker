@@ -1300,6 +1300,9 @@ class ScheduleCard {
         const lessonElement = event.target.closest(".lesson-card");
         if (!lessonElement) return;
 
+        // Her durumda sürüklenen eleman bilgisini ayarla (highlight için gerekli)
+        this.setDraggedLesson(lessonElement, event);
+
         // Eğer sürüklenen ders seçili değilse, mevcut seçimi temizle ve sadece bunu seçili yap (opsiyonel ama standart UX)
         // Ancak kullanıcı çoklu sürüklemek istiyorsa, seçili olanlardan birini tutuyor olmalı.
         if (this.selectedLessonElements.size > 0 && this.selectedLessonElements.has(lessonElement)) {
@@ -1312,12 +1315,10 @@ class ScheduleCard {
         } else {
             // Tekli sürükleme
             this.clearSelection(); // Mevcut seçimleri temizle
-            this.setDraggedLesson(lessonElement, event);
             event.dataTransfer.setData("text/plain", JSON.stringify({
                 type: 'single',
                 id: this.draggedLesson.schedule_item_id
             }));
-            this.highlightUnavailableCells();
         }
 
         event.dataTransfer.effectAllowed = "move";
@@ -1355,9 +1356,11 @@ class ScheduleCard {
         /*
         * silmek için buraya sürükleyin yazısını göstermek için eklenen tooltip kaldırılıyor
         * */
-        this.removeLessonDropZone.style.border = ""
-        const tooltip = bootstrap.Tooltip.getInstance(this.removeLessonDropZone);
-        if (tooltip) tooltip.hide()
+        if (this.removeLessonDropZone) {
+            this.removeLessonDropZone.style.border = ""
+            const tooltip = bootstrap.Tooltip.getInstance(this.removeLessonDropZone);
+            if (tooltip) tooltip.hide()
+        }
 
         this.dropZone = element;
 
@@ -1377,35 +1380,32 @@ class ScheduleCard {
                 // Toplu silme (Tablodan Listeye)
                 let deleteResult = await this.deleteScheduleItems(); // Tüm seçili dersleri bir kerede silmeye gönder
                 if (deleteResult) {
-                    for (const id of ids) {
-                        const el = Array.from(this.selectedLessonElements).find(e => e.dataset.scheduleItemId == id);
-                        if (el) {
-                            this.draggedLesson.HTMLElement = el;
-                            this.draggedLesson.schedule_item_id = id;
-                            this.getDatasetValue(this.draggedLesson, el);
-                            await this.dropTableToList(true); // true = skip delete call (already done)
-                        }
+                    // Seçili elementlerin kopyasını alalım çünkü loop içinde DOM'dan silinecekler
+                    const elementsToProcess = Array.from(this.selectedLessonElements).filter(el => ids.includes(el.dataset.scheduleItemId));
+
+                    for (const el of elementsToProcess) {
+                        this.draggedLesson.HTMLElement = el;
+                        this.draggedLesson.schedule_item_id = el.dataset.scheduleItemId;
+                        this.getDatasetValue(this.draggedLesson, el);
+                        // dropTableToList içinde this.draggedLesson kullanıldığı için her seferinde set ediyoruz
+                        await this.dropTableToList(true); // true = skip delete call (already done)
                     }
                 }
             } else {
                 // Toplu taşıma (Tablodan Tabloya)
-                // Şuan taşıma işlemini hücre bazlı loop ile yapıyoruz, 
-                // ancak her bir taşıma öncesi tek tek silmek yerine topluca silip sonra yerleştirmek daha temiz olabilir.
-                // Şimdilik mevcut akışı bozmamak adına tek tek devam edebiliriz ama skipDelete desteği ekliyoruz.
-                for (const id of ids) {
-                    const el = Array.from(this.selectedLessonElements).find(e => e.dataset.scheduleItemId == id);
-                    if (el) {
-                        this.draggedLesson.HTMLElement = el;
-                        this.draggedLesson.schedule_item_id = id;
-                        this.draggedLesson.end_element = this.dropZone;
-                        this.getDatasetValue(this.draggedLesson, el);
-                        this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
-                        await this.dropTableToTable(); // Taşıma işi karmaşık olduğu için (checkCrash vb) tek tek devam
-                    }
+                const elementsToProcess = Array.from(this.selectedLessonElements).filter(el => ids.includes(el.dataset.scheduleItemId));
+
+                for (const el of elementsToProcess) {
+                    this.draggedLesson.HTMLElement = el;
+                    this.draggedLesson.schedule_item_id = el.dataset.scheduleItemId;
+                    this.draggedLesson.end_element = this.dropZone;
+                    this.getDatasetValue(this.draggedLesson, el);
+                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+                    await this.dropTableToTable(); // Taşıma işi karmaşık olduğu için tek tek
                 }
             }
         } else {
-            // Tekli sürükleme (Mevcut mantık)
+            // Tekli sürükleme
             this.draggedLesson.end_element = this.dropZone;
             if (this.draggedLesson.start_element === "list") {
                 if (!isToList) {
@@ -1512,7 +1512,7 @@ class ScheduleCard {
                     lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();
                     badgeText = lessonInList.dataset.size;
                 } else {
-                    lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString() + " Saat";
+                    lessonInList.dataset.lessonHours = ((parseInt(lessonInList.dataset.lessonHours) || 0) + 1).toString() + " Saat";
                     badgeText = lessonInList.dataset.lessonHours;
                 }
                 lessonInList.querySelector(".lesson-classroom").innerText = badgeText;
