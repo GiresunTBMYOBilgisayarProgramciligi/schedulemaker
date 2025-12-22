@@ -569,6 +569,14 @@ class Model
             throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
         }
         $data = $this->getArray(['id'], true);
+
+        // dizi türündeki veriler serialize ediliyor
+        array_walk($data, function (&$value) {
+            if (is_array($value)) {
+                $value = serialize($value);
+            }
+        });
+
         $setStatements = array_map(function ($field) {
             return "{$field} = :{$field}";
         }, array_keys($data));
