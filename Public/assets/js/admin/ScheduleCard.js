@@ -159,29 +159,20 @@ class ScheduleCard {
         if (!element) return null;
         const ds = element.dataset;
         const cell = element.closest('td');
-        const row = element.closest('tr');
-
-        let dayIndex = ds.dayIndex;
-        if (dayIndex === undefined && cell) {
-            dayIndex = cell.cellIndex - 1;
-        }
-
-        let time = ds.time;
-        if (time === undefined && row) {
-            time = row.cells[0]?.innerText?.split('\n')[0].trim();
-        }
 
         return {
-            schedule_item_id: ds.scheduleItemId,
-            lesson_id: ds.lessonId,
-            lecturer_id: ds.lecturerId,
-            classroom_id: ds.classroomId,
-            day_index: dayIndex,
-            time: time,
-            type: this.type,
-            academic_year: this.academic_year,
-            semester: this.semester,
-            semester_no: isNaN(this.semester_no) ? null : this.semester_no
+            id: ds.scheduleItemId,
+            schedule_id: this.id,
+            day_index: parseInt(cell.cellIndex - 1),
+            week_index: parseInt(this.table?.dataset?.weekIndex || 0),
+            start_time: cell.dataset.startTime,
+            end_time: cell.dataset.endTime,
+            status: ds.status || (parseInt(ds.groupNo) > 0 ? "group" : "single"),
+            data: {
+                lesson_id: ds.lessonId,
+                lecturer_id: ds.lecturerId,
+                classroom_id: ds.classroomId
+            }
         };
     }
 
@@ -957,8 +948,8 @@ class ScheduleCard {
                     currentItem = {
                         'id': this.draggedLesson.schedule_item_id,
                         'schedule_id': this.id,
-                        'day_index': this.draggedLesson.end_element.dataset.dayIndex,
-                        'week_index': this.table.dataset.weekIndex,
+                        'day_index': parseInt(this.draggedLesson.end_element.dataset.dayIndex),
+                        'week_index': parseInt(this.table?.dataset?.weekIndex || 0),
                         'start_time': cell.dataset.startTime,
                         'end_time': null,
                         'status': status,
@@ -1066,6 +1057,13 @@ class ScheduleCard {
                         .trim();
 
                     if (!lessonCard.classList.contains('lesson-card')) lessonCard.classList.add('lesson-card');
+
+                    // Bulk checkbox ekle
+                    const bulkCheckbox = document.createElement('input');
+                    bulkCheckbox.type = 'checkbox';
+                    bulkCheckbox.className = 'lesson-bulk-checkbox';
+                    bulkCheckbox.title = 'Toplu işlem için seç';
+                    lessonCard.prepend(bulkCheckbox);
 
                     // Attribute'leri ayarla
                     lessonCard.setAttribute('draggable', 'true');
