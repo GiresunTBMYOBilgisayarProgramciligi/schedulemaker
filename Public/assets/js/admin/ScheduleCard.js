@@ -1231,7 +1231,7 @@ class ScheduleCard {
      * Programdan dersleri silmek için kullanılır.
      * @param {Array|string|number|null} param Silinecek derslerin listesi (Array) veya tek bir derslik ID'si. Null ise seçilenler veya sürüklenen ders kullanılır.
      */
-    async deleteSchedule(param = null) {
+    async deleteScheduleItems(param = null) {
         let scheduleItems = [];
 
         if (Array.isArray(param)) {
@@ -1270,7 +1270,7 @@ class ScheduleCard {
         data.append("semester", this.semester);
         data.append("type", this.type);
 
-        return fetch("/ajax/deleteSchedule", {
+        return fetch("/ajax/deleteScheduleItems", {
             method: "POST",
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -1375,7 +1375,7 @@ class ScheduleCard {
             const ids = dragData.ids;
             if (isToList) {
                 // Toplu silme (Tablodan Listeye)
-                let deleteResult = await this.deleteSchedule(); // Tüm seçili dersleri bir kerede silmeye gönder
+                let deleteResult = await this.deleteScheduleItems(); // Tüm seçili dersleri bir kerede silmeye gönder
                 if (deleteResult) {
                     for (const id of ids) {
                         const el = Array.from(this.selectedLessonElements).find(e => e.dataset.scheduleItemId == id);
@@ -1498,7 +1498,7 @@ class ScheduleCard {
     //todo
     async dropTableToList(skipDelete = false) {
 
-        let deleteScheduleResult = skipDelete ? true : await this.deleteSchedule();
+        let deleteScheduleResult = skipDelete ? true : await this.deleteScheduleItems();
 
         if (deleteScheduleResult) {
             let draggedElementIdInList = "available-lesson-" + this.draggedLesson.lesson_id;
@@ -1512,7 +1512,7 @@ class ScheduleCard {
                     lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();
                     badgeText = lessonInList.dataset.size;
                 } else {
-                    lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString();
+                    lessonInList.dataset.lessonHours = (parseInt(lessonInList.dataset.lessonHours) + 1).toString() + " Saat";
                     badgeText = lessonInList.dataset.lessonHours;
                 }
                 lessonInList.querySelector(".lesson-classroom").innerText = badgeText;
@@ -1533,7 +1533,6 @@ class ScheduleCard {
                 let newElement = this.draggedLesson.HTMLElement.cloneNode(true);
                 // Reset attributes
                 newElement.id = draggedElementIdInList;
-                newElement.classList.remove('lesson-card'); // If it had it?
                 // Original logic followed below:
 
                 let draggedElementFrameDiv = document.createElement("div");
@@ -1545,10 +1544,11 @@ class ScheduleCard {
                     newElement.dataset.size = this.draggedLesson.classroom_exam_size
                     badgeText = newElement.dataset.size;
                 } else {
-                    newElement.dataset.lessonHours = 1;
+                    newElement.dataset.lessonHours = 1 + " Saat";
                     badgeText = newElement.dataset.lessonHours;
                 }
                 newElement.querySelector(".lesson-classroom").innerText = badgeText
+                newElement.querySelector(".lesson-bulk-checkbox").remove()
 
                 delete newElement.dataset.time
                 delete newElement.dataset.dayIndex
@@ -1605,7 +1605,7 @@ class ScheduleCard {
         // 4. Backend Crash Check
         if (await this.checkCrashBackEnd(newItems)) {
             // 5. Delete Old
-            if (await this.deleteSchedule(oldId)) {
+            if (await this.deleteScheduleItems(oldId)) {
                 // 6. Save New
                 if (await this.saveScheduleItems(newItems)) {
                     // 7. Update DOM
