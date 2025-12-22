@@ -39,13 +39,8 @@ use function App\Helpers\getSettingValue;
                         </td>
                         <!-- 
                 <div 
-                data-lesson-code="BILP-113"
                 data-semester="Güz"
-                data-classroom-id="7"
                 data-lesson-hours="2"
-                data-size="0"
-                data-classroom-exam-size="35"
-                data-classroom-size="0"
                 >
                 -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
@@ -73,7 +68,8 @@ use function App\Helpers\getSettingValue;
                                                     data-lecturer-id="<?= $slotData->lecturer->id ?>"
                                                     data-classroom-id="<?= $slotData->classroom->id ?>"
                                                     data-classroom-size="<?= $slotData->classroom->class_size ?>"
-                                                    data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>">
+                                                    data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
+                                                    data-status="<?= $scheduleItem->status ?>">
                                                     <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                     <span class="lesson-name">
                                                         <a class='text-decoration-none' target='_blank' style="color: inherit;"
