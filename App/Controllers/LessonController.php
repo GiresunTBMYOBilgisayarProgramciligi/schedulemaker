@@ -125,12 +125,7 @@ class LessonController extends Controller
     public function delete(int $id): void
     {
         $lesson = (new Lesson())->find($id) ?: throw new Exception("Silinecek Ders bulunamadı");
-        // ilişkili tüm programı sil
-        $scheduleController = new ScheduleController();
-        $scheduleFilters = $scheduleController->findLessonSchedules(['lesson_id' => $lesson->id]);
-        foreach ($scheduleFilters as $scheduleFilter) {
-            $scheduleController->deleteSchedule($scheduleFilter);
-        }
+    
         $lesson->delete();
     }
 
@@ -182,20 +177,8 @@ class LessonController extends Controller
                 $child->update();
             }
         }
-        /**
-         * Çocuk dersin var olan programları siliniyor
-         */
         $scheduleController = new ScheduleController();
-        $scheduleFilters = $scheduleController->findLessonSchedules(
-            [
-                "lesson_id" => $childLesson->id,
-                "semester_no" => $childLesson->semester_no,
-                "semester" => $childLesson->semester,
-                "academic_year" => $childLesson->academic_year
-            ]);
-        foreach ($scheduleFilters as $scheduleFilter) {
-            $scheduleController->deleteSchedule($scheduleFilter);
-        }
+        
         /**
          * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
          * @var Schedule $parentSchedule
@@ -238,20 +221,7 @@ class LessonController extends Controller
          * @var Lesson $lesson
          */
         $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
-        /**
-         * Çocuk dersin var olan programları siliniyor
-         */
-        $scheduleController = new ScheduleController();
-        $scheduleFilters = $scheduleController->findLessonSchedules(
-            [
-                "lesson_id" => $lesson->id,
-                "semester_no" => $lesson->semester_no,
-                "semester" => $lesson->semester,
-                "academic_year" => $lesson->academic_year
-            ]);
-        foreach ($scheduleFilters as $scheduleFilter) {
-            $scheduleController->deleteSchedule($scheduleFilter);
-        }
+        
         $lesson->parent_lesson_id = null;
         $lesson->update();
     }
