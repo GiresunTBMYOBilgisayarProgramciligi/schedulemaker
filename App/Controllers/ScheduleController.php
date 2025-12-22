@@ -761,12 +761,13 @@ class ScheduleController extends Controller
     /**
      * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
      * @param array $itemsData JSON decode edilmiş items dizisi
-     * @return bool
+     * @return array
      * @throws Exception
      */
-    public function saveScheduleItems(array $itemsData): bool
+    public function saveScheduleItems(array $itemsData): array
     {
         $this->database->beginTransaction();
+        $createdIds = [];
         try {
             foreach ($itemsData as $itemData) {
                 // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
@@ -868,7 +869,8 @@ class ScheduleController extends Controller
 
                     if ($itemData['status'] === 'group') {
                         // Group statusunde ise merge/split işlemi yap
-                        $this->processGroupItemSaving(
+                        // todo group işlemi sonucunda oluşan id'ler dönmeli
+                        $groupIds = $this->processGroupItemSaving(
                             $schedule,
                             $itemData['day_index'],
                             $itemData['start_time'],
@@ -876,6 +878,7 @@ class ScheduleController extends Controller
                             $validData,
                             $validDetail
                         );
+                        $createdIds = array_merge($createdIds, $groupIds);
                     } else {
                         // Diğer durumlar (single, preferred, unavailable) için direkt create
                         $newItem = new ScheduleItem();
@@ -887,11 +890,12 @@ class ScheduleController extends Controller
                         $newItem->data = $validData;
                         $newItem->detail = $validDetail;
                         $newItem->create();
+                        $createdIds[] = $newItem->id;
                     }
                 }
             }
             $this->database->commit();
-            return true;
+            return $createdIds;
         } catch (Exception $e) {
             $this->database->rollBack();
             throw $e;
@@ -960,23 +964,249 @@ class ScheduleController extends Controller
         }
     }
 
-    public function deleteScheduleItems($itemsData){
-         /** 
-         * filter içerisinde gelen items listesi gerekli kontroller yapılarak silinecek
+    public function deleteScheduleItems(array $items): array
+    {
+        /** 
+         * filter içerisinde gelen items listesi gerekli kontroller yapılarak silinecek:
+         * 
          * gelen itemler aynı scheduleitem_id ye sahipse start ve end time bilgilerine göre birleştirilecekler. 
          * birleştirilen item schedule item ile aynı ise o item silinecek. Yani başlangıç ve bitiş saatleri tüm itemi kapsıyorsa silinecek.
          * tamamını kapsamıyorsa start ve end time bilgilerine göre schedule items tablosunda güncellenecek. 
          * item kaydetme işlemlerindeki prefered item ile çakışma durumunda yapılan işlemler gibibi silme işlem idüzenlenecek.
          * eğer silinmesi için gelen item ver olan itemin başlangıç kısmında ise start time güncellenecek son kısmında ise end time güncellenecek. orta kısmında ise item parçalanarak iki item olarak kaydedilecek.
          * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
+         * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
          */
+        $deletedIds = [];
+        $errors = [];
+
+        // 1. Itemları ID'ye göre grupla
+        $groups = [];
+        foreach ($items as $item) {
+            $id = $item['schedule_item_id'] ?? ($item['id'] ?? null);
+            if (!$id)
+                continue;
+            $groups[$id][] = $item;
+        }
+
+        foreach ($groups as $id => $chunkItems) {
+            try {
+                // Ana itemi bul
+                $scheduleItem = (new ScheduleItem())->find($id);
+                if (!$scheduleItem) {
+                    $errors[] = "Item ID $id bulunamadı.";
+                    continue;
+                }
+
+                // 2. Silinecek zaman aralıklarını hesapla (Union of selected slots)
+                $deleteIntervals = [];
+                $targetLessonIds = [];
+                foreach ($chunkItems as $cItem) {
+                    if (isset($cItem['data']['lesson_id'])) {
+                        $targetLessonIds[] = $cItem['data']['lesson_id'];
+                    }
+
+                    $startTimeStr = $cItem['start_time'] ?? ($cItem['time'] ?? null);
+                    if (empty($startTimeStr))
+                        continue;
+
+                    $start = $startTimeStr; // Örn: "09:00"
+                    $type = $cItem['type'] ?? 'lesson';
+                    // Ayarlardan süre bilgisini al
+                    $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+
+                    // Bitiş saatini hesapla
+                    $endUnix = strtotime($start) + ($duration * 60);
+                    $end = date("H:i", $endUnix);
+
+                    $deleteIntervals[] = ['start' => $start, 'end' => $end];
+                }
+
+                if (empty($deleteIntervals))
+                    continue;
+
+                // 3. İlgili TÜM sibling schedule itemları bul (User, Classroom, Program programlarındaki kopyaları)
+                $siblings = (new ScheduleItem())->get()->where([
+                    'day_index' => $scheduleItem->day_index,
+                    'start_time' => $scheduleItem->start_time,
+                    'end_time' => $scheduleItem->end_time,
+                ])->all();
+
+                $targets = [];
+                // Kendisini de ekle (eğer listede yoksa ki olmalı)
+                $siblings[] = $scheduleItem;
+
+                $processedIds = [];
+                $targetLessonIds = array_unique($targetLessonIds);
+
+                foreach ($siblings as $sib) {
+                    if (in_array($sib->id, $processedIds))
+                        continue;
+
+                    // Lesson ID kontrolü: data içinde bu derslerden HERHANGİ BİRİ var mı?
+                    if (!empty($targetLessonIds)) {
+                        $sibData = is_string($sib->data) ? @unserialize($sib->data) : $sib->data;
+                        if (!is_array($sibData) && is_string($sib->data)) {
+                            $decoded = json_decode($sib->data, true);
+                            if (json_last_error() === JSON_ERROR_NONE) {
+                                $sibData = $decoded;
+                            }
+                        }
+                        $lessonFound = false;
+                        if (is_array($sibData)) {
+                            $lessonsList = isset($sibData['lesson_id']) ? [$sibData] : $sibData;
+                            foreach ($lessonsList as $row) {
+                                if (isset($row['lesson_id']) && in_array($row['lesson_id'], $targetLessonIds)) {
+                                    $lessonFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!$lessonFound)
+                            continue;
+                    }
+
+                    $processedIds[] = $sib->id;
+                    $targets[] = $sib;
+                }
+
+                // 4. Bulunan tüm itemlar için silme/bölme işlemini uygula
+                foreach ($targets as $targetItem) {
+                    $this->processItemDeletion($targetItem, $deleteIntervals, $targetLessonIds);
+                }
+
+                $deletedIds[] = $id;
+
+            } catch (Exception $e) {
+                $this->logger()->error("Delete schedule item error: " . $e->getMessage());
+                $errors[] = "ID $id işlem hatası: " . $e->getMessage();
+            }
+        }
+
+        return [
+            'status' => empty($errors) ? 'success' : 'warning',
+            'deleted_ids' => $deletedIds,
+            'errors' => $errors
+        ];
+    }
+
+    /**
+     * Verilen item üzerinde belirtilen aralıkları siler (Trim/Split/Delete)
+     * Eğer targetLessonIds varsa, silme işlemi sadece o dersler için geçerli olur (Group slot desteği).
+     * @param ScheduleItem $item
+     * @param array $deleteIntervals [['start'=>'09:00', 'end'=>'09:50'], ...]
+     * @param array $targetLessonIds
+     * @throws Exception
+     */
+    private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = []): void
+    {
+        // 1. Zaman çizelgesini belirle
+        $points = [$item->start_time, $item->end_time];
+        foreach ($deleteIntervals as $del) {
+            // Sadece item aralığına giren noktaları ekle
+            if ($del['start'] > $item->start_time && $del['start'] < $item->end_time)
+                $points[] = $del['start'];
+            if ($del['end'] > $item->start_time && $del['end'] < $item->end_time)
+                $points[] = $del['end'];
+        }
+        $points = array_unique($points);
+        sort($points);
+
+        $newSegments = [];
+        $itemData = is_string($item->data) ? @unserialize($item->data) : $item->data;
+        if (!is_array($itemData) && is_string($item->data)) {
+            $decoded = json_decode($item->data, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $itemData = $decoded;
+            }
+        }
+        if (!is_array($itemData))
+            $itemData = [];
+
+        // Yeni sistemde data her zaman dizi olmalı
+        $originalLessons = isset($itemData['lesson_id']) ? [$itemData] : $itemData;
+
+        for ($i = 0; $i < count($points) - 1; $i++) {
+            $pStart = $points[$i];
+            $pEnd = $points[$i + 1];
+
+            // Bu aralık silinecek bir aralık mı?
+            $shouldDeleteLesson = false;
+            foreach ($deleteIntervals as $del) {
+                if ($del['start'] <= $pStart && $del['end'] >= $pEnd) {
+                    $shouldDeleteLesson = true;
+                    break;
+                }
+            }
+
+            $currentSegmentLessons = $originalLessons;
+            if ($shouldDeleteLesson) {
+                if (!empty($targetLessonIds)) {
+                    // Sadece belirli dersleri sil
+                    $currentSegmentLessons = array_values(array_filter($originalLessons, function ($l) use ($targetLessonIds) {
+                        return !in_array($l['lesson_id'], $targetLessonIds);
+                    }));
+                } else {
+                    // Tüm itemi sil
+                    $currentSegmentLessons = [];
+                }
+            }
+
+            if (!empty($currentSegmentLessons)) {
+                // Segmenti ekle (Optimization: Önceki ile aynıysa birleştir)
+                $lastIdx = count($newSegments) - 1;
+                if ($lastIdx >= 0 && serialize($newSegments[$lastIdx]['lessons']) === serialize($currentSegmentLessons)) {
+                    $newSegments[$lastIdx]['end'] = $pEnd;
+                } else {
+                    $newSegments[] = ['start' => $pStart, 'end' => $pEnd, 'lessons' => $currentSegmentLessons];
+                }
+            }
+        }
+
+        // 2. Veri tabanı işlemleri
+        if (empty($newSegments)) {
+            $item->delete();
+        } else {
+            // İlk segment ile mevcut itemi güncelle
+            $first = array_shift($newSegments);
+            $item->start_time = $first['start'];
+            $item->end_time = $first['end'];
+            $item->data = $first['lessons'];
+            // Eğer tek ders kaldıysa status 'single' olabilir
+            if (count($first['lessons']) === 1) {
+                $item->status = 'single';
+            }
+
+            $stmt = $this->database->prepare("UPDATE schedule_items SET start_time = ?, end_time = ?, data = ?, status = ? WHERE id = ?");
+            $stmt->execute([
+                $item->start_time,
+                $item->end_time,
+                serialize($item->data),
+                $item->status,
+                $item->id
+            ]);
+
+            // Kalanlar için yeni item oluştur
+            foreach ($newSegments as $seg) {
+                $newItem = new ScheduleItem();
+                $newItem->schedule_id = $item->schedule_id;
+                $newItem->day_index = $item->day_index;
+                $newItem->week_index = $item->week_index;
+                $newItem->start_time = $seg['start'];
+                $newItem->end_time = $seg['end'];
+                $newItem->status = count($seg['lessons']) > 1 ? 'group' : 'single';
+                $newItem->data = $seg['lessons'];
+                $newItem->detail = $item->detail;
+                $newItem->create();
+            }
+        }
     }
 
     /**
      * Group statusundaki itemleri birleştirip yeniden oluşturur.
      * Çakışan zaman dilimlerinde verileri birleştirir, diğer dilimlerde ayırır.
      */
-    private function processGroupItemSaving(Schedule $schedule, int $dayIndex, string $startTime, string $endTime, array $newData, ?array $newDetail): void
+    private function processGroupItemSaving(Schedule $schedule, int $dayIndex, string $startTime, string $endTime, array $newData, ?array $newDetail): array
     {
         // 1. İlgili günün tüm 'group' itemlerini çek
         $allDayItems = (new ScheduleItem())->get()->where([
@@ -1001,7 +1231,7 @@ class ScheduleController extends Controller
             $newItem->data = $newData;
             $newItem->detail = $newDetail;
             $newItem->create();
-            return;
+            return [$newItem->id];
         }
 
         // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
@@ -1096,6 +1326,7 @@ class ScheduleController extends Controller
             $item->delete();
         }
 
+        $createdGroupIds = [];
         // Yeni itemleri oluştur
         foreach ($pendingItems as $pItem) {
             $newItem = new ScheduleItem();
@@ -1107,6 +1338,8 @@ class ScheduleController extends Controller
             $newItem->data = $pItem['data'];
             $newItem->detail = !empty($pItem['detail']) ? $pItem['detail'] : null;
             $newItem->create();
+            $createdGroupIds[] = $newItem->id;
         }
+        return $createdGroupIds;
     }
 }

@@ -646,10 +646,12 @@ class AjaxRouter extends Router
         }
 
         try {
-            if ($scheduleController->saveScheduleItems($items)) {
+            $createdIds = $scheduleController->saveScheduleItems($items);
+            if (!empty($createdIds)) {
                 $this->response = array(
                     "status" => "success",
-                    "msg" => "Program başarıyla kaydedildi."
+                    "msg" => "Program başarıyla kaydedildi.",
+                    "createdIds" => $createdIds
                 );
             }
         } catch (Exception $e) {
@@ -678,7 +680,7 @@ class AjaxRouter extends Router
         foreach ($currentSemesters as $semester_no) {
             $filters['semester_no'] = $semester_no;
             $filters['day' . $filters['day_index']] = $filters['day'][0];
-           // todo   $savedId = $scheduleController->saveNew(array_diff_key($filters, array_flip(["day_index", "day"])));
+            // todo   $savedId = $scheduleController->saveNew(array_diff_key($filters, array_flip(["day_index", "day"])));
             if ($savedId == 0) {
                 throw new Exception("Hoca tercihi kaydedilemedi");
             } else {

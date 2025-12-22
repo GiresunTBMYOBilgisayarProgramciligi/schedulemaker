@@ -996,10 +996,11 @@ class ScheduleCard {
         return scheduleItems;
     }
 
-    moveLessonListToTable(scheduleItems, classroom) {
-        console.log('moveLessonListToTable', scheduleItems, classroom);
+    moveLessonListToTable(scheduleItems, classroom, createdIds = []) {
+        console.log('moveLessonListToTable', scheduleItems, classroom, createdIds);
 
         let addedHours = 0;
+        let idIndex = 0;
 
         scheduleItems.forEach(item => {
             let itemStartTime = item.start_time;
@@ -1007,6 +1008,10 @@ class ScheduleCard {
             // day_index should typically be an integer, ensure it
             let targetDayIndex = parseInt(item.day_index, 10);
             let colIndex = targetDayIndex + 1; // 0 index is time column
+
+            // Backend'den gelen ID varsa onu kullan, yoksa item.id'yi fallback olarak kullan
+            let currentDataId = (createdIds && createdIds.length > idIndex) ? createdIds[idIndex] : item.id;
+            idIndex++;
 
             // Tablo satırlarını gezerek uygun saat aralığını bul
             for (let i = 0; i < this.table.rows.length; i++) {
@@ -1030,7 +1035,7 @@ class ScheduleCard {
                     }
 
                     // Hücreye schedule-item-id ata
-                    cell.dataset.scheduleItemId = item.id;
+                    cell.dataset.scheduleItemId = currentDataId;
 
                     // Group handling
                     let container;
@@ -1067,7 +1072,7 @@ class ScheduleCard {
 
                     // Attribute'leri ayarla
                     lessonCard.setAttribute('draggable', 'true');
-                    lessonCard.dataset.scheduleItemId = item.id;
+                    lessonCard.dataset.scheduleItemId = currentDataId;
                     lessonCard.dataset.groupNo = this.draggedLesson.group_no || 0;
                     lessonCard.dataset.size = this.draggedLesson.size || 0;
                     lessonCard.dataset.lessonId = this.draggedLesson.lesson_id;
@@ -1215,7 +1220,7 @@ class ScheduleCard {
                     return false;
                 } else {
                     console.info(data)
-                    return true;
+                    return data.createdIds || true;
                 }
             })
             .catch((error) => {
@@ -1461,7 +1466,7 @@ class ScheduleCard {
                     let saveResult = await this.saveScheduleItems(scheduleItems);
                     if (saveResult) {
                         saveScheduleToast.closeToast()
-                        this.moveLessonListToTable(scheduleItems, classroom);
+                        this.moveLessonListToTable(scheduleItems, classroom, saveResult);
                     } else {
                         saveScheduleToast.closeToast();
                         console.error('saveResult', saveResult)
@@ -1483,7 +1488,7 @@ class ScheduleCard {
                 let saveScheduleResult = await this.saveScheduleItems(scheduleItems);
                 if (saveScheduleResult) {
                     saveScheduleToast.closeToast()
-                    this.moveLessonListToTable(scheduleItems, classroom);
+                    this.moveLessonListToTable(scheduleItems, classroom, saveScheduleResult);
                 }
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
