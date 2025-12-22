@@ -912,57 +912,35 @@ class AjaxRouter extends Router
     }
 
     /**
-     * todo
-     * Ders programından veri silmek için gerekli kontrolleri yapar
+     * Ders programından item silme işlemi
      * @return void
      * @throws Exception
      */
-    public function deleteScheduleAction(): void
+    public function deleteScheduleItemsAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "deleteScheduleAction");
-        $this->logger()->debug("Delete ScheduleAction Filters: ", ["filters" => $filters]);
-        if (!key_exists("owner_type", $filters)) {
-            //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
-            $owners = [];
-            $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $lecturer = (new User())->find($filters['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");//todo dersten alınması ile bu şekilde alınması arasında fark var mı ?
-            $classroom = (new Classroom())->find($filters["classroom_id"]);
-            // bağlı dersleri alıyoruz
-            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-            //bağlı dersler listesine ana dersi ekliyoruz
-            array_unshift($lessons, $lesson);
-            foreach ($lessons as $child) {
-                //set Owners
-                $owners['program'] = $child->program_id;
-                $owners["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
-                $owners['lesson'] = $child->id;
-                $owners["classroom"] = $classroom->id;
-                $day = [
-                    "lesson_id" => $child->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                foreach ($owners as $owner_type => $owner_id) {
-                    if (is_null($owner_id))
-                        continue; // child lesson ise owner_id null olduğundan atlanacak
-                    $deleteFilters = [
-                        "owner_type" => $owner_type,
-                        "owner_id" => $owner_id,
-                        "day_index" => $filters["day_index"],
-                        "day" => $day,
-                        "type" => $filters["type"],
-                        "time" => $filters['time'],
-                        "semester_no" => $lesson->semester_no,
-                        "semester" => $filters["semester"],
-                        "academic_year" => $filters['academic_year'],
-                    ];
-                    $this->response["deleteResult"][$deleteFilters['owner_type']] = $scheduleController->deleteSchedule($deleteFilters);
+        $this->logger()->debug("Delete ScheduleItemsAction Data: ", ['data' => $this->data]);
 
-                }
-            }
-        } else {// owner_type belirtilmişse sadece o type için işlem yapılacak
-            $this->response["deleteResult"] = $scheduleController->deleteSchedule($filters);
+        $scheduleController = new ScheduleController();
+        $items = json_decode($this->data['items'], true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+            $this->sendResponse();
+            return;
+        }
+
+        try {
+            $result = $scheduleController->deleteScheduleItems($items);
+            $this->response = array_merge(["status" => "success"], $result);
+        } catch (Exception $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $this->response = [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
         $this->sendResponse();
     }
