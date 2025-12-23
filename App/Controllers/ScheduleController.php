@@ -898,6 +898,10 @@ class ScheduleController extends Controller
             return $createdIds;
         } catch (Exception $e) {
             $this->database->rollBack();
+            $this->logger()->error("Save Schedule Items Error: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'itemData' => $itemData ?? 'N/A'
+            ]);
             throw $e;
         }
     }
