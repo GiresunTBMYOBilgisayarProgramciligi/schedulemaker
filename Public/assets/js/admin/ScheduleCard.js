@@ -1268,10 +1268,6 @@ class ScheduleCard {
         let data = new FormData();
         data.append("items", JSON.stringify(scheduleItems));
 
-        // Metadata
-        data.append("academic_year", this.academic_year);
-        data.append("semester", this.semester);
-        data.append("type", this.type);
 
         return fetch("/ajax/deleteScheduleItems", {
             method: "POST",
