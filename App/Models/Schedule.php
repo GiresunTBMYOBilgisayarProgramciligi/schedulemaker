@@ -80,6 +80,7 @@ class Schedule extends Model
     public array|bool|null $day6 = null;
     public ?string $semester = null;
     public ?string $academic_year = null;
+    protected array $excludeFromDb = [];
 
 
     /**

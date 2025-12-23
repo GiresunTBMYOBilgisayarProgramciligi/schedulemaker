@@ -17,7 +17,7 @@ class Setting extends Model
     public ?string $group = null;
     public ?\DateTime $created_at = null;
     public ?\DateTime $updated_at = null;
-
+    protected array $excludeFromDb = [];
     protected string $table_name='settings';
 
     protected array $dateFields = ['created_at', 'updated_at'];

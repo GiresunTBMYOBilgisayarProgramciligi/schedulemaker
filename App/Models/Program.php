@@ -12,7 +12,7 @@ class Program extends Model
     public ?string $name = null;
     public ?int $department_id = null;
     public ?bool $active = null;
-
+    protected array $excludeFromDb = [];
     protected string $table_name = "programs";
 
 

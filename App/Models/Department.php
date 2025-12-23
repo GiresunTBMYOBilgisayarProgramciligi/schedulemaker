@@ -16,7 +16,7 @@ class Department extends Model
     public ?int $chairperson_id = null;
 
     public ?bool $active = null;
-
+    protected array $excludeFromDb = [];
     protected string $table_name = "departments";
 
 

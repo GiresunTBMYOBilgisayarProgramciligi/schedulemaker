@@ -29,7 +29,7 @@ class User extends Model
      * @var array|string[]
      */
     protected array $dateFields = ['register_date', 'last_login'];
-
+    protected array $excludeFromDb = [];
     protected string $table_name = "users";
 
     public function getRegisterDate(): string

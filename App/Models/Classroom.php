@@ -21,6 +21,7 @@ class Classroom extends Model
      * 4-> Karma (Derslik ve Lab)
      */
     public ?string $type = null;
+    protected array $excludeFromDb = [];
     protected string $table_name = "classrooms";
 
 
