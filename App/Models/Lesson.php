@@ -48,6 +48,7 @@ class Lesson extends Model
      */
     public ?int $placed_size = 0;
     public ?int $remaining_size = 0;
+    protected array $excludeFromDb = ['placed_hours', 'placed_size', 'remaining_size'];
     protected string $table_name = "lessons";
 
     /**

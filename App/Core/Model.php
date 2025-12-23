@@ -466,6 +466,9 @@ class Model
      */
     public function getArray(array $excludedProperties = [], bool $acceptNull = false): array
     {
+        // Exclude edilenleri birleştir
+        $excludedProperties = array_merge($excludedProperties, $this->excludeFromDb);
+
         // ReflectionClass kullanarak sadece public özellikleri alın
         $reflection = new \ReflectionClass($this);
         $properties = $reflection->getProperties(\ReflectionProperty::IS_PUBLIC);
@@ -541,6 +544,14 @@ class Model
             throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
         }
         $data = $this->getArray(['id'], true);
+
+        // dizi türündeki veriler serialize ediliyor
+        array_walk($data, function (&$value) {
+            if (is_array($value)) {
+                $value = serialize($value);
+            }
+        });
+
         $setStatements = array_map(function ($field) {
             return "{$field} = :{$field}";
         }, array_keys($data));
@@ -553,7 +564,7 @@ class Model
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
-        $this->logger()->info("Veri Güncellendi",$this->logContext());
+        $this->logger()->info("Veri Güncellendi", $this->logContext());
         return $statement->execute();
     }
 
