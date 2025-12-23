@@ -41,7 +41,7 @@ class Model
     public function __construct()
     {
         if (self::$database === null) {
-            self::$database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
+            self::$database = Database::getConnection();
         }
     }
     /*
