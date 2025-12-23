@@ -221,8 +221,8 @@ class ImportExportManager
                 'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
                 'academic_year' => $this->formData['academic_year'],
             ];
-            //Ders ders kodu, program_id ikilisine göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();
+            //Ders ders kodu, program_id ve group_no göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
+            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id,'group_no'=>$group_no])->first();
             if ($lesson) {
                 $lesson->fill($lessonData);
                 $lessonsController->updateLesson($lesson);
