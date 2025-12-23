@@ -337,6 +337,9 @@ class Lesson extends Model
             }
         } else {
             $lessonDuration = getSettingValue('duration', 'lesson', 50);
+            $breakDuration = getSettingValue('break', 'lesson', 10);
+            $totalSlotDuration = $lessonDuration + $breakDuration;
+
             foreach ($items as $item) {
                 if ($item->status === 'unavailable' || $item->status === 'preferred') {
                     continue;
@@ -346,7 +349,12 @@ class Lesson extends Model
 
                 if ($start && $end) {
                     $diffMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
-                    $this->placed_size += round($diffMinutes / $lessonDuration);
+                    // Eğer süre tam bölünmüyorsa yukarı yuvarla (örn: 50dk ders + 10dk teneffüs = 60dk)
+                    // Ancak tek ders 50dk olabilir, bu yüzden diffMinutes 50 ise 1 sayılmalı.
+                    // Bu mantıkla: diffMinutes / totalSlotDuration.
+                    // Örnek: 230 dk blok. 230 / 60 = 3.83 => 4 saat.
+                    // Örnek: 50 dk blok. 50 / 60 = 0.83 => 1 saat.
+                    $this->placed_size += round($diffMinutes / $totalSlotDuration);
                 }
             }
             $this->placed_hours = $this->placed_size;
