@@ -316,10 +316,14 @@ class AssetManager
         // Sayfa özel assetleri ekle
         if (isset($this->pageAssets[$page])) {
             if (isset($this->pageAssets[$page]['css'])) {
-                $this->css = array_merge($this->css, $this->pageAssets[$page]['css']);
+                foreach ($this->pageAssets[$page]['css'] as $css) {
+                    $this->addCss($css['path'], $css['attributes'] ?? []);
+                }
             }
             if (isset($this->pageAssets[$page]['js'])) {
-                $this->js = array_merge($this->js, $this->pageAssets[$page]['js']);
+                foreach ($this->pageAssets[$page]['js'] as $js) {
+                    $this->addJs($js['path'], $js['attributes'] ?? []);
+                }
             }
         }
     }
