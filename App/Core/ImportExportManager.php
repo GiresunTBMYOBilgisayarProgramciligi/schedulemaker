@@ -646,7 +646,7 @@ class ImportExportManager
                 continue;
 
             foreach ($schedules as $schedule) {
-                $this->logger()->debug("Schedule time: ", ['schedule' => $schedule]);
+                //$this->logger()->debug("Schedule time: ", ['schedule' => $schedule]);
                 if (empty($schedule->time))
                     continue;
                 // Parse start-end times from schedule time label like "08.00 - 08.50"

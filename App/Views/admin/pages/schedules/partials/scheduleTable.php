@@ -45,7 +45,7 @@ use function App\Helpers\getSettingValue;
                 -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                             <?php if ($scheduleItem):
-                                Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
+                                //Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
                                 $dropZone = $scheduleItem->status === 'unavailable' ? '' : 'drop-zone'; ?>
                                 <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"

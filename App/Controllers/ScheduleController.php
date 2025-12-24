@@ -196,7 +196,7 @@ class ScheduleController extends Controller
             }
         }
 
-        $this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows' => $scheduleRows]);
+        //$this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows' => $scheduleRows]);
         return $scheduleRows;
     }
 
@@ -270,7 +270,7 @@ class ScheduleController extends Controller
      */
     private function prepareScheduleCard($filters, bool $only_table = false): string
     {
-        $this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
+        //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
@@ -342,7 +342,7 @@ class ScheduleController extends Controller
             $headers = [];
             $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
             $type = in_array($filters['type'], $examTypes) ? 'exam' : 'lesson';
-            $this->logger()->debug("Schedule Table Headers için Type alındı", ['type' => $type]);
+            //$this->logger()->debug("Schedule Table Headers için Type alındı", ['type' => $type]);
             $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
             for ($i = 0; $i <= $maxDayIndex; $i++) {
                 $headers[] = '<th>' . $days[$i] . '</th>';
@@ -586,7 +586,7 @@ class ScheduleController extends Controller
     public function checkScheduleCrash(array $filters = []): bool
     {
         $filters = $this->validator->validate($filters, "checkScheduleCrash");
-        $this->logger()->debug("Check Schedule Crash Filters: ", $this->logContext($filters));
+        //$this->logger()->debug("Check Schedule Crash Filters: ", $this->logContext($filters));
 
         $items = json_decode($filters['items'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -780,7 +780,7 @@ class ScheduleController extends Controller
         $createdIds = [];
         try {
             foreach ($itemsData as $itemData) {
-                $this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
+                //$this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
                 // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
                 $lessonId = $itemData['data']['lesson_id'];
                 $lecturerId = $itemData['data']['lecturer_id'];
@@ -981,6 +981,17 @@ class ScheduleController extends Controller
 
     public function deleteScheduleItems(array $items): array
     {
+        /** 
+         * filter içerisinde gelen items listesi gerekli kontroller yapılarak silinecek:
+         * 
+         * gelen itemler aynı scheduleitem_id ye sahipse start ve end time bilgilerine göre birleştirilecekler. 
+         * birleştirilen item schedule item ile aynı ise o item silinecek. Yani başlangıç ve bitiş saatleri tüm itemi kapsıyorsa silinecek.
+         * tamamını kapsamıyorsa start ve end time bilgilerine göre schedule items tablosunda güncellenecek. 
+         * item kaydetme işlemlerindeki prefered item ile çakışma durumunda yapılan işlemler gibibi silme işlem idüzenlenecek.
+         * eğer silinmesi için gelen item ver olan itemin başlangıç kısmında ise start time güncellenecek son kısmında ise end time güncellenecek. orta kısmında ise item parçalanarak iki item olarak kaydedilecek.
+         * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
+         * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
+         */
         $deletedIds = [];
         $errors = [];
 

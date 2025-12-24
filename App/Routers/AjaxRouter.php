@@ -632,7 +632,7 @@ class AjaxRouter extends Router
      */
     public function saveScheduleItemAction(): void
     {
-        $this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
+        //$this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
 
         $scheduleController = new ScheduleController();
         $items = json_decode($this->data['items'], true);
@@ -793,7 +793,7 @@ class AjaxRouter extends Router
          */
         $classroomOccupancy = [];
         $classroomIds = array_column($classrooms, 'id');
-        $this->logger()->debug("Classroom IDs: ", ["classroomIds" => $classroomIds]);
+        //$this->logger()->debug("Classroom IDs: ", ["classroomIds" => $classroomIds]);
 
         $schedules = (new Schedule())->get()->where([
             'owner_type' => 'classroom',
@@ -802,10 +802,10 @@ class AjaxRouter extends Router
             'semester' => $filters['semester'],
             'academic_year' => $filters['academic_year'],
         ])->with(['items'])->all();
-        $this->logger()->debug("Schedules: ", ['schedules' => $schedules]);
+        //$this->logger()->debug("Schedules: ", ['schedules' => $schedules]);
 
         foreach ($schedules as $schedule) {
-            $this->logger()->debug("Schedule Items: ", ['scheduleItems' => $schedule->items]);
+            //$this->logger()->debug("Schedule Items: ", ['scheduleItems' => $schedule->items]);
             foreach ($schedule->items as $item) {
                 $itemStart = substr($item->start_time, 0, 5);
                 $itemEnd = substr($item->end_time, 0, 5);

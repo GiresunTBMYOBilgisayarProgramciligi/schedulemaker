@@ -93,14 +93,12 @@ class Router
      */
     public function defaultAction(string $action, array $params = []): void
     {
-        $this->logger()->debug("Default action", ["action"=> $action,'params'=>$params]);
         // Router adı: AdminRouter -> admin
         $folder = strtolower(str_replace("Router", "", (new \ReflectionClass($this))->getShortName()));
         
         // Action adı: settingsAction -> settings
         $page = strtolower(str_replace("Action", "", $action));
         
-        $this->logger()->debug("Default action", ["folder"=> $folder,'page'=>$page]);
         if (!empty($params) && isset($params[0])) {
             $file = $params[0];
             // Güvenlik veya format kontrolü yapılabilir
@@ -121,7 +119,6 @@ class Router
             // Şöyle bir strateji izleyelim:
             // 1. Parametreyi dosya adı olarak kabul edip render etmeyi dene.
             // 2. Başarısız olursa varsayılan index dosyasını dene.
-            $this->logger()->debug("Default action", ["viewPath"=> $viewPath]);
             $this->view_data["page_title"] = $file . " Sayfası";
             $this->view_data = array_merge($this->view_data, $params);
             $this->callView($viewPath);

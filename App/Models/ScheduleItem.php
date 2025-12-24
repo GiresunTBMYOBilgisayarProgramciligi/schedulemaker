@@ -72,7 +72,7 @@ class ScheduleItem extends Model
                 continue;
             $lessons[] = (new Lesson()->get()->where(['id' => $dayData['lesson_id']]))->first();
         }
-        $this->logger()->debug('Lessons: ', ['lessons' => $lessons]);
+        //$this->logger()->debug('Lessons: ', ['lessons' => $lessons]);
         return $lessons;
     }
 
@@ -84,7 +84,7 @@ class ScheduleItem extends Model
                 continue;
             $lecturers[] = (new User()->get()->where(['id' => $dayData['lecturer_id']]))->first();
         }
-        $this->logger()->debug('Lecturers: ', ['lecturers' => $lecturers]);
+        //$this->logger()->debug('Lecturers: ', ['lecturers' => $lecturers]);
         return $lecturers;
     }
 
@@ -96,7 +96,7 @@ class ScheduleItem extends Model
                 continue;
             $classrooms[] = (new Classroom()->get()->where(['id' => $dayData['classroom_id']]))->first();
         }
-        $this->logger()->debug('Classrooms: ', ['classrooms' => $classrooms]);
+        //$this->logger()->debug('Classrooms: ', ['classrooms' => $classrooms]);
         return $classrooms;
     }
     public function getSlotDatas()
@@ -114,7 +114,7 @@ class ScheduleItem extends Model
                 'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
             ];
         }
-        $this->logger()->debug('SlotDatas: ', $this->logContext(['slotDatas' => $slotDatas]));
+        //$this->logger()->debug('SlotDatas: ', $this->logContext(['slotDatas' => $slotDatas]));
         return $slotDatas;
     }
     public function getSlotCSSClass()
