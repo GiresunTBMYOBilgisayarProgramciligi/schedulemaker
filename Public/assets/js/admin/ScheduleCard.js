@@ -168,11 +168,14 @@ class ScheduleCard {
             start_time: cell.dataset.startTime,
             end_time: cell.dataset.endTime,
             status: ds.status || (parseInt(ds.groupNo) > 0 ? "group" : "single"),
-            data: {
-                lesson_id: ds.lessonId,
-                lecturer_id: ds.lecturerId,
-                classroom_id: ds.classroomId
-            }
+            data: [
+                {
+                    lesson_id: ds.lessonId,
+                    lecturer_id: ds.lecturerId,
+                    classroom_id: ds.classroomId
+                }
+            ],
+            detail: null
         };
     }
 
