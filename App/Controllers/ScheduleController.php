@@ -992,6 +992,7 @@ class ScheduleController extends Controller
          * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
          * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
          */
+        $this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
         $deletedIds = [];
         $errors = [];
 

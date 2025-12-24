@@ -1000,6 +1000,17 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
+    public function clearLogsAction(): void
+    {
+        (new SettingsController())->clearLogsAction();
+        $this->response['status'] = "success";
+        $this->response['msg'] = "Loglar başarıyla temizlendi";
+        $this->sendResponse();
+    }
+
     /*
      * İmport ve Export
      */
