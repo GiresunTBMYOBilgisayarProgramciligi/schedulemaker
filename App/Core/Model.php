@@ -627,7 +627,7 @@ class Model
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
-            $this->logger()->info("Veri Silindi", $this->logContext());
+            $this->logger()->info("Veri Silindi", $this->logContext(['statement' => $statement]));
             return true;
         }
     }
