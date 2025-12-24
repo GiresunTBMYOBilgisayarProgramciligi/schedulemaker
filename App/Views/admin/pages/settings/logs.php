@@ -26,7 +26,8 @@
             <div class="card card-outline card-primary">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table id="logsTable" class="table table-striped table-hover dataTable">
+                        <table id="logsTable" class="table table-striped table-hover dataTable"
+                            data-order='[[0, "desc"]]'>
                             <thead>
                                 <tr>
                                     <th>Tarih</th>
