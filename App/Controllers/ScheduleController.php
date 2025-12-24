@@ -721,17 +721,21 @@ class ScheduleController extends Controller
                     throw new Exception("Grup dersi üzerine normal ders eklenemez.");
                 }
 
-                // Dersler farklı olmalı
-                $existingLessonId = $existingItem->data['lesson_id'] ?? null;
-                if ($existingLessonId == $newLesson->id) {
-                    throw new Exception("Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).");
-                }
+                // Mevcut gruptaki dersleri kontrol et
+                $slotDatas = $existingItem->getSlotDatas();
+                foreach ($slotDatas as $sd) {
+                    if (!$sd->lesson)
+                        continue;
 
-                // Grup numaraları farklı olmalı (Bunu Lesson modelinden kontrol edebiliriz eğer item data içinde group_no yoksa)
-                // Existing item'in dersini bulalım
-                $existingLesson = (new Lesson())->find($existingLessonId);
-                if ($existingLesson && $existingLesson->group_no == $newLesson->group_no) {
-                    throw new Exception("Aynı grup numarasına sahip dersler çakışamaz.");
+                    // Dersler farklı olmalı
+                    if ($sd->lesson->id == $newLesson->id) {
+                        throw new Exception("Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).");
+                    }
+
+                    // Grup numaraları farklı olmalı
+                    if ($sd->lesson->group_no == $newLesson->group_no) {
+                        throw new Exception("Aynı grup numarasına sahip dersler çakışamaz.");
+                    }
                 }
 
                 // Buraya geldiyse uygundur (Farklı ders, farklı grup, ikisi de grup)
@@ -751,9 +755,15 @@ class ScheduleController extends Controller
      */
     private function getLessonNameFromItem(ScheduleItem $item): string
     {
-        if (isset($item->data['lesson_id'])) {
-            $l = (new Lesson())->find($item->data['lesson_id']);
-            return $l ? $l->getFullName() : "Bilinmeyen Ders";
+        $slotDatas = $item->getSlotDatas();
+        if (!empty($slotDatas)) {
+            $names = [];
+            foreach ($slotDatas as $sd) {
+                if ($sd->lesson) {
+                    $names[] = $sd->lesson->getFullName();
+                }
+            }
+            return !empty($names) ? implode(", ", $names) : "Bilinmeyen Ders";
         }
         return "Bilinmeyen Öğe";
     }
@@ -770,6 +780,7 @@ class ScheduleController extends Controller
         $createdIds = [];
         try {
             foreach ($itemsData as $itemData) {
+                $this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
                 // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
                 $lessonId = $itemData['data']['lesson_id'];
                 $lecturerId = $itemData['data']['lecturer_id'];
@@ -981,21 +992,31 @@ class ScheduleController extends Controller
          * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
          * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
          */
+
+        // $deletedIds: Silme işlemi başarıyla tamamlanan kayıtların ID listesi
         $deletedIds = [];
+        // $errors: İşlem sırasında oluşan hata mesajlarının listesi
         $errors = [];
 
         // 1. Itemları ID'ye göre grupla
+        // $groups: Frontend'den gelen parçalı verileri ID bazlı gruplar (her ID için birden fazla zaman dilimi olabilir)
         $groups = [];
         foreach ($items as $item) {
+            // $id: İşlem yapılacak ScheduleItem'ın benzersiz kimliği
             $id = $item['schedule_item_id'] ?? ($item['id'] ?? null);
             if (!$id)
                 continue;
-            $groups[$id][] = $item;
+
+            $model = new ScheduleItem();
+            $model->fill($item);
+            $groups[$id][] = $model;
         }
 
+        // $chunkItems: Aynı ID'ye sahip silme isteklerinin listesi
         foreach ($groups as $id => $chunkItems) {
             try {
                 // Ana itemi bul
+                // $scheduleItem: Veritabanındaki gerçek ScheduleItem nesnesi
                 $scheduleItem = (new ScheduleItem())->find($id);
                 if (!$scheduleItem) {
                     $errors[] = "Item ID $id bulunamadı.";
@@ -1003,32 +1024,39 @@ class ScheduleController extends Controller
                 }
 
                 // 2. Silinecek zaman aralıklarını hesapla (Union of selected slots)
+                // $deleteIntervals: Bu item için silinecek tüm zaman aralıklarını (başlangıç-bitiş) tutan dizi
                 $deleteIntervals = [];
+                // $targetLessonIds: Sadece belirli dersler silinecekse, o derslerin ID listesi (Grup dersleri için önemli)
                 $targetLessonIds = [];
-                foreach ($chunkItems as $cItem) {
-                    $cData = $cItem['data'] ?? [];
-                    // Normalize data to list
-                    if (isset($cData['lesson_id'])) {
-                        $cData = [$cData];
-                    }
 
-                    foreach ($cData as $d) {
-                        if (isset($d['lesson_id'])) {
-                            $targetLessonIds[] = $d['lesson_id'];
+                // $cItem: Gruptaki her bir parça isteği (Model nesnesi)
+                foreach ($chunkItems as $cItem) {
+                    // İsteğin içindeki ders verisinden hedef ders ID'lerini topla
+                    foreach ($cItem->getSlotDatas() as $sd) {
+                        if ($sd->lesson) {
+                            $targetLessonIds[] = $sd->lesson->id;
                         }
                     }
 
-                    $startTimeStr = $cItem['start_time'] ?? ($cItem['time'] ?? null);
+                    // $startTimeStr: Silinecek aralığın başlangıç saati (string)
+                    $startTimeStr = $cItem->start_time;
                     if (empty($startTimeStr))
                         continue;
 
                     $start = $startTimeStr; // Örn: "09:00"
-                    $type = $cItem['type'] ?? 'lesson';
+                    // $type: Ders tipi (lesson veya exam) - Süre hesaplaması için gerekli
+                    // Sınav kontrolü start_time null ise modelden de gelmeyebilir, item array'inden bakabiliriz ama cItem->status üzerinden de gidilebilir. 
+                    // Ancak type bilgisi cItem içerisinde olmayabilir, bu yüzden fill() ile gelmemişse varsayılan 'lesson' diyelim.
+                    $type = 'lesson'; // Varsayılan
+
                     // Ayarlardan süre bilgisini al
+                    // $duration: Dersin veya sınavın süresi (dakika)
                     $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
 
                     // Bitiş saatini hesapla
+                    // $endUnix: Bitiş zamanının Unix timestamp değeri
                     $endUnix = strtotime($start) + ($duration * 60);
+                    // $end: Bitiş zamanının saat formatı (H:i)
                     $end = date("H:i", $endUnix);
 
                     $deleteIntervals[] = ['start' => $start, 'end' => $end];
@@ -1041,28 +1069,34 @@ class ScheduleController extends Controller
                 // Sadece katı zaman eşitliği yerine, ders ID'si ve zaman örtüşmesine bakıyoruz.
 
                 // Mevcut itemin ait olduğu schedule bilgisini al
+                // $currentSchedule: İşlem yapılan 'Schedule' (Program) nesnesi. Dönem ve yıl bilgisi için gerekli.
                 $currentSchedule = (new Schedule())->find($scheduleItem->schedule_id);
                 if (!$currentSchedule)
                     continue;
 
+                // $siblings: Bu item'in diğer programlardaki (Hoca, Sınıf vb.) yansımaları (kardeşleri)
                 $siblings = [];
                 if (!empty($targetLessonIds)) {
                     $this->logger()->info("Deleting sibling items", ['targetLessonIds' => $targetLessonIds, 'currentScheduleId' => $currentSchedule->id]);
 
                     // Hedef derslerin bulunduğu diğer programları bulacağız.
                     // Verileri getSlotDatas üzerinden alıyoruz.
+                    // $slotDatas: Item'in içindeki derslerin detaylı nesne hali (ScheduleItem modelinden gelir)
                     $slotDatas = $scheduleItem->getSlotDatas();
                     $this->logger()->info("Slot datas retrieved", ['slotDatas' => $slotDatas]);
 
+                    // $relatedScheduleFilters: İlişkili programları bulmak için kullanılacak sorgu filtreleri
                     $relatedScheduleFilters = [];
 
                     // Ortak filtreler
+                    // $baseFilter: Dönem ve yıl gibi temel filtre kriterleri
                     $baseFilter = [
                         'semester' => $currentSchedule->semester,
                         'academic_year' => $currentSchedule->academic_year,
                         'type' => $currentSchedule->type // lesson, exam vs
                     ];
 
+                    // $sd: Her bir slot data (ders/hoca/sınıf üçlüsü)
                     foreach ($slotDatas as $sd) {
                         if (!isset($sd->lesson) || !in_array($sd->lesson->id, $targetLessonIds)) {
                             $this->logger()->info("Skipping slot data", ['lesson_id' => $sd->lesson->id ?? 'null']);
@@ -1104,6 +1138,7 @@ class ScheduleController extends Controller
                     $this->logger()->info("Related schedule filters built", ['count' => count($relatedScheduleFilters), 'filters' => $relatedScheduleFilters]);
 
                     // Benzersiz filtreleri oluştur (duplicate sorguları önle)
+                    // $uniqueFilters: Tekrar eden filtrelerin temizlenmiş hali
                     $uniqueFilters = [];
                     foreach ($relatedScheduleFilters as $rf) {
                         $key = md5(json_encode($rf));
@@ -1111,8 +1146,10 @@ class ScheduleController extends Controller
                     }
 
                     // İlgili Schedule'ları bul
+                    // $relatedScheduleIds: İlişkili Schedule'ların ID listesi
                     $relatedScheduleIds = [];
                     foreach ($uniqueFilters as $rf) {
+                        // $s: Bulunan Schedule nesnesi
                         $s = (new Schedule())->get()->where($rf)->first(); // firstOrCreate değil, sadece varsa.
                         if ($s) {
                             $relatedScheduleIds[] = $s->id;
@@ -1123,8 +1160,11 @@ class ScheduleController extends Controller
 
                     if (!empty($relatedScheduleIds)) {
                         // Silme aralığının sınırlarını bul (en erken ve en geç)
+                        // $minStart: Silinecek aralığın en başı
                         $minStart = $deleteIntervals[0]['start'];
+                        // $maxEnd: Silinecek aralığın en sonu
                         $maxEnd = $deleteIntervals[0]['end'];
+                        // $di: Her bir silme aralığı
                         foreach ($deleteIntervals as $di) {
                             if ($di['start'] < $minStart)
                                 $minStart = $di['start'];
@@ -1135,6 +1175,7 @@ class ScheduleController extends Controller
                         $this->logger()->info("Search interval", ['minStart' => $minStart, 'maxEnd' => $maxEnd]);
 
                         // Bu schedule'larda gün ve saat örtüşmesi olan itemleri getir
+                        // $candidateItems: Belirlenen schedule ve zaman aralığında bulunan aday itemlar
                         $candidateItems = (new ScheduleItem())->get()->where([
                             'schedule_id' => ['in' => array_unique($relatedScheduleIds)],
                             'day_index' => $scheduleItem->day_index
@@ -1142,6 +1183,7 @@ class ScheduleController extends Controller
 
                         $this->logger()->info("Candidate items found", ['count' => count($candidateItems)]);
 
+                        // $cand: Aday item
                         foreach ($candidateItems as $cand) {
                             if ($this->checkOverlap($minStart, $maxEnd, $cand->start_time, $cand->end_time)) {
                                 $siblings[] = $cand;
@@ -1152,6 +1194,7 @@ class ScheduleController extends Controller
                 } else {
                     // Lesson ID yoksa (örn sadece rezervasyon), eski usül strict match + schedule owner kontrolü yapılabilir
                     // Şimdilik boş geçiyoruz, senaryomuz ders silme üzerine.
+                    // $strictSiblings: Tam zaman eşleşmesi ile bulunan kardeşler (Alternatif yöntem)
                     $strictSiblings = (new ScheduleItem())->get()->where([
                         'day_index' => $scheduleItem->day_index,
                         'start_time' => $scheduleItem->start_time,
@@ -1160,9 +1203,11 @@ class ScheduleController extends Controller
                     // Ancak tüm DB'yi tarayamayız. Lesson id siz veri pek yok. Geçiyoruz.
                 }
 
+                // $targets: Sonuç olarak işlem yapılacak tüm itemların (kardeşler dahil) listesi
                 $targets = [];
                 // Kendisini de ekle (eğer listede yoksa ki olmalı)
                 // Siblings araması kendisini de bulmuş olabilir, kontrol et.
+                // $foundSelf: Ana item listede bulundu mu bayrağı
                 $foundSelf = false;
                 foreach ($siblings as $s) {
                     if ($s->id == $scheduleItem->id)
@@ -1171,30 +1216,22 @@ class ScheduleController extends Controller
                 if (!$foundSelf)
                     $siblings[] = $scheduleItem;
 
+                // $processedIds: İşlenen item ID'lerini takip ederek mükerrer işlemi önleme
                 $processedIds = [];
                 $targetLessonIds = array_unique($targetLessonIds);
 
+                // $sib: Kontrol edilen kardeş item
                 foreach ($siblings as $sib) {
                     if (in_array($sib->id, $processedIds))
                         continue;
 
                     // Lesson ID kontrolü: data içinde bu derslerden HERHANGİ BİRİ var mı?
                     if (!empty($targetLessonIds)) {
-                        $sibData = is_string($sib->data) ? @unserialize($sib->data) : $sib->data;
-                        if (!is_array($sibData) && is_string($sib->data)) {
-                            $decoded = json_decode($sib->data, true);
-                            if (json_last_error() === JSON_ERROR_NONE) {
-                                $sibData = $decoded;
-                            }
-                        }
                         $lessonFound = false;
-                        if (is_array($sibData)) {
-                            $lessonsList = isset($sibData['lesson_id']) ? [$sibData] : $sibData;
-                            foreach ($lessonsList as $row) {
-                                if (isset($row['lesson_id']) && in_array($row['lesson_id'], $targetLessonIds)) {
-                                    $lessonFound = true;
-                                    break;
-                                }
+                        foreach ($sib->getSlotDatas() as $sd) {
+                            if ($sd->lesson && in_array($sd->lesson->id, $targetLessonIds)) {
+                                $lessonFound = true;
+                                break;
                             }
                         }
                         if (!$lessonFound)
@@ -1206,6 +1243,7 @@ class ScheduleController extends Controller
                 }
 
                 // 4. Bulunan tüm itemlar için silme/bölme işlemini uygula
+                // $targetItem: Üzerinde işlem yapılacak nihai item
                 foreach ($targets as $targetItem) {
                     $this->processItemDeletion($targetItem, $deleteIntervals, $targetLessonIds);
                 }
@@ -1236,12 +1274,18 @@ class ScheduleController extends Controller
     private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = []): void
     {
         // 1. Zaman çizelgesini belirle (H:i formatına normalize et)
+        // $startStr: Item başlangıç saati
         $startStr = substr($item->start_time, 0, 5);
+        // $endStr: Item bitiş saati
         $endStr = substr($item->end_time, 0, 5);
 
+        // $points: Zaman çizelgesini oluşturacak kritik noktalar (başlangıçlar ve bitişler)
         $points = [$startStr, $endStr];
+        // $del: Her bir silme aralığı
         foreach ($deleteIntervals as $del) {
+            // $dStart: Silme başlangıcı
             $dStart = substr($del['start'], 0, 5);
+            // $dEnd: Silme bitişi
             $dEnd = substr($del['end'], 0, 5);
 
             // Sadece item aralığına giren noktaları ekle
@@ -1253,22 +1297,17 @@ class ScheduleController extends Controller
         $points = array_unique($points);
         sort($points);
 
+        // $newSegments: Silme işlemi sonrası oluşacak yeni (parçalanmış veya kısalmış) item parçaları
         $newSegments = [];
-        $itemData = is_string($item->data) ? @unserialize($item->data) : $item->data;
-        if (!is_array($itemData) && is_string($item->data)) {
-            $decoded = json_decode($item->data, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $itemData = $decoded;
-            }
-        }
-        if (!is_array($itemData))
-            $itemData = [];
+        // $itemData: Item'in mevcut veri içeriği (Dersler, hocalar vb.)
+        // $originalLessons: Item içindeki derslerin listesi. Model fill edildiği için data dizidir.
+        $originalLessons = isset($item->data['lesson_id']) ? [$item->data] : ($item->data ?? []);
 
-        // Yeni sistemde data her zaman dizi olmalı
-        $originalLessons = isset($itemData['lesson_id']) ? [$itemData] : $itemData;
-
+        // Zaman dilimleri üzerinde iterasyon
         for ($i = 0; $i < count($points) - 1; $i++) {
+            // $pStart: Şu anki dilimin başlangıcı
             $pStart = $points[$i];
+            // $pEnd: Şu anki dilimin bitişi
             $pEnd = $points[$i + 1];
 
             // 0 süre kontrolü
@@ -1276,6 +1315,7 @@ class ScheduleController extends Controller
                 continue;
 
             // Bu aralık silinecek bir aralık mı?
+            // $shouldDeleteLesson: Bu dilimin silinmesi gerekiyor mu bayrağı
             $shouldDeleteLesson = false;
             foreach ($deleteIntervals as $del) {
                 $dStart = substr($del['start'], 0, 5);
@@ -1287,6 +1327,7 @@ class ScheduleController extends Controller
                 }
             }
 
+            // $currentSegmentLessons: Bu dilimde kalacak olan dersler
             $currentSegmentLessons = $originalLessons;
             if ($shouldDeleteLesson) {
                 if (!empty($targetLessonIds)) {
@@ -1304,20 +1345,26 @@ class ScheduleController extends Controller
                 // Segmenti ekle (Optimization: Önceki ile aynıysa birleştir)
 
                 // Minimum süre kontrolü (Ghost item önleme)
+                // $segStart: Segment başlangıç DateTime nesnesi
                 $segStart = \DateTime::createFromFormat('H:i', $pStart);
+                // $segEnd: Segment bitiş DateTime nesnesi
                 $segEnd = \DateTime::createFromFormat('H:i', $pEnd);
 
                 if ($segStart && $segEnd) {
+                    // $diff: Süre farkı (saniye)
                     $diff = $segEnd->getTimestamp() - $segStart->getTimestamp();
                     if ($diff < 20 * 60) { // 20 dakikadan kısa ise (teneffüs vs) oluşturma
                         continue;
                     }
                 }
 
+                // $lastIdx: Son eklenen segmentin indeksi
                 $lastIdx = count($newSegments) - 1;
                 if ($lastIdx >= 0 && serialize($newSegments[$lastIdx]['lessons']) === serialize($currentSegmentLessons)) {
+                    // Dersler aynıysa süreyi uzat (birleştir)
                     $newSegments[$lastIdx]['end'] = $pEnd;
                 } else {
+                    // Yeni segment ekle
                     $newSegments[] = ['start' => $pStart, 'end' => $pEnd, 'lessons' => $currentSegmentLessons];
                 }
             }
@@ -1325,9 +1372,11 @@ class ScheduleController extends Controller
 
         // 2. Veri tabanı işlemleri
         if (empty($newSegments)) {
+            // Hiç segment kalmadıysa item silinir
             $item->delete();
         } else {
             // İlk segment ile mevcut itemi güncelle
+            // $first: İlk segment
             $first = array_shift($newSegments);
             $item->start_time = $first['start'];
             $item->end_time = $first['end'];
@@ -1343,7 +1392,9 @@ class ScheduleController extends Controller
             $item->update();
 
             // Kalanlar için yeni item oluştur
+            // $seg: Geriye kalan diğer segmentler
             foreach ($newSegments as $seg) {
+                // $newItem: Yeni oluşturulacak parça item
                 $newItem = new ScheduleItem();
                 $newItem->schedule_id = $item->schedule_id;
                 $newItem->day_index = $item->day_index;
@@ -1425,12 +1476,12 @@ class ScheduleController extends Controller
             // Mevcut itemler bu aralığı kapsıyor mu?
             foreach ($involvedItems as $item) {
                 if ($item->start_time <= $pStart && $item->end_time >= $pEnd) {
-                    $itemData = is_string($item->data) ? json_decode($item->data, true) : $item->data;
+                    $itemData = $item->data;
                     if (is_array($itemData)) {
                         $mergedData = array_merge($mergedData, $itemData);
                     }
 
-                    $itemDetail = is_string($item->detail) ? json_decode($item->detail, true) : $item->detail;
+                    $itemDetail = $item->detail;
                     if (is_array($itemDetail)) {
                         $mergedDetail = array_merge($mergedDetail, $itemDetail);
                     }
