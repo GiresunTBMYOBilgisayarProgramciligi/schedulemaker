@@ -993,36 +993,59 @@ class ScheduleController extends Controller
          * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
          */
         $this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
+
+        /**
+         * silinen yada güncellenen ScheduleItem id'leri
+         * @var mixed
+         */
         $deletedIds = [];
         $errors = [];
 
         // 1. Itemları ID'ye göre grupla
+
         $groups = [];
         foreach ($items as $item) {
-            $id = $item['schedule_item_id'] ?? ($item['id'] ?? null);
-            if (!$id)
-                continue;
-
             $model = new ScheduleItem();
             $model->fill($item);
-            $groups[$id][] = $model;
+            $groups[$model->id][] = $model;
         }
 
         $this->database->beginTransaction();
         try {
             foreach ($groups as $id => $chunkItems) {
                 // Ana itemi bul
-                $scheduleItem = (new ScheduleItem())->find($id);
+                $scheduleItem = (new ScheduleItem())->where(['id' => $id])->with('schedule')->first();
                 if (!$scheduleItem) {
                     $errors[] = "Item ID $id bulunamadı.";
                     continue;
                 }
 
-                // 2. Silinecek zaman aralıklarını ve dersleri hesapla
+                /**
+                 * 2. chunkItemsleri starttime bilgisine göre sırala. 
+                 */
+                usort($chunkItems, function ($a, $b) {
+                    return strcmp($a->start_time, $b->start_time);
+                });
+
+                /**
+                 * 3. Tip, süre ve ara (break) bilgilerini al. 
+                 */
+                $type = 'lesson';
+                if ($scheduleItem->schedule && in_array($scheduleItem->schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                    $type = 'exam';
+                }
+                $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+                $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+
+                /**
+                 * 4. Sıralanmış itemlerden birbirine bitişik olanları birleştir.
+                 * Bir önceki endtime değerine break eklendiğinde startTime ile aynı değer oluyorsa bu itemler bitişikdir. 
+                 */
                 $deleteIntervals = [];
                 $targetLessonIds = [];
 
                 foreach ($chunkItems as $cItem) {
+                    // Silinecek ders ID'lerini topla
                     foreach ($cItem->getSlotDatas() as $sd) {
                         if ($sd->lesson) {
                             $targetLessonIds[] = (int) $sd->lesson->id;
@@ -1033,35 +1056,42 @@ class ScheduleController extends Controller
                     if (empty($startTimeStr))
                         continue;
 
-                    // Tip tespiti (lesson/exam)
-                    $type = 'lesson';
-                    if ($scheduleItem->schedule_id) {
-                        $s = (new Schedule())->find($scheduleItem->schedule_id);
-                        if ($s && in_array($s->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-                            $type = 'exam';
+                    $endUnix = strtotime($startTimeStr) + ($duration * 60);
+                    $endTimeStr = date("H:i", $endUnix);
+
+                    if (empty($deleteIntervals)) {
+                        $deleteIntervals[] = ['start' => $startTimeStr, 'end' => $endTimeStr];
+                    } else {
+                        $lastIdx = count($deleteIntervals) - 1;
+                        $lastEnd = $deleteIntervals[$lastIdx]['end'];
+
+                        // Bitişiklik kontrolü: Bir önceki bitiş + ara == Şimdiki başlangıç
+                        $nextExpectedStart = date("H:i", strtotime($lastEnd) + ($break * 60));
+
+                        if ($nextExpectedStart === $startTimeStr) {
+                            // Bitişik, son aralığın bitiş zamanını güncelle
+                            $deleteIntervals[$lastIdx]['end'] = $endTimeStr;
+                        } else {
+                            // Bitişik değil, yeni aralık ekle
+                            $deleteIntervals[] = ['start' => $startTimeStr, 'end' => $endTimeStr];
                         }
                     }
-
-                    $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
-                    $endUnix = strtotime($startTimeStr) + ($duration * 60);
-                    $end = date("H:i", $endUnix);
-
-                    $deleteIntervals[] = ['start' => $startTimeStr, 'end' => $end];
                 }
-
+                $this->logger()->debug("Delete Intervals: ", ['intervals' => $deleteIntervals]);
                 if (empty($deleteIntervals))
                     continue;
 
                 $targetLessonIds = array_unique($targetLessonIds);
-
-                // 3. Sibling (Kardeş) itemları bul
+                $this->logger()->debug('Target Lesson IDs: ', ['lessonIds' => $targetLessonIds]);
+                // 5. Sibling (Kardeş) itemları bul ve işlemleri uygula
+                // processItemDeletion içerisinde ana item ve silinecek aralıklar karşılaştırılarak
+                // tam eşleşme durumunda silme, kısmi eşleşmede parçalama (split) ve group/single durumları yönetilir.
                 $siblings = $this->findSiblingItems($scheduleItem, $targetLessonIds);
-
-                // 4. Tüm etkilenen kopyalar üzerinde silme işlemini yap
-                foreach ($siblings as $sibling) {
+                $this->logger()->debug('Sibling Items: ', ['siblings' => $siblings]);
+                /*foreach ($siblings as $sibling) {
                     $this->processItemDeletion($sibling, $deleteIntervals, $targetLessonIds);
                     $deletedIds[] = $sibling->id;
-                }
+                }*/
             }
             $this->database->commit();
         } catch (\Exception $e) {
@@ -1082,57 +1112,99 @@ class ScheduleController extends Controller
      */
     private function findSiblingItems(ScheduleItem $baseItem, array $lessonIds): array
     {
-        $siblings = [$baseItem];
+        /**
+         * sibling bulma mantığını değiştirmeliyiz. Projede programlar owner_type ve owner_id bilgilerine göre gruplandırılıyor.
+         * owner_type değerleri "lesson", "user", "classroom" ve "program"'dur.
+         * sibling bulma mantığı bu owner_type ve owner_id bilgilerine göre yapılmalıdır.
+         * owner_id belirlerken izlenecek yol şu: item data içerisindeki lesson id si owner_type "lesson" ise owner_id olur.
+         * aynı şekilde classroom id si owner_type "classroom" ise owner_id olur.
+         * aynı şekilde lecturer id si owner_type "user" ise owner_id olur.
+         * aynı şekilde lesson->program id si owner_type "program" ise owner_id olur. getSlotDatas() fonksiyonu ile elde edilen lesson bilgisinde program ilişkisi yok onu ek olarak almak gerekiyor. 
+         * Bu şekilde bütün schedule'ların aynı dönem, yıl ve tipteki item'ları tara
+         * bulunan schedule'ların item'ları ile verilen item ile zaman çakışması kontrolü yapılır.
+         * Eğer zaman çakışması varsa bu item sibling olarak eklenecek.
+         */
+        $siblingsKeyed = [$baseItem->id => $baseItem];
 
         $baseSchedule = (new Schedule())->find($baseItem->schedule_id);
         if (!$baseSchedule)
-            return $siblings;
+            return array_values($siblingsKeyed);
 
-        // Aynı dönem, yıl ve tipteki TÜM schedule'ları tara
-        $allSchedules = (new Schedule())->get()->where([
-            'semester' => $baseSchedule->semester,
-            'academic_year' => $baseSchedule->academic_year,
-            'type' => $baseSchedule->type
-        ])->all();
+        // 1. Etkilenen derslere (atanmış hoca, sınıf ve programlarına) göre owner listesini oluştur
+        $ownerList = [];
 
-        foreach ($allSchedules as $schedule) {
-            if ($schedule->id == $baseSchedule->id)
+        // Item datası içindeki her bir atama (bir dersin bir hoca ve sınıfla eşleşmesi) için
+        foreach ($baseItem->data as $d) {
+            $currentLessonId = (int) ($d['lesson_id'] ?? 0);
+            if (!$currentLessonId)
                 continue;
 
-            $items = (new ScheduleItem())->get()->where([
-                'schedule_id' => $schedule->id,
-                'day_index' => $baseItem->day_index
-            ])->all();
+            // Sadece silinmek istenen dersler arasındaysa bu atamanın sahiplerini bul
+            if (in_array($currentLessonId, $lessonIds)) {
+                $lesson = (new Lesson())->find($currentLessonId);
+                if (!$lesson)
+                    continue;
 
-            foreach ($items as $item) {
-                // Zaman çakışması kontrolü
-                if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
-                    // İçerik kontrolü (Silinecek dersleri içeriyor mu?)
-                    $itemLessonIds = [];
-                    foreach ($item->getSlotDatas() as $sd) {
-                        if ($sd->lesson)
-                            $itemLessonIds[] = (int) $sd->lesson->id;
-                    }
+                // Lesson owner
+                $ownerList[] = ['type' => 'lesson', 'id' => $currentLessonId, 'semester_no' => null];
 
-                    // Eğer item silinecek derslerden en az birini içeriyorsa o da bir siblingdir
-                    if (!empty(array_intersect($lessonIds, $itemLessonIds))) {
-                        $siblings[] = $item;
+                // Lecturer (User) owner
+                if (!empty($d['lecturer_id'])) {
+                    $ownerList[] = ['type' => 'user', 'id' => (int) $d['lecturer_id'], 'semester_no' => null];
+                }
+
+                // Classroom owner
+                if (!empty($d['classroom_id'])) {
+                    $ownerList[] = ['type' => 'classroom', 'id' => (int) $d['classroom_id'], 'semester_no' => null];
+                }
+
+                // Program owner
+                if ($lesson->program_id) {
+                    $ownerList[] = ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no];
+                }
+            }
+        }
+
+        // 2. Owner listesini unique hale getir
+        $uniqueOwners = [];
+        foreach ($ownerList as $owner) {
+            $key = $owner['type'] . "_" . $owner['id'] . "_" . ($owner['semester_no'] ?? 'null');
+            $uniqueOwners[$key] = $owner;
+        }
+
+        // 3. Her bir owner için ilgili schedule'ı bul ve içindeki çakışan item'ları topla
+        foreach ($uniqueOwners as $owner) {
+            $scheduleFilters = [
+                'semester' => $baseSchedule->semester,
+                'academic_year' => $baseSchedule->academic_year,
+                'type' => $baseSchedule->type,
+                'owner_type' => $owner['type'],
+                'owner_id' => $owner['id'],
+                'semester_no' => $owner['semester_no']
+            ];
+
+            $schedules = (new Schedule())->get()->where($scheduleFilters)->all();
+
+            foreach ($schedules as $schedule) {
+                // İlgili schedule ve gün için itemları getir
+                $items = (new ScheduleItem())->get()->where([
+                    'schedule_id' => $schedule->id,
+                    'day_index' => $baseItem->day_index
+                ])->all();
+
+                foreach ($items as $item) {
+                    // Zaman çakışması kontrolü
+                    if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
+                        // Zaten eklenmiş mi kontrol et (ID bazlı)
+                        if (!isset($siblingsKeyed[$item->id])) {
+                            $siblingsKeyed[$item->id] = $item;
+                        }
                     }
                 }
             }
         }
 
-        // Benzersiz nesneler olduğundan emin ol (ID bazlı)
-        $uniqueSiblings = [];
-        $seenIds = [];
-        foreach ($siblings as $s) {
-            if (!in_array($s->id, $seenIds)) {
-                $seenIds[] = $s->id;
-                $uniqueSiblings[] = $s;
-            }
-        }
-
-        return $uniqueSiblings;
+        return array_values($siblingsKeyed);
     }
 
     /**
