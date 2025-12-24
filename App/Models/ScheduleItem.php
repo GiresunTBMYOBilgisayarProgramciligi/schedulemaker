@@ -114,7 +114,7 @@ class ScheduleItem extends Model
                 'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
             ];
         }
-        $this->logger()->debug('SlotDatas: ', ['slotDatas' => $slotDatas]);
+        $this->logger()->debug('SlotDatas: ', $this->logContext(['slotDatas' => $slotDatas]));
         return $slotDatas;
     }
     public function getSlotCSSClass()
