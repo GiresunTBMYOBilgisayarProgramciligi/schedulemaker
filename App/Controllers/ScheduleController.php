@@ -992,7 +992,7 @@ class ScheduleController extends Controller
          * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
          * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
          */
-        $this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
+        //$this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
 
         /**
          * silinen yada güncellenen ScheduleItem id'leri
@@ -1081,17 +1081,17 @@ class ScheduleController extends Controller
                         }
                     }
                 }
-                $this->logger()->debug("Delete Intervals: ", ['intervals' => $deleteIntervals]);
+                //$this->logger()->debug("Delete Intervals: ", ['intervals' => $deleteIntervals]);
                 if (empty($deleteIntervals))
                     continue;
 
                 $targetLessonIds = array_unique($targetLessonIds);
-                $this->logger()->debug('Target Lesson IDs: ', ['lessonIds' => $targetLessonIds]);
+                //$this->logger()->debug('Target Lesson IDs: ', ['lessonIds' => $targetLessonIds]);
                 // 5. Sibling (Kardeş) itemları bul ve işlemleri uygula
                 // processItemDeletion içerisinde ana item ve silinecek aralıklar karşılaştırılarak
                 // tam eşleşme durumunda silme, kısmi eşleşmede parçalama (split) ve group/single durumları yönetilir.
                 $siblings = $this->findSiblingItems($scheduleItem, $targetLessonIds);
-                $this->logger()->debug('Sibling Items: ', ['siblings' => $siblings]);
+                //$this->logger()->debug('Sibling Items: ', ['siblings' => $siblings]);
                 foreach ($siblings as $sibling) {
                     $this->processItemDeletion($sibling, $deleteIntervals, $targetLessonIds);
                     $deletedIds[] = $sibling->id;
@@ -1216,7 +1216,7 @@ class ScheduleController extends Controller
      */
     private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = []): void
     {
-        $this->logger()->debug('Processing item deletion', ['item' => $item, 'deleteIntervals' => $deleteIntervals, 'targetLessonIds' => $targetLessonIds]);
+        //$this->logger()->debug('Processing item deletion', ['item' => $item, 'deleteIntervals' => $deleteIntervals, 'targetLessonIds' => $targetLessonIds]);
         $startStr = $item->getShortStartTime();
         $endStr = $item->getShortEndTime();
 
