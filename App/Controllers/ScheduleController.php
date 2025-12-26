@@ -681,7 +681,7 @@ class ScheduleController extends Controller
      */
     private function checkOverlap(string $start1, string $end1, string $start2, string $end2): bool
     {
-        // Zamanları H:i formatına normalize et (veritabanından H:i:s gelebilir)
+        // Zamanları H:i formatına normalize et
         $start1 = substr($start1, 0, 5);
         $end1 = substr($end1, 0, 5);
         $start2 = substr($start2, 0, 5);
@@ -925,8 +925,8 @@ class ScheduleController extends Controller
         // Zamanları H:i formatına normalize et
         $newStart = substr($newStart, 0, 5);
         $newEnd = substr($newEnd, 0, 5);
-        $prefStart = substr($preferredItem->start_time, 0, 5);
-        $prefEnd = substr($preferredItem->end_time, 0, 5);
+        $prefStart = $preferredItem->getShortStartTime();
+        $prefEnd = $preferredItem->getShortEndTime();
 
         // Durum 1: Yeni item preferred item'i tamamen kapsıyor -> Sil
         if ($newStart <= $prefStart && $newEnd >= $prefEnd) {
@@ -938,7 +938,7 @@ class ScheduleController extends Controller
         if ($newStart > $prefStart && $newStart < $prefEnd && $newEnd >= $prefEnd) {
             $preferredItem->end_time = $newStart;
             // Eğer süre sıfıra indiyse sil
-            if (substr($preferredItem->start_time, 0, 5) >= substr($preferredItem->end_time, 0, 5)) {
+            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
                 $preferredItem->delete();
             } else {
                 $preferredItem->update();
@@ -950,7 +950,7 @@ class ScheduleController extends Controller
         if ($newStart <= $prefStart && $newEnd > $prefStart && $newEnd < $prefEnd) {
             $preferredItem->start_time = $newEnd;
             // Eğer süre sıfıra indiyse sil
-            if (substr($preferredItem->start_time, 0, 5) >= substr($preferredItem->end_time, 0, 5)) {
+            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
                 $preferredItem->delete();
             } else {
                 $preferredItem->update();
@@ -1052,12 +1052,15 @@ class ScheduleController extends Controller
                         }
                     }
 
-                    $startTimeStr = substr($cItem->start_time, 0, 5);
+                    $startTimeStr = $cItem->getShortStartTime();
                     if (empty($startTimeStr))
                         continue;
 
-                    $endUnix = strtotime($startTimeStr) + ($duration * 60);
-                    $endTimeStr = date("H:i", $endUnix);
+                    $endTimeStr = $cItem->getShortEndTime();
+                    if (empty($endTimeStr)) {
+                        $endUnix = strtotime($startTimeStr) + ($duration * 60);
+                        $endTimeStr = date("H:i", $endUnix);
+                    }
 
                     if (empty($deleteIntervals)) {
                         $deleteIntervals[] = ['start' => $startTimeStr, 'end' => $endTimeStr];
@@ -1065,14 +1068,15 @@ class ScheduleController extends Controller
                         $lastIdx = count($deleteIntervals) - 1;
                         $lastEnd = $deleteIntervals[$lastIdx]['end'];
 
-                        // Bitişiklik kontrolü: Bir önceki bitiş + ara == Şimdiki başlangıç
-                        $nextExpectedStart = date("H:i", strtotime($lastEnd) + ($break * 60));
+                        // Bitişiklik kontrolü: Eğer aradaki boşluk teneffüs süresine eşit veya daha az ise
+                        // bu iki dersi ve aradaki boşluğu tek bir silme aralığı olarak birleştir.
+                        $gapMinutes = (strtotime($startTimeStr) - strtotime($lastEnd)) / 60;
 
-                        if ($nextExpectedStart === $startTimeStr) {
-                            // Bitişik, son aralığın bitiş zamanını güncelle
+                        if ($gapMinutes >= 0 && $gapMinutes <= $break) {
+                            // Bitişik veya teneffüs kadar boşluk var, son aralığın bitiş zamanını güncelle
                             $deleteIntervals[$lastIdx]['end'] = $endTimeStr;
                         } else {
-                            // Bitişik değil, yeni aralık ekle
+                            // Boşluk çok fazla veya negatif (çakışma?), yeni aralık ekle
                             $deleteIntervals[] = ['start' => $startTimeStr, 'end' => $endTimeStr];
                         }
                     }
@@ -1088,10 +1092,10 @@ class ScheduleController extends Controller
                 // tam eşleşme durumunda silme, kısmi eşleşmede parçalama (split) ve group/single durumları yönetilir.
                 $siblings = $this->findSiblingItems($scheduleItem, $targetLessonIds);
                 $this->logger()->debug('Sibling Items: ', ['siblings' => $siblings]);
-                /*foreach ($siblings as $sibling) {
+                foreach ($siblings as $sibling) {
                     $this->processItemDeletion($sibling, $deleteIntervals, $targetLessonIds);
                     $deletedIds[] = $sibling->id;
-                }*/
+                }
             }
             $this->database->commit();
         } catch (\Exception $e) {
@@ -1194,7 +1198,7 @@ class ScheduleController extends Controller
 
                 foreach ($items as $item) {
                     // Zaman çakışması kontrolü
-                    if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
+                    if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->getShortStartTime(), $item->getShortEndTime())) {
                         // Zaten eklenmiş mi kontrol et (ID bazlı)
                         if (!isset($siblingsKeyed[$item->id])) {
                             $siblingsKeyed[$item->id] = $item;
@@ -1212,8 +1216,9 @@ class ScheduleController extends Controller
      */
     private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = []): void
     {
-        $startStr = substr($item->start_time, 0, 5);
-        $endStr = substr($item->end_time, 0, 5);
+        $this->logger()->debug('Processing item deletion', ['item' => $item, 'deleteIntervals' => $deleteIntervals, 'targetLessonIds' => $targetLessonIds]);
+        $startStr = $item->getShortStartTime();
+        $endStr = $item->getShortEndTime();
 
         // 1. Kritik noktaları topla (Zaman çizelgesini düzleştir)
         $points = [$startStr, $endStr];
@@ -1264,9 +1269,13 @@ class ScheduleController extends Controller
             }
 
             if (!empty($currentData)) {
-                // Merge optimization: Önceki dilimle aynı dataya sahipse birleştir
+                // Merge optimization: Önceki dilimle aynı dataya sahipse VE zaman olarak bitişikse birleştir
                 $lastIdx = count($newSegments) - 1;
-                if ($lastIdx >= 0 && serialize($newSegments[$lastIdx]['data']) === serialize($currentData)) {
+                if (
+                    $lastIdx >= 0 &&
+                    $newSegments[$lastIdx]['end'] === $pStart &&
+                    serialize($newSegments[$lastIdx]['data']) === serialize($currentData)
+                ) {
                     $newSegments[$lastIdx]['end'] = $pEnd;
                 } else {
                     $newSegments[] = [
@@ -1290,8 +1299,20 @@ class ScheduleController extends Controller
                 $newItem->start_time = $seg['start'];
                 $newItem->end_time = $seg['end'];
 
-                // Status belirleme
-                if (count($seg['data']) > 1) {
+                // Status belirleme: data içerisindeki derslerin group_no bilgisini kontrol et
+                $isGroup = false;
+                foreach ($seg['data'] as $d) {
+                    $lessonId = $d['lesson_id'] ?? null;
+                    if ($lessonId) {
+                        $lesson = (new \App\Models\Lesson())->find($lessonId);
+                        if ($lesson && $lesson->group_no > 0) {
+                            $isGroup = true;
+                            break;
+                        }
+                    }
+                }
+
+                if ($isGroup) {
                     $newItem->status = 'group';
                 } else {
                     $newItem->status = $item->status === 'preferred' ? 'preferred' : 'single';
@@ -1319,7 +1340,7 @@ class ScheduleController extends Controller
 
         // Sadece tarih aralığı çakışanları filtrele
         $involvedItems = array_filter($allDayItems, function ($item) use ($startTime, $endTime) {
-            return $this->checkOverlap($startTime, $endTime, $item->start_time, $item->end_time);
+            return $this->checkOverlap($startTime, $endTime, $item->getShortStartTime(), $item->getShortEndTime());
         });
 
         // Eğer hiç çakışma yoksa direkt oluştur
@@ -1338,10 +1359,12 @@ class ScheduleController extends Controller
 
         // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
         // Tüm başlangıç ve bitiş noktalarını topla
+        $startTime = substr($startTime, 0, 5);
+        $endTime = substr($endTime, 0, 5);
         $points = [$startTime, $endTime];
         foreach ($involvedItems as $item) {
-            $points[] = $item->start_time;
-            $points[] = $item->end_time;
+            $points[] = $item->getShortStartTime();
+            $points[] = $item->getShortEndTime();
         }
         $points = array_unique($points);
         sort($points);
@@ -1370,7 +1393,7 @@ class ScheduleController extends Controller
 
             // Mevcut itemler bu aralığı kapsıyor mu?
             foreach ($involvedItems as $item) {
-                if ($item->start_time <= $pStart && $item->end_time >= $pEnd) {
+                if ($item->getShortStartTime() <= $pStart && $item->getShortEndTime() >= $pEnd) {
                     $itemData = $item->data;
                     if (is_array($itemData)) {
                         $mergedData = array_merge($mergedData, $itemData);

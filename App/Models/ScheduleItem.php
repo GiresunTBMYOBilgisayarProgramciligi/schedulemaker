@@ -128,4 +128,20 @@ class ScheduleItem extends Model
                 return '';
         }
     }
+
+    /**
+     * @return string H:i formatında başlangıç saati
+     */
+    public function getShortStartTime(): string
+    {
+        return $this->start_time ? substr($this->start_time, 0, 5) : "";
+    }
+
+    /**
+     * @return string H:i formatında bitiş saati
+     */
+    public function getShortEndTime(): string
+    {
+        return $this->end_time ? substr($this->end_time, 0, 5) : "";
+    }
 }
