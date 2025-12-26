@@ -1287,6 +1287,9 @@ class ScheduleCard {
                     return false;
                 } else {
                     console.info("Silme işlemi yanıtı:", data);
+                    if (data.createdItems && data.createdItems.length > 0) {
+                        this.syncTableItems(data.createdItems);
+                    }
                     return true;
                 }
             })
@@ -1426,6 +1429,39 @@ class ScheduleCard {
 
         this.clearSelection();
         document.dispatchEvent(lessonDrop);
+    }
+
+    /**
+     * Backend'den gelen yeni item'ları (split sonrası oluşanlar) tabloya yansıtır.
+     * @param {Array} createdItems 
+     */
+    syncTableItems(createdItems) {
+        console.log("Syncing Table Items with new IDs:", createdItems);
+        createdItems.forEach(item => {
+            const dayIndex = parseInt(item.day_index, 10);
+            const startTime = item.start_time.substring(0, 5);
+            const academicYear = item.academic_year; // Backend'den gelmeli ama gelmiyorsa local schedule info kullanılabilir
+
+            // Tablo hücrelerini gezerek day_index ve start_time eşleşmesini bul
+            const colIndex = dayIndex + 1;
+            for (let i = 0; i < this.table.rows.length; i++) {
+                const row = this.table.rows[i];
+                const cell = row.cells[colIndex];
+                if (!cell) continue;
+
+                const cellStartTime = cell.dataset.startTime;
+                if (cellStartTime === startTime) {
+                    // Hücrenin ID'sini güncelle
+                    cell.dataset.scheduleItemId = item.id;
+
+                    // İçindeki ders kartlarının ID'sini güncelle
+                    const cards = cell.querySelectorAll('.lesson-card');
+                    cards.forEach(card => {
+                        card.dataset.scheduleItemId = item.id;
+                    });
+                }
+            }
+        });
     }
 
     /**

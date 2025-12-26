@@ -1010,6 +1010,7 @@ class ScheduleController extends Controller
             $groups[$model->id][] = $model;
         }
 
+        $createdItems = [];
         $this->database->beginTransaction();
         try {
             foreach ($groups as $id => $chunkItems) {
@@ -1093,7 +1094,8 @@ class ScheduleController extends Controller
                 $siblings = $this->findSiblingItems($scheduleItem, $targetLessonIds);
                 //$this->logger()->debug('Sibling Items: ', ['siblings' => $siblings]);
                 foreach ($siblings as $sibling) {
-                    $this->processItemDeletion($sibling, $deleteIntervals, $targetLessonIds);
+                    $newItems = $this->processItemDeletion($sibling, $deleteIntervals, $targetLessonIds, $duration, $break);
+                    $createdItems = array_merge($createdItems, $newItems);
                     $deletedIds[] = $sibling->id;
                 }
             }
@@ -1107,6 +1109,7 @@ class ScheduleController extends Controller
         return [
             'status' => empty($errors) ? 'success' : 'warning',
             'deletedIds' => array_unique($deletedIds),
+            'createdItems' => $createdItems,
             'errors' => $errors
         ];
     }
@@ -1214,7 +1217,7 @@ class ScheduleController extends Controller
     /**
      * Verilen item üzerinde belirtilen aralıkları siler (Flatten Timeline Yaklaşımı)
      */
-    private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = []): void
+    private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = [], int $duration = 50, int $break = 10): array
     {
         //$this->logger()->debug('Processing item deletion', ['item' => $item, 'deleteIntervals' => $deleteIntervals, 'targetLessonIds' => $targetLessonIds]);
         $startStr = $item->getShortStartTime();
@@ -1222,6 +1225,23 @@ class ScheduleController extends Controller
 
         // 1. Kritik noktaları topla (Zaman çizelgesini düzleştir)
         $points = [$startStr, $endStr];
+
+        // İç slot sınırlarını ekle (Duration ve Break geçişleri)
+        $current = strtotime($startStr);
+        $endUnix = strtotime($endStr);
+        while ($current < $endUnix) {
+            // Ders sonu
+            $current += ($duration * 60);
+            if ($current < $endUnix) {
+                $points[] = date("H:i", $current);
+                // Teneffüs sonu
+                $current += ($break * 60);
+                if ($current < $endUnix) {
+                    $points[] = date("H:i", $current);
+                }
+            }
+        }
+
         foreach ($deleteIntervals as $del) {
             $dStart = substr($del['start'], 0, 5);
             $dEnd = substr($del['end'], 0, 5);
@@ -1239,12 +1259,17 @@ class ScheduleController extends Controller
         $dataList = isset($originalData['lesson_id']) ? [$originalData] : $originalData;
 
         // 2. dilimler (segments) üzerinden geç
+        $segments = [];
         for ($i = 0; $i < count($points) - 1; $i++) {
             $pStart = $points[$i];
             $pEnd = $points[$i + 1];
 
             if ($pStart >= $pEnd)
                 continue;
+
+            // Bu dilimin tipi tespiti
+            $diff = (strtotime($pEnd) - strtotime($pStart)) / 60;
+            $isBreak = ($diff == $break);
 
             // Bu dilimin silinmesi isteniyor mu?
             $isDeleteZone = false;
@@ -1256,6 +1281,8 @@ class ScheduleController extends Controller
             }
 
             $currentData = $dataList;
+            $shouldKeep = true;
+
             if ($isDeleteZone) {
                 if (!empty($targetLessonIds)) {
                     // Sadece belirli dersleri çıkar
@@ -1268,28 +1295,59 @@ class ScheduleController extends Controller
                 }
             }
 
-            if (!empty($currentData)) {
-                // Merge optimization: Önceki dilimle aynı dataya sahipse VE zaman olarak bitişikse birleştir
-                $lastIdx = count($newSegments) - 1;
-                if (
-                    $lastIdx >= 0 &&
-                    $newSegments[$lastIdx]['end'] === $pStart &&
-                    serialize($newSegments[$lastIdx]['data']) === serialize($currentData)
-                ) {
-                    $newSegments[$lastIdx]['end'] = $pEnd;
-                } else {
-                    $newSegments[] = [
-                        'start' => $pStart,
-                        'end' => $pEnd,
-                        'data' => $currentData
-                    ];
+            if (empty($currentData)) {
+                $shouldKeep = false;
+            }
+
+            $segments[] = [
+                'start' => $pStart,
+                'end' => $pEnd,
+                'data' => $currentData,
+                'isBreak' => $isBreak,
+                'shouldKeep' => $shouldKeep
+            ];
+        }
+
+        // 3. Teneffüs Temizliği (Break Sanitization)
+        // Bir teneffüs ancak hem öncesindeki hem sonrasındaki ders tutuluyorsa (keep) tutulur.
+        for ($i = 0; $i < count($segments); $i++) {
+            if ($segments[$i]['isBreak']) {
+                $prevKept = ($i > 0 && $segments[$i - 1]['shouldKeep']);
+                $nextKept = ($i < count($segments) - 1 && $segments[$i + 1]['shouldKeep']);
+
+                if (!$prevKept || !$nextKept) {
+                    $segments[$i]['shouldKeep'] = false;
+                    $segments[$i]['data'] = [];
                 }
             }
         }
 
-        // 3. Veritabanı güncelleme
+        // 4. Parçaları birleştir ve yeni itemları oluştur
+        $newSegments = [];
+        foreach ($segments as $seg) {
+            if (!$seg['shouldKeep'])
+                continue;
+
+            $lastIdx = count($newSegments) - 1;
+            if (
+                $lastIdx >= 0 &&
+                $newSegments[$lastIdx]['end'] === $seg['start'] &&
+                serialize($newSegments[$lastIdx]['data']) === serialize($seg['data'])
+            ) {
+                $newSegments[$lastIdx]['end'] = $seg['end'];
+            } else {
+                $newSegments[] = [
+                    'start' => $seg['start'],
+                    'end' => $seg['end'],
+                    'data' => $seg['data']
+                ];
+            }
+        }
+
+        // 5. Veritabanı güncelleme
         $item->delete(); // Mevcut item her durumda silinir
 
+        $createdItems = [];
         if (!empty($newSegments)) {
             foreach ($newSegments as $seg) {
                 $newItem = new ScheduleItem();
@@ -1321,8 +1379,10 @@ class ScheduleController extends Controller
                 $newItem->data = $seg['data'];
                 $newItem->detail = $item->detail; // Detaylar korunur
                 $newItem->create();
+                $createdItems[] = $newItem;
             }
         }
+        return $createdItems;
     }
 
     /**
