@@ -1512,10 +1512,10 @@ class ScheduleCard {
                 let badgeText = '';
                 if (this.type == 'exam') {
                     lessonInList.dataset.size = (parseInt(lessonInList.dataset.size) + parseInt(this.draggedLesson.classroom_exam_size)).toString();
-                    badgeText = lessonInList.dataset.size;
+                    badgeText = lessonInList.dataset.size + " Kişi";
                 } else {
-                    lessonInList.dataset.lessonHours = ((parseInt(lessonInList.dataset.lessonHours) || 0) + 1).toString() + " Saat";
-                    badgeText = lessonInList.dataset.lessonHours;
+                    lessonInList.dataset.lessonHours = ((parseInt(lessonInList.dataset.lessonHours) || 0) + 1).toString();
+                    badgeText = lessonInList.dataset.lessonHours + " Saat";
                 }
                 lessonInList.querySelector(".lesson-classroom").innerText = badgeText;
 
@@ -1544,10 +1544,10 @@ class ScheduleCard {
                 let badgeText = '';
                 if (this.type == 'exam') {
                     newElement.dataset.size = this.draggedLesson.classroom_exam_size
-                    badgeText = newElement.dataset.size;
+                    badgeText = newElement.dataset.size + " Kişi";
                 } else {
-                    newElement.dataset.lessonHours = 1 + " Saat";
-                    badgeText = newElement.dataset.lessonHours;
+                    newElement.dataset.lessonHours = 1;
+                    badgeText = newElement.dataset.lessonHours + " Saat";
                 }
                 newElement.querySelector(".lesson-classroom").innerText = badgeText
                 newElement.querySelector(".lesson-bulk-checkbox").remove()
