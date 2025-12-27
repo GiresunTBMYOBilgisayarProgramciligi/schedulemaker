@@ -13,24 +13,51 @@
 
 ## Metod Listesi
 
-### Başlatıcılar ve UI
-*   [initialize()](./initialize.md)
-*   [initStickyHeaders()](./initStickyHeaders.md)
-*   [highlightUnavailableCells()](./highlightUnavailableCells.md)
+### Başlatıcılar ve Temel Metotlar
+- [constructor](./constructor.md): Sınıfı başlatır ve temel olay dinleyicilerini kurar.
+- [initialize](./initialize.md): Sürükle-bırak ve seçim gibi ana modülleri aktif eder.
+- [getSchedule](./getSchedule.md): Mevcut ders programı verisini nesne olarak döner.
+- [resetDraggedLesson](./resetDraggedLesson.md): Sürükleme verilerini sıfırlar.
+- [getDatasetValue](./getDatasetValue.md): Elementlerdeki `data-*` özniteliklerini güvenli şekilde okur.
+- [setDraggedLesson](./setDraggedLesson.md): Sürüklenen kartın verilerini merkezi objeye aktarır.
 
-### Veri ve API
-*   [saveScheduleItems()](./saveScheduleItems.md)
-*   [deleteScheduleItems()](./deleteScheduleItems.md)
-*   [syncTableItems()](./syncTableItems.md)
+- [getLessonItemData](./getLessonItemData.md): Elementten veri paketi hazırlar.
 
-### Interaction Handlers & UX
-*   [dragStartHandler()](./dragStartHandler.md)
-*   [dropHandler()](./dropHandler.md): Sürükleme sonrası List-Table-Table branching mantığı.
-*   [checkCrash()](./checkCrash.md): Frontend taraflı kural denetimi.
+### Sürükle-Bırak (Drag & Drop)
+- [dragStartHandler](./dragStartHandler.md): Sürükleme başladığında veri hazırlığı yapar.
+- [dragOverHandler](./dragOverHandler.md): Bırakma alanlarını (cells) belirler.
+- [dropHandler](./dropHandler.md): Bırakma anındaki tüm atama veya taşıma mantığını yönetir.
+
+### Seçim ve Düzenleme (Selection & Editing)
+- [initBulkSelection](./initBulkSelection.md): Toplu ders seçim mekanizmasını kurar.
+- [updateSelectionState](./updateSelectionState.md): Tekil kart seçim görselini günceller.
+- [clearSelection](./clearSelection.md): Tüm seçimleri temizler.
+- [selectHours](./selectHours.md): Blok ders saati sayısını değiştirir.
+- [openAssignmentModal](./openAssignmentModal.md): Derslik/Hoca atama penceresini açar.
+
+### Görsel ve Tablo İşlemleri (UI & Table)
+- [highlightUnavailableCells](./highlightUnavailableCells.md): Çakışma olan hücreleri vurgular.
+- [clearCells](./clearCells.md): Tablodaki görsel vurguları temizler.
+- [moveLessonListToTable](./moveLessonListToTable.md): Dersi listeden tabloya görsel olarak taşır.
+- [syncTableItems](./syncTableItems.md): Tablo elemanlarını sunucu verisiyle senkronize eder.
+- [clearTableItemsByIds](./clearTableItemsByIds.md): Belirli dersleri tablodan kaldırır.
+- [LayoutHelpers](./LayoutHelpers.md): Sticky header ve kaydırma (scroll) yardımcıları (syncWidths, handleScroll vb.).
+
+### Veri ve Zaman Mantığı (Data & Logic)
+- [checkCrash](./checkCrash.md): Frontend taraflı hücre çakışma denetimi.
+- [checkCrashBackEnd](./checkCrashBackEnd.md): Sunucu taraflı detaylı çakışma denetimi.
+- [fetchOptions](./fetchOptions.md): Uygun derslik ve gözetmenleri AJAX ile çeker.
+- [generateScheduleItems](./generateScheduleItems.md): DOM elemanlarını kayıt formatına çevirir.
+- [saveScheduleItems](./saveScheduleItems.md): Verileri veritabanına kaydeder.
+- [deleteScheduleItems](./deleteScheduleItems.md): Kayıtları sistemden siler.
+- [TimeHelpers](./TimeHelpers.md): Zaman hesaplama yardımcıları (addMinutes, timeToMinutes vb.).
 
 ## UX Kuralları
-1.  **Sticky Headers**: Uzun tablolarda başlıkların sabit kalması.
-2.  **Bulk Actions**: `CTRL` tuşu ile çoklu seçim ve toplu taşıma/silme.
-3.  **Real-time Validation**: Sürükleme anında hücrelerin kırmızı/yeşil boyanması.
+1.  **Sticky Headers**: Uzun tablolarda başlıkların ve ders listesinin ekranın üstüne yapışması.
+2.  **Bulk Actions**: 
+    - Ders kartına tek tıklama veya checkbox ile seçim.
+    - Çift tıklama ile aynı ders adına sahip tüm kartların seçilmesi.
+    - Toplu taşıma ve silme desteği.
+3.  **Real-time Validation**: Sürükleme anında hücrelerin kırmızı/yeşil boyanması ve `checkCrash` ile anlık kontrol.
 
 *(Not: Her metod için detaylı algoritmik dosyalar bu dizinde mevcuttur.)*

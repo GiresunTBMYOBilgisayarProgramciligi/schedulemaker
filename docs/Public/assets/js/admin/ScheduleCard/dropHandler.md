@@ -1,17 +1,17 @@
-[🏠 Ana Sayfa](../../../../../README.md) / [Public](../../../../README.md) / [assets](../../../README.md) / [js](../../README.md) / [admin](../README.md) / [ScheduleCard](README.md) / **dropHandler**
+[🏠 Ana Sayfa](../../../../README.md) / [JS Assets](../../../README.md) / [Admin](../../README.md) / [ScheduleCard](./README.md) / **dropHandler**
 
 ---
-# ScheduleCard::dropHandler(element, event)
+# ScheduleCard.dropHandler(e)
 
-Sürükleme işlemi bittiğinde ve fare bırakıldığında tetiklenen ana karar verme metodudur.
+Sürüklenen ders kartı bir tablo hücresine veya tekrar listeye bırakıldığında tetiklenen ana mantık yöneticisidir.
 
-## İşleyiş
-
-1.  **State Kontrolü**: Eğer sistem zaten bir işlem yapıyorsa (`isProcessing`), yeni drop taleplerini yoksayar.
-2.  **Veri Çözümleme**: `dataTransfer` üzerinden gelen ders ID'si ve tipini (`single`/`bulk`) ayıklar.
-3.  **Hedef Analizi**: Fare nereye bırakıldı?
-    *   **Tablodan Listeye**: Ders silme işlemi tetiklenir (`dropTableToList`).
-    *   **Listeden Tabloya**: Yeni ders atama işlemi başlatılır (`dropListToTable`).
-    *   **Tablodan Tabloya**: Dersin yerini değiştirme (Taşıma) işlemi yapılır (`dropTableToTable`).
-4.  **Bulk (Toplu) İşlem**: Eğer birden fazla kart seçiliyse, her bir kart için bu akışı döngü içinde çalıştırır.
-5.  **Temizlik**: Görsel seçimleri ve geçici işaretlemeleri (`slot-unavailable` vb.) temizler.
+## Mantık (Algoritma)
+1.  **Hazırlık**: Varsayılan davranışları engeller ve sürükleme stilini (`.dragging`) kaldırır.
+2.  **Hedef Belirleme**: Bırakılan yer bir tablo hücresi (`<td>`) ise:
+    - Hücreden `day` ve `time` (saat) bilgilerini alır.
+    - **Çakışma Kontrolü**: `checkCrash()` metodunu çağırarak dersin oraya sığıp sığmadığını, hoca/derslik çakışması olup olmadığını denetler.
+    - **İşlem Tipi**:
+        - Listeden tabloya çekiliyorsa (`start_element == "list"`): `moveLessonListToTable()` ile yeni kayıt oluşturur.
+        - Tablo içinde yer değiştiriyorsa (`start_element == "table"`): Mevcut kaydı günceller veya bölerek taşır.
+3.  **Listeye İade**: Eğer kart tekrar `available-schedule-items` (sol liste) üzerine bırakılmışsa, `dropTableToList()` metodunu çağırarak dersi tablodan siler ve listeye geri gönderir.
+4.  **Temizlik**: `clearCells()` ile hücrelerdeki vurguları kaldırır ve `resetDraggedLesson()` ile süreci sonlandırır.
