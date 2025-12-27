@@ -8,9 +8,9 @@ Tek bir program öğesinin tüm paydaşlar için çakışma kontrolünü yapan "
 ## İşleyiş
 1.  Gelen `itemData` içindeki `lesson_id`, `lecturer_id` ve `classroom_id` üzerinden ilgili modelleri çeker.
 2.  Dersin bağlı olduğu **Program**'ı tespit eder.
-3.  Şu takvimleri (`Schedule`) tarar:
+3. Şu takvimleri (`Schedule`) tarar:
     *   Hocanın şahsi takvimi.
-    *   Sınıfın doluluk takvimi.
+    *   Sınıfın doluluk takvimi. *(İstisna: UZEM (3) tipi dersler için bu adım atlanır)*
     *   Programın (Öğrencilerin) ders takvimi.
     *   Dersin kendi koduna ait özel takvim.
 4.  Herhangi birinde `resolveConflict` hatası alınırsa işlemi durdurur.

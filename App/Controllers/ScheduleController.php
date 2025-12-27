@@ -466,7 +466,7 @@ class ScheduleController extends Controller
                 // Kontrol edilecek schedule sahipleri
                 $owners = [
                     'user' => $lecturerId,
-                    'classroom' => $classroomId,
+                    'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik programı oluşturma
                     'program' => $lesson->program_id,
                     'lesson' => $lesson->id // Kullanıcı isteği üzerine eklendi
                 ];
@@ -908,7 +908,7 @@ class ScheduleController extends Controller
         // Kontrol edilecek schedule sahipleri
         $owners = [
             'user' => $lecturerId,
-            'classroom' => $classroomId,
+            'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik çakışmasına bakma
             'program' => $lesson->program_id,
             'lesson' => $lesson->id
         ];
@@ -1075,10 +1075,13 @@ class ScheduleController extends Controller
             ])->all();
 
             $isAvailable = true;
-            foreach ($items as $item) {
-                if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
-                    $isAvailable = false;
-                    break;
+            // UZEM (3) tipi sınıflar her zaman uygun sayılır
+            if ($classroom->type != 3) {
+                foreach ($items as $item) {
+                    if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
+                        $isAvailable = false;
+                        break;
+                    }
                 }
             }
 

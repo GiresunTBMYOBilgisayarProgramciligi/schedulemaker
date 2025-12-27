@@ -23,4 +23,5 @@
     *   **Sonuç**: Hiçbir kısıtlama uygulanmaz, çakışma yoksayılır (Çünkü kayıt aşamasında bu alan zaten otomatik daraltılır).
 
 ## Teknik Not
-Bu metod hiçbir değer dönmez (`void`). Sadece kural ihlali durumunda `Exception` fırlatarak işlemi (ve transaction'ı) durdurur.
+*   Bu metod hiçbir değer dönmez (`void`). Sadece kural ihlali durumunda `Exception` fırlatarak işlemi (ve transaction'ı) durdurur.
+*   **UZEM Muafiyeti**: UZEM dersleri derslik programına kaydedilmediği için, bu metod derslik paydaşı bazlı çakışmaları UZEM dersleri için hiçbir zaman değerlendirmez.

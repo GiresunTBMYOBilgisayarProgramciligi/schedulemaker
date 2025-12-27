@@ -793,7 +793,10 @@ class AjaxRouter extends Router
          */
         $classroomOccupancy = [];
         $classroomIds = array_column($classrooms, 'id');
-        //$this->logger()->debug("Classroom IDs: ", ["classroomIds" => $classroomIds]);
+        $classroomTypes = [];
+        foreach ($classrooms as $c) {
+            $classroomTypes[$c->id] = (int) $c->type;
+        }
 
         $schedules = (new Schedule())->get()->where([
             'owner_type' => 'classroom',
@@ -813,6 +816,10 @@ class AjaxRouter extends Router
                 foreach ($slots as $rowIndex => $slot) {
                     // Çakışma kontrolü: (itemStart < slotEnd) && (slotStart < itemEnd)
                     if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        // UZEM (3) tipi sınıflar doluluk kontrolünde yok sayılır (her zaman müsait)
+                        if (isset($classroomTypes[$schedule->owner_id]) && $classroomTypes[$schedule->owner_id] === 3) {
+                            continue;
+                        }
                         // Bu slot ve bu günde bu derslik dolu
                         $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
                     }

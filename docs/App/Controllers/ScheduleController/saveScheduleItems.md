@@ -16,7 +16,7 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
     *   İlgili `Lesson` modeli veritabanından çekilir.
     *   Hoca, Sınıf, Program ve Ders bazlı 4 farklı paydaş belirlenir:
         *   `user` (Hoca)
-        *   `classroom` (Derslik)
+        *   `classroom` (Derslik) - *İstisna: Eğer ders tipi **UZEM (3)** ise bu paydaş atlanır (derslik programına kayıt yapılmaz).*
         *   `program` (Öğrenci Grubu/Bölüm)
         *   `lesson` (Dersin kendisi)
     *   Her bir paydaş için mevcut bir `Schedule` (Takvim başlığı) olup olmadığı kontrol edilir, yoksa oluşturulur (`firstOrCreate`).
