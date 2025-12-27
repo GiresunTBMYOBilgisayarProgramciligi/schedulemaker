@@ -1,5 +1,5 @@
 <?php
-
+//todo App/Helpers içerisine taşınabilir.
 namespace App\Helpers;
 
 use App\Controllers\LessonController;

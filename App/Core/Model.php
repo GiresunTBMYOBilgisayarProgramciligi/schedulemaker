@@ -10,22 +10,6 @@ use Monolog\Logger;
 
 class Model
 {
-    /**
-     * Shared application logger for all models.
-     */
-    protected function logger(): Logger
-    {
-        return Log::logger();
-    }
-
-    /**
-     * Standard logging context used across models.
-     * Adds current user, caller, URL, IP and table name.
-     */
-    protected function logContext(array $extra = []): array
-    {
-        return Log::context($this, $extra);
-    }
     protected string $table_name = "";
     public ?int $id = null;
     private static ?PDO $database = null;
@@ -43,6 +27,22 @@ class Model
         if (self::$database === null) {
             self::$database = Database::getConnection();
         }
+    }
+        /**
+     * Shared application logger for all models.
+     */
+    protected function logger(): Logger
+    {
+        return Log::logger();
+    }
+
+    /**
+     * Standard logging context used across models.
+     * Adds current user, caller, URL, IP and table name.
+     */
+    protected function logContext(array $extra = []): array
+    {
+        return Log::context($this, $extra);
     }
     /*
      * Quey Builder
@@ -463,6 +463,7 @@ class Model
     }
 
     /**
+     * todo bu hiç buraya ait durmuyor.
      * Ekleme ve düzenleme sayfalarında oluşturulacak program listesini oluşturur.
      * Bölümü tanımlanmamış bir ders ise sadece program seçiniz verisi olur.
      * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
