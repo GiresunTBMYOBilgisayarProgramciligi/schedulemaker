@@ -10,9 +10,9 @@ Bir ders programı bloğundan belirli bir dersin veya zaman diliminin "cerrahi" 
 1.  **Atomik Parçalama**:
     *   İşlem gören bloğu; ders süresi (`duration`) ve teneffüs (`break`) sınırlarına göre küçük parçalara böler.
     *   Silinmek istenen zaman aralığının başlangıç/bitiş noktalarını da bu parçalama sınırlarına ekler.
-2.  **Filtreleme**:
-    *   Eğer tüm blok siliniyorsa parça imha edilir.
-    *   Eğer sadece belirli dersler siliniyorsa (`targetLessonIds`), parçanın içindeki `data` (ders listesi) filtrelenir.
+2.  **Seçici Filtreleme**:
+    *   Eğer `targetLessonIds` boşsa, o zaman dilimindeki tüm blok imha edilir.
+    *   Eğer `targetLessonIds` doluysa (örn: gruplu dersin bir parçası), sadece listedeki dersler `data` (ders listesi) içerisinden çıkartılarak filtreleme yapılır; diğer dersler korunur.
 3.  **Teneffüs (Break) Sanitasyonu**:
     *   Eğer bir teneffüs diliminin hem öncesinde hem sonrasında ders kalmadıysa, o teneffüs de otomatik olarak silinir (Yetim teneffüslerin önlenmesi).
 4.  **Yeniden Birleştirme**:

@@ -33,7 +33,7 @@ class ScheduleController extends Controller
         parent::__construct();
         $this->validator = new FilterValidator();
     }
-        /**
+    /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
      * @param $type string  html | excel
      * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
@@ -441,7 +441,7 @@ class ScheduleController extends Controller
     /********************************
      * KAYIT VE GÜNCELLEME İŞLEMLERİ
      ********************************/
-        /**
+    /**
      * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
      * @param array $itemsData JSON decode edilmiş items dizisi
      * @return array
@@ -797,7 +797,7 @@ class ScheduleController extends Controller
     /*********************
      *  Çakışma VE UYGUNLUK KONTROL İŞLEMLERİ
      **********************/
-        
+
     /**
      * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
      * @param array $filters
@@ -1190,14 +1190,17 @@ class ScheduleController extends Controller
 
                 // Hedef ders ID'lerini topla (Grup derslerin parçalanması için)
                 $targetLessonIds = [];
-                foreach ($scheduleItem->getSlotDatas() as $sd) {
-                    if ($sd->lesson) {
-                        $targetLessonIds[] = (int) $sd->lesson->id;
-                    }
-                }
-                // İstek içinde özel ders ID'si varsa (opsiyonel)
+                // İstek içinde özel ders ID'si varsa sadece onu hedef al
                 if (isset($itemData['data'][0]['lesson_id'])) {
                     $targetLessonIds[] = (int) $itemData['data'][0]['lesson_id'];
+                } else {
+                    // Eğer spesifik ders ID'si yoksa (örneğin koca bir slot siliniyorsa) 
+                    // slottaki tüm dersleri otomatik tespit et (Eski mantık)
+                    foreach ($scheduleItem->getSlotDatas() as $sd) {
+                        if ($sd->lesson) {
+                            $targetLessonIds[] = (int) $sd->lesson->id;
+                        }
+                    }
                 }
                 $targetLessonIds = array_unique($targetLessonIds);
 
