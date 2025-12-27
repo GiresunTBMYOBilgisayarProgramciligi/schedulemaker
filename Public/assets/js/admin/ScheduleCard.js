@@ -98,6 +98,7 @@ class ScheduleCard {
          */
         this.selectedLessonElements = new Set();
         this.selectedScheduleItemIds = new Set();
+        this.isProcessing = false; // Concurrent işlem koruması
 
         /**
          * Ders Programının Sahibinin adı
@@ -909,93 +910,129 @@ class ScheduleCard {
     }
 
     addMinutes(timeStr, minutes) {
-        let [h, m] = timeStr.split(':').map(Number);
+        let [hours, mins] = timeStr.split(":").map(Number);
         let date = new Date();
-        date.setHours(h, m, 0, 0);
-        date.setMinutes(date.getMinutes() + minutes);
-        return date.toTimeString().slice(0, 5);
+        date.setHours(hours, mins + minutes, 0);
+        return date.toTimeString().substring(0, 5);
     }
 
-    generateScheduleItems(hours, classroom) {
+    /**
+     * HH:mm formatını dakikaya çevirir
+     */
+    timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        return (h * 60) + m;
+    }
+
+    /**
+     * Dakikayı HH:mm formatına çevirir
+     */
+    minutesToTime(minutes) {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    /**
+     * İki zaman arasındaki farkı (slot sayısı olarak) döner
+     */
+    getDurationInHours(startTime, endTime) {
+        const start = this.timeToMinutes(startTime);
+        const end = this.timeToMinutes(endTime);
+        const diff = end - start;
+        const slotWithBreak = this.lessonHourToMinute(1) + this.breakDuration;
+
+        // Eğer diff tam slot süresine bölünmüyorsa (son ders teneffüssüz bitmişse) yukarı yuvarla
+        return Math.ceil(diff / (this.lessonHourToMinute(1) + this.breakDuration));
+    }
+
+    /**
+     * Verilen ders listesi veya süresi kadar ScheduleItem nesnesi üretir.
+     * Ardışık yerleştirme mantığını (bulk move) destekler.
+     * @param {number|Array} input Saat sayısı veya ders veri listesi
+     * @param {Object} classroom 
+     */
+    generateScheduleItems(input, classroom) {
         let scheduleItems = [];
-        let currentItem = null;
-        let addedHours = 0;
-        let i = 0;
+        let itemsToProcess = [];
+
+        if (Array.isArray(input)) {
+            itemsToProcess = input;
+        } else {
+            // Tek bir giriş varsa eski mantıkla diziye çevir
+            itemsToProcess = [{
+                hours: input,
+                data: {
+                    "lesson_id": this.draggedLesson.lesson_id,
+                    "lecturer_id": this.draggedLesson.lecturer_id,
+                    "classroom_id": classroom.id
+                },
+                status: this.draggedLesson.group_no > 0 ? "group" : "single"
+            }];
+        }
+
+        let currentSlotOffset = 0;
         let breakTime = this.breakDuration;
-        let scheduleItemData = {
-            "lesson_id": this.draggedLesson.lesson_id,
-            "lecturer_id": this.draggedLesson.lecturer_id,
-            "classroom_id": classroom.id
-        }
-        let status = this.draggedLesson.group_no > 0 ? "group" : "single";
 
-        // Loop until we have filled required hours or ran out of rows
-        while (addedHours < hours) {
-            // Calculate row index based on drop position + offset
-            let rowIndex = this.draggedLesson.end_element.closest("tr").rowIndex + i;
+        itemsToProcess.forEach(itemInfo => {
+            let currentItem = null;
+            let addedHours = 0;
+            let hoursNeeded = itemInfo.hours;
+            let i = 0;
 
-            // Boundary check: Stop if we go past the last row
-            if (rowIndex >= this.table.rows.length) {
-                break;
-            }
+            while (addedHours < hoursNeeded) {
+                let rowIndex = this.draggedLesson.end_element.closest("tr").rowIndex + currentSlotOffset;
 
-            let row = this.table.rows[rowIndex];
-            let cell = row.cells[this.draggedLesson.end_element.cellIndex];
+                if (rowIndex >= this.table.rows.length) break;
 
-            // Validate slot: Must be a drop-zone and not marked unavailable
-            let isValid = cell && cell.classList.contains("drop-zone") && !cell.querySelector('.slot-unavailable');
+                let row = this.table.rows[rowIndex];
+                let cell = row.cells[this.draggedLesson.end_element.cellIndex];
 
-            if (isValid) {
-                if (!currentItem) {
-                    // Start a new schedule item block
-                    currentItem = {
-                        'id': this.draggedLesson.schedule_item_id,
-                        'schedule_id': this.id,
-                        'day_index': parseInt(this.draggedLesson.end_element.dataset.dayIndex),
-                        'week_index': parseInt(this.table?.dataset?.weekIndex || 0),
-                        'start_time': cell.dataset.startTime,
-                        'end_time': null,
-                        'status': status,
-                        'data': scheduleItemData,
-                        'detail': null
-                    };
+                let isValid = cell && cell.classList.contains("drop-zone") && !cell.querySelector('.slot-unavailable');
 
-                    // Check if merging with an existing item ID (if applicable)
-                    if (cell.dataset.scheduleItemId) {
-                        currentItem.id = cell.dataset.scheduleItemId;
+                if (isValid) {
+                    if (!currentItem) {
+                        currentItem = {
+                            'id': null, // Her zaman yeni kayıt (Insert)
+                            'schedule_id': this.id,
+                            'day_index': parseInt(this.draggedLesson.end_element.dataset.dayIndex),
+                            'week_index': parseInt(this.table?.dataset?.weekIndex || 0),
+                            'start_time': cell.dataset.startTime,
+                            'end_time': null,
+                            'status': itemInfo.status,
+                            'data': itemInfo.data,
+                            'detail': null
+                        };
                     }
-                }
 
-                // Extend the current item's end time
-                let slotDuration = this.lessonHourToMinute(1);
+                    let slotDuration = this.lessonHourToMinute(1);
 
-                if (currentItem.end_time) {
-                    // Subsequent slot: add break time + slot duration
-                    currentItem.end_time = this.addMinutes(currentItem.end_time, slotDuration + breakTime);
+                    if (currentItem.end_time) {
+                        currentItem.end_time = this.addMinutes(currentItem.end_time, slotDuration + breakTime);
+                    } else {
+                        currentItem.end_time = this.addMinutes(currentItem.start_time, slotDuration);
+                    }
+
+                    addedHours++;
+                    currentSlotOffset++; // Global offset her geçerli slotta artar
                 } else {
-                    // First slot: add only slot duration
-                    currentItem.end_time = this.addMinutes(currentItem.start_time, slotDuration);
+                    // Geçersiz slot (öğle arası vb.) - offset artar ama addedHours artmaz
+                    if (currentItem) {
+                        scheduleItems.push(currentItem);
+                        currentItem = null;
+                    }
+                    currentSlotOffset++;
                 }
-
-                addedHours++;
-            } else {
-                // Gap encountered (unavailable slot or break)
-                if (currentItem) {
-                    // Finalize and push the current block
-                    scheduleItems.push(currentItem);
-                    currentItem = null;
-                }
-                // Continue scanning next slots without incrementing addedHours
             }
-            i++;
-        }
 
-        // Push the last item if it exists
-        if (currentItem) {
-            scheduleItems.push(currentItem);
-        }
+            if (currentItem) {
+                currentItem.originalElement = itemInfo.originalElement;
+                scheduleItems.push(currentItem);
+            }
+        });
 
-        console.log('Generated Schedule Items:', scheduleItems);
+        console.log('Generated Bulk Schedule Items:', scheduleItems);
         return scheduleItems;
     }
 
@@ -1015,6 +1052,9 @@ class ScheduleCard {
             // Backend'den gelen ID varsa onu kullan, yoksa item.id'yi fallback olarak kullan
             let currentDataId = (createdIds && createdIds.length > idIndex) ? createdIds[idIndex] : item.id;
             idIndex++;
+
+            // Elementi bul (Eğer item içinde originalElement varsa onu kullan, yoksa genel draggedLesson'ı kullan)
+            const sourceElement = item.originalElement || this.draggedLesson.HTMLElement;
 
             // Tablo satırlarını gezerek uygun saat aralığını bul
             for (let i = 0; i < this.table.rows.length; i++) {
@@ -1054,10 +1094,10 @@ class ScheduleCard {
                     }
 
                     // Elementi Klonla
-                    let lessonCard = this.draggedLesson.HTMLElement.cloneNode(true);
+                    let lessonCard = sourceElement.cloneNode(true);
 
                     // Gereksiz classları temizle (frame, col-md-4 vb.)
-                    lessonCard.className = this.draggedLesson.HTMLElement.className
+                    lessonCard.className = sourceElement.className
                         .replace('col-md-4', '')
                         .replace('p-0', '')
                         .replace('ps-1', '')
@@ -1066,30 +1106,32 @@ class ScheduleCard {
 
                     if (!lessonCard.classList.contains('lesson-card')) lessonCard.classList.add('lesson-card');
 
-                    // Bulk checkbox ekle
-                    const bulkCheckbox = document.createElement('input');
-                    bulkCheckbox.type = 'checkbox';
-                    bulkCheckbox.className = 'lesson-bulk-checkbox';
-                    bulkCheckbox.title = 'Toplu işlem için seç';
-                    lessonCard.prepend(bulkCheckbox);
+                    // Bulk checkbox ekle (zaten varsa ekleme)
+                    if (!lessonCard.querySelector('.lesson-bulk-checkbox')) {
+                        const bulkCheckbox = document.createElement('input');
+                        bulkCheckbox.type = 'checkbox';
+                        bulkCheckbox.className = 'lesson-bulk-checkbox';
+                        bulkCheckbox.title = 'Toplu işlem için seç';
+                        lessonCard.prepend(bulkCheckbox);
+                    }
 
                     // Attribute'leri ayarla
                     lessonCard.setAttribute('draggable', 'true');
                     lessonCard.dataset.scheduleItemId = currentDataId;
-                    lessonCard.dataset.groupNo = this.draggedLesson.group_no || 0;
-                    lessonCard.dataset.size = this.draggedLesson.size || 0;
-                    lessonCard.dataset.lessonId = this.draggedLesson.lesson_id;
-                    lessonCard.dataset.lessonCode = this.draggedLesson.lesson_code;
+                    lessonCard.dataset.groupNo = lessonCard.dataset.groupNo || 0;
+                    lessonCard.dataset.size = lessonCard.dataset.size || 0;
+                    lessonCard.dataset.lessonId = lessonCard.dataset.lessonId;
+                    lessonCard.dataset.lessonCode = lessonCard.dataset.lessonCode;
                     lessonCard.dataset.classroomId = classroom.id;
                     lessonCard.dataset.classroomSize = classroom.size;
                     lessonCard.dataset.classroomExamSize = classroom.exam_size;
 
                     // Lecturer handling
                     let lecturerId;
-                    if (this.examTypes.includes(this.type) && this.draggedLesson.observer_id) {
-                        lecturerId = this.draggedLesson.observer_id;
+                    if (this.examTypes.includes(this.type) && lessonCard.dataset.observerId) {
+                        lecturerId = lessonCard.dataset.observerId;
                     } else {
-                        lecturerId = this.draggedLesson.lecturer_id;
+                        lecturerId = lessonCard.dataset.lecturerId;
                     }
                     lessonCard.dataset.lecturerId = lecturerId;
 
@@ -1286,9 +1328,14 @@ class ScheduleCard {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
-                    console.info("Silme işlemi yanıtı:", data);
+                    console.info("Silme işlemi yanıtı (v4.6):", data);
+                    // 1. ÖNCE Yeni oluşanları (split) senkronize et (ID'leri güncelleyerek silinmekten kurtar)
                     if (data.createdItems && data.createdItems.length > 0) {
                         this.syncTableItems(data.createdItems);
+                    }
+                    // 2. SONRA Gerçekten silinenleri temizle
+                    if (data.deletedIds && data.deletedIds.length > 0) {
+                        this.clearTableItemsByIds(data.deletedIds);
                     }
                     return true;
                 }
@@ -1355,80 +1402,122 @@ class ScheduleCard {
     }
 
     async dropHandler(element, event) {
-        event.preventDefault();
-        this.isDragging = false;
-        this.clearCells();
-        /*
-        * silmek için buraya sürükleyin yazısını göstermek için eklenen tooltip kaldırılıyor
-        * */
-        if (this.removeLessonDropZone) {
-            this.removeLessonDropZone.style.border = ""
-            const tooltip = bootstrap.Tooltip.getInstance(this.removeLessonDropZone);
-            if (tooltip) tooltip.hide()
-        }
-
-        this.dropZone = element;
-
-        let dragData;
-        try {
-            dragData = JSON.parse(event.dataTransfer.getData("text/plain"));
-        } catch (e) {
-            console.error("Invalid drag data", e);
+        if (this.isProcessing) {
+            console.warn("Already processing a drop event, ignoring...");
             return;
         }
+        this.isProcessing = true;
 
-        const isToList = this.dropZone.classList.contains("available-schedule-items");
+        try {
+            event.preventDefault();
+            this.isDragging = false;
+            this.clearCells();
+            // ... (rest of logic)
+            /*
+            * silmek için buraya sürükleyin yazısını göstermek için eklenen tooltip kaldırılıyor
+            * */
+            if (this.removeLessonDropZone) {
+                this.removeLessonDropZone.style.border = ""
+                const tooltip = bootstrap.Tooltip.getInstance(this.removeLessonDropZone);
+                if (tooltip) tooltip.hide()
+            }
 
-        if (dragData.type === 'bulk') {
-            const ids = dragData.ids;
-            if (isToList) {
-                // Toplu silme (Tablodan Listeye)
-                let deleteResult = await this.deleteScheduleItems(); // Tüm seçili dersleri bir kerede silmeye gönder
-                if (deleteResult) {
-                    // Seçili elementlerin kopyasını alalım çünkü loop içinde DOM'dan silinecekler
-                    const elementsToProcess = Array.from(this.selectedLessonElements).filter(el => ids.includes(el.dataset.scheduleItemId));
+            this.dropZone = element;
+            console.log("Drop triggered on:", element);
 
-                    for (const el of elementsToProcess) {
-                        this.draggedLesson.HTMLElement = el;
-                        this.draggedLesson.schedule_item_id = el.dataset.scheduleItemId;
-                        this.getDatasetValue(this.draggedLesson, el);
-                        // dropTableToList içinde this.draggedLesson kullanıldığı için her seferinde set ediyoruz
-                        await this.dropTableToList(true); // true = skip delete call (already done)
+            let dragData;
+            try {
+                dragData = JSON.parse(event.dataTransfer.getData("text/plain"));
+            } catch (e) {
+                console.error("Invalid drag data", e);
+                return;
+            }
+
+            const isToList = this.dropZone.classList.contains("available-schedule-items");
+
+            if (dragData.type === 'bulk') {
+                const ids = dragData.ids;
+                if (isToList) {
+                    // Toplu silme (Tablodan Listeye)
+                    let deleteResult = await this.deleteScheduleItems(); // Tüm seçili dersleri bir kerede silmeye gönder
+                    if (deleteResult) {
+                        // Seçili elementlerin kopyasını alalım çünkü loop içinde DOM'dan silinecekler
+                        const elementsToProcess = Array.from(this.selectedLessonElements).filter(el => ids.includes(el.dataset.scheduleItemId));
+
+                        for (const el of elementsToProcess) {
+                            this.draggedLesson.HTMLElement = el;
+                            this.draggedLesson.schedule_item_id = el.dataset.scheduleItemId;
+                            this.getDatasetValue(this.draggedLesson, el);
+                            // dropTableToList içinde this.draggedLesson kullanıldığı için her seferinde set ediyoruz
+                            await this.dropTableToList(true); // true = skip delete call (already done)
+                        }
+                    }
+                } else {
+                    // Toplu taşıma (Tablodan Tabloya) - YENİ: Toplu yönetiliyor
+                    console.log("Bulk move detected with IDs:", ids);
+                    this.draggedLesson.end_element = this.dropZone;
+                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+                    await this.dropTableToTable(true); // true = bulk
+                }
+            } else {
+                // Tekli sürükleme
+                this.draggedLesson.end_element = this.dropZone;
+                if (this.draggedLesson.start_element === "list") {
+                    if (!isToList) {
+                        this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+                        await this.dropListToTable();
+                    }
+                } else {
+                    if (isToList) {
+                        await this.dropTableToList();
+                    } else {
+                        this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+                        await this.dropTableToTable();
                     }
                 }
-            } else {
-                // Toplu taşıma (Tablodan Tabloya)
-                const elementsToProcess = Array.from(this.selectedLessonElements).filter(el => ids.includes(el.dataset.scheduleItemId));
-
-                for (const el of elementsToProcess) {
-                    this.draggedLesson.HTMLElement = el;
-                    this.draggedLesson.schedule_item_id = el.dataset.scheduleItemId;
-                    this.draggedLesson.end_element = this.dropZone;
-                    this.getDatasetValue(this.draggedLesson, el);
-                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
-                    await this.dropTableToTable(); // Taşıma işi karmaşık olduğu için tek tek
-                }
             }
-        } else {
-            // Tekli sürükleme
-            this.draggedLesson.end_element = this.dropZone;
-            if (this.draggedLesson.start_element === "list") {
-                if (!isToList) {
-                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
-                    await this.dropListToTable();
-                }
-            } else {
-                if (isToList) {
-                    await this.dropTableToList();
-                } else {
-                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
-                    await this.dropTableToTable();
+
+            this.clearSelection();
+            document.dispatchEvent(lessonDrop);
+        } catch (e) {
+            console.error("Drop handler failed:", e);
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+
+    /**
+     * Backend'den gelen silinen ID'leri tablodan ve DOM'dan temizler.
+     * @param {Array} deletedIds 
+     */
+    clearTableItemsByIds(deletedIds) {
+        if (!deletedIds || deletedIds.length === 0) return;
+        console.log("Tablodan silinecek ID'ler:", deletedIds);
+
+        const idSet = new Set(deletedIds.map(id => id.toString()));
+
+        // Tüm hücreleri gez ve eşleşen ID'leri temizle
+        for (let i = 0; i < this.table.rows.length; i++) {
+            const row = this.table.rows[i];
+            for (let j = 1; j < row.cells.length; j++) {
+                const cell = row.cells[j];
+                const cellId = cell.dataset.scheduleItemId ? cell.dataset.scheduleItemId.toString() : null;
+                if (cellId && idSet.has(cellId)) {
+                    // Hücre içindeki kartları bul (Henüz ID'yi silmeden önce)
+                    const orphanedCards = cell.querySelectorAll(`.lesson-card[data-schedule-item-id="${cellId}"]`);
+                    orphanedCards.forEach(c => c.remove());
+
+                    // ID'yi hücreden sil
+                    delete cell.dataset.scheduleItemId;
                 }
             }
         }
 
-        this.clearSelection();
-        document.dispatchEvent(lessonDrop);
+        // Tablo dışında kalmış (orphaned) kartlar varsa onları da DOM'dan temizle
+        idSet.forEach(id => {
+            const cards = document.querySelectorAll(`.lesson-card[data-schedule-item-id="${id}"]`);
+            cards.forEach(card => card.remove());
+        });
     }
 
     /**
@@ -1436,27 +1525,62 @@ class ScheduleCard {
      * @param {Array} createdItems 
      */
     syncTableItems(createdItems) {
-        console.log("Syncing Table Items with new IDs:", createdItems);
+        console.log("Syncing Table Items with new IDs (v4.5):", createdItems);
         createdItems.forEach(item => {
             const dayIndex = parseInt(item.day_index, 10);
-            const startTime = item.start_time.substring(0, 5);
-            const academicYear = item.academic_year; // Backend'den gelmeli ama gelmiyorsa local schedule info kullanılabilir
-
-            // Tablo hücrelerini gezerek day_index ve start_time eşleşmesini bul
+            const itemStartTime = item.start_time.substring(0, 5);
+            const itemEndTime = item.end_time.substring(0, 5);
             const colIndex = dayIndex + 1;
+
+            // Önemli: Ders sadece başladığı hücrede değil, sürdüğü tüm hücrelerde ID'sini taşımalıdır.
             for (let i = 0; i < this.table.rows.length; i++) {
                 const row = this.table.rows[i];
                 const cell = row.cells[colIndex];
                 if (!cell) continue;
 
-                const cellStartTime = cell.dataset.startTime;
-                if (cellStartTime === startTime) {
-                    // Hücrenin ID'sini güncelle
+                let cellStartTime = cell.dataset.startTime;
+                if (!cellStartTime && row.cells[0]) {
+                    cellStartTime = row.cells[0].innerText.trim().substring(0, 5);
+                }
+
+                // Eğer hücrenin saati dersin aralığında ise ID'yi güncelle
+                if (cellStartTime && cellStartTime >= itemStartTime && cellStartTime < itemEndTime) {
                     cell.dataset.scheduleItemId = item.id;
 
-                    // İçindeki ders kartlarının ID'sini güncelle
-                    const cards = cell.querySelectorAll('.lesson-card');
-                    cards.forEach(card => {
+                    // Hücre içindeki ders kartlarını bul
+                    let lessonCards = cell.querySelectorAll('.lesson-card');
+
+                    // KRİTİK: Eğer hücre olması gereken ID'ye sahip ama içinde GÖRSEL KART YOKSA (bölünme sonrası), kartı oluştur.
+                    if (lessonCards.length === 0) {
+                        const data = (typeof item.data === 'string') ? JSON.parse(item.data) : item.data;
+                        const lessonId = data && data[0] ? data[0].lesson_id : null;
+
+                        if (lessonId) {
+                            // Dokümandaki herhangi bir aynı ders kartını bul (şablon olarak kullanmak için)
+                            const templateCard = document.querySelector(`.lesson-card[data-lesson-id="${lessonId}"]`);
+                            if (templateCard) {
+                                console.log(`Re-creating missing card for lesson ${lessonId} in cell ${cellStartTime}`);
+                                let newCard = templateCard.cloneNode(true);
+                                newCard.dataset.scheduleItemId = item.id;
+
+                                // Group container kontrolü
+                                let container = cell;
+                                if (item.status === 'group') {
+                                    container = cell.querySelector('.lesson-group-container');
+                                    if (!container) {
+                                        container = document.createElement('div');
+                                        container.classList.add('lesson-group-container');
+                                        cell.appendChild(container);
+                                    }
+                                }
+                                container.appendChild(newCard);
+                                lessonCards = [newCard]; // loop devam etmesi için
+                            }
+                        }
+                    }
+
+                    // Mevcut veya yeni oluşturulan kartların ID'sini güncelle
+                    lessonCards.forEach(card => {
                         card.dataset.scheduleItemId = item.id;
                     });
                 }
@@ -1472,7 +1596,7 @@ class ScheduleCard {
         event.preventDefault();
         event.dataTransfer.effectAllowed = "move";
     }
-    //todo
+
     async dropListToTable() {
         console.log('dropListToTable', { ...this.draggedLesson })
         if (this.owner_type !== 'classroom') {
@@ -1533,7 +1657,6 @@ class ScheduleCard {
 
         this.resetDraggedLesson();
     }
-    //todo
     async dropTableToList(skipDelete = false) {
 
         let deleteScheduleResult = skipDelete ? true : await this.deleteScheduleItems();
@@ -1609,53 +1732,106 @@ class ScheduleCard {
         this.resetDraggedLesson();
     }
     //todo
-    async dropTableToTable() {
-        const row = this.table.rows[this.draggedLesson.dropped_row_index];
+    async dropTableToTable(isBulk = false) {
+        console.log("dropTableToTable called. isBulk:", isBulk);
+        let itemsToMove = [];
+        let classroom = null;
+        let totalHours = 0;
+        let itemsToDelete = []; // Eskiden oldIds idi, artık tüm nesne listesi
+        let detailedItems = [];
 
-        // 1. Prepare Data
-        const hours = this.draggedLesson.lesson_hours || 1;
-        const oldId = this.draggedLesson.schedule_item_id;
+        if (isBulk && this.selectedLessonElements.size > 0) {
+            const sortedElements = Array.from(this.selectedLessonElements).sort((a, b) => {
+                const rowA = a.closest('tr').rowIndex;
+                const rowB = b.closest('tr').rowIndex;
+                return rowA - rowB;
+            });
 
-        const classroomNameSpan = this.draggedLesson.HTMLElement.querySelector('.lesson-classroom');
-        const classroomName = classroomNameSpan ? classroomNameSpan.innerText : "";
+            sortedElements.forEach(el => {
+                const data = this.getLessonItemData(el);
+                if (data) {
+                    const hours = this.getDurationInHours(data.start_time, data.end_time) || 1;
+                    itemsToMove.push({ element: el, data: data });
+                    itemsToDelete.push(data); // Nesnenin tamamını ekle
+                    totalHours += hours;
 
-        const classroom = {
-            id: this.draggedLesson.classroom_id,
-            name: classroomName,
-            size: this.draggedLesson.HTMLElement.dataset.classroomSize,
-            exam_size: this.draggedLesson.HTMLElement.dataset.classroomExamSize
-        };
+                    detailedItems.push({
+                        hours: hours,
+                        data: data.data[0], // Sadece iç veri (lesson_id vb)
+                        status: data.status,
+                        originalElement: el // Klonlama için referans
+                    });
+                }
+            });
 
-        // 2. Visual Check
+            if (itemsToMove.length > 0) {
+                const el = itemsToMove[0].element;
+                const classroomSpan = el.querySelector('.lesson-classroom');
+                classroom = {
+                    id: el.dataset.classroomId,
+                    name: classroomSpan ? classroomSpan.innerText : "",
+                    size: el.dataset.classroomSize,
+                    exam_size: el.dataset.classroomExamSize
+                };
+            }
+        } else {
+            const element = this.draggedLesson.HTMLElement;
+            const data = this.getLessonItemData(element);
+            if (data) {
+                const hours = this.getDurationInHours(data.start_time, data.end_time) || 1;
+                itemsToMove.push({ element: element, data: data });
+                itemsToDelete.push(data);
+                totalHours = hours;
+
+                detailedItems.push({
+                    hours: hours,
+                    data: data.data[0],
+                    status: data.status,
+                    originalElement: element
+                });
+
+                const classroomSpan = element.querySelector('.lesson-classroom');
+                classroom = {
+                    id: element.dataset.classroomId,
+                    name: classroomSpan ? classroomSpan.innerText : "",
+                    size: element.dataset.classroomSize,
+                    exam_size: element.dataset.classroomExamSize
+                };
+            }
+        }
+
+        if (itemsToMove.length === 0) return;
+
         try {
-            await this.checkCrash(hours, classroom);
+            await this.checkCrash(totalHours, classroom);
         } catch (errorMessage) {
             new Toast().prepareToast("Hata", errorMessage, "danger");
             return;
         }
 
-        // 3. Generate New Items
-        // Temporarily clear ID so generateScheduleItems creates new item structure (for Insert)
-        this.draggedLesson.schedule_item_id = null;
-        const newItems = this.generateScheduleItems(hours, classroom);
-        this.draggedLesson.schedule_item_id = oldId; // Restore for delete
+        const newItems = this.generateScheduleItems(detailedItems, classroom);
 
-        // 4. Backend Crash Check
+        // 3. Backend Çakışma Kontrolü
         if (await this.checkCrashBackEnd(newItems)) {
-            // 5. Delete Old
-            if (await this.deleteScheduleItems(oldId)) {
-                // 6. Save New
-                if (await this.saveScheduleItems(newItems)) {
-                    // 7. Update DOM
-                    this.draggedLesson.HTMLElement.remove(); // Remove old
-                    this.moveLessonListToTable(newItems, classroom); // Add new
-                    console.info("Ders başarıyla taşındı.");
+            // 4. ESKİLERİ SİL (Toplu)
+            console.log("Attempting to delete items:", itemsToDelete);
+            if (await this.deleteScheduleItems(itemsToDelete)) {
+                // 5. YENİLERİ KAYDET (Toplu)
+                let saveResult = await this.saveScheduleItems(newItems);
+                if (saveResult) {
+                    // 6. DOM GÜNCELLEME
+                    // Eskileri temizle
+                    itemsToMove.forEach(item => item.element.remove());
+
+                    // Yeni yerine yerleştir
+                    this.moveLessonListToTable(newItems, classroom, saveResult);
+                    console.info("Dersler başarıyla taşındı.");
                 } else {
-                    console.error("Yeni ders kaydedilemedi (Eski ders silindi!)");
-                    new Toast().prepareToast("Hata", "Ders taşınırken sorun oluştu (Kaydetme)", "danger");
+                    console.error("Yeni dersler kaydedilemedi!");
+                    new Toast().prepareToast("Hata", "Dersler taşınırken kayıt aşamasında sorun oluştu.", "danger");
                 }
             } else {
-                console.error("Eski ders silinemedi");
+                console.error("Eski dersler silinemedi");
             }
         }
 
