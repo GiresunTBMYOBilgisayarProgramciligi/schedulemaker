@@ -478,6 +478,7 @@ class ScheduleController extends Controller
 
                 // Tercih edilen alan çakışması yaşanan programların ID listesi
                 $preferredConflictScheduleIds = [];
+                $targetSchedules = []; // Her ders saati için hedef program listesini sıfırla
 
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
                 foreach ($owners as $ownerType => $ownerId) {

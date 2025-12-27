@@ -11,7 +11,8 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
 ## Algoritma Adımları
 
 1.  **Transaction Başlatımı**: Veritabanı tutarlılığı için bir `beginTransaction` başlatılır.
-2.  **Döngü**: Gelen her bir öğe verisi için:
+2.  **Döngü**: Gelen her bir öğe verisi için (Örn: 2 saatlik blok ders için 2 ayrı öğe):
+    *   **Hedef Sıfırlama**: İlgili ders saatine ait paydaş listesi (`$targetSchedules`) sıfırlanır. *Bu adım, blok derslerde mükerrer kayıt hatasını önler.*
     *   İlgili `Lesson` modeli veritabanından çekilir.
     *   Hoca, Sınıf, Program ve Ders bazlı 4 farklı paydaş belirlenir:
         *   `user` (Hoca)
