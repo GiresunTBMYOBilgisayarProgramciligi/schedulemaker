@@ -1096,8 +1096,13 @@ class ScheduleCard {
                     // Elementi Klonla
                     let lessonCard = sourceElement.cloneNode(true);
 
+                    // Seçim durumunu temizle (Klonlandığı için eski seçim hali gelebilir)
+                    lessonCard.classList.remove('selected-lesson');
+                    const bulkCb = lessonCard.querySelector('.lesson-bulk-checkbox');
+                    if (bulkCb) bulkCb.checked = false;
+
                     // Gereksiz classları temizle (frame, col-md-4 vb.)
-                    lessonCard.className = sourceElement.className
+                    lessonCard.className = lessonCard.className
                         .replace('col-md-4', '')
                         .replace('p-0', '')
                         .replace('ps-1', '')
@@ -1451,6 +1456,7 @@ class ScheduleCard {
                             // dropTableToList içinde this.draggedLesson kullanıldığı için her seferinde set ediyoruz
                             await this.dropTableToList(true); // true = skip delete call (already done)
                         }
+                        this.clearSelection();
                     }
                 } else {
                     // Toplu taşıma (Tablodan Tabloya) - YENİ: Toplu yönetiliyor
@@ -1458,6 +1464,7 @@ class ScheduleCard {
                     this.draggedLesson.end_element = this.dropZone;
                     this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
                     await this.dropTableToTable(true); // true = bulk
+                    this.clearSelection();
                 }
             } else {
                 // Tekli sürükleme

@@ -14,4 +14,4 @@ Sürüklenen ders kartı bir tablo hücresine veya tekrar listeye bırakıldığ
         - Listeden tabloya çekiliyorsa (`start_element == "list"`): `moveLessonListToTable()` ile yeni kayıt oluşturur.
         - Tablo içinde yer değiştiriyorsa (`start_element == "table"`): Mevcut kaydı günceller veya bölerek taşır.
 3.  **Listeye İade**: Eğer kart tekrar `available-schedule-items` (sol liste) üzerine bırakılmışsa, `dropTableToList()` metodunu çağırarak dersi tablodan siler ve listeye geri gönderir.
-4.  **Temizlik**: `clearCells()` ile hücrelerdeki vurguları kaldırır ve `resetDraggedLesson()` ile süreci sonlandırır.
+4.  **Temizlik**: `clearCells()` ile hücrelerdeki vurguları, `clearSelection()` ile toplu seçimleri kaldırır ve `resetDraggedLesson()` ile süreci sonlandırır.
