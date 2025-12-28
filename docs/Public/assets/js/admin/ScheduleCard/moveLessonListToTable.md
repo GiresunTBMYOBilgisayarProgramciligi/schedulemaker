@@ -12,3 +12,4 @@ Bir dersi yan listeden tutup tabloya bıraktığınızda çalışır ve görsel 
 4.  **İçerik Ekleme**: Birleştirilen hücre içerisine dersin adını, kodunu ve hocasını içeren `schedule-item` HTML bloklarını yerleştirir.
     *   **Seçim Sıfırlama**: Yeni oluşturulan (klonlanan) kartın üzerindeki seçim sınıfı (`selected-lesson`) ve onay kutusu (`checkbox`) temizlenerek taze bir kart oluşturulması sağlanır.
 5.  **Veri Kaydı**: Görsel yerleşim başarılı olduktan sonra `saveScheduleItems()` metodunu çağırarak veritabanı kaydını başlatır.
+    *   **ID Seçimi**: Backend tarafından dönen gruplanmış ID listesinden (User, Classroom, Program), o an aktif olan `owner_type` değerine uygun olan ID seçilerek karta atanır. Bu, silme işlemlerinin doğru ID ile yapılmasını garanti eder.

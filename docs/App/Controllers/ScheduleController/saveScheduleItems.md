@@ -31,4 +31,7 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
 5.  **Bitiş**: Tüm öğeler başarıyla işlendiyse `commit` yapılır, hata oluşursa `rollBack`.
 
 ## Dönüş Değeri
-*   `array`: Oluşturulan yeni öğelerin ID listesi (`createdIds`).
+*   `array`: Oluşturulan yeni öğelerin ID listesi (`createdIds`). 
+    *   **Yapı**: Her ders saati için owner tiplerine göre gruplandırılmış bir map döner.
+    *   *Örn:* `[[ 'user' => [10], 'classroom' => [11], 'program' => [12], 'lesson' => [13] ], ...]`
+    *   Bu yapı, frontend'in (Hoca, Derslik veya Program ekranı) kendine uygun olan doğru ID'yi seçmesini sağlar.

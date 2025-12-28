@@ -7,6 +7,7 @@ Sunucudan gelen güncel ders verilerini, tablodaki mevcut HTML elemanları ile e
 
 ## Mantık (Algoritma)
 1.  Sunucudan dönen her bir ders nesnesi (`updatedItems`) için:
+    - **ID Filtresi**: Gelen öğenin `schedule_id` değeri ile aktif programın ID'si karşılaştırılır. Sadece aktif programa ait olan öğeler işlenir. Bu, hoca veya derslik takvimlerindeki kardeş (sibling) öğelerin ID'lerinin mevcut tabloya karışmasını önler.
     - Tabloda o dersin geçici veya eski haline ait HTML elemanını bulur.
     - Elemanın `data-id` değerini sunucudan gelen kalıcı ID ile günceller.
     - Eleman üzerindeki diğer meta verileri (hoca, derslik, koordinat) senkronize eder.

@@ -1049,8 +1049,16 @@ class ScheduleCard {
             let targetDayIndex = parseInt(item.day_index, 10);
             let colIndex = targetDayIndex + 1; // 0 index is time column
 
-            // Backend'den gelen ID varsa onu kullan, yoksa item.id'yi fallback olarak kullan
-            let currentDataId = (createdIds && createdIds.length > idIndex) ? createdIds[idIndex] : item.id;
+            // Backend'den gelen gruplanmış ID'ler varsa ekran tipine (owner_type) uygun olanı seç
+            let currentDataId = item.id;
+            if (createdIds && createdIds[idIndex]) {
+                const groupedIds = createdIds[idIndex];
+                // Ekran tipine göre ID seç, yoksa fallback olarak program ID'sini kullan
+                const targetIds = groupedIds[this.owner_type] || groupedIds['program'];
+                if (targetIds && targetIds.length > 0) {
+                    currentDataId = targetIds[0];
+                }
+            }
             idIndex++;
 
             // Elementi bul (Eğer item içinde originalElement varsa onu kullan, yoksa genel draggedLesson'ı kullan)
@@ -1534,6 +1542,9 @@ class ScheduleCard {
     syncTableItems(createdItems) {
         console.log("Syncing Table Items with new IDs (v4.5):", createdItems);
         createdItems.forEach(item => {
+            // Sadece bu programa ait öğeleri senkronize et (Diğer kardeş programların ID'lerini yoksay)
+            if (item.schedule_id != this.id) return;
+
             const dayIndex = parseInt(item.day_index, 10);
             const itemStartTime = item.start_time.substring(0, 5);
             const itemEndTime = item.end_time.substring(0, 5);

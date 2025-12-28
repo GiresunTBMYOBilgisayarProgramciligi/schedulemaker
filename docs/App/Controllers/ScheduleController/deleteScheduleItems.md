@@ -11,7 +11,9 @@ Seçilen ders veya zaman aralıklarını tüm ilgili takvimlerden siler.
     *   İstek içerisinde spesifik bir `lesson_id` varsa, sadece bu ders silinecekler listesine (`targetLessonIds`) eklenir.
     *   Eğer spesifik bir ID yoksa (örn: tüm zaman bloğunun silinmesi talep edildiğinde), o zaman slottaki **tüm** dersler otomatik olarak listeye eklenir.
     *   *Bu mantık, gruplu derslerde seçilmeyen derslerin yanlışlıkla silinmesini engeller.*
-2.  **Paydaş Tespiti**: Belirlenmiş olan `targetLessonIds` listesine göre `findSiblingItems` çağrılarak, bu derslerin diğer takvimlerdeki (Hoca, Sınıf, Program) tüm kopyaları bulunur.
+2.  **Paydaş Tespiti**: 
+    *   Belirlenmiş olan `targetLessonIds` listesine göre `findSiblingItems` çağrılarak, bu derslerin diğer takvimlerdeki (Hoca, Sınıf, Program) kopyaları bulunur.
+    *   **Zaman Kısıtı**: Sibling tespiti, sadece silinmek istenen öğe ile **zaman çakışması (overlap)** olan kayıtları kapsayacak şekilde daraltılmıştır. Bu, farklı saatlerdeki blokların birbirini "işlendi" diyerek engellemesini önler.
 3.  **Aralık Birleştirme**: Aynı ID'ye sahip öğeler için gelen farklı silme talepleri zaman bazlı olarak birleştirilir.
 4.  **Flatten Timeline Uygulaması**:
     *   Her bir paydaş öğe için `processItemDeletion` çağrılır.
