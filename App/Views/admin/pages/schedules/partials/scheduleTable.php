@@ -70,7 +70,9 @@ use function App\Helpers\getSettingValue;
                                                     data-classroom-size="<?= $slotData->classroom->class_size ?>"
                                                     data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
                                                     data-status="<?= $scheduleItem->status ?>">
-                                                    <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
+                                                    <?php if (!isset($only_table) or !$only_table): ?>
+                                                        <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
+                                                    <?php endif; ?>
                                                     <span class="lesson-name">
                                                         <a class='text-decoration-none' target='_blank' style="color: inherit;"
                                                             href='/admin/lesson/<?= $slotData->lesson->id ?>'>

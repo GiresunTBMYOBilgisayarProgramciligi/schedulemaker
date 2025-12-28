@@ -354,7 +354,8 @@ class ScheduleController extends Controller
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
-            'schedule' => $schedule
+            'schedule' => $schedule,
+            'only_table' => $only_table
         ]);
 
         $createTableHeaders = function () use ($filters): array {
@@ -373,7 +374,8 @@ class ScheduleController extends Controller
         $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
             'scheduleRows' => $scheduleRows,
             'dayHeaders' => $createTableHeaders(),
-            'schedule' => $schedule
+            'schedule' => $schedule,
+            'only_table' => $only_table
         ]);
 
         $ownerName = match ($filters['owner_type']) {
