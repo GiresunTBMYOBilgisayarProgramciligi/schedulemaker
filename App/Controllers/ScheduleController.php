@@ -1192,34 +1192,43 @@ class ScheduleController extends Controller
                 $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
                 $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
 
-                // Hedef ders ID'lerini topla (Grup derslerin parçalanması için)
-                $targetLessonIds = [];
-                // İstek içinde özel ders ID'si varsa sadece onu hedef al
+                // 2. Kardeşleri (Hoca, Derslik, Program kopyaları) bul
+                // findSiblingItems metoduna baz ders ID'lerini gönderiyoruz (Hocanın derslerini bulması için yeterli)
+                $baseLessonIds = [];
                 if (isset($itemData['data'][0]['lesson_id'])) {
-                    $targetLessonIds[] = (int) $itemData['data'][0]['lesson_id'];
+                    $baseLessonIds[] = (int) $itemData['data'][0]['lesson_id'];
                 } else {
-                    // Eğer spesifik ders ID'si yoksa (örneğin koca bir slot siliniyorsa) 
-                    // slottaki tüm dersleri otomatik tespit et (Eski mantık)
                     foreach ($scheduleItem->getSlotDatas() as $sd) {
-                        if ($sd->lesson) {
-                            $targetLessonIds[] = (int) $sd->lesson->id;
-                        }
+                        if ($sd->lesson)
+                            $baseLessonIds[] = (int) $sd->lesson->id;
                     }
                 }
-                $targetLessonIds = array_unique($targetLessonIds);
 
-                // 2. Kardeşleri (Hoca, Derslik, Program kopyaları) bul
-                $siblings = $this->findSiblingItems($scheduleItem, $targetLessonIds);
+                $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
 
-                // 3. Bu kardeş grubu için istekteki İLGİLİ TÜM silme aralıklarını topla ve birleştir
+                // 3. Bu kardeş grubu için İSTEKTEKİ (BULK) TÜM silme aralıklarını ve DERS ID'lerini topla
                 $rawIntervals = [];
+                $targetLessonIds = [];
                 foreach ($items as $reqItem) {
                     if (in_array((int) $reqItem['id'], $siblingIds)) {
                         $rawIntervals[] = [
                             'start' => substr($reqItem['start_time'], 0, 5),
                             'end' => substr($reqItem['end_time'], 0, 5)
                         ];
+                        // Eğer spesifik bir ders siliniyorsa onu hedefe ekle (Örn: Gruptan sadece biri taşınıyorsa)
+                        if (isset($reqItem['data'][0]['lesson_id'])) {
+                            $targetLessonIds[] = (int) $reqItem['data'][0]['lesson_id'];
+                        }
+                    }
+                }
+                $targetLessonIds = array_unique($targetLessonIds);
+
+                // Eğer targetLessonIds boş kaldıysa (slot silme), o zaman baseItem'daki tüm dersleri hedef al
+                if (empty($targetLessonIds)) {
+                    foreach ($scheduleItem->getSlotDatas() as $sd) {
+                        if ($sd->lesson)
+                            $targetLessonIds[] = (int) $sd->lesson->id;
                     }
                 }
 
