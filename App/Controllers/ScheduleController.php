@@ -1286,13 +1286,18 @@ class ScheduleController extends Controller
                 ]);
 
                 // 4. Her bir kardeşe silme/parçalama işlemini uygula
+                // Önemli: Önce tüm kardeşleri siliyoruz ki oluşturulacak parçalarla çakışmasın (Duplicate Entry önlemi)
                 foreach ($siblings as $sibling) {
-                    $result = $this->processItemDeletion($sibling, $mergedIntervals, $targetLessonIds, $duration, $break);
+                    $sibling->delete();
+                }
+
+                foreach ($siblings as $sibling) {
+                    // processItemDeletion artık silme işlemini yapmayacak (yukarıda yaptık)
+                    $result = $this->processItemDeletion($sibling, $mergedIntervals, $targetLessonIds, $duration, $break, false);
 
                     if ($result['deleted']) {
                         $deletedIds[] = $sibling->id;
                     }
-
                     if (!empty($result['created'])) {
                         $createdItems = array_merge($createdItems, $result['created']);
                     }
@@ -1415,7 +1420,7 @@ class ScheduleController extends Controller
     /**
      * Verilen item üzerinde belirtilen aralıkları siler (Flatten Timeline Yaklaşımı)
      */
-    private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = [], int $duration = 50, int $break = 10): array
+    private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = [], int $duration = 50, int $break = 10, bool $deleteOriginal = true): array
     {
         //$this->logger()->debug('Processing item deletion', ['item' => $item, 'deleteIntervals' => $deleteIntervals, 'targetLessonIds' => $targetLessonIds]);
         $startStr = $item->getShortStartTime();
@@ -1428,17 +1433,6 @@ class ScheduleController extends Controller
         $current = strtotime($startStr);
         $endUnix = strtotime($endStr);
         while ($current < $endUnix) {
-            // Öğle Arası Kontrolü (12:00 - 13:00)
-            if (date("H:i", $current) === "12:00") {
-                if (!in_array("12:00", $points))
-                    $points[] = "12:00";
-                $current = strtotime("13:00");
-                if (!in_array("13:00", $points))
-                    $points[] = "13:00";
-                if ($current >= $endUnix)
-                    break;
-            }
-
             // Ders sonu
             $current += ($duration * 60);
 
@@ -1448,17 +1442,9 @@ class ScheduleController extends Controller
 
                 // Teneffüs sonu
                 if ($current < $endUnix) {
-                    $nextBreakEnd = $current + ($break * 60);
-                    // Teneffüs bitişi öğle arasına denk geliyorsa 12:00'de kes
-                    if (date("H:i", $nextBreakEnd) === "12:00" || ($current < strtotime("12:00") && $nextBreakEnd > strtotime("12:00"))) {
-                        $current = strtotime("12:00");
-                        if (!in_array("12:00", $points))
-                            $points[] = "12:00";
-                    } else {
-                        $current = $nextBreakEnd;
-                        if (!in_array(date("H:i", $current), $points))
-                            $points[] = date("H:i", $current);
-                    }
+                    $current += ($break * 60);
+                    if (!in_array(date("H:i", $current), $points))
+                        $points[] = date("H:i", $current);
                 }
             }
         }
@@ -1526,6 +1512,10 @@ class ScheduleController extends Controller
                 }
             }
 
+            // Önemli: Segment orijinal öğenin zaman aralığı içinde olmalı
+            if ($pStart < $startStr || $pEnd > $endStr)
+                continue;
+
             $segments[] = [
                 'start' => $pStart,
                 'end' => $pEnd,
@@ -1584,7 +1574,9 @@ class ScheduleController extends Controller
         }
 
         // 6. Veritabanı güncelleme
-        $item->delete();
+        if ($deleteOriginal) {
+            $item->delete();
+        }
 
         $createdItems = [];
         if (!empty($newSegments)) {

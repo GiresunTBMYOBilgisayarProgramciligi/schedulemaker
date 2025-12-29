@@ -19,12 +19,12 @@
     - **Toplu Taşıma**: Seçili birden fazla öğenin aynı anda taşınması desteği.
     - **Zaman Koruma**: Taşınan öğelerin orijinal süreleri ve statüleri hedef konumda korunur.
 -   **Modern Bildirimler**: Klasik `alert`/`confirm` yerine Bootstrap Modal ve Toast kullanımı.
--   **Gelişmiş Silme ve Parçalama (Split)**:
-    -   **Toplu Silme**: Seçili tüm öğelerin tek seferde silinmesi.
-    -   **Parçalı Silme**: 8 saatlik bir bloğun içinden sadece seçilen saatlerin silinip geri kalanların korunması (Split) backend tarafında tam desteklenir.
-    -   **Dummy Öğe Koruması**: Verisi boş olan özel slotlar (Preferred/Unavailable) parçalanırken korunur ve veri kaybı önlenir.
-    -   **Öğle Arası Uyumu**: Silme/Parçalama sırasında 12:00-13:00 aralığı otomatik olarak hesaplanır ve slot kaymaları engellenir.
--   **Dinamik Süre**: Slot süresi ve teneffüs değerlerini doğrudan kart verilerinden okur.
+-   **Dinamik Slot Parçalama (Unavailable Aware Splitting)**: 
+    -   İşlemler sırasında hedef hücrelerin durumu (`.slot-unavailable`) kontrol edilir.
+    -   Bir blok oluşturulurken veya taşınırken, aradaki "Unavailable" veya "Öğle Arası" olan hücreler otomatik olarak atlanır (skip).
+    -   Blok bu engellere göre otomatik olarak parçalara (split) bölünür.
+-   **Koşullu Açıklama Kaydı**: Gereksiz veritabanı doluluğunu önlemek için sadece içi dolu açıklamalar `detail` alanına kaydedilir; boş açıklamalar için `detail` alanı `null` olarak gönderilir.
+-   **Dinamik Süre**: Slot süresi ve teneffüs değerlerini doğrudan kart verilerinden okur ve zaman hesaplamalarını tablo hücrelerinin `dataset` öznitelikleri üzerinden yapar.
 
 ## Kullanım
 

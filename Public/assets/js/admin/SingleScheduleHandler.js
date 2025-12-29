@@ -389,46 +389,68 @@ class SingleScheduleHandler {
 
     prepareScheduleData(dropZone, hours, description, lessonData) {
         const scheduleCard = dropZone.closest('.schedule-card');
+        if (!scheduleCard) return [];
+
+        const table = scheduleCard.querySelector('table.schedule-table');
+        if (!table) return [];
+
         const scheduleId = scheduleCard.dataset.scheduleId;
-        const startTime = dropZone.dataset.startTime;
-
-        const duration = parseInt(scheduleCard.dataset.duration) || 50;
-        const breakTime = parseInt(scheduleCard.dataset.break) || 10;
-        const endTime = this.calculateEndTime(startTime, hours, duration, breakTime);
-
+        const colIndex = dropZone.cellIndex;
+        const startRowIndex = dropZone.closest('tr').rowIndex;
         const isDummy = ['preferred', 'unavailable'].includes(lessonData.status);
-        return [{
-            schedule_id: scheduleId,
-            day_index: dropZone.cellIndex - 1,
-            start_time: startTime,
-            end_time: endTime,
-            status: lessonData.status,
-            data: isDummy ? null : {
-                lesson_id: lessonData.lessonId,
-                lecturer_id: lessonData.lecturerId,
-                classroom_id: lessonData.classroomId || 0
-            },
-            detail: {
-                description: description
+
+        let scheduleItems = [];
+        let currentItem = null;
+        let addedHours = 0;
+        let currentRowOffset = 0;
+
+        while (addedHours < hours) {
+            const rowIndex = startRowIndex + currentRowOffset;
+            if (rowIndex >= table.rows.length) break;
+
+            const row = table.rows[rowIndex];
+            const cell = row.cells[colIndex];
+
+            // Hücre uygunluğu: Drop-zone olmalı ve içinde 'unavailable' (öğle arası dahil) olmamalı
+            // NOT: createDummySlotHTML içindeki .slot-unavailable sınıfı burada belirleyici
+            const isValid = cell && (cell.classList.contains('drop-zone') || cell.querySelector('.empty-slot')) && !cell.querySelector('.slot-unavailable');
+
+            if (isValid) {
+                if (!currentItem) {
+                    currentItem = {
+                        schedule_id: scheduleId,
+                        day_index: colIndex - 1,
+                        start_time: cell.dataset.startTime,
+                        end_time: cell.dataset.endTime,
+                        status: lessonData.status,
+                        data: isDummy ? null : {
+                            lesson_id: lessonData.lessonId,
+                            lecturer_id: lessonData.lecturerId,
+                            classroom_id: lessonData.classroomId || 0
+                        },
+                        detail: description && description.trim() !== "" ? { description: description } : null
+                    };
+                } else {
+                    currentItem.end_time = cell.dataset.endTime;
+                }
+                addedHours++;
+            } else {
+                // Geçersiz hücre (Atla ve gerekirse mevcut öğeyi kaydet)
+                if (currentItem) {
+                    scheduleItems.push(currentItem);
+                    currentItem = null;
+                }
             }
-        }];
-    }
-
-    calculateEndTime(startTime, hours, duration = 50, breakTime = 10) {
-        const [h, m] = startTime.split(':').map(Number);
-        const startMinutes = h * 60 + m;
-        let totalMinutes = startMinutes + (hours * (duration + breakTime)) - breakTime;
-
-        // Öğle arasını (12:00 = 720 dk) kapsıyorsa 60 dk ekle
-        const lunchStart = 12 * 60;
-        if (startMinutes < lunchStart && totalMinutes >= lunchStart) {
-            totalMinutes += 60;
+            currentRowOffset++;
         }
 
-        const endH = Math.floor(totalMinutes / 60);
-        const endM = totalMinutes % 60;
-        return `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+        if (currentItem) {
+            scheduleItems.push(currentItem);
+        }
+
+        return scheduleItems;
     }
+
 
     /**
      * Bir slot veya kart elementinden silme verilerini hazırlar
