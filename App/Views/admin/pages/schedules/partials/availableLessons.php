@@ -59,7 +59,7 @@ use App\Core\Log;
             'data-group-no' => $isDummy ? 0 : $lesson->group_no,
             'data-lesson-code' => $lesson->code,
             'data-lecturer-id' => $isDummy ? $lesson->lecturer_id : $lesson->lecturer_id,
-            'data-status' => $isDummy ? $status : 'lesson' // dummy ise preferred/unavailable, değilse lesson
+            'data-status' => $isDummy ? $status : '' // dummy ise preferred/unavailable, değilse boş (JS group/single olarak belirleyecek)
         ];
 
         if ($isDummy) {

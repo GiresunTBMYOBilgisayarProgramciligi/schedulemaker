@@ -23,9 +23,10 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
 3.  **Çakışma Taraması**:
     *   Belirlenen tüm paydaşların takvimleri taranır.
     *   Eklenmek istenen zaman dilimiyle çakışan (`checkOverlap`) mevcut öğeler aranır.
-    *   Eğer çakışan öğe `preferred` (tercih edilen) statüsündeyse `resolvePreferredConflict` ile alan boşaltılır.
+    *   Eğer çakışan öğe `preferred` (tercih edilen) statüsündeyse `resolvePreferredConflict` ile alan boşaltılır. Bu aşamada öğenin `description` (açıklama) verisi hafızaya alınır.
     *   Değilse `resolveConflict` ile kural ihlali (hata) olup olmadığına bakılır.
 4.  **Kayıt / Güncelleme**:
+    *   Hafızaya alınan `description` verisi, yeni oluşturulan dersin `detail` alanına `preferred => true` bayrağı ile birlikte eklenir.
     *   Eğer öğe `group` (birleştirilebilir grup dersi) statüsündeyse `processGroupItemSaving` çağrılır.
     *   Değilse normal bir `ScheduleItem` olarak oluşturulur.
 5.  **Bitiş**: Tüm öğeler başarıyla işlendiyse `commit` yapılır, hata oluşursa `rollBack`.

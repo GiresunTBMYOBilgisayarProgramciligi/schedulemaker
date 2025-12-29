@@ -13,6 +13,7 @@ Bir ders programı bloğundan belirli bir dersin veya zaman diliminin "cerrahi" 
 2.  **Seçici Filtreleme**:
     *   Eğer `targetLessonIds` boşsa, o zaman dilimindeki tüm blok imha edilir.
     *   Eğer `targetLessonIds` doluysa (örn: gruplu dersin bir parçası), sadece listedeki dersler `data` (ders listesi) içerisinden çıkartılarak filtreleme yapılır; diğer dersler korunur.
+    *   **Preferred Slot Geri Kazanımı**: Eğer silinen dersin `detail` alanında `preferred => true` bayrağı varsa, silme işlemi sonrası o alan tamamen boşalmak yerine tekrar `statüsü preferred` olan boş bir slot haline getirilir. Orijinal açıklama (`description`) korunur.
 3.  **Teneffüs (Break) Sanitasyonu**:
     *   Eğer bir teneffüs diliminin hem öncesinde hem sonrasında ders kalmadıysa, o teneffüs de otomatik olarak silinir (Yetim teneffüslerin önlenmesi).
 4.  **Yeniden Birleştirme**:

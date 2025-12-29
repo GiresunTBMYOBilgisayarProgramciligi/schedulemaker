@@ -1482,7 +1482,8 @@ class ScheduleCard {
                         this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
                         await this.dropListToTable();
                     }
-                } else {
+                } else { // draggedLesson.start_element === "table"
+                    console.log("dropHandler: Table source. isToList:", isToList, "DropZone:", this.dropZone);
                     if (isToList) {
                         await this.dropTableToList();
                     } else {
@@ -1524,6 +1525,17 @@ class ScheduleCard {
 
                     // ID'yi hücreden sil
                     delete cell.dataset.scheduleItemId;
+
+                    // KRİTİK: Hücrede hiç ders kartı veya konteyner kalmadıysa boş slot div'ini geri koy
+                    const hasLesson = cell.querySelector('.lesson-card');
+                    const hasContainer = cell.querySelector('.lesson-group-container');
+
+                    if (!hasLesson && !hasContainer) {
+                        cell.innerHTML = '<div class="empty-slot"></div>';
+                    } else if (hasContainer && !hasLesson) {
+                        // Boş konteyner kaldıysa onu da temizle ve slot koy
+                        cell.innerHTML = '<div class="empty-slot"></div>';
+                    }
                 }
             }
         }
@@ -1565,8 +1577,25 @@ class ScheduleCard {
                 if (cellStartTime && cellStartTime >= itemStartTime && cellStartTime < itemEndTime) {
                     cell.dataset.scheduleItemId = item.id;
 
-                    // Hücre içindeki ders kartlarını bul
+                    // Hücre içindeki ders kartlarını ve boş slotu bul
                     let lessonCards = cell.querySelectorAll('.lesson-card');
+                    let emptySlot = cell.querySelector('.empty-slot');
+
+                    // Kurtarılmış Preferred/Unavailable alanı ise (üzerinde ders yoksa)
+                    if (item.status === 'preferred' || item.status === 'unavailable') {
+                        // Eğer hücrede ders kartı veya konteyner varsa temizle (kurtarma işlemi)
+                        if (lessonCards.length > 0 || cell.querySelector('.lesson-group-container')) {
+                            cell.innerHTML = '<div class="empty-slot"></div>';
+                        } else if (!emptySlot) {
+                            cell.innerHTML = '<div class="empty-slot"></div>';
+                        }
+                        return; // Preferred slotlar ana Program görünümünde kart olarak çizilmez
+                    }
+
+                    // Ders ekleniyorsa/senkronize ediliyorsa boş slotu kaldır
+                    if (emptySlot) {
+                        emptySlot.remove();
+                    }
 
                     // KRİTİK: Eğer hücre olması gereken ID'ye sahip ama içinde GÖRSEL KART YOKSA (bölünme sonrası), kartı oluştur.
                     if (lessonCards.length === 0) {
@@ -1682,6 +1711,7 @@ class ScheduleCard {
         this.resetDraggedLesson();
     }
     async dropTableToList(skipDelete = false) {
+        console.warn("dropTableToList CALLED! SkipDelete:", skipDelete);
 
         let deleteScheduleResult = skipDelete ? true : await this.deleteScheduleItems();
 
@@ -1715,6 +1745,7 @@ class ScheduleCard {
             } else {
                 //eğer listede yoksa o ders listeye eklenir
                 // Create new element for the ORIGINAL list
+                console.warn("Adding NEW element to Available List:", draggedElementIdInList);
                 let newElement = this.draggedLesson.HTMLElement.cloneNode(true);
                 // Reset attributes
                 newElement.id = draggedElementIdInList;

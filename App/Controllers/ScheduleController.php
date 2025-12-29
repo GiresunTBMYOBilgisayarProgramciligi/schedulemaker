@@ -453,11 +453,12 @@ class ScheduleController extends Controller
      */
     public function saveScheduleItems(array $itemsData): array
     {
+        $this->logger()->debug("saveScheduleItems START. Item Count: " . count($itemsData));
         $this->database->beginTransaction();
         $createdIds = [];
         try {
             foreach ($itemsData as $itemData) {
-                //$this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
+                $this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
                 // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
                 $dayIndex = $itemData['day_index'];
                 $startTime = $itemData['start_time'];
@@ -492,8 +493,8 @@ class ScheduleController extends Controller
                 $semester = $targetSchedule->semester;
                 $academicYear = $targetSchedule->academic_year;
 
-                // Tercih edilen alan çakışması yaşanan programların ID listesi
-                $preferredConflictScheduleIds = [];
+                // Tercih edilen alan çakışması yaşanan programların ve açıklamaların listesi
+                $preferredConflictSchedules = []; // [schedule_id => description]
                 $targetSchedules = []; // Her ders saati için hedef program listesini sıfırla
 
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
@@ -530,7 +531,7 @@ class ScheduleController extends Controller
                             // Çakışma Var: Çözümle
                             if ($existingItem->status == 'preferred') {
                                 $this->resolvePreferredConflict($startTime, $endTime, $existingItem);
-                                $preferredConflictScheduleIds[] = $relatedSchedule->id;
+                                $preferredConflictSchedules[$relatedSchedule->id] = $existingItem->detail['description'] ?? null;
                             } else {
                                 // preferred değilse standart conflict check (hata fırlatabilir)
                                 if (!$isDummy) {
@@ -546,11 +547,17 @@ class ScheduleController extends Controller
                 foreach ($targetSchedules as $schedule) {
                     // Bu programa özel metadata kontrolü
                     $currentDetail = $itemData['detail'] ?? null;
-                    if (in_array($schedule->id, $preferredConflictScheduleIds)) {
+                    if (array_key_exists($schedule->id, $preferredConflictSchedules)) {
                         if (is_null($currentDetail)) {
                             $currentDetail = ['preferred' => true];
                         } elseif (is_array($currentDetail)) {
                             $currentDetail['preferred'] = true;
+                        }
+
+                        // Eğer açıklama varsa onu da ekle
+                        $description = $preferredConflictSchedules[$schedule->id];
+                        if ($description) {
+                            $currentDetail['description'] = $description;
                         }
                     }
 
@@ -870,14 +877,13 @@ class ScheduleController extends Controller
             ]);
         }
 
-        // Eğer program (curriculum) schedule'ı ise semester_no filtresini ekle
+        // Eğer program schedule'ı ise semester_no filtresini ekle
         if ($schedule->semester_no !== null) {
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
         $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
 
 
-        // Ders programı için mevcut saat bazlı mantık
         /**
          * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
          * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
@@ -1407,12 +1413,6 @@ class ScheduleController extends Controller
                     // Bu sayede farklı saatlerdeki bloklar birbirini "processed" diyerek engellemez.
                     if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
                         if (!isset($siblingsKeyed[$item->id])) {
-                            $siblingsKeyed[$item->id] = $item;
-                        }
-                    }
-                }
-            }
-        }
 
         return array_values($siblingsKeyed);
     }
@@ -1504,9 +1504,14 @@ class ScheduleController extends Controller
             // Dummy öğeler (Preferred/Unavailable) için data boştur.
             // Eğer data boşsa ama statü special ise, isDeleteZone değilse tutmalıyız.
             $isSpecial = in_array($item->status, ['preferred', 'unavailable']);
+            $wasPreferred = ($item->detail['preferred'] ?? false);
+
             if (empty($currentData)) {
                 if ($isSpecial) {
                     $shouldKeep = !$isDeleteZone;
+                } elseif ($wasPreferred && $isDeleteZone) {
+                    // Üzerinde ders olan preferred alan siliniyorsa, alanı preferred olarak geri kazan
+                    $shouldKeep = true;
                 } else {
                     $shouldKeep = false;
                 }
@@ -1561,17 +1566,8 @@ class ScheduleController extends Controller
             }
         }
 
-        // 5. Değişiklik Kontrolü: Eğer tek bir parça oluştuysa ve orijinal ile tamamen aynıysa hiçbir şey yapma.
-        if (count($newSegments) === 1) {
-            $seg = $newSegments[0];
-            if (
-                $seg['start'] === $item->getShortStartTime() &&
-                $seg['end'] === $item->getShortEndTime() &&
-                serialize($seg['data']) === serialize($item->data)
-            ) {
-                return ['deleted' => false, 'created' => []];
-            }
-        }
+        // 5. Değişiklik Kontrolü kaldırıldı çünkü deleteScheduleItems metodu tüm kardeşleri siliyor.
+        // Bu yüzden değişmemiş olsa bile yeniden oluşturulması gerekiyor.
 
         // 6. Veritabanı güncelleme
         if ($deleteOriginal) {
@@ -1588,9 +1584,30 @@ class ScheduleController extends Controller
                 $newItem->start_time = $seg['start'];
                 $newItem->end_time = $seg['end'];
 
-                // Status belirleme: Eğer özel bir statü ise koru, değilse data içeriğine göre single/group belirle
                 if (in_array($item->status, ['preferred', 'unavailable'])) {
                     $newItem->status = $item->status;
+                } elseif ($item->detail['preferred'] ?? false) {
+                    // Eğer aslen preferred olan bir dersin parçasıysa ve data boşalmışsa (yukarıdaki shouldKeep sayesinde buraya gelir)
+                    // statüsünü tekrar preferred yap
+                    if (empty($seg['data'])) {
+                        $newItem->status = 'preferred';
+                    } else {
+                        // Hala ders varsa (kısmi silme) status ders tipine göre belirlenir
+                        $isGroup = false;
+                        if (!empty($seg['data'])) {
+                            foreach ($seg['data'] as $d) {
+                                $lessonId = $d['lesson_id'] ?? null;
+                                if ($lessonId) {
+                                    $lesson = (new \App\Models\Lesson())->find($lessonId);
+                                    if ($lesson && $lesson->group_no > 0) {
+                                        $isGroup = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        $newItem->status = $isGroup ? 'group' : 'single';
+                    }
                 } else {
                     $isGroup = false;
                     if (!empty($seg['data'])) {

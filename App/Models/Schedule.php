@@ -8,7 +8,7 @@ use function App\Helpers\getSettingValue;
 class Schedule extends Model
 {
     protected string $table_name = "schedules";
-    protected array $excludeFromDb = ['items'];  
+    protected array $excludeFromDb = ['items'];
 
     public ?int $id = null;
     /**
