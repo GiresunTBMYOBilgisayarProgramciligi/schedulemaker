@@ -136,6 +136,92 @@ class ScheduleController extends Controller
      * Görünüm ve Veri Hazırlama
      ********************************/
 
+        /**
+     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
+     * @param array $filters
+     * @return array
+     * @throws Exception
+     */
+    public function availableLessons(Schedule $schedule, bool $onlyTable = false): array
+    {
+        if ($onlyTable && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
+            // Sadece tablo modunda (profil sayfaları vb.) Preferred ve Unavailable kartlarını döndür
+            return [
+                (object) [
+                    'id' => 'dummy-preferred',
+                    'name' => '',
+                    'code' => 'PREF',
+                    'status' => 'preferred',
+                    'hours' => 1,
+                    'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
+                    'is_dummy' => true
+                ],
+                (object) [
+                    'id' => 'dummy-unavailable',
+                    'name' => '',
+                    'code' => 'UNAV',
+                    'status' => 'unavailable',
+                    'hours' => 1,
+                    'lecturer_id' => $schedule->owner_id,
+                    'is_dummy' => true
+                ]
+            ];
+        }
+
+        $available_lessons = [];
+
+        $lessonFilters = [
+            'semester' => $schedule->semester,
+            'academic_year' => $schedule->academic_year,
+            '!type' => 4// staj dersleri dahil değil
+        ];
+
+        if ($schedule->owner_type == "program") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'program_id' => $schedule->owner_id,
+            ]);
+        } elseif ($schedule->owner_type == "classroom") {
+            $classroom = (new Classroom())->find($schedule->owner_id);
+            $lessonFilters = array_merge($lessonFilters, [
+                'classroom_type' => $classroom->type,
+            ]);
+        } elseif ($schedule->owner_type == "user") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'lecturer_id' => $schedule->owner_id,
+            ]);
+        } elseif ($schedule->owner_type == "lesson") {
+            $lessonFilters = array_merge($lessonFilters, [
+                'id' => $schedule->owner_id,
+            ]);
+        }
+
+        // Eğer program schedule'ı ise semester_no filtresini ekle
+        if ($schedule->semester_no !== null) {
+            $lessonFilters['semester_no'] = $schedule->semester_no;
+        }
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
+
+
+        /**
+         * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
+         * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
+         */
+        foreach ($lessonsList as $lesson) {
+            if (!$lesson->IsScheduleComplete($schedule->type)) {
+                //Ders Programı tamamlanmamışsa
+
+                if ($schedule->type == 'lesson') {
+                    $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
+                } elseif (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                    $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
+                }
+
+                $available_lessons[] = $lesson;
+            }
+        }
+
+        return $available_lessons;
+    }
     /**
      * todo yeni tablo düzenine göre düzenlenecek
      * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmuş bir dizi döner
@@ -819,93 +905,6 @@ class ScheduleController extends Controller
      **********************/
 
     /**
-     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
-     * @param array $filters
-     * @return array
-     * @throws Exception
-     */
-    public function availableLessons(Schedule $schedule, bool $onlyTable = false): array
-    {
-        if ($onlyTable && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
-            // Sadece tablo modunda (profil sayfaları vb.) Preferred ve Unavailable kartlarını döndür
-            return [
-                (object) [
-                    'id' => 'dummy-preferred',
-                    'name' => '',
-                    'code' => 'PREF',
-                    'status' => 'preferred',
-                    'hours' => 1,
-                    'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
-                    'is_dummy' => true
-                ],
-                (object) [
-                    'id' => 'dummy-unavailable',
-                    'name' => '',
-                    'code' => 'UNAV',
-                    'status' => 'unavailable',
-                    'hours' => 1,
-                    'lecturer_id' => $schedule->owner_id,
-                    'is_dummy' => true
-                ]
-            ];
-        }
-
-        $available_lessons = [];
-
-        $lessonFilters = [
-            'semester' => $schedule->semester,
-            'academic_year' => $schedule->academic_year,
-            '!type' => 4// staj dersleri dahil değil
-        ];
-
-        if ($schedule->owner_type == "program") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'program_id' => $schedule->owner_id,
-            ]);
-        } elseif ($schedule->owner_type == "classroom") {
-            $classroom = (new Classroom())->find($schedule->owner_id);
-            $lessonFilters = array_merge($lessonFilters, [
-                'classroom_type' => $classroom->type,
-            ]);
-        } elseif ($schedule->owner_type == "user") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'lecturer_id' => $schedule->owner_id,
-            ]);
-        } elseif ($schedule->owner_type == "lesson") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'id' => $schedule->owner_id,
-            ]);
-        }
-
-        // Eğer program schedule'ı ise semester_no filtresini ekle
-        if ($schedule->semester_no !== null) {
-            $lessonFilters['semester_no'] = $schedule->semester_no;
-        }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
-
-
-        /**
-         * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-         * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-         */
-        foreach ($lessonsList as $lesson) {
-            if (!$lesson->IsScheduleComplete($schedule->type)) {
-                //Ders Programı tamamlanmamışsa
-
-                if ($schedule->type == 'lesson') {
-                    $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
-                } elseif (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-                    $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
-                }
-
-                $available_lessons[] = $lesson;
-            }
-        }
-
-        return $available_lessons;
-    }
-
-    /**
      * Programa eklenmek isteyen itemler için çakışma kontrolü yapar
      * @param array $filters
      * @return bool
@@ -1333,18 +1332,6 @@ class ScheduleController extends Controller
      */
     private function findSiblingItems(ScheduleItem $baseItem, array $lessonIds): array
     {
-        /**
-         * sibling bulma mantığını değiştirmeliyiz. Projede programlar owner_type ve owner_id bilgilerine göre gruplandırılıyor.
-         * owner_type değerleri "lesson", "user", "classroom" ve "program"'dur.
-         * sibling bulma mantığı bu owner_type ve owner_id bilgilerine göre yapılmalıdır.
-         * owner_id belirlerken izlenecek yol şu: item data içerisindeki lesson id si owner_type "lesson" ise owner_id olur.
-         * aynı şekilde classroom id si owner_type "classroom" ise owner_id olur.
-         * aynı şekilde lecturer id si owner_type "user" ise owner_id olur.
-         * aynı şekilde lesson->program id si owner_type "program" ise owner_id olur. getSlotDatas() fonksiyonu ile elde edilen lesson bilgisinde program ilişkisi yok onu ek olarak almak gerekiyor. 
-         * Bu şekilde bütün schedule'ların aynı dönem, yıl ve tipteki item'ları tara
-         * bulunan schedule'ların item'ları ile verilen item ile zaman çakışması kontrolü yapılır.
-         * Eğer zaman çakışması varsa bu item sibling olarak eklenecek.
-         */
         $siblingsKeyed = [$baseItem->id => $baseItem];
 
         $baseSchedule = (new Schedule())->find($baseItem->schedule_id);
