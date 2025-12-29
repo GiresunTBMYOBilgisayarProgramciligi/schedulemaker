@@ -9,4 +9,5 @@ Bu dizindeki alt bileşenler:
 *   **[Lesson](./Lesson/README.md)**
 *   **[Program](./Program/README.md)**
 *   **[ScheduleItem](./ScheduleItem/README.md)**
+*   **[Schedule](./Schedule/README.md)**
 *   **[User](./User/README.md)**

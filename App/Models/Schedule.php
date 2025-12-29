@@ -3,6 +3,11 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Models\Classroom;
+use App\Models\Lesson;
+use App\Models\Program;
+use App\Models\User;
+use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
 class Schedule extends Model
@@ -116,5 +121,15 @@ class Schedule extends Model
         $instance->create();
 
         return $instance;
+    }
+    public function getScheduleScreenName(): string
+    {
+        return match ($this->owner_type) {
+            "user" => (new User())->find($this->owner_id)?->getFullName() . " Ders Programı",
+            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName() . " Ders Programı",
+            "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . " Ders Programı",
+            "classroom" => (new Classroom())->find($this->owner_id)?->name . " Ders Programı",
+            default => "Ders Programı",
+        };
     }
 }

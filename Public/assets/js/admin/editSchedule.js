@@ -5,6 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener('scheduleLoaded', function () {
         let scheduleCardElements = document.querySelectorAll("#schedule_container .card")
+
+        if (scheduleCardElements.length > 0 && scheduleCardElements[0].dataset.scheduleScreenName) {
+            document.title = scheduleCardElements[0].dataset.scheduleScreenName;
+        }
+
         let scheduleCards = [];
         scheduleCardElements.forEach((scheduleCardElement) => {
             let scheduleCard = new ScheduleCard(scheduleCardElement)

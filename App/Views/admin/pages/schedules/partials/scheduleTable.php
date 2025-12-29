@@ -1,6 +1,4 @@
 <?php
-
-use App\Core\Log;
 use App\Models\Schedule;
 use function App\Helpers\getSettingValue;
 

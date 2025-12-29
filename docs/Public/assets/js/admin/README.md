@@ -5,5 +5,6 @@
 
 Bu dizindeki alt bileşenler:
 
+*   **[editSchedule](./editSchedule.md)**
 *   **[ScheduleCard](./ScheduleCard/README.md)**
 *   **[SingleScheduleHandler](./SingleScheduleHandler.md)**

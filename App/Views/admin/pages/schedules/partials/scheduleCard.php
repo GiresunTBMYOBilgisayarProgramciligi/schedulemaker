@@ -14,7 +14,8 @@ use App\Models\Schedule;
             data-schedule-id="<?= $schedule->id ?>" data-duration="<?= $duration ?? 50 ?>"
             data-break="<?= $break ?? 10 ?>"
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
-            data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>">
+            data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
+            data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
             <div class="card-header">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
