@@ -112,6 +112,32 @@ class SingleScheduleHandler {
                 </div>
             </div>`;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Form submit davranışını engelle ve Enter tuşu ile kaydetmeyi sağla
+            // Global Modal Keydown Handler
+            // Form submit, Close button enter, vb. hepsini yakalar
+            const modalEl = document.getElementById('singleScheduleModal');
+            if (modalEl) {
+                modalEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        // Textarea içinde Enter'a basılırsa yeni satıra geçsin, engelleme
+                        if (e.target.tagName === 'TEXTAREA') return;
+
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Eğer focus kapatma butonundaysa hiçbir şey yapma (kapanmasın)
+                        if (e.target.classList.contains('btn-close')) {
+                            // İstenirse burada focus inputa atılabilir
+                            document.getElementById('modalHours').focus();
+                            return;
+                        }
+
+                        // Diğer durumlarda (input vb.) kaydet butonunu tetikle
+                        document.getElementById('saveSingleItem').click();
+                    }
+                });
+            }
         }
 
         if (!document.getElementById('deleteConfirmModal')) {
@@ -138,6 +164,14 @@ class SingleScheduleHandler {
 
         this.bsModal = new bootstrap.Modal(document.getElementById('singleScheduleModal'));
         this.deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+
+        // Modal açıldığında inputa focuslan (timeout ile garantiye al)
+        document.getElementById('singleScheduleModal').addEventListener('shown.bs.modal', function () {
+            setTimeout(() => {
+                const input = document.getElementById('modalHours');
+                if (input) input.focus();
+            }, 100);
+        });
     }
 
     async handleTableDrop(dropZone) {
@@ -480,7 +514,7 @@ class SingleScheduleHandler {
         };
     }
 
-    async saveItem(items, reloadOnSuccess = true) {
+    async saveItem(items) {
         try {
             const formData = new FormData();
             formData.append('items', JSON.stringify(items));
@@ -494,18 +528,14 @@ class SingleScheduleHandler {
             const result = await response.json();
 
             if (result.status === 'success') {
-                if (reloadOnSuccess) {
-                    location.reload();
-                } else {
-                    // createdItems önceliklidir çünkü tam nesne verisi (day_index, timing vb.) içerir
-                    if (result.createdItems && Array.isArray(result.createdItems)) {
-                        this.syncTableItems(result.createdItems);
-                    } else if (result.createdIds) {
-                        // Eğer sadece ID dönmüşse (eskiden olduğu gibi), sync kısıtlı çalışır
-                        this.syncTableItems(result.createdIds);
-                    }
-                    return result;
+                // createdItems önceliklidir çünkü tam nesne verisi (day_index, timing vb.) içerir
+                if (result.createdItems && Array.isArray(result.createdItems)) {
+                    this.syncTableItems(result.createdItems);
+                } else if (result.createdIds) {
+                    // Eğer sadece ID dönmüşse (eskiden olduğu gibi), sync kısıtlı çalışır
+                    this.syncTableItems(result.createdIds);
                 }
+                return result;
             } else {
                 new Toast().prepareToast("Hata", result.msg, "danger");
             }

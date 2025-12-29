@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
 -   `initDraggableItems()`: Sürüklenebilir öğeleri hazırlar.
 -   `initBulkSelection()`: Tıklama ve çift tıklama ile toplu seçim mantığını kurar.
 -   `initModals()`: Ekleme/Güncelleme ve Silme Onayı için Bootstrap modallarını hazırlar.
+    -   **Global Enter Yönetimi**: Modal içinde Enter'a basıldığında, focus kapatma butonundaysa focus'u input'a taşır (kapanmayı engeller), diğer durumlarda 'Kaydet' işlemini tetikler.
+    -   **Otomatik Focus**: Modal açıldığında (shown olayı) 100ms gecikme ile focus otomatik olarak 'Süre' inputuna zorlanır.
 -   `syncTableItems(items)`: Backend'den gelen yeni/güncellenmiş öğeleri tabloya yansıtır.
 -   `clearTableItemsByIds(ids)`: Silinen öğeleri tablodan temizler ve hücreleri boşaltır.
 -   `handleTableMove()`: Seçili veya sürüklenen öğelerin yeni bir hücreye taşınmasını yönetir (Eskileri siler, yenileri ekler).
