@@ -1413,7 +1413,12 @@ class ScheduleController extends Controller
                     // Bu sayede farklı saatlerdeki bloklar birbirini "processed" diyerek engellemez.
                     if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
                         if (!isset($siblingsKeyed[$item->id])) {
-
+                            $siblingsKeyed[$item->id] = $item;
+                        }
+                    }
+                }
+            }
+        }
         return array_values($siblingsKeyed);
     }
 
