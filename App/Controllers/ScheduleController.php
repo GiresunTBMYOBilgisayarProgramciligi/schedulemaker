@@ -136,16 +136,16 @@ class ScheduleController extends Controller
      * Görünüm ve Veri Hazırlama
      ********************************/
 
-        /**
+    /**
      * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
      * @param array $filters
      * @return array
      * @throws Exception
      */
-    public function availableLessons(Schedule $schedule, bool $onlyTable = false): array
+    public function availableLessons(Schedule $schedule, bool $preferenceMode = false): array
     {
-        if ($onlyTable && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
-            // Sadece tablo modunda (profil sayfaları vb.) Preferred ve Unavailable kartlarını döndür
+        if ($preferenceMode && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
+            // Sadece tercih modunda Preferred ve Unavailable kartlarını döndür
             return [
                 (object) [
                     'id' => 'dummy-preferred',
@@ -374,7 +374,7 @@ class ScheduleController extends Controller
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
-    private function prepareScheduleCard($filters, bool $only_table = false): string
+    private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false): string
     {
         //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
@@ -392,7 +392,7 @@ class ScheduleController extends Controller
                 $scheduleFilters = $filters;
                 $scheduleFilters['semester_no'] = $semester_no;
                 $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
-                $availableLessons = ($only_table and in_array($filters['owner_type'], ['program'])) ? [] : array_merge($availableLessons, $this->availableLessons($schedule, $only_table));
+                $availableLessons = ($only_table) ? [] : array_merge($availableLessons, $this->availableLessons($schedule, $preference_mode));
                 /**
                  * birden fazla schedule row içindeki bilgileri birleştiriyoruz.
                  * Gemini yaptı. biraz karışık ama iş görüyor.
@@ -434,7 +434,7 @@ class ScheduleController extends Controller
             }
         } else {
             $schedule = (new Schedule())->firstOrCreate($filters);
-            $availableLessons = ($only_table and in_array($filters['owner_type'], ['program'])) ? [] : $this->availableLessons($schedule, $only_table);
+            $availableLessons = ($only_table) ? [] : $this->availableLessons($schedule, $preference_mode);
             $scheduleRows = $this->prepareScheduleRows($schedule, "html");
         }
 
@@ -442,6 +442,7 @@ class ScheduleController extends Controller
             'availableLessons' => $availableLessons,
             'schedule' => $schedule,
             'only_table' => $only_table,
+            'preference_mode' => $preference_mode,
             'owner_type' => $filters['owner_type'] ?? null
         ]);
 
@@ -462,7 +463,8 @@ class ScheduleController extends Controller
             'scheduleRows' => $scheduleRows,
             'dayHeaders' => $createTableHeaders(),
             'schedule' => $schedule,
-            'only_table' => $only_table
+            'only_table' => $only_table,
+            'preference_mode' => $preference_mode
         ]);
 
         $ownerName = match ($filters['owner_type']) {
@@ -494,7 +496,8 @@ class ScheduleController extends Controller
             'dataSemesterNo' => $dataSemesterNo,
             'duration' => $duration,
             'break' => $break,
-            'only_table' => $only_table
+            'only_table' => $only_table,
+            'preference_mode' => $preference_mode
         ]);
     }
 
@@ -505,23 +508,23 @@ class ScheduleController extends Controller
      * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = [], bool $only_table = false): string
+    public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false): string
     {
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
         } elseif (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
             $filters['semester_no'] = null;
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
         } else {
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
                 $filters['semester_no'] = $semester_no;
-                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table);
+                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
             }
         }
 

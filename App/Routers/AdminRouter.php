@@ -162,8 +162,8 @@ class AdminRouter extends Router
                     'owner_id' => $user->id,
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
-                ]
-                ,true
+                ],
+                preference_mode: true
             ),
         ]);
         $this->callView("admin/users/profile");
@@ -237,7 +237,7 @@ class AdminRouter extends Router
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
                 ],
-                true
+                preference_mode: true
             ),
             'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester')])->all(),
         ]);
@@ -356,7 +356,7 @@ class AdminRouter extends Router
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
                 ],
-                true
+                preference_mode: true
             ),
         ]);
         $this->callView("admin/classrooms/classroom");
@@ -510,7 +510,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "program" => $program,
             "page_title" => $program->name . " Sayfası",
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $program->id, 'type' => 'lesson'], true),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $program->id, 'type' => 'lesson'], preference_mode: true),
         ]);
         $this->callView("admin/programs/program");
     }

@@ -13,7 +13,8 @@ use App\Models\Schedule;
         <div class="card schedule-card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>"
             data-schedule-id="<?= $schedule->id ?>" data-duration="<?= $duration ?? 50 ?>"
             data-break="<?= $break ?? 10 ?>"
-            data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>">
+            data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
+            data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>">
             <div class="card-header">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
@@ -28,7 +29,9 @@ use App\Models\Schedule;
                 </div>
             </div>
             <div class="card-body">
-                <?= $availableLessonsHTML ?>
+                <?php if (!isset($only_table) || !$only_table): ?>
+                    <?= $availableLessonsHTML ?>
+                <?php endif; ?>
                 <!--begin::Row Schedule Table-->
                 <div class="row">
                     <div class="schedule-table col-md-12">

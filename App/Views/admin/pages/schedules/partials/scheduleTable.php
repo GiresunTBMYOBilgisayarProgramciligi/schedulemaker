@@ -46,7 +46,7 @@ use function App\Helpers\getSettingValue;
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                             <?php if ($scheduleItem):
                                 //Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
-                                $dropZone = $scheduleItem->status === 'unavailable' ? '' : 'drop-zone'; ?>
+                                $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                 <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
                                     data-schedule-item-id="<?= $scheduleItem->id ?>">
@@ -56,7 +56,7 @@ use function App\Helpers\getSettingValue;
                                         <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                             <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
                                                 $draggable = "true";
-                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester') or $only_table) {
+                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester') or (isset($only_table) && $only_table) or (isset($preference_mode) && $preference_mode)) {
                                                     $draggable = "false";
                                                 }
                                                 ?>
@@ -70,7 +70,7 @@ use function App\Helpers\getSettingValue;
                                                     data-classroom-size="<?= $slotData->classroom->class_size ?>"
                                                     data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
                                                     data-status="<?= $scheduleItem->status ?>">
-                                                    <?php if (!isset($only_table) or !$only_table): ?>
+                                                    <?php if ((!isset($only_table) or !$only_table) && (!isset($preference_mode) or !$preference_mode)): ?>
                                                         <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                     <?php endif; ?>
                                                     <span class="lesson-name">
@@ -95,10 +95,10 @@ use function App\Helpers\getSettingValue;
                                             <?php endforeach ?>
                                         <?php else: ?>
                                             <div class="empty-slot dummy <?= $scheduleItem->getSlotCSSClass() ?>"
-                                                draggable="<?= (isset($only_table) && $only_table) ? 'true' : 'false' ?>"
+                                                draggable="<?= (isset($preference_mode) && $preference_mode) ? 'true' : 'false' ?>"
                                                 data-schedule-item-id="<?= $scheduleItem->id ?>" data-status="<?= $scheduleItem->status ?>"
                                                 data-detail='<?= json_encode($scheduleItem->detail) ?>'>
-                                                <?php if (isset($only_table) && $only_table): ?>
+                                                <?php if (isset($preference_mode) && $preference_mode): ?>
                                                     <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                 <?php endif; ?>
                                                 <?php if (is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
