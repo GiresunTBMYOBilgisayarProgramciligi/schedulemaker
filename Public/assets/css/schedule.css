@@ -8,6 +8,10 @@
 
     /* --- Slot Durumları ve Vurgular --- */
 
+    .dummy {
+        padding: 15px !important;
+    }
+
     .slot-unavailable {
         background-color: #fff5f5;
         border: 1px dashed #feb2b2;
@@ -48,6 +52,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         color: #e53e3e;
         z-index: 5;
+        content: "Müsait Değil";
     }
 
     .unavailable-for-classroom::after {
@@ -203,7 +208,7 @@
     .note-icon {
         position: absolute;
         top: 2px;
-        right: 4px;
+        left: 4px;
         color: #ffca28;
         /* Uyarı / Not rengi (Amber) */
         cursor: pointer;
@@ -230,23 +235,6 @@
         border-color: #4caf50;
     }
 
-    /* Slot Durumları */
-    .slot-preferred {
-        background-color: #f1f8e9;
-        /* Light Green */
-        border: 1px dashed #aed581;
-    }
-
-    .slot-unavailable {
-        background-color: #ffebee;
-        /* Light Red */
-        border: 1px dashed #ef9a9a;
-        opacity: 0.7;
-        pointer-events: none;
-        /* Genellikle buraya ders konmaz */
-    }
-
-    /* Unavailable slotlarda "Müsait Değil" yazısı eklenebilir veya boş bırakılabilir. */
 
     /* Gruplu Dersler İçin Ek Stiller */
     .lesson-group-container {
@@ -351,11 +339,6 @@
 
     }
 
-    .lesson-group-1 .lesson-name {
-        /* Başlık rengini biraz daha koyulaştırabiliriz veya tür rengini koruyabiliriz. 
-           Okunabilirlik için tür rengini korumak daha güvenli, fakat grup tonu da eklenebilir. 
-           Şimdilik tür rengi baskın kalsın. */
-    }
 
     /* Grup B (Pink) */
     .lesson-group-2 {

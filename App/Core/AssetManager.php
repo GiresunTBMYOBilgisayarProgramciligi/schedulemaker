@@ -210,7 +210,7 @@ class AssetManager
         'profilepage' => [
             'js' => [
                 [
-                    'path' => '/assets/js/userSchedule.js'
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
                 ],
                 [
                     'path' => '/assets/js/exportSchedule.js'
@@ -224,6 +224,9 @@ class AssetManager
         ],
         'singlepages' => [
             'js' => [
+                [
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
+                ],
                 [
                     'path' => '/assets/js/ajax.js'
                 ],
@@ -239,6 +242,9 @@ class AssetManager
         ],
         'classroompage' => [
             'js' => [
+                [
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
+                ],
                 [
                     'path' => '/assets/js/ajax.js'
                 ],

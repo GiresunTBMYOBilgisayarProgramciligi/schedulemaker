@@ -10,9 +10,10 @@ use App\Models\Schedule;
 <!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>"
+        <div class="card schedule-card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>"
             data-schedule-id="<?= $schedule->id ?>" data-duration="<?= $duration ?? 50 ?>"
-            data-break="<?= $break ?? 10 ?>">
+            data-break="<?= $break ?? 10 ?>"
+            data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>">
             <div class="card-header">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
                 <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->

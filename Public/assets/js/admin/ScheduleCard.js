@@ -1604,6 +1604,12 @@ class ScheduleCard {
                 }
             }
         });
+
+        // Canlı güncelleme sonrası popoverları (not ikonları) etkinleştir
+        const popoverTriggerList = [].slice.call(this.table.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+        });
     }
 
     /**

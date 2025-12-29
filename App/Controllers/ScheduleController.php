@@ -306,7 +306,7 @@ class ScheduleController extends Controller
                 $scheduleFilters = $filters;
                 $scheduleFilters['semester_no'] = $semester_no;
                 $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
-                $availableLessons = $only_table ? [] : array_merge($availableLessons, $this->availableLessons($schedule));
+                $availableLessons = ($only_table and in_array($filters['owner_type'], ['program'])) ? [] : array_merge($availableLessons, $this->availableLessons($schedule, $only_table));
                 /**
                  * birden fazla schedule row içindeki bilgileri birleştiriyoruz.
                  * Gemini yaptı. biraz karışık ama iş görüyor.
@@ -348,14 +348,15 @@ class ScheduleController extends Controller
             }
         } else {
             $schedule = (new Schedule())->firstOrCreate($filters);
-            $availableLessons = $only_table ? [] : $this->availableLessons($schedule);
+            $availableLessons = ($only_table and in_array($filters['owner_type'], ['program'])) ? [] : $this->availableLessons($schedule, $only_table);
             $scheduleRows = $this->prepareScheduleRows($schedule, "html");
         }
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
             'schedule' => $schedule,
-            'only_table' => $only_table
+            'only_table' => $only_table,
+            'owner_type' => $filters['owner_type'] ?? null
         ]);
 
         $createTableHeaders = function () use ($filters): array {
@@ -406,7 +407,8 @@ class ScheduleController extends Controller
             'cardTitle' => $cardTitle,
             'dataSemesterNo' => $dataSemesterNo,
             'duration' => $duration,
-            'break' => $break
+            'break' => $break,
+            'only_table' => $only_table
         ]);
     }
 
@@ -457,21 +459,33 @@ class ScheduleController extends Controller
             foreach ($itemsData as $itemData) {
                 //$this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
                 // 1. İlgili Schedule'ları bul (Çakışma kontrolü için)
-                $lessonId = $itemData['data']['lesson_id'];
-                $lecturerId = $itemData['data']['lecturer_id'];
-                $classroomId = $itemData['data']['classroom_id'];
                 $dayIndex = $itemData['day_index'];
                 $startTime = $itemData['start_time'];
                 $endTime = $itemData['end_time'];
 
-                $lesson = (new Lesson())->find($lessonId);
+                $isDummy = in_array($itemData['status'], ['preferred', 'unavailable']);
+
+                $lessonId = !$isDummy ? $itemData['data']['lesson_id'] : null;
+                $lecturerId = !$isDummy ? $itemData['data']['lecturer_id'] : null;
+                $classroomId = !$isDummy ? $itemData['data']['classroom_id'] : null;
+
+                $lesson = !$isDummy ? (new Lesson())->find($lessonId) : null;
+
                 // Kontrol edilecek schedule sahipleri
-                $owners = [
-                    'user' => $lecturerId,
-                    'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik programı oluşturma
-                    'program' => $lesson->program_id,
-                    'lesson' => $lesson->id // Kullanıcı isteği üzerine eklendi
-                ];
+                $owners = [];
+                if ($isDummy) {
+                    $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+                    if ($targetSchedule) {
+                        $owners[$targetSchedule->owner_type] = $targetSchedule->owner_id;
+                    }
+                } else {
+                    $owners = [
+                        'user' => $lecturerId,
+                        'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik programı oluşturma
+                        'program' => $lesson->program_id,
+                        'lesson' => $lesson->id // Kullanıcı isteği üzerine eklendi
+                    ];
+                }
 
                 // Item'in ekleneceği Schedule'ı bul
                 $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
@@ -497,7 +511,7 @@ class ScheduleController extends Controller
 
                     // Program için semester_no önemli (Diğerleri için null)
                     if ($ownerType == 'program') {
-                        $scheduleFilters['semester_no'] = $lesson->semester_no;
+                        $scheduleFilters['semester_no'] = $lesson ? $lesson->semester_no : $targetSchedule->semester_no;
                     } else {
                         $scheduleFilters['semester_no'] = null;
                     }
@@ -519,7 +533,9 @@ class ScheduleController extends Controller
                                 $preferredConflictScheduleIds[] = $relatedSchedule->id;
                             } else {
                                 // preferred değilse standart conflict check (hata fırlatabilir)
-                                $this->resolveConflict($itemData, $existingItem, $lesson);
+                                if (!$isDummy) {
+                                    $this->resolveConflict($itemData, $existingItem, $lesson);
+                                }
                             }
                         }
                     }
@@ -546,14 +562,7 @@ class ScheduleController extends Controller
                         $validData = $itemData['data'];
                     }
 
-                    $validDetail = null;
-                    if (!is_null($currentDetail)) {
-                        if (!array_is_list($currentDetail)) {
-                            $validDetail = [$currentDetail];
-                        } else {
-                            $validDetail = $currentDetail;
-                        }
-                    }
+                    $validDetail = $currentDetail;
 
                     if ($itemData['status'] === 'group') {
                         // Group statusunde ise merge/split işlemi yap
@@ -584,7 +593,7 @@ class ScheduleController extends Controller
             }
             $this->database->commit();
             return $createdIds;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->database->rollBack();
             $this->logger()->error("Save Schedule Items Error: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -808,8 +817,32 @@ class ScheduleController extends Controller
      * @return array
      * @throws Exception
      */
-    public function availableLessons(Schedule $schedule): array
+    public function availableLessons(Schedule $schedule, bool $onlyTable = false): array
     {
+        if ($onlyTable && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
+            // Sadece tablo modunda (profil sayfaları vb.) Preferred ve Unavailable kartlarını döndür
+            return [
+                (object) [
+                    'id' => 'dummy-preferred',
+                    'name' => '',
+                    'code' => 'PREF',
+                    'status' => 'preferred',
+                    'hours' => 1,
+                    'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
+                    'is_dummy' => true
+                ],
+                (object) [
+                    'id' => 'dummy-unavailable',
+                    'name' => '',
+                    'code' => 'UNAV',
+                    'status' => 'unavailable',
+                    'hours' => 1,
+                    'lecturer_id' => $schedule->owner_id,
+                    'is_dummy' => true
+                ]
+            ];
+        }
+
         $available_lessons = [];
 
         $lessonFilters = [
@@ -1145,17 +1178,7 @@ class ScheduleController extends Controller
 
     public function deleteScheduleItems(array $items): array
     {
-        /** 
-         * filter içerisinde gelen items listesi gerekli kontroller yapılarak silinecek:
-         * 
-         * gelen itemler aynı scheduleitem_id ye sahipse start ve end time bilgilerine göre birleştirilecekler. 
-         * birleştirilen item schedule item ile aynı ise o item silinecek. Yani başlangıç ve bitiş saatleri tüm itemi kapsıyorsa silinecek.
-         * tamamını kapsamıyorsa start ve end time bilgilerine göre schedule items tablosunda güncellenecek. 
-         * item kaydetme işlemlerindeki prefered item ile çakışma durumunda yapılan işlemler gibibi silme işlem idüzenlenecek.
-         * eğer silinmesi için gelen item ver olan itemin başlangıç kısmında ise start time güncellenecek son kısmında ise end time güncellenecek. orta kısmında ise item parçalanarak iki item olarak kaydedilecek.
-         * Bu işlemler gelen schedule item ile bağlantılı tüm schedule'lar için yapılacak. schedule item kaydedilirken hangi schedule'lar kaydediliyorsa silme işlemi de hepsinde yapılacak. 
-         * eğer slot gruplu ise silinen ders bilgisi schedule item içerisinde kontrol edilerek data içerisinden silinecek. eğer gerekiyorsa item parçalanacak. 
-         */
+
         //$this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
 
         /**
@@ -1164,6 +1187,8 @@ class ScheduleController extends Controller
          */
         $deletedIds = [];
         $errors = [];
+
+        $ignoreSiblings = filter_var($this->data['ignore_siblings'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         // 1. Kardeş Öğeleri (Siblings) Batch Halinde İşle
         $createdItems = [];
@@ -1196,14 +1221,18 @@ class ScheduleController extends Controller
                 $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
 
                 // 2. Kardeşleri (Hoca, Derslik, Program kopyaları) bul
-                $baseLessonIds = [];
-                foreach ($scheduleItem->getSlotDatas() as $sd) {
-                    if ($sd->lesson) {
-                        $baseLessonIds[] = (int) $sd->lesson->id;
+                if ($ignoreSiblings) {
+                    $siblings = [$scheduleItem];
+                } else {
+                    $baseLessonIds = [];
+                    foreach ($scheduleItem->getSlotDatas() as $sd) {
+                        if ($sd->lesson) {
+                            $baseLessonIds[] = (int) $sd->lesson->id;
+                        }
                     }
+                    $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                 }
 
-                $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
 
                 // 3. Bu kardeş grubu için İSTEKTEKİ (BULK) TÜM silme aralıklarını ve DERS ID'lerini topla
@@ -1399,14 +1428,37 @@ class ScheduleController extends Controller
         $current = strtotime($startStr);
         $endUnix = strtotime($endStr);
         while ($current < $endUnix) {
+            // Öğle Arası Kontrolü (12:00 - 13:00)
+            if (date("H:i", $current) === "12:00") {
+                if (!in_array("12:00", $points))
+                    $points[] = "12:00";
+                $current = strtotime("13:00");
+                if (!in_array("13:00", $points))
+                    $points[] = "13:00";
+                if ($current >= $endUnix)
+                    break;
+            }
+
             // Ders sonu
             $current += ($duration * 60);
-            if ($current < $endUnix) {
-                $points[] = date("H:i", $current);
-                // Teneffüs sonu
-                $current += ($break * 60);
-                if ($current < $endUnix) {
+
+            if ($current <= $endUnix) {
+                if (!in_array(date("H:i", $current), $points))
                     $points[] = date("H:i", $current);
+
+                // Teneffüs sonu
+                if ($current < $endUnix) {
+                    $nextBreakEnd = $current + ($break * 60);
+                    // Teneffüs bitişi öğle arasına denk geliyorsa 12:00'de kes
+                    if (date("H:i", $nextBreakEnd) === "12:00" || ($current < strtotime("12:00") && $nextBreakEnd > strtotime("12:00"))) {
+                        $current = strtotime("12:00");
+                        if (!in_array("12:00", $points))
+                            $points[] = "12:00";
+                    } else {
+                        $current = $nextBreakEnd;
+                        if (!in_array(date("H:i", $current), $points))
+                            $points[] = date("H:i", $current);
+                    }
                 }
             }
         }
@@ -1458,13 +1510,20 @@ class ScheduleController extends Controller
                         return !in_array((int) $l['lesson_id'], $targetLessonIds);
                     }));
                 } else {
-                    // Tüm item siliniyor
+                    // Tüm item siliniyor (Aralık bazlı tam silme)
                     $currentData = [];
                 }
             }
 
+            // Dummy öğeler (Preferred/Unavailable) için data boştur.
+            // Eğer data boşsa ama statü special ise, isDeleteZone değilse tutmalıyız.
+            $isSpecial = in_array($item->status, ['preferred', 'unavailable']);
             if (empty($currentData)) {
-                $shouldKeep = false;
+                if ($isSpecial) {
+                    $shouldKeep = !$isDeleteZone;
+                } else {
+                    $shouldKeep = false;
+                }
             }
 
             $segments[] = [
@@ -1513,7 +1572,6 @@ class ScheduleController extends Controller
         }
 
         // 5. Değişiklik Kontrolü: Eğer tek bir parça oluştuysa ve orijinal ile tamamen aynıysa hiçbir şey yapma.
-        // Bu, aynı programdaki "etkilenmeyen" kardeşlerin ID'lerinin değişmesini önler.
         if (count($newSegments) === 1) {
             $seg = $newSegments[0];
             if (
@@ -1521,12 +1579,12 @@ class ScheduleController extends Controller
                 $seg['end'] === $item->getShortEndTime() &&
                 serialize($seg['data']) === serialize($item->data)
             ) {
-                return ['deleted' => false, 'created' => []]; // Hiçbir şey değişmedi, yeni öğe oluşturma, silme de yapma.
+                return ['deleted' => false, 'created' => []];
             }
         }
 
         // 6. Veritabanı güncelleme
-        $item->delete(); // Mevcut item ancak gerçekten değiştiyse silinir
+        $item->delete();
 
         $createdItems = [];
         if (!empty($newSegments)) {
@@ -1538,27 +1596,28 @@ class ScheduleController extends Controller
                 $newItem->start_time = $seg['start'];
                 $newItem->end_time = $seg['end'];
 
-                // Status belirleme: data içerisindeki derslerin group_no bilgisini kontrol et
-                $isGroup = false;
-                foreach ($seg['data'] as $d) {
-                    $lessonId = $d['lesson_id'] ?? null;
-                    if ($lessonId) {
-                        $lesson = (new \App\Models\Lesson())->find($lessonId);
-                        if ($lesson && $lesson->group_no > 0) {
-                            $isGroup = true;
-                            break;
+                // Status belirleme: Eğer özel bir statü ise koru, değilse data içeriğine göre single/group belirle
+                if (in_array($item->status, ['preferred', 'unavailable'])) {
+                    $newItem->status = $item->status;
+                } else {
+                    $isGroup = false;
+                    if (!empty($seg['data'])) {
+                        foreach ($seg['data'] as $d) {
+                            $lessonId = $d['lesson_id'] ?? null;
+                            if ($lessonId) {
+                                $lesson = (new \App\Models\Lesson())->find($lessonId);
+                                if ($lesson && $lesson->group_no > 0) {
+                                    $isGroup = true;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-
-                if ($isGroup) {
-                    $newItem->status = 'group';
-                } else {
-                    $newItem->status = $item->status === 'preferred' ? 'preferred' : 'single';
+                    $newItem->status = $isGroup ? 'group' : 'single';
                 }
 
                 $newItem->data = $seg['data'];
-                $newItem->detail = $item->detail; // Detaylar korunur
+                $newItem->detail = $item->detail;
                 $newItem->create();
                 $createdItems[] = $newItem;
             }

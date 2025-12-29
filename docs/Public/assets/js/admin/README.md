@@ -6,3 +6,4 @@
 Bu dizindeki alt bileşenler:
 
 *   **[ScheduleCard](./ScheduleCard/README.md)**
+*   **[SingleScheduleHandler](./SingleScheduleHandler.md)**

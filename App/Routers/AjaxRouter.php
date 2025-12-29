@@ -648,17 +648,31 @@ class AjaxRouter extends Router
         try {
             $createdIds = $scheduleController->saveScheduleItems($items);
             if (!empty($createdIds)) {
+                // Canlı Güncelleme (Live Update) için oluşturulan öğelerin tam listesini topla
+                $createdItems = [];
+                foreach ($createdIds as $groupedIds) {
+                    foreach ($groupedIds as $ownerType => $ids) {
+                        foreach ($ids as $id) {
+                            $item = (new ScheduleItem())->find($id);
+                            if ($item) {
+                                $createdItems[] = $item->getArray();
+                            }
+                        }
+                    }
+                }
+
                 $this->response = array(
                     "status" => "success",
                     "msg" => "Program başarıyla kaydedildi.",
-                    "createdIds" => $createdIds
+                    "createdIds" => $createdIds,
+                    "createdItems" => $createdItems
                 );
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
             $this->response = array(
                 "status" => "error",
-                "msg" => $e->getMessage()
+                "msg" => "Sistem Hatası: " . $e->getMessage()
             );
         }
         $this->sendResponse();

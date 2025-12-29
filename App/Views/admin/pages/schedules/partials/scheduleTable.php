@@ -56,7 +56,7 @@ use function App\Helpers\getSettingValue;
                                         <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                             <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
                                                 $draggable = "true";
-                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester')) {
+                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester') or $only_table) {
                                                     $draggable = "false";
                                                 }
                                                 ?>
@@ -94,7 +94,13 @@ use function App\Helpers\getSettingValue;
                                                 </div>
                                             <?php endforeach ?>
                                         <?php else: ?>
-                                            <div class="empty-slot <?= $scheduleItem->getSlotCSSClass() ?>">
+                                            <div class="empty-slot dummy <?= $scheduleItem->getSlotCSSClass() ?>"
+                                                draggable="<?= (isset($only_table) && $only_table) ? 'true' : 'false' ?>"
+                                                data-schedule-item-id="<?= $scheduleItem->id ?>" data-status="<?= $scheduleItem->status ?>"
+                                                data-detail='<?= json_encode($scheduleItem->detail) ?>'>
+                                                <?php if (isset($only_table) && $only_table): ?>
+                                                    <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
+                                                <?php endif; ?>
                                                 <?php if (is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
                                                     <div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
                                                         data-bs-trigger="hover" data-bs-content="<?= $scheduleItem->detail['description'] ?>"

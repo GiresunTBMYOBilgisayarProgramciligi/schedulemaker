@@ -8,53 +8,95 @@ use App\Core\Log;
  * @var Schedule $schedule
  */
 ?>
-<div class="row available-schedule-items drop-zone small"
-    data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin" data-bs-placement="left" data-bs-trigger="none">
+<div class="row available-schedule-items drop-zone small" data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin"
+    data-bs-placement="left" data-bs-trigger="none">
     <?php foreach ($availableLessons as $lesson): ?>
         <?php
         /**
-         * @var Lesson $lesson
-         * @var Lesson $parentLesson
+         * @var Lesson|object $lesson
          */
+        $isDummy = isset($lesson->is_dummy) && $lesson->is_dummy;
+
         $draggable = "true";
-        if (!is_null($lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester')) {
-            $draggable = "false";
+        if (!$isDummy) {
+            if (!is_null($lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester')) {
+                $draggable = "false";
+            }
         }
 
-        $isChild = !is_null($lesson->parent_lesson_id);
+        $popover = "";
+        if (!$isDummy) {
+            $isChild = !is_null($lesson->parent_lesson_id);
+            $parentLesson = $isChild ? (new Lesson())->find($lesson->parent_lesson_id) : null;
+            $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
+        }
 
-        $parentLesson = $isChild ? (new Lesson())->find($lesson->parent_lesson_id) : null;
-        $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
+        $status = "";
+        if ($isDummy) {
+            $status = isset($lesson->status) ? $lesson->status : "";
+        } else {
+            /** @var Lesson $lesson */
+            $status = $lesson->getScheduleCSSClass();
+        }
+        $lessonName = $lesson->name;
+        if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
+            $lessonName = $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')';
+        }
 
-        $lessonName = in_array($schedule->owner_type, ['user', 'classroom']) ? $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')' : $lesson->name;
         // Badge yerine sağ alta gelecek metin
-        $infoText = $schedule->type == 'lesson' ? $lesson->hours . ' Saat' : $lesson->size . ' Kişi';
+        $infoText = "";
+        if ($isDummy) {
+            $infoText = "";
+        } else {
+            $infoText = $schedule->type == 'lesson' ? $lesson->hours . ' Saat' : $lesson->size . ' Kişi';
+        }
+
+        $dataAttrs = [
+            'draggable' => $draggable,
+            'class' => ($isDummy ? "dummy" : "lesson-card") . " w-100 " . ($isDummy ? "slot-" . $status : $status),
+            'data-lesson-id' => $isDummy ? $lesson->id : $lesson->id,
+            'data-lesson-hours' => $lesson->hours ?? 1,
+            'data-group-no' => $isDummy ? 0 : $lesson->group_no,
+            'data-lesson-code' => $lesson->code,
+            'data-lecturer-id' => $isDummy ? $lesson->lecturer_id : $lesson->lecturer_id,
+            'data-status' => $isDummy ? $status : 'lesson' // dummy ise preferred/unavailable, değilse lesson
+        ];
+
+        if ($isDummy) {
+            $dataAttrs['data-is-dummy'] = 'true';
+        } else {
+            $dataAttrs['data-size'] = ($lesson->size ?? 0);
+        }
+
+        $attrString = "";
+        foreach ($dataAttrs as $key => $val) {
+            $attrString .= " $key=\"$val\"";
+        }
         ?>
         <div class='frame col-md-4 p-1'>
-            <div id="available-lesson-<?= $lesson->id ?>" draggable="<?= $draggable ?>"
-                class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?>" 
-                data-lesson-id="<?= $lesson->id ?>"
-                data-lesson-hours="<?= $lesson->hours ?>"
-                data-size="<?= ($lesson->size ?? 0) ?>"
-                data-group-no="<?= $lesson->group_no ?>"
-                data-lesson-code="<?= $lesson->code ?>"
-                data-lecturer-id="<?= $lesson->lecturer_id ?>"
-                <?= $popover ?>
-                >
+            <div id="available-lesson-<?= $lesson->id ?>" <?= $attrString ?>     <?= $popover ?>>
 
                 <span class="lesson-name" title="<?= $lesson->code ?>">
-                    <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                        href='/admin/lesson/<?= $lesson->id ?>'>
+                    <?php if ($isDummy): ?>
                         <?= $lessonName ?>
-                    </a>
+                    <?php else: ?>
+                        <a class='text-decoration-none' target='_blank' style="color: inherit;"
+                            href='/admin/lesson/<?= $lesson->id ?>'>
+                            <?= $lessonName ?>
+                        </a>
+                    <?php endif; ?>
                 </span>
 
                 <div class="lesson-meta">
                     <span class="lesson-lecturer">
-                        <a class="text-decoration-none" target='_blank' style="color: inherit;"
-                            href="/admin/profile/<?= $lesson->lecturer_id ?>">
-                            <?= $lesson->lecturer?->getFullName() ?>
-                        </a>
+                        <?php if ($isDummy): ?>
+                            -
+                        <?php else: ?>
+                            <a class="text-decoration-none" target='_blank' style="color: inherit;"
+                                href="/admin/profile/<?= $lesson->lecturer_id ?>">
+                                <?= $lesson->lecturer?->getFullName() ?>
+                            </a>
+                        <?php endif; ?>
                     </span>
                     <span class="lesson-classroom">
                         <?= $infoText ?>
