@@ -125,7 +125,6 @@ class LessonController extends Controller
     public function delete(int $id): void
     {
         $lesson = (new Lesson())->find($id) ?: throw new Exception("Silinecek Ders bulunamadı");
-    
         $lesson->delete();
     }
 
@@ -147,71 +146,96 @@ class LessonController extends Controller
          * @var Lesson $parentLesson
          * @var Lesson $childLesson
          */
-        $parentLesson = (new Lesson())->find($parentLessonId) ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
-        $childLesson = (new Lesson())->find($childLessonId) ?: throw new Exception("Birleştirilecek ders bulunamadı");
+        $parentLesson = (new Lesson())->where(["id"=> $parentLessonId])->with(["parentLesson"=>['with' => ['program']],"childLessons","program"])->first() ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
+        $childLesson = (new Lesson())->where(["id"=> $childLessonId])->with(["parentLesson"=>['with' => ['program']],"childLessons","program"])->first() ?: throw new Exception("Birleştirilecek ders bulunamadı");
         /*
-         * Bir derse bağlanmak istenilen bir ders zaten bir derse bağlı ise hata verir.
+         * istenilen bir ders zaten bir derse bağlı ise hata verir.
          */
-        if ($childLesson->parent_lesson_id) {
-            $childLesson->getParentLesson();
-            throw new Exception($childLesson->getProgram()->name . " - " . $childLesson->name . " zaten " . $childLesson->getParentLesson()->getProgram()->name . " - " . $childLesson->getParentLesson()->getFullName() . " dersine bağlı");
+        if ($childLesson->parentLesson) {
+            throw new Exception($childLesson->program->name . " - " . $childLesson->name . " zaten " . $childLesson->parentLesson->program->name . " - " . $childLesson->parentLesson->getFullName() . " dersine bağlı");
         }
         /*
          * Bağlanmak istenilen ders zaten başka bir derse bağlı ise bağlantı üst ebeveyne yapılır
          */
-        if ($parentLesson->parent_lesson_id) {
-            /**
-             * @var Lesson $existingParentLesson
-             */
-            $parentLesson = (new Lesson())->find($parentLesson->parent_lesson_id) ?: throw new Exception("Bağlanmak istenilen dersin üst ebeveyni bulunamadı");
+        if ($parentLesson->parentLesson) {
+            $parentLesson = $parentLesson->parentLesson ?: throw new Exception("Bağlanmak istenilen dersin üst ebeveyni bulunamadı");
         }
 
         $childLesson->parent_lesson_id = $parentLesson->id;
         $childLesson->update();
 
         //Başka derse bağlanan derse bağlı dersler varsa onlarda bu derse bağlanır
-        $childLessons = $childLesson->getChildLessonList();
-        if (count($childLessons) > 0) {
-            foreach ($childLessons as $child) {
-                $child->parent_lesson_id = $parentLesson->id;
-                $child->update();
-            }
+        foreach ($childLesson->childLessons as $child) {
+            $child->parent_lesson_id = $parentLesson->id;
+            $child->update();
         }
-        $scheduleController = new ScheduleController();
         
         /**
-         * todo 
          * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
          * @var Schedule $parentSchedule
-        
-        $parentSchedules = (new Schedule())->get()->where(['owner_type' => "lesson", "owner_id" => $parentLesson->id])->all();
-        foreach ($parentSchedules as $parentSchedule) {
-            //Ders programı gününü bul
-            $day = [];
-            for ($i = 1; $i <= 5; $i++) {
-                if (!is_null($parentSchedule->{"day$i"})) {
-                    $day["day$i"] = $parentSchedule->{"day$i"};
-                    $day["day$i"]["lesson_id"] = $childLesson->id;
+         */
+        $parentSchedule = (new Schedule())->get()->where(['owner_type' => "lesson", "owner_id" => $parentLesson->id])->with(['items'])->first();
+
+        foreach ($parentSchedule->items as $item) {
+            // Item datası içindeki lesson_id'yi güncellemek için hazırlık
+            $itemData = [["lesson_id" => null, "lecturer_id" => null, "classroom_id" => null]];
+            
+            if ($item->status === 'group') {
+                foreach ($item->getSlotDatas() as $slotData) {
+                    if ($slotData->lesson_id == $parentLesson->id) {
+                        $itemData[0] = [
+                            "lesson_id" => $slotData->lesson_id,
+                            "lecturer_id" => $slotData->lecturer_id,
+                            "classroom_id" => $slotData->classroom_id
+                        ];
+                    }
                 }
+            }else{
+                $itemData[0] = [
+                    "lesson_id" => $slotData->lesson_id,
+                    "lecturer_id" => $slotData->lecturer_id,
+                    "classroom_id" => $slotData->classroom_id
+                ];
             }
-            $owners["lesson"] = $childLesson->id;
-            $owners["program"] = $childLesson->getProgram()->id;
-            foreach ($owners as $owner_type => $owner_id) {
-                $savedId = $scheduleController->saveNew([
-                    "type" => "lesson",
-                    "owner_type" => $owner_type,
-                    "owner_id" => $owner_id,
-                    array_keys($day)[0] => $day[array_keys($day)[0]],
-                    "time" => $parentSchedule->time,
-                    "semester_no" => $parentSchedule->semester_no,
-                    "semester" => $parentSchedule->semester,
-                    "academic_year" => $parentSchedule->academic_year,
-                ]);
+
+            // Child Lesson ve Programı için item oluştur
+            $owners = [
+                ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
+                ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no]
+            ];
+
+            foreach ($owners as $owner) {
+                if (!$owner['id'])
+                    continue;
+
+                $scheduleFilters = [
+                    'owner_type' => $owner['type'],
+                    'owner_id' => $owner['id'],
+                    'semester' => $parentSchedule->semester,
+                    'academic_year' => $parentSchedule->academic_year,
+                    'type' => $parentSchedule->type
+                ];
+
+                if ($owner['type'] == 'program') {
+                    $scheduleFilters['semester_no'] = $owner['semester_no'];
+                } else {
+                    $scheduleFilters['semester_no'] = null;
+                }
+
+                $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+
+                // Yeni Item oluştur
+                $newItem = new \App\Models\ScheduleItem();
+                $newItem->schedule_id = $childSchedule->id;
+                $newItem->day_index = $item->day_index;
+                $newItem->start_time = $item->start_time;
+                $newItem->end_time = $item->end_time;
+                $newItem->status = $item->status;
+                $newItem->data = $itemData;
+                $newItem->detail = $item->detail;
+                $newItem->create();
             }
         }
-             */
-
-
     }
 
     /**

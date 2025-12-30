@@ -219,7 +219,7 @@ class AdminRouter extends Router
             /**
              * @var Lesson $lesson
              */
-            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department'])->first() ?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->first() ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
@@ -239,7 +239,7 @@ class AdminRouter extends Router
                 ],
                 preference_mode: true
             ),
-            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester')])->all(),
+            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester')])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->all(),
         ]);
         $this->callView("admin/lessons/lesson");
     }
