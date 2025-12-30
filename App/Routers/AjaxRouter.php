@@ -891,6 +891,22 @@ class AjaxRouter extends Router
             'semester_no' => $lesson->semester_no
         ])->all();
 
+        // Child Lessons (Bağlı Alt Dersler) programlarını da kontrol et
+        if (!empty($lesson->childLessons)) {
+            foreach ($lesson->childLessons as $childLesson) {
+                if ($childLesson->program_id) {
+                    $childSchedules = (new Schedule())->get()->where([
+                        'owner_type' => 'program',
+                        'owner_id' => $childLesson->program_id,
+                        'semester' => $filters['semester'],
+                        'academic_year' => $filters['academic_year'],
+                        'semester_no' => $childLesson->semester_no
+                    ])->all();
+                    $schedules = array_merge($schedules, $childSchedules);
+                }
+            }
+        }
+
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
             foreach ($items as $item) {
