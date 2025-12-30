@@ -389,6 +389,19 @@ class ScheduleCard {
             element.addEventListener('dragstart', this.dragStartHandler.bind(this));
         });
 
+        // Re-bind drop events for the list itself if it is a drop zone
+        if (listClone.classList.contains('drop-zone')) {
+            listClone.addEventListener("drop", this.dropHandler.bind(this, listClone));
+            listClone.addEventListener("dragover", this.dragOverHandler.bind(this));
+        }
+
+        // Re-bind drop events for any child drop zones
+        const childDropZones = listClone.querySelectorAll('.drop-zone');
+        childDropZones.forEach(element => {
+            element.addEventListener("drop", this.dropHandler.bind(this, element));
+            element.addEventListener("dragover", this.dragOverHandler.bind(this));
+        });
+
         this.stickyWrapper.prepend(listClone);
     }
 
