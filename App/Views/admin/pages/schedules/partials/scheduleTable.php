@@ -50,7 +50,7 @@ use function App\Helpers\getSettingValue;
                                     data-schedule-item-id="<?= $scheduleItem->id ?>">
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
-                                        <?php endif; ?>
+                                    <?php endif; ?>
                                         <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                             <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
                                                 $draggable = "true";
@@ -108,7 +108,7 @@ use function App\Helpers\getSettingValue;
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
-                                        <?php if ($scheduleItem->status === 'group'): ?>
+                                    <?php if ($scheduleItem->status === 'group'): ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
