@@ -50,7 +50,8 @@ class LessonController extends Controller
     public function getLessonsList(?int $lecturer_id = null): array
     {
         $filters = [];
-        if (!is_null($lecturer_id)) $filters["lecturer_id"] = $lecturer_id;
+        if (!is_null($lecturer_id))
+            $filters["lecturer_id"] = $lecturer_id;
         return $this->getListByFilters($filters);
     }
 
@@ -70,7 +71,7 @@ class LessonController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -113,7 +114,7 @@ class LessonController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -146,8 +147,8 @@ class LessonController extends Controller
          * @var Lesson $parentLesson
          * @var Lesson $childLesson
          */
-        $parentLesson = (new Lesson())->where(["id"=> $parentLessonId])->with(["parentLesson"=>['with' => ['program']],"childLessons","program"])->first() ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
-        $childLesson = (new Lesson())->where(["id"=> $childLessonId])->with(["parentLesson"=>['with' => ['program']],"childLessons","program"])->first() ?: throw new Exception("Birleştirilecek ders bulunamadı");
+        $parentLesson = (new Lesson())->where(["id" => $parentLessonId])->with(["parentLesson" => ['with' => ['program']], "childLessons", "program"])->first() ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
+        $childLesson = (new Lesson())->where(["id" => $childLessonId])->with(["parentLesson" => ['with' => ['program']], "childLessons", "program"])->first() ?: throw new Exception("Birleştirilecek ders bulunamadı");
         /*
          * istenilen bir ders zaten bir derse bağlı ise hata verir.
          */
@@ -169,7 +170,7 @@ class LessonController extends Controller
             $child->parent_lesson_id = $parentLesson->id;
             $child->update();
         }
-        
+
         /**
          * Bağlanılan dersin ders programında bir kaydı varsa bu bağlanan ders için de kaydedilir
          * @var Schedule $parentSchedule
@@ -179,22 +180,23 @@ class LessonController extends Controller
         foreach ($parentSchedule->items as $item) {
             // Item datası içindeki lesson_id'yi güncellemek için hazırlık
             $itemData = [["lesson_id" => null, "lecturer_id" => null, "classroom_id" => null]];
-            
+            //genel mantık olarak gruplu ders birleştirilmez ama yine de işlemler yapılsın 
             if ($item->status === 'group') {
                 foreach ($item->getSlotDatas() as $slotData) {
                     if ($slotData->lesson_id == $parentLesson->id) {
                         $itemData[0] = [
-                            "lesson_id" => $slotData->lesson_id,
-                            "lecturer_id" => $slotData->lecturer_id,
-                            "classroom_id" => $slotData->classroom_id
+                            "lesson_id" => $childLesson->id,
+                            "lecturer_id" => $childLesson->lecturer_id,
+                            "classroom_id" => $slotData->classroom->id
                         ];
                     }
                 }
-            }else{
+            } else {
+                $slotData = $item->getSlotDatas()[0];
                 $itemData[0] = [
-                    "lesson_id" => $slotData->lesson_id,
-                    "lecturer_id" => $slotData->lecturer_id,
-                    "classroom_id" => $slotData->classroom_id
+                    "lesson_id" => $childLesson->id,
+                    "lecturer_id" => $childLesson->lecturer_id,
+                    "classroom_id" => $slotData->classroom->id
                 ];
             }
 
@@ -247,7 +249,7 @@ class LessonController extends Controller
          * @var Lesson $lesson
          */
         $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
-        
+
         $lesson->parent_lesson_id = null;
         $lesson->update();
     }
