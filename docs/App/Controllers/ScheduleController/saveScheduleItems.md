@@ -19,6 +19,7 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
         *   `classroom` (Derslik) - *İstisna: Eğer ders tipi **UZEM (3)** ise bu paydaş atlanır (derslik programına kayıt yapılmaz).*
         *   `program` (Öğrenci Grubu/Bölüm)
         *   `lesson` (Dersin kendisi)
+    *   **Bağlı Ders Senkronizasyonu**: Eğer ders bir "Ana Ders" ise, ona bağlı olan tüm **Alt Dersler** (Child Lessons) için de otomatik olarak `lesson` ve `program` paydaşları oluşturulur.
     *   Her bir paydaş için mevcut bir `Schedule` (Takvim başlığı) olup olmadığı kontrol edilir, yoksa oluşturulur (`firstOrCreate`).
 3.  **Çakışma Taraması**:
     *   Belirlenen tüm paydaşların takvimleri taranır.

@@ -14,6 +14,7 @@
 Ana algoritmalar şunlardır:
 1.  **Zaman Çizelgesi Düzleştirme (Flatten Timeline)**: Silme ve grup birleştirme işlemlerinde zamanı atomik parçalara bölerek yönetir.
 2.  **Çakışma Çözümleme (Conflict Resolution)**: Standart, grup ve tercih edilen (`preferred`) zaman dilimleri arasındaki öncelikleri belirler.
+3.  **Bağlı Dersler (Connected Lessons)**: Bir ana ders (Parent) ve ona bağlı alt derslerin (Child) programlarını çift yönlü (bidirectional) olarak senkronize eder.
 
 ## Metod Listesi (İçindekiler)
 

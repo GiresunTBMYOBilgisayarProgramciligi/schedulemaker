@@ -13,6 +13,7 @@ Tek bir program öğesinin tüm paydaşlar için çakışma kontrolünü yapan "
     *   Sınıfın doluluk takvimi. *(İstisna: UZEM (3) tipi dersler için bu adım atlanır)*
     *   Programın (Öğrencilerin) ders takvimi.
     *   Dersin kendi koduna ait özel takvim.
+    *   **Bağlı Dersler**: Eğer ders veya bağlı olduğu üst ders (Parent) bir gruba aitse, gruptaki tüm diğer derslerin program ve özel takvimleri de bu kontrole dahil edilir.
 4.  Herhangi birinde `resolveConflict` hatası alınırsa işlemi durdurur.
 
 ## Teknik Not

@@ -10,6 +10,7 @@
 1.  **Ders Tanımlama**: Yeni ders kodu ve adı oluşturma.
 2.  **Kapasite Yönetimi**: Dersin öğrenci kontenjanı ve fiziksel gereksinimlerinin (Lab, Normal vb.) belirlenmesi.
 3.  **Hoca Atama**: Dersi verecek varsayılan akademisyenin seçilmesi.
+4.  **Ders Birleştirme (Combine)**: İçeriği aynı olan farklı derslerin "Bağlı Dersler" (Connected Lessons) olarak gruplandırılması ve programlarının senkronize edilmesi.
 
 ## Metod Listesi
 
@@ -18,3 +19,4 @@
 *   [Update()](./Update.md)
 *   [Delete()](./Delete.md)
 *   [GetLessonDetails()](./GetLessonDetails.md)
+*   [combineLesson()](./combineLesson.md)

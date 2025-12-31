@@ -564,22 +564,43 @@ class ScheduleController extends Controller
                 $lecturerId = !$isDummy ? $itemData['data']['lecturer_id'] : null;
                 $classroomId = !$isDummy ? $itemData['data']['classroom_id'] : null;
 
-                $lesson = !$isDummy ? (new Lesson())->find($lessonId) : null;
+                $lesson = !$isDummy ? (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first() : null;
 
                 // Kontrol edilecek schedule sahipleri
                 $owners = [];
                 if ($isDummy) {
                     $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
                     if ($targetSchedule) {
-                        $owners[$targetSchedule->owner_type] = $targetSchedule->owner_id;
+                        $owners[] = ['type' => $targetSchedule->owner_type, 'id' => $targetSchedule->owner_id];
                     }
                 } else {
                     $owners = [
-                        'user' => $lecturerId,
-                        'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik programı oluşturma
-                        'program' => $lesson->program_id,
-                        'lesson' => $lesson->id // Kullanıcı isteği üzerine eklendi
+                        ['type' => 'user', 'id' => $lecturerId],
+                        ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik programı oluşturma
+                        ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+                        ['type' => 'lesson', 'id' => $lesson->id]
                     ];
+
+                    // Child Lessons (Bağlı Alt Dersler) sisteme dahil ediliyor
+                    if (!empty($lesson->childLessons)) {
+                        foreach ($lesson->childLessons as $childLesson) {
+                            $owners[] = [
+                                'type' => 'lesson',
+                                'id' => $childLesson->id,
+                                'is_child' => true,
+                                'child_lesson_id' => $childLesson->id
+                            ];
+                            if ($childLesson->program_id) {
+                                $owners[] = [
+                                    'type' => 'program',
+                                    'id' => $childLesson->program_id,
+                                    'semester_no' => $childLesson->semester_no,
+                                    'is_child' => true,
+                                    'child_lesson_id' => $childLesson->id
+                                ];
+                            }
+                        }
+                    }
                 }
 
                 // Item'in ekleneceği Schedule'ı bul
@@ -592,7 +613,9 @@ class ScheduleController extends Controller
                 $targetSchedules = []; // Her ders saati için hedef program listesini sıfırla
 
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
-                foreach ($owners as $ownerType => $ownerId) {
+                foreach ($owners as $owner) {
+                    $ownerType = $owner['type'];
+                    $ownerId = $owner['id'];
                     if (!$ownerId)
                         continue;
 
@@ -606,14 +629,17 @@ class ScheduleController extends Controller
 
                     // Program için semester_no önemli (Diğerleri için null)
                     if ($ownerType == 'program') {
-                        $scheduleFilters['semester_no'] = $lesson ? $lesson->semester_no : $targetSchedule->semester_no;
+                        $scheduleFilters['semester_no'] = isset($owner['semester_no']) ? $owner['semester_no'] : ($lesson ? $lesson->semester_no : $targetSchedule->semester_no);
                     } else {
                         $scheduleFilters['semester_no'] = null;
                     }
 
                     // İlgili schedule'ı bul veya oluştur
                     $relatedSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
-                    $targetSchedules[] = $relatedSchedule;
+                    $targetSchedules[] = [
+                        'schedule' => $relatedSchedule,
+                        'child_lesson_id' => (isset($owner['is_child']) && $owner['is_child']) ? $owner['child_lesson_id'] : null
+                    ];
 
                     $existingItems = (new ScheduleItem())->get()->where([
                         'schedule_id' => $relatedSchedule->id,
@@ -638,7 +664,10 @@ class ScheduleController extends Controller
 
                 // 2. Yeni Item'i Tüm İlgili Schedule'lara Kaydet
                 $itemGroupedIds = [];
-                foreach ($targetSchedules as $schedule) {
+                foreach ($targetSchedules as $targetInfo) {
+                    /** @var Schedule $schedule */
+                    $schedule = $targetInfo['schedule'];
+                    $childLessonId = $targetInfo['child_lesson_id'];
                     // Bu programa özel metadata kontrolü
                     $currentDetail = $itemData['detail'] ?? null;
                     if (array_key_exists($schedule->id, $preferredConflictSchedules)) {
@@ -657,10 +686,18 @@ class ScheduleController extends Controller
 
                     // Data formatını hazırla (Tekil array içinde array yapısı)
                     $validData = [];
+                    // Eğer child lesson için işlem yapıyorsak, data içindeki lesson_id'yi child lesson id ile değiştirmeliyiz
+                    $currentData = $itemData['data'];
+                    if ($childLessonId) {
+                        if (isset($currentData['lesson_id'])) {
+                            $currentData['lesson_id'] = $childLessonId;
+                        }
+                    }
+
                     if (isset($itemData['data']['lesson_id'])) {
-                        $validData = [$itemData['data']];
+                        $validData = [$currentData];
                     } else {
-                        $validData = $itemData['data'];
+                        $validData = $currentData;
                     }
 
                     $validDetail = $currentDetail;
@@ -954,17 +991,27 @@ class ScheduleController extends Controller
         $startTime = $itemData['start_time'];
         $endTime = $itemData['end_time'];
 
-        $lesson = (new Lesson())->find($lessonId);
+        $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
         if (!$lesson)
             throw new Exception("Ders bulunamadı");
 
         // Kontrol edilecek schedule sahipleri
         $owners = [
-            'user' => $lecturerId,
-            'classroom' => ($lesson->classroom_type == 3) ? null : $classroomId, // UZEM ise derslik çakışmasına bakma
-            'program' => $lesson->program_id,
-            'lesson' => $lesson->id
+            ['type' => 'user', 'id' => $lecturerId],
+            ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik çakışmasına bakma
+            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+            ['type' => 'lesson', 'id' => $lesson->id]
         ];
+
+        // Child Lessons (Bağlı Alt Dersler) için de çakışma kontrolü yapılmalı
+        if (!empty($lesson->childLessons)) {
+            foreach ($lesson->childLessons as $childLesson) {
+                $owners[] = ['type' => 'lesson', 'id' => $childLesson->id];
+                if ($childLesson->program_id) {
+                    $owners[] = ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no];
+                }
+            }
+        }
 
         // Item'in ekleneceği Schedule'ı bul (Dönem ve Yıl bilgisi için)
         $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
@@ -974,7 +1021,10 @@ class ScheduleController extends Controller
         $semester = $targetSchedule->semester;
         $academicYear = $targetSchedule->academic_year;
 
-        foreach ($owners as $ownerType => $ownerId) {
+        foreach ($owners as $owner) {
+            $ownerType = $owner['type'];
+            $ownerId = $owner['id'];
+
             if (!$ownerId)
                 continue;
 
@@ -987,7 +1037,9 @@ class ScheduleController extends Controller
             ];
 
             if ($ownerType == 'program') {
-                $scheduleFilters['semester_no'] = $lesson->semester_no;
+                $scheduleFilters['semester_no'] = isset($owner['semester_no']) ? $owner['semester_no'] : $lesson->semester_no;
+            } else {
+                $scheduleFilters['semester_no'] = null;
             }
 
             $relatedSchedules = (new Schedule())->get()->where($scheduleFilters)->all();
@@ -1256,6 +1308,7 @@ class ScheduleController extends Controller
                 }
 
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
+                $this->logger()->debug("Found Siblings for ID $id: " . implode(', ', $siblingIds));
 
                 // 3. Bu kardeş grubu için İSTEKTEKİ (BULK) TÜM silme aralıklarını ve DERS ID'lerini topla
                 $rawIntervals = [];
@@ -1271,7 +1324,36 @@ class ScheduleController extends Controller
                         if (!empty($reqItem['data'])) {
                             foreach ($reqItem['data'] as $d) {
                                 if (isset($d['lesson_id'])) {
-                                    $targetLessonIds[] = (int) $d['lesson_id'];
+                                    $lId = (int) $d['lesson_id'];
+                                    if (!in_array($lId, $targetLessonIds)) {
+                                        $targetLessonIds[] = $lId;
+
+                                        // Tüm grubu dahil et (Grup = Parent + Tüm Çocuklar)
+                                        $lObj = (new Lesson())->where(['id' => $lId])->with(['childLessons', 'parentLesson'])->first();
+                                        if ($lObj) {
+                                            $allRelatedIds = [];
+                                            if ($lObj->parent_lesson_id) {
+                                                $allRelatedIds[] = (int) $lObj->parent_lesson_id;
+                                                // Parent'ın diğer çocuklarını da bulmak için parent'ı yükle
+                                                $parentObj = (new Lesson())->where(['id' => $lObj->parent_lesson_id])->with(['childLessons'])->first();
+                                                if ($parentObj && !empty($parentObj->childLessons)) {
+                                                    foreach ($parentObj->childLessons as $child) {
+                                                        $allRelatedIds[] = (int) $child->id;
+                                                    }
+                                                }
+                                            } elseif (!empty($lObj->childLessons)) {
+                                                foreach ($lObj->childLessons as $child) {
+                                                    $allRelatedIds[] = (int) $child->id;
+                                                }
+                                            }
+
+                                            foreach ($allRelatedIds as $rId) {
+                                                if (!in_array($rId, $targetLessonIds)) {
+                                                    $targetLessonIds[] = $rId;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1304,7 +1386,8 @@ class ScheduleController extends Controller
                 $this->logger()->debug("Processing Sibling Group for ID $id: ", [
                     'siblingCount' => count($siblings),
                     'ids' => $siblingIds,
-                    'intervals' => $mergedIntervals
+                    'intervals' => $mergedIntervals,
+                    'targetLessonIds' => $targetLessonIds
                 ]);
 
                 // 4. Her bir kardeşe silme/parçalama işlemini uygula
@@ -1368,8 +1451,35 @@ class ScheduleController extends Controller
 
             // Sadece silinmek istenen dersler arasındaysa bu atamanın sahiplerini bul
             if (in_array((int) $lesson->id, $lessonIds)) {
-                // Lesson owner
-                $ownerList[] = ['type' => 'lesson', 'id' => (int) $lesson->id, 'semester_no' => null];
+                // Grubu tamamla (Eğer çocuksa parent'ı, eğer parentsa çocukları ekle)
+                $relatedLessons = [];
+                if ($lesson->parent_lesson_id) {
+                    $parent = (new Lesson())->where(['id' => $lesson->parent_lesson_id])->with(['childLessons'])->first();
+                    if ($parent) {
+                        $relatedLessons[] = $parent;
+                        foreach ($parent->childLessons as $cl)
+                            $relatedLessons[] = $cl;
+                    }
+                } elseif (!empty($lesson->childLessons)) {
+                    $relatedLessons[] = $lesson;
+                    foreach ($lesson->childLessons as $cl)
+                        $relatedLessons[] = $cl;
+                } else {
+                    $relatedLessons[] = $lesson;
+                }
+
+                foreach ($relatedLessons as $rLesson) {
+                    // Lesson owner
+                    $ownerList[] = ['type' => 'lesson', 'id' => (int) $rLesson->id, 'semester_no' => null];
+
+                    // Program owner
+                    if ($rLesson->program_id) {
+                        $ownerList[] = ['type' => 'program', 'id' => (int) $rLesson->program_id, 'semester_no' => $rLesson->semester_no];
+                    }
+
+                    // Shared owners (Lecturer/Classroom) - Sadece ilk (veya ana) dersten almak yeterli ama her biri için bakmak daha güvenli
+                    // Not: getSlotDatas() zaten baseItem'dan geldiği için lecturer/classroom orada sabit.
+                }
 
                 // Lecturer (User) owner
                 if ($slotData->lecturer) {
@@ -1380,19 +1490,23 @@ class ScheduleController extends Controller
                 if ($slotData->classroom) {
                     $ownerList[] = ['type' => 'classroom', 'id' => (int) $slotData->classroom->id, 'semester_no' => null];
                 }
-
-                // Program owner
-                if ($lesson->program_id) {
-                    $ownerList[] = ['type' => 'program', 'id' => (int) $lesson->program_id, 'semester_no' => $lesson->semester_no];
-                }
             }
         }
 
         // 2. Owner listesini unique hale getir
         $uniqueOwners = [];
         foreach ($ownerList as $owner) {
-            $key = $owner['type'] . "_" . $owner['id'] . "_" . ($owner['semester_no'] ?? 'null');
-            $uniqueOwners[$key] = $owner;
+            $ownerType = $owner['type'];
+            $ownerId = $owner['id'];
+            // saveScheduleItems ile uyumlu semester_no mantığı
+            $sNo = ($ownerType === 'program') ? $owner['semester_no'] : null;
+
+            $key = $ownerType . "_" . $ownerId . "_" . ($sNo ?? 'null');
+            $uniqueOwners[$key] = [
+                'type' => $ownerType,
+                'id' => $ownerId,
+                'semester_no' => $sNo
+            ];
         }
 
         // 3. Her bir owner için ilgili schedule'ı bul ve içindeki çakışan item'ları topla

@@ -155,6 +155,7 @@ class ImportExportManager
         $rows = $this->sheet->toArray();
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
+        $this->logger()->debug("Headers: " . var_export($headers, true));
         $headers = array_map('trim', $headers);
         $expectedHeaders =
             ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
