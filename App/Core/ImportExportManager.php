@@ -155,7 +155,8 @@ class ImportExportManager
         $rows = $this->sheet->toArray();
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
-        $headers = array_map('trim', $headers);
+        $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
+        $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
         $expectedHeaders =
             ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
 
