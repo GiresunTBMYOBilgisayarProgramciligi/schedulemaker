@@ -543,7 +543,12 @@ class ScheduleController extends Controller
     public function saveScheduleItems(array $itemsData): array
     {
         $this->logger()->debug("saveScheduleItems START. Item Count: " . count($itemsData));
-        $this->database->beginTransaction();
+
+        $isInitiator = !$this->database->inTransaction();
+        if ($isInitiator) {
+            $this->database->beginTransaction();
+        }
+
         $createdIds = [];
         try {
             foreach ($itemsData as $itemData) {
@@ -687,10 +692,14 @@ class ScheduleController extends Controller
                 }
                 $createdIds[] = $itemGroupedIds;
             }
-            $this->database->commit();
+            if ($isInitiator) {
+                $this->database->commit();
+            }
             return $createdIds;
         } catch (\Throwable $e) {
-            $this->database->rollBack();
+            if ($isInitiator) {
+                $this->database->rollBack();
+            }
             $this->logger()->error("Save Schedule Items Error: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'itemData' => $itemData ?? 'N/A'
@@ -1201,7 +1210,12 @@ class ScheduleController extends Controller
         // 1. Kardeş Öğeleri (Siblings) Batch Halinde İşle
         $createdItems = [];
         $processedSiblingIds = [];
-        $this->database->beginTransaction();
+
+        $isInitiator = !$this->database->inTransaction();
+        if ($isInitiator) {
+            $this->database->beginTransaction();
+        }
+
         try {
             foreach ($items as $itemData) {
                 $id = (int) ($itemData['id'] ?? 0);
@@ -1311,13 +1325,16 @@ class ScheduleController extends Controller
                     }
                 }
 
-                // Bu gruptaki herkesi işlendi olarak işaretle (Bir sonraki döngüde mükerrer işlememesi için)
                 $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
                 $this->logger()->debug("Finished Sibling Group for ID $id. Processed IDs: ", ['list' => $processedSiblingIds]);
             }
-            $this->database->commit();
+            if ($isInitiator) {
+                $this->database->commit();
+            }
         } catch (\Exception $e) {
-            $this->database->rollBack();
+            if ($isInitiator) {
+                $this->database->rollBack();
+            }
             $this->logger()->error("Silme işlemi başarısız: " . $e->getMessage(), ['exception' => $e]);
             throw $e;
         }
@@ -1333,7 +1350,7 @@ class ScheduleController extends Controller
     /**
      * Verilen item ile ilişkili diğer programlardaki (Hoca, Sınıf vb.) kopyaları bulur.
      */
-    private function findSiblingItems(ScheduleItem $baseItem, array $lessonIds): array
+    public function findSiblingItems(ScheduleItem $baseItem, array $lessonIds): array
     {
         $siblingsKeyed = [$baseItem->id => $baseItem];
 
