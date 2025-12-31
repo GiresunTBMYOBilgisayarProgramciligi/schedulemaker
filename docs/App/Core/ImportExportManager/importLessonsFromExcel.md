@@ -6,7 +6,7 @@
 Excel dosyasındaki ders bilgilerini okuyarak veritabanına kaydeder.
 
 ## Mantık (Algoritma)
-1.  **Başlık Doğrulama**: Excel'in ilk satırını okur ve "Bölüm", "Program", "Dersin Kodu" gibi zorunlu başlıkların doğru sırada olduğunu kontrol eder.
+1.  **Başlık Doğrulama**: Excel'in ilk satırını okur, başlıkları temizler (boşlukları siler ve varsa null/boş sütunları filtreler) ve "Bölüm", "Program", "Dersin Kodu" gibi zorunlu başlıkların doğru sırada olduğunu kontrol eder.
 2.  **Satır Döngüsü**: Verilerin olduğu her bir satır için:
     - **Varlık Kontrolü**: Satırdaki Bölüm, Program ve Hoca isimlerini ilgili Controller'lar aracılığıyla sorgulayarak sistemdeki ID'lerini bulur.
     - **Hata Yakalama**: Eğer hoca veya bölüm bulunamazsa, satırı atlar ve bir hata mesajı oluşturur.

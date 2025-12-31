@@ -92,6 +92,8 @@ class ImportExportManager
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
         $expectedHeaders = ["Mail", "Ünvanı", "Adı", "Soyadı", "Görevi", "Bölümü", "Programı"];
+        $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
+        $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
 
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
@@ -155,8 +157,8 @@ class ImportExportManager
         $rows = $this->sheet->toArray();
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
-        $this->logger()->debug("Headers: " . var_export($headers, true));
-        $headers = array_map('trim', $headers);
+        $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
+        $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
         $expectedHeaders =
             ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
 
@@ -223,7 +225,7 @@ class ImportExportManager
                 'academic_year' => $this->formData['academic_year'],
             ];
             //Ders ders kodu, program_id ve group_no göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id,'group_no'=>$group_no])->first();
+            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
             if ($lesson) {
                 $lesson->fill($lessonData);
                 $lessonsController->updateLesson($lesson);
