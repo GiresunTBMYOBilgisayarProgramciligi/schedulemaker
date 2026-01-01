@@ -64,6 +64,7 @@ class FilterValidator
             'schedule_id' => ['type' => 'int'],//Ders programının id numarası
             'startTime' => ['type' => 'string'],//Dersin başlangıç saati
             'items' => ['type' => 'string'],//JSON formatında schedule items
+            'week_index' => ['type' => 'int'],//Hafta index numarası
         ];
 
         // 2. Her işlem için kuralları tanımla
@@ -90,18 +91,18 @@ class FilterValidator
             ],
             "checkLecturerScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "checkClassroomScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "checkProgramScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "getSchedulesHTML" => [
                 'required' => ["type", "owner_type", "owner_id"],
@@ -144,12 +145,12 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
-                'required' => ["schedule_id", 'hours', "startTime", "lesson_id", "day_index"],
+                'required' => ["schedule_id", 'hours', "startTime", "lesson_id", "day_index", "week_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableObservers" => [
-                'required' => ["type", 'hours', "time", "day_index"],
+                'required' => ["type", 'hours', "startTime", "day_index", "week_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
@@ -250,6 +251,8 @@ class FilterValidator
                 $validatedFilters[$key] = getSettingValue('academic_year');
             } elseif ($key === 'type') {
                 $validatedFilters[$key] = 'lesson';
+            } elseif ($key === 'week_index') {
+                $validatedFilters[$key] = 0;
             }
         }
 

@@ -1224,7 +1224,8 @@ class ScheduleController extends Controller
 
             $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $classroomSchedule->id,
-                'day_index' => $filters['day_index']
+                'day_index' => $filters['day_index'],
+                'week_index' => $filters['week_index']
             ])->all();
 
             $isAvailable = true;
@@ -1257,36 +1258,42 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "availableObservers");
 
         $observerFilters = ['role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]];
+        $observers = (new UserController())->getListByFilters($observerFilters);
 
-        $times = $this->generateTimesArrayFromText($filters["time"], $filters["hours"], $filters["type"]);
-        $unavailable_observer_ids = [];
+        $availableObservers = [];
+        $startTime = new \DateTime($filters['startTime']);
+        $endTime = (clone $startTime)->modify('+' . $this->lessonHourToMinute($filters['type'], $filters['hours']) . ' minutes');
 
-        // O saatte herhangi bir programı olan kullanıcıları bul (owner_type = user)
-        $userSchedules = $this->getListByFilters(
-            [
-                "time" => ['in' => $times],
-                "owner_type" => 'user',
-                "semester" => $filters['semester'],
-                "academic_year" => $filters['academic_year'],
-                "type" => $filters['type']
-            ]
-        );
+        foreach ($observers as $observer) {
+            $userSchedule = (new Schedule())->firstOrCreate([
+                'type' => $filters['type'],
+                'owner_type' => 'user',
+                'owner_id' => $observer->id,
+                'semester_no' => null, // Kullanıcı programları dönemden bağımsızdır
+                'semester' => $filters['semester'],
+                'academic_year' => $filters['academic_year']
+            ]);
 
-        foreach ($userSchedules as $schedule) {
-            if (!is_null($schedule->{"day" . $filters["day_index"]})) {
-                $unavailable_observer_ids[$schedule->owner_id] = true;
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $userSchedule->id,
+                'day_index' => $filters['day_index'],
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            $isAvailable = true;
+            foreach ($items as $item) {
+                if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
+                    $isAvailable = false;
+                    break;
+                }
+            }
+
+            if ($isAvailable) {
+                $availableObservers[] = $observer;
             }
         }
 
-        // Anahtarları diziye dönüştürüyoruz.
-        $unavailable_observer_ids = array_keys($unavailable_observer_ids);
-
-        // Eğer hariç tutulacaklar varsa filtreye ekle
-        if (!empty($unavailable_observer_ids)) {
-            $observerFilters["!id"] = ['in' => $unavailable_observer_ids];
-        }
-
-        return (new UserController())->getListByFilters($observerFilters);
+        return $availableObservers;
     }
 
     /*********************
@@ -1574,7 +1581,8 @@ class ScheduleController extends Controller
                 // İlgili schedule ve gün için itemları getir
                 $items = (new ScheduleItem())->get()->where([
                     'schedule_id' => $schedule->id,
-                    'day_index' => $baseItem->day_index
+                    'day_index' => $baseItem->day_index,
+                    'week_index' => $baseItem->week_index
                 ])->all();
 
                 foreach ($items as $item) {

@@ -663,6 +663,7 @@ class ScheduleCard {
         data.append("semester", this.semester);
         data.append("academic_year", this.academic_year);
         data.append("type", this.type);
+        data.append("week_index", this.currentWeekIndex);
 
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
@@ -848,6 +849,7 @@ class ScheduleCard {
         data.append("startTime", this.draggedLesson.end_element.dataset.startTime);
         data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
         data.append("lesson_id", this.draggedLesson.lesson_id);
+        data.append("week_index", this.currentWeekIndex);
 
         await this.fetchOptions("/ajax/getAvailableClassroomForSchedule", classroomSelect, data, "Bir Sınıf Seçin");
     }
@@ -855,11 +857,12 @@ class ScheduleCard {
     async fetchAvailableObservers(observerSelect, hours) {
         let data = new FormData();
         data.append("hours", hours);
-        data.append("time", this.draggedLesson.time);
-        data.append("day_index", this.draggedLesson.day_index);
+        data.append("startTime", this.draggedLesson.end_element.dataset.startTime);
+        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
+        data.append("week_index", this.currentWeekIndex);
         data.append("type", this.type);
-        data.append("semester", this.draggedLesson.semester);
-        data.append("academic_year", this.draggedLesson.academic_year);
+        data.append("semester", this.semester);
+        data.append("academic_year", this.academic_year);
 
         await this.fetchOptions("/ajax/getAvailableObserversForSchedule", observerSelect, data, "Bir Gözetmen Seçin");
     }

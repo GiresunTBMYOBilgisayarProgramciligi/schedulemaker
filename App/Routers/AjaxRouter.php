@@ -725,7 +725,12 @@ class AjaxRouter extends Router
         ])->with(['items'])->all();
 
         foreach ($schedules as $schedule) {
-            foreach ($schedule->items as $item) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
                 $itemStart = substr($item->start_time, 0, 5);
                 $itemEnd = substr($item->end_time, 0, 5);
 
@@ -802,7 +807,12 @@ class AjaxRouter extends Router
 
         foreach ($schedules as $schedule) {
             //$this->logger()->debug("Schedule Items: ", ['scheduleItems' => $schedule->items]);
-            foreach ($schedule->items as $item) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
                 $itemStart = substr($item->start_time, 0, 5);
                 $itemEnd = substr($item->end_time, 0, 5);
 
@@ -908,7 +918,11 @@ class AjaxRouter extends Router
         }
 
         foreach ($schedules as $schedule) {
-            $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
             foreach ($items as $item) {
                 $itemStart = substr($item->start_time, 0, 5);
                 $itemEnd = substr($item->end_time, 0, 5);
