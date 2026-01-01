@@ -109,7 +109,7 @@ class ScheduleItem extends Model
             if ($dayData == null)
                 continue;
             $slotDatas[] = (object) [
-                'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons'])->first(),
+                'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons','program'])->first(),
                 'lecturer' => (new User())->get()->where(['id' => $dayData['lecturer_id']])->first(),
                 'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
             ];

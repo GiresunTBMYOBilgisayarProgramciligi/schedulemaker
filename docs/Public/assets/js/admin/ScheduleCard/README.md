@@ -33,6 +33,9 @@
 - [updateSelectionState](./updateSelectionState.md): Tekil kart seçim görselini günceller.
 - [clearSelection](./clearSelection.md): Tüm seçimleri temizler.
 - [selectHours](./selectHours.md): Blok ders saati sayısını değiştirir.
+- [initContextMenu](./initContextMenu.md): Sağ tık menüsü sistemini başlatır.
+- [showContextMenu](./showContextMenu.md): Özel sağ tık menüsünü görselleştirir.
+- [showScheduleInModal](./showScheduleInModal.md): Programı modal içerisinde görüntüler.
 - [openAssignmentModal](./openAssignmentModal.md): Derslik/Hoca atama penceresini açar.
 
 ### Görsel ve Tablo İşlemleri (UI & Table)
@@ -59,5 +62,6 @@
     - Çift tıklama ile aynı ders adına sahip tüm kartların seçilmesi.
     - Toplu taşıma ve silme desteği.
 3.  **Real-time Validation**: Sürükleme anında hücrelerin kırmızı/yeşil boyanması ve `checkCrash` ile anlık kontrol.
+4.  **Quick View**: Ders kartına sağ tıklayarak hoca veya derslik programının modalda hızlıca incelenmesi.
 
 *(Not: Her metod için detaylı algoritmik dosyalar bu dizinde mevcuttur.)*

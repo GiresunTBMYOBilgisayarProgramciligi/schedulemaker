@@ -17,6 +17,7 @@ class SingleScheduleHandler {
         this.initModals();
         this.initBulkSelection();
         this.initPopovers();
+        this.initContextMenu();
         console.log("SingleScheduleHandler initialized");
     }
 
@@ -696,3 +697,118 @@ class SingleScheduleHandler {
 document.addEventListener('DOMContentLoaded', () => {
     window.singleScheduleHandler = new SingleScheduleHandler();
 });
+
+/**
+ * Ders kartları için sağ tık menüsünü başlatır
+ */
+SingleScheduleHandler.prototype.initContextMenu = function () {
+    document.addEventListener('contextmenu', (event) => {
+        const lessonCard = event.target.closest('.lesson-card');
+        if (!lessonCard || lessonCard.classList.contains('dummy')) return;
+
+        event.preventDefault();
+        this.showContextMenu(event.pageX, event.pageY, lessonCard);
+    });
+
+    document.addEventListener('click', () => {
+        const menu = document.getElementById('lesson-context-menu');
+        if (menu) menu.remove();
+    });
+};
+
+/**
+ * Özel sağ tık menüsünü gösterir
+ */
+SingleScheduleHandler.prototype.showContextMenu = function (x, y, lessonCard) {
+    const oldMenu = document.getElementById('lesson-context-menu');
+    if (oldMenu) oldMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.id = 'lesson-context-menu';
+    menu.className = 'context-menu';
+    menu.style.position = 'absolute';
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.zIndex = '2000';
+
+    let menuItems = [];
+    const lecturerId = lessonCard.dataset.lecturerId;
+    const classroomId = lessonCard.dataset.classroomId;
+    const programId = lessonCard.dataset.programId;
+    if (programId) {
+        menuItems.push({
+            text: 'Program programını göster',
+            icon: 'bi-book',
+            onClick: () => this.showScheduleInModal('program', programId, 'Program Programı')
+        });
+    }   
+    if (classroomId) {
+        menuItems.push({
+            text: 'Derslik programını göster',
+            icon: 'bi-door-open',
+            onClick: () => this.showScheduleInModal('classroom', classroomId, 'Derslik Programı')
+        });
+    }
+
+    if (lecturerId) {
+        menuItems.push({
+            text: 'Hoca programını göster',
+            icon: 'bi-person-badge',
+            onClick: () => this.showScheduleInModal('user', lecturerId, 'Hoca Programı')
+        });
+    }
+
+    menuItems.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.className = 'context-menu-item';
+        menuItem.innerHTML = `<i class="bi ${item.icon} me-2"></i>${item.text}`;
+        menuItem.onclick = item.onClick;
+        menu.appendChild(menuItem);
+    });
+
+    document.body.appendChild(menu);
+};
+
+/**
+ * Belirtilen programı modal içerisinde gösterir
+ */
+SingleScheduleHandler.prototype.showScheduleInModal = function (ownerType, ownerId, title) {
+    if (!ownerId) {
+        new Toast().prepareToast("Hata", "ID bilgisi eksik", "danger");
+        return;
+    }
+
+    const scheduleCard = document.querySelector('.schedule-card');
+    const semester = scheduleCard ? scheduleCard.dataset.semester : "";
+    const academicYear = scheduleCard ? scheduleCard.dataset.academicYear : "";
+    const type = scheduleCard ? scheduleCard.dataset.type : "lesson";
+
+    const modal = new Modal();
+    modal.initializeModal("xl");
+    modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true);
+    modal.showModal();
+
+    const data = new FormData();
+    data.append('owner_type', ownerType);
+    data.append('owner_id', ownerId);
+    data.append('semester', semester);
+    data.append('academic_year', academicYear);
+    data.append('type', type);
+    data.append('only_table', 'true');
+
+    fetch('/ajax/getScheduleHTML', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: data
+    }).then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                modal.body.innerHTML = result.HTML;
+            } else {
+                modal.body.innerHTML = `<div class="alert alert-danger">${result.msg || "Program yüklenemedi"}</div>`;
+            }
+        }).catch(error => {
+            console.error(error);
+            modal.body.innerHTML = '<div class="alert alert-danger">Sistem hatası oluştu.</div>';
+        });
+};

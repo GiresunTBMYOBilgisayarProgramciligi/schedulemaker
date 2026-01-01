@@ -35,58 +35,70 @@ use function App\Helpers\getSettingValue;
                         <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                             <?= $scheduleRow['slotEndTime']->format('H:i') ?>
                         </td>
-                        <!-- 
-                <div 
-                data-semester="Güz"
-                data-lesson-hours="2"
-                >
-                -->
                         <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                             <?php if ($scheduleItem):
                                 //Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
                                 $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
-                                <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
-                                    data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                <td class="<?= $dropZone ?>" 
+                                data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
+                                data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
+                                data-schedule-item-id="<?= $scheduleItem->id ?>"
+                                >
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container">
                                     <?php endif; ?>
-                                        <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
-                                            <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
-                                                $draggable = "true";
-                                                if (!is_null($slotData->lesson->parent_lesson_id) or $schedule->academic_year != getSettingValue('academic_year') or $schedule->semester != getSettingValue('semester') or (isset($only_table) && $only_table) or (isset($preference_mode) && $preference_mode)) {
-                                                    $draggable = "false";
-                                                }
-                                                ?>
-                                                <div class="lesson-card <?= $slotData->lesson->getScheduleCSSClass() ?>"
-                                                    draggable="<?= $draggable ?>" data-schedule-item-id="<?= $scheduleItem->id ?>"
-                                                    data-group-no="<?= $slotData->lesson->group_no ?>"
-                                                    data-lesson-id="<?= $slotData->lesson->id ?>"
-                                                    data-lesson-code="<?= $slotData->lesson->code ?>" data-size="<?= $slotData->lesson->size ?>"
-                                                    data-lecturer-id="<?= $slotData->lecturer->id ?>"
-                                                    data-classroom-id="<?= $slotData->classroom->id ?>"
-                                                    data-classroom-size="<?= $slotData->classroom->class_size ?>"
-                                                    data-classroom-exam-size="<?= $slotData->classroom->exam_size ?>"
-                                                    data-status="<?= $scheduleItem->status ?>">
+                                    <?php if (count($scheduleItem->getSlotDatas()) > 0): ?><!-- slot içinde ders var-->
+                                        <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                            $draggable = "true";
+                                            if (
+                                                !is_null($slotData->lesson->parent_lesson_id) or
+                                                $schedule->academic_year != getSettingValue('academic_year') or 
+                                                $schedule->semester != getSettingValue('semester') or
+                                                (isset($only_table) && $only_table) or
+                                                (isset($preference_mode) && $preference_mode)
+                                            ) {
+                                                $draggable = "false";
+                                            }
+                                            $dataAttrs = [
+                                                'draggable' => $draggable,
+                                                'class' => "lesson-card " . $slotData->lesson->getScheduleCSSClass(),
+                                                'data-schedule-item-id' => $scheduleItem->id,
+                                                'data-group-no' => $slotData->lesson->group_no,
+                                                'data-lesson-id' => $slotData->lesson->id,
+                                                'data-lesson-code' => $slotData->lesson->code,
+                                                'data-size' => $slotData->lesson->size,
+                                                'data-lecturer-id' => $slotData->lecturer->id,
+                                                'data-classroom-id' => $slotData->classroom->id,
+                                                'data-classroom-size' => $slotData->classroom->class_size,
+                                                'data-classroom-exam-size' => $slotData->classroom->exam_size,
+                                                'data-status' => $scheduleItem->status,
+                                            ];
+                                            if($schedule->owner_type !== 'program') {
+                                                $dataAttrs['data-program-id'] = $slotData->lesson->program_id;
+                                            }
+
+                                            $attrString = "";
+                                            foreach ($dataAttrs as $key => $val) {
+                                                $attrString .= " $key=\"$val\"";
+                                            }
+                                            ?>
+                                                <div <?= $attrString ?>>
                                                     <?php if ((!isset($only_table) or !$only_table) && (!isset($preference_mode) or !$preference_mode)): ?>
                                                         <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                     <?php endif; ?>
                                                     <span class="lesson-name">
-                                                        <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                                                            href='/admin/lesson/<?= $slotData->lesson->id ?>'>
+                                                        <?php if($schedule->owner_type !== 'program'): ?>
+                                                            <?= $slotData->lesson->name . ' (' . ($slotData->lesson->program?->name ?? "") . ')'; ?>
+                                                        <?php else: ?>
                                                             <?= $slotData->lesson->name ?>
-                                                        </a>
+                                                        <?php endif; ?>
                                                     </span>
                                                     <div class="lesson-meta">
                                                         <span class="lesson-lecturer">
-                                                            <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                                                                href='/admin/profile/<?= $slotData->lecturer->id ?>'>
-                                                                <?= $slotData->lecturer->getFullName() ?></a>
+                                                            <?= $slotData->lecturer->getFullName() ?>
                                                         </span>
                                                         <span class="lesson-classroom">
-                                                            <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                                                                href='/admin/classroom/<?= $slotData->classroom->id ?>'>
-                                                                <?= $slotData->classroom->name ?></a>
+                                                            <?= $slotData->classroom->name ?>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -108,7 +120,7 @@ use function App\Helpers\getSettingValue;
                                                 <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
-                                    <?php if ($scheduleItem->status === 'group'): ?>
+                                        <?php if ($scheduleItem->status === 'group'): ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>

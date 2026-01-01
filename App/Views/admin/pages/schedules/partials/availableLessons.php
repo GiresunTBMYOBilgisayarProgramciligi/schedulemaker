@@ -59,7 +59,8 @@ use App\Core\Log;
             'data-group-no' => $isDummy ? 0 : $lesson->group_no,
             'data-lesson-code' => $lesson->code,
             'data-lecturer-id' => $isDummy ? $lesson->lecturer_id : $lesson->lecturer_id,
-            'data-status' => $isDummy ? $status : '' // dummy ise preferred/unavailable, değilse boş (JS group/single olarak belirleyecek)
+            'data-status' => $isDummy ? $status : '', // dummy ise preferred/unavailable, değilse boş (JS group/single olarak belirleyecek)
+            'data-program-id' => $lesson->program_id,
         ];
 
         if ($isDummy) {
@@ -80,10 +81,7 @@ use App\Core\Log;
                     <?php if ($isDummy): ?>
                         <?= $lessonName ?>
                     <?php else: ?>
-                        <a class='text-decoration-none' target='_blank' style="color: inherit;"
-                            href='/admin/lesson/<?= $lesson->id ?>'>
-                            <?= $lessonName ?>
-                        </a>
+                        <?= $lessonName ?>
                     <?php endif; ?>
                 </span>
 
@@ -92,10 +90,7 @@ use App\Core\Log;
                         <?php if ($isDummy): ?>
                             -
                         <?php else: ?>
-                            <a class="text-decoration-none" target='_blank' style="color: inherit;"
-                                href="/admin/profile/<?= $lesson->lecturer_id ?>">
-                                <?= $lesson->lecturer?->getFullName() ?>
-                            </a>
+                            <?= $lesson->lecturer?->getFullName() ?>
                         <?php endif; ?>
                     </span>
                     <span class="lesson-classroom">

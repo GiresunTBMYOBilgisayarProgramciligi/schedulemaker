@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 -   `initDraggableItems()`: Sürüklenebilir öğeleri hazırlar.
 -   `initBulkSelection()`: Tıklama ve çift tıklama ile toplu seçim mantığını kurar.
+-   `initContextMenu()`: Ders kartları için sağ tık menüsünü başlatır.
+-   `showContextMenu(x, y, lessonCard)`: Özel sağ tık menüsünü oluşturur ve görüntüler.
+-   `showScheduleInModal(ownerType, ownerId, title)`: Programı modal içerisinde gösterir.
 -   `initModals()`: Ekleme/Güncelleme ve Silme Onayı için Bootstrap modallarını hazırlar.
     -   **Global Enter Yönetimi**: Modal içinde Enter'a basıldığında, focus kapatma butonundaysa focus'u input'a taşır (kapanmayı engeller), diğer durumlarda 'Kaydet' işlemini tetikler.
     -   **Otomatik Focus**: Modal açıldığında (shown olayı) 100ms gecikme ile focus otomatik olarak 'Süre' inputuna zorlanır.

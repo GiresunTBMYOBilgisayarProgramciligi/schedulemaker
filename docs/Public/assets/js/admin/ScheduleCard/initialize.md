@@ -15,3 +15,4 @@ DOM elementinden verileri okuyarak nesneyi tam işlevsel hale getirir ve olay di
 5.  **Yardımcı Sistemler**:
     - `initStickyHeaders()` ile yapışkan başlıkları başlatır.
     - `initBulkSelection()` ile toplu seçim sistemini aktif eder.
+    - `initContextMenu()` ile ders kartları için sağ tık menüsünü aktif eder.
