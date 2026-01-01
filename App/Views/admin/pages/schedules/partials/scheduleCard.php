@@ -15,10 +15,27 @@ use App\Models\Schedule;
             data-break="<?= $break ?? 10 ?>"
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
+            data-week-count="<?= $weekCount ?? 1 ?>"
             data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
-            <div class="card-header">
+            <div
+                class="card-header <?= (isset($weekCount) && $weekCount > 1) ? 'd-flex justify-content-between align-items-center' : '' ?>">
                 <h3 class="card-title"><?= $cardTitle ?></h3>
-                <div class="card-tools"><!-- todo butondan değil card dan bilgiler alınacak-->
+
+                <?php if (isset($weekCount) && $weekCount > 1): ?>
+                    <div class="week-navigation mx-auto">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm prev-week" disabled>
+                                <i class="bi bi-chevron-left"></i> Önceki Hafta
+                            </button>
+                            <span class="btn btn-sm btn-outline-primary disabled current-week-label">1. Hafta</span>
+                            <button type="button" class="btn btn-outline-primary btn-sm next-week">
+                                Sonraki Hafta <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="card-tools">
                     <div class="btn-group" role="group" aria-label="Dışa aktarma">
                         <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm">
                             <span>Excel\'e aktar</span>
@@ -35,9 +52,9 @@ use App\Models\Schedule;
                 <?php endif; ?>
                 <!--begin::Row Schedule Table-->
                 <div class="row">
-                    <div class="schedule-table col-md-12">
+                    <div class="schedule-table-wrapper col-md-12">
                         <?= $scheduleTableHTML ?>
-                    </div><!--end::schedule-table-->
+                    </div><!--end::schedule-table-wrapper-->
                 </div><!--end::Row-->
             </div><!--end::card-body-->
         </div><!--end::Card-->

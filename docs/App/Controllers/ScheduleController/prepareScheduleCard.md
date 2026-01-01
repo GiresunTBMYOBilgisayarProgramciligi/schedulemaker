@@ -1,15 +1,11 @@
-[🏠 Ana Sayfa](../../../README.md) / [App](../../README.md) / [Controllers](../README.md) / [ScheduleController](./README.md) / **prepareScheduleCard()**
-
----
-
 # prepareScheduleCard()
 
-Ders programı düzenleme sayfasında; ders profili, bölüm ve program sayfalarındaki ders program kartlarının HTML çıktısını oluşturur.
+Ders programı düzenleme sayfasında; ders profili, bölüm ve program sayfalarındaki ders program kartlarının HTML çıktısını oluşturur. Çok haftalı yapı ve tarihli başlıkları destekler.
 
 ## Metod İmzası
 
 ```php
-private function prepareScheduleCard(array $filters, bool $only_table = false): string
+private function prepareScheduleCard(array $filters, bool $only_table = false, bool $preference_mode = false): string
 ```
 
 ### Parametreler
@@ -17,7 +13,8 @@ private function prepareScheduleCard(array $filters, bool $only_table = false): 
 | Parametre | Tip | Açıklama |
 | :--- | :--- | :--- |
 | `$filters` | `array` | Filtreleme kriterleri (owner_type, owner_id, semester, academic_year vb.) |
-| `$only_table` | `bool` | `true` ise sadece tabloyu gösterir, checkbox vb. düzenleme araçlarını gizler. (Varsayılan: `false`) |
+| `$only_table` | `bool` | `true` ise sadece tabloyu gösterir, checkbox vb. düzenleme araçlarını gizler. |
+| `$preference_mode` | `bool` | Tercihli alan ekleme modu. |
 
 ### Dönüş Değeri
 
@@ -30,12 +27,15 @@ private function prepareScheduleCard(array $filters, bool $only_table = false): 
 1.  **Filtre Doğrulama**: Gelen filtreler `FilterValidator` üzerinden geçirilir.
 2.  **Dönem Ayarı**: Hoca, derslik ve ders programları için `semester_no` null set edilir (Genel program).
 3.  **Veri Hazırlama**:
-    -   `prepareScheduleRows()` ile tablonun satır verileri (`$scheduleRows`) oluşturulur.
+    -   `prepareScheduleRows()` ile çok haftalı satır verileri (`$scheduleRows`) oluşturulur.
+    -   Eğer birden fazla dönem birleştiriliyorsa, haftalar ve satırlar çakışmayacak şekilde merge edilir.
     -   `availableLessons()` ile eklenebilir dersler listesi oluşturulur.
-4.  **View Render**:
+4.  **Tarihli Başlık Hesaplama**: Sınav programları için ayarlardan başlangıç tarihi alınarak her hafta için günlere özel tarihler hesaplanır.
+5.  **View Render**:
     -   `availableLessons` partial'ı render edilir.
-    -   `scheduleTable` partial'ı render edilir.
-    -   Son olarak `scheduleCard` partial'ı tüm içerikle birlikte render edilerek döndürülür.
+    -   `scheduleTable` partial'ı (hafta ve tarih bilgileriyle) render edilir.
+    -   Son olarak `scheduleCard` (hafta navigasyonu dahil) render edilerek döndürülür.
 
 ## Notlar
--   `$only_table` parametresi `true` gönderildiğinde, `availableLessons` ve `scheduleTable` partial'larına bu değer aktarılır. `scheduleTable` içerisindeki ders kartlarında toplu işlem checkbox'ları (`.lesson-bulk-checkbox`) gizlenir.
+-   Çok haftalı programlarda (Final sınavları gibi) her hafta için ayrı bir `scheduleTable` üretilir.
+-   `weekCount` değeri kaç haftalık veri üretildiğini takip eder ve navigasyon butonlarının görünürlüğünü kontrol eder.

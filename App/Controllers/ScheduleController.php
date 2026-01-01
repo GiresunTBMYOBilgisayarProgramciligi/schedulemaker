@@ -300,38 +300,43 @@ class ScheduleController extends Controller
          */
         $scheduleRows = [];
         $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        if (in_array($schedule->type, $examTypes)) {
-            $duration = getSettingValue('duration', 'exam', 30);
-            $break = getSettingValue('break', 'exam', 0);
-            // 08:00–17:00 arası 
-            $start = new \DateTime('08:00');
-            $end = new \DateTime('17:00');
-            while ($start < $end) {
-                $slotStartTime = clone $start;
-                $slotEndTime = (clone $start)->modify("+$duration minutes");
-                $scheduleRows[] = [
-                    'slotStartTime' => $slotStartTime,
-                    'slotEndTime' => $slotEndTime,
-                    'days' => $this->generateEmptyWeek($type, $maxDayIndex)
-                ];
+        $weekCount = ($schedule->type === 'final-exam') ? 2 : 1;
 
-                $start = (clone $slotEndTime)->modify("+$break minutes");
-            }
-        } else {
-            $duration = getSettingValue('duration', 'lesson', 50);
-            $break = getSettingValue('break', 'lesson', 10);
-            // 08:00–17:00 arası
-            $start = new \DateTime('08:00');
-            $end = new \DateTime('17:00');
-            while ($start < $end) {
-                $slotStartTime = clone $start;
-                $slotEndTime = (clone $start)->modify("+$duration minutes");
-                $scheduleRows[] = [
-                    'slotStartTime' => $slotStartTime,
-                    'slotEndTime' => $slotEndTime,
-                    'days' => $this->generateEmptyWeek($type, $maxDayIndex)
-                ];
-                $start = (clone $slotEndTime)->modify("+$break minutes"); // tenefüs arası
+        for ($w = 0; $w < $weekCount; $w++) {
+            $scheduleRows[$w] = [];
+            if (in_array($schedule->type, $examTypes)) {
+                $duration = getSettingValue('duration', 'exam', 30);
+                $break = getSettingValue('break', 'exam', 0);
+                // 08:00–17:00 arası 
+                $start = new \DateTime('08:00');
+                $end = new \DateTime('17:00');
+                while ($start < $end) {
+                    $slotStartTime = clone $start;
+                    $slotEndTime = (clone $start)->modify("+$duration minutes");
+                    $scheduleRows[$w][] = [
+                        'slotStartTime' => $slotStartTime,
+                        'slotEndTime' => $slotEndTime,
+                        'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                    ];
+
+                    $start = (clone $slotEndTime)->modify("+$break minutes");
+                }
+            } else {
+                $duration = getSettingValue('duration', 'lesson', 50);
+                $break = getSettingValue('break', 'lesson', 10);
+                // 08:00–17:00 arası
+                $start = new \DateTime('08:00');
+                $end = new \DateTime('17:00');
+                while ($start < $end) {
+                    $slotStartTime = clone $start;
+                    $slotEndTime = (clone $start)->modify("+$duration minutes");
+                    $scheduleRows[$w][] = [
+                        'slotStartTime' => $slotStartTime,
+                        'slotEndTime' => $slotEndTime,
+                        'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                    ];
+                    $start = (clone $slotEndTime)->modify("+$break minutes"); // tenefüs arası
+                }
             }
         }
 
@@ -346,7 +351,7 @@ class ScheduleController extends Controller
             if (!$itemStart || !$itemEnd)
                 continue;
 
-            foreach ($scheduleRows as &$row) {
+            foreach ($scheduleRows[$scheduleItem->week_index] as &$row) {
                 $slotStart = $row['slotStartTime'];
 
                 if ($slotStart->format('H:i') >= $itemStart->format('H:i') && $slotStart->format('H:i') < $itemEnd->format('H:i')) {
@@ -402,30 +407,37 @@ class ScheduleController extends Controller
                 if (empty($scheduleRows)) {
                     $scheduleRows = $currentRows;
                 } else {
-                    foreach ($currentRows as $rowIndex => $row) {
-                        if (!isset($scheduleRows[$rowIndex])) {
-                            $scheduleRows[$rowIndex] = $row;
+                    foreach ($currentRows as $weekIndex => $weekRows) {
+                        if (!isset($scheduleRows[$weekIndex])) {
+                            $scheduleRows[$weekIndex] = $weekRows;
                             continue;
                         }
 
-                        foreach ($row['days'] as $dayIndex => $dayContent) {
-                            if (empty($dayContent)) {
+                        foreach ($weekRows as $rowIndex => $row) {
+                            if (!isset($scheduleRows[$weekIndex][$rowIndex])) {
+                                $scheduleRows[$weekIndex][$rowIndex] = $row;
                                 continue;
                             }
 
-                            if (empty($scheduleRows[$rowIndex]['days'][$dayIndex])) {
-                                $scheduleRows[$rowIndex]['days'][$dayIndex] = $dayContent;
-                            } else {
-                                // Hedefin dizi olduğundan emin ol
-                                if (!is_array($scheduleRows[$rowIndex]['days'][$dayIndex])) {
-                                    $scheduleRows[$rowIndex]['days'][$dayIndex] = [$scheduleRows[$rowIndex]['days'][$dayIndex]];
+                            foreach ($row['days'] as $dayIndex => $dayContent) {
+                                if (empty($dayContent)) {
+                                    continue;
                                 }
 
-                                // Kaynağı birleştir
-                                if (is_array($dayContent)) {
-                                    $scheduleRows[$rowIndex]['days'][$dayIndex] = array_merge($scheduleRows[$rowIndex]['days'][$dayIndex], $dayContent);
+                                if (empty($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex])) {
+                                    $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = $dayContent;
                                 } else {
-                                    $scheduleRows[$rowIndex]['days'][$dayIndex][] = $dayContent; // Tek öğe ekle
+                                    // Hedefin dizi olduğundan emin ol
+                                    if (!is_array($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex])) {
+                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = [$scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex]];
+                                    }
+
+                                    // Kaynağı birleştir
+                                    if (is_array($dayContent)) {
+                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = array_merge($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex], $dayContent);
+                                    } else {
+                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex][] = $dayContent; // Tek öğe ekle
+                                    }
                                 }
                             }
                         }
@@ -446,22 +458,50 @@ class ScheduleController extends Controller
             'owner_type' => $filters['owner_type'] ?? null
         ]);
 
-        $createTableHeaders = function () use ($filters): array {
+        $createTableHeaders = function (int $weekIndex = 0) use ($filters): array {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = [];
             $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-            $type = in_array($filters['type'], $examTypes) ? 'exam' : 'lesson';
-            //$this->logger()->debug("Schedule Table Headers için Type alındı", ['type' => $type]);
+            $isExam = in_array($filters['type'], $examTypes);
+            $type = $isExam ? 'exam' : 'lesson';
+
+            $startDate = null;
+            if ($isExam) {
+                $settingKey = match ($filters['type']) {
+                    'midterm-exam' => 'midterm_start_date',
+                    'final-exam' => 'final_start_date',
+                    'makeup-exam' => 'makeup_start_date',
+                    default => null
+                };
+                if ($settingKey) {
+                    $startDateString = getSettingValue($settingKey, 'exam');
+                    if ($startDateString) {
+                        $startDate = new \DateTime($startDateString);
+                    }
+                }
+            }
+
             $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
             for ($i = 0; $i <= $maxDayIndex; $i++) {
-                $headers[] = '<th>' . $days[$i] . '</th>';
+                $headerTitle = $days[$i];
+                if ($startDate) {
+                    $currentDate = (clone $startDate)->modify("+" . ($weekIndex * 7 + $i) . " days");
+                    $headerTitle .= '<br><small>' . $currentDate->format('d.m.Y') . '</small>';
+                }
+                $headers[] = '<th>' . $headerTitle . '</th>';
             }
             return $headers;
         };
 
+        // Her hafta için ayrı header'lar oluştur
+        $allWeekHeaders = [];
+        foreach ($scheduleRows as $weekIndex => $rows) {
+            $allWeekHeaders[$weekIndex] = $createTableHeaders($weekIndex);
+        }
+
         $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
-            'scheduleRows' => $scheduleRows,
-            'dayHeaders' => $createTableHeaders(),
+            'weekRows' => $scheduleRows,
+            'weekHeaders' => $allWeekHeaders,
             'schedule' => $schedule,
             'only_table' => $only_table,
             'preference_mode' => $preference_mode
@@ -497,7 +537,8 @@ class ScheduleController extends Controller
             'duration' => $duration,
             'break' => $break,
             'only_table' => $only_table,
-            'preference_mode' => $preference_mode
+            'preference_mode' => $preference_mode,
+            'weekCount' => count($scheduleRows)
         ]);
     }
 
@@ -643,7 +684,8 @@ class ScheduleController extends Controller
 
                     $existingItems = (new ScheduleItem())->get()->where([
                         'schedule_id' => $relatedSchedule->id,
-                        'day_index' => $dayIndex
+                        'day_index' => $dayIndex,
+                        'week_index' => $itemData['week_index'] ?? 0
                     ])->all();
 
                     foreach ($existingItems as $existingItem) {
@@ -710,7 +752,8 @@ class ScheduleController extends Controller
                             $itemData['start_time'],
                             $itemData['end_time'],
                             $validData,
-                            $validDetail
+                            $validDetail,
+                            $itemData['week_index'] ?? 0
                         );
                         $itemGroupedIds[$schedule->owner_type] = $groupIds;
                     } else {
@@ -718,6 +761,7 @@ class ScheduleController extends Controller
                         $newItem = new ScheduleItem();
                         $newItem->schedule_id = $schedule->id;
                         $newItem->day_index = $itemData['day_index'];
+                        $newItem->week_index = $itemData['week_index'] ?? 0;
                         $newItem->start_time = $itemData['start_time'];
                         $newItem->end_time = $itemData['end_time'];
                         $newItem->status = $itemData['status'];
@@ -749,12 +793,13 @@ class ScheduleController extends Controller
      * Group statusundaki itemleri birleştirip yeniden oluşturur.
      * Çakışan zaman dilimlerinde verileri birleştirir, diğer dilimlerde ayırır.
      */
-    private function processGroupItemSaving(Schedule $schedule, int $dayIndex, string $startTime, string $endTime, array $newData, ?array $newDetail): array
+    private function processGroupItemSaving(Schedule $schedule, int $dayIndex, string $startTime, string $endTime, array $newData, ?array $newDetail, int $weekIndex = 0): array
     {
         // 1. İlgili günün tüm 'group' itemlerini çek
         $allDayItems = (new ScheduleItem())->get()->where([
             'schedule_id' => $schedule->id,
             'day_index' => $dayIndex,
+            'week_index' => $weekIndex,
             'status' => 'group'
         ])->all();
 
@@ -768,6 +813,7 @@ class ScheduleController extends Controller
             $newItem = new ScheduleItem();
             $newItem->schedule_id = $schedule->id;
             $newItem->day_index = $dayIndex;
+            $newItem->week_index = $weekIndex;
             $newItem->start_time = $startTime;
             $newItem->end_time = $endTime;
             $newItem->status = 'group';
@@ -877,6 +923,7 @@ class ScheduleController extends Controller
             $newItem = new ScheduleItem();
             $newItem->schedule_id = $schedule->id;
             $newItem->day_index = $dayIndex;
+            $newItem->week_index = $weekIndex;
             $newItem->start_time = $pItem['start'];
             $newItem->end_time = $pItem['end'];
             $newItem->status = 'group';
@@ -1048,7 +1095,8 @@ class ScheduleController extends Controller
                 // İlgili schedule ve gün için itemları getir
                 $dayItems = (new ScheduleItem())->get()->where([
                     'schedule_id' => $relatedSchedule->id,
-                    'day_index' => $dayIndex
+                    'day_index' => $dayIndex,
+                    'week_index' => $itemData['week_index'] ?? 0
                 ])->all();
 
                 foreach ($dayItems as $existingItem) {

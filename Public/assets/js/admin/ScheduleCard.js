@@ -99,6 +99,8 @@ class ScheduleCard {
         this.selectedLessonElements = new Set();
         this.selectedScheduleItemIds = new Set();
         this.isProcessing = false; // Concurrent işlem koruması
+        this.currentWeekIndex = 0;
+        this.weekCount = 1;
 
         /**
          * Ders Programının Sahibinin adı
@@ -150,6 +152,7 @@ class ScheduleCard {
         this.initStickyHeaders();
         this.initBulkSelection(); // Toplu seçim olaylarını başlat
         this.initContextMenu(); // Sağ tık menüsünü başlat
+        this.initWeekNavigation(); // Hafta navigasyonunu başlat
     }
 
     /**
@@ -264,6 +267,71 @@ class ScheduleCard {
     }
 
     /**
+     * Hafta navigasyonu (Önceki/Sonraki Hafta) olaylarını başlatır
+     */
+    initWeekNavigation() {
+        this.weekCount = parseInt(this.card.dataset.weekCount) || this.card.querySelectorAll('.schedule-table').length;
+        const prevBtn = this.card.querySelector('.prev-week');
+        const nextBtn = this.card.querySelector('.next-week');
+        const label = this.card.querySelector('.current-week-label');
+
+        if (!prevBtn || !nextBtn) return;
+
+        prevBtn.addEventListener('click', () => {
+            if (this.currentWeekIndex > 0) {
+                this.switchWeek(this.currentWeekIndex - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (this.currentWeekIndex < this.weekCount - 1) {
+                this.switchWeek(this.currentWeekIndex + 1);
+            }
+        });
+    }
+
+    /**
+     * Belirtilen haftaya geçiş yapar
+     * @param {number} weekIndex 
+     */
+    switchWeek(weekIndex) {
+        const tables = this.card.querySelectorAll('table.schedule-table');
+        const prevBtn = this.card.querySelector('.prev-week');
+        const nextBtn = this.card.querySelector('.next-week');
+        const label = this.card.querySelector('.current-week-label');
+
+        // Tabloyu değiştir
+        tables.forEach(t => {
+            t.classList.add('d-none');
+            t.classList.remove('active');
+        });
+
+        const targetTable = this.card.querySelector(`table.schedule-table[data-week-index="${weekIndex}"]`);
+        if (targetTable) {
+            targetTable.classList.remove('d-none');
+            targetTable.classList.add('active');
+            this.table = targetTable;
+            this.currentWeekIndex = weekIndex;
+
+            // Header yapışkanlığını ve diğer tablo tabanlı özellikleri güncelle
+            this.initStickyHeaders();
+
+            // Drag-drop olaylarını yeni tablo için yeniden bağlamak gerekebilir 
+            // ama querySelectorAll('.drop-zone') hepsini kapsıyor mu? 
+            // initialize'da bind edilenler tüm drop-zone'lar içindi.
+            // Eğer tablolar DOM'da zaten varsa ve sadece gizleniyorsa olaylar korunur.
+        }
+
+        // Buton durumlarını ve etiketi güncelle
+        if (label) label.textContent = `${weekIndex + 1}. Hafta`;
+        if (prevBtn) prevBtn.disabled = (weekIndex === 0);
+        if (nextBtn) nextBtn.disabled = (weekIndex === this.weekCount - 1);
+
+        // Sticky headers'ı yeni görünür tablo için tetikle
+        window.dispatchEvent(new Event('scroll'));
+    }
+
+    /**
      * Ders kartları için sağ tık menüsünü başlatır
      */
     initContextMenu() {
@@ -302,21 +370,21 @@ class ScheduleCard {
         const lecturerId = lessonCard.dataset.lecturerId;
         const classroomId = lessonCard.dataset.classroomId;
         const programId = lessonCard.dataset.programId;
-        if (classroomId){
+        if (classroomId) {
             menuItems.push({
                 text: 'Derslik programını göster',
                 icon: 'bi-door-open',
                 onClick: () => this.showScheduleInModal('classroom', classroomId, 'Derslik Programı')
             });
         }
-        if (lecturerId){
+        if (lecturerId) {
             menuItems.push({
                 text: 'Hoca programını göster',
                 icon: 'bi-person-badge',
                 onClick: () => this.showScheduleInModal('user', lecturerId, 'Hoca Programı')
             });
         }
-        if (programId){
+        if (programId) {
             menuItems.push({
                 text: 'Program programını göster',
                 icon: 'bi-book',

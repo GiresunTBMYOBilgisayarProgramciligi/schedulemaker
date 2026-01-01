@@ -285,7 +285,6 @@ class Lesson extends Model
     }
 
     /**
-     * todo yeni veritabanına göre düzenlenecek
      * Ders saati ile ders adına kayıtlı schedule sayısı aynı ise ders ders programı tamamlanmıştır.
      * @param string $type schedule type
      * @return bool true if complete
@@ -319,6 +318,14 @@ class Lesson extends Model
 
         $targetSize = ($type == 'lesson' && isset($this->hours)) ? $this->hours : $this->size;
         $this->placed_size = 0;
+        /**
+         * mevcut ve/ya saat 0 ise program tamamlanmış sayılır
+         */
+        if ($targetSize <= 0) {
+            $this->remaining_size = 0;
+            $this->placed_hours = 0;
+            return true;
+        }
 
         if (empty($items)) {
             $this->remaining_size = $targetSize;
