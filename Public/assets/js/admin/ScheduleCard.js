@@ -413,7 +413,7 @@ class ScheduleCard {
 
         const modal = new Modal();
         modal.initializeModal("xl");
-        modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true);
+        modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true, "xl");
         modal.showModal();
 
         const data = new FormData();
@@ -870,13 +870,11 @@ class ScheduleCard {
     /**
      * Unified modal for selecting details (Hours, Classroom, Observer)
      */
-    openAssignmentModal(options = {}) {
-        const { includeObserver = false, title = "Seçim Yapın" } = options;
-
+    openAssignmentModal(title = "Seçim Yapın") {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
-            let maxHours = includeObserver ? this.draggedLesson.size : this.draggedLesson.lesson_hours;
-            let initialHours = includeObserver ? 1 : this.draggedLesson.lesson_hours;
+            let maxHours = this.draggedLesson.lesson_hours;
+            let initialHours = this.draggedLesson.lesson_hours;
 
             let modalContentHTML = `
             <form>
@@ -890,11 +888,6 @@ class ScheduleCard {
                     <label class="form-label">Derslik Seçin</label>
                     <select id="classroom" class="form-select" required></select>
                 </div>
-                ${includeObserver ? `
-                <div class="mb-3">
-                    <label class="form-label">Gözetmen Seçin</label>
-                    <select id="observer" class="form-select" required></select>
-                </div>` : ''}
             </form>`;
 
             scheduleModal.prepareModal(title, modalContentHTML, true, false);
@@ -902,13 +895,9 @@ class ScheduleCard {
 
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
-            let observerSelect = includeObserver ? scheduleModal.body.querySelector("#observer") : null;
 
             const updateLists = () => {
                 this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
-                if (includeObserver) {
-                    this.fetchAvailableObservers(observerSelect, selectedHoursInput.value);
-                }
             };
 
             selectedHoursInput.addEventListener("change", updateLists);
@@ -928,10 +917,6 @@ class ScheduleCard {
                     new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                     return;
                 }
-                if (includeObserver && !observerSelect.value) {
-                    new Toast().prepareToast("Dikkat", "Bir gözetmen seçmelisiniz.", "danger");
-                    return;
-                }
 
                 const classroomName = classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, "");
                 const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
@@ -949,26 +934,198 @@ class ScheduleCard {
                     hours: selectedHoursInput.value
                 };
 
-                if (includeObserver) {
-                    result.observer = {
-                        id: observerSelect.value,
-                        full_name: observerSelect.selectedOptions[0].innerText
-                    };
-                }
-
                 scheduleModal.closeModal();
                 resolve(result);
             });
         });
     }
 
-    selectClassroomAndHours() {
-        return this.openAssignmentModal({ includeObserver: false, title: "Sınıf ve Saat Seçimi" });
+
+    async openExamAssignmentModal() {
+        return new Promise((resolve, reject) => {
+            let scheduleModal = new Modal();
+            // Varsayılan süre 2 slot (Genelde 2x30 = 60dk)
+            let initialHours = 2;
+            let lessonSize = parseInt(this.draggedLesson.size) || 0;
+
+            let modalContentHTML = `
+            <form id="exam-assignment-form">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input class="form-control" id="selected_hours" type="number" 
+                                   value="${initialHours}" min=1>
+                            <label for="selected_hours">Sınav Süresi (Slot Sayısı)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info py-2 px-3 mb-0">
+                           <small><strong>Ders Mevcudu:</strong> <span id="lesson-size">${lessonSize}</span></small><br>
+                           <small><strong>Toplam Kapasite:</strong> <span id="total-capacity">0</span></small>
+                        </div>
+                    </div>
+                </div>
+                <div id="classroom-observer-rows" class="mb-2">
+                    <!-- Satırlar buraya gelecek -->
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-row-btn">
+                        <i class="bi bi-plus-circle me-1"></i>Yeni Derslik/Gözetmen Ekle
+                    </button>
+                </div>
+            </form>`;
+
+            scheduleModal.prepareModal("Sınav Atama ve Derslik Seçimi", modalContentHTML, true, false, "lg");
+            scheduleModal.showModal();
+
+            let rowsContainer = scheduleModal.body.querySelector("#classroom-observer-rows");
+            let addRowBtn = scheduleModal.body.querySelector("#add-row-btn");
+            let hoursInput = scheduleModal.body.querySelector("#selected_hours");
+            let totalCapacitySpan = scheduleModal.body.querySelector("#total-capacity");
+
+            const updateCapacity = () => {
+                let total = 0;
+                rowsContainer.querySelectorAll(".classroom-select").forEach(select => {
+                    let option = select.selectedOptions[0];
+                    if (option && option.dataset.examSize) {
+                        total += parseInt(option.dataset.examSize);
+                    }
+                });
+                totalCapacitySpan.innerText = total;
+                if (total < lessonSize) {
+                    totalCapacitySpan.classList.add("text-danger");
+                } else {
+                    totalCapacitySpan.classList.remove("text-danger");
+                }
+            };
+
+            const updateOptionsVisibility = () => {
+                const selectedClassrooms = Array.from(rowsContainer.querySelectorAll(".classroom-select")).map(s => s.value).filter(v => v);
+                const selectedObservers = Array.from(rowsContainer.querySelectorAll(".observer-select")).map(s => s.value).filter(v => v);
+
+                rowsContainer.querySelectorAll(".classroom-select").forEach(select => {
+                    const currentValue = select.value;
+                    Array.from(select.options).forEach(option => {
+                        if (option.value && option.value !== currentValue && selectedClassrooms.includes(option.value)) {
+                            option.style.display = 'none';
+                        } else {
+                            option.style.display = '';
+                        }
+                    });
+                });
+
+                rowsContainer.querySelectorAll(".observer-select").forEach(select => {
+                    const currentValue = select.value;
+                    Array.from(select.options).forEach(option => {
+                        if (option.value && option.value !== currentValue && selectedObservers.includes(option.value)) {
+                            option.style.display = 'none';
+                        } else {
+                            option.style.display = '';
+                        }
+                    });
+                });
+            };
+
+            const addRow = async (isFirst = false) => {
+                let rowCount = rowsContainer.querySelectorAll(".row").length;
+                let rowId = `row-${Date.now()}-${rowCount}`;
+                let rowHTML = `
+                <div class="row g-2 mb-2 align-items-end" id="${rowId}">
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">Derslik</label>
+                        <select class="form-select classroom-select" required></select>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label small mb-1">Gözetmen</label>
+                        <select class="form-select observer-select" required></select>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        ${!isFirst ? `<button type="button" class="btn btn-outline-danger btn-sm remove-row-btn"><i class="bi bi-trash"></i></button>` : ''}
+                    </div>
+                </div>`;
+
+                let wrapper = document.createElement("div");
+                wrapper.innerHTML = rowHTML;
+                let rowElement = wrapper.firstElementChild;
+                rowsContainer.appendChild(rowElement);
+
+                let classroomSelect = rowElement.querySelector(".classroom-select");
+                let observerSelect = rowElement.querySelector(".observer-select");
+
+                // Verileri getir
+                await Promise.all([
+                    this.fetchAvailableClassrooms(classroomSelect, hoursInput.value),
+                    this.fetchAvailableObservers(observerSelect, hoursInput.value)
+                ]);
+
+                // Eğer ilk satır ise gözetmen dersin hocası olsun
+                if (isFirst && this.draggedLesson.lecturer_id) {
+                    observerSelect.value = this.draggedLesson.lecturer_id;
+                }
+
+                classroomSelect.addEventListener("change", () => {
+                    updateCapacity();
+                    updateOptionsVisibility();
+                });
+                observerSelect.addEventListener("change", updateOptionsVisibility);
+
+                if (!isFirst) {
+                    rowElement.querySelector(".remove-row-btn").addEventListener("click", () => {
+                        rowElement.remove();
+                        updateCapacity();
+                        updateOptionsVisibility();
+                    });
+                }
+                updateCapacity();
+                updateOptionsVisibility();
+            };
+
+            addRowBtn.addEventListener("click", () => addRow());
+
+            // İlk satırı ekle
+            addRow(true);
+
+            scheduleModal.confirmButton.addEventListener("click", (event) => {
+                event.preventDefault();
+                let selectedData = {
+                    hours: hoursInput.value,
+                    assignments: []
+                };
+
+                let rows = rowsContainer.querySelectorAll(".row");
+                let isValid = true;
+                rows.forEach(row => {
+                    let classroomSelect = row.querySelector(".classroom-select");
+                    let observerSelect = row.querySelector(".observer-select");
+                    if (!classroomSelect.value || !observerSelect.value) {
+                        isValid = false;
+                    } else {
+                        selectedData.assignments.push({
+                            classroom_id: classroomSelect.value,
+                            classroom_name: classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, ""),
+                            observer_id: observerSelect.value,
+                            observer_name: observerSelect.selectedOptions[0].innerText
+                        });
+                    }
+                });
+
+                if (!isValid) {
+                    new Toast().prepareToast("Hata", "Lütfen tüm alanları doldurun.", "warning");
+                    return;
+                }
+
+                if (parseInt(totalCapacitySpan.innerText) < lessonSize) {
+                    if (!confirm("Seçilen dersliklerin kapasitesi ders mevcudundan az. Devam etmek istiyor musunuz?")) {
+                        return;
+                    }
+                }
+
+                scheduleModal.closeModal();
+                resolve(selectedData);
+            });
+        });
     }
 
-    selectClassroomAndObserver() {
-        return this.openAssignmentModal({ includeObserver: true, title: "Derslik ve Gözetmen Seçimi" });
-    }
 
     /**
      * Derslik programı düzenlenirken eklenecek ders saati miktarını seçmek için
@@ -1159,13 +1316,14 @@ class ScheduleCard {
         } else {
             // Tek bir giriş varsa eski mantıkla diziye çevir
             itemsToProcess = [{
-                hours: input,
+                hours: parseInt(input.hours || input),
                 data: {
                     "lesson_id": this.draggedLesson.lesson_id,
                     "lecturer_id": this.draggedLesson.lecturer_id,
-                    "classroom_id": classroom.id
+                    "classroom_id": classroom?.id || null
                 },
-                status: this.draggedLesson.group_no > 0 ? "group" : "single"
+                status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
+                detail: input.assignments ? { assignments: input.assignments } : null
             }];
         }
 
@@ -1199,7 +1357,7 @@ class ScheduleCard {
                             'end_time': null,
                             'status': itemInfo.status,
                             'data': itemInfo.data,
-                            'detail': null
+                            'detail': itemInfo.detail || null
                         };
                     }
 
@@ -1336,20 +1494,36 @@ class ScheduleCard {
                     lessonCard.dataset.classroomSize = classroom.size;
                     lessonCard.dataset.classroomExamSize = classroom.exam_size;
 
-                    // Lecturer handling
+                    // Lecturer & Assignment handling
                     let lecturerId;
-                    if (this.examTypes.includes(this.type) && lessonCard.dataset.observerId) {
-                        lecturerId = lessonCard.dataset.observerId;
+                    let lessonMeta = lessonCard.querySelector('.lesson-meta');
+
+                    if (this.examTypes.includes(this.type) && item.detail && item.detail.assignments) {
+                        lecturerId = item.detail.assignments[0].observer_id;
+                        lessonCard.dataset.observerId = lecturerId;
+                        if (lessonMeta) {
+                            lessonMeta.innerHTML = ''; // Temizle
+                            let observerList = document.createElement("div");
+                            observerList.className = "lesson-observers-list w-100";
+                            item.detail.assignments.forEach(assignment => {
+                                let observerDiv = document.createElement("div");
+                                observerDiv.className = "lesson-observer-item small d-flex justify-content-between w-100";
+                                observerDiv.innerHTML = `
+                                    <span class="lesson-lecturer text-truncate" title="Gözetmen">${assignment.observer_name}</span>
+                                    <span class="lesson-classroom fw-bold ms-2" title="Derslik">${assignment.classroom_name}</span>
+                                `;
+                                observerList.appendChild(observerDiv);
+                            });
+                            lessonMeta.appendChild(observerList);
+                        }
                     } else {
                         lecturerId = lessonCard.dataset.lecturerId;
+                        let classroomSpan = lessonCard.querySelector('.lesson-classroom');
+                        if (classroomSpan) {
+                            classroomSpan.innerHTML = `${classroom.name}`;
+                        }
                     }
                     lessonCard.dataset.lecturerId = lecturerId;
-
-                    // Update Classroom Name in View
-                    let classroomSpan = lessonCard.querySelector('.lesson-classroom');
-                    if (classroomSpan) {
-                        classroomSpan.innerHTML = `${classroom.name}`;
-                    }
 
                     // Tooltip'i yeniden tanımla (klonlandığı için)
                     // Önce eski tooltip instance'ı varsa temizlemek gerekebilir ama yeni element olduğu için sorun olmaz.
@@ -1850,25 +2024,28 @@ class ScheduleCard {
     async dropListToTable() {
         console.log('dropListToTable', { ...this.draggedLesson })
         if (this.owner_type !== 'classroom') {
-            let classroom, hours, observer;
+            let classroom, hours, observer, hoursInput;
             if (this.examTypes.includes(this.type)) {
-                // todo 
-                const result = await this.selectClassroomAndObserver();
-                classroom = result.classroom;
-                observer = result.observer;
-                this.draggedLesson.observer_id = observer.id;
-                this.draggedLesson.observer_full_name = observer.full_name;
+                const result = await this.openExamAssignmentModal();
+                classroom = result.assignments[0]; // moveLessonListToTable için ilk dersliği baz al
+                classroom.id = result.assignments[0].classroom_id; // id key'i uyumlu hale getir
+                classroom.name = result.assignments[0].classroom_name;
+                classroom.exam_size = result.assignments[0].classroom_exam_size;
+                classroom.size = result.assignments[0].classroom_size;
+
                 hours = result.hours;
+                hoursInput = result; // result içinde assignments da var
             } else {
-                const result = await this.selectClassroomAndHours();
+                const result = await this.openAssignmentModal("Sınıf ve Saat Seçimi");
                 classroom = result.classroom;
                 hours = result.hours;
+                hoursInput = hours;
             }
             try {
-                await this.checkCrash(hours, classroom);//buradaki reject kısımları hata fırlatıyor ve try yakalıyor. 
+                await this.checkCrash(hours, classroom);
                 let saveScheduleToast = new Toast();
                 saveScheduleToast.prepareToast("Yükleniyor...", "Ders, programa kaydediliyor...")
-                let scheduleItems = this.generateScheduleItems(hours, classroom);
+                let scheduleItems = this.generateScheduleItems(hoursInput, classroom);
                 let crashResult = await this.checkCrashBackEnd(scheduleItems);
                 console.log('crashResult', crashResult)
                 if (crashResult) {

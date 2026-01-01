@@ -97,12 +97,25 @@ use function App\Helpers\getSettingValue;
                                                             <?php endif; ?>
                                                         </span>
                                                         <div class="lesson-meta">
-                                                            <span class="lesson-lecturer">
-                                                                <?= $slotData->lecturer->getFullName() ?>
-                                                            </span>
-                                                            <span class="lesson-classroom">
-                                                                <?= $slotData->classroom->name ?>
-                                                            </span>
+                                                            <?php if (isset($scheduleItem->detail['assignments']) && is_array($scheduleItem->detail['assignments'])): ?>
+                                                                <div class="lesson-observers-list w-100">
+                                                                    <?php foreach ($scheduleItem->detail['assignments'] as $assignment): ?>
+                                                                        <div class="lesson-observer-item small d-flex justify-content-between w-100">
+                                                                            <span class="lesson-lecturer text-truncate"
+                                                                                title="Gözetmen"><?= $assignment['observer_name'] ?></span>
+                                                                            <span class="lesson-classroom fw-bold ms-2"
+                                                                                title="Derslik"><?= $assignment['classroom_name'] ?></span>
+                                                                        </div>
+                                                                    <?php endforeach; ?>
+                                                                </div>
+                                                            <?php else: ?>
+                                                                <span class="lesson-lecturer">
+                                                                    <?= $slotData->lecturer?->getFullName() ?>
+                                                                </span>
+                                                                <span class="lesson-classroom">
+                                                                    <?= $slotData->classroom?->name ?>
+                                                                </span>
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                 <?php endforeach ?>

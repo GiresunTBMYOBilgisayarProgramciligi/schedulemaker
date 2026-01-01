@@ -615,12 +615,24 @@ class ScheduleController extends Controller
                         $owners[] = ['type' => $targetSchedule->owner_type, 'id' => $targetSchedule->owner_id];
                     }
                 } else {
-                    $owners = [
-                        ['type' => 'user', 'id' => $lecturerId],
-                        ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik programı oluşturma
-                        ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
-                        ['type' => 'lesson', 'id' => $lesson->id]
-                    ];
+                    $examAssignments = $itemData['detail']['assignments'] ?? null;
+                    if ($examAssignments) {
+                        // Sınav (Çoklu Atama)
+                        $owners[] = ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no];
+                        $owners[] = ['type' => 'lesson', 'id' => $lesson->id];
+                        foreach ($examAssignments as $assignment) {
+                            $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
+                            $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
+                        }
+                    } else {
+                        // Normal Ders
+                        $owners = [
+                            ['type' => 'user', 'id' => $lecturerId],
+                            ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik programı oluşturma
+                            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+                            ['type' => 'lesson', 'id' => $lesson->id]
+                        ];
+                    }
 
                     // Child Lessons (Bağlı Alt Dersler) sisteme dahil ediliyor
                     if (!empty($lesson->childLessons)) {
@@ -1043,12 +1055,25 @@ class ScheduleController extends Controller
             throw new Exception("Ders bulunamadı");
 
         // Kontrol edilecek schedule sahipleri
-        $owners = [
-            ['type' => 'user', 'id' => $lecturerId],
-            ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik çakışmasına bakma
-            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
-            ['type' => 'lesson', 'id' => $lesson->id]
-        ];
+        $owners = [];
+        $examAssignments = $itemData['detail']['assignments'] ?? null;
+        if ($examAssignments) {
+            // Sınav (Çoklu Atama)
+            $owners[] = ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no];
+            $owners[] = ['type' => 'lesson', 'id' => $lesson->id];
+            foreach ($examAssignments as $assignment) {
+                $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
+                $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
+            }
+        } else {
+            // Normal Ders
+            $owners = [
+                ['type' => 'user', 'id' => $lecturerId],
+                ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik çakışmasına bakma
+                ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+                ['type' => 'lesson', 'id' => $lesson->id]
+            ];
+        }
 
         // Child Lessons (Bağlı Alt Dersler) için de çakışma kontrolü yapılmalı
         if (!empty($lesson->childLessons)) {
@@ -1204,9 +1229,16 @@ class ScheduleController extends Controller
          * bu schedule'lerin 
          */
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
-        //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
-        $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
-        $classrooms = (new Classroom())->get()->where(["type" => ['in' => $classroom_type]])->all();
+
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        if (in_array($schedule->type, $examTypes)) {
+            // Sınav programı ise UZEM (3) hariç tüm derslikler
+            $classrooms = (new Classroom())->get()->where(["type" => ['!=' => 3]])->all();
+        } else {
+            // Ders programı ise derslik türü filtrelemesi (Karma ise Lab(2) ve Derslik(1) dahil)
+            $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
+            $classrooms = (new Classroom())->get()->where(["type" => ['in' => $classroom_type]])->all();
+        }
 
         $availableClassrooms = [];
         $startTime = new \DateTime($filters['startTime']);
