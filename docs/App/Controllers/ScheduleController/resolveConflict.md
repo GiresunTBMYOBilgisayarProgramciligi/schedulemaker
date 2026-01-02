@@ -16,6 +16,7 @@
     *   **Kural A**: Yeni eklenen ders de bir grup dersi olmalıdır (`group_no > 0`). Değilse hata fırlatılır.
     *   **Kural B**: Aynı hücrede aynı Ders ID'sine sahip iki ders bulunamaz.
     *   **Kural C**: Aynı grup numarasına (`group_no`) sahip farklı dersler çakışamaz.
+    *   **Kural D**: Aynı hocaya (`lecturer_id`) sahip farklı dersler çakışamaz. Hoca aynı anda iki farklı derse giremez.
 *   **Sonuç**: Eğer tüm kurallar sağlanırsa, çakışma bir hata olarak kabul edilmez ve birleştirme işlemine izin verilir.
 
 ### 3. `preferred` Statüsü

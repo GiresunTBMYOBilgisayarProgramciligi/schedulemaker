@@ -11,7 +11,7 @@
 Bu sınıf, temel sınıfın sunduğu iskeleti kullanarak normal dersler için özelleşmiş şu mantıkları uygular:
 
 - **openAssignmentModal**: Sadece tek bir derslik seçimine izin veren, ders saati süresini (blok ders) ayarlamaya olanak tanıyan basit bir modal açar.
-- **checkCrash**: Ders bazlı çakışma kontrollerini yapar. Gruplu derslerin aynı hücreye girmesine izin verir ancak farklı derslerin çakışmasını engeller.
+- **checkCrash**: Ders bazlı çakışma kontrollerini yapar. Gruplu derslerin aynı hücreye girmesine izin verir ancak farklı derslerin veya aynı hocanın farklı derslerinin çakışmasını engeller.
 - **moveLessonListToTable**: Ders tabloya eklendiğinde "Kalan Saat" bilgisini günceller. Eğer dersin tüm saatleri yerleştirildiyse kartı listeden kaldırır.
 
 ## Önemli Metodlar
@@ -22,7 +22,7 @@ Ders ataması sırasında açılan penceredir. Seçilen ders saati kadar boş ye
 ### [checkCrash]
 Derslerin üst üste binme (crash) durumunu kontrol eder. 
 - Eğer hücre boşsa geçişe izin verir.
-- Eğer hücrede ders varsa, bu dersin bir grup dersi olup olmadığını ve eklenen dersle çakışıp çakışmadığını kontrol eder.
+- Eğer hücrede ders varsa, bu dersin bir grup dersi olup olmadığını, eklenen dersle çakışıp çakışmadığını ve **aynı hocaya ait olup olmadığını** kontrol eder. Hoca çakışması durumunda işlem engellenir.
 
 ### [moveLessonListToTable]
 UI tarafında ders kartlarını tabloya yerleştirir ve sol menüdeki ders listesiyle senkronizasyon sağlar.

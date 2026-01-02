@@ -117,6 +117,10 @@ class LessonScheduleCard extends ScheduleCard {
                                 hasCrash = true;
                                 reject("Eklenen ders gruplu değil, bu alana eklenemez");
                             }
+                            if (lesson.dataset.lecturerId == this.draggedLesson.lecturer_id) {
+                                hasCrash = true;
+                                reject("Hoca aynı anda iki farklı derse giremez.");
+                            }
                             if (lesson.dataset.lessonCode === newLessonCode) {
                                 hasCrash = true;
                                 reject("Lütfen farklı bir ders seçin.");

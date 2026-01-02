@@ -1196,6 +1196,11 @@ class ScheduleController extends Controller
                         throw new Exception("Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).");
                     }
 
+                    // Hoca aynı olmamalı
+                    if ($sd->lecturer && $sd->lecturer->id == $newItemData['data']['lecturer_id']) {
+                        throw new Exception("Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName());
+                    }
+
                     // Grup numaraları farklı olmalı
                     if ($sd->lesson->group_no == $newLesson->group_no) {
                         throw new Exception("Aynı grup numarasına sahip dersler çakışamaz.");
