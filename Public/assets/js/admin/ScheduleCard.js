@@ -957,8 +957,21 @@ class ScheduleCard {
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
-                    if (data.createdItems) this.syncTableItems(data.createdItems);
+                    const templates = new Map();
+                    if (data.deletedIds) {
+                        data.deletedIds.forEach(id => {
+                            const cards = this.table.querySelectorAll(`.lesson-card[data-schedule-item-id="${id}"]`);
+                            cards.forEach(card => {
+                                const lId = card.dataset.lessonId;
+                                if (lId && !templates.has(lId)) {
+                                    templates.set(lId, card.cloneNode(true));
+                                }
+                            });
+                        });
+                    }
+
                     if (data.deletedIds) this.clearTableItemsByIds(data.deletedIds);
+                    if (data.createdItems) this.syncTableItems(data.createdItems, templates);
                     return true;
                 }
             })
@@ -1008,7 +1021,12 @@ class ScheduleCard {
             }
 
             this.dropZone = element;
-            let dragData = JSON.parse(event.dataTransfer.getData("text/plain"));
+            const rawData = event.dataTransfer.getData("text/plain");
+            if (!rawData) {
+                this.resetDraggedLesson();
+                return;
+            }
+            let dragData = JSON.parse(rawData);
             const isToList = this.dropZone.classList.contains("available-schedule-items");
 
             if (dragData.type === 'bulk') {
@@ -1056,59 +1074,94 @@ class ScheduleCard {
     clearTableItemsByIds(deletedIds) {
         if (!deletedIds || deletedIds.length === 0) return;
         const idSet = new Set(deletedIds.map(id => id.toString()));
-        for (let i = 0; i < this.table.rows.length; i++) {
-            const row = this.table.rows[i];
-            for (let j = 1; j < row.cells.length; j++) {
-                const cell = row.cells[j];
-                const cellId = cell.dataset.scheduleItemId ? cell.dataset.scheduleItemId.toString() : null;
-                if (cellId && idSet.has(cellId)) {
-                    cell.querySelectorAll(`.lesson-card[data-schedule-item-id="${cellId}"]`).forEach(c => c.remove());
+
+        // Tablodaki tüm ilgili kartları bul ve sil
+        document.querySelectorAll('.lesson-card').forEach(card => {
+            if (card.dataset.scheduleItemId && idSet.has(card.dataset.scheduleItemId.toString())) {
+                const cell = card.closest('td');
+                card.remove();
+
+                // Eğer hücre boş kaldıysa boş slot ekle ve ID'yi temizle
+                if (cell && !cell.querySelector('.lesson-card')) {
+                    cell.innerHTML = '<div class="empty-slot"></div>';
                     delete cell.dataset.scheduleItemId;
-                    if (!cell.querySelector('.lesson-card')) cell.innerHTML = '<div class="empty-slot"></div>';
                 }
             }
-        }
-        idSet.forEach(id => document.querySelectorAll(`.lesson-card[data-schedule-item-id="${id}"]`).forEach(card => card.remove()));
+        });
     }
 
-    syncTableItems(createdItems) {
+    syncTableItems(createdItems, externalTemplates = new Map()) {
         createdItems.forEach(item => {
             if (item.schedule_id != this.id) return;
-            const colIndex = parseInt(item.day_index, 10) + 1;
             const itemStartTime = item.start_time.substring(0, 5);
             const itemEndTime = item.end_time.substring(0, 5);
+            const targetDay = parseInt(item.day_index);
 
+            // Rowspan ve tablo yapısından bağımsız hücre bulma
             for (let i = 0; i < this.table.rows.length; i++) {
                 const row = this.table.rows[i];
-                const cell = row.cells[colIndex];
-                if (!cell) continue;
+                const timeCell = row.cells[0];
+                const rowTime = timeCell?.innerText.trim().substring(0, 5);
 
-                let cellStartTime = cell.dataset.startTime || row.cells[0]?.innerText.trim().substring(0, 5);
+                if (rowTime && rowTime >= itemStartTime && rowTime < itemEndTime) {
+                    // Bu satırdaki doğru güne ait hücreyi bul (rowspan hesaba katarak)
+                    let currentDay = -1;
+                    let cell = null;
+                    for (let j = 1; j < row.cells.length; j++) {
+                        // Not: Basit tabloda j=day+1'dir ama rowspan varsa kayar. 
+                        // Biz şimdilik basitleştirilmiş hücre içi veri kontrolü yapıyoruz.
+                        // Eğer hücre bulunamazsa veya yanlışsa dataset üzerinden doğrula.
+                        const tempCell = row.cells[j];
+                        const cellDay = tempCell.cellIndex - 1; // Genelde bu doğrudur
+                        if (cellDay === targetDay) {
+                            cell = tempCell;
+                            break;
+                        }
+                    }
 
-                if (cellStartTime && cellStartTime >= itemStartTime && cellStartTime < itemEndTime) {
+                    if (!cell) continue;
+
                     cell.dataset.scheduleItemId = item.id;
-                    let lessonCards = cell.querySelectorAll('.lesson-card');
+                    const itemsData = (typeof item.data === 'string') ? JSON.parse(item.data) : item.data;
+                    const existingCards = cell.querySelectorAll('.lesson-card');
+                    const existingLessonIds = new Set(Array.from(existingCards).map(c => c.dataset.lessonId?.toString()));
+
                     if (item.status === 'preferred' || item.status === 'unavailable') {
-                        if (lessonCards.length > 0 || cell.querySelector('.lesson-group-container')) cell.innerHTML = '<div class="empty-slot"></div>';
+                        cell.innerHTML = '<div class="empty-slot"></div>';
                         return;
                     }
                     if (cell.querySelector('.empty-slot')) cell.querySelector('.empty-slot').remove();
 
-                    if (lessonCards.length === 0) {
-                        const data = (typeof item.data === 'string') ? JSON.parse(item.data) : item.data;
-                        const lessonId = data?.[0]?.lesson_id;
-                        if (lessonId) {
-                            const templateCard = document.querySelector(`.lesson-card[data-lesson-id="${lessonId}"]`);
-                            if (templateCard) {
-                                let newCard = templateCard.cloneNode(true);
-                                newCard.dataset.scheduleItemId = item.id;
-                                let container = (item.status === 'group') ? (cell.querySelector('.lesson-group-container') || cell.appendChild(Object.assign(document.createElement('div'), { className: 'lesson-group-container' }))) : cell;
-                                container.appendChild(newCard);
-                                lessonCards = [newCard];
+                    if (itemsData && Array.isArray(itemsData)) {
+                        itemsData.forEach(d => {
+                            const lessonId = d.lesson_id?.toString();
+                            if (!lessonId) return;
+
+                            if (existingLessonIds.has(lessonId)) {
+                                // Kart var, sadece ID'sini güncelle
+                                const card = cell.querySelector(`.lesson-card[data-lesson-id="${lessonId}"]`);
+                                if (card) card.dataset.scheduleItemId = item.id;
+                            } else {
+                                // Kart yok, yeni oluştur
+                                let templateCard = externalTemplates.get(lessonId) || document.querySelector(`.lesson-card[data-lesson-id="${lessonId}"]`);
+                                if (!templateCard && this.draggedLesson && this.draggedLesson.lesson_id == lessonId) {
+                                    templateCard = this.draggedLesson.HTMLElement;
+                                }
+
+                                if (templateCard) {
+                                    let newCard = templateCard.cloneNode(true);
+                                    newCard.dataset.scheduleItemId = item.id;
+                                    newCard.dataset.classroomId = d.classroom_id || "";
+                                    newCard.className = newCard.className.replace('col-md-4', '').replace('p-0', '').replace('ps-1', '').replace('frame', '').trim();
+                                    if (!newCard.classList.contains('lesson-card')) newCard.classList.add('lesson-card');
+
+                                    let container = (item.status === 'group') ? (cell.querySelector('.lesson-group-container') || cell.appendChild(Object.assign(document.createElement('div'), { className: 'lesson-group-container' }))) : cell;
+                                    newCard.addEventListener('dragstart', this.dragStartHandler.bind(this));
+                                    container.appendChild(newCard);
+                                }
                             }
-                        }
+                        });
                     }
-                    lessonCards.forEach(card => card.dataset.scheduleItemId = item.id);
                 }
             }
         });
