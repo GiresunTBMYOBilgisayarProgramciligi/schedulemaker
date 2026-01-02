@@ -610,7 +610,7 @@ class AdminRouter extends Router
         if (!isAuthorized("department_head")) {
             throw new Exception("Sınav programı düzenleme yetkiniz yok");
         }
-        $this->assetManager->loadPageAssets('editschedule');
+        $this->assetManager->loadPageAssets('editexamschedule');
         $userController = new UserController();
         $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {

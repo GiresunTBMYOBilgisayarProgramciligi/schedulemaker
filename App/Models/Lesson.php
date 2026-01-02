@@ -336,9 +336,17 @@ class Lesson extends Model
         $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
         if (in_array($type, $examTypes)) {
             foreach ($items as $item) {
-                foreach ($item->getSlotDatas() as $data) {
-                    if (isset($data->classroom)) {
-                        $this->placed_size += $data->classroom->exam_size;
+                if (isset($item->detail['assignments']) && is_array($item->detail['assignments'])) {
+                    // Yeni mantık: detail içindeki assignments listesini kullan
+                    foreach ($item->detail['assignments'] as $assignment) {
+                        $this->placed_size += (int) ($assignment['classroom_exam_size'] ?? 0);
+                    }
+                } else {
+                    // Eski mantık: getSlotDatas üzerinden (geriye dönük uyumluluk)
+                    foreach ($item->getSlotDatas() as $data) {
+                        if (isset($data->classroom)) {
+                            $this->placed_size += $data->classroom->exam_size;
+                        }
                     }
                 }
             }

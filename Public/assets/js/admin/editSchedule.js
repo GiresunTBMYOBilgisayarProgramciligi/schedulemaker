@@ -12,7 +12,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let scheduleCards = [];
         scheduleCardElements.forEach((scheduleCardElement) => {
-            let scheduleCard = new ScheduleCard(scheduleCardElement)
+            const type = scheduleCardElement.dataset.type;
+            let scheduleCard;
+            if (['midterm-exam', 'final-exam', 'makeup-exam', 'exam'].includes(type)) {
+                scheduleCard = new ExamScheduleCard(scheduleCardElement);
+            } else {
+                scheduleCard = new LessonScheduleCard(scheduleCardElement);
+            }
             scheduleCards.push(scheduleCard);
         })
         document.addEventListener("lessonDrop", (event) => {

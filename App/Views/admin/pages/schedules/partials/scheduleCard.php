@@ -16,6 +16,7 @@ use App\Models\Schedule;
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
             data-week-count="<?= $weekCount ?? 1 ?>"
+            data-type="<?= $schedule->type ?>"
             data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
             <div
                 class="card-header <?= (isset($weekCount) && $weekCount > 1) ? 'd-flex justify-content-between align-items-center' : '' ?>">

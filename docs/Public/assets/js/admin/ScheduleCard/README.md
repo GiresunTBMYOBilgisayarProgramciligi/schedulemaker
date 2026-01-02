@@ -5,11 +5,14 @@
 
 `ScheduleCard`, projenin frontend tarafındaki en kritik ve karmaşık JavaScript sınıfıdır. Ders programı tablosu üzerindeki tüm sürükle-bırak, çakışma boyama, modal yönetimi ve API senkronizasyon işlemlerini yönetir.
 
-## Temel İşleyiş
+## Sınıf Hiyerarşisi
 
-1.  **Event Orchestration**: Sayfa yüklendiğinde (`initialize`) tüm hücreleri ve kartları dinlemeye başlar.
-2.  **Drag & Drop Engine**: Native HTML5 Drag and Drop API'sini kullanarak derslerin taşınmasını sağlar.
-3.  **Real-time Validation**: Ders sürüklenirken backend ile asenkron konuşarak (AJAX) uygun olmayan hücreleri gerçek zamanlı olarak işaretler.
+`ScheduleCard` artık bir temel sınıf (Base Class) olarak hizmet vermektedir. Uygulama içinde doğrudan değil, şu alt sınıflar üzerinden kullanılır:
+
+- [LessonScheduleCard](../LessonScheduleCard.md): Standart haftalık ders programı işlemleri için.
+- [ExamScheduleCard](../ExamScheduleCard.md): Sınav haftası programı işlemleri için.
+
+Bu yapı, ders ve sınav programlarının kendine özgü modal, çakışma ve görselleştirme mantıklarını ayrıştırarak kodun bakımını kolaylaştırır.
 
 ## Metod Listesi
 

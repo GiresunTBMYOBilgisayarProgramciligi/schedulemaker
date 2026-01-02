@@ -171,6 +171,42 @@ class AssetManager
                     'path' => '/assets/js/admin/ScheduleCard.js'
                 ],
                 [
+                    'path' => '/assets/js/admin/LessonScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/editSchedule.js'
+                ],
+                [//Select arama işlemi için
+                    'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
+                ],
+                [
+                    'path' => "/assets/css/schedule.css"
+                ]
+            ]
+        ],
+        'editexamschedule' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/formEvents.js'
+                ],
+                [
+                    'path' => '/assets/js/getSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ExamScheduleCard.js'
+                ],
+                [
                     'path' => '/assets/js/admin/editSchedule.js'
                 ],
                 [//Select arama işlemi için
