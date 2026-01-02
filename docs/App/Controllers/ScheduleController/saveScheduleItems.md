@@ -19,10 +19,10 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
     *   **Haftaya Duyarlı Kontrol**: Sadece aynı `week_index` içindeki öğeler taranır.
     *   Eklenmek istenen zaman dilimiyle çakışan (`checkOverlap`) öğeler aranır.
     *   İhlal durumuna göre `resolvePreferredConflict` veya `resolveConflict` işletilir.
-4.  **Kayıt / Güncelleme**:
-    *   Öğe `group` ise `processGroupItemSaving` (hafta bilgisiyle) çağrılır.
-    *   Değilse yeni bir `ScheduleItem` olarak (doğru `week_index` ile) kaydedilir.
-5.  **Bitiş**: `commit` / `rollBack` işlemleri yapılır.
+4.  **Ders Saati / Mevcut Kontrolü**:
+    *   İşlem gören tüm dersler (ve bağlı dersler) için `IsScheduleComplete` metodu çağrılır.
+    *   Eğer dersin toplam saati veya sınav mevcudu aşılmışsa (`remaining_size < 0`), bir `Exception` fırlatılır.
+5.  **Bitiş**: `commit` / `rollBack` işlemleri yapılır. Fırlatılan bir hata durumunda tüm işlemler geri alınır.
 
 ## Dönüş Değeri
 *   `array`: Oluşturulan yeni öğelerin ID listesi (`createdIds`).

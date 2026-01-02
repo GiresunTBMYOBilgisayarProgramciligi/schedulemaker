@@ -591,6 +591,7 @@ class ScheduleController extends Controller
         }
 
         $createdIds = [];
+        $affectedLessonIds = [];
         try {
             foreach ($itemsData as $itemData) {
                 $this->logger()->debug("saveScheduleItems: Processing item", $this->logContext(['itemData' => $itemData]));
@@ -784,7 +785,34 @@ class ScheduleController extends Controller
                     }
                 }
                 $createdIds[] = $itemGroupedIds;
+
+                // İşlem gören dersleri kaydet (Kontrol için)
+                if (!$isDummy) {
+                    $affectedLessonIds[] = $lessonId;
+                    if (!empty($lesson->childLessons)) {
+                        foreach ($lesson->childLessons as $childLesson) {
+                            $affectedLessonIds[] = $childLesson->id;
+                        }
+                    }
+                }
             }
+
+            // 3. Ders Saati / Mevcut Kontrolü
+            $affectedLessonIds = array_unique($affectedLessonIds);
+            foreach ($affectedLessonIds as $id) {
+                $checkLesson = (new Lesson())->find($id);
+                if ($checkLesson) {
+                    // IsScheduleComplete metodunu çalıştırarak remaining_size hesaplatıyoruz
+                    $checkLesson->IsScheduleComplete($targetSchedule->type);
+                    if ($checkLesson->remaining_size < 0) {
+                        $errorMsg = ($targetSchedule->type === 'lesson')
+                            ? "{$checkLesson->getFullName()} dersinin toplam saati aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " saat)"
+                            : "{$checkLesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " kişi)";
+                        throw new Exception($errorMsg);
+                    }
+                }
+            }
+
             if ($isInitiator) {
                 $this->database->commit();
             }
