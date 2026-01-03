@@ -3,8 +3,11 @@ use App\Models\Schedule;
 use function App\Helpers\getSettingValue;
 
 /**
- * @var array $scheduleRows
+ * @var array $weekRows
+ * @var array $weekHeaders
  * @var Schedule $schedule
+ * @var bool $only_table
+ * @var bool $preference_mode
  */
 ?>
 <div class="schedule-table-container">
@@ -27,7 +30,8 @@ use function App\Helpers\getSettingValue;
                     <?php if ($scheduleRow['slotStartTime']->format('H:i') === '12:00'): ?>
                         <!-- Öğle Arası -->
                         <tr style="background-color: #fcfcfc;">
-                            <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
+                            <td class="time-slot">
+                                <?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                                 <?= $scheduleRow['slotEndTime']->modify('+10 minutes')->format('H:i') ?>
                             </td>
                             <td colspan="<?= count($dayHeaders) ?>"
@@ -37,12 +41,12 @@ use function App\Helpers\getSettingValue;
                         </tr>
                     <?php else: ?>
                         <tr>
-                            <td class="time-slot"><?= $scheduleRow['slotStartTime']->format('H:i') ?> -
+                            <td class="time-slot">
+                                <?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                                 <?= $scheduleRow['slotEndTime']->format('H:i') ?>
                             </td>
                             <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
                                 <?php if ($scheduleItem):
-                                    //Log::logger()->debug('scheduleItem', ['scheduleItem' => $scheduleItem]);
                                     $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
@@ -50,7 +54,8 @@ use function App\Helpers\getSettingValue;
                                         <?php if ($scheduleItem->status === 'group'): ?>
                                             <div class="lesson-group-container">
                                             <?php endif; ?>
-                                            <?php if (count($scheduleItem->getSlotDatas()) > 0): ?><!-- slot içinde ders var-->
+
+                                            <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                                 <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
                                                     $draggable = "true";
                                                     if (
@@ -82,7 +87,7 @@ use function App\Helpers\getSettingValue;
 
                                                     $attrString = "";
                                                     foreach ($dataAttrs as $key => $val) {
-                                                        $attrString .= " $key=\"$val\"";
+                                                        $attrString .= " $key=\"" . htmlspecialchars($val) . "\"";
                                                     }
                                                     ?>
                                                     <div <?= $attrString ?>>
@@ -97,25 +102,12 @@ use function App\Helpers\getSettingValue;
                                                             <?php endif; ?>
                                                         </span>
                                                         <div class="lesson-meta">
-                                                            <?php if (isset($scheduleItem->detail['assignments']) && is_array($scheduleItem->detail['assignments'])): ?>
-                                                                <div class="lesson-observers-list w-100">
-                                                                    <?php foreach ($scheduleItem->detail['assignments'] as $assignment): ?>
-                                                                        <div class="lesson-observer-item small d-flex justify-content-between w-100">
-                                                                            <span class="lesson-lecturer text-truncate"
-                                                                                title="Gözetmen"><?= $assignment['observer_name'] ?></span>
-                                                                            <span class="lesson-classroom fw-bold ms-2"
-                                                                                title="Derslik"><?= $assignment['classroom_name'] ?></span>
-                                                                        </div>
-                                                                    <?php endforeach; ?>
-                                                                </div>
-                                                            <?php else: ?>
-                                                                <span class="lesson-lecturer">
-                                                                    <?= $slotData->lecturer?->getFullName() ?>
-                                                                </span>
-                                                                <span class="lesson-classroom">
-                                                                    <?= $slotData->classroom?->name ?>
-                                                                </span>
-                                                            <?php endif; ?>
+                                                            <span class="lesson-lecturer">
+                                                                <?= $slotData->lecturer?->getFullName() ?>
+                                                            </span>
+                                                            <span class="lesson-classroom">
+                                                                <?= $slotData->classroom?->name ?>
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 <?php endforeach ?>
@@ -129,13 +121,15 @@ use function App\Helpers\getSettingValue;
                                                     <?php endif; ?>
                                                     <?php if (is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
                                                         <div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
-                                                            data-bs-trigger="hover" data-bs-content="<?= $scheduleItem->detail['description'] ?>"
+                                                            data-bs-trigger="hover"
+                                                            data-bs-content="<?= htmlspecialchars($scheduleItem->detail['description']) ?>"
                                                             data-bs-original-title="Açıklama">
                                                             <i class="bi bi-chat-square-text-fill"></i>
                                                         </div>
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
+
                                             <?php if ($scheduleItem->status === 'group'): ?>
                                             </div>
                                         <?php endif; ?>

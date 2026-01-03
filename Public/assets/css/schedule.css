@@ -111,6 +111,8 @@
         padding: 12px;
         text-align: center;
         vertical-align: middle;
+        height: 1px;
+        /* Rowspan içindeki h-100 elemanların esnemesi için */
     }
 
     /* Başlık Stilleri */
@@ -145,6 +147,34 @@
         font-size: 0.9rem;
         position: relative;
         /* Checkbox için eklendi */
+    }
+
+    .lesson-card.h-100 {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 15px !important;
+        gap: 8px;
+    }
+
+    .lesson-card.h-100 .lesson-name {
+        font-size: 1.1rem;
+        margin-bottom: 0;
+        line-height: 1.3;
+    }
+
+    .lesson-card.h-100 .lesson-meta {
+        font-size: 0.85rem;
+    }
+
+    .lesson-card.h-100 .lesson-observer-item {
+        margin-bottom: 4px;
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .lesson-card.h-100 .lesson-observer-item:last-child {
+        border-bottom: none;
     }
 
     .lesson-card:hover {
@@ -360,32 +390,33 @@
         /*border-color: #009688 !important;*/
         border-width: 2px;
     }
-/* Context Menu Styles */
-.context-menu {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    border-radius: 6px;
-    padding: 6px 0;
-    min-width: 200px;
-    transition: opacity 0.2s ease;
-}
 
-.context-menu-item {
-    padding: 10px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #333;
-    display: flex;
-    align-items: center;
-    transition: background-color 0.2s;
-}
+    /* Context Menu Styles */
+    .context-menu {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        padding: 6px 0;
+        min-width: 200px;
+        transition: opacity 0.2s ease;
+    }
 
-.context-menu-item:hover {
-    background-color: #f1f3f5;
-    color: #007bff;
-}
+    .context-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
 
-.context-menu-item i {
-    font-size: 16px;
-}
+    .context-menu-item:hover {
+        background-color: #f1f3f5;
+        color: #007bff;
+    }
+
+    .context-menu-item i {
+        font-size: 16px;
+    }

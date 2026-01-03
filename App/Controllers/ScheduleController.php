@@ -499,7 +499,11 @@ class ScheduleController extends Controller
             $allWeekHeaders[$weekIndex] = $createTableHeaders($weekIndex);
         }
 
-        $scheduleTableHTML = View::renderPartial('admin', 'schedules', 'scheduleTable', [
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $isExam = in_array($schedule->type, $examTypes);
+        $partialName = $isExam ? 'examScheduleTable' : 'lessonScheduleTable';
+
+        $scheduleTableHTML = View::renderPartial('admin', 'schedules', $partialName, [
             'weekRows' => $scheduleRows,
             'weekHeaders' => $allWeekHeaders,
             'schedule' => $schedule,

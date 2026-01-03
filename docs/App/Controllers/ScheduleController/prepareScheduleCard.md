@@ -33,7 +33,7 @@ private function prepareScheduleCard(array $filters, bool $only_table = false, b
 4.  **Tarihli Başlık Hesaplama**: Sınav programları için ayarlardan başlangıç tarihi alınarak her hafta için günlere özel tarihler hesaplanır.
 5.  **View Render**:
     -   `availableLessons` partial'ı render edilir.
-    -   `scheduleTable` partial'ı (hafta ve tarih bilgileriyle) render edilir.
+    -   Program türüne göre (`lesson` veya `exam`) `lessonScheduleTable` veya `examScheduleTable` partial'ı render edilir.
     -   Son olarak `scheduleCard` (hafta navigasyonu dahil) render edilerek döndürülür.
 
 ## Notlar
