@@ -6,6 +6,11 @@ class ExamScheduleCard extends ScheduleCard {
         super(scheduleCardElement);
     }
 
+    async initialize(scheduleCardElement) {
+        await super.initialize(scheduleCardElement);
+        this.initWeekNavigation();
+    }
+
     /**
      * Sınav atama modalını açar (Çoklu derslik ve gözetmen seçimi)
      */
@@ -313,5 +318,54 @@ class ExamScheduleCard extends ScheduleCard {
             }
             this.updateStickyList();
         }
+    }
+
+    initWeekNavigation() {
+        this.weekCount = parseInt(this.card.dataset.weekCount) || this.card.querySelectorAll('.schedule-table').length;
+        const prevBtn = this.card.querySelector('.prev-week');
+        const nextBtn = this.card.querySelector('.next-week');
+        const label = this.card.querySelector('.current-week-label');
+
+        if (!prevBtn || !nextBtn) return;
+
+        prevBtn.addEventListener('click', () => {
+            if (this.currentWeekIndex > 0) {
+                this.switchWeek(this.currentWeekIndex - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (this.currentWeekIndex < this.weekCount - 1) {
+                this.switchWeek(this.currentWeekIndex + 1);
+            }
+        });
+    }
+
+    switchWeek(weekIndex) {
+        const tables = this.card.querySelectorAll('table.schedule-table');
+        const prevBtn = this.card.querySelector('.prev-week');
+        const nextBtn = this.card.querySelector('.next-week');
+        const label = this.card.querySelector('.current-week-label');
+
+        tables.forEach(t => {
+            t.classList.add('d-none');
+            t.classList.remove('active');
+        });
+
+        const targetTable = this.card.querySelector(`table.schedule-table[data-week-index="${weekIndex}"]`);
+        if (targetTable) {
+            targetTable.classList.remove('d-none');
+            targetTable.classList.add('active');
+            this.table = targetTable;
+            this.currentWeekIndex = weekIndex;
+
+            this.initStickyHeaders();
+        }
+
+        if (label) label.textContent = `${weekIndex + 1}. Hafta`;
+        if (prevBtn) prevBtn.disabled = (weekIndex === 0);
+        if (nextBtn) nextBtn.disabled = (weekIndex === this.weekCount - 1);
+
+        window.dispatchEvent(new Event('scroll'));
     }
 }
