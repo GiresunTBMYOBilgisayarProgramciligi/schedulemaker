@@ -701,8 +701,7 @@ class AjaxRouter extends Router
         $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
         $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
         $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
-        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-
+        
         $slots = [];
         $start = new \DateTime('08:00');
         $end = new \DateTime('17:00');
@@ -720,6 +719,7 @@ class AjaxRouter extends Router
         $schedules = (new Schedule())->get()->where([
             'owner_type' => 'user',
             'owner_id' => $lecturer->id,
+            'type' => $filters['type'],
             'semester' => $filters['semester'],
             'academic_year' => $filters['academic_year'],
         ])->with(['items'])->all();
@@ -896,6 +896,7 @@ class AjaxRouter extends Router
         $schedules = (new Schedule())->get()->where([
             'owner_type' => 'program',
             'owner_id' => $program->id,
+            'type' => $filters['type'],
             'semester' => $filters['semester'],
             'academic_year' => $filters['academic_year'],
             'semester_no' => $lesson->semester_no
@@ -908,6 +909,7 @@ class AjaxRouter extends Router
                     $childSchedules = (new Schedule())->get()->where([
                         'owner_type' => 'program',
                         'owner_id' => $childLesson->program_id,
+                        'type' => $filters['type'],
                         'semester' => $filters['semester'],
                         'academic_year' => $filters['academic_year'],
                         'semester_no' => $childLesson->semester_no
