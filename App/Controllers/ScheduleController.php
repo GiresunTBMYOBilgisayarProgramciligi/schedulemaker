@@ -200,14 +200,15 @@ class ScheduleController extends Controller
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
         $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
-
+        $this->logger()->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id);
 
         /**
          * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
          * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
          */
         foreach ($lessonsList as $lesson) {
-            if (!$lesson->IsScheduleComplete($schedule->type)) {
+            $isComplete = $lesson->IsScheduleComplete($schedule->type);
+            if (!$isComplete) {
                 //Ders Programı tamamlanmamışsa
 
                 if ($schedule->type == 'lesson') {
@@ -547,6 +548,46 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Sadece kullanılabilir dersler listesinin HTML çıktısını hazırlar
+     * @param array $filters
+     * @param bool $preference_mode
+     * @return string
+     * @throws Exception
+     */
+    public function getAvailableLessonsHTML(array $filters = [], bool $preference_mode = false): string
+    {
+        $filters = $this->validator->validate($filters, "prepareScheduleCard");
+
+        // Hoca, Derslik ve Ders programları dönemden bağımsızdır
+        if (in_array($filters['owner_type'] ?? '', ['user', 'classroom', 'lesson'])) {
+            $filters['semester_no'] = null;
+        }
+
+        $availableLessons = [];
+        $schedule = null;
+
+        if (key_exists("semester_no", $filters) && is_array($filters['semester_no'])) {
+            foreach ($filters['semester_no'] as $semester_no) {
+                $scheduleFilters = $filters;
+                $scheduleFilters['semester_no'] = $semester_no;
+                $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                $availableLessons = array_merge($availableLessons, $this->availableLessons($schedule, $preference_mode));
+            }
+        } else {
+            $schedule = (new Schedule())->firstOrCreate($filters);
+            $availableLessons = $this->availableLessons($schedule, $preference_mode);
+        }
+
+        return View::renderPartial('admin', 'schedules', 'availableLessons', [
+            'availableLessons' => $availableLessons,
+            'schedule' => $schedule,
+            'only_table' => false,
+            'preference_mode' => $preference_mode,
+            'owner_type' => $filters['owner_type'] ?? null
+        ]);
+    }
+
+    /**
      * Dönem numarasına göre birleştirilmiş yada her bir dönem için Schedule Card oluşturur
      * @param array $filters
      * @param bool $only_table
@@ -579,6 +620,180 @@ class ScheduleController extends Controller
     /********************************
      * KAYIT VE GÜNCELLEME İŞLEMLERİ
      ********************************/
+    /**
+     * Sınav Itemlerini kaydeder ve kardeş programlara (Hoca, Derslik, Program, Ders) yansıtır.
+     * Sınavlara özel veri süzme ve referans mantığı içerir.
+     * @param array $itemsData
+     * @return array
+     * @throws Exception
+     */
+    public function saveExamScheduleItems(array $itemsData): array
+    {
+        $this->logger()->debug("saveExamScheduleItems START. Item Count: " . count($itemsData));
+
+        $isInitiator = !$this->database->inTransaction();
+        if ($isInitiator) {
+            $this->database->beginTransaction();
+        }
+
+        $createdIds = [];
+        $affectedLessonIds = [];
+        try {
+            foreach ($itemsData as $itemData) {
+                $dayIndex = $itemData['day_index'];
+                $startTime = $itemData['start_time'];
+                $endTime = $itemData['end_time'];
+                $weekIndex = $itemData['week_index'] ?? 0;
+
+                $lessonId = $itemData['data'][0]['lesson_id'] ?? $itemData['data']['lesson_id'] ?? null;
+                $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons', 'parentLesson'])->first();
+                if (!$lesson)
+                    throw new Exception("Ders bulunamadı");
+
+                // Hedef Schedule bilgileri
+                $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+                $semester = $targetSchedule->semester;
+                $academicYear = $targetSchedule->academic_year;
+
+                // 1. ADIM: Program ve Ders Sahiplerini Belirle (Parent ve tüm Children)
+                $programOwners = [];
+                $mainLesson = $lesson->parent_lesson_id ? $lesson->parentLesson : $lesson;
+
+                // Ana dersi ekle
+                $programOwners[] = ['type' => 'lesson', 'id' => $mainLesson->id];
+                $programOwners[] = ['type' => 'program', 'id' => $mainLesson->program_id, 'semester_no' => $mainLesson->semester_no];
+
+                // Çocuk dersleri ekle
+                if (!empty($mainLesson->childLessons)) {
+                    foreach ($mainLesson->childLessons as $child) {
+                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id];
+                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no];
+                    }
+                }
+                // Unique owners (bazı dersler aynı programda olabilir)
+                $uniqueProgramOwners = [];
+                foreach ($programOwners as $po) {
+                    $key = $po['type'] . '_' . $po['id'] . '_' . ($po['semester_no'] ?? '');
+                    $uniqueProgramOwners[$key] = $po;
+                }
+
+                // 2. ADIM: Program ve Ders Kayıtlarını Yap (Süzülmüş veri ile)
+                $itemGroupedIds = [];
+                $primaryProgramItemId = null; // Diğer kardeşler (Hoca/Sınıf) için referans
+
+                foreach ($uniqueProgramOwners as $owner) {
+                    $scheduleFilters = [
+                        'owner_type' => $owner['type'],
+                        'owner_id' => $owner['id'],
+                        'semester' => $semester,
+                        'academic_year' => $academicYear,
+                        'type' => $targetSchedule->type,
+                        'semester_no' => ($owner['type'] == 'program') ? $owner['semester_no'] : null
+                    ];
+                    $relSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+
+                    // VERİ SÜZME: Program ve Ders için sadece lesson_id kalacak
+                    $filteredData = [
+                        [
+                            'lesson_id' => $mainLesson->id, // Her zaman ana ders ID'si referans alınabilir veya orijinal lessonId
+                            'lecturer_id' => null,
+                            'classroom_id' => null
+                        ]
+                    ];
+
+                    $newItem = new ScheduleItem();
+                    $newItem->schedule_id = $relSchedule->id;
+                    $newItem->day_index = $dayIndex;
+                    $newItem->week_index = $weekIndex;
+                    $newItem->start_time = $startTime;
+                    $newItem->end_time = $endTime;
+                    $newItem->status = 'single';
+                    $newItem->data = $filteredData;
+                    $newItem->detail = $itemData['detail']; // Atama bilgileri burada kalsın
+                    $newItem->create();
+
+                    $itemGroupedIds[$owner['type']][] = $newItem->id;
+
+                    // Eğer bu asıl hedef program ise ID'yi sakla
+                    if ($relSchedule->id == $targetSchedule->id) {
+                        $primaryProgramItemId = $newItem->id;
+                    }
+                }
+
+                // 3. ADIM: Gözetmen (User) ve Derslik (Classroom) Kayıtlarını Yap (Tam veri + Referans)
+                $assignments = $itemData['detail']['assignments'] ?? [];
+                foreach ($assignments as $assignment) {
+                    $assignmentOwners = [
+                        ['type' => 'user', 'id' => $assignment['observer_id'], 'classroom_id' => $assignment['classroom_id']],
+                        ['type' => 'classroom', 'id' => $assignment['classroom_id'], 'observer_id' => $assignment['observer_id']]
+                    ];
+
+                    foreach ($assignmentOwners as $ao) {
+                        $scheduleFilters = [
+                            'owner_type' => $ao['type'],
+                            'owner_id' => $ao['id'],
+                            'semester' => $semester,
+                            'academic_year' => $academicYear,
+                            'type' => $targetSchedule->type,
+                            'semester_no' => null
+                        ];
+                        $relSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+
+                        // TAM VERİ: Hoca ve Derslik için tüm ID'ler korunur
+                        $fullData = [
+                            [
+                                'lesson_id' => $lessonId,
+                                'lecturer_id' => ($ao['type'] == 'user') ? $ao['id'] : $ao['observer_id'],
+                                'classroom_id' => ($ao['type'] == 'classroom') ? $ao['id'] : $ao['classroom_id']
+                            ]
+                        ];
+
+                        $newItem = new ScheduleItem();
+                        $newItem->schedule_id = $relSchedule->id;
+                        $newItem->day_index = $dayIndex;
+                        $newItem->week_index = $weekIndex;
+                        $newItem->start_time = $startTime;
+                        $newItem->end_time = $endTime;
+                        $newItem->status = 'single';
+                        $newItem->data = $fullData;
+
+                        // REFERANS: Program tablosundaki ana item ID'sini ekle
+                        $newItem->detail = [
+                            'program_item_id' => $primaryProgramItemId,
+                            'reference_type' => 'exam_assignment'
+                        ];
+                        $newItem->create();
+                        $itemGroupedIds[$ao['type']][] = $newItem->id;
+                    }
+                }
+                $createdIds[] = $itemGroupedIds;
+                $affectedLessonIds[] = $mainLesson->id;
+            }
+
+            // 4. ADIM: Kapasite Kontrolü
+            foreach (array_unique($affectedLessonIds) as $id) {
+                $checkLesson = (new Lesson())->find($id);
+                if ($checkLesson) {
+                    $checkLesson->IsScheduleComplete($targetSchedule->type);
+                    if ($checkLesson->remaining_size < 0) {
+                        throw new Exception("{$checkLesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " kişi)");
+                    }
+                }
+            }
+
+            if ($isInitiator) {
+                $this->database->commit();
+            }
+            return $createdIds;
+        } catch (\Throwable $e) {
+            if ($isInitiator) {
+                $this->database->rollBack();
+            }
+            $this->logger()->error("Save Exam Schedule Items Error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
     /**
      * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
      * @param array $itemsData JSON decode edilmiş items dizisi

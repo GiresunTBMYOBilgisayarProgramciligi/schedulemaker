@@ -271,6 +271,21 @@ class Lesson extends Model
     }
 
     /**
+     * Bağlı derslerin (veli ve tüm çocuklar) ID listesini döner.
+     * @return array
+     */
+    public function getLinkedLessonIds(): array
+    {
+        $rootId = $this->parent_lesson_id ?: $this->id;
+        $ids = [$rootId];
+        $children = (new Lesson())->get()->where(['parent_lesson_id' => $rootId])->all();
+        foreach ($children as $child) {
+            $ids[] = $child->id;
+        }
+        return array_unique($ids);
+    }
+
+    /**
      * @return string
      * @throws Exception
      */
@@ -292,22 +307,32 @@ class Lesson extends Model
      */
     public function IsScheduleComplete(string $type = "lesson"): bool
     {
-        /**
-         * derse ait schedule bulunur
-         * bu schedule a ait schedule itemler bulunur.
-         * schedule itemi yoksa $this->remaining_size = $this->size; yapılır ve false dönülür.
-         * item varsa status bilgisi unavailable ve preferred olmayanların ders saat sayısı ayarlardan gelen ders saat süresine göre hesaplanır.
-         * itemde hesaplanan saat sayısı $this->placed_size olarak kaydedilir.
-         * $this->remaining_size = $this->size - $this->placed_size; ile kalan saat sayısı hesaplanır.
-         * kalan saat 0 ise true döndürülür.
-         *
-         * sınav programları için itemlerin getSlotDatas metodu kullanılarak dersliklerin sınav mevcudu toplanarak ddersin mevcudunu karşılayıp karşılamadığına bakılır.
-         */
-        $schedules = (new Schedule())->get()->where([
-            'owner_type' => 'lesson',
-            'owner_id' => $this->id,
-            'type' => $type
-        ])->with('items')->all();
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $isExam = in_array($type, $examTypes);
+
+        if ($isExam) {
+            $linkedIds = $this->getLinkedLessonIds();
+            // Toplam grup mevcudunu hesapla
+            $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
+
+            // Tüm bağlı derslerin programlarını çek
+            $schedules = (new Schedule())->get()->where([
+                'owner_type' => 'lesson',
+                'owner_id' => ['in' => $linkedIds],
+                'type' => $type,
+                'semester' => $this->semester,
+                'academic_year' => $this->academic_year
+            ])->with('items')->all();
+        } else {
+            $targetSize = isset($this->hours) ? $this->hours : 0;
+            $schedules = (new Schedule())->get()->where([
+                'owner_type' => 'lesson',
+                'owner_id' => $this->id,
+                'type' => $type,
+                'semester' => $this->semester,
+                'academic_year' => $this->academic_year
+            ])->with('items')->all();
+        }
 
         $items = [];
         foreach ($schedules as $schedule) {
@@ -316,11 +341,7 @@ class Lesson extends Model
             }
         }
 
-        $targetSize = ($type == 'lesson' && isset($this->hours)) ? $this->hours : $this->size;
         $this->placed_size = 0;
-        /**
-         * mevcut ve/ya saat 0 ise program tamamlanmış sayılır
-         */
         if ($targetSize <= 0) {
             $this->remaining_size = 0;
             $this->placed_hours = 0;
@@ -333,23 +354,69 @@ class Lesson extends Model
             return false;
         }
 
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        if (in_array($type, $examTypes)) {
+        if ($isExam) {
+            // Aynı slotta (hafta, gün, saat) birden fazla derslikte sınav olabilir.
+            // Kullanıcı talebi: Derslik programlarına bakılmalı.
+            $uniqueClassroomSlots = []; // [ 'week-day-start-classId' => assignment_data ]
+
             foreach ($items as $item) {
-                if (isset($item->detail['assignments']) && is_array($item->detail['assignments'])) {
-                    // Yeni mantık: detail içindeki assignments listesini kullan
-                    foreach ($item->detail['assignments'] as $assignment) {
-                        $this->placed_size += (int) ($assignment['classroom_exam_size'] ?? 0);
-                    }
-                } else {
-                    // Eski mantık: getSlotDatas üzerinden (geriye dönük uyumluluk)
-                    foreach ($item->getSlotDatas() as $data) {
-                        if (isset($data->classroom)) {
-                            $this->placed_size += $data->classroom->exam_size;
+                $detail = is_string($item->detail) ? json_decode($item->detail, true) : $item->detail;
+                if (isset($detail['assignments']) && is_array($detail['assignments'])) {
+                    foreach ($detail['assignments'] as $assignment) {
+                        $classId = $assignment['classroom_id'] ?? null;
+                        if ($classId) {
+                            $key = "{$item->week_index}_{$item->day_index}_{$item->start_time}_{$classId}";
+                            $uniqueClassroomSlots[$key] = [
+                                'classroom_id' => $classId,
+                                'week' => $item->week_index,
+                                'day' => $item->day_index,
+                                'start' => $item->start_time
+                            ];
                         }
                     }
                 }
             }
+
+            foreach ($uniqueClassroomSlots as $slot) {
+                // Her derslik için o zamandaki resmi program kaydını (owner_type=classroom) bul
+                $classroomSchedule = (new Schedule())->get()->where([
+                    'owner_type' => 'classroom',
+                    'owner_id' => $slot['classroom_id'],
+                    'type' => $type,
+                    'semester' => $this->semester,
+                    'academic_year' => $this->academic_year
+                ])->first();
+
+                if ($classroomSchedule) {
+                    $classroomItem = (new ScheduleItem())->get()->where([
+                        'schedule_id' => $classroomSchedule->id,
+                        'week_index' => $slot['week'],
+                        'day_index' => $slot['day'],
+                        'start_time' => $slot['start']
+                    ])->first();
+
+                    if ($classroomItem) {
+                        $cDetail = is_string($classroomItem->detail) ? json_decode($classroomItem->detail, true) : $classroomItem->detail;
+                        if (isset($cDetail['assignments']) && is_array($cDetail['assignments'])) {
+                            foreach ($cDetail['assignments'] as $asgn) {
+                                if ($asgn['classroom_id'] == $slot['classroom_id']) {
+                                    $this->placed_size += (int) ($asgn['classroom_exam_size'] ?? 0);
+                                    break;
+                                }
+                            }
+                        } else {
+                            // Geriye dönük uyumluluk: getSlotDatas üzerinden
+                            foreach ($classroomItem->getSlotDatas() as $gd) {
+                                if (isset($gd->classroom) && $gd->classroom->id == $slot['classroom_id']) {
+                                    $this->placed_size += (int) ($gd->classroom->exam_size ?? 0);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            $this->logger()->debug("IsScheduleComplete(exam-classroom-verified) lesson {$this->id}: target={$targetSize}, placed={$this->placed_size}");
         } else {
             $lessonDuration = getSettingValue('duration', 'lesson', 50);
             $breakDuration = getSettingValue('break', 'lesson', 10);
@@ -364,11 +431,6 @@ class Lesson extends Model
 
                 if ($start && $end) {
                     $diffMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
-                    // Eğer süre tam bölünmüyorsa yukarı yuvarla (örn: 50dk ders + 10dk teneffüs = 60dk)
-                    // Ancak tek ders 50dk olabilir, bu yüzden diffMinutes 50 ise 1 sayılmalı.
-                    // Bu mantıkla: diffMinutes / totalSlotDuration.
-                    // Örnek: 230 dk blok. 230 / 60 = 3.83 => 4 saat.
-                    // Örnek: 50 dk blok. 50 / 60 = 0.83 => 1 saat.
                     $this->placed_size += round($diffMinutes / $totalSlotDuration);
                 }
             }

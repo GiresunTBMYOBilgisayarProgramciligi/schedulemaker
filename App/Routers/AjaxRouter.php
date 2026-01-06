@@ -555,6 +555,24 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Sadece kullanılabilir dersler listesinin HTML çıktısını döndürür
+     * @throws Exception
+     */
+    public function getAvailableLessonsHTMLAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        $preference_mode = false;
+        if (isset($this->data['preference_mode'])) {
+            $preference_mode = $this->data['preference_mode'] === "true";
+            unset($this->data['preference_mode']);
+        }
+        $html = $scheduleController->getAvailableLessonsHTML($this->data, $preference_mode);
+        $this->response['status'] = "success";
+        $this->response['HTML'] = $html;
+        $this->sendResponse();
+    }
+
+    /**
      * Ders programı seçiminde Eklenen derse uygun olan sınıf listesini hazırlar.
      * @throws Exception
      */
@@ -684,6 +702,54 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Sınav programı kaydetme isteği
+     */
+    public function saveExamScheduleItemAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        $items = json_decode($this->data['items'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+            $this->sendResponse();
+            return;
+        }
+
+        try {
+            $createdIds = $scheduleController->saveExamScheduleItems($items);
+            if (!empty($createdIds)) {
+                $createdItems = [];
+                foreach ($createdIds as $groupedIds) {
+                    foreach ($groupedIds as $ownerType => $ids) {
+                        foreach ($ids as $id) {
+                            $item = (new ScheduleItem())->find($id);
+                            if ($item) {
+                                $createdItems[] = $item->getArray();
+                            }
+                        }
+                    }
+                }
+
+                $this->response = [
+                    "status" => "success",
+                    "msg" => "Sınav programı başarıyla kaydedildi.",
+                    "createdIds" => $createdIds,
+                    "createdItems" => $createdItems
+                ];
+            }
+        } catch (\Throwable $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $this->response = [
+                "status" => "error",
+                "msg" => "Sistem Hatası: " . $e->getMessage()
+            ];
+        }
+        $this->sendResponse();
+    }
+
+    /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void
      * @throws Exception
@@ -701,7 +767,7 @@ class AjaxRouter extends Router
         $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
         $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
         $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
-        
+
         $slots = [];
         $start = new \DateTime('08:00');
         $end = new \DateTime('17:00');

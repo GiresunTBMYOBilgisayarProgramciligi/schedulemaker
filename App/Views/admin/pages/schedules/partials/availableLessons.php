@@ -60,7 +60,7 @@ use App\Core\Log;
             'data-lesson-code' => $lesson->code,
             'data-lecturer-id' => $isDummy ? $lesson->lecturer_id : $lesson->lecturer_id,
             'data-status' => $isDummy ? $status : '', // dummy ise preferred/unavailable, değilse boş (JS group/single olarak belirleyecek)
-            'data-program-id' => $lesson->program_id,
+            'data-program-id' => $isDummy ? null :$lesson->program_id,
         ];
 
         if ($isDummy) {

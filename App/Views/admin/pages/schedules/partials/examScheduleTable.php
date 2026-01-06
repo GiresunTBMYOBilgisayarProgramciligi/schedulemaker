@@ -57,10 +57,10 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 }
 
                                 $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
-                                <td class="<?= $dropZone ?> p-1" rowspan="<?= $rowSpan ?>"
+                                <td class="<?= $dropZone ?>" rowspan="<?= $rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
-                                    data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                    data-day-index="<?= $dayIndex ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
 
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container h-100">
@@ -86,10 +86,10 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                     'data-lesson-id' => $slotData->lesson->id,
                                                     'data-lesson-code' => $slotData->lesson->code,
                                                     'data-size' => $slotData->lesson->size,
-                                                    'data-lecturer-id' => $slotData->lecturer->id,
-                                                    'data-classroom-id' => $slotData->classroom->id,
-                                                    'data-classroom-size' => $slotData->classroom->class_size,
-                                                    'data-classroom-exam-size' => $slotData->classroom->exam_size,
+                                                    'data-lecturer-id' => $slotData->lecturer?->id,
+                                                    'data-classroom-id' => $slotData->classroom?->id,
+                                                    'data-classroom-size' => $slotData->classroom?->class_size,
+                                                    'data-classroom-exam-size' => $slotData->classroom?->exam_size,
                                                     'data-status' => $scheduleItem->status,
                                                 ];
                                                 if ($schedule->owner_type !== 'program') {
@@ -98,7 +98,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
 
                                                 $attrString = "";
                                                 foreach ($dataAttrs as $key => $val) {
-                                                    $attrString .= " $key=\"" . htmlspecialchars($val) . "\"";
+                                                    $attrString .= " $key=\"" . htmlspecialchars((string) ($val ?? "")) . "\"";
                                                 }
                                                 ?>
                                                 <div <?= $attrString ?>>
@@ -162,7 +162,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 </td>
                             <?php else: ?>
                                 <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
+                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= $dayIndex ?>">
                                     <div class="empty-slot"></div>
                                 </td>
                             <?php endif; ?>

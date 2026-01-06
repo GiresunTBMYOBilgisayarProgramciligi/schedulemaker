@@ -1143,7 +1143,10 @@ class ScheduleCard {
                 let scheduleItems = this.generateScheduleItems(result, classroom);
                 if (await this.checkCrashBackEnd(scheduleItems)) {
                     let saveResult = await this.saveScheduleItems(scheduleItems);
-                    if (saveResult) this.moveLessonListToTable(scheduleItems, classroom, saveResult);
+                    if (saveResult) {
+                        this.moveLessonListToTable(scheduleItems, classroom, saveResult);
+                        this.refreshAvailableLessons();
+                    }
                 }
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
@@ -1155,7 +1158,10 @@ class ScheduleCard {
                 await this.checkCrash(hours, classroom);
                 let scheduleItems = this.generateScheduleItems(hours, classroom);
                 let saveScheduleResult = await this.saveScheduleItems(scheduleItems);
-                if (saveScheduleResult) this.moveLessonListToTable(scheduleItems, classroom, saveScheduleResult);
+                if (saveScheduleResult) {
+                    this.moveLessonListToTable(scheduleItems, classroom, saveScheduleResult);
+                    this.refreshAvailableLessons();
+                }
             } catch (errorMessage) {
                 new Toast().prepareToast("Hata", errorMessage, "danger");
             }
@@ -1211,6 +1217,7 @@ class ScheduleCard {
                 this.draggedLesson.HTMLElement.remove();
             }
             this.updateStickyList();
+            this.refreshAvailableLessons();
         }
         this.resetDraggedLesson();
     }
@@ -1243,6 +1250,7 @@ class ScheduleCard {
                     if (saveResult) {
                         itemsToMove.forEach(item => item.element.remove());
                         this.moveLessonListToTable(newItems, classroom, saveResult);
+                        this.refreshAvailableLessons();
                     }
                 }
             }
@@ -1250,5 +1258,56 @@ class ScheduleCard {
             new Toast().prepareToast("Hata", errorMessage, "danger");
         }
         this.resetDraggedLesson();
+    }
+
+    /**
+     * Kullanılabilir dersler listesini AJAX ile yeniler
+     */
+    async refreshAvailableLessons() {
+        const availableList = this.card.querySelector('.available-schedule-items');
+        if (!availableList) return;
+
+        let data = new FormData();
+        data.append("owner_type", this.owner_type);
+        data.append("owner_id", this.owner_id);
+        data.append("semester", this.semester);
+        data.append("academic_year", this.academic_year);
+        data.append("type", this.type);
+
+        if (this.semester_no) {
+            if (Array.isArray(this.semester_no)) {
+                this.semester_no.forEach(no => data.append("semester_no[]", no));
+            } else {
+                data.append("semester_no", this.semester_no);
+            }
+        }
+
+        data.append("preference_mode", this.preference_mode ? "true" : "false");
+
+        try {
+            const response = await fetch("/ajax/getAvailableLessonsHTML", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data
+            });
+            const result = await response.json();
+            if (result.status === "success" && result.HTML) {
+                // Mevcut listeyi yeni gelenle değiştir
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = result.HTML;
+                const newList = tempDiv.querySelector('.available-schedule-items');
+                if (newList) {
+                    availableList.innerHTML = newList.innerHTML;
+                    // Tooltip ve drag olaylarını tekrar bağlamak için initialize'ı sınırlı şekilde çağırabiliriz
+                    // Ancak şimdilik generic initialize çağrısı yapalım (kart özelinde çalışmalı)
+                    const dragableElements = availableList.querySelectorAll('[draggable="true"]');
+                    dragableElements.forEach(element => {
+                        element.addEventListener('dragstart', this.dragStartHandler.bind(this));
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Available lessons refresh error:", error);
+        }
     }
 }
