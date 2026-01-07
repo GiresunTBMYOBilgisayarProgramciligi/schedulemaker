@@ -278,7 +278,7 @@ class ScheduleController extends Controller
      * @throws Exception
      * @return array
      */
-    private function prepareScheduleRows(Schedule $schedule, $type = "html", $maxDayIndex = null): array
+    public function prepareScheduleRows(Schedule $schedule, $type = "html", $maxDayIndex = null): array
     {
         /*
          * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.

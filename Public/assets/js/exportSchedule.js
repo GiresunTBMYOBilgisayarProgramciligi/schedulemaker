@@ -13,135 +13,120 @@ document.addEventListener("DOMContentLoaded", function () {
         const button = event.target.closest("button"); // En yakın button'u bul
         if (!button) return; // Eğer button değilse devam etme
 
-        // Bölüm/Program bazlı dışa aktarma
-        if (button.id === "departmentAndProgramExport") {
+        // Sadece Excel dışa aktarma butonları için (id sonunda Export olanlar)
+        if (button.id.endsWith("Export")) {
+            const ownerType = button.id === "singlePageExport" ? button.dataset.ownerType :
+                button.id === "lecturerExport" ? "user" :
+                    button.id === "classroomExport" ? "classroom" : "program";
+
+            showExportOptionsModal(ownerType, async (options) => {
+                let data = new FormData();
+                data.append("type", "lesson");
+                data.append("semester", document.getElementById("semester")?.value || "");
+                data.append("academic_year", document.getElementById("academic_year")?.value || "");
+                data.append("owner_type", ownerType);
+
+                // Seçenekleri ekle
+                Object.keys(options).forEach(key => data.append(key, options[key] ? 1 : 0));
+
+                if (button.id === "singlePageExport") {
+                    data.append("owner_id", button.dataset.ownerId);
+                } else {
+                    const selectId = button.id === "lecturerExport" ? "lecturer_id" :
+                        button.id === "classroomExport" ? "classroom_id" :
+                            button.id === "departmentAndProgramExport" ? (programSelect && programSelect.value > 0 ? "program_id" : "department_id") : "";
+
+                    if (selectId) {
+                        const selectElement = document.getElementById(selectId);
+                        if (selectElement && selectElement.value > 0) {
+                            if (selectId === "department_id") data.set("owner_type", "department");
+                            data.append("owner_id", selectElement.value);
+                        }
+                    }
+                }
+
+                spinner.showSpinner(document.getElementById("schedule_container"));
+                await fetchExportSchedule(data);
+            });
+            return;
+        }
+
+        // ICS (Takvim) butonları için mevcut mantık devam ediyor
+        if (button.id.endsWith("Calendar")) {
             let data = new FormData();
             data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
+            data.append("semester", document.getElementById("semester")?.value || "");
+            data.append("academic_year", document.getElementById("academic_year")?.value || "");
 
-            if (programSelect && programSelect.value > 0) {
-                data.append("owner_type", "program");
-                data.append("owner_id", programSelect.value);
-            } else if (departmentSelect && departmentSelect.value > 0) {
-                data.append("owner_type", "department");
-                data.append("owner_id", departmentSelect.value);
+            if (button.id === "singlePageCalendar") {
+                data.append("owner_type", button.dataset.ownerType);
+                data.append("owner_id", button.dataset.ownerId);
             } else {
-                data.append("owner_type", "program");
+                if (button.id === "lecturerCalendar") {
+                    data.append("owner_type", "user");
+                    if (lecturerSelect && lecturerSelect.value > 0) data.append("owner_id", lecturerSelect.value);
+                } else if (button.id === "classroomCalendar") {
+                    data.append("owner_type", "classroom");
+                    if (classroomSelect && classroomSelect.value > 0) data.append("owner_id", classroomSelect.value);
+                } else if (button.id === "departmentAndProgramCalendar") {
+                    if (programSelect && programSelect.value > 0) {
+                        data.append("owner_type", "program");
+                        data.append("owner_id", programSelect.value);
+                    } else if (departmentSelect && departmentSelect.value > 0) {
+                        data.append("owner_type", "department");
+                        data.append("owner_id", departmentSelect.value);
+                    } else {
+                        data.append("owner_type", "program");
+                    }
+                }
             }
-
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportSchedule(data);
-        }
-
-        // Hoca bazlı dışa aktarma
-        if (button.id === "lecturerExport") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
-
-            if (lecturerSelect && lecturerSelect.value > 0) {
-                data.append("owner_type", "user");
-                data.append("owner_id", lecturerSelect.value);
-            } else {
-                data.append("owner_type", "user");
-            }
-
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportSchedule(data);
-        }
-
-        // Derslik bazlı dışa aktarma
-        if (button.id === "classroomExport") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
-
-            if (classroomSelect && classroomSelect.value > 0) {
-                data.append("owner_type", "classroom");
-                data.append("owner_id", classroomSelect.value);
-            } else {
-                data.append("owner_type", "classroom");
-            }
-
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportSchedule(data);
-        }
-
-        // Tek sayfalık dışa aktarma (dinamik eklenen buton)
-        if (button.id === "singlePageExport") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("owner_type", button.dataset.ownerType);
-            data.append("owner_id", button.dataset.ownerId);
-
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportSchedule(data);
-        }
-
-        // Bölüm/Program bazlı takvime kaydet
-        if (button.id === "departmentAndProgramCalendar") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
-            if (programSelect && programSelect.value > 0) {
-                data.append("owner_type", "program");
-                data.append("owner_id", programSelect.value);
-            } else if (departmentSelect && departmentSelect.value > 0) {
-                data.append("owner_type", "department");
-                data.append("owner_id", departmentSelect.value);
-            } else {
-                data.append("owner_type", "program");
-            }
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportIcs(data);
-        }
-
-        // Hoca bazlı takvime kaydet
-        if (button.id === "lecturerCalendar") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
-            if (lecturerSelect && lecturerSelect.value > 0) {
-                data.append("owner_type", "user");
-                data.append("owner_id", lecturerSelect.value);
-            } else {
-                data.append("owner_type", "user");
-            }
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportIcs(data);
-        }
-
-        // Derslik bazlı takvime kaydet
-        if (button.id === "classroomCalendar") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("semester", document.getElementById("semester").value);
-            data.append("academic_year", document.getElementById("academic_year").value);
-            if (classroomSelect && classroomSelect.value > 0) {
-                data.append("owner_type", "classroom");
-                data.append("owner_id", classroomSelect.value);
-            } else {
-                data.append("owner_type", "classroom");
-            }
-            spinner.showSpinner(document.getElementById("schedule_container"));
-            await fetchExportIcs(data);
-        }
-
-        // Tek sayfa takvime kaydet (dinamik)
-        if (button.id === "singlePageCalendar") {
-            let data = new FormData();
-            data.append("type", "lesson");
-            data.append("owner_type", button.dataset.ownerType);
-            data.append("owner_id", button.dataset.ownerId);
             spinner.showSpinner(document.getElementById("schedule_container"));
             await fetchExportIcs(data);
         }
     });
+
+    /**
+     * Dışa aktarma seçeneklerini soran modalı gösterir
+     */
+    function showExportOptionsModal(ownerType, onConfirm) {
+        const modal = new Modal();
+        let content = `<div class="p-2">
+            <p class="mb-3 border-bottom pb-2">Excel tablosunda görünmesini istediğiniz alanları seçin:</p>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="show_code" checked>
+                <label class="form-check-label" for="show_code">Ders Kodu</label>
+            </div>`;
+
+        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department") {
+            content += `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="show_lecturer" checked>
+                <label class="form-check-label" for="show_lecturer">Hoca Adı</label>
+            </div>`;
+        }
+
+        if (ownerType === "user" || ownerType === "classroom") {
+            content += `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="show_program" checked>
+                <label class="form-check-label" for="show_program">Program/Bölüm Adı</label>
+            </div>`;
+        }
+
+        content += `</div>`;
+
+        modal.prepareModal("Dışa Aktarma Seçenekleri", content, true, true, "md");
+        modal.confirmButton.textContent = "Dışa Aktar";
+        modal.showModal();
+
+        modal.confirmButton.addEventListener("click", () => {
+            const options = {};
+            if (document.getElementById("show_code")) options.show_code = document.getElementById("show_code").checked;
+            if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
+            if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
+
+            modal.closeModal();
+            onConfirm(options);
+        });
+    }
 
     // Export isteği gönderme ve indirme işlemi
     function fetchExportSchedule(data) {

@@ -65,6 +65,9 @@ class FilterValidator
             'startTime' => ['type' => 'string'],//Dersin başlangıç saati
             'items' => ['type' => 'string'],//JSON formatında schedule items
             'week_index' => ['type' => 'int'],//Hafta index numarası
+            'show_code' => ['type' => 'int'],//Ders kodu gösterilsin mi?
+            'show_lecturer' => ['type' => 'int'],//Hoca adı gösterilsin mi?
+            'show_program' => ['type' => 'int'],//Program adı gösterilsin mi?
         ];
 
         // 2. Her işlem için kuralları tanımla
@@ -131,17 +134,17 @@ class FilterValidator
             ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "generateScheduleFilters" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportSchedule" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
