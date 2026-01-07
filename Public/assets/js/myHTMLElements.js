@@ -51,7 +51,7 @@ class Modal {
         this.modal.setAttribute("aria-hidden", "true");
 
         this.dialog = document.createElement("div");
-        this.dialog.classList.add("modal-dialog");
+        this.dialog.classList.add("modal-dialog", "modal-dialog-scrollable");
 
         this.content = document.createElement("div");
         this.content.classList.add("modal-content");

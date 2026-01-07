@@ -209,28 +209,31 @@ class ScheduleCard {
 
         let menuItems = []
         const lecturerId = lessonCard.dataset.lecturerId;
+        const lecturerName = lessonCard.dataset.lecturerName || 'Hoca';
         const classroomId = lessonCard.dataset.classroomId;
+        const classroomName = lessonCard.dataset.classroomName || 'Derslik';
         const programId = lessonCard.dataset.programId;
+        const programName = lessonCard.dataset.programName || 'Program';
 
         if (classroomId) {
             menuItems.push({
-                text: 'Derslik programını göster',
+                text: `${classroomName} programını göster`,
                 icon: 'bi-door-open',
-                onClick: () => this.showScheduleInModal('classroom', classroomId, 'Derslik Programı')
+                onClick: () => this.showScheduleInModal('classroom', classroomId, `${classroomName} Programı`)
             });
         }
         if (lecturerId) {
             menuItems.push({
-                text: 'Hoca programını göster',
+                text: `${lecturerName} programını göster`,
                 icon: 'bi-person-badge',
-                onClick: () => this.showScheduleInModal('user', lecturerId, 'Hoca Programı')
+                onClick: () => this.showScheduleInModal('user', lecturerId, `${lecturerName} Programı`)
             });
         }
         if (programId) {
             menuItems.push({
-                text: 'Program programını göster',
+                text: `${programName} programını göster`,
                 icon: 'bi-book',
-                onClick: () => this.showScheduleInModal('program', programId, 'Program Programı')
+                onClick: () => this.showScheduleInModal('program', programId, `${programName} Programı`)
             });
         }
         menuItems.forEach(item => {
@@ -253,6 +256,24 @@ class ScheduleCard {
         const modal = new Modal();
         modal.initializeModal("xl");
         modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true, "xl");
+
+        // Sayfaya git butonu ekle
+        let url = "";
+        switch (ownerType) {
+            case 'user': url = `/admin/profile/${ownerId}`; break;
+            case 'classroom': url = `/admin/classroom/${ownerId}`; break;
+            case 'program': url = `/admin/program/${ownerId}`; break;
+            case 'lesson': url = `/admin/lesson/${ownerId}`; break;
+        }
+
+        if (url) {
+            const goBtn = document.createElement('button');
+            goBtn.className = 'btn btn-info';
+            goBtn.innerHTML = '<i class="bi bi-box-arrow-up-right me-1"></i> Sayfaya Git';
+            goBtn.onclick = () => window.open(url, '_blank');
+            modal.footer.prepend(goBtn);
+        }
+
         modal.showModal();
 
         const data = new FormData();

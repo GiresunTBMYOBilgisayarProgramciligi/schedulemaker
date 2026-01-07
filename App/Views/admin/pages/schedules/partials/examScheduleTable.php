@@ -87,7 +87,9 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                     'data-lesson-code' => $slotData->lesson->code,
                                                     'data-size' => $slotData->lesson->size,
                                                     'data-lecturer-id' => $slotData->lecturer?->id,
+                                                    'data-lecturer-name' => $slotData->lecturer?->getFullName(),
                                                     'data-classroom-id' => $slotData->classroom?->id,
+                                                    'data-classroom-name' => $slotData->classroom?->name,
                                                     'data-classroom-size' => $slotData->classroom?->class_size,
                                                     'data-classroom-exam-size' => $slotData->classroom?->exam_size,
                                                     'data-status' => $scheduleItem->status,
@@ -95,6 +97,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                 ];
                                                 if ($schedule->owner_type !== 'program') {
                                                     $dataAttrs['data-program-id'] = $slotData->lesson->program_id;
+                                                    $dataAttrs['data-program-name'] = $slotData->lesson->program?->name;
                                                 }
 
                                                 $attrString = "";

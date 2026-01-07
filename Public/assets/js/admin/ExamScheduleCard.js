@@ -63,28 +63,31 @@ class ExamScheduleCard extends ScheduleCard {
         } else {
             // Detay yoksa ScheduleCard'daki gibi dataset'ten dene (belki liste tarafındadır veya tekil atamadır)
             const lecturerId = lessonCard.dataset.lecturerId;
+            const lecturerName = lessonCard.dataset.lecturerName || 'Hoca';
             const classroomId = lessonCard.dataset.classroomId;
+            const classroomName = lessonCard.dataset.classroomName || 'Derslik';
             if (lecturerId) {
                 menuItems.push({
-                    text: 'Hoca programını göster',
+                    text: `${lecturerName} programını göster`,
                     icon: 'bi-person-badge',
-                    onClick: () => this.showScheduleInModal('user', lecturerId, 'Hoca Programı')
+                    onClick: () => this.showScheduleInModal('user', lecturerId, `${lecturerName} Programı`)
                 });
             }
             if (classroomId) {
                 menuItems.push({
-                    text: 'Derslik programını göster',
+                    text: `${classroomName} programını göster`,
                     icon: 'bi-door-open',
-                    onClick: () => this.showScheduleInModal('classroom', classroomId, 'Derslik Programı')
+                    onClick: () => this.showScheduleInModal('classroom', classroomId, `${classroomName} Programı`)
                 });
             }
         }
 
         if (programId) {
+            const programName = lessonCard.dataset.programName || 'Program';
             menuItems.push({
-                text: 'Program programını göster',
+                text: `${programName} programını göster`,
                 icon: 'bi-book',
-                onClick: () => this.showScheduleInModal('program', programId, 'Program Programı')
+                onClick: () => this.showScheduleInModal('program', programId, `${programName} Programı`)
             });
         }
 
