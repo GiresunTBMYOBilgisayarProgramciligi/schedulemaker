@@ -28,6 +28,7 @@ Ders kartı üzerindeki `data-lecturer-id` ve `data-classroom-id` değerlerini k
 - Menü oluşturulmadan önce varsa eski menü (`#lesson-context-menu`) DOM'dan kaldırılır.
 - Menü elemanları için Bootstrap ikonları (`bi-person-badge`, `bi-door-open`) kullanılır.
 - Menü `z-index: 2000` ile diğer elemanların üzerinde görünecek şekilde ayarlanır.
+- **Not:** [ExamScheduleCard](../ExamScheduleCard.md) sınıfı bu metodu sınavlara özel (çoklu gözetmen ve derslik desteği) olacak şekilde ezer (override).
 
 ## Dosya Bilgisi
 

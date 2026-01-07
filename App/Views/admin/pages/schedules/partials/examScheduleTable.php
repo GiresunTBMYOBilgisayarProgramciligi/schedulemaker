@@ -91,6 +91,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                     'data-classroom-size' => $slotData->classroom?->class_size,
                                                     'data-classroom-exam-size' => $slotData->classroom?->exam_size,
                                                     'data-status' => $scheduleItem->status,
+                                                    'data-detail' => json_encode($scheduleItem->detail),
                                                 ];
                                                 if ($schedule->owner_type !== 'program') {
                                                     $dataAttrs['data-program-id'] = $slotData->lesson->program_id;

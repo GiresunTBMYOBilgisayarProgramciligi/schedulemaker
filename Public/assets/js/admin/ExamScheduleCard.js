@@ -12,6 +12,98 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     /**
+     * Sınav programı için özel sağ tık menüsü.
+     * Atanmış tüm gözetmen ve derslikleri listeler.
+     */
+    showContextMenu(x, y, lessonCard) {
+        const oldMenu = document.getElementById('lesson-context-menu');
+        if (oldMenu) oldMenu.remove();
+
+        const menu = document.createElement('div');
+        menu.id = 'lesson-context-menu';
+        menu.className = 'context-menu';
+        menu.style.position = 'absolute';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+        menu.style.zIndex = '2000';
+
+        let menuItems = [];
+        const programId = lessonCard.dataset.programId;
+
+        // Atamaları kontrol et
+        let assignments = [];
+        if (lessonCard.dataset.detail) {
+            try {
+                const detail = JSON.parse(lessonCard.dataset.detail);
+                if (detail && detail.assignments) {
+                    assignments = detail.assignments;
+                }
+            } catch (e) {
+                console.error("JSON parse error for lesson card detail", e);
+            }
+        }
+
+        if (assignments.length > 0) {
+            assignments.forEach(asgn => {
+                if (asgn.observer_id) {
+                    menuItems.push({
+                        text: `${asgn.observer_name} programını göster`,
+                        icon: 'bi-person-badge',
+                        onClick: () => this.showScheduleInModal('user', asgn.observer_id, `${asgn.observer_name} Programı`)
+                    });
+                }
+                if (asgn.classroom_id) {
+                    menuItems.push({
+                        text: `${asgn.classroom_name} programını göster`,
+                        icon: 'bi-door-open',
+                        onClick: () => this.showScheduleInModal('classroom', asgn.classroom_id, `${asgn.classroom_name} Programı`)
+                    });
+                }
+            });
+        } else {
+            // Detay yoksa ScheduleCard'daki gibi dataset'ten dene (belki liste tarafındadır veya tekil atamadır)
+            const lecturerId = lessonCard.dataset.lecturerId;
+            const classroomId = lessonCard.dataset.classroomId;
+            if (lecturerId) {
+                menuItems.push({
+                    text: 'Hoca programını göster',
+                    icon: 'bi-person-badge',
+                    onClick: () => this.showScheduleInModal('user', lecturerId, 'Hoca Programı')
+                });
+            }
+            if (classroomId) {
+                menuItems.push({
+                    text: 'Derslik programını göster',
+                    icon: 'bi-door-open',
+                    onClick: () => this.showScheduleInModal('classroom', classroomId, 'Derslik Programı')
+                });
+            }
+        }
+
+        if (programId) {
+            menuItems.push({
+                text: 'Program programını göster',
+                icon: 'bi-book',
+                onClick: () => this.showScheduleInModal('program', programId, 'Program Programı')
+            });
+        }
+
+        menuItems.forEach(item => {
+            const menuItem = document.createElement('div');
+            menuItem.className = 'context-menu-item';
+            menuItem.innerHTML = `<i class="bi ${item.icon} me-2"></i>${item.text}`;
+            menuItem.onclick = (e) => {
+                e.stopPropagation();
+                item.onClick();
+                menu.remove();
+            };
+            menu.appendChild(menuItem);
+        });
+
+        document.body.appendChild(menu);
+    }
+
+    /**
      * Sınav atama modalını açar (Çoklu derslik ve gözetmen seçimi)
      */
     async openAssignmentModal(title = "Sınav Atama ve Derslik Seçimi") {
