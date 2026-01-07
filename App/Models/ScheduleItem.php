@@ -70,7 +70,7 @@ class ScheduleItem extends Model
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
-            $lessons[] = (new Lesson()->get()->where(['id' => $dayData['lesson_id']]))->first();
+            $lessons[] = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->first();
         }
         //$this->logger()->debug('Lessons: ', ['lessons' => $lessons]);
         return $lessons;
@@ -82,7 +82,7 @@ class ScheduleItem extends Model
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
-            $lecturers[] = (new User()->get()->where(['id' => $dayData['lecturer_id']]))->first();
+            $lecturers[] = (new User())->get()->where(['id' => $dayData['lecturer_id']])->first();
         }
         //$this->logger()->debug('Lecturers: ', ['lecturers' => $lecturers]);
         return $lecturers;
@@ -94,7 +94,7 @@ class ScheduleItem extends Model
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
-            $classrooms[] = (new Classroom()->get()->where(['id' => $dayData['classroom_id']]))->first();
+            $classrooms[] = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first();
         }
         //$this->logger()->debug('Classrooms: ', ['classrooms' => $classrooms]);
         return $classrooms;
@@ -109,7 +109,7 @@ class ScheduleItem extends Model
             if ($dayData == null)
                 continue;
             $slotDatas[] = (object) [
-                'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons','program'])->first(),
+                'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons', 'program'])->first(),
                 'lecturer' => (new User())->get()->where(['id' => $dayData['lecturer_id']])->first(),
                 'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
             ];
