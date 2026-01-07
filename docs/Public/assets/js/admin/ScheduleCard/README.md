@@ -57,6 +57,7 @@ Bu yapı, ders ve sınav programlarının kendine özgü modal, çakışma ve g�
 - [saveScheduleItems](./saveScheduleItems.md): Verileri veritabanına kaydeder.
 - [deleteScheduleItems](./deleteScheduleItems.md): Kayıtları sistemden siler.
 - [TimeHelpers](./TimeHelpers.md): Zaman hesaplama yardımcıları (addMinutes, timeToMinutes vb.).
+- **Hata İzleme**: Tüm `Toast` ve `reject` hata mesajlarından önce, hatanın kaynağını ve detaylarını belirten `console.error` logları eklenmiştir. Bu, geliştirme sırasında frontend çakışmalarının nedenini bulmayı kolaylaştırır.
 
 ## UX Kuralları
 1.  **Sticky Headers**: Uzun tablolarda başlıkların ve ders listesinin ekranın üstüne yapışması.

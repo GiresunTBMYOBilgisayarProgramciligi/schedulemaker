@@ -53,6 +53,7 @@ class LessonScheduleCard extends ScheduleCard {
                 event.preventDefault();
 
                 if (!classroomSelect.value) {
+                    console.error("Ders atama hatası: Derslik seçilmedi.");
                     new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
                     return;
                 }
@@ -91,6 +92,7 @@ class LessonScheduleCard extends ScheduleCard {
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = this.table.rows[this.draggedLesson.end_element.closest("tr").rowIndex + i];
                 if (!row) {
+                    console.error("checkCrash hatası: Ders saatleri programın dışına taşıyor. Row index:", this.draggedLesson.end_element.closest("tr").rowIndex + i);
                     reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
                 }
@@ -108,6 +110,7 @@ class LessonScheduleCard extends ScheduleCard {
                     let isGroup = Boolean(cell.querySelector('.lesson-group-container'));
 
                     if (!isGroup) {
+                        console.error("checkCrash hatası: Hedef hücre grup dersi değil. Hücre içeriği:", cell.innerHTML);
                         reject("Bu alana ders ekleyemezsiniz.");
                         return;
                     } else {
@@ -115,18 +118,22 @@ class LessonScheduleCard extends ScheduleCard {
                         lessons.forEach((lesson) => {
                             if (this.draggedLesson.group_no < 1) {
                                 hasCrash = true;
+                                console.error("checkCrash hatası: Eklenen ders gruplu değil.");
                                 reject("Eklenen ders gruplu değil, bu alana eklenemez");
                             }
                             if (lesson.dataset.lecturerId == this.draggedLesson.lecturer_id) {
                                 hasCrash = true;
+                                console.error("checkCrash hatası: Hoca çakışması. Hoca ID:", this.draggedLesson.lecturer_id);
                                 reject("Hoca aynı anda iki farklı derse giremez.");
                             }
                             if (lesson.dataset.lessonCode === newLessonCode) {
                                 hasCrash = true;
+                                console.error("checkCrash hatası: Ders kodu çakışması. Ders kodu:", newLessonCode);
                                 reject("Lütfen farklı bir ders seçin.");
                             }
                             if (lesson.dataset.groupNo === newGroupNo) {
                                 hasCrash = true;
+                                console.error("checkCrash hatası: Grup numarası çakışması. Grup no:", newGroupNo);
                                 reject("Grup numaraları aynı olamaz.");
                             }
                         });

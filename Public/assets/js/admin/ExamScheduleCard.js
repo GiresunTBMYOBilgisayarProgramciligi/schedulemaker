@@ -274,7 +274,7 @@ class ExamScheduleCard extends ScheduleCard {
                 });
 
                 if (!isValid) {
-                    new Toast().prepareToast("Hata", "Lütfen tüm alanları doldurun.", "warning");
+                    console.error("Exam assignment error: Fields missing"); new Toast().prepareToast("Hata", "Lütfen tüm alanları doldurun.", "warning");
                     return;
                 }
 
@@ -302,7 +302,7 @@ class ExamScheduleCard extends ScheduleCard {
 
             if (!this.draggedLesson.end_element) {
                 console.error("checkCrash: end_element is missing");
-                reject("Hedef hücre bulunamadı.");
+                console.error("checkCrash error: Target cell missing"); reject("Hedef hücre bulunamadı.");
                 return;
             }
 
@@ -314,7 +314,7 @@ class ExamScheduleCard extends ScheduleCard {
                 let row = dropTable.rows[startRowIndex + i];
                 if (!row) {
                     console.error("checkCrash: Row not found at index", startRowIndex + i, "for day", targetDayIndex);
-                    reject("Eklenen sınav saatleri programın dışına taşıyor.");
+                    console.error("checkCrash error: Out of bounds"); reject("Eklenen sınav saatleri programın dışına taşıyor.");
                     return;
                 }
 
@@ -329,17 +329,17 @@ class ExamScheduleCard extends ScheduleCard {
 
                 if (!cell) {
                     console.error("checkCrash: Cell not found for targetDayIndex", targetDayIndex, "in row", startRowIndex + i, ". Available dayIndexes:", Array.from(row.cells).map(c => c.dataset.dayIndex));
-                    reject("Hücre bulunamadı (Tablo yapısı tutarsız).");
+                    console.error("checkCrash error: Table structure inconsistent"); reject("Hücre bulunamadı (Tablo yapısı tutarsız).");
                     return;
                 }
 
                 if (!cell.classList.contains("drop-zone") || cell.querySelector('.slot-unavailable')) {
                     if (cell.style.display === 'none') {
                         console.error("checkCrash: Intersection with another rowspan exam at row", startRowIndex + i, "day", targetDayIndex, "Cell:", cell);
-                        reject("Bu saatte başka bir sınav planlanmış.");
+                        console.error("checkCrash error: Rowspan intersection"); reject("Bu saatte başka bir sınav planlanmış.");
                     } else {
                         console.error("checkCrash: Slot not suitable (not drop-zone or unavailable) at row", startRowIndex + i, "day", targetDayIndex, "Cell:", cell);
-                        reject("Seçilen zaman aralığında uygun olmayan saatler (Müsait değil/Kısıtlı) var.");
+                        console.error("checkCrash error: Slot not suitable"); reject("Seçilen zaman aralığında uygun olmayan saatler (Müsait değil/Kısıtlı) var.");
                     }
                     return;
                 }
@@ -358,19 +358,19 @@ class ExamScheduleCard extends ScheduleCard {
 
                         if (existBase !== currentBase) {
                             console.error("checkCrash: Base lesson mismatch", existBase, currentBase, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
-                            reject("Sınav programında aynı saate farklı dersler konulamaz.");
+                            console.error("checkCrash error: Base lesson mismatch"); reject("Sınav programında aynı saate farklı dersler konulamaz.");
                             return;
                         }
 
                         if (existClassroomId == newClassroomId) {
                             console.error("checkCrash: Classroom conflict", existClassroomId, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
-                            reject("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
+                            console.error("checkCrash error: Classroom conflict"); reject("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
                             return;
                         }
 
                         if (existLecturerId == newLecturerId) {
                             console.error("checkCrash: Lecturer conflict", existLecturerId, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
-                            reject("Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz.");
+                            console.error("checkCrash error: Lecturer conflict"); reject("Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz.");
                             return;
                         }
                     }
@@ -416,7 +416,7 @@ class ExamScheduleCard extends ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
-                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    console.error("Exam save API error:", data.msg); new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
                     return data.createdIds || true;
@@ -424,7 +424,7 @@ class ExamScheduleCard extends ScheduleCard {
             })
             .catch((error) => {
                 console.error("Exam saveScheduleItems error:", error);
-                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                console.error("Exam save system error:", error); new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });
     }

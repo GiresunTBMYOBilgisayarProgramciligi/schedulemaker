@@ -442,6 +442,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data && data.status === "error") {
+                    console.error("getSchedule API hatası:", data.msg);
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -449,8 +450,8 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
+                console.error("getSchedule sistem hatası:", error);
                 new Toast().prepareToast("Hata", "Program bilgisi alınırken hata oluştu.", "danger");
-                console.error(error);
                 return false;
             });
     }
@@ -561,6 +562,7 @@ class ScheduleCard {
             return true;
         } catch (error) {
             toast.closeToast();
+            console.error("highlightUnavailableCells hatası:", error);
             new Toast().prepareToast("Hata", "Veriler alınırken hata oluştu", "danger");
             return false;
         }
@@ -592,6 +594,7 @@ class ScheduleCard {
             targetSelect.innerHTML = `<option value="">${defaultText}</option>`;
 
             if (resData.status === "error") {
+                console.error("fetchOptions API hatası (" + url + "):", resData.msg);
                 new Toast().prepareToast("Hata", resData.msg || "Liste alınırken hata oluştu", "danger");
                 return;
             }
@@ -612,6 +615,7 @@ class ScheduleCard {
             });
 
         } catch (error) {
+            console.error("fetchOptions sistem hatası (" + url + "):", error);
             new Toast().prepareToast("Hata", "Liste alınırken hata oluştu", "danger");
         }
     }
@@ -861,6 +865,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data && data.status === "error") {
+                    console.error("checkCrashBackEnd API hatası:", data.msg);
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -868,6 +873,7 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
+                console.error("checkCrashBackEnd sistem hatası:");
                 new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });
@@ -885,6 +891,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
+                    console.error("saveScheduleItems API hatası:", data.msg); 
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -892,6 +899,7 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
+                console.error("saveScheduleItems sistem hatası:"); 
                 new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });
@@ -927,6 +935,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
+                    console.error("deleteScheduleItems API hatası:", data.msg); 
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -949,6 +958,7 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
+                console.error("deleteScheduleItems sistem hatası:"); 
                 new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });
