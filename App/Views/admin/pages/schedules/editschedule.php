@@ -22,7 +22,7 @@ use function App\Helpers\getSettingValue;
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Takvim İşlemleri</li>
-                        <li class="breadcrumb-item active">Program Düzenle</li>
+                        <li class="breadcrumb-item active">Ders Programı Düzenle</li>
                     </ol>
                 </div>
             </div>

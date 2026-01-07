@@ -595,7 +595,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "page_title" => "Takvim Düzenle",
+            "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
