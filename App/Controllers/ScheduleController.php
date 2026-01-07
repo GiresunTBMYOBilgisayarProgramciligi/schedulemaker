@@ -770,7 +770,7 @@ class ScheduleController extends Controller
                 $affectedLessonIds[] = $mainLesson->id;
             }
 
-            // 4. ADIM: Kapasite Kontrolü
+            /* 4. ADIM: Kapasite Kontrolü
             foreach (array_unique($affectedLessonIds) as $id) {
                 $checkLesson = (new Lesson())->find($id);
                 if ($checkLesson) {
@@ -779,7 +779,7 @@ class ScheduleController extends Controller
                         throw new Exception("{$checkLesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " kişi)");
                     }
                 }
-            }
+            }*/
 
             if ($isInitiator) {
                 $this->database->commit();
@@ -1637,13 +1637,17 @@ class ScheduleController extends Controller
                 if ($ignoreSiblings) {
                     $siblings = [$scheduleItem];
                 } else {
-                    $baseLessonIds = [];
-                    foreach ($scheduleItem->getSlotDatas() as $sd) {
-                        if ($sd->lesson) {
-                            $baseLessonIds[] = (int) $sd->lesson->id;
+                    if ($type === 'exam') {
+                        $siblings = $this->findExamSiblingItems($scheduleItem);
+                    } else {
+                        $baseLessonIds = [];
+                        foreach ($scheduleItem->getSlotDatas() as $sd) {
+                            if ($sd->lesson) {
+                                $baseLessonIds[] = (int) $sd->lesson->id;
+                            }
                         }
+                        $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                     }
-                    $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                 }
 
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
@@ -1880,6 +1884,92 @@ class ScheduleController extends Controller
                 }
             }
         }
+        return array_values($siblingsKeyed);
+    }
+
+    /**
+     * Sınav kayıtları için ilişkili diğer programlardaki kopyaları bulur.
+     */
+    public function findExamSiblingItems(ScheduleItem $baseItem): array
+    {
+        $siblingsKeyed = [$baseItem->id => $baseItem];
+        $baseSchedule = (new Schedule())->find($baseItem->schedule_id);
+        if (!$baseSchedule)
+            return array_values($siblingsKeyed);
+
+        $detail = is_string($baseItem->detail) ? json_decode($baseItem->detail, true) : $baseItem->detail;
+        $ownerList = [];
+
+        if (in_array($baseSchedule->owner_type, ['program', 'lesson'])) {
+            // Program/Ders'ten geliyorsa, detail['assignments'] içindeki tüm derslik ve gözetmenleri ekle
+            if (isset($detail['assignments']) && is_array($detail['assignments'])) {
+                foreach ($detail['assignments'] as $asgn) {
+                    $ownerList[] = ['type' => 'user', 'id' => (int) $asgn['observer_id'], 'semester_no' => null];
+                    $ownerList[] = ['type' => 'classroom', 'id' => (int) $asgn['classroom_id'], 'semester_no' => null];
+                }
+            }
+            // Ayrıca bağlı tüm dersleri ve onların programlarını ekle
+            $lessonId = $baseItem->data[0]['lesson_id'] ?? null;
+            if ($lessonId) {
+                $lesson = (new Lesson())->find($lessonId);
+                if ($lesson) {
+                    $linkedIds = $lesson->getLinkedLessonIds();
+                    foreach ($linkedIds as $lId) {
+                        $ownerList[] = ['type' => 'lesson', 'id' => (int) $lId, 'semester_no' => null];
+                        $lObj = (new Lesson())->find($lId);
+                        if ($lObj && $lObj->program_id) {
+                            $ownerList[] = ['type' => 'program', 'id' => (int) $lObj->program_id, 'semester_no' => $lObj->semester_no];
+                        }
+                    }
+                }
+            }
+        } else {
+            // User/Classroom'dan geliyorsa, program_item_id üzerinden ana program öğesini bul
+            $programItemId = $detail['program_item_id'] ?? null;
+            if ($programItemId) {
+                $programItem = (new ScheduleItem())->where(['id' => $programItemId])->with('schedule')->first();
+                if ($programItem) {
+                    return $this->findExamSiblingItems($programItem);
+                }
+            }
+        }
+
+        // Unique Owners
+        $uniqueOwners = [];
+        foreach ($ownerList as $owner) {
+            $key = $owner['type'] . "_" . $owner['id'] . "_" . ($owner['semester_no'] ?? 'null');
+            $uniqueOwners[$key] = $owner;
+        }
+
+        foreach ($uniqueOwners as $owner) {
+            $scheduleFilters = [
+                'semester' => $baseSchedule->semester,
+                'academic_year' => $baseSchedule->academic_year,
+                'type' => $baseSchedule->type,
+                'owner_type' => $owner['type'],
+                'owner_id' => $owner['id'],
+                'semester_no' => $owner['semester_no']
+            ];
+
+            $schedules = (new Schedule())->get()->where($scheduleFilters)->all();
+            foreach ($schedules as $schedule) {
+                // Sınavlar için tam zaman çakışması aranır (aynı başlangıç saatindeki kayıt)
+                $items = (new ScheduleItem())->get()->where([
+                    'schedule_id' => $schedule->id,
+                    'day_index' => $baseItem->day_index,
+                    'week_index' => $baseItem->week_index
+                ])->all();
+
+                foreach ($items as $item) {
+                    if ($this->checkOverlap($baseItem->start_time, $baseItem->end_time, $item->start_time, $item->end_time)) {
+                        if (!isset($siblingsKeyed[$item->id])) {
+                            $siblingsKeyed[$item->id] = $item;
+                        }
+                    }
+                }
+            }
+        }
+
         return array_values($siblingsKeyed);
     }
 
