@@ -30,4 +30,4 @@ create table if not exists schedule_items
 
 ALTER TABLE `lessons` ADD COLUMN `group_no` INT NOT NULL DEFAULT 0 after `code`;
 alter table `lessons` drop INDEX `code`;
-ALTER TABLE `lessons` ADD UNIQUE (`code`,`program_id`,`group_no`)
+ALTER TABLE `lessons` ADD UNIQUE (`code`,`program_id`,`group_no`);
