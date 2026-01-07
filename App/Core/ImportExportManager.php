@@ -32,6 +32,12 @@ class ImportExportManager
 
     private $sheet;
     private array $formData = [];
+    private array $cache = [
+        'departments' => [],
+        'programs' => [],
+        'users_by_mail' => [],
+        'users_by_name' => []
+    ];
 
     public function __construct(?array $uploadedFile = null, array $formData = [])
     {
@@ -98,35 +104,88 @@ class ImportExportManager
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
-        foreach ($rows as $index => $row) {
-            [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
-                return trim((string) ($item ?? ''));
-            }, $row);
+        $db = Database::getConnection();
+        $db->beginTransaction();
 
-            if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
-                $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
-                $errorCount++;
-                continue;
+        try {
+            foreach ($rows as $index => $row) {
+                // Boş satır kontrolü
+                $is_empty = true;
+                foreach ($row as $cell) {
+                    if ($cell !== null && trim((string) $cell) !== '') {
+                        $is_empty = false;
+                        break;
+                    }
+                }
+                if ($is_empty)
+                    continue;
+
+                [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
+                    return trim((string) ($item ?? ''));
+                }, $row);
+
+                if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
+                    $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
+                    $errorCount++;
+                    continue;
+                }
+
+                // Caching for Department
+                if (!isset($this->cache['departments'][$department_name])) {
+                    $this->cache['departments'][$department_name] = $departmentController->getDepartmentByName($department_name);
+                }
+                $department = $this->cache['departments'][$department_name];
+
+                // Caching for Program
+                $program_cache_key = $department_name . '_' . $program_name;
+                if (!isset($this->cache['programs'][$program_cache_key])) {
+                    $this->cache['programs'][$program_cache_key] = $programController->getProgramByName($program_name);
+                }
+                $program = $this->cache['programs'][$program_cache_key];
+
+                if (!$department || !$program) {
+                    $rowErrors = [];
+                    if (!$department)
+                        $rowErrors[] = "Bölüm bulunamadı! (" . $department_name . ")";
+                    if (!$program)
+                        $rowErrors[] = "Program bulunamadı! (" . $program_name . ")";
+                    $errors[] = "Satır " . ($index + 2) . ": " . implode(" | ", $rowErrors);
+                    $errorCount++;
+                    continue;
+                }
+
+                $userData = [
+                    'mail' => $mail,
+                    'title' => $title,
+                    'name' => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
+                    'last_name' => mb_strtoupper($last_name, "UTF-8"),
+                    'role' => array_search($role, $userController->getRoleList()),
+                    'department_id' => $department->id ?? null,
+                    'program_id' => $program->id ?? null,
+                ];
+
+                // Check cache/db for user
+                if (!isset($this->cache['users_by_mail'][$mail])) {
+                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                }
+                $user = $this->cache['users_by_mail'][$mail];
+
+                if ($user) {
+                    $user->fill($userData);
+                    $user->password = null;
+                    $userController->updateUser($user);
+                    $updatedCount++;
+                } else {
+                    $userController->saveNew($userData);
+                    $addedCount++;
+                    // Yeni eklenen kullanıcıyı da cache'e alalım (id'si oluştu)
+                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                }
             }
-            $userData = [
-                'mail' => $mail,
-                'title' => $title,
-                'name' => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
-                'last_name' => mb_strtoupper($last_name, "UTF-8"),
-                'role' => array_search($role, $userController->getRoleList()),
-                'department_id' => $departmentController->getDepartmentByName($department_name)->id ?? null,
-                'program_id' => $programController->getProgramByName($program_name)->id ?? null,
-            ];
-            $user = $userController->getUserByEmail($mail);
-            if ($user) {
-                $user->fill($userData);
-                $user->password = null;
-                $userController->updateUser($user);
-                $updatedCount++;
-            } else {
-                $userController->saveNew($userData);
-                $addedCount++;
-            }
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
         }
         return [
             "status" => "success",
@@ -169,73 +228,107 @@ class ImportExportManager
         if (!isset($this->formData['academic_year']) or !isset($this->formData['semester'])) {
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
-        foreach ($rows as $rowIndex => $row) {
-            $hasError = false;// her bir satıra hatasız başlanıyor
-            [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
-                return trim((string) ($item ?? ''));
-            }, $row);
+        $db = Database::getConnection();
+        $db->beginTransaction();
 
-            // Değişkenleri bir diziye topla
-            $data = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+        try {
+            foreach ($rows as $rowIndex => $row) {
+                // Boş satır kontrolü
+                $is_empty = true;
+                foreach ($row as $cell) {
+                    if ($cell !== null && trim((string) $cell) !== '') {
+                        $is_empty = false;
+                        break;
+                    }
+                }
+                if ($is_empty)
+                    continue;
 
-            // Her bir değeri kontrol et
-            foreach ($data as $dataIndex => $value) {
-                if ($value === null || $value === "") {
-                    $errors[] = "Satir " . ($rowIndex + 2) . ": " . $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
+                $hasError = false;// her bir satıra hatasız başlanıyor
+                [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
+                    return trim((string) ($item ?? ''));
+                }, $row);
+
+                $data = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+                $rowErrors = []; // Satır bazlı hata toplayıcı
+                // Her bir değeri kontrol et
+                foreach ($data as $dataIndex => $value) {
+                    if ($value === null || $value === "") {
+                        $rowErrors[] = $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
+                        $hasError = true; // Bu satırda hata olduğunu belirt
+                    }
+                }
+
+                // Caching for Department
+                if (!isset($this->cache['departments'][$department_name])) {
+                    $this->cache['departments'][$department_name] = $departmentController->getDepartmentByName($department_name);
+                }
+                $department = $this->cache['departments'][$department_name];
+
+                // Caching for Program
+                $program_cache_key = $department_name . '_' . $program_name;
+                if (!isset($this->cache['programs'][$program_cache_key])) {
+                    $this->cache['programs'][$program_cache_key] = $programController->getProgramByName($program_name);
+                }
+                $program = $this->cache['programs'][$program_cache_key];
+
+                // Caching for Lecturer
+                if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
+                    $this->cache['users_by_name'][$lecturer_full_name] = $userController->getUserByFullName($lecturer_full_name);
+                }
+                $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
+
+                if (!$lecturer) {
+                    $rowErrors[] = "Hoca hatalı! (" . $lecturer_full_name . ")";
+                    $hasError = true;
+                }
+                if (!$program) {
+                    $rowErrors[] = "Program hatalı! (" . $program_name . ")";
+                    $hasError = true;
+                }
+                if (!$department) {
+                    $rowErrors[] = "Bölüm hatalı! (" . $department_name . ")";
+                    $hasError = true;
+                }
+
+                // Eğer bu satırda hata varsa, bir sonraki satıra geç
+                if ($hasError) {
+                    $errors[] = "Satır " . ($rowIndex + 2) . ": " . implode(" | ", $rowErrors);
                     $errorCount++;
-                    $hasError = true; // Bu satırda hata olduğunu belirt
+                    continue;
+                }
+                $lessonData = [
+                    'code' => $code,
+                    'group_no' => $group_no,
+                    'name' => $name,
+                    'size' => $size,
+                    'hours' => $hours,
+                    'type' => array_search(trim($type), (new LessonController())->getTypeList()),
+                    'semester_no' => $semester_no,
+                    'lecturer_id' => $lecturer->id,
+                    'department_id' => $department->id,
+                    'program_id' => $program->id,
+                    'semester' => $this->formData['semester'],
+                    'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
+                    'academic_year' => $this->formData['academic_year'],
+                ];
+                //Ders ders kodu, program_id ve group_no göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
+                $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
+                if ($lesson) {
+                    $lesson->fill($lessonData);
+                    $lessonsController->updateLesson($lesson);
+                    $updatedLessons[] = $lesson->getFullName();
+                } else {
+                    $lesson = new Lesson();
+                    $lesson->fill($lessonData);
+                    $lessonsController->saveNew($lesson);
+                    $addedLessons[] = $lesson->getFullName();
                 }
             }
-
-            $department = $departmentController->getDepartmentByName($department_name);
-            $program = $programController->getProgramByName($program_name);
-            $lecturer = $userController->getUserByFullName($lecturer_full_name);
-            if (!$lecturer) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Hoca hatalı!" . $lecturer_full_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            } elseif (!$program) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Program hatalı!" . $program_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            } elseif (!$department) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Bölüm hatalı!" . $department_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            }
-
-            // Eğer bu satırda hata varsa, bir sonraki satıra geç
-            if (isset($hasError) && $hasError) {
-                $errors[] = "has_Error:" . $hasError;
-                continue;
-            }
-            $lessonData = [
-                'code' => $code,
-                'group_no' => $group_no,
-                'name' => $name,
-                'size' => $size,
-                'hours' => $hours,
-                'type' => array_search(trim($type), (new LessonController())->getTypeList()),
-                'semester_no' => $semester_no,
-                'lecturer_id' => $lecturer->id,
-                'department_id' => $department->id,
-                'program_id' => $program->id,
-                'semester' => $this->formData['semester'],
-                'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
-                'academic_year' => $this->formData['academic_year'],
-            ];
-            //Ders ders kodu, program_id ve group_no göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
-            if ($lesson) {
-                $lesson->fill($lessonData);
-                $lessonsController->updateLesson($lesson);
-                $updatedLessons[] = $lesson->getFullName();
-            } else {
-                $lesson = new Lesson();
-                $lesson->fill($lessonData);
-                $lessonsController->saveNew($lesson);
-                $addedLessons[] = $lesson->getFullName();
-            }
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
         }
         return [
             "status" => "success",

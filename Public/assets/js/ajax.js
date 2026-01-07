@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchForm(form, data) {
         let modal = new Modal();
-        modal.prepareModal(form.getAttribute("title"));
+        modal.prepareModal(form.getAttribute("title"), "", false, true, "lg");
         spinner.showSpinner(modal.body)
         modal.showModal();
         return fetch(form.action, {
@@ -138,24 +138,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.errors) {
                     console.log(data.errors)
                 }
-                if (data.status === "error") {
+                const statusClass = data.status === "error" ? "danger" : data.status;
+                modal.body.classList.add("text-bg-" + statusClass)
 
-                    const statusClass = data.status === "error" ? "danger" : data.status;
-                    modal.body.classList.add("text-bg-" + statusClass)
-                    const message = Array.isArray(data.msg)
-                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                        : data.msg;
-                    spinner.removeSpinner();
-                    modal.body.innerHTML = message;
-                } else {
-                    modal.body.classList.add("text-bg-" + data.status)
+                let message = Array.isArray(data.msg)
+                    ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                    : data.msg;
 
-                    const message = Array.isArray(data.msg)
-                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                        : data.msg;
-                    spinner.removeSpinner();
-                    modal.body.innerHTML = message;
-                    // başarılı işlem sonrası update formları dışınsa kalan formlar resetleniyor
+                if (data.errors && data.errors.length > 0) {
+                    message += `<hr><div class="error-list text-start" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">
+                        <h6 class="fw-bold">Hata Detayları:</h6>
+                        <ul class="small mb-0">
+                            ${data.errors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                }
+
+                spinner.removeSpinner();
+                modal.body.innerHTML = message;
+
+                if (data.status === "success") {
+                    // başarılı işlem sonrası update formları dışında kalan formlar resetleniyor
                     if (!form.classList.contains("updateForm")) {
                         form.reset();
                     }
