@@ -1580,9 +1580,57 @@ class ScheduleController extends Controller
         return $availableObservers;
     }
 
-    /*********************
-     *  SİLME İŞLEMLERİ
-     **********************/
+    public function wipeResourceSchedules(string $ownerType, int $ownerId): void
+    {
+        $this->logger()->info("wipeResourceSchedules START for $ownerType ID: $ownerId");
+
+        // 1. Varlığın kendi ana programlarını ve bu programlara ait tüm itemları sil
+        $schedules = (new Schedule())->get()->where(['owner_type' => $ownerType, 'owner_id' => $ownerId])->all();
+        foreach ($schedules as $schedule) {
+            // ScheduleItem'ları manuel silmek gerekebilir çünkü DB tarafında Cascade olmayabilir
+            $items = (new \App\Models\ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            foreach ($items as $item) {
+                $item->delete();
+            }
+            $schedule->delete();
+        }
+
+        // 2. Diğer programlarda bu varlığın geçtiği ScheduleItem'ları bul ve temizle
+        $idKey = match ($ownerType) {
+            'lesson' => 'lesson_id',
+            'user' => 'lecturer_id',
+            'classroom' => 'classroom_id',
+            default => null,
+        };
+
+        if ($idKey) {
+            // Veri serialized formatta olduğu için LIKE ile arama yapıyoruz.
+            // Örn: "lesson_id";i:123; veya "lesson_id";s:3:"123";
+            $searchTermInteger = "\"$idKey\";i:$ownerId;";
+            $searchTermString = "\"$idKey\";s:" . strlen((string) $ownerId) . ":\"$ownerId\";";
+
+            $itemsToClean = (new \App\Models\ScheduleItem())->get()
+                ->where(['data' => ['like' => "%$searchTermInteger%"]], "OR")
+                ->where(['data' => ['like' => "%$searchTermString%"]])
+                ->all();
+
+            if (!empty($itemsToClean)) {
+                $deleteData = [];
+                foreach ($itemsToClean as $item) {
+                    $deleteData[] = [
+                        'id' => $item->id,
+                        'start_time' => $item->start_time,
+                        'end_time' => $item->end_time,
+                        'data' => $item->data
+                    ];
+                }
+                // deleteScheduleItems metodu sibling'leri de bulup silecektir.
+                // Request objesi beklediği durumlar olabilir ama array desteği var.
+                $this->deleteScheduleItems($deleteData);
+            }
+        }
+        $this->logger()->info("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
+    }
 
     public function deleteScheduleItems(array $items): array
     {

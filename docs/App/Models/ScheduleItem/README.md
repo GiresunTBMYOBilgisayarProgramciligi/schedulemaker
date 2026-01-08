@@ -22,4 +22,5 @@
 ## Kritik Metodlar
 
 *   [getShortStartTime()](./getShortStartTime.md): Zamanı HH:mm formatında kısaltır.
+*   [getSlotDatas()](./getSlotDatas.md): Item içindeki tüm ilişkili nesneleri (ders, hoca, sınıf) döner.
 *   [isConflict()](./isConflict.md): Başka bir item ile çakışma durumunu kontrol eder.

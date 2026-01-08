@@ -38,7 +38,7 @@ class UserController extends Controller
         $user = false;
         $id = $_SESSION[$_ENV["SESSION_KEY"]] ?? $_COOKIE[$_ENV["COOKIE_KEY"]] ?? null;
         if ($id) {
-            $user = (new User())->get()->where(['id' => $id])->with(['department', 'program','lessons'])->first() ?: false;
+            $user = (new User())->get()->where(['id' => $id])->with(['department', 'program', 'lessons'])->first() ?: false;
         }
         return $user;
     }
@@ -369,7 +369,7 @@ class UserController extends Controller
                         case "user":
                             $ScheduleUser = (new User())->where(["id" => $model->owner_id])->with(['department'])->first();
                             if ($ScheduleUser) {
-                                
+
                                 if (!$ScheduleUser->department) {
                                     $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
                                 } else {
@@ -418,11 +418,7 @@ class UserController extends Controller
     public function delete(int $id): void
     {
         $user = (new User())->find($id) ?: throw new Exception("Silinecek Kullanıcı bulunamadı");
-        // ilişkili tüm programı sil todo
-        $schedules = (new Schedule())->get()->where(["owner_type" => "user", "owner_id" => $id])->all();
-        foreach ($schedules as $schedule) {
-            $schedule->delete();
-        }
+        (new ScheduleController())->wipeResourceSchedules('user', $id);
         $user->delete();
     }
 }

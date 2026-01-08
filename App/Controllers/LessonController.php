@@ -126,6 +126,7 @@ class LessonController extends Controller
     public function delete(int $id): void
     {
         $lesson = (new Lesson())->find($id) ?: throw new Exception("Silinecek Ders bulunamadı");
+        (new ScheduleController())->wipeResourceSchedules('lesson', $id);
         $lesson->delete();
     }
 

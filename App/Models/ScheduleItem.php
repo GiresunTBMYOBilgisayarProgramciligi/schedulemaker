@@ -108,10 +108,26 @@ class ScheduleItem extends Model
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
+
+            $lesson = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons', 'program'])->first();
+            if ($lesson === null) {
+                throw new \Exception("ScheduleItem ID: {$this->id} için ders (ID: {$dayData['lesson_id']}) bulunamadı.");
+            }
+
+            $lecturer = (new User())->get()->where(['id' => $dayData['lecturer_id']])->first();
+            if ($lecturer === null) {
+                throw new \Exception("ScheduleItem ID: {$this->id} için öğretim elemanı (ID: {$dayData['lecturer_id']}) bulunamadı.");
+            }
+
+            $classroom = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first();
+            if ($classroom === null) {
+                throw new \Exception("ScheduleItem ID: {$this->id} için derslik (ID: {$dayData['classroom_id']}) bulunamadı.");
+            }
+
             $slotDatas[] = (object) [
-                'lesson' => (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons', 'program'])->first(),
-                'lecturer' => (new User())->get()->where(['id' => $dayData['lecturer_id']])->first(),
-                'classroom' => (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first(),
+                'lesson' => $lesson,
+                'lecturer' => $lecturer,
+                'classroom' => $classroom,
             ];
         }
         //$this->logger()->debug('SlotDatas: ', $this->logContext(['slotDatas' => $slotDatas]));
