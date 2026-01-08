@@ -666,6 +666,10 @@ class ScheduleCard {
             scheduleModal.prepareModal("Saat seçimi", modalContentHTML, true, false);
             scheduleModal.showModal();
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
+            scheduleModal.modal.addEventListener("hidden.bs.modal", () => {
+                resolve(null);
+            });
+
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
                 let selectedHours = selectedHoursInput.value;
@@ -891,7 +895,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
-                    console.error("saveScheduleItems API hatası:", data.msg); 
+                    console.error("saveScheduleItems API hatası:", data.msg);
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -899,7 +903,7 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
-                console.error("saveScheduleItems sistem hatası:"); 
+                console.error("saveScheduleItems sistem hatası:");
                 new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });
@@ -935,7 +939,7 @@ class ScheduleCard {
             .then(response => response.json())
             .then((data) => {
                 if (data.status === "error") {
-                    console.error("deleteScheduleItems API hatası:", data.msg); 
+                    console.error("deleteScheduleItems API hatası:", data.msg);
                     new Toast().prepareToast("Hata", data.msg, "danger")
                     return false;
                 } else {
@@ -958,7 +962,7 @@ class ScheduleCard {
                 }
             })
             .catch((error) => {
-                console.error("deleteScheduleItems sistem hatası:"); 
+                console.error("deleteScheduleItems sistem hatası:");
                 new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
                 return false;
             });

@@ -248,6 +248,10 @@ class ExamScheduleCard extends ScheduleCard {
             addRowBtn.addEventListener("click", () => addRow());
             addRow(true);
 
+            scheduleModal.modal.addEventListener("hidden.bs.modal", () => {
+                resolve(null);
+            });
+
             scheduleModal.confirmButton.addEventListener("click", (event) => {
                 event.preventDefault();
                 let selectedData = {

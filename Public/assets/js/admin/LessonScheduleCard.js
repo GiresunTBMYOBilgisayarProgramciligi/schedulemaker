@@ -49,6 +49,10 @@ class LessonScheduleCard extends ScheduleCard {
                 formEl.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
             });
 
+            scheduleModal.modal.addEventListener("hidden.bs.modal", () => {
+                resolve(null);
+            });
+
             formEl.addEventListener("submit", (event) => {
                 event.preventDefault();
 
