@@ -74,6 +74,7 @@ use function App\Helpers\getSettingValue;
                                                         'data-group-no' => $slotData->lesson->group_no,
                                                         'data-lesson-id' => $slotData->lesson->id,
                                                         'data-lesson-code' => $slotData->lesson->code,
+                                                        'data-lesson-name' => $slotData->lesson->name,
                                                         'data-size' => $slotData->lesson->size,
                                                         'data-lecturer-id' => $slotData->lecturer->id,
                                                         'data-lecturer-name' => $slotData->lecturer->getFullName(),

@@ -214,6 +214,8 @@ class ScheduleCard {
         const classroomName = lessonCard.dataset.classroomName || 'Derslik';
         const programId = lessonCard.dataset.programId;
         const programName = lessonCard.dataset.programName || 'Program';
+        const lessonId = lessonCard.dataset.lessonId;
+        const lessonName = lessonCard.dataset.lessonName || 'Ders';
 
         if (classroomId) {
             menuItems.push({
@@ -234,6 +236,13 @@ class ScheduleCard {
                 text: `${programName} programını göster`,
                 icon: 'bi-book',
                 onClick: () => this.showScheduleInModal('program', programId, `${programName} Programı`)
+            });
+        }
+        if (lessonId) {
+            menuItems.push({
+                text: `${lessonName} programını göster`,
+                icon: 'bi-journal-text',
+                onClick: () => this.showScheduleInModal('lesson', lessonId, `${lessonName} Programı`)
             });
         }
         menuItems.forEach(item => {
