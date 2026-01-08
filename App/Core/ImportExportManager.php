@@ -434,7 +434,7 @@ class ImportExportManager
                         'title' => $lecturer->getFullName() . " Ders Programı",
                         'type' => 'user',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'user',
                             'owner_id' => $lecturer->id,
                             'type' => $filters["type"],
@@ -451,7 +451,7 @@ class ImportExportManager
                             'title' => $lecturer->getFullName() . " Ders Programı",
                             'type' => 'user',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'user',
                                 'owner_id' => $lecturer->id,
                                 'type' => $filters["type"],
@@ -473,7 +473,7 @@ class ImportExportManager
                         'title' => $classroom->name . " Ders Programı",
                         'type' => 'classroom',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'classroom',
                             'owner_id' => $classroom->id,
                             'type' => $filters["type"],
@@ -490,7 +490,7 @@ class ImportExportManager
                             'title' => $classroom->name . " Ders Programı",
                             'type' => 'classroom',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'classroom',
                                 'owner_id' => $classroom->id,
                                 'type' => $filters["type"],
@@ -512,7 +512,7 @@ class ImportExportManager
                         'title' => $lesson->getFullName() . " Ders Programı",
                         'type' => 'lesson',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'lesson',
                             'owner_id' => $lesson->id,
                             'type' => $filters["type"],
@@ -529,7 +529,7 @@ class ImportExportManager
                             'title' => $lesson->getFullName() . " Ders Programı",
                             'type' => 'lesson',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'lesson',
                                 'owner_id' => $lesson->id,
                                 'type' => $filters["type"],
@@ -566,6 +566,13 @@ class ImportExportManager
 
         // Yazı tipi ayarları
         $this->exportFile->getDefaultStyle()->getFont()->setName('Segoe UI')->setSize(10);
+
+        // Hesaplamayı döngü öncesinde yaparak $lastCol değişkenini garantiye alıyoruz
+        $type = in_array($filters['type'] ?? '', ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+        $colsPerDay = (($filters['owner_type'] ?? '') === 'classroom') ? 1 : 2;
+        $totalCols = ($maxDayIndex + 1) * $colsPerDay + 1;
+        $lastCol = Coordinate::stringFromColumnIndex($totalCols);
 
         $row = $this->createFileTitle($filters);
 
