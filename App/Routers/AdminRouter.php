@@ -51,7 +51,10 @@ class AdminRouter extends Router
         $this->currentUser = $userController->getCurrentUser();
         $this->view_data['currentUser'] = $this->currentUser;
         if (!$this->currentUser) {
-            //todo goback ön tanımlı olarak false olursa daha iyi olur gibi. ön tanımlı true olduğu için login redirect çalışmıyordu
+            // Giriş yapılmamışsa gidilmek istenen URL'yi kaydet (AJAX değilse)
+            if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+                $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+            }
             $this->Redirect('/auth/login', false);
         }
     }

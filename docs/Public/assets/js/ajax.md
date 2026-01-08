@@ -14,3 +14,4 @@ Proje genelinde kullanılan merkezi AJAX yönetim scriptidir.
 
 ## Metodlar
 *   **ajaxRequest(url, data, successCallback, errorCallback)**: Temel AJAX sarmalayıcısı.
+*   **fetchForm(form, data)**: Formları AJAX ile gönderir. `data-toast="true"` özniteliği ile modal yerine toast bildirimlerini ve gecikmeli yönlendirmeleri destekler.
