@@ -677,6 +677,16 @@ class ScheduleController extends Controller
                     $uniqueProgramOwners[$key] = $po;
                 }
 
+                // 2. ADIM: Çakışma Kontrolü Yap
+                $errors = [];
+                // Her bir item için çakışma kontrolü yap (saveScheduleItems'da olduğu gibi benzer bir yapı)
+                $this->checkItemConflict($itemData, $errors);
+
+                if (!empty($errors)) {
+                    $errors = array_unique($errors);
+                    throw new Exception(implode("\n", $errors));
+                }
+
                 // 2. ADIM: Program ve Ders Kayıtlarını Yap (Süzülmüş veri ile)
                 $itemGroupedIds = [];
                 $primaryProgramItemId = null; // Diğer kardeşler (Hoca/Sınıf) için referans
@@ -886,6 +896,7 @@ class ScheduleController extends Controller
                 $targetSchedules = []; // Her ders saati için hedef program listesini sıfırla
 
                 // Tüm ilgili schedulelarda çakışma ara ve kayıt edilecek schedule'ları hazırla
+                $errors = [];
                 foreach ($owners as $owner) {
                     $ownerType = $owner['type'];
                     $ownerId = $owner['id'];
@@ -927,13 +938,21 @@ class ScheduleController extends Controller
                                 $this->resolvePreferredConflict($startTime, $endTime, $existingItem);
                                 $preferredConflictSchedules[$relatedSchedule->id] = $existingItem->detail['description'] ?? null;
                             } else {
-                                // preferred değilse standart conflict check (hata fırlatabilir)
+                                // preferred değilse standart conflict check (hata toplayabilir)
                                 if (!$isDummy) {
-                                    $this->resolveConflict($itemData, $existingItem, $lesson);
+                                    $error = $this->resolveConflict($itemData, $existingItem, $lesson, $relatedSchedule);
+                                    if ($error) {
+                                        $errors[] = $error;
+                                    }
                                 }
                             }
                         }
                     }
+                }
+
+                if (!empty($errors)) {
+                    $errors = array_unique($errors);
+                    throw new Exception(implode("\n", $errors));
                 }
 
                 // 2. Yeni Item'i Tüm İlgili Schedule'lara Kaydet
@@ -1275,8 +1294,14 @@ class ScheduleController extends Controller
             throw new Exception("Geçersiz JSON verisi");
         }
 
+        $errors = [];
         foreach ($items as $itemData) {
-            $this->checkItemConflict($itemData);
+            $this->checkItemConflict($itemData, $errors);
+        }
+
+        if (!empty($errors)) {
+            $errors = array_unique($errors);
+            throw new Exception(implode("\n", $errors));
         }
 
         return true;
@@ -1286,9 +1311,10 @@ class ScheduleController extends Controller
      * Tek bir item için tüm olasılıkları (Hoca, Sınıf, Program, Ders) kontrol eder
      * İlgili schedule ve itemleri bulup çakışma kontrolüne gönderir
      * @param array $itemData
+     * @param array $errors Hataların toplanacağı dizi (referans)
      * @throws Exception
      */
-    private function checkItemConflict(array $itemData): void
+    private function checkItemConflict(array $itemData, array &$errors = []): void
     {
         $lessonId = $itemData['data']['lesson_id'];
         $lecturerId = $itemData['data']['lecturer_id'];
@@ -1374,7 +1400,10 @@ class ScheduleController extends Controller
                 foreach ($dayItems as $existingItem) {
                     // Zaman çakışması kontrolü
                     if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
-                        $this->resolveConflict($itemData, $existingItem, $lesson);
+                        $error = $this->resolveConflict($itemData, $existingItem, $lesson, $relatedSchedule);
+                        if ($error) {
+                            $errors[] = $error;
+                        }
                     }
                 }
             }
@@ -1409,27 +1438,30 @@ class ScheduleController extends Controller
      * @param array $newItemData Yeni eklenecek item verisi
      * @param ScheduleItem $existingItem Mevcut çakışan item
      * @param Lesson $newLesson Yeni eklenen ders
-     * @throws Exception Çakışma kuralı ihlal edilirse
+     * @param Schedule $currentSchedule Çakışmanın yaşandığı program (Hata mesajında isim göstermek için)
+     * @return string|null Çakışma kuralı ihlal edilirse hata mesajı döner, yoksa null
      */
-    private function resolveConflict(array $newItemData, ScheduleItem $existingItem, Lesson $newLesson): void
+    private function resolveConflict(array $newItemData, ScheduleItem $existingItem, Lesson $newLesson, Schedule $currentSchedule): ?string
     {
         // Kendi kendisiyle çakışıyorsa (update durumu vs) yoksay
         if (isset($newItemData['id']) && $newItemData['id'] == $existingItem->id) {
-            return;
+            return null;
         }
+
+        $crashInfo = "{$currentSchedule->getScheduleScreenName()} ({$existingItem->start_time} - {$existingItem->end_time})";
 
         // Status Kontrolü
         switch ($existingItem->status) {
             case 'unavailable':
-                throw new Exception("Bu saat aralığı uygun değil.");
+                return "{$crashInfo}: Bu saat aralığı uygun değil.";
             case 'single':
                 // Single ders varsa üzerine ders eklenemez
-                throw new Exception("Bu saatte zaten bir ders mevcut: " . $this->getLessonNameFromItem($existingItem));
+                return "{$crashInfo}: Bu saatte zaten bir ders mevcut: " . $this->getLessonNameFromItem($existingItem);
             case 'group':
                 // Grup mantığı
                 // Yeni ders aynı zamanda grup dersi olmalı (Lesson group_no > 0)
                 if ($newLesson->group_no < 1) {
-                    throw new Exception("Grup dersi üzerine normal ders eklenemez.");
+                    return "{$crashInfo}: Grup dersi üzerine normal ders eklenemez.";
                 }
 
                 // Mevcut gruptaki dersleri kontrol et
@@ -1440,17 +1472,17 @@ class ScheduleController extends Controller
 
                     // Dersler farklı olmalı
                     if ($sd->lesson->id == $newLesson->id) {
-                        throw new Exception("Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).");
+                        return "{$crashInfo}: Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).";
                     }
 
                     // Hoca aynı olmamalı
                     if ($sd->lecturer && $sd->lecturer->id == $newItemData['data']['lecturer_id']) {
-                        throw new Exception("Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName());
+                        return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName();
                     }
 
                     // Grup numaraları farklı olmalı
                     if ($sd->lesson->group_no == $newLesson->group_no) {
-                        throw new Exception("Aynı grup numarasına sahip dersler çakışamaz.");
+                        return "{$crashInfo}: Aynı grup numarasına sahip dersler çakışamaz.";
                     }
                 }
 
@@ -1460,8 +1492,9 @@ class ScheduleController extends Controller
                 // Tercih edilen saat, çakışma yok
                 break;
             default:
-                throw new Exception("Bilinmeyen durum: " . $existingItem->status);
+                return "{$crashInfo}: Bilinmeyen durum: " . $existingItem->status;
         }
+        return null;
     }
     /**
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür

@@ -232,7 +232,11 @@ class Toast {
         `;
         this.header.appendChild(this.closeButton);
 
-        this.body.textContent = message;
+        if (Array.isArray(message)) {
+            this.body.innerHTML = `<ul class="mb-0 ps-3">${message.map(m => `<li>${m}</li>`).join('')}</ul>`;
+        } else {
+            this.body.textContent = message;
+        }
 
         // Tipine göre sınıf ekle
         this.toast.classList.remove("text-bg-success", "text-bg-danger", "text-bg-info", "text-bg-warning");

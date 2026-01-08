@@ -611,10 +611,19 @@ class AjaxRouter extends Router
      */
     public function checkScheduleCrashAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $scheduleController->checkScheduleCrash($this->data);
+        try {
+            $scheduleController = new ScheduleController();
+            $scheduleController->checkScheduleCrash($this->data);
 
-        $this->response['status'] = "success";
+            $this->response['status'] = "success";
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            $this->response = [
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : $msg
+            ];
+        }
         $this->sendResponse();
     }
 
@@ -693,9 +702,11 @@ class AjaxRouter extends Router
             }
         } catch (\Throwable $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
             $this->response = array(
                 "status" => "error",
-                "msg" => "Sistem Hatası: " . $e->getMessage()
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
             );
         }
         $this->sendResponse();
@@ -741,9 +752,11 @@ class AjaxRouter extends Router
             }
         } catch (\Throwable $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
             $this->response = [
                 "status" => "error",
-                "msg" => "Sistem Hatası: " . $e->getMessage()
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
             ];
         }
         $this->sendResponse();

@@ -420,3 +420,7 @@
     .context-menu-item i {
         font-size: 16px;
     }
+
+    .toast-body {
+        white-space: pre-wrap;
+    }
