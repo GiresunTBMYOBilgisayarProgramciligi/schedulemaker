@@ -822,6 +822,8 @@ class ImportExportManager
         $lines[] = 'PRODID:-//schedulemaker//TR MBMYO Ders Programı//TR';
         $lines[] = 'CALSCALE:GREGORIAN';
         $lines[] = 'METHOD:PUBLISH';
+        $lines[] = 'X-WR-CALNAME:' . $this->escapeIcsText($filters['academic_year'] . ' ' . $filters['semester'] . ' Ders Programı');
+        $lines[] = 'X-WR-TIMEZONE:Europe/Istanbul';
 
         foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
             // Fetch schedule with items for the filter
@@ -834,6 +836,7 @@ class ImportExportManager
                 continue;
 
             foreach ($schedule->items as $scheduleItem) {
+                // Saat formatı kontrolü (HH:mm:ss -> HH:mm)
                 $startText = $scheduleItem->getShortStartTime();
                 $endText = $scheduleItem->getShortEndTime();
 
@@ -845,6 +848,10 @@ class ImportExportManager
 
                 foreach ($slotDatas as $data) {
                     $lesson = $data->lesson;
+                    // Ders silinmişse veya yoksa atla
+                    if (!$lesson)
+                        continue;
+
                     $lecturer = $data->lecturer;
                     $classroom = $data->classroom;
 
@@ -855,33 +862,43 @@ class ImportExportManager
                         $startDow = (int) $semesterStart->format('N');
                         $delta = ($targetDow - $startDow + 7) % 7;
                         $firstDate = (clone $semesterStart)->modify("+{$delta} days");
-                        $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
-                        $dtEnd = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
                     } else {
                         $anchor = new \DateTime('next monday', $timezone);
                         if ((int) $now->format('N') === 1) {
                             $anchor = new \DateTime('today', $timezone);
                         }
-                        $eventDate = (clone $anchor)->modify("+{$dayIndex} day");
-                        $dtStart = new \DateTime($eventDate->format('Y-m-d') . ' ' . $startText, $timezone);
-                        $dtEnd = new \DateTime($eventDate->format('Y-m-d') . ' ' . $endText, $timezone);
+                        $firstDate = (clone $anchor)->modify("+{$dayIndex} day");
                     }
 
-                    // Build summary (using a simplified version of formatScheduleItemForExport logic)
-                    $summaryParts = [$lesson->name];
-                    if ($scheduleFilter['type'] !== 'user' && $lecturer)
-                        $summaryParts[] = "(" . $lecturer->getFullName() . ")";
-                    if ($classroom)
-                        $summaryParts[] = "[" . $classroom->name . "]";
-                    $summary = implode(" ", $summaryParts);
+                    $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
+                    $dtEnd = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
 
+                    // Build Summary: Ders Adı (Ders Kodu)
+                    $summaryText = $lesson->name;
+                    if (!empty($lesson->code)) {
+                        $summaryText .= " (" . $lesson->code . ")";
+                    }
+
+                    // Build Location
+                    $locationText = $classroom ? $classroom->name : '';
+
+                    // Build Description
                     $descriptionParts = [];
-                    $descriptionParts[] = $scheduleFilter['title'];
+                    // Hoca bilgisi (eğer hoca programı değilse göster)
+                    if ($scheduleFilter['type'] !== 'user' && $lecturer) {
+                        $descriptionParts[] = "Hoca: " . $lecturer->getFullName();
+                    }
+                    // Program/Bölüm bilgisi (eğer program/bölüm programı değilse göster)
+                    if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
+                        $descriptionParts[] = "Program: " . $lesson->program->name;
+                    }
+
                     $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
                     $descriptionParts[] = 'Dönem: ' . $filters['semester'];
-                    $description = implode(' | ', array_filter($descriptionParts));
 
-                    $uid = uniqid('schedulemaker-', true) . '@schedulemaker';
+                    $descriptionText = implode('\n', $descriptionParts);
+
+                    $uid = uniqid('sm-', true) . '@schedulemaker.local';
                     $dtstamp = $now->format('Ymd\THis');
                     $dtstartLine = 'DTSTART;TZID=Europe/Istanbul:' . $dtStart->format('Ymd\THis');
                     $dtendLine = 'DTEND;TZID=Europe/Istanbul:' . $dtEnd->format('Ymd\THis');
@@ -891,18 +908,25 @@ class ImportExportManager
                     $lines[] = 'DTSTAMP:' . $dtstamp;
                     $lines[] = $dtstartLine;
                     $lines[] = $dtendLine;
+
                     if ($useRecurrence) {
                         $weekdayCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
                         $byday = $weekdayCodes[$dayIndex] ?? 'MO';
                         $untilLocal = (clone $semesterEnd)->setTime(23, 59, 59);
+                        // Convert UNTIL to UTC as per RFC 5545
                         $untilUtc = (clone $untilLocal)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
                         $lines[] = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
                     }
-                    $lines[] = 'SUMMARY:' . $this->escapeIcsText($summary);
-                    if ($classroom)
-                        $lines[] = 'LOCATION:' . $this->escapeIcsText($classroom->name);
-                    if (!empty($description))
-                        $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
+
+                    $lines[] = 'SUMMARY:' . $this->escapeIcsText($summaryText);
+                    if (!empty($locationText)) {
+                        $lines[] = 'LOCATION:' . $this->escapeIcsText($locationText);
+                    }
+                    if (!empty($descriptionText)) {
+                        // Açıklama içindeki yeni satırları ICS formatına uygun hale getir
+                        $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($descriptionText);
+                    }
+
                     $lines[] = 'END:VEVENT';
                 }
             }
@@ -911,12 +935,24 @@ class ImportExportManager
         $lines[] = 'END:VCALENDAR';
         $content = implode("\r\n", $lines) . "\r\n";
 
-        $fileName = $filters['academic_year'] . ' ' . $filters['semester'] . ' ' . 'ders-programi.ics';
+        $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester']) . '-program.ics';
+
         header('Content-Type: text/calendar; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
         echo $content;
         exit;
+    }
+
+    private function slugify($text)
+    {
+        // Basit bir slug fonksiyonu
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        return strtolower($text);
     }
 
     private function escapeIcsText(string $text): string
