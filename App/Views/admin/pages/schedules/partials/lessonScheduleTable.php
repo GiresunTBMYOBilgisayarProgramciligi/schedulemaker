@@ -100,7 +100,25 @@ use function App\Helpers\getSettingValue;
                                                         <?php endif; ?>
                                                         <span class="lesson-name">
                                                             <?php if ($schedule->owner_type !== 'program'): ?>
-                                                                <?= $slotData->lesson->name . ' (' . ($slotData->lesson->program?->name ?? "") . ')'; ?>
+                                                                <?php
+                                                                $programNames = [$slotData->lesson->program->name];
+                                                                if (!empty($slotData->lesson->childLessons)) {
+                                                                    foreach ($slotData->lesson->childLessons as $child) {
+                                                                        if ($child->program) {
+                                                                            $programNames[] = $child->program->name;
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (empty($programNames) && $slotData->lesson->program) {
+                                                                    $programNames[] = $slotData->lesson->program->name;
+                                                                }
+
+                                                                // Unique ve virgülle birleştir
+                                                                $programNamesStr = implode(', ', array_unique($programNames));
+
+                                                                echo $slotData->lesson->name . ($programNamesStr ? " ($programNamesStr)" : "");
+                                                                ?>
                                                             <?php else: ?>
                                                                 <?= $slotData->lesson->name ?>
                                                             <?php endif; ?>
