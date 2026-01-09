@@ -261,7 +261,7 @@ class AdminRouter extends Router
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lessons'] = (new Lesson())->get()->where(['department_id' => $this->currentUser->department_id])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
         } else
-            $this->view_data['lessons'] = (new Lesson())->get()->where(['semester' => getSettingValue('semester')])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
+            $this->view_data['lessons'] = (new Lesson())->get()->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
         $this->callView("admin/lessons/listlessons");
     }
 
