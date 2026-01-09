@@ -38,8 +38,9 @@ use App\Models\Schedule;
 
                 <div class="card-tools">
                     <div class="btn-group" role="group" aria-label="Dışa aktarma">
-                        <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm">
-                            <span>Excel\'e aktar</span>
+                        <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm"
+                                data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>">
+                            <span>Excel'e aktar</span>
                         </button>
                         <button id="singlePageCalendar" type="button" class="btn btn-outline-secondary btn-sm">
                             <span>Takvime kaydet</span>

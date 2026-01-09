@@ -45,7 +45,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
 
-                spinner.showSpinner(document.getElementById("schedule_container"));
+                // Spinner container belirle
+                let spinnerContainer = document.getElementById("schedule_container");
+                if (!spinnerContainer) {
+                    spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
+                }
+                spinner.showSpinner(spinnerContainer);
                 await fetchExportSchedule(data);
             });
             return;
@@ -80,7 +85,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             }
-            spinner.showSpinner(document.getElementById("schedule_container"));
+            // Spinner container belirle
+            let spinnerContainer = document.getElementById("schedule_container");
+            if (!spinnerContainer) {
+                spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
+            }
+            spinner.showSpinner(spinnerContainer);
             await fetchExportIcs(data);
         }
     });
