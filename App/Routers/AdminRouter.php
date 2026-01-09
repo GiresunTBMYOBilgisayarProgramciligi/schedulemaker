@@ -279,9 +279,9 @@ class AdminRouter extends Router
             "classroomTypes" => (new ClassroomController())->getTypeList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ['admin', 'user']])->all();
         } else
-            $this->view_data['lecturers'] = $userController->getListByFilters();
+            $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/lessons/addlesson");
     }
 
@@ -310,13 +310,13 @@ class AdminRouter extends Router
         ]);
         $userController = new UserController();
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, 'role' => 'lecturer'])->all();
             /* Bölümsüz hocalar için dersin hocası da listeye ekleniyor. (Okul dışından gelen hocalar için)*/
             $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } elseif ($this->currentUser->role == "lecturer") {
             $this->view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
         } else
-            $this->view_data['lecturers'] = $userController->getListByFilters();
+            $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/lessons/editlesson");
     }
 
@@ -587,7 +587,6 @@ class AdminRouter extends Router
         }
         $this->assetManager->loadPageAssets('editschedule');
         $userController = new UserController();
-        $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
             $departments = (new Department())->get()->where(['active' => true])->all();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
@@ -602,9 +601,9 @@ class AdminRouter extends Router
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id,'!role' => ["in" => ['admin', 'user']]])->all();
         } else
-            $this->view_data['lecturers'] = $userController->getListByFilters();
+            $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/schedules/editschedule");
     }
 
@@ -615,7 +614,6 @@ class AdminRouter extends Router
         }
         $this->assetManager->loadPageAssets('editexamschedule');
         $userController = new UserController();
-        $departmentController = new DepartmentController();
         if ($userController->canUserDoAction(8)) {
             $departments = (new Department())->get()->where(['active' => true])->all();
         } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
@@ -630,9 +628,9 @@ class AdminRouter extends Router
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id,'!role' => ['admin', 'user']])->all();
         } else
-            $this->view_data['lecturers'] = $userController->getListByFilters();
+            $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/schedules/editexamschedule");
     }
 

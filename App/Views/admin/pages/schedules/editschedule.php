@@ -110,7 +110,7 @@ use function App\Helpers\getSettingValue;
                                     <div class=" input-group mb-3">
                                         <select class="form-select tom-select " id="lecturer_id" name="lecturer_id"
                                                 placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
-                                            <option></option>
+                                            <option>Öğretim Üyesi / Görevlisi Seçiniz</option>
                                             <?php foreach ($lecturers as $lecturer): ?>
                                                 <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
                                             <?php endforeach; ?>
