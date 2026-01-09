@@ -165,35 +165,24 @@ class LessonController extends Controller
                 $parentLesson = $parentLesson->parentLesson ?: throw new Exception("Bağlanmak istenilen dersin üst ebeveyni bulunamadı");
             }
 
+            /*
+             * Çocuk dersin daha önceden kaydedilmiş bir programı varsa silinmeli.
+             * Hoca, ders, program, derslik programlarının hepsinin silinmesi lazım.
+             * ÖNEMLİ: Bu işlem dersler bağlanmadan ÖNCE yapılmalı, aksi takdirde ebeveyn dersin programı da silinir.
+             */
+            (new ScheduleController())->wipeResourceSchedules('lesson', $childLesson->id);
+
+            // İlişkiyi güncelle
             $childLesson->parent_lesson_id = $parentLesson->id;
             $childLesson->update();
 
             //Başka derse bağlanan derse bağlı dersler varsa onlarda bu derse bağlanır
             foreach ($childLesson->childLessons as $child) {
+                // Alt çocukların programlarını da temizle (Eğer varsa)
+                (new ScheduleController())->wipeResourceSchedules('lesson', $child->id);
+
                 $child->parent_lesson_id = $parentLesson->id;
                 $child->update();
-            }
-
-            /*
-             * Çocuk dersin daha önceden kaydedilmiş bir programı varsa silinmeli.
-             * Hoca, ders, program, derslik programlarının hepsinin silinmesi lazım.
-             */
-            $scheduleController = new ScheduleController();
-            $toWipe = [];
-            $childLessonSchedules = (new Schedule())->get()->where(['owner_type' => 'lesson', 'owner_id' => $childLesson->id])->all();
-            foreach ($childLessonSchedules as $cSchedule) {
-                $cItems = (new \App\Models\ScheduleItem())->get()->where(['schedule_id' => $cSchedule->id])->all();
-                foreach ($cItems as $cItem) {
-                    $toWipe[] = [
-                        'id' => $cItem->id,
-                        'start_time' => $cItem->start_time,
-                        'end_time' => $cItem->end_time,
-                        'data' => $cItem->data
-                    ];
-                }
-            }
-            if (!empty($toWipe)) {
-                $scheduleController->deleteScheduleItems($toWipe);
             }
 
             /**
@@ -281,6 +270,9 @@ class LessonController extends Controller
          * @var Lesson $lesson
          */
         $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
+
+        // İlişkiyi kaldırmadan önce derse ait program kayıtlarını temizle
+        (new ScheduleController())->wipeResourceSchedules('lesson', $lessonId);
 
         $lesson->parent_lesson_id = null;
         $lesson->update();

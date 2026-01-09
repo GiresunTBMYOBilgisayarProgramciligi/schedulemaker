@@ -1621,7 +1621,7 @@ class ScheduleController extends Controller
         $schedules = (new Schedule())->get()->where(['owner_type' => $ownerType, 'owner_id' => $ownerId])->all();
         foreach ($schedules as $schedule) {
             // ScheduleItem'ları manuel silmek gerekebilir çünkü DB tarafında Cascade olmayabilir
-            $items = (new \App\Models\ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
             foreach ($items as $item) {
                 $item->delete();
             }
@@ -1642,10 +1642,24 @@ class ScheduleController extends Controller
             $searchTermInteger = "\"$idKey\";i:$ownerId;";
             $searchTermString = "\"$idKey\";s:" . strlen((string) $ownerId) . ":\"$ownerId\";";
 
-            $itemsToClean = (new \App\Models\ScheduleItem())->get()
-                ->where(['data' => ['like' => "%$searchTermInteger%"]], "OR")
-                ->where(['data' => ['like' => "%$searchTermString%"]])
+            $termInt = "%$searchTermInteger%";
+            $termStr = "%$searchTermString%";
+
+            $itemsInt = (new ScheduleItem())->get()
+                ->where(['data' => ['like' => $termInt]])
                 ->all();
+
+            $itemsStr = (new ScheduleItem())->get()
+                ->where(['data' => ['like' => $termStr]])
+                ->all();
+
+            $itemsToClean = array_merge($itemsInt, $itemsStr);
+            // Unique items
+            $idMap = [];
+            foreach ($itemsToClean as $it) {
+                $idMap[$it->id] = $it;
+            }
+            $itemsToClean = array_values($idMap);
 
             if (!empty($itemsToClean)) {
                 $deleteData = [];
@@ -1659,13 +1673,13 @@ class ScheduleController extends Controller
                 }
                 // deleteScheduleItems metodu sibling'leri de bulup silecektir.
                 // Request objesi beklediği durumlar olabilir ama array desteği var.
-                $this->deleteScheduleItems($deleteData);
+                $this->deleteScheduleItems($deleteData, false);
             }
         }
         $this->logger()->info("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
     }
 
-    public function deleteScheduleItems(array $items): array
+    public function deleteScheduleItems(array $items, bool $expandGroup = true): array
     {
 
         //$this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
@@ -1752,28 +1766,30 @@ class ScheduleController extends Controller
                                     if (!in_array($lId, $targetLessonIds)) {
                                         $targetLessonIds[] = $lId;
 
-                                        // Tüm grubu dahil et (Grup = Parent + Tüm Çocuklar)
-                                        $lObj = (new Lesson())->where(['id' => $lId])->with(['childLessons', 'parentLesson'])->first();
-                                        if ($lObj) {
-                                            $allRelatedIds = [];
-                                            if ($lObj->parent_lesson_id) {
-                                                $allRelatedIds[] = (int) $lObj->parent_lesson_id;
-                                                // Parent'ın diğer çocuklarını da bulmak için parent'ı yükle
-                                                $parentObj = (new Lesson())->where(['id' => $lObj->parent_lesson_id])->with(['childLessons'])->first();
-                                                if ($parentObj && !empty($parentObj->childLessons)) {
-                                                    foreach ($parentObj->childLessons as $child) {
+                                        if ($expandGroup) {
+                                            // Tüm grubu dahil et (Grup = Parent + Tüm Çocuklar)
+                                            $lObj = (new Lesson())->where(['id' => $lId])->with(['childLessons', 'parentLesson'])->first();
+                                            if ($lObj) {
+                                                $allRelatedIds = [];
+                                                if ($lObj->parent_lesson_id) {
+                                                    $allRelatedIds[] = (int) $lObj->parent_lesson_id;
+                                                    // Parent'ın diğer çocuklarını da bulmak için parent'ı yükle
+                                                    $parentObj = (new Lesson())->where(['id' => $lObj->parent_lesson_id])->with(['childLessons'])->first();
+                                                    if ($parentObj && !empty($parentObj->childLessons)) {
+                                                        foreach ($parentObj->childLessons as $child) {
+                                                            $allRelatedIds[] = (int) $child->id;
+                                                        }
+                                                    }
+                                                } elseif (!empty($lObj->childLessons)) {
+                                                    foreach ($lObj->childLessons as $child) {
                                                         $allRelatedIds[] = (int) $child->id;
                                                     }
                                                 }
-                                            } elseif (!empty($lObj->childLessons)) {
-                                                foreach ($lObj->childLessons as $child) {
-                                                    $allRelatedIds[] = (int) $child->id;
-                                                }
-                                            }
 
-                                            foreach ($allRelatedIds as $rId) {
-                                                if (!in_array($rId, $targetLessonIds)) {
-                                                    $targetLessonIds[] = $rId;
+                                                foreach ($allRelatedIds as $rId) {
+                                                    if (!in_array($rId, $targetLessonIds)) {
+                                                        $targetLessonIds[] = $rId;
+                                                    }
                                                 }
                                             }
                                         }
