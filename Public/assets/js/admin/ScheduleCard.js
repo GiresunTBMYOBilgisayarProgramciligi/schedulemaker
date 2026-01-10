@@ -178,8 +178,6 @@ class ScheduleCard {
         this.selectedScheduleItemIds.clear();
     }
 
-
-
     initContextMenu() {
         this.card.addEventListener('contextmenu', (event) => {
             const lessonCard = event.target.closest('.lesson-card');
@@ -515,12 +513,14 @@ class ScheduleCard {
 
             switch (this.owner_type) {
                 case 'user': {
-                    const [classroomRes, programRes] = await Promise.all([
+                    const [classroomRes, programRes, lecturerRes] = await Promise.all([
                         fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
+                        fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
                     ]);
                     classroomData = await classroomRes.json();
                     programData = await programRes.json();
+                    lecturerData = await lecturerRes.json();
                     break;
                 }
                 case 'program': {
@@ -582,11 +582,12 @@ class ScheduleCard {
         for (let i = 0; i < this.table.rows.length; i++) {
             for (let j = 0; j < this.table.rows[i].cells.length; j++) {
                 const emptySlot = this.table.rows[i].cells[j].querySelector('.empty-slot');
-                if (emptySlot) {
+                if (emptySlot && this.owner_type !== "user") {
                     emptySlot.classList.remove(
                         "slot-unavailable", "slot-preferred", "unavailable-for-lecturer",
                         "unavailable-for-classroom", "unavailable-for-program"
                     );
+                    emptySlot.innerHTML = '';
                 }
             }
         }

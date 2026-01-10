@@ -101,7 +101,7 @@ class SingleScheduleHandler {
                                 <div class="mb-3">
                                     <label class="form-label">Açıklama</label>
                                     <textarea class="form-control" name="description" id="modalDescription" rows="3" placeholder="Açıklama giriniz..."></textarea>
-                                    <div class="invalid-feedback">Unavailable durumu için açıklama girmek zorunludur.</div>
+                                    <div class="invalid-feedback">"Müsait Değil" durumu için açıklama girmek zorunludur.</div>
                                 </div>
                             </form>
                         </div>
