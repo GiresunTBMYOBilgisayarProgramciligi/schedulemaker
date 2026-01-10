@@ -67,7 +67,7 @@ use function App\Helpers\getSettingValue;
                                         </option>
                                     </select>
                                     <span class="input-group-text"> - </span>
-                                    <select class="form-select" id="exam_type" name="exam_type">
+                                    <select class="form-select" id="schedule_type" name="schedule_type">
                                         <option value="midterm-exam">Ara Sınav</option>
                                         <option value="final-exam">Final</option>
                                         <option value="makeup-exam">Bütünleme</option>

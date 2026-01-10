@@ -43,9 +43,16 @@ use function App\Helpers\getSettingValue;
                     <div class="card card-primary card-outline">
                         <!-- .card-header -->
                         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                            <h3 class="card-title flex-fill">Bölüm ve Program Ders Programı</h3>
+                            <h3 class="card-title flex-fill"></h3>
                             <div class="flex-fill">
                                 <div class="input-group">
+                                    <select class="form-select" id="schedule_type" name="schedule_type">
+                                        <option value="lesson">Ders Programı</option>
+                                        <option value="midterm-exam">Ara Sınav Programı</option>
+                                        <option value="final-exam">Final Programı</option>
+                                        <option value="makeup-exam">Bütünleme Programı</option>
+                                    </select>
+                                    <span class="input-group-text"> - </span>
                                     <select class="form-select" id="academic_year" name="academic_year">
                                         <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
                                             <option value="<?= $year . ' - ' . $year + 1 ?>"

@@ -16,13 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (departmentAndProgramScheduleButton) {
         departmentAndProgramScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            let scheduleType = departmentAndProgramScheduleButton?.dataset?.scheduleType || "lesson";
-            if (scheduleType === 'exam') {
-                const examTypeSelect = document.getElementById('exam_type');
-                if (examTypeSelect) {
-                    scheduleType = examTypeSelect.value;
-                }
-            }
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -40,13 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lecturerScheduleButton) {
         lecturerScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            let scheduleType = lecturerScheduleButton?.dataset?.scheduleType || "lesson";
-            if (scheduleType === 'exam') {
-                const examTypeSelect = document.getElementById('exam_type');
-                if (examTypeSelect) {
-                    scheduleType = examTypeSelect.value;
-                }
-            }
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -65,13 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (classroomScheduleButton) {
         classroomScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            let scheduleType = classroomScheduleButton?.dataset?.scheduleType || "lesson";
-            if (scheduleType === 'exam') {
-                const examTypeSelect = document.getElementById('exam_type');
-                if (examTypeSelect) {
-                    scheduleType = examTypeSelect.value;
-                }
-            }
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
