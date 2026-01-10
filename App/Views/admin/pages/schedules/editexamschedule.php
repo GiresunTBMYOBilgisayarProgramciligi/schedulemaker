@@ -43,7 +43,7 @@ use function App\Helpers\getSettingValue;
                     <div class="card card-primary card-outline">
                         <!-- .card-header -->
                         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                            <h3 class="card-title flex-fill">Bölüm ve Program Sınav Programı</h3>
+                            <h3 class="card-title flex-fill">Sınav Programı Düzenle</h3>
                             <div class="flex-fill">
                                 <div class="input-group">
                                     <select class="form-select" id="academic_year" name="academic_year">
@@ -83,67 +83,105 @@ use function App\Helpers\getSettingValue;
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <!--begin::Row-->
-                            <div class="row">
-                                <div class="col-12 mb-3">
+                            <!-- Tabs navs -->
+                            <ul class="nav nav-tabs mb-3" id="scheduleTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
+                                        data-bs-target="#program-tab-pane" type="button" role="tab"
+                                        aria-controls="program-tab-pane" aria-selected="true">Bölüm/Program</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="lecturer-tab" data-bs-toggle="tab"
+                                        data-bs-target="#lecturer-tab-pane" type="button" role="tab"
+                                        aria-controls="lecturer-tab-pane" aria-selected="false">Hoca</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="classroom-tab" data-bs-toggle="tab"
+                                        data-bs-target="#classroom-tab-pane" type="button" role="tab"
+                                        aria-controls="classroom-tab-pane" aria-selected="false">Derslik</button>
+                                </li>
+                            </ul>
+
+                            <!-- Tabs content -->
+                            <div class="tab-content" id="scheduleTabsContent">
+                                <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel"
+                                    aria-labelledby="program-tab" tabindex="0">
+                                    <!--begin::Row-->
                                     <div class="row">
-                                        <div class="col-12 col-md-6">
-                                            <select class="form-select tom-select" id="department_id"
-                                                name="department_id">
-                                                <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                                foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>">
-                                                        <?= $department->name ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+                                        <div class="col-12 mb-3">
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <select class="form-select tom-select" id="department_id"
+                                                        name="department_id">
+                                                        <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                                        foreach ($departments as $department): ?>
+                                                            <option value="<?= $department->id ?>">
+                                                                <?= $department->name ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <div class="input-group">
+                                                        <select class="form-select" id="program_id" name="program_id">
+                                                            <option value="0">İlk olarak Bölüm seçiniz</option>
+                                                        </select>
+                                                        <button type="button" class="btn btn-primary"
+                                                            id="departmentAndProgramScheduleButton"
+                                                            data-only-table="false" data-schedule-type="exam">
+                                                            Düzenle
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
-                                        <div class="col-12 col-md-6">
-                                            <div class="input-group">
-                                                <select class="form-select" id="program_id" name="program_id">
-                                                    <option value="0">İlk olarak Bölüm seçiniz</option>
+                                    </div>
+                                    <!--end::Row-->
+                                </div>
+                                <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel"
+                                    aria-labelledby="lecturer-tab" tabindex="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class=" input-group mb-3">
+                                                <select class="form-select tom-select " id="lecturer_id"
+                                                    name="lecturer_id"
+                                                    placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
+                                                    <option></option>
+                                                    <?php foreach ($lecturers as $lecturer): ?>
+                                                        <option value="<?= $lecturer->id ?>">
+                                                            <?= $lecturer->getFullName() ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
                                                 </select>
-                                                <button type="button" class="btn btn-primary"
-                                                    id="departmentAndProgramScheduleButton" data-only-table="false"
+                                                <button class="btn btn-primary" type="button"
+                                                    id="lecturerScheduleButton" data-only-table="false"
                                                     data-schedule-type="exam">
-                                                    Göster
+                                                    Düzenle
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
-
                                 </div>
-                            </div>
-                            <!--end::Row-->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class=" input-group mb-3">
-                                        <select class="form-select tom-select " id="lecturer_id" name="lecturer_id"
-                                            placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
-                                            <option></option>
-                                            <?php foreach ($lecturers as $lecturer): ?>
-                                                <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button class="btn btn-primary" type="button" id="lecturerScheduleButton"
-                                            data-only-table="false" data-schedule-type="exam">
-                                            Göster
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="input-group mb-3">
-                                        <select class="form-select" id="classroom_id" name="classroom_id">
-                                            <option value="0">Derslik Seçiniz</option>
-                                            <?php foreach ($classrooms as $classroom): ?>
-                                                <option value="<?= $classroom->id ?>"><?= $classroom->name ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <button class="btn btn-primary" type="button" id="classroomScheduleButton"
-                                            data-only-table="false" data-schedule-type="exam">
-                                            Göster
-                                        </button>
+                                <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel"
+                                    aria-labelledby="classroom-tab" tabindex="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="input-group mb-3">
+                                                <select class="form-select" id="classroom_id" name="classroom_id">
+                                                    <option value="0">Derslik Seçiniz</option>
+                                                    <?php foreach ($classrooms as $classroom): ?>
+                                                        <option value="<?= $classroom->id ?>"><?= $classroom->name ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button class="btn btn-primary" type="button"
+                                                    id="classroomScheduleButton" data-only-table="false"
+                                                    data-schedule-type="exam">
+                                                    Düzenle
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
