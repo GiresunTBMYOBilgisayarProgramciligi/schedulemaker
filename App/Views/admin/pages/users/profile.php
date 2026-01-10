@@ -111,7 +111,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-6">
                                         <input type="hidden" name="id" value="<?= $user->id ?>">
                                         <div class="mb-3">
-                                            <label class="from-label" for="name">Adı</label>
+                                            <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    placeholder="Adı"
                                                    value="<?= htmlspecialchars($user->name ?? '') ?>"
@@ -120,7 +120,7 @@ use function App\Helpers\isAuthorized;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="last_name">Soyadı</label>
+                                            <label class="form-label" for="last_name">Soyadı</label>
                                             <input type="text" class="form-control" id="last_name" name="last_name"
                                                    placeholder="Soyadı"
                                                    value="<?= htmlspecialchars($user->last_name ?? '') ?>"
@@ -131,7 +131,7 @@ use function App\Helpers\isAuthorized;
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="mail">e-Posta</label>
+                                            <label class="form-label" for="mail">e-Posta</label>
                                             <input type="email" class="form-control" id="mail" name="mail"
                                                    placeholder="e-Posta"
                                                    value="<?= htmlspecialchars($user->mail ?? '') ?>"
@@ -140,7 +140,7 @@ use function App\Helpers\isAuthorized;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="password">Şifre</label>
+                                            <label class="form-label" for="password">Şifre</label>
                                             <input type="password" class="form-control" id="password" name="password"
                                                    placeholder="Şifre">
                                         </div>
@@ -149,7 +149,7 @@ use function App\Helpers\isAuthorized;
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="role">Rol</label>
+                                            <label class="form-label" for="role">Rol</label>
                                             <select class="form-select" id="role" name="role">
                                                 <?php foreach ($userController->getRoleList() as $role => $value): ?>
                                                     <option value="<?= $role ?>"
@@ -160,7 +160,7 @@ use function App\Helpers\isAuthorized;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="title">Ünvan</label>
+                                            <label class="form-label" for="title">Ünvan</label>
                                             <select class="form-select" id="title" name="title">
                                                 <?php $titleList = $userController->getTitleList();
                                                 array_unshift($titleList, "");
@@ -175,7 +175,7 @@ use function App\Helpers\isAuthorized;
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="department_id">Bölüm</label>
+                                            <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id" name="department_id">
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
@@ -189,7 +189,7 @@ use function App\Helpers\isAuthorized;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="from-label" for="program_id">Program</label>
+                                            <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id">
                                                 <?php foreach ($user->getDepartmentProgramsList() as $program): ?>
                                                     <option value="<?= $program->id ?>"
@@ -219,45 +219,83 @@ use function App\Helpers\isAuthorized;
             <!--end::Row-->
             <!--begin::Row-->
             <div class="row mb-3">
-                <div class="col-md-12">
-                    <!-- card Derslerim -->
-                    <div class="card card-outline card-primary collapsed-card">
-                        <div class="card-header">
-                            <h3 class="card-title">Derslerim</h3>
-                            <div class="card-tools">
-                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
-                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
-                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
-                                </button>
-                            </div>
+                <div class="col-12">
+                    <div class="card card-primary card-outline card-tabs">
+                        <div class="card-header p-0 border-bottom-0">
+                            <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="lessons-tab" data-bs-toggle="pill" href="#lessons" role="tab" aria-controls="lessons" aria-selected="true">Derslerim</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="schedule-tab" data-bs-toggle="pill" href="#schedule" role="tab" aria-controls="schedule" aria-selected="false">Ders Programım</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="exams-tab" data-bs-toggle="pill" href="#exams" role="tab" aria-controls="exams" aria-selected="false">Sınav Programım</a>
+                                </li>
+                            </ul>
                         </div>
-                        <!-- /.card-header -->
                         <div class="card-body">
-                            <!-- Burada dersler listelenecek -->
-                            <div class="row">
-                                <?php foreach ($user->lessons as $lesson): ?>
-                                    <div class="col-md-4">
-                                        <a href="/admin/lesson/<?= $lesson->id ?>" class="link-underline link-underline-opacity-0">
-                                            <div class="info-box text-bg-primary">
-                                                <span class="info-box-icon"> <i class="bi bi-book"></i> </span>
-                                                <div class="info-box-content">
-                                                    <span class="info-box-text"><?= $lesson->code ?></span>
-                                                    <span class="info-box-number"> <?= $lesson->name ?></span>
-                                                    <span class=""><?= $lesson->department->name ?? "-"?> </span>
-                                                    <span class=""><?= $lesson->program->name ?? "-" ?> </span>
-                                                </div>
-                                                <!-- /.info-box-content -->
+                            <div class="tab-content" id="profileTabsContent">
+                                <div class="tab-pane fade show active" id="lessons" role="tabpanel" aria-labelledby="lessons-tab">
+                                    <div class="row">
+                                        <?php foreach ($user->lessons as $lesson): ?>
+                                            <div class="col-md-3 col-sm-6 p-1">
+                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-decoration-none text-reset">
+                                                    <div class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?? '' ?>" style="cursor: pointer;">
+                                                        <span class="lesson-name" title="<?= $lesson->name ?>">
+                                                            <?= $lesson->code ?> - <?= $lesson->name ?>
+                                                        </span>
+                                                        <div class="lesson-meta">
+                                                            <span class="lesson-lecturer">
+                                                                <?= $lesson->program->name ?? "-" ?>
+                                                            </span>
+                                                            <span class="lesson-classroom">
+                                                                <?= $lesson->hours ?> Saat / <?= $lesson->size ?> Kişi
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </a>
                                             </div>
-                                        </a>
+                                        <?php endforeach; ?>
+                                        <?php if (empty($user->lessons)): ?>
+                                            <div class="col-12 text-center text-muted">Hoca üzerine kayıtlı ders bulunamadı.</div>
+                                        <?php endif; ?>
                                     </div>
-                                <?php endforeach; ?>
+                                </div>
+                                <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
+                                    <?= $scheduleHTML ?>
+                                </div>
+                                <div class="tab-pane fade" id="exams" role="tabpanel" aria-labelledby="exams-tab">
+                                    <!-- Nested Tabs for Exams -->
+                                    <ul class="nav nav-tabs mb-3" id="examTabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="midterm-tab" data-bs-toggle="tab" href="#midterm" role="tab">Ara Sınav</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="final-tab" data-bs-toggle="tab" href="#final" role="tab">Final</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="makeup-tab" data-bs-toggle="tab" href="#makeup" role="tab">Bütünleme</a>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content" id="examTabsContent">
+                                        <div class="tab-pane fade show active" id="midterm" role="tabpanel">
+                                            <?= $midtermScheduleHTML ?>
+                                        </div>
+                                        <div class="tab-pane fade" id="final" role="tabpanel">
+                                            <?= $finalScheduleHTML ?>
+                                        </div>
+                                        <div class="tab-pane fade" id="makeup" role="tabpanel">
+                                            <?= $makeupScheduleHTML ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        <!-- /.card -->
                     </div>
-                    <!-- /.card -->
                 </div>
             </div>
-            <?= $scheduleHTML ?>
         </div>
         <!--end::Container-->
     </div>

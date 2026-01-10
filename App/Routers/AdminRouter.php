@@ -166,7 +166,38 @@ class AdminRouter extends Router
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
                 ],
-                preference_mode: true
+                preference_mode: true,
+                no_card: true
+            ),
+            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'user',
+                    'owner_id' => $user->id,
+                    'type' => 'midterm-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
+            ),
+            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'user',
+                    'owner_id' => $user->id,
+                    'type' => 'final-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
+            ),
+            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'user',
+                    'owner_id' => $user->id,
+                    'type' => 'makeup-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
             ),
         ]);
         $this->callView("admin/users/profile");
@@ -601,7 +632,7 @@ class AdminRouter extends Router
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id,'!role' => ["in" => ['admin', 'user']]])->all();
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ["in" => ['admin', 'user']]])->all();
         } else
             $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/schedules/editschedule");
@@ -628,7 +659,7 @@ class AdminRouter extends Router
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id,'!role' => ['admin', 'user']])->all();
+            $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ['admin', 'user']])->all();
         } else
             $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
         $this->callView("admin/schedules/editexamschedule");

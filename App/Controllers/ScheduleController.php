@@ -380,7 +380,7 @@ class ScheduleController extends Controller
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
-    private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false): string
+    private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
         $filters = $this->validator->validate($filters, "prepareScheduleCard");
@@ -543,7 +543,8 @@ class ScheduleController extends Controller
             'break' => $break,
             'only_table' => $only_table,
             'preference_mode' => $preference_mode,
-            'weekCount' => count($scheduleRows)
+            'weekCount' => count($scheduleRows),
+            'no_card' => $no_card
         ]);
     }
 
@@ -594,23 +595,23 @@ class ScheduleController extends Controller
      * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false): string
+    public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
         if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
             // birleştirilmiş dönem
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
         } elseif (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
             $filters['semester_no'] = null;
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
+            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
         } else {
             $currentSemesters = getSemesterNumbers($filters["semester"]);
             foreach ($currentSemesters as $semester_no) {
                 $filters['semester_no'] = $semester_no;
-                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode);
+                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
             }
         }
 

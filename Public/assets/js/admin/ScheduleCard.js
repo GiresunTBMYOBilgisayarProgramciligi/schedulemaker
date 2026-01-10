@@ -292,6 +292,7 @@ class ScheduleCard {
         data.append('academic_year', this.academic_year);
         data.append('type', this.type);
         data.append('only_table', 'true');
+        data.append('no_card', 'true');
 
         try {
             const response = await fetch('/ajax/getScheduleHTML', {

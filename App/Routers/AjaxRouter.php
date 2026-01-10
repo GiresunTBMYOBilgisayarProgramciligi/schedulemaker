@@ -548,7 +548,12 @@ class AjaxRouter extends Router
             $preference_mode = $this->data['preference_mode'] === "true";
             unset($this->data['preference_mode']);
         }
-        $schedulesHTML = $scheduleController->getSchedulesHTML($this->data, $only_table, $preference_mode);
+        $no_card = false;
+        if (isset($this->data['no_card'])) {
+            $no_card = $this->data['no_card'] === "true";
+            unset($this->data['no_card']);
+        }
+        $schedulesHTML = $scheduleController->getSchedulesHTML($this->data, $only_table, $preference_mode, $no_card);
         $this->response['status'] = "success";
         $this->response['HTML'] = $schedulesHTML;
         $this->sendResponse();

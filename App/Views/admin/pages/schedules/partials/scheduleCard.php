@@ -8,19 +8,25 @@ use App\Models\Schedule;
  */
 ?>
 <!--begin::Row Program Satırı-->
+<?php
+$no_card = isset($no_card) && $no_card;
+$cardClasses = $no_card ? "schedule-card" : "card schedule-card card-outline card-primary";
+$headerClasses = $no_card ? "d-flex justify-content-between align-items-center mb-3" : "card-header " . ((isset($weekCount) && $weekCount > 1) ? 'd-flex justify-content-between align-items-center' : '');
+$bodyClasses = $no_card ? "" : "card-body";
+?>
+<!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="card schedule-card card-outline card-primary" id="scheduleCard-<?= $schedule->id ?>"
-            data-schedule-id="<?= $schedule->id ?>" data-duration="<?= $duration ?? 50 ?>"
-            data-break="<?= $break ?? 10 ?>"
+        <div class="<?= $cardClasses ?>" id="scheduleCard-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>"
+            data-duration="<?= $duration ?? 50 ?>" data-break="<?= $break ?? 10 ?>"
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
-            data-week-count="<?= $weekCount ?? 1 ?>"
-            data-type="<?= $schedule->type ?>"
+            data-week-count="<?= $weekCount ?? 1 ?>" data-type="<?= $schedule->type ?>"
             data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
-            <div
-                class="card-header <?= (isset($weekCount) && $weekCount > 1) ? 'd-flex justify-content-between align-items-center' : '' ?>">
-                <h3 class="card-title"><?= $cardTitle ?></h3>
+            <div class="<?= $headerClasses ?>">
+                <?php if (!$no_card): ?>
+                    <h3 class="card-title"><?= $cardTitle ?></h3>
+                <?php endif; ?>
 
                 <?php if (isset($weekCount) && $weekCount > 1): ?>
                     <div class="week-navigation mx-auto">
@@ -36,7 +42,7 @@ use App\Models\Schedule;
                     </div>
                 <?php endif; ?>
 
-                <div class="card-tools">
+                <div class="d-flex <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
                     <div class="btn-group" role="group" aria-label="Dışa aktarma">
                         <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm"
                             data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>">
@@ -49,7 +55,7 @@ use App\Models\Schedule;
                     </div>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="<?= $bodyClasses ?>">
                 <?php if (!isset($only_table) || !$only_table): ?>
                     <?= $availableLessonsHTML ?>
                 <?php endif; ?>
