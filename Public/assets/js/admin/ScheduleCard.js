@@ -58,6 +58,10 @@ class ScheduleCard {
         this.academic_year = this.card.dataset.academicYear || null;
 
         await this.bindCardEvents();
+
+        // Event delegation methods should be initialized only once
+        this.initBulkSelection();
+        this.initContextMenu();
     }
 
     async bindCardEvents() {
@@ -89,13 +93,7 @@ class ScheduleCard {
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
 
         this.initStickyHeaders();
-        this.initBulkSelection(); // This manages event delegation on this.card, so safe to call once if card element persists, but internal logic checks class names.
-        // Note: initBulkSelection adds listener to this.card. If this.card is same element, we might add duplicate listeners. 
-        // We should move delegation listeners to a separate "once" method or check if already added. 
-        // Since we are refactoring, let's keep it simple: refreshScheduleCard replaces innerHTML, but this.card persists.
-        // initialize is called only once per page load per card. refreshScheduleCard will NOT call initialize.
-
-        // HOWEVER, initStickyHeaders creates elements. refreshScheduleCard should recreate them or update them.
+        // initBulkSelection and initContextMenu are now in initialize() to ensure single binding via delegation.
     }
 
     // Call this ONLY once in constructor or initialize
