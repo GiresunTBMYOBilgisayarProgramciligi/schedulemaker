@@ -390,66 +390,9 @@ class ScheduleController extends Controller
             $filters['semester_no'] = null;
         }
 
-        if (is_array($filters['semester_no'])) {
-            $availableLessons = [];
-            $scheduleRows = [];
-
-            foreach ($filters['semester_no'] as $semester_no) {
-                $scheduleFilters = $filters;
-                $scheduleFilters['semester_no'] = $semester_no;
-                $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
-                $availableLessons = ($only_table) ? [] : array_merge($availableLessons, $this->availableLessons($schedule, $preference_mode));
-                /**
-                 * birden fazla schedule row içindeki bilgileri birleştiriyoruz.
-                 * Gemini yaptı. biraz karışık ama iş görüyor.
-                 */
-                $currentRows = $this->prepareScheduleRows($schedule, "html");
-
-                if (empty($scheduleRows)) {
-                    $scheduleRows = $currentRows;
-                } else {
-                    foreach ($currentRows as $weekIndex => $weekRows) {
-                        if (!isset($scheduleRows[$weekIndex])) {
-                            $scheduleRows[$weekIndex] = $weekRows;
-                            continue;
-                        }
-
-                        foreach ($weekRows as $rowIndex => $row) {
-                            if (!isset($scheduleRows[$weekIndex][$rowIndex])) {
-                                $scheduleRows[$weekIndex][$rowIndex] = $row;
-                                continue;
-                            }
-
-                            foreach ($row['days'] as $dayIndex => $dayContent) {
-                                if (empty($dayContent)) {
-                                    continue;
-                                }
-
-                                if (empty($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex])) {
-                                    $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = $dayContent;
-                                } else {
-                                    // Hedefin dizi olduğundan emin ol
-                                    if (!is_array($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex])) {
-                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = [$scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex]];
-                                    }
-
-                                    // Kaynağı birleştir
-                                    if (is_array($dayContent)) {
-                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex] = array_merge($scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex], $dayContent);
-                                    } else {
-                                        $scheduleRows[$weekIndex][$rowIndex]['days'][$dayIndex][] = $dayContent; // Tek öğe ekle
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            $schedule = (new Schedule())->firstOrCreate($filters);
-            $availableLessons = ($only_table) ? [] : $this->availableLessons($schedule, $preference_mode);
-            $scheduleRows = $this->prepareScheduleRows($schedule, "html");
-        }
+        $schedule = (new Schedule())->firstOrCreate($filters);
+        $availableLessons = ($only_table) ? [] : $this->availableLessons($schedule, $preference_mode);
+        $scheduleRows = $this->prepareScheduleRows($schedule, "html");
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
@@ -521,8 +464,8 @@ class ScheduleController extends Controller
         };
 
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
-        $cardTitle = is_array($filters['semester_no']) ? "Ders Programı" : $filters['semester_no'] . " Yarıyıl Programı";
-        $dataSemesterNo = is_array($filters['semester_no']) ? "" : 'data-semester-no="' . $filters['semester_no'] . '"';
+        $cardTitle = $filters['semester_no'] . " Yarıyıl Programı";
+        $dataSemesterNo = 'data-semester-no="' . $filters['semester_no'] . '"';
 
         if (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) {
             $duration = getSettingValue('duration', 'exam', 30);
@@ -567,17 +510,8 @@ class ScheduleController extends Controller
         $availableLessons = [];
         $schedule = null;
 
-        if (key_exists("semester_no", $filters) && is_array($filters['semester_no'])) {
-            foreach ($filters['semester_no'] as $semester_no) {
-                $scheduleFilters = $filters;
-                $scheduleFilters['semester_no'] = $semester_no;
-                $schedule = (new Schedule())->firstOrCreate($scheduleFilters);
-                $availableLessons = array_merge($availableLessons, $this->availableLessons($schedule, $preference_mode));
-            }
-        } else {
-            $schedule = (new Schedule())->firstOrCreate($filters);
-            $availableLessons = $this->availableLessons($schedule, $preference_mode);
-        }
+        $schedule = (new Schedule())->firstOrCreate($filters);
+        $availableLessons = $this->availableLessons($schedule, $preference_mode);
 
         return View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
@@ -600,7 +534,7 @@ class ScheduleController extends Controller
         $filters = $this->validator->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
-        if (key_exists("semester_no", $filters) and is_array($filters['semester_no'])) {
+        if (key_exists("semester_no", $filters)) {
             // birleştirilmiş dönem
             $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
         } elseif (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {

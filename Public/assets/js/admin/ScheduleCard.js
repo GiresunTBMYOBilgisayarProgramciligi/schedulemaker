@@ -57,6 +57,16 @@ class ScheduleCard {
         this.breakDuration = parseInt(this.card.dataset.break) || 0;
         this.academic_year = this.card.dataset.academicYear || null;
 
+        if (this.card.dataset.semesterNo) {
+            try {
+                this.semester_no = JSON.parse(this.card.dataset.semesterNo);
+            } catch (e) {
+                this.semester_no = this.card.dataset.semesterNo;
+            }
+        }
+
+        console.log(`[ScheduleCard Initialized] ID: ${this.id}, Owner: ${this.owner_type} #${this.owner_id}, SemesterNo:`, this.semester_no, "AcademicYear:", this.academic_year);
+
         await this.bindCardEvents();
 
         // Event delegation methods should be initialized only once
@@ -119,6 +129,17 @@ class ScheduleCard {
         }
 
         data.append("preference_mode", this.preference_mode ? "true" : "false");
+
+        // Debug logging
+        console.group("refreshScheduleCard Call");
+        console.log("Card ID:", this.id);
+        console.log("Owner:", this.owner_type, this.owner_id);
+        console.log("Semester:", this.semester);
+        console.log("Semester No:", this.semester_no);
+        console.log("Academic Year:", this.academic_year);
+        console.log("Type:", this.type);
+        console.log("Sent Data:", Object.fromEntries(data.entries()));
+        console.groupEnd();
 
         // Add loading state
         const loadingDiv = document.createElement('div');
