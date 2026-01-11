@@ -150,29 +150,5 @@ class LessonScheduleCard extends ScheduleCard {
         });
     }
 
-    /**
-     * Dersleri tabloya taşır ve süreleri günceller
-     */
-    moveLessonListToTable(scheduleItems, classroom, createdIds = []) {
-        super.moveLessonListToTable(scheduleItems, classroom, createdIds);
 
-        // Derslere özgü kalan saat güncelleme mantığı
-        let targetElement = this.draggedLesson.HTMLElement;
-        if (targetElement && targetElement.closest('.sticky-header-wrapper')) {
-            targetElement = this.list.querySelector(`[data-lesson-id="${this.draggedLesson.lesson_id}"]`);
-        }
-
-        if (targetElement) {
-            let addedHours = scheduleItems.reduce((acc, item) => acc + this.getDurationInHours(item.start_time, item.end_time), 0);
-            if (this.draggedLesson.lesson_hours > addedHours) {
-                let newHours = this.draggedLesson.lesson_hours - addedHours;
-                targetElement.querySelector(".lesson-classroom").innerHTML = newHours.toString() + " Saat";
-                targetElement.dataset.lessonHours = newHours;
-            } else {
-                targetElement.closest("div.frame")?.remove();
-                targetElement.remove();
-            }
-            this.updateStickyList();
-        }
-    }
 }
