@@ -663,7 +663,13 @@ class SingleScheduleHandler {
 
     createDummySlotHTML(item) {
         const scheduleCard = document.querySelector('.schedule-card');
+        // Sunucu tarafındaki mantıkla hizalama: preference_mode draggable ve checkbox durumunu belirler
+        const preferenceMode = scheduleCard ? (scheduleCard.dataset.preferenceMode === 'true' || scheduleCard.dataset.preferenceMode === '1') : false;
+
+        // onlyTable eskiden kullanılıyordu ancak sunucu tarafında bu kontrol preference_mode ile yapılıyor.
+        // Yine de eski kodun mantığını tamamen kırmamak adına onlyTable değişkenini koruyoruz ama kullanımı azalıyor.
         const onlyTable = scheduleCard ? (scheduleCard.dataset.onlyTable === 'true' || scheduleCard.dataset.onlyTable === '1') : false;
+
         const statusClass = item.status === 'preferred' ? 'slot-preferred' : 'slot-unavailable';
 
         let detail = item.detail;
@@ -671,13 +677,14 @@ class SingleScheduleHandler {
             try { detail = JSON.parse(detail); } catch (e) { detail = {}; }
         }
 
+        // Draggable özelliği ve checkbox preferenceMode'a bağlı olmalı
         let html = `<div class="empty-slot dummy ${statusClass}" 
-                        draggable="${onlyTable ? 'true' : 'false'}" 
+                        draggable="${preferenceMode ? 'true' : 'false'}" 
                         data-schedule-item-id="${item.id}" 
                         data-status="${item.status}"
                         data-detail='${JSON.stringify(item.detail || {})}'>`;
 
-        if (onlyTable) {
+        if (preferenceMode) {
             html += `<input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">`;
         }
 
