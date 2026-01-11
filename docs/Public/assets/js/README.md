@@ -16,6 +16,6 @@ Uygulamanın interaktif özelliklerini sağlayan JavaScript dosyaları.
 *   **[formEvents.js](./formEvents.md)**: Form ve Modal etkileşimleri.
 *   **[data_table.js](./data_table.md)**: DataTables ilklendirme.
 *   **[myHTMLElements.js](./myHTMLElements.md)**: Özel UI elementleri ve yardımcıları.
-*   **[userSchedule.js](./userSchedule.md)**: Kullanıcı taraflı program görünümü.
+
 *   **datatable_tr.json**: DataTables Türkçe dil dosyası.
 *   **gettext.php**: Dil desteği için yardımcı script.
