@@ -1007,7 +1007,11 @@ class ScheduleController extends Controller
                             $validDetail,
                             $itemData['week_index'] ?? 0
                         );
-                        $itemGroupedIds[$schedule->owner_type] = $groupIds;
+                        // Append to grouped IDs (fix overwrite)
+                        if (!isset($itemGroupedIds[$schedule->owner_type])) {
+                            $itemGroupedIds[$schedule->owner_type] = [];
+                        }
+                        $itemGroupedIds[$schedule->owner_type] = array_merge($itemGroupedIds[$schedule->owner_type], $groupIds);
                     } else {
                         // Diğer durumlar (single, preferred, unavailable) için direkt create
                         $newItem = new ScheduleItem();
@@ -1020,11 +1024,15 @@ class ScheduleController extends Controller
                         $newItem->data = $validData;
                         $newItem->detail = $validDetail;
                         $newItem->create();
-                        $itemGroupedIds[$schedule->owner_type] = [$newItem->id];
+
+                        // Append to grouped IDs (fix overwrite)
+                        if (!isset($itemGroupedIds[$schedule->owner_type])) {
+                            $itemGroupedIds[$schedule->owner_type] = [];
+                        }
+                        $itemGroupedIds[$schedule->owner_type][] = $newItem->id;
                     }
                 }
                 $createdIds[] = $itemGroupedIds;
-
                 // İşlem gören dersleri kaydet (Kontrol için)
                 if (!$isDummy) {
                     $affectedLessonIds[] = $lessonId;
@@ -1047,6 +1055,10 @@ class ScheduleController extends Controller
                         $errorMsg = ($targetSchedule->type === 'lesson')
                             ? "{$checkLesson->getFullName()} dersinin toplam saati aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " saat)"
                             : "{$checkLesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($checkLesson->remaining_size) . " kişi)";
+                        if ($checkLesson->parent_lesson_id) {
+                            $this->logger()->debug("Child Lesson: " . $checkLesson->getFullName() . " - " . $errorMsg . "|" . var_export($createdIds, true));
+                            continue;
+                        }
                         throw new Exception($errorMsg);
                     }
                 }
