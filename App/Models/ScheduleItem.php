@@ -109,7 +109,7 @@ class ScheduleItem extends Model
             if ($dayData == null)
                 continue;
 
-            $lesson = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons' => ['with' => ['program']], 'program'])->first();
+            $lesson = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons' => ['with' => ['program']], 'program', 'parentLesson' => ['with' => ['program']]])->first();
             if ($lesson === null) {
                 throw new \Exception("ScheduleItem ID: {$this->id} için ders (ID: {$dayData['lesson_id']}) bulunamadı.");
             }

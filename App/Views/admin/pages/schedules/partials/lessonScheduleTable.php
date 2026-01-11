@@ -93,8 +93,17 @@ use function App\Helpers\getSettingValue;
                                                     foreach ($dataAttrs as $key => $val) {
                                                         $attrString .= " $key=\"" . htmlspecialchars($val) . "\"";
                                                     }
+
+                                                    $popoverAttr = "";
+                                                    $isChild = !is_null($slotData->lesson->parent_lesson_id);
+                                                    if ($isChild && isset($slotData->lesson->parentLesson)) {
+                                                        $parent = $slotData->lesson->parentLesson;
+                                                        $popoverTitle = "Birleştirilmiş Ders";
+                                                        $popoverContent = "Bu ders " . $parent->getFullName() . "(" . ($parent->program?->name ?? "") . ") dersine bağlı olduğu için düzenlenemez.";
+                                                        $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+                                                    }
                                                     ?>
-                                                    <div <?= $attrString ?>>
+                                                    <div <?= $attrString ?>                             <?= $popoverAttr ?>>
                                                         <?php if ((!isset($only_table) or !$only_table) && (!isset($preference_mode) or !$preference_mode)): ?>
                                                             <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
                                                         <?php endif; ?>
@@ -170,3 +179,10 @@ use function App\Helpers\getSettingValue;
         </table>
     <?php endforeach; ?>
 </div>
+<script>
+    // Re-initialize Bootstrap Popovers
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.map(function (popoverTriggerEl) {
+        new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+    });
+</script>
