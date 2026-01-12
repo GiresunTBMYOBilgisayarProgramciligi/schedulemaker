@@ -2,6 +2,7 @@
 use App\Models\Lesson;
 use App\Models\Schedule;
 use function App\Helpers\getSettingValue;
+use function App\Helpers\getClassFromSemesterNo;
 use App\Core\Log;
 /**
  * @var array $availableLessons
@@ -40,7 +41,7 @@ use App\Core\Log;
         }
         $lessonName = $lesson->name;
         if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
-            $lessonName = $lesson->name . ' (' . ($lesson->program?->name ?? "") . ')';
+            $lessonName = $lesson->name . ' (' . ($lesson->program?->name."-".getClassFromSemesterNo($lesson->semester_no) ?? "") . ')';
         }
 
         // Badge yerine sağ alta gelecek metin

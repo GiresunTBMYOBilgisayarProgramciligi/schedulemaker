@@ -1,5 +1,6 @@
 <?php
 use App\Models\Schedule;
+use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -110,17 +111,17 @@ use function App\Helpers\getSettingValue;
                                                         <span class="lesson-name">
                                                             <?php if ($schedule->owner_type !== 'program'): ?>
                                                                 <?php
-                                                                $programNames = [$slotData->lesson->program->name];
+                                                                $programNames = [$slotData->lesson->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no)];
                                                                 if (!empty($slotData->lesson->childLessons)) {
                                                                     foreach ($slotData->lesson->childLessons as $child) {
                                                                         if ($child->program) {
-                                                                            $programNames[] = $child->program->name;
+                                                                            $programNames[] = $child->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no);
                                                                         }
                                                                     }
                                                                 }
 
                                                                 if (empty($programNames) && $slotData->lesson->program) {
-                                                                    $programNames[] = $slotData->lesson->program->name;
+                                                                    $programNames[] = $slotData->lesson->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no);
                                                                 }
 
                                                                 // Unique ve virgülle birleştir
