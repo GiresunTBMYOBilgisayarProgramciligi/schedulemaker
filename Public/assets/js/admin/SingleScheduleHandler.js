@@ -82,6 +82,7 @@ class SingleScheduleHandler {
     }
 
     initModals() {
+        //todo: MyHTMLElements.js ile Modal kullan
         // Bootstrap modal elementini oluştur (eğer yoksa)
         if (!document.getElementById('singleScheduleModal')) {
             const modalHtml = `

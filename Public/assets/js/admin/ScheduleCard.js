@@ -701,12 +701,12 @@ class ScheduleCard {
         for (let i = 0; i < this.table.rows.length; i++) {
             for (let j = 0; j < this.table.rows[i].cells.length; j++) {
                 const emptySlot = this.table.rows[i].cells[j].querySelector('.empty-slot');
-                if (emptySlot && this.owner_type !== "user") {
+                if (emptySlot) {
                     emptySlot.classList.remove(
                         "slot-unavailable", "slot-preferred", "unavailable-for-lecturer",
                         "unavailable-for-classroom", "unavailable-for-program"
                     );
-                    emptySlot.innerHTML = '';
+                    if (this.owner_type !== "user") emptySlot.innerHTML = '';// kalan not bilgisini silmek için
                 }
             }
         }
