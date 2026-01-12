@@ -680,6 +680,17 @@ class ScheduleCard {
                     }
                 });
             };
+            /**Program çakışması ile hoca tercihleri çakışırsa hoca tercih hücrelerinden siler */
+            if (programData && programData.status !== "error" && programData.unavailableCells &&
+                lecturerData && lecturerData.status !== "error" && lecturerData.preferredCells) {
+                Object.keys(programData.unavailableCells).forEach(row => {
+                    if (lecturerData.preferredCells[row]) {
+                        Object.keys(programData.unavailableCells[row]).forEach(col => {
+                            delete lecturerData.preferredCells[row][col];
+                        });
+                    }
+                });
+            }
 
             if (classroomData && classroomData.status !== "error") applyCells(classroomData.unavailableCells, ["slot-unavailable", "unavailable-for-classroom"]);
             if (lecturerData && lecturerData.status !== "error") {
