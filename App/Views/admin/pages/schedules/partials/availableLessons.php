@@ -62,6 +62,10 @@ use App\Core\Log;
             'data-lecturer-id' => $isDummy ? $lesson->lecturer_id : $lesson->lecturer_id,
             'data-status' => $isDummy ? $status : '', // dummy ise preferred/unavailable, değilse boş (JS group/single olarak belirleyecek)
             'data-program-id' => $isDummy ? null :$lesson->program_id,
+            //Sağ-tık menü için isimler
+            'data-program-name' => $isDummy ? null :$lesson->program?->name,
+            'data-lecturer-name' => $isDummy ? null :$lesson->lecturer?->getFullName(),
+            'data-lesson-name' => $isDummy ? null :$lesson->name,
         ];
 
         if ($isDummy) {
