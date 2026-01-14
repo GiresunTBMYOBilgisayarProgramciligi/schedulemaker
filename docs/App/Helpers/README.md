@@ -20,6 +20,10 @@
 ### 5. `find_key_starting_with(array $array, string $prefix)`
 *   Dizi içinde belirli bir ön ek ile başlayan anahtarı bulur.
 
+
+### 6. `getAppVersion()`
+*   `composer.json` dosyasından uygulamanın versiyon numarasını okur ve döner.
+
 ---
 ### 🛡️ [FilterValidator](./FilterValidator/README.md)
 Gelen istek verilerini şema bazlı doğrulayan ve temizleyen gelişmiş doğrulama sınıfı.

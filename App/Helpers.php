@@ -117,3 +117,17 @@ function find_key_starting_with(array $array, string $prefix): ?string
     return null;
 }
 
+
+/**
+ * Uygulamanın versiyon numarasını döner
+ * @return string
+ */
+function getAppVersion(): string
+{
+    $composerFile = __DIR__ . '/../composer.json';
+    if (!file_exists($composerFile)) {
+        return '0.0.0';
+    }
+    $composerData = json_decode(file_get_contents($composerFile), true);
+    return $composerData['version'] ?? '0.0.0';
+}
