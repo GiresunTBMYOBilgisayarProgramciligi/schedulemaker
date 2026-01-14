@@ -737,8 +737,25 @@ class ImportExportManager
             }
 
             // Program/Bölüm Adı
-            if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom') && $data->lesson->program) {
-                $richContent->createText("\n(" . $data->lesson->program->name . ")");
+            if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
+                $programNames = [];
+                if ($data->lesson->program) {
+                    $programNames[] = $data->lesson->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
+                }
+
+                if (!empty($data->lesson->childLessons)) {
+                    foreach ($data->lesson->childLessons as $child) {
+                        if ($child->program) {
+                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
+                        }
+                    }
+                }
+
+                $programNamesStr = implode(', ', array_unique($programNames));
+
+                if ($programNamesStr) {
+                    $richContent->createText("\n(" . $programNamesStr . ")");
+                }
             }
 
             // Derslik (Ayrı sütuna gidecek)

@@ -58,9 +58,10 @@ use function App\Helpers\getSettingValue;
 
                                             <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                                 <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                                    $isChild = !is_null($slotData->lesson->parent_lesson_id);
                                                     $draggable = "true";
                                                     if (
-                                                        !is_null($slotData->lesson->parent_lesson_id) or
+                                                        $isChild or
                                                         $schedule->academic_year != getSettingValue('academic_year') or
                                                         $schedule->semester != getSettingValue('semester') or
                                                         (isset($only_table) && $only_table) or
@@ -96,7 +97,7 @@ use function App\Helpers\getSettingValue;
                                                     }
 
                                                     $popoverAttr = "";
-                                                    $isChild = !is_null($slotData->lesson->parent_lesson_id);
+                                                    
                                                     if ($isChild && isset($slotData->lesson->parentLesson)) {
                                                         $parent = $slotData->lesson->parentLesson;
                                                         $popoverTitle = "Birleştirilmiş Ders";
