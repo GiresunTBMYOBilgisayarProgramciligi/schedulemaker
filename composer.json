@@ -1,11 +1,12 @@
 {
   "name": "tmbmyo/schedulemaker",
-  "description": "description",
+  "version": "0.1.0",
+  "description": "Ders Programı Düzenleme Sistemi",
   "minimum-stability": "stable",
-  "license": "proprietary",
+  "license": "MIT",
   "authors": [
     {
-      "name": "sametatabasch",
+      "name": "Samet Aatabaş",
       "email": "sametatabasch@gmail.com"
     }
   ],
