@@ -35,7 +35,6 @@ class Schedule extends Model
     public ?int $semester_no = null;
     public ?string $semester = null;
     public ?string $academic_year = null;
-    protected array $excludeFromDb = [];
 
     /**
      * @var ScheduleItem[]
