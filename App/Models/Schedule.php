@@ -3,16 +3,21 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Models\Classroom;
+use App\Models\Lesson;
+use App\Models\Program;
+use App\Models\User;
+use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
 class Schedule extends Model
 {
-    protected string $table_name = "schedule";
+    protected string $table_name = "schedules";
+    protected array $excludeFromDb = ['items'];
 
     public ?int $id = null;
     /**
-     * Final sınavları iki haftalık olduğu için exam ve exam-2 türü ile kontrol edilecek
-     * @var string|null Program türü lesson, exam,exam-2 observer (Ders, sınav, gözetmen)
+     * @var string|null Program türü lesson, midterm-exam, final-exam, makeup-exam
      */
     public ?string $type = null;
     /**
@@ -24,106 +29,52 @@ class Schedule extends Model
      */
     public ?int $owner_id = null;
     /**
-     * "08.00-08.50", "09.00-09.50", "10.00-10.50",
-     * "11.00-11.50", "12.00-12.50", "13.00-13.50",
-     * "14.00-14.50", "15.00-15.50", "16.00-16.50",
-     * sınav saatleri de yarımsaatlik aralıklarla oluşturulabilir.
-     * @var string|null Program saati
-     */
-    public ?string $time = null;
-    /**
      * Sınıf ayrımı yapmak için kullanılır
      * @var int|null $semester_no 1,2 ...
      */
     public ?int $semester_no = null;
-    /**
-     * Pazartesi günü için time alanında belirlenen saatteki program bilgileri
-     *  array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|bool|null
-     */
-    public array|bool|null $day0 = null;
-    /**
-     * Salı günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day1 = null;
-    /**
-     * Çarşamba günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day2 = null;
-    /**
-     * Perşembe günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day3 = null;
-    /**
-     * Cuma günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day4 = null;
-    /**
-     * Cumartesi günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day5 = null;
-    /**
-     * PAzar günü için time alanında belirlenen saatteki program bilgileri
-     *   array("lecturer_id"=>1,"classroom_id"=>1,"lesson_id"=>1)
-     * @var array|null
-     */
-    public array|bool|null $day6 = null;
     public ?string $semester = null;
     public ?string $academic_year = null;
     protected array $excludeFromDb = [];
 
+    /**
+     * @var ScheduleItem[]
+     */
+    public array $items = [];
 
     /**
-     * Tablo oluştururken günler döngüye sokulurken kullanılır
-     * @param string $type html | excel
-     * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
+     * @param array $results
+     * @param array $options
      * @return array
      * @throws \Exception
      */
-    public function getWeek(string $type = 'html', ?int $maxDayIndex = null): array
+    public function getItemsRelation(array $results, array $options = []): array
     {
-        $maxDayIndex = $maxDayIndex ?? getSettingValue('maxDayIndex', 'lesson', 4);
-        $week = [];
-        foreach (range(0, $maxDayIndex) as $dayIndex) {
-            if ($type === 'excel') {
-                $day = $this->{"day{$dayIndex}"};
-                if (is_array($day)) {
-                    //günde ders var
-                    if (isset($day[0]) and is_array($day[0])) {
-                        // günde iki ders var
-                        $groupDayLessons = [];
-                        $groupDayClasrooms = [];
-                        foreach ($day as $groupLesson) {
-                            $groupDayLessons[] = ['lesson_id' => $groupLesson['lesson_id'], 'lecturer_id' => $groupLesson['lecturer_id']]; // ders bilgileri
-                            $groupDayClasrooms[] = ['classroom_id' => $groupLesson['classroom_id']];// sınıf bilgileri
-                        }
-                        $week["day{$dayIndex}"] = $groupDayLessons;
-                        $week["classroom{$dayIndex}"] = $groupDayClasrooms;
-                    } else {
-                        // günde tek ders var
-                        $week["day{$dayIndex}"] = ['lesson_id' => $day['lesson_id'], 'lecturer_id' => $day['lecturer_id']]; // ders bilgileri
-                        $week["classroom{$dayIndex}"] = ['classroom_id' => $day['classroom_id']];// sınıf bilgileri
-                    }
-                } else {
-                    //günde ders yok
-                    $week["day{$dayIndex}"] = null;// ders bilgileri
-                    $week["classroom{$dayIndex}"] = null;// sınıf bilgileri
-                }
+        $scheduleIds = array_column($results, 'id');
+        if (empty($scheduleIds))
+            return $results;
 
-            } else
-                $week["day{$dayIndex}"] = $this->{"day{$dayIndex}"};
+        $query = (new ScheduleItem())
+            ->get()
+            ->where(['schedule_id' => ['in' => $scheduleIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
         }
-        return $week;
+
+        $itemsRaw = $query->all();
+
+        $itemsByScheduleId = [];
+        foreach ($itemsRaw as $item) {
+            $itemsByScheduleId[$item->schedule_id][] = $item;
+        }
+
+        foreach ($results as &$scheduleRow) {
+            $scheduleId = $scheduleRow['id'];
+            $scheduleRow['items'] = $itemsByScheduleId[$scheduleId] ?? [];
+        }
+
+        return $results;
     }
 
     public function getdayName($dayString): string
@@ -148,5 +99,38 @@ class Schedule extends Model
             "classroom" => "Derslik",
         ];
         return $names[$this->owner_type];
+    }
+
+    /**
+     * Belirtilen özelliklere sahip kaydı getirir, yoksa oluşturur.
+     * @param array $attributes
+     * @return Schedule
+     * @throws \Exception
+     */
+    public function firstOrCreate(array $attributes): Schedule
+    {
+        // Mevcut kaydı ara
+        $instance = (new self())->get()->where($attributes)->with("items")->first();
+
+        if ($instance) {
+            return $instance;
+        }
+
+        // Yoksa yeni oluştur
+        $instance = new self();
+        $instance->fill($attributes);
+        $instance->create();
+
+        return $instance;
+    }
+    public function getScheduleScreenName(): string
+    {
+        return match ($this->owner_type) {
+            "user" => (new User())->find($this->owner_id)?->getFullName() . " Ders Programı",
+            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName() . " Ders Programı",
+            "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . " Ders Programı",
+            "classroom" => (new Classroom())->find($this->owner_id)?->name . " Ders Programı",
+            default => "Ders Programı",
+        };
     }
 }

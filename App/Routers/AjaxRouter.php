@@ -17,6 +17,7 @@ use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
+use App\Models\ScheduleItem;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
@@ -542,9 +543,37 @@ class AjaxRouter extends Router
             $only_table = $this->data['only_table'] === "true";
             unset($this->data['only_table']);
         }
-        $schedulesHTML = $scheduleController->getSchedulesHTML($this->data, $only_table);
+        $preference_mode = false;
+        if (isset($this->data['preference_mode'])) {
+            $preference_mode = $this->data['preference_mode'] === "true";
+            unset($this->data['preference_mode']);
+        }
+        $no_card = false;
+        if (isset($this->data['no_card'])) {
+            $no_card = $this->data['no_card'] === "true";
+            unset($this->data['no_card']);
+        }
+        $schedulesHTML = $scheduleController->getSchedulesHTML($this->data, $only_table, $preference_mode, $no_card);
         $this->response['status'] = "success";
         $this->response['HTML'] = $schedulesHTML;
+        $this->sendResponse();
+    }
+
+    /**
+     * Sadece kullanılabilir dersler listesinin HTML çıktısını döndürür
+     * @throws Exception
+     */
+    public function getAvailableLessonsHTMLAction(): void
+    {
+        $scheduleController = new ScheduleController();
+        $preference_mode = false;
+        if (isset($this->data['preference_mode'])) {
+            $preference_mode = $this->data['preference_mode'] === "true";
+            unset($this->data['preference_mode']);
+        }
+        $html = $scheduleController->getAvailableLessonsHTML($this->data, $preference_mode);
+        $this->response['status'] = "success";
+        $this->response['HTML'] = $html;
         $this->sendResponse();
     }
 
@@ -565,6 +594,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo 
      * Ders programı seçiminde Eklenen derse uygun olan gözetmen listesini hazırlar.
      * @throws Exception
      */
@@ -581,145 +611,158 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function checkScheduleCrashAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $scheduleController->checkScheduleCrash($this->data);
+        try {
+            $scheduleController = new ScheduleController();
+            $scheduleController->checkScheduleCrash($this->data);
 
-        $this->response['status'] = "success";
+            $this->response['status'] = "success";
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            $this->response = [
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : $msg
+            ];
+        }
         $this->sendResponse();
     }
 
     /**
-     * Program bilgilerini veri tabanına kaydeder. Aşağıdaki bilgileri alır
-     * "lesson_id" Programa eklenen dersin id numarası
-     * "time_start" programa eklenen dersin başlangıç saati
-     * "lesson_hours" programa eklenen dersin kaç saat eklendiği
-     * "day_index", programa eklenecek dersin eklendiği günün index numarası
-     * "classroom_name"
-     * "semester_no"
-     *
+     * ID değerine göre program bilgisini döndürür
      * @return void
      * @throws Exception
      */
-    public function saveScheduleAction(): void
+    public function getScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "saveScheduleAction");
-        $this->logger()->debug("Save ScheduleAction Filters: ", ['filters' => $filters]);
-        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        //sınav programında gözetmen lecturer_id ile belirtiliyor.
-        $lecturer = isset($this->data['lecturer_id']) ? ((new User())->find($this->data['lecturer_id']) ?: $lesson->getLecturer()) : $lesson->getLecturer();
-        $classroom = (new Classroom())->find($this->data['classroom_id']);
-        // bağlı dersleri alıyoruz
-        $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-        //bağlı dersler listesine ana dersi ekliyoruz
-        array_unshift($lessons, $lesson);
-        $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $lessons]);
-        $scheduleController->checkScheduleCrash($filters);
+        if (key_exists('id', $this->data)) {
+            $schedule = (new Schedule())->find($this->data['id']);
+            if ($schedule) {
+                $this->response = array(
+                    "status" => "success",
+                    "schedule" => $schedule->getArray()
+                );
+            } else {
+                $this->response = array(
+                    "status" => "error",
+                    "msg" => "Program bulunamadı"
+                );
+            }
+        } else {
+            $this->response = array(
+                "status" => "error",
+                "msg" => "ID belirtilmedi"
+            );
+        }
+        $this->sendResponse();
+    }
+    /**
+     * gelen item verilerine göre ilk olarak çakışan item kontrol edilir checkScheduleCrashAction ile yapılan yeterli olmaz preferred item kontrolü ve düzenlemesi burada yapılmalı
+     * çakışan item'in prefered olup olmadığı kontrol edilir. 
+     * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
+     * çakışan kısım prefered değil ise çakışma hatası verilir.
+     * çakışan kısım yoksa item kaydedilir.
+     */
+    public function saveScheduleItemAction(): void
+    {
+        //$this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
 
-        /**
-         * birden fazla saat eklendiğinde başlangıç saati ve saat bilgisine göre saatleri dizi olarak dindürür
-         *
-         */
-        $timeArray = $scheduleController->generateTimesArrayFromText($this->data['time'], $this->data['lesson_hours'], $filters['type']);
-        $this->logger()->debug("Save ScheduleAction Time Array: ", ['timeArray' => $timeArray]);
-        /*
-         * her bir saat için ayrı ekleme yapılacak
-         */
-        foreach ($timeArray as $time) {
-            if (count($lessons) > 1) {
-                if (!isAuthorized('submanager')) {
-                    throw new Exception("Birleştirilmiş dersleri düzenleme yetkiniz yok");
-                }
-            }
-            foreach ($lessons as $child) {
-                $this->logger()->debug("Save ScheduleAction Lessons: ", ['lessons' => $child]);
-                /**
-                 * @var Lesson $child
-                 */
-                $scheduleFilters = array_merge($filters, [
-                    //Hangi tür programların kontrol edileceğini belirler owner_type=>owner_id
-                    "owners" => [
-                        "program" => $child->program_id,
-                        "lesson" => $child->id
-                    ],//sıralama yetki kontrolü için önemli);
-                ]);
-                /**
-                 * Uzem Sınıfı değilse ve asıl ders ise çakışma kontrolüne dersliği de ekle
-                 * Bu aynı zamanda Uzem derslerinin programının uzem sınıfına kaydedilmemesini sağlar. Bu sayede unique hatası da oluşmaz
-                 */
-                if ($classroom->type != 3 and is_null($child->parent_lesson_id)) {
-                    $scheduleFilters['owners']['classroom'] = $classroom->id;
-                }
-                //sadece asıl dersin bilgisi kullanıcıya eklenecek
-                $scheduleFilters["owners"]["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
-                /**
-                 * veri tabanına eklenecek gün verisi
-                 */
-                $day = [
-                    "lesson_id" => $child->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                $this->logger()->debug("Save ScheduleAction Schedule Filters: ", ['scheduleFilters' => $scheduleFilters]);
-                if (!$child->IsScheduleComplete($scheduleFilters['type'])) {
-                    $schedule = new Schedule();
-                    /*
-                     * Bir program kaydı yapılırken kullanıcı, sınıf, program ve ders için birer kayıt yapılır.
-                     * Bu değerler için döngü oluşturuluyor
-                     */
-                    foreach ($scheduleFilters['owners'] as $owner_type => $owner_id) {
-                        if (is_null($owner_id))
-                            continue;// child lesson ise owner_id null olduğundan atlanacak
-                        $savedId = $scheduleController->saveNew([
-                            "type" => $filters['type'],
-                            "owner_type" => $owner_type,
-                            "owner_id" => $owner_id,
-                            "day" . $filters['day_index'] => $day,
-                            "time" => $time,
-                            "semester_no" => trim($child->semester_no),
-                            "semester" => $filters['semester'],
-                            "academic_year" => $filters['academic_year'],
-                        ]);
-                        if ($savedId == 0) {
-                            throw new Exception($owner_type . " kaydı yapılırken hata oluştu");
-                        } else
-                            $this->response[$owner_type . "_result"] = $savedId;
-                    }
-                } else {
-                    throw new Exception("Bu dersin programı zaten planlanmış. Ders saatinden fazla ekleme yapılamaz");
-                }
-            }
+        $scheduleController = new ScheduleController();
+        $items = json_decode($this->data['items'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = array(
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            );
+            $this->sendResponse();
+            return;
         }
 
-        $this->response = array_merge($this->response, array("status" => "success", "msg" => "Bilgiler Kaydedildi"));
+        try {
+            $createdIds = $scheduleController->saveScheduleItems($items);
+            if (!empty($createdIds)) {
+                // Canlı Güncelleme (Live Update) için oluşturulan öğelerin tam listesini topla
+                $createdItems = [];
+                foreach ($createdIds as $groupedIds) {
+                    foreach ($groupedIds as $ownerType => $ids) {
+                        foreach ($ids as $id) {
+                            $item = (new ScheduleItem())->find($id);
+                            if ($item) {
+                                $createdItems[] = $item->getArray();
+                            }
+                        }
+                    }
+                }
 
+                $this->response = array(
+                    "status" => "success",
+                    "msg" => "Program başarıyla kaydedildi.",
+                    "createdIds" => $createdIds,
+                    "createdItems" => $createdItems
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            $this->response = array(
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
+            );
+        }
         $this->sendResponse();
     }
 
     /**
-     * @throws Exception
+     * Sınav programı kaydetme isteği
      */
-    public function saveSchedulePreferenceAction(): void
+    public function saveExamScheduleItemAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "saveSchedulePreferenceAction");
-        $currentSemesters = getSemesterNumbers($filters["semester"]);
-        /**
-         * Her iki dönem için de tercih kaydediliyor.
-         */
-        foreach ($currentSemesters as $semester_no) {
-            $filters['semester_no'] = $semester_no;
-            $filters['day' . $filters['day_index']] = $filters['day'][0];
-            $savedId = $scheduleController->saveNew(array_diff_key($filters, array_flip(["day_index", "day"])));
-            if ($savedId == 0) {
-                throw new Exception("Hoca tercihi kaydedilemedi");
-            } else {
-                $this->response = array_merge($this->response, array("status" => "success"));
+        $items = json_decode($this->data['items'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+            $this->sendResponse();
+            return;
+        }
+
+        try {
+            $createdIds = $scheduleController->saveExamScheduleItems($items);
+            if (!empty($createdIds)) {
+                $createdItems = [];
+                foreach ($createdIds as $groupedIds) {
+                    foreach ($groupedIds as $ownerType => $ids) {
+                        foreach ($ids as $id) {
+                            $item = (new ScheduleItem())->find($id);
+                            if ($item) {
+                                $createdItems[] = $item->getArray();
+                            }
+                        }
+                    }
+                }
+
+                $this->response = [
+                    "status" => "success",
+                    "msg" => "Sınav programı başarıyla kaydedildi.",
+                    "createdIds" => $createdIds,
+                    "createdItems" => $createdItems
+                ];
             }
+        } catch (\Throwable $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            $this->response = [
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
+            ];
         }
         $this->sendResponse();
     }
@@ -734,53 +777,71 @@ class AjaxRouter extends Router
         $scheduleController = new ScheduleController();
         $filters = $scheduleController->validator->validate($this->data, "checkLecturerScheduleAction");
 
-        $lesson = (new Lesson())->find($this->data['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        $lecturer = $lesson->getLecturer();
-        $filters = [
-            "owner_type" => "user",
-            "owner_id" => $lecturer->id,
-            "type" => $filters["type"],
-            "semester" => $this->data['semester'],
-            "academic_year" => $this->data['academic_year'],
-        ];
-        $lessonSchedules = $scheduleController->getListByFilters($filters);
-        if (count($lessonSchedules) > 0) {
-            $unavailableCells = [];
-            $preferredCells = [];
-            $tableRows = [
-                "08.00 - 08.50",
-                "09.00 - 09.50",
-                "10.00 - 10.50",
-                "11.00 - 11.50",
-                "12.00 - 12.50",
-                "13.00 - 13.50",
-                "14.00 - 14.50",
-                "15.00 - 15.50",
-                "16.00 - 16.50"
-            ];
-            foreach ($lessonSchedules as $lessonSchedule) {
-                $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                if ($rowIndex === false) {
-                    continue; // bu saat tabloda yoksa atla
-                }
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {//day0-4
-                    if (!is_null($lessonSchedule->{"day" . $i})) {
-                        if ($lessonSchedule->{"day" . $i} === false or is_array($lessonSchedule->{"day" . $i})) {
-                            $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
-                        }
-                        if ($lessonSchedule->{"day" . $i} === true) {
-                            $preferredCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+        $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
+            ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->lecturer;
+
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
+        $unavailableCells = [];
+        $preferredCells = [];
+
+        // Hocaya ait o dönemdeki TÜM programları (ders, sınav, tercih vb.) kontrol et
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'user',
+            'owner_id' => $lecturer->id,
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->with(['items'])->all();
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        if ($item->status === 'preferred') {
+                            $preferredCells[$rowIndex + 1][$item->day_index + 1] = true;
+                        } else {
+                            // unavailable, single, group vb. durumlar hoca için "dolu/uygun değil" demektir
+                            $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                         }
                     }
                 }
             }
-
-            $this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells, "preferredCells" => $preferredCells);
         }
+
+        $this->response = [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $unavailableCells,
+            "preferredCells" => $preferredCells
+        ];
         $this->sendResponse();
     }
 
     /**
+     * 
      * @throws Exception
      */
     public function checkClassroomScheduleAction(): void
@@ -789,65 +850,86 @@ class AjaxRouter extends Router
         $filters = $scheduleController->validator->validate($this->data, "checkClassroomScheduleAction");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-        //Derslik türü karma ise Lab ve derslik türleri dahil ediliyor
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
-
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
-        /**
-         * Hiç bir derslik için uygun olmayan hücreler
-         */
-        $unavailableCells = [];
-        $tableRows = [
-            "08.00 - 08.50",
-            "09.00 - 09.50",
-            "10.00 - 10.50",
-            "11.00 - 11.50",
-            "12.00 - 12.50",
-            "13.00 - 13.50",
-            "14.00 - 14.50",
-            "15.00 - 15.50",
-            "16.00 - 16.50"
-        ];
-        $classroomIds = [];
-        foreach ($classrooms as $classroom) {
-            $classroomIds[] = $classroom->id;
-            $classroomScheduleFilters = [
-                "owner_type" => "classroom",
-                "owner_id" => $classroom->id,
-                "type" => $filters["type"],
-                "semester" => $filters['semester'],
-                "academic_year" => $filters['academic_year'],
-            ];
-            $classroomSchedules = $scheduleController->getListByFilters($classroomScheduleFilters);
 
-            if (count($classroomSchedules) > 0) {// dersliğin herhangi bir programı var ise
-                foreach ($classroomSchedules as $classroomSchedule) {
-                    $rowIndex = array_search($classroomSchedule->time, $tableRows);
-                    if ($rowIndex === false) {
-                        continue; // bu saat tabloda yoksa atla
-                    }
-                    for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                        if (!is_null($classroomSchedule->{"day" . $i})) { // derslik programında hoca programında olduğu gibi true yada false tanımlaması olmadığından null kontrolü yeterli
-                            $unavailableCells[$rowIndex + 1][$i + 1][$classroom->id] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
+        /**
+         * Hangi hücrede hangi dersliğin DOLU olduğunu takip eder
+         * $classroomOccupancy[rowIndex][dayIndex][classroomId] = true
+         */
+        $classroomOccupancy = [];
+        $classroomIds = array_column($classrooms, 'id');
+        $classroomTypes = [];
+        foreach ($classrooms as $c) {
+            $classroomTypes[$c->id] = (int) $c->type;
+        }
+
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'classroom',
+            'owner_id' => ['in' => $classroomIds],
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->with(['items'])->all();
+        //$this->logger()->debug("Schedules: ", ['schedules' => $schedules]);
+
+        foreach ($schedules as $schedule) {
+            //$this->logger()->debug("Schedule Items: ", ['scheduleItems' => $schedule->items]);
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    // Çakışma kontrolü: (itemStart < slotEnd) && (slotStart < itemEnd)
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        // UZEM (3) tipi sınıflar doluluk kontrolünde yok sayılır (her zaman müsait)
+                        if (isset($classroomTypes[$schedule->owner_id]) && $classroomTypes[$schedule->owner_id] === 3) {
+                            continue;
                         }
+                        // Bu slot ve bu günde bu derslik dolu
+                        $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
                     }
                 }
             }
         }
-        $result = [];
 
-        foreach ($unavailableCells as $rowKey => $row) {
-            foreach ($row as $colKey => $classrooms) {
-                $hasAllClassrooms = true;
+        // Eğer bir hücrede TÜM derslikler doluysa o hücreyi "unavailable" (kullanılamaz) işaretle
+        $result = [];
+        foreach ($slots as $rowIndex => $slot) {
+            $rowKey = $rowIndex + 1;
+            for ($dayIndex = 0; $dayIndex <= $maxDayIndex; $dayIndex++) {
+                $colKey = $dayIndex + 1;
+                $hasAvailable = false;
 
                 foreach ($classroomIds as $id) {
-                    if (!isset($classrooms[$id])) {
-                        $hasAllClassrooms = false;
+                    if (!isset($classroomOccupancy[$rowKey][$colKey][$id])) {
+                        $hasAvailable = true;
                         break;
                     }
                 }
 
-                if ($hasAllClassrooms) {
+                if (!$hasAvailable) {
                     if (!isset($result[$rowKey])) {
                         $result[$rowKey] = [];
                     }
@@ -856,7 +938,6 @@ class AjaxRouter extends Router
             }
         }
 
-        //$this->response = array("status" => "success", "msg" => "", "unavailableCells" => $unavailableCells);
         $this->response["status"] = "success";
         $this->response["msg"] = "";
         $this->response["unavailableCells"] = $result;
@@ -867,110 +948,123 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public function checkProgramScheduleAction()
+    public function checkProgramScheduleAction(): void
     {
         $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkProgramSchedule");
+        $filters = $scheduleController->validator->validate($this->data, "checkProgramScheduleAction");
 
-        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $lesson = (new Lesson())->where([
+            'id' => $filters['lesson_id'],
+        ])->with(['program'])->first() ?: throw new Exception("Ders bulunamadı");
+        $program = $lesson->program;
+
+        // Ayarlara göre slotları (satırları) oluştur
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $slots = [];
+        $start = new \DateTime('08:00');
+        $end = new \DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+
         $unavailableCells = [];
-        $program = $lesson->getProgram();
-        $programSchedulesFilters = [
-            "owner_type" => "program",
-            "owner_id" => $program->id,
-            "type" => $filters["type"],
-            "semester" => $filters['semester'],
-            "semester_no" => $lesson->semester_no,
-            "academic_year" => $filters['academic_year'],
-        ];
-        $programSchedules = $scheduleController->getListByFilters($programSchedulesFilters);
-        if (count($programSchedules) > 0) {
-            $tableRows = [
-                "08.00 - 08.50",
-                "09.00 - 09.50",
-                "10.00 - 10.50",
-                "11.00 - 11.50",
-                "12.00 - 12.50",
-                "13.00 - 13.50",
-                "14.00 - 14.50",
-                "15.00 - 15.50",
-                "16.00 - 16.50"
-            ];
-            foreach ($programSchedules as $lessonSchedule) {
-                $rowIndex = array_search($lessonSchedule->time, $tableRows);
-                if ($rowIndex === false) {
-                    continue; // bu saat tabloda yoksa atla
+
+        // Programın o dönemdeki TÜM programlarını (ders, sınav vb.) kontrol et
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'program',
+            'owner_id' => $program->id,
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+            'semester_no' => $lesson->semester_no
+        ])->all();
+
+        // Child Lessons (Bağlı Alt Dersler) programlarını da kontrol et
+        if (!empty($lesson->childLessons)) {
+            foreach ($lesson->childLessons as $childLesson) {
+                if ($childLesson->program_id) {
+                    $childSchedules = (new Schedule())->get()->where([
+                        'owner_type' => 'program',
+                        'owner_id' => $childLesson->program_id,
+                        'type' => $filters['type'],
+                        'semester' => $filters['semester'],
+                        'academic_year' => $filters['academic_year'],
+                        'semester_no' => $childLesson->semester_no
+                    ])->all();
+                    $schedules = array_merge($schedules, $childSchedules);
                 }
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', default: 4); $i++) {//day0-4
-                    if (is_array($lessonSchedule->{"day" . $i})) {
-                        $unavailableCells[$rowIndex + 1][$i + 1] = true; //ilk satır günler olduğu için +1, ilk sütun saatlar olduğu için+1
+            }
+        }
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if (($itemStart < $slot['end']) && ($slot['start'] < $itemEnd)) {
+                        $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                     }
                 }
             }
         }
 
-        $this->response['status'] = "success";
-        $this->response["msg"] = "";
-        $this->response["unavailableCells"] = $unavailableCells;
+        $this->response = [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $unavailableCells
+        ];
         $this->sendResponse();
     }
 
     /**
-     * Ders programından veri silmek için gerekli kontrolleri yapar
+     * Ders programından item silme işlemi
      * @return void
      * @throws Exception
      */
-    public function deleteScheduleAction(): void
+    public function deleteScheduleItemsAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "deleteScheduleAction");
-        $this->logger()->debug("Delete ScheduleAction Filters: ", ["filters" => $filters]);
-        if (!key_exists("owner_type", $filters)) {
-            //owner_type yok ise tüm owner_type'lar için döngü oluşturulacak
-            $owners = [];
-            $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
-            $lecturer = (new User())->find($filters['lecturer_id']) ?: throw new Exception("Hoca bulunamadı");//todo dersten alınması ile bu şekilde alınması arasında fark var mı ?
-            $classroom = (new Classroom())->find($filters["classroom_id"]);
-            // bağlı dersleri alıyoruz
-            $lessons = (new Lesson())->get()->where(["parent_lesson_id" => $lesson->id])->all();
-            //bağlı dersler listesine ana dersi ekliyoruz
-            array_unshift($lessons, $lesson);
-            foreach ($lessons as $child) {
-                //set Owners
-                $owners['program'] = $child->program_id;
-                $owners["user"] = is_null($child->parent_lesson_id) ? $lecturer->id : null;
-                $owners['lesson'] = $child->id;
-                $owners["classroom"] = $classroom->id;
-                $day = [
-                    "lesson_id" => $child->id,
-                    "classroom_id" => $classroom->id,
-                    "lecturer_id" => $lecturer->id,
-                ];
-                foreach ($owners as $owner_type => $owner_id) {
-                    if (is_null($owner_id))
-                        continue; // child lesson ise owner_id null olduğundan atlanacak
-                    $deleteFilters = [
-                        "owner_type" => $owner_type,
-                        "owner_id" => $owner_id,
-                        "day_index" => $filters["day_index"],
-                        "day" => $day,
-                        "type" => $filters["type"],
-                        "time" => $filters['time'],
-                        "semester_no" => $lesson->semester_no,
-                        "semester" => $filters["semester"],
-                        "academic_year" => $filters['academic_year'],
-                    ];
-                    $this->response["deleteResult"][$deleteFilters['owner_type']] = $scheduleController->deleteSchedule($deleteFilters);
+        $this->logger()->debug("Delete ScheduleItemsAction Data: ", ['data' => $this->data]);
 
-                }
-            }
-        } else {// owner_type belirtilmişse sadece o type için işlem yapılacak
-            $this->response["deleteResult"] = $scheduleController->deleteSchedule($filters);
+        $scheduleController = new ScheduleController();
+        $items = json_decode($this->data['items'], true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->response = [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+            $this->sendResponse();
+            return;
+        }
+
+        try {
+            $result = $scheduleController->deleteScheduleItems($items);
+            $this->response = array_merge(["status" => "success"], $result);
+        } catch (Exception $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $this->response = [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
         $this->sendResponse();
     }
 
     /**
+     * todo
      * @throws Exception
      */
     public function exportScheduleAction(): void
@@ -982,6 +1076,7 @@ class AjaxRouter extends Router
     }
 
     /**
+     * todo
      * Takvim (ICS) dışa aktarma
      * @throws Exception
      */
@@ -1018,6 +1113,17 @@ class AjaxRouter extends Router
         }
         $this->response['status'] = "success";
         $this->response['msg'] = "Ayarlar kaydedildi";
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function clearLogsAction(): void
+    {
+        (new SettingsController())->clearLogsAction();
+        $this->response['status'] = "success";
+        $this->response['msg'] = "Loglar başarıyla temizlendi";
         $this->sendResponse();
     }
 

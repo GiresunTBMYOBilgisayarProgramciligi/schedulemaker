@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (departmentAndProgramScheduleButton) {
         departmentAndProgramScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = departmentAndProgramScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
@@ -34,11 +34,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lecturerScheduleButton) {
         lecturerScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = lecturerScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no", 0);
             data.append("only_table", lecturerScheduleButton.dataset.onlyTable)
             if (lecturerSelect.value > 0) {
                 data.append("owner_type", "user");
@@ -54,11 +53,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (classroomScheduleButton) {
         classroomScheduleButton.addEventListener("click", async function () {
             let data = new FormData();
-            const scheduleType = classroomScheduleButton?.dataset?.scheduleType || "lesson";
+            let scheduleType = document.getElementById('schedule_type')?.value || "lesson";
             data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
-            data.append("semester_no", 0);
             data.append("only_table", classroomScheduleButton.dataset.onlyTable)
             if (classroomSelect.value > 0) {
                 data.append("owner_type", "classroom");
@@ -86,13 +84,19 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((data) => {
                 if (data['status'] !== 'error') {
                     container.innerHTML = data['HTML'];
+                    //Cardiçerisindeki tüm tooltiplerin aktif edilmesi için
+                    var tooltipTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    });
+
                     /**
                      * Bağlı derslerde gösterilecek popoverları aktif etmek için eklendi.
                      * @type {*[]}
                      */
-                    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+                    var popoverTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="popover"]'))
                     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-                        return new bootstrap.Popover(popoverTriggerEl, {trigger: 'hover'})
+                        return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' })
                     })
                     toast.closeToast()
                     document.dispatchEvent(scheduleLoaded);

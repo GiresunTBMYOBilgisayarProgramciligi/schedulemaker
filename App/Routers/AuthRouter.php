@@ -35,14 +35,14 @@ class AuthRouter extends Router
         }
 
         // Ana sayfaya veya giriş sayfasına yönlendir
-        header("Location: /");
-        exit;
+        $this->Redirect("/");
     }
 
     public function ajaxloginAction()
     {
         try {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            if (
+                isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                 strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
             ) {
                 $loginData = $_POST;
@@ -53,9 +53,15 @@ class AuthRouter extends Router
                     "remember_me" => isset($loginData['remember_me'])
                 ]);
 
+                $redirect = "/admin";
+                if (isset($_SESSION['redirect_url'])) {
+                    $redirect = $_SESSION['redirect_url'];
+                    unset($_SESSION['redirect_url']);
+                }
+
                 $response = array(
                     "msg" => "Kullanıcı başarıyla Giriş yaptı.",
-                    "redirect" => "/admin",
+                    "redirect" => $redirect,
                     "status" => "success"
                 );
                 header('Content-Type: application/json; charset=utf-8');

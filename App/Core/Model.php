@@ -10,7 +10,25 @@ use Monolog\Logger;
 
 class Model
 {
-    /**
+    protected string $table_name = "";
+    public ?int $id = null;
+    private static ?PDO $database = null;
+    protected ?string $whereClause = null;
+    protected array $parameters = [];
+    protected array $relations = [];
+    protected array $orderBy = [];
+    protected ?string $limit = null;
+    protected ?string $offset = null;
+    protected array $selectedFields = ['*'];
+    protected array $excludeFromDb = [];
+
+    public function __construct()
+    {
+        if (self::$database === null) {
+            self::$database = Database::getConnection();
+        }
+    }
+        /**
      * Shared application logger for all models.
      */
     protected function logger(): Logger
@@ -25,23 +43,6 @@ class Model
     protected function logContext(array $extra = []): array
     {
         return Log::context($this, $extra);
-    }
-    protected string $table_name = "";
-    public ?int $id = null;
-    private static ?PDO $database = null;
-    protected ?string $whereClause = null;
-    protected array $parameters = [];
-    protected array $relations = [];
-    protected array $orderBy = [];
-    protected ?string $limit = null;
-    protected ?string $offset = null;
-    protected array $selectedFields = ['*'];
-
-    public function __construct()
-    {
-        if (self::$database === null) {
-            self::$database = new PDO("mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
-        }
     }
     /*
      * Quey Builder
@@ -184,6 +185,13 @@ class Model
                     }
                     $operator = $isNotCondition ? 'NOT IN' : 'IN';
                     $conditions[] = "`$column` $operator (" . implode(", ", $placeholders) . ")";
+                } elseif (isset($value['between']) && is_array($value['between']) && count($value['between']) == 2) {
+                    $placeholder1 = ":{$column}_min_" . count($this->parameters);
+                    $placeholder2 = ":{$column}_max_" . count($this->parameters);
+                    $operator = $isNotCondition ? 'NOT BETWEEN' : 'BETWEEN';
+                    $conditions[] = "`$column` $operator $placeholder1 AND $placeholder2";
+                    $this->parameters[$placeholder1] = $value['between'][0];
+                    $this->parameters[$placeholder2] = $value['between'][1];
                 } // Karşılaştırma operatörleri için kontrol
                 else {
                     foreach ($value as $operator => $operandValue) {
@@ -196,10 +204,15 @@ class Model
                 }
             } // Basit eşitlik kontrolü
             else {
-                $placeholder = ":{$column}";
-                $operator = $isNotCondition ? '!=' : '=';
-                $conditions[] = "`$column` $operator $placeholder";
-                $this->parameters[$placeholder] = $value;
+                if (is_null($value)) {
+                    $operator = $isNotCondition ? 'IS NOT' : 'IS';
+                    $conditions[] = "`$column` $operator NULL";
+                } else {
+                    $placeholder = ":{$column}";
+                    $operator = $isNotCondition ? '!=' : '=';
+                    $conditions[] = "`$column` $operator $placeholder";
+                    $this->parameters[$placeholder] = $value;
+                }
             }
         }
         $this->whereClause = count($conditions) > 0 ? implode(" " . $logicalOperator . " ", $conditions) : "";
@@ -252,9 +265,17 @@ class Model
     public function with(array|string $relations): static
     {
         if (is_string($relations)) {
-            $this->relations[] = $relations;
+            $this->relations[$relations] = [];
         } elseif (is_array($relations)) {
-            $this->relations = array_merge($this->relations, $relations);
+            foreach ($relations as $key => $value) {
+                if (is_int($key)) {
+                    // ['relationName'] format
+                    $this->relations[$value] = [];
+                } else {
+                    // ['relationName' => ['option' => 'value']] format
+                    $this->relations[$key] = $value;
+                }
+            }
         }
         return $this;
     }
@@ -302,25 +323,29 @@ class Model
 
     /**
      * İlişkili verileri yükler
-     * @param array $results Ana sorgu sonuçları
+     * @param array $results Ana sorgu sonuçları [ ['id'=>1, ...], ['id'=>2, ...] ]
      * @return array İlişkili verilerle birleştirilmiş sonuçlar
      */
     protected function loadRelations(array $results): array
     {
-        //todo
-        // Bu fonksiyon implementasyonu veritabanı yapınıza göre değişecektir
-        // Burada sadece temel yapı verilmiştir
+        // $this->relations structure: ['relationName' => ['options'], 'otherRelation' => []]
+        foreach ($this->relations as $relation => $options) {
 
-        foreach ($this->relations as $relation) {
-            // İlişki tipine göre yükleme işlemi
-            // Örnek: hasMany, belongsTo vb.
-
+            // İlişki metodu ismi oluşturuluyor. Örn: 'items' -> 'getItemsRelation'
             $relationMethod = "get" . ucfirst($relation) . "Relation";
+
             if (method_exists($this, $relationMethod)) {
-                $results = $this->$relationMethod($results);
+                // Metot varsa çalıştırılır ve $results dizisi güncellenip döner.
+                // Bu metot, sonuç dizisine ilgili ilişkiyi 'key' olarak eklemelidir.
+                // Options parametresi eklendi
+                $results = $this->$relationMethod($results, $options);
+            } else {
+                // Geliştirme aşamasında hata ayıklamak için log düşülebilir
+                if ($_ENV['DEBUG'] ?? false) {
+                    $this->logger()->error("Model ilişkisi bulunamadı: " . get_class($this) . "::" . $relationMethod, $this->logContext());
+                }
             }
         }
-
         return $results;
     }
 
@@ -438,6 +463,7 @@ class Model
     }
 
     /**
+     * todo bu hiç buraya ait durmuyor.
      * Ekleme ve düzenleme sayfalarında oluşturulacak program listesini oluşturur.
      * Bölümü tanımlanmamış bir ders ise sadece program seçiniz verisi olur.
      * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
@@ -529,7 +555,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-            $this->logger()->info("Veri Eklendi",$this->logContext([$this]));
+            $this->logger()->info("Veri Eklendi", $this->logContext([$this]));
         }
     }
 
@@ -576,23 +602,35 @@ class Model
     public function delete(): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
-        if (empty($this->table_name) || empty($this->id)) {
-            throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
+        if (empty($this->table_name)) {
+            throw new Exception('Model düzgün oluşturulmamış: Tablo adı eksik.');
         }
 
         if ($this->table_name == "users" and $this->id == 1) {
             throw new Exception("Birincil yönetici hesabı silinemez.");
         }
 
-        $statement = self::$database->prepare("DELETE FROM {$this->table_name} WHERE id = :id");
-        $statement->bindValue(':id', $this->id);
+        if ($this->id) {
+            $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
+            $statement = self::$database->prepare($sql);
+            $statement->bindValue(':id', $this->id);
+        } elseif ($this->whereClause) {
+            $sql = "DELETE FROM {$this->table_name} WHERE " . $this->whereClause;
+            $statement = self::$database->prepare($sql);
+            // Parametreleri bağla
+            foreach ($this->parameters as $key => $value) {
+                $statement->bindValue($key, $value);
+            }
+        } else {
+            throw new Exception('Silinecek kayıt belirtilmemiş. ID yok veya where koşulu sağlanmamış.');
+        }
+
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
-            $this->logger()->info("Veri Silindi",$this->logContext());
+            $this->logger()->info("Veri Silindi", $this->logContext(['statement' => $statement]));
             return true;
         }
-
     }
 
     /**

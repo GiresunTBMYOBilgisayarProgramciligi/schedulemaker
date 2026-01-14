@@ -21,9 +21,44 @@ class Classroom extends Model
      * 4-> Karma (Derslik ve Lab)
      */
     public ?string $type = null;
-    protected array $excludeFromDb = [];
-    protected string $table_name = "classrooms";
 
+    public array $schedules = [];
+    protected array $excludeFromDb = ['schedules'];
+    protected string $table_name = "classrooms";
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getSchedulesRelation(array $results, array $options = []): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $query = (new Schedule())->get()
+            ->where([
+                'owner_type' => 'classroom',
+                'owner_id' => ['in' => $ids]
+            ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $schedules = $query->all();
+
+        $schedulesGrouped = [];
+        foreach ($schedules as $schedule) {
+            $schedulesGrouped[$schedule->owner_id][] = $schedule;
+        }
+
+        foreach ($results as &$row) {
+            $row['schedules'] = $schedulesGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
 
     /**
      * @return string

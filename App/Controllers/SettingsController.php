@@ -44,7 +44,7 @@ class SettingsController extends Controller
                 $setting->id = $existingSetting->id;
                 return $this->updateSetting($setting);
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -83,9 +83,9 @@ class SettingsController extends Controller
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", (int)$e->getCode(), $e);
+                throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", (int) $e->getCode(), $e);
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -97,17 +97,34 @@ class SettingsController extends Controller
      */
     public function getSettings(): array
     {
-        $settingModel= new Setting();
+        $settingModel = new Setting();
         $settingModels = $settingModel->get()->all();
         $settings = [];
         foreach ($settingModels as $setting) {
             $settings[$setting->group][$setting->key] = match ($setting->type) {
-                'integer' => (int)$setting->value,
+                'integer' => (int) $setting->value,
                 'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
                 'json' => json_decode($setting->value, true),
                 default => $setting->value
             };
         }
         return $settings;
+    }
+
+    /**
+     * Log tablosunu temizler
+     * @return void
+     * @throws Exception
+     */
+    public function clearLogsAction(): void
+    {
+        if (!isAuthorized("submanager")) {
+            throw new Exception("Bu işlemi yapmak için yetkiniz yok");
+        }
+        try {
+            $this->database->exec("TRUNCATE TABLE logs");
+        } catch (Exception $e) {
+            throw new Exception("Loglar temizlenirken bir hata oluştu: " . $e->getMessage());
+        }
     }
 }

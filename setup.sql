@@ -33,25 +33,33 @@ create table if not exists logs
     index (user_id)
 ) ENGINE = INNODB;
 
-create table if not exists schedule
+create table if not exists schedules
 (
     id            int AUTO_INCREMENT,
-    type          varchar(20), /* exam, lesson*/
-    owner_type    varchar(20),
+    type          ENUM('lesson','midterm-exam','final-exam','makeup-exam') NOT NULL,
+    owner_type    ENUM('user','lesson','program','classroom') NOT NULL,
     owner_id      int,
-    time          varchar(20),
     semester_no   int,
-    day0          text,
-    day1          text,
-    day2          text,
-    day3          text,
-    day4          text,
-    day5          text,
-    day6          text,
-    semester      varchar(20),
+    semester      ENUM('Güz','Bahar','Yaz') NOT NULL,
     academic_year varchar(12),
     primary key (id),
-    unique (owner_type, owner_id, time, semester_no, semester, academic_year, type)
+    unique (owner_type, owner_id, semester_no, semester, academic_year, type)
+) ENGINE = INNODB;
+
+create table if not exists schedule_items
+(
+    id            int AUTO_INCREMENT,
+    schedule_id   int,
+    day_index     int,
+    week_index    int,
+    start_time    TIME,
+    end_time      TIME,
+    status        ENUM('preferred','unavailable','group','single'),
+    data          TEXT,
+    detail        TEXT,
+    primary key (id),
+    unique (schedule_id,day_index,week_index,start_time,end_time),
+    foreign key (schedule_id) references schedules (id) on delete cascade
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -121,8 +129,9 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
+    group_no       int NOT NULL DEFAULT 0,
     primary key (id),
-    unique (code, program_id),
+    unique (code, program_id, group_no),
     foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null,
     foreign key (program_id) references programs (id) on delete set null

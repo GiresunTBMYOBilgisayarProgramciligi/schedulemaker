@@ -50,7 +50,7 @@
                             <tr>
                                 <td><?= $program->id ?></td>
                                 <td><?= $program->name ?></td>
-                                <td><?= $program->getDepartment()?->name ?></td>
+                                <td><?= $program->department?->name ?></td>
                                 <td>
                                     <div class="form-check form-switch ">
                                         <input name="active" class="form-check-input" type="checkbox"

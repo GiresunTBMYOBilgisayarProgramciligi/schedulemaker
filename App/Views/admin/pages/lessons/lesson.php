@@ -20,7 +20,9 @@ use function App\Helpers\isAuthorized;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0"><?= $page_title ?></h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -54,67 +56,67 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <div class="card-body">
                             <dl class="row">
-                                <dt class="col-sm-2">Ders Kodu</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->code, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-2">Ders Kodu - Grup No</dt>
+                                <dd class="col-sm-4"><?= $lesson->code ?> - <?= $lesson->group_no ?></dd>
                                 <dt class="col-sm-2">Ders Adı</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->name ?></dd>
                                 <dt class="col-sm-2">Ders Türü</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->getTypeName() ?></dd>
                                 <dt class="col-sm-2">Saat</dt>
                                 <dd class="col-sm-4"><?= $lesson->hours ?></dd>
                                 <dt class="col-sm-2">Yarıyılı</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->semester_no . ". Yarıyıl", ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->semester_no . ". Yarıyıl" ?></dd>
                                 <dt class="col-sm-2">Bölüm</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/department/<?= $lesson->getDepartment()->id ?>"><?= htmlspecialchars($lesson->getDepartment()->name, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a href="/admin/department/<?= $lesson->department_id ?>"><?= $lesson->department->name ?></a>
                                 </dd>
                                 <dt class="col-sm-2">Program</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/program/<?= $lesson->getProgram()->id ?>"><?= htmlspecialchars($lesson->getProgram()->name, ENT_QUOTES, 'UTF-8') ?></a>
+                                    <a href="/admin/program/<?= $lesson->program_id ?>"><?= $lesson->program->name ?></a>
                                 </dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->getClassroomTypeName(), ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
                                 <dt class="col-sm-2">Akademik yıl ve Dönem</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->academic_year . " " . $lesson->semester, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->academic_year . " " . $lesson->semester ?></dd>
                                 <dt class="col-sm-2">Mevcudu</dt>
-                                <dd class="col-sm-4"><?= htmlspecialchars($lesson->size, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-4"><?= $lesson->size ?></dd>
                                 <?php
-                                if ($lesson->getParentLesson()):
+                                if ($lesson->parentLesson):
                                     ?>
                                     <dt class="col-sm-2">Bağlı Olduğu Ders</dt>
                                     <dd class="col-sm-10 p-0">
                                         <a class="link-dark link-underline-opacity-0"
-                                           href="/admin/lesson/<?= $lesson->getParentLesson()->id ?>">
-                                            <?= htmlspecialchars($lesson->getParentLesson()->getFullName() . "-" . $lesson->getParentLesson()->getProgram()->name, ENT_QUOTES, 'UTF-8') ?>
+                                            href="/admin/lesson/<?= $lesson->parentLesson->id ?>">
+                                            <?= $lesson->parentLesson->getFullName() . "-" . ($lesson->parentLesson->program->name ?? '') ?>
                                         </a>
                                         <form action="/ajax/deleteParentLesson" method="post"
-                                              class="d-inline ajaxDeleteParentLesson">
+                                            class="d-inline ajaxDeleteParentLesson">
                                             <input type="hidden" name="id" value="<?= $lesson->id ?>">
                                             <button type="submit"
-                                                    class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
+                                                class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
                                                 X
                                             </button>
                                         </form>
                                     </dd>
                                 <?php endif; ?>
                                 <?php
-                                if (count($lesson->getChildLessonList()) > 0):
+                                if (isset($lesson->childLessons) && count($lesson->childLessons) > 0):
                                     ?>
                                     <dt class="col-sm-2">Bağlı Dersler</dt>
                                     <dd class="col-sm-10 p-0">
                                         <ul class="list-group list-group-flush">
-                                            <?php foreach ($lesson->getChildLessonList() as $childLesson): ?>
+                                            <?php foreach ($lesson->childLessons as $childLesson): ?>
                                                 <li class="list-group-item">
                                                     <a href="/admin/lesson/<?= $childLesson->id ?>"
-                                                       class="link-dark link-underline-opacity-0">
+                                                        class="link-dark link-underline-opacity-0">
                                                         <?= $childLesson->getFullName() . "-" .
-                                                        $childLesson->getProgram()->name ?>
+                                                            ($childLesson->program->name ?? '') ?>
                                                     </a>
                                                     <form action="/ajax/deleteParentLesson" method="post"
-                                                          class="d-inline ajaxDeleteParentLesson">
+                                                        class="d-inline ajaxDeleteParentLesson">
                                                         <input type="hidden" name="id" value="<?= $childLesson->id ?>">
                                                         <button type="submit"
-                                                                class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
+                                                            class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
                                                             X
                                                         </button>
                                                     </form>
@@ -127,12 +129,12 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <div class="card-footer text-end">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#CombineLessonModal">Ders Birleştir
+                                data-bs-target="#CombineLessonModal">Ders Birleştir
                             </button>
                             <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
                             <?php if (isAuthorized("department_head")): ?>
                                 <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline"
-                                      method="post">
+                                    method="post">
                                     <input type="hidden" name="id" value="<?= $lesson->id ?>">
                                     <input type="submit" class="btn btn-danger" value="Sil">
                                 </form>
@@ -141,13 +143,13 @@ use function App\Helpers\isAuthorized;
                     </div>
                 </div>
                 <div class="col-3">
-                    <?php $user = $lesson->getLecturer() ?>
+                    <?php $user = $lesson->lecturer; ?>
                     <!-- Profile Image -->
                     <div class="card card-primary card-outline">
                         <div class="card-body box-profile">
                             <div class="text-center">
                                 <img class="profile-user-img img-fluid img-circle"
-                                     src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
+                                    src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
                             </div>
 
                             <h3 class="profile-username text-center"><?= $user->getFullName() ?></h3>
@@ -159,19 +161,21 @@ use function App\Helpers\isAuthorized;
                                     <div class="ms-3 me-auto">
                                         <b>Ders</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getLessonCount() ?></span>
+                                    <span class="badge text-bg-primary "><?= count($user->lessons ?? []) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
                                         <b>Öğrenci sayısı</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getTotalStudentCount() ?></span>
+                                    <span
+                                        class="badge text-bg-primary "><?= array_reduce($user->lessons ?? [], fn($sum, $l) => $sum + ($l->size ?? 0), 0) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
                                         <b>Ders Saati</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= $user->getTotalLessonHours() ?></span>
+                                    <span
+                                        class="badge text-bg-primary "><?= array_reduce($user->lessons ?? [], fn($sum, $l) => $sum + ($l->hours ?? 0), 0) ?></span>
                                 </li>
                             </ul>
                         </div>
@@ -196,18 +200,18 @@ use function App\Helpers\isAuthorized;
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="/ajax/combineLesson" name="CombineLesson" id="CombineLesson" method="post"
-                  class="ajaxFormCombineLesson" title="Dersler birleştiriliyor">
+                class="ajaxFormCombineLesson" title="Dersler birleştiriliyor">
                 <div class="modal-body">
                     <div class="accordion " id="accordionCombineLesson">
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="headingOne">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                     Bu Dersi Başka Derse Bağla
                                 </button>
                             </h2>
                             <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
-                                 data-bs-parent="#accordionCombineLesson">
+                                data-bs-parent="#accordionCombineLesson">
                                 <div class="accordion-body">
                                     <p>
                                         Bu dersi başka bir derse bağladığınızda bu dersi programda düzenleyemezsiniz.Bu
@@ -221,12 +225,13 @@ use function App\Helpers\isAuthorized;
                                         $programName = "";
                                         /** @var Lesson $combineLesson */
                                         foreach ($combineLessonList as $combineLesson):
-                                            if ($programName != $combineLesson->getProgram()->name) {
-                                                $programName = $combineLesson->getProgram()->name;
+                                            if ($programName != ($combineLesson->program->name ?? '')) {
+                                                $programName = $combineLesson->program->name ?? '';
                                                 echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
-                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?></option>
+                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?>
+                                            </option>
                                         <?php endforeach; ?>
                                     </select>
 
@@ -236,19 +241,19 @@ use function App\Helpers\isAuthorized;
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="headingTwo">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
                                     Bu Derse Başka Ders Bağla
                                 </button>
                             </h2>
                             <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
-                                 data-bs-parent="#accordionCombineLesson">
+                                data-bs-parent="#accordionCombineLesson">
                                 <div class="accordion-body">
                                     <p>
                                         Bu derse bağlanan dersler programda düzenlenemezler. Bağlı ders bağlandığı ders
                                         hangi gün ve saate eklenirse o saate otomatik olarak eklenir
                                     </p>
                                     <input type="hidden" name="lesson_id" id="parent_lesson_id"
-                                           value="<?= $lesson->id ?>">
+                                        value="<?= $lesson->id ?>">
                                     <label for="child_lesson_id" class="form-label">Birleştirilecek Ders</label>
                                     <select class="form-select" name="child_lesson_id" id="child_lesson_id">
                                         <option value="0">Ders Seçiniz</option>
@@ -256,12 +261,13 @@ use function App\Helpers\isAuthorized;
                                         $programName = "";
                                         /** @var Lesson $combineLesson */
                                         foreach ($combineLessonList as $combineLesson):
-                                            if ($programName != $combineLesson->getProgram()->name) {
-                                                $programName = $combineLesson->getProgram()->name;
+                                            if ($programName != ($combineLesson->program->name ?? '')) {
+                                                $programName = $combineLesson->program->name ?? '';
                                                 echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
-                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?></option>
+                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?>
+                                            </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>

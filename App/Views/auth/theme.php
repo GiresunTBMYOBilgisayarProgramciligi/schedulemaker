@@ -1,2 +1,2 @@
 <?php
-include "pages/" . $this->view_page . ".php";
+include $filePath;

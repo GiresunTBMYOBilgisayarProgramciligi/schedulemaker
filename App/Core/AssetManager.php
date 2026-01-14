@@ -110,6 +110,9 @@ class AssetManager
             'css' => [
                 [
                     'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
+                ],
+                [
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
 
@@ -168,6 +171,9 @@ class AssetManager
                     'path' => '/assets/js/admin/ScheduleCard.js'
                 ],
                 [
+                    'path' => '/assets/js/admin/LessonScheduleCard.js'
+                ],
+                [
                     'path' => '/assets/js/admin/editSchedule.js'
                 ],
                 [//Select arama işlemi için
@@ -179,10 +185,43 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
                 ],
                 [
+                    'path' => "/assets/css/schedule.css"
+                ]
+            ]
+        ],
+        'editexamschedule' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/formEvents.js'
+                ],
+                [
+                    'path' => '/assets/js/getSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ExamScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/editSchedule.js'
+                ],
+                [//Select arama işlemi için
+                    'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
+                ],
+                [
+                    'path' => '/assets/js/exportSchedule.js'
+                ],
+            ],
+            'css' => [
+                [
                     'path' => "/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css"
+                ],
+                [
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ],
@@ -207,15 +246,23 @@ class AssetManager
         'profilepage' => [
             'js' => [
                 [
-                    'path' => '/assets/js/userSchedule.js'
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
                 ],
                 [
                     'path' => '/assets/js/exportSchedule.js'
                 ],
+            ],
+            'css' => [
+                [
+                    'path' => "/assets/css/schedule.css"
+                ]
             ]
         ],
         'singlepages' => [
             'js' => [
+                [
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
+                ],
                 [
                     'path' => '/assets/js/ajax.js'
                 ],
@@ -225,13 +272,16 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ],
         'classroompage' => [
             'js' => [
                 [
+                    'path' => '/assets/js/admin/SingleScheduleHandler.js'
+                ],
+                [
                     'path' => '/assets/js/ajax.js'
                 ],
                 [
@@ -240,7 +290,7 @@ class AssetManager
             ],
             'css' => [
                 [
-                    'path' => "/assets/css/customCSS.css"
+                    'path' => "/assets/css/schedule.css"
                 ]
             ]
         ]
@@ -308,10 +358,14 @@ class AssetManager
         // Sayfa özel assetleri ekle
         if (isset($this->pageAssets[$page])) {
             if (isset($this->pageAssets[$page]['css'])) {
-                $this->css = array_merge($this->css, $this->pageAssets[$page]['css']);
+                foreach ($this->pageAssets[$page]['css'] as $css) {
+                    $this->addCss($css['path'], $css['attributes'] ?? []);
+                }
             }
             if (isset($this->pageAssets[$page]['js'])) {
-                $this->js = array_merge($this->js, $this->pageAssets[$page]['js']);
+                foreach ($this->pageAssets[$page]['js'] as $js) {
+                    $this->addJs($js['path'], $js['attributes'] ?? []);
+                }
             }
         }
     }

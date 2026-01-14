@@ -5,9 +5,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener('scheduleLoaded', function () {
         let scheduleCardElements = document.querySelectorAll("#schedule_container .card")
+
+        if (scheduleCardElements.length > 0 && scheduleCardElements[0].dataset.scheduleScreenName) {
+            document.title = scheduleCardElements[0].dataset.scheduleScreenName;
+        }
+
         let scheduleCards = [];
         scheduleCardElements.forEach((scheduleCardElement) => {
-            let scheduleCard = new ScheduleCard(scheduleCardElement)
+            const type = scheduleCardElement.dataset.type;
+            let scheduleCard;
+            if (['midterm-exam', 'final-exam', 'makeup-exam', 'exam'].includes(type)) {
+                scheduleCard = new ExamScheduleCard(scheduleCardElement);
+            } else {
+                scheduleCard = new LessonScheduleCard(scheduleCardElement);
+            }
             scheduleCards.push(scheduleCard);
         })
         document.addEventListener("lessonDrop", (event) => {

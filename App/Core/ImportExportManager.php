@@ -12,6 +12,8 @@ use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
+use App\Models\Schedule;
+use App\Models\ScheduleItem;
 use App\Models\User;
 use Exception;
 use Monolog\Logger;
@@ -21,6 +23,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
@@ -32,6 +36,12 @@ class ImportExportManager
 
     private $sheet;
     private array $formData = [];
+    private array $cache = [
+        'departments' => [],
+        'programs' => [],
+        'users_by_mail' => [],
+        'users_by_name' => []
+    ];
 
     public function __construct(?array $uploadedFile = null, array $formData = [])
     {
@@ -92,39 +102,94 @@ class ImportExportManager
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
         $expectedHeaders = ["Mail", "Ünvanı", "Adı", "Soyadı", "Görevi", "Bölümü", "Programı"];
+        $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
+        $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
 
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
-        foreach ($rows as $index => $row) {
-            [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
-                return trim((string) ($item ?? ''));
-            }, $row);
+        $db = Database::getConnection();
+        $db->beginTransaction();
 
-            if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
-                $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
-                $errorCount++;
-                continue;
+        try {
+            foreach ($rows as $index => $row) {
+                // Boş satır kontrolü
+                $is_empty = true;
+                foreach ($row as $cell) {
+                    if ($cell !== null && trim((string) $cell) !== '') {
+                        $is_empty = false;
+                        break;
+                    }
+                }
+                if ($is_empty)
+                    continue;
+
+                [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(function ($item) {
+                    return trim((string) ($item ?? ''));
+                }, $row);
+
+                if (empty($mail) or empty($title) or empty($name) or empty($last_name) or empty($role)) {
+                    $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
+                    $errorCount++;
+                    continue;
+                }
+
+                // Caching for Department
+                if (!isset($this->cache['departments'][$department_name])) {
+                    $this->cache['departments'][$department_name] = $departmentController->getDepartmentByName($department_name);
+                }
+                $department = $this->cache['departments'][$department_name];
+
+                // Caching for Program
+                $program_cache_key = $department_name . '_' . $program_name;
+                if (!isset($this->cache['programs'][$program_cache_key])) {
+                    $this->cache['programs'][$program_cache_key] = $programController->getProgramByName($program_name);
+                }
+                $program = $this->cache['programs'][$program_cache_key];
+
+                if (!$department || !$program) {
+                    $rowErrors = [];
+                    if (!$department)
+                        $rowErrors[] = "Bölüm bulunamadı! (" . $department_name . ")";
+                    if (!$program)
+                        $rowErrors[] = "Program bulunamadı! (" . $program_name . ")";
+                    $errors[] = "Satır " . ($index + 2) . ": " . implode(" | ", $rowErrors);
+                    $errorCount++;
+                    continue;
+                }
+
+                $userData = [
+                    'mail' => $mail,
+                    'title' => $title,
+                    'name' => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
+                    'last_name' => mb_strtoupper($last_name, "UTF-8"),
+                    'role' => array_search($role, $userController->getRoleList()),
+                    'department_id' => $department->id ?? null,
+                    'program_id' => $program->id ?? null,
+                ];
+
+                // Check cache/db for user
+                if (!isset($this->cache['users_by_mail'][$mail])) {
+                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                }
+                $user = $this->cache['users_by_mail'][$mail];
+
+                if ($user) {
+                    $user->fill($userData);
+                    $user->password = null;
+                    $userController->updateUser($user);
+                    $updatedCount++;
+                } else {
+                    $userController->saveNew($userData);
+                    $addedCount++;
+                    // Yeni eklenen kullanıcıyı da cache'e alalım (id'si oluştu)
+                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                }
             }
-            $userData = [
-                'mail' => $mail,
-                'title' => $title,
-                'name' => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
-                'last_name' => mb_strtoupper($last_name, "UTF-8"),
-                'role' => array_search($role, $userController->getRoleList()),
-                'department_id' => $departmentController->getDepartmentByName($department_name)->id ?? null,
-                'program_id' => $programController->getProgramByName($program_name)->id ?? null,
-            ];
-            $user = $userController->getUserByEmail($mail);
-            if ($user) {
-                $user->fill($userData);
-                $user->password = null;
-                $userController->updateUser($user);
-                $updatedCount++;
-            } else {
-                $userController->saveNew($userData);
-                $addedCount++;
-            }
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
         }
         return [
             "status" => "success",
@@ -158,7 +223,7 @@ class ImportExportManager
         $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
         $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
         $expectedHeaders =
-            ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
+            ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
 
 
         if ($headers !== $expectedHeaders) {
@@ -167,72 +232,107 @@ class ImportExportManager
         if (!isset($this->formData['academic_year']) or !isset($this->formData['semester'])) {
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
-        foreach ($rows as $rowIndex => $row) {
-            $hasError = false;// her bir satıra hatasız başlanıyor
-            [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
-                return trim((string) ($item ?? ''));
-            }, $row);
+        $db = Database::getConnection();
+        $db->beginTransaction();
 
-            // Değişkenleri bir diziye topla
-            $data = [$department_name, $program_name, $semester_no, $type, $code, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+        try {
+            foreach ($rows as $rowIndex => $row) {
+                // Boş satır kontrolü
+                $is_empty = true;
+                foreach ($row as $cell) {
+                    if ($cell !== null && trim((string) $cell) !== '') {
+                        $is_empty = false;
+                        break;
+                    }
+                }
+                if ($is_empty)
+                    continue;
 
-            // Her bir değeri kontrol et
-            foreach ($data as $dataIndex => $value) {
-                if ($value === null || $value === "") {
-                    $errors[] = "Satir " . ($rowIndex + 2) . ": " . $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
+                $hasError = false;// her bir satıra hatasız başlanıyor
+                [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(function ($item) {
+                    return trim((string) ($item ?? ''));
+                }, $row);
+
+                $data = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+                $rowErrors = []; // Satır bazlı hata toplayıcı
+                // Her bir değeri kontrol et
+                foreach ($data as $dataIndex => $value) {
+                    if ($value === null || $value === "") {
+                        $rowErrors[] = $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
+                        $hasError = true; // Bu satırda hata olduğunu belirt
+                    }
+                }
+
+                // Caching for Department
+                if (!isset($this->cache['departments'][$department_name])) {
+                    $this->cache['departments'][$department_name] = $departmentController->getDepartmentByName($department_name);
+                }
+                $department = $this->cache['departments'][$department_name];
+
+                // Caching for Program
+                $program_cache_key = $department_name . '_' . $program_name;
+                if (!isset($this->cache['programs'][$program_cache_key])) {
+                    $this->cache['programs'][$program_cache_key] = $programController->getProgramByName($program_name);
+                }
+                $program = $this->cache['programs'][$program_cache_key];
+
+                // Caching for Lecturer
+                if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
+                    $this->cache['users_by_name'][$lecturer_full_name] = $userController->getUserByFullName($lecturer_full_name);
+                }
+                $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
+
+                if (!$lecturer) {
+                    $rowErrors[] = "Hoca hatalı! (" . $lecturer_full_name . ")";
+                    $hasError = true;
+                }
+                if (!$program) {
+                    $rowErrors[] = "Program hatalı! (" . $program_name . ")";
+                    $hasError = true;
+                }
+                if (!$department) {
+                    $rowErrors[] = "Bölüm hatalı! (" . $department_name . ")";
+                    $hasError = true;
+                }
+
+                // Eğer bu satırda hata varsa, bir sonraki satıra geç
+                if ($hasError) {
+                    $errors[] = "Satır " . ($rowIndex + 2) . ": " . implode(" | ", $rowErrors);
                     $errorCount++;
-                    $hasError = true; // Bu satırda hata olduğunu belirt
+                    continue;
+                }
+                $lessonData = [
+                    'code' => $code,
+                    'group_no' => $group_no,
+                    'name' => $name,
+                    'size' => $size,
+                    'hours' => $hours,
+                    'type' => array_search(trim($type), (new LessonController())->getTypeList()),
+                    'semester_no' => $semester_no,
+                    'lecturer_id' => $lecturer->id,
+                    'department_id' => $department->id,
+                    'program_id' => $program->id,
+                    'semester' => $this->formData['semester'],
+                    'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
+                    'academic_year' => $this->formData['academic_year'],
+                ];
+                //Ders ders kodu, program_id ve group_no göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
+                $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
+                if ($lesson) {
+                    $lesson->fill($lessonData);
+                    $lessonsController->updateLesson($lesson);
+                    $updatedLessons[] = $lesson->getFullName();
+                } else {
+                    $lesson = new Lesson();
+                    $lesson->fill($lessonData);
+                    $lessonsController->saveNew($lesson);
+                    $addedLessons[] = $lesson->getFullName();
                 }
             }
-
-            $department = $departmentController->getDepartmentByName($department_name);
-            $program = $programController->getProgramByName($program_name);
-            $lecturer = $userController->getUserByFullName($lecturer_full_name);
-            if (!$lecturer) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Hoca hatalı!" . $lecturer_full_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            } elseif (!$program) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Program hatalı!" . $program_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            } elseif (!$department) {
-                $errors[] = "Satır " . ($rowIndex + 2) . ": Bölüm hatalı!" . $department_name;
-                $errorCount++;
-                $hasError = true; // Bu satırda hata olduğunu belirt
-            }
-
-            // Eğer bu satırda hata varsa, bir sonraki satıra geç
-            if (isset($hasError) && $hasError) {
-                $errors[] = "has_Error:" . $hasError;
-                continue;
-            }
-            $lessonData = [
-                'code' => $code,
-                'name' => $name,
-                'size' => $size,
-                'hours' => $hours,
-                'type' => array_search(trim($type), (new LessonController())->getTypeList()),
-                'semester_no' => $semester_no,
-                'lecturer_id' => $lecturer->id,
-                'department_id' => $department->id,
-                'program_id' => $program->id,
-                'semester' => $this->formData['semester'],
-                'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
-                'academic_year' => $this->formData['academic_year'],
-            ];
-            //Ders ders kodu, program_id ikilisine göre benzersiz kaydediliyor. Aynı ders koduna sahip dersler var
-            $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id])->first();
-            if ($lesson) {
-                $lesson->fill($lessonData);
-                $lessonsController->updateLesson($lesson);
-                $updatedLessons[] = $lesson->getFullName();
-            } else {
-                $lesson = new Lesson();
-                $lesson->fill($lessonData);
-                $lessonsController->saveNew($lesson);
-                $addedLessons[] = $lesson->getFullName();
-            }
+            $db->commit();
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
         }
         return [
             "status" => "success",
@@ -334,7 +434,7 @@ class ImportExportManager
                         'title' => $lecturer->getFullName() . " Ders Programı",
                         'type' => 'user',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'user',
                             'owner_id' => $lecturer->id,
                             'type' => $filters["type"],
@@ -351,7 +451,7 @@ class ImportExportManager
                             'title' => $lecturer->getFullName() . " Ders Programı",
                             'type' => 'user',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'user',
                                 'owner_id' => $lecturer->id,
                                 'type' => $filters["type"],
@@ -373,7 +473,7 @@ class ImportExportManager
                         'title' => $classroom->name . " Ders Programı",
                         'type' => 'classroom',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'classroom',
                             'owner_id' => $classroom->id,
                             'type' => $filters["type"],
@@ -390,7 +490,7 @@ class ImportExportManager
                             'title' => $classroom->name . " Ders Programı",
                             'type' => 'classroom',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'classroom',
                                 'owner_id' => $classroom->id,
                                 'type' => $filters["type"],
@@ -412,7 +512,7 @@ class ImportExportManager
                         'title' => $lesson->getFullName() . " Ders Programı",
                         'type' => 'lesson',
                         'filter' => [
-                            "semester_no" => ['in' => $semesterNumbers],
+                            "semester_no" => null,
                             'owner_type' => 'lesson',
                             'owner_id' => $lesson->id,
                             'type' => $filters["type"],
@@ -429,7 +529,7 @@ class ImportExportManager
                             'title' => $lesson->getFullName() . " Ders Programı",
                             'type' => 'lesson',
                             'filter' => [
-                                "semester_no" => ['in' => $semesterNumbers],
+                                "semester_no" => null,
                                 'owner_type' => 'lesson',
                                 'owner_id' => $lesson->id,
                                 'type' => $filters["type"],
@@ -453,145 +553,246 @@ class ImportExportManager
     #[NoReturn]
     public function exportSchedule($filters = []): void
     {
+        // Önce filtreleri doğrula (AjaxRouter zaten yapmıştı ama garantiye alalım)
         $filters = (new FilterValidator())->validate($filters, "exportScheduleAction");
 
+        // Kullanıcı tercihlerini al (Filtreler doğrulandıktan sonra)
+        $showOptions = [
+            'show_code' => !isset($filters['show_code']) || (string) $filters['show_code'] === '1',
+            'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
+            'show_program' => !isset($filters['show_program']) || (string) $filters['show_program'] === '1'
+        ];
         $scheduleController = new ScheduleController();
-        /**
-         * Dosya başlığı yazıldıktan sonra dosyada kaçıncı satırdan veri yazılmaya başlanacağını belirtir.
-         */
+
+        // Yazı tipi ayarları
+        $this->exportFile->getDefaultStyle()->getFont()->setName('Segoe UI')->setSize(10);
+
+        // Hesaplamayı döngü öncesinde yaparak $lastCol değişkenini garantiye alıyoruz
+        $type = in_array($filters['type'] ?? '', ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+        $colsPerDay = (($filters['owner_type'] ?? '') === 'classroom') ? 1 : 2;
+        $totalCols = ($maxDayIndex + 1) * $colsPerDay + 1;
+        $lastCol = Coordinate::stringFromColumnIndex($totalCols);
+
         $row = $this->createFileTitle($filters);
 
         foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
-            // programların her biri için tablo oluşturuluyor
-            $scheduleArray = $scheduleController->createScheduleExcelTable($scheduleFilter['filter']);// her bir elemanı bir satır olan bir dizi
-            if (!$scheduleArray)
-                continue; //Eğer programda ders yoksa geç
-            $lastCellLetter = $scheduleFilter['type'] == "classroom" ? 'F' : 'K';
-            //start::Program başlığını yaz
-            $this->sheet->setCellValue("A{$row}", $scheduleFilter['title']);
-            $this->sheet->getStyle("A{$row}")->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
-                ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-            $this->sheet->mergeCells("A{$row}:{$lastCellLetter}{$row}");
-            $this->sheet->getStyle("A{$row}:{$lastCellLetter}{$row}")->getFont()->setBold(true);
-            $this->sheet->getStyle("A{$row}:{$lastCellLetter}{$row}")->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('ffbf00');
-            //end::Program başlığını yaz
-            //Ders programının yazılmaya başlandığı ilk hücre çerçeve için kullanılacak
-            $firstCell = "A" . $row + 1;
-            $row++;// başlıktan sonra bir satır aşağı iniyoruz
+            // Yeni yapıya göre Schedule modelini bul
+            $schedule = (new Schedule())->get()
+                ->where($scheduleFilter['filter'])
+                ->with("items")
+                ->first();
 
+            if (!$schedule || empty($schedule->items)) {
+                continue;
+            }
 
-            foreach ($scheduleArray as $scheduleRow) {
-                $colNames = range('A', 'Z');
-                $colNameIndex = 0;
-                foreach ($scheduleRow as $scheduleCell) {
-                    // Mevcut hücre referansını alalım
-                    $currentCell = $colNames[$colNameIndex] . "{$row}";
-                    $cellValue = "";
-                    if (is_array($scheduleCell)) {
-                        //bu hücrede ders var demektir
-                        if (isset($scheduleCell[0]) and is_array($scheduleCell[0])) {
-                            // bu alanda gruplu iki ders var demektir.
-                            /**
-                             * Hücre içerisine yazdırılacak derslerin bilgilerinin dizisi
-                             */
-                            $lessons = [];
-                            foreach ($scheduleCell as $groupLesson) {
-                                if (isset($groupLesson['lesson_id'])) {
-                                    $lesson = (new Lesson())->find($groupLesson['lesson_id']);
-                                    // ders bilgileri hücreye yazılır.
-                                    $lessons[] = $this->setExportLessonName($lesson, $scheduleFilter['type']);
-                                }
-                                if (isset($groupLesson['classroom_id']) and $scheduleFilter['type'] != "classroom") {
-                                    $classroom = (new Classroom())->find($groupLesson['classroom_id']);
-                                    // derslik bilgileri hücreye yazılır.
-                                    $lessons[] = $classroom->name;
-                                }
+            // Grid yapısını al
+            $weekCount = ($schedule->type === 'final-exam') ? 2 : 1;
+            $type = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+            $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+            $scheduleRows = $scheduleController->prepareScheduleRows($schedule, 'excel', $maxDayIndex);
+
+            foreach ($scheduleRows as $weekIndex => $slots) {
+                // Her hafta için ayrı bir başlık veya boşluk
+                $isClassroom = ($scheduleFilter['type'] === 'classroom');
+                $colsPerDay = $isClassroom ? 1 : 2;
+                $totalCols = ($maxDayIndex + 1) * $colsPerDay + 1;
+                $lastCol = Coordinate::stringFromColumnIndex($totalCols);
+
+                if ($weekIndex > 0) {
+                    $row += 1;
+                    $this->sheet->setCellValue("A{$row}", ($weekIndex + 1) . ". HAFTA");
+                    $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+                    $this->sheet->getStyle("A{$row}")->getFont()->setBold(true);
+                    $row++;
+                }
+
+                // Program başlığı (Turuncu bar)
+                $this->sheet->setCellValue("A{$row}", $scheduleFilter['title'] . ($weekCount > 1 ? " (" . ($weekIndex + 1) . ". Hafta)" : ""));
+                $this->sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true)->setSize(11);
+                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('ffbf00');
+
+                $firstCell = "A" . ($row + 1);
+                $row++;
+
+                // Gün başlıklarını yaz
+                $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+                $this->sheet->setCellValue("A{$row}", "Saat");
+                for ($i = 0; $i <= $maxDayIndex; $i++) {
+                    $colIdx = $i * $colsPerDay + 2;
+                    $col = Coordinate::stringFromColumnIndex($colIdx);
+                    $this->sheet->setCellValue("{$col}{$row}", $days[$i]);
+                    $this->sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+                    if (!$isClassroom) {
+                        $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
+                        $this->sheet->setCellValue("{$sCol}{$row}", "S");
+                        $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                        $this->sheet->getColumnDimension($sCol)->setWidth(8); // Lab-A gibi isimler sığacak kadar dar kalsın
+                    }
+                }
+                $this->sheet->getColumnDimension('A')->setWidth(12); // Saat sütunu genişliği (Örn: 08:00 - 08:50 sığması için)
+                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
+                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $row++;
+
+                // Slotları yaz
+                foreach ($slots as $slot) {
+                    $timeLabel = $slot['slotStartTime']->format('H:i') . " - " . $slot['slotEndTime']->format('H:i');
+                    $this->sheet->setCellValue("A{$row}", $timeLabel);
+                    $this->sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+                    for ($i = 0; $i <= $maxDayIndex; $i++) {
+                        $colIdx = $i * $colsPerDay + 2;
+                        $col = Coordinate::stringFromColumnIndex($colIdx);
+                        $dayKey = 'day' . $i;
+
+                        if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
+                            $items = is_array($slot['days'][$dayKey]) ? $slot['days'][$dayKey] : [$slot['days'][$dayKey]];
+
+                            $combinedContent = new RichText();
+                            $combinedClassroom = new RichText();
+
+                            // Dikey padding için en başa boş satır
+                            $combinedContent->createText("\n");
+                            $combinedClassroom->createText("\n");
+
+                            foreach ($items as $idx => $item) {
+                                $this->formatScheduleItemForExport(
+                                    $item,
+                                    $scheduleFilter['type'],
+                                    $showOptions,
+                                    $combinedContent,
+                                    $combinedClassroom,
+                                    $idx > 0
+                                );
                             }
-                            // hücre içerisine ders bilgileri satırlar oluşturacak şekilde yazılır
-                            $cellValue = implode("\n", $lessons);
-                        } else {
-                            // Bu hücrede tek bir ders var demektir
-                            if (isset($scheduleCell['lesson_id'])) {
-                                $lesson = (new Lesson())->find($scheduleCell['lesson_id']);
-                                // ders bilgileri hücreye yazılır.
-                                $cellValue = $this->setExportLessonName($lesson, $scheduleFilter['type']);
-                            }
-                            if (isset($scheduleCell['classroom_id']) and $scheduleFilter['type'] != "classroom") {
-                                $classroom = (new Classroom())->find($scheduleCell['classroom_id']);
-                                // derslik bilgileri hücreye yazılır.
-                                $cellValue = $classroom->name;
+
+                            // Dikey padding için en sona boş satır
+                            $combinedContent->createText("\n");
+                            $combinedClassroom->createText("\n");
+
+                            $this->sheet->setCellValue("{$col}{$row}", $combinedContent);
+                            if (!$isClassroom) {
+                                $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
+                                $this->sheet->setCellValue("{$sCol}{$row}", $combinedClassroom);
+                                $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                                $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()->setWrapText(true);
                             }
                         }
-                    } else {
-                        //burada bir ders yok boş hücre yada gün ce saat bilgisini içerir
-                        $cellValue = $scheduleCell ?? "";
+
+                        $this->sheet->getStyle("{$col}{$row}")->getAlignment()->setWrapText(true);
+                        $this->sheet->getStyle("{$col}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        $this->sheet->getStyle("{$col}{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
                     }
-                    $this->sheet->setCellValue($currentCell, $cellValue);// ders bilgisi
-
-                    // Hücre stilini düzenleyerek satır sonunu işleme
-                    $this->sheet->getStyle($currentCell)->getAlignment()->setWrapText(true);
-                    $this->sheet->getStyle($currentCell)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $this->sheet->getStyle($currentCell)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                    // bir sonraki sütüna geç
-                    $colNameIndex++;
+                    $row++;
                 }
-                //bir satır yazıldıktan sonra sonraki satıra geç
-                $row++;
+
+                // Kenarlıklar
+                $this->sheet->getStyle($firstCell . ":" . $lastCol . ($row - 1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $row += 2;
             }
-            // Her hücreye kenarlık ekle
-            $lastCell = $lastCellLetter . $row - 1; //todo maxDay Index e göre ayarlanmalı
-            $this->sheet->getStyle($firstCell . ":" . $lastCell)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            //todo Cuma yada perşembe günü ders yoksa G sütünunda bitiyor. k olarak belirtilirse tüm hafta kenarlık oluyor
-            $row += 2;//bir tablo bittikten sonra iki satır boşluk bırak
         }
 
-
-        // Sütunları otomatik boyutlandır (içeriğe göre ayarla)
-        foreach ($this->sheet->getColumnIterator('A', 'K') as $column) {
-            $colIndex = $column->getColumnIndex(); // A, B, C...
-            $this->sheet->getColumnDimension($colIndex)->setAutoSize(true);
+        // Sütun genişlikleri
+        foreach ($this->sheet->getColumnIterator('A', $lastCol) as $column) {
+            $colIdx = $column->getColumnIndex();
+            // S sütunları zaten manuel set edildiği için sadece diğerlerini autoSize yap
+            if ($this->sheet->getColumnDimension($colIdx)->getWidth() <= 0) {
+                $this->sheet->getColumnDimension($colIdx)->setAutoSize(true);
+            }
         }
-        $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . $scheduleFilter['file_title'] . ".xlsx";
+
+        $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . ($scheduleFilter['file_title'] ?? 'Program') . ".xlsx";
         $this->downloadExportFile($exportFileName);
-
     }
 
     /**
-     * @throws Exception
+     * ScheduleItem içeriğini kullanıcı tercihlerine göre formatlar (Zengin Metin Olarak)
      */
-    private function setExportLessonName(Lesson $lesson, $scheduleType)
+    private function formatScheduleItemForExport(ScheduleItem $item, string $scheduleType, array $options, RichText &$richContent, RichText &$richClassroom, bool $addSeparator = false): void
     {
-        return match ($scheduleType) {
-            'user' => $lesson->name . "\n (" . $lesson->getProgram()->name . ")",
-            'classroom' => $lesson->name . " (" . $lesson->getProgram()->name . ") \n (" . $lesson->getLecturer()->getFullName() . ")",
-            'program' => $lesson->name . " \n (" . $lesson->getLecturer()->getFullName() . ")",
-            default => $lesson->name,
-        };
+        $slotDatas = $item->getSlotDatas();
+
+        foreach ($slotDatas as $index => $data) {
+            if ($addSeparator || $index > 0) {
+                $richContent->createText("\n" . str_repeat('═', 20) . "\n");
+                $richClassroom->createText("\n" . str_repeat('═', 5) . "\n");
+                $addSeparator = false; // Sadece bir kez ekle
+            }
+
+            // Ders Adı
+            $lessonName = $data->lesson->name;
+            if ($options['show_code'] && !empty($data->lesson->code)) {
+                $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
+            }
+            $richContent->createTextRun($lessonName)->getFont()->setBold(true);
+
+            // Hoca Adı
+            if ($options['show_lecturer'] && $scheduleType !== 'user' && $data->lecturer) {
+                $richContent->createText("\n(" . $data->lecturer->getFullName() . ")");
+            }
+
+            // Program/Bölüm Adı
+            if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
+                $programNames = [];
+                if ($data->lesson->program) {
+                    $programNames[] = $data->lesson->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
+                }
+
+                if (!empty($data->lesson->childLessons)) {
+                    foreach ($data->lesson->childLessons as $child) {
+                        if ($child->program) {
+                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
+                        }
+                    }
+                }
+
+                $programNamesStr = implode(', ', array_unique($programNames));
+
+                if ($programNamesStr) {
+                    $richContent->createText("\n(" . $programNamesStr . ")");
+                }
+            }
+
+            // Derslik (Ayrı sütuna gidecek)
+            if ($scheduleType !== 'classroom' && $data->classroom) {
+                $richClassroom->createText($data->classroom->name);
+            }
+        }
     }
+
 
     public function createFileTitle($filters): int
     {
-        $lastCellLetter = $filters['owner_type'] == "classroom" ? 'F' : 'K';
+        // Türüne (ders/sınav) göre maxDayIndex'i alıp genişliği hesapla
+        $type = in_array($filters['type'] ?? '', ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        // Eğer derslik programı ise her güne 1 sütun, değilse 2 sütun (ders + S)
+        $colsPerDay = ($filters['owner_type'] === 'classroom') ? 1 : 2;
+        $totalCols = ($maxDayIndex + 1) * $colsPerDay + 1;
+        $lastCol = Coordinate::stringFromColumnIndex($totalCols);
+
         // Üniversite ve dönem bilgileri
         $this->sheet->setCellValue('A2', 'GİRESUN ÜNİVERSİTESİ TİREBOLU MEHMET BAYRAK MESLEK YÜKSEKOKULU');
-        $this->sheet->mergeCells("A2:{$lastCellLetter}2");
-        // Birleştirilmiş hücrede yazıyı ortalama (hem yatay hem dikey)
-        $this->sheet->getStyle("A2:{$lastCellLetter}2")->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
-            ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-        $this->sheet->getStyle("A2:{$lastCellLetter}2")->getFont()->setBold(true);
+        $this->sheet->mergeCells("A2:{$lastCol}2");
+        $this->sheet->getStyle("A2:{$lastCol}2")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle("A2:{$lastCol}2")->getFont()->setBold(true)->setSize(12);
 
         $this->sheet->setCellValue('A3', $filters['academic_year'] . ' AKADEMİK YILI ' . mb_strtoupper($filters['semester']) . ' DÖNEMİ HAFTALIK DERS PROGRAMI');
-        $this->sheet->mergeCells("A3:{$lastCellLetter}3");
-        // Birleştirilmiş hücrede yazıyı ortalama (hem yatay hem dikey)
-        $this->sheet->getStyle("A3:{$lastCellLetter}3")->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)  // Yatay ortalama
-            ->setVertical(Alignment::VERTICAL_CENTER);    // Dikey ortalama
-        $this->sheet->getStyle("A3:{$lastCellLetter}3")->getFont()->setBold(true);
-        return 6; //başlıktan sonra devam edilecek satır numarası
+        $this->sheet->mergeCells("A3:{$lastCol}3");
+        $this->sheet->getStyle("A3:{$lastCol}3")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle("A3:{$lastCol}3")->getFont()->setBold(true)->setSize(12);
+
+        return 6;
     }
 
     #[NoReturn]
@@ -638,95 +839,112 @@ class ImportExportManager
         $lines[] = 'PRODID:-//schedulemaker//TR MBMYO Ders Programı//TR';
         $lines[] = 'CALSCALE:GREGORIAN';
         $lines[] = 'METHOD:PUBLISH';
+        $lines[] = 'X-WR-CALNAME:' . $this->escapeIcsText($filters['academic_year'] . ' ' . $filters['semester'] . ' Ders Programı');
+        $lines[] = 'X-WR-TIMEZONE:Europe/Istanbul';
 
         foreach ($this->generateScheduleFilters($filters) as $scheduleFilter) {
-            // Fetch schedules matching the filter
-            $schedules = (new \App\Models\Schedule())->get()->where($scheduleFilter['filter'])->all();
-            if (count($schedules) === 0)
+            // Fetch schedule with items for the filter
+            $schedule = (new \App\Models\Schedule())->get()
+                ->where($scheduleFilter['filter'])
+                ->with("items")
+                ->first();
+
+            if (!$schedule || empty($schedule->items))
                 continue;
 
-            foreach ($schedules as $schedule) {
-                $this->logger()->debug("Schedule time: ", ['schedule' => $schedule]);
-                if (empty($schedule->time))
-                    continue;
-                // Parse start-end times from schedule time label like "08.00 - 08.50"
-                [$startText, $endText] = array_map('trim', explode('-', str_replace(' - ', '-', $schedule->time)));
-                $startText = str_replace('.', ':', trim($startText));
-                $endText = str_replace('.', ':', trim($endText));
+            foreach ($schedule->items as $scheduleItem) {
+                // Saat formatı kontrolü (HH:mm:ss -> HH:mm)
+                $startText = $scheduleItem->getShortStartTime();
+                $endText = $scheduleItem->getShortEndTime();
 
-                for ($dayIndex = 0; $dayIndex <= getSettingValue('maxDayIndex', 'lesson', 4); $dayIndex++) {
-                    $day = $schedule->{"day{$dayIndex}"};
-                    if (is_null($day) || $day === false)
+                if (empty($startText) || empty($endText))
+                    continue;
+
+                $dayIndex = $scheduleItem->day_index;
+                $slotDatas = $scheduleItem->getSlotDatas();
+
+                foreach ($slotDatas as $data) {
+                    $lesson = $data->lesson;
+                    // Ders silinmişse veya yoksa atla
+                    if (!$lesson)
                         continue;
 
-                    // Determine lessons: either single associative array or array of associative arrays (grouped)
-                    $entries = (isset($day[0]) && is_array($day[0])) ? $day : [$day];
-                    foreach ($entries as $entry) {
-                        if (!isset($entry['lesson_id']))
-                            continue;
-                        $lesson = (new \App\Models\Lesson())->find($entry['lesson_id']);
-                        if (!$lesson)
-                            continue;
-                        $classroomName = '';
-                        if (isset($entry['classroom_id'])) {
-                            $classroom = (new \App\Models\Classroom())->find($entry['classroom_id']);
-                            if ($classroom)
-                                $classroomName = $classroom->name;
+                    $lecturer = $data->lecturer;
+                    $classroom = $data->classroom;
+
+                    // Compute first occurrence date
+                    $useRecurrence = ($semesterStart instanceof \DateTime) && ($semesterEnd instanceof \DateTime) && ($semesterEnd >= $semesterStart);
+                    if ($useRecurrence) {
+                        $targetDow = $dayIndex + 1; // 1=Mon ... 7=Sun
+                        $startDow = (int) $semesterStart->format('N');
+                        $delta = ($targetDow - $startDow + 7) % 7;
+                        $firstDate = (clone $semesterStart)->modify("+{$delta} days");
+                    } else {
+                        $anchor = new \DateTime('next monday', $timezone);
+                        if ((int) $now->format('N') === 1) {
+                            $anchor = new \DateTime('today', $timezone);
                         }
-
-                        // Compute first occurrence date for this weekday based on settings
-                        $useRecurrence = ($semesterStart instanceof \DateTime) && ($semesterEnd instanceof \DateTime) && ($semesterEnd >= $semesterStart);
-                        if ($useRecurrence) {
-                            $targetDow = $dayIndex + 1; // 1=Mon ... 7=Sun
-                            $startDow = (int) $semesterStart->format('N');
-                            $delta = ($targetDow - $startDow + 7) % 7;
-                            $firstDate = (clone $semesterStart)->modify("+{$delta} days");
-                            $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
-                            $dtEnd = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
-                        } else {
-                            // Fallback: single reference week next Monday + dayIndex
-                            $anchor = new \DateTime('next monday', $timezone);
-                            if ((int) $now->format('N') === 1) {
-                                $anchor = new \DateTime('today', $timezone);
-                            }
-                            $eventDate = (clone $anchor)->modify("+{$dayIndex} day");
-                            $dtStart = new \DateTime($eventDate->format('Y-m-d') . ' ' . $startText, $timezone);
-                            $dtEnd = new \DateTime($eventDate->format('Y-m-d') . ' ' . $endText, $timezone);
-                        }
-
-                        // Build summary based on context
-                        $summary = $this->setExportLessonName($lesson, $scheduleFilter['type']);
-                        $location = $classroomName;
-                        $descriptionParts = [];
-                        $descriptionParts[] = $scheduleFilter['title'];
-                        $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
-                        $descriptionParts[] = 'Dönem: ' . $filters['semester'];
-                        $description = implode(' | ', array_filter($descriptionParts));
-
-                        $uid = uniqid('schedulemaker-', true) . '@schedulemaker';
-                        $dtstamp = $now->format('Ymd\THis');
-                        $dtstartLine = 'DTSTART;TZID=Europe/Istanbul:' . $dtStart->format('Ymd\THis');
-                        $dtendLine = 'DTEND;TZID=Europe/Istanbul:' . $dtEnd->format('Ymd\THis');
-
-                        $lines[] = 'BEGIN:VEVENT';
-                        $lines[] = 'UID:' . $uid;
-                        $lines[] = 'DTSTAMP:' . $dtstamp;
-                        $lines[] = $dtstartLine;
-                        $lines[] = $dtendLine;
-                        if ($useRecurrence) {
-                            $weekdayCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-                            $byday = $weekdayCodes[$dayIndex] ?? 'MO';
-                            $untilLocal = (clone $semesterEnd)->setTime(23, 59, 59);
-                            $untilUtc = (clone $untilLocal)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
-                            $lines[] = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
-                        }
-                        $lines[] = 'SUMMARY:' . $this->escapeIcsText($summary);
-                        if ($location !== '')
-                            $lines[] = 'LOCATION:' . $this->escapeIcsText($location);
-                        if ($description !== '')
-                            $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
-                        $lines[] = 'END:VEVENT';
+                        $firstDate = (clone $anchor)->modify("+{$dayIndex} day");
                     }
+
+                    $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
+                    $dtEnd = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
+
+                    // Build Summary: Ders Adı (Ders Kodu)
+                    $summaryText = $lesson->name;
+                    if (!empty($lesson->code)) {
+                        $summaryText .= " (" . $lesson->code . ")";
+                    }
+
+                    // Build Location
+                    $locationText = $classroom ? $classroom->name : '';
+
+                    // Build Description
+                    $descriptionParts = [];
+                    // Hoca bilgisi (eğer hoca programı değilse göster)
+                    if ($scheduleFilter['type'] !== 'user' && $lecturer) {
+                        $descriptionParts[] = "Hoca: " . $lecturer->getFullName();
+                    }
+                    // Program/Bölüm bilgisi (eğer program/bölüm programı değilse göster)
+                    if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
+                        $descriptionParts[] = "Program: " . $lesson->program->name;
+                    }
+
+                    $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
+                    $descriptionParts[] = 'Dönem: ' . $filters['semester'];
+
+                    $descriptionText = implode('\n', $descriptionParts);
+
+                    $uid = uniqid('sm-', true) . '@schedulemaker.local';
+                    $dtstamp = $now->format('Ymd\THis');
+                    $dtstartLine = 'DTSTART;TZID=Europe/Istanbul:' . $dtStart->format('Ymd\THis');
+                    $dtendLine = 'DTEND;TZID=Europe/Istanbul:' . $dtEnd->format('Ymd\THis');
+
+                    $lines[] = 'BEGIN:VEVENT';
+                    $lines[] = 'UID:' . $uid;
+                    $lines[] = 'DTSTAMP:' . $dtstamp;
+                    $lines[] = $dtstartLine;
+                    $lines[] = $dtendLine;
+
+                    if ($useRecurrence) {
+                        $weekdayCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+                        $byday = $weekdayCodes[$dayIndex] ?? 'MO';
+                        $untilLocal = (clone $semesterEnd)->setTime(23, 59, 59);
+                        // Convert UNTIL to UTC as per RFC 5545
+                        $untilUtc = (clone $untilLocal)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
+                        $lines[] = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
+                    }
+
+                    $lines[] = 'SUMMARY:' . $this->escapeIcsText($summaryText);
+                    if (!empty($locationText)) {
+                        $lines[] = 'LOCATION:' . $this->escapeIcsText($locationText);
+                    }
+                    if (!empty($descriptionText)) {
+                        // Açıklama içindeki yeni satırları ICS formatına uygun hale getir
+                        $lines[] = 'DESCRIPTION:' . $this->escapeIcsText($descriptionText);
+                    }
+
+                    $lines[] = 'END:VEVENT';
                 }
             }
         }
@@ -734,12 +952,24 @@ class ImportExportManager
         $lines[] = 'END:VCALENDAR';
         $content = implode("\r\n", $lines) . "\r\n";
 
-        $fileName = $filters['academic_year'] . ' ' . $filters['semester'] . ' ' . 'ders-programi.ics';
+        $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester']) . '-program.ics';
+
         header('Content-Type: text/calendar; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
         echo $content;
         exit;
+    }
+
+    private function slugify($text)
+    {
+        // Basit bir slug fonksiyonu
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        return strtolower($text);
     }
 
     private function escapeIcsText(string $text): string

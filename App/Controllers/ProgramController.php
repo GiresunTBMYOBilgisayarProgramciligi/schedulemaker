@@ -22,9 +22,6 @@ class ProgramController extends Controller
      */
     public function getProgramsList(array $filters = []): array
     {
-        if (!isset($filters["department_id"])) {
-            unset($filters["department_id"]);
-        }
         return $this->getListByFilters($filters);
     }
 
@@ -54,7 +51,7 @@ class ProgramController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu isimde Program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -67,7 +64,7 @@ class ProgramController extends Controller
     public function updateProgram(array $program_data): int
     {
         try {
-            $program= new Program();
+            $program = new Program();
             $program->fill($program_data);
             $program->update();
             return $program->id;
@@ -76,7 +73,7 @@ class ProgramController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu isimde prgoram zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -88,11 +85,7 @@ class ProgramController extends Controller
     public function delete(int $id): void
     {
         $program = (new Program())->find($id) ?: throw new Exception("Silinecek Program bulunamadı");
-        // ilişkili tüm programı sil //todo bu silme işlemi findLessonSchedules da olduğu gibi olmalı
-        $schedules = (new Schedule())->get()->where(["owner_type" => "program", "owner_id" => $id])->all();
-        foreach ($schedules as $schedule) {
-            $schedule->delete();
-        }
+        (new ScheduleController())->wipeResourceSchedules('program', $id);
         $program->delete();
     }
 }

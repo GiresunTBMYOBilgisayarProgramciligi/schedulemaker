@@ -119,12 +119,22 @@ document.addEventListener("DOMContentLoaded", function () {
             fetchForm(form, data)
         })
     }
-
     function fetchForm(form, data) {
-        let modal = new Modal();
-        modal.prepareModal(form.getAttribute("title"));
-        spinner.showSpinner(modal.body)
-        modal.showModal();
+        let isToast = form.getAttribute("data-toast") === "true";
+        let redirectDelay = parseInt(form.getAttribute("data-redirect-delay")) || 0;
+        let modal = null;
+        let loadingToast = null;
+
+        if (isToast) {
+            loadingToast = new Toast();
+            loadingToast.prepareToast(form.getAttribute("title") || "İşlem", "Lütfen bekleyin...", "info", false);
+        } else {
+            modal = new Modal();
+            modal.prepareModal(form.getAttribute("title"), "", false, true, "lg");
+            spinner.showSpinner(modal.body);
+            modal.showModal();
+        }
+
         return fetch(form.action, {
             method: form.method || "POST",
             headers: {
@@ -132,36 +142,27 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             body: data,
         })
-            .then(response => response.json())
+            .then(response => {
+                if (loadingToast) loadingToast.closeToast();
+                return response.json();
+            })
             .then((data) => {
                 console.log(data)
-                if (data.errors) {
-                    console.log(data.errors)
-                }
-                if (data.status === "error") {
+                const statusClass = data.status === "error" ? "danger" : data.status;
+                let message = Array.isArray(data.msg)
+                    ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                    : data.msg;
 
-                    const statusClass = data.status === "error" ? "danger" : data.status;
-                    modal.body.classList.add("text-bg-" + statusClass)
-                    const message = Array.isArray(data.msg)
-                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                        : data.msg;
-                    spinner.removeSpinner();
-                    modal.body.innerHTML = message;
-                } else {
-                    modal.body.classList.add("text-bg-" + data.status)
-
-                    const message = Array.isArray(data.msg)
-                        ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
-                        : data.msg;
-                    spinner.removeSpinner();
-                    modal.body.innerHTML = message;
-                    // başarılı işlem sonrası update formları dışınsa kalan formlar resetleniyor
-                    if (!form.classList.contains("updateForm")) {
-                        form.reset();
-                    }
+                if (data.errors && data.errors.length > 0) {
+                    message += `<hr><div class="error-list text-start" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">
+                        <h6 class="fw-bold">Hata Detayları:</h6>
+                        <ul class="small mb-0">
+                            ${data.errors.map(err => `<li>${err}</li>`).join('')}
+                        </ul>
+                    </div>`;
                 }
 
-                modal.cancelButton.addEventListener("click", () => {
+                const handleRedirect = () => {
                     if (data.redirect) {
                         console.log("redirect")
                         if (data.redirect === "back")
@@ -171,12 +172,39 @@ document.addEventListener("DOMContentLoaded", function () {
                         else
                             window.location.href = data.redirect;
                     }
-                });
+                };
+
+                if (isToast) {
+                    let toastObj = new Toast();
+                    toastObj.prepareToast(form.getAttribute("title") || "İşlem", message, statusClass, true, redirectDelay || 5000);
+                    if (data.redirect) {
+                        toastObj.toast.addEventListener("hidden.bs.toast", handleRedirect);
+                    }
+                } else {
+                    modal.body.classList.add("text-bg-" + statusClass)
+                    spinner.removeSpinner();
+                    modal.body.innerHTML = message;
+                }
+
+                if (data.status === "success") {
+                    if (!form.classList.contains("updateForm")) {
+                        form.reset();
+                    }
+                }
+
+                if (modal) {
+                    modal.cancelButton.addEventListener("click", handleRedirect);
+                }
             })
             .catch((error) => {
-                modal.title.textContent = "Hata";
-                modal.body.classList.add("text-bg-danger");
-                modal.body.innerHTML = error;
+                if (loadingToast) loadingToast.closeToast();
+                if (modal) {
+                    modal.title.textContent = "Hata";
+                    modal.body.classList.add("text-bg-danger");
+                    modal.body.innerHTML = error;
+                } else {
+                    new Toast().prepareToast("Hata", error, "danger");
+                }
                 console.error(error);
             });
     }

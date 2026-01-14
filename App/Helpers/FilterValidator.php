@@ -50,7 +50,7 @@ class FilterValidator
             'hours' => ['type' => 'int'],// Derslik kontrolü yapılırken kaç saat ekleneceği bilgisi
             'owner_type' => ['type' => 'string'],//Ders programının ait olduğu birimi belirtir (user, lesson, classroom, program)
             'owner_id' => ['type' => 'int'],//Ders programının ait olduğu birimin ID numarası
-            'time' => ['type' => 'string'], // Dersin saat aralığı "10:00-10:50" formatında olabilir
+            'time' => ['type' => 'string'], // Dersin saat aralığı "10:00-10:50" formatında olabilir TODO buna ihtiyaç kalmayacak gibi görünüyor
             'semester_no' => ['type' => 'int|int[]'], //Dersin ait olduğu yarıyıl numarası 1 veya [1, 3]
             'semester' => ['type' => 'string'],//Ders programının ait olduğu dönem (Güz, Bahar)
             'academic_year' => ['type' => 'string'],//Ders programının ait olduğu akademik yıl (2024 - 2025)
@@ -61,19 +61,21 @@ class FilterValidator
             'lecturer_id' => ['type' => 'int'],//Ders programının hoca id numarası
             'day' => ['type' => 'array'],//Gün bilgisi içeren dizi (lesson_id, lecturer_id, classroom_id)
             'owners' => ['type' => 'array'], //Ders programının ait olduğu birim türleri listesi
+            'schedule_id' => ['type' => 'int'],//Ders programının id numarası
+            'startTime' => ['type' => 'string'],//Dersin başlangıç saati
+            'items' => ['type' => 'string'],//JSON formatında schedule items
+            'week_index' => ['type' => 'int'],//Hafta index numarası
+            'show_code' => ['type' => 'int'],//Ders kodu gösterilsin mi?
+            'show_lecturer' => ['type' => 'int'],//Hoca adı gösterilsin mi?
+            'show_program' => ['type' => 'int'],//Program adı gösterilsin mi?
         ];
 
         // 2. Her işlem için kuralları tanımla
         $this->operationRules = [
-            'saveScheduleAction' => [
-                'required' => ["type", "lesson_id", "classroom_id", "time", "lesson_hours", "day_index"],
-                'optional' => ['lecturer_id'],
-                'defaults' => ['semester', 'academic_year']
-            ],
             'checkScheduleCrash' => [
-                'required' => ["type", "lesson_id", "classroom_id", "time", "lesson_hours", "day_index"],
-                'optional' => ["semester_no", "lecturer_id"],
-                'defaults' => ['semester', 'academic_year']
+                'required' => ["items"],
+                'optional' => [],
+                'defaults' => []
             ],
             'deleteScheduleAction' => [
                 'required' => ["type", "time"],
@@ -92,18 +94,18 @@ class FilterValidator
             ],
             "checkLecturerScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "checkClassroomScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "checkProgramScheduleAction" => [
                 'required' => ["type", "lesson_id"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
+                'optional' => ["week_index"],
+                'defaults' => ['semester', 'academic_year', 'week_index']
             ],
             "getSchedulesHTML" => [
                 'required' => ["type", "owner_type", "owner_id"],
@@ -115,24 +117,14 @@ class FilterValidator
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "createAvailableLessonsHTML" => [
-                'required' => ["type", "owner_type", "owner_id", "semester_no"],
-                'optional' => [],
-                'defaults' => ['semester', 'academic_year']
-            ],
             "availableLessons" => [
                 'required' => ["type", "owner_type", "owner_id", "semester_no"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "createScheduleHTMLTable" => [
-                'required' => ["type", "owner_type", "owner_id"],
-                'optional' => ["semester_no"],
-                'defaults' => ['semester', 'academic_year']
-            ],
             "prepareScheduleRows" => [
-                'required' => ["type", "owner_type", "owner_id"],
-                'optional' => ["semester_no"],
+                'required' => ["type", "owner_type", "owner_id", "semester_no"],
+                'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
             'createScheduleExcelTable' => [
@@ -142,38 +134,38 @@ class FilterValidator
             ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id","semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
-            "generateScheduleFilters"=> [
+            "generateScheduleFilters" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id","semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportSchedule" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
-                'required' => ["type", 'hours', "time", "lesson_id", "day_index"],
+                'required' => ["schedule_id", 'hours', "startTime", "lesson_id", "day_index", "week_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableObservers" => [
-                'required' => ["type", 'hours', "time", "day_index"],
+                'required' => ["type", 'hours', "startTime", "day_index", "week_index"],
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
             "saveSchedulePreferenceAction" => [
-                'required' => ["type", "owner_type", "owner_id","time","day_index","day"],
+                'required' => ["type", "owner_type", "owner_id", "time", "day_index", "day"],
                 'optional' => ["semester_no"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportScheduleIcsAction" => [
                 'required' => ["owner_type"],
-                'optional' => ["semester_no","owner_id"],
-                'defaults' => ['semester', 'academic_year',"type"]
+                'optional' => ["semester_no", "owner_id"],
+                'defaults' => ['semester', 'academic_year', "type"]
             ]
 
         ];
@@ -262,6 +254,8 @@ class FilterValidator
                 $validatedFilters[$key] = getSettingValue('academic_year');
             } elseif ($key === 'type') {
                 $validatedFilters[$key] = 'lesson';
+            } elseif ($key === 'week_index') {
+                $validatedFilters[$key] = 0;
             }
         }
 

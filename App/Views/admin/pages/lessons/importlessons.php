@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  * @var array $departments \App\Models\Department->getDepartments())
  * @var string $page_title

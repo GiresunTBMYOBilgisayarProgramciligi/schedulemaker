@@ -1,7 +1,6 @@
 <?php
 /**
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
- * @var \App\Controllers\UserController $userController
  */
 use function App\Helpers\isAuthorized;
 ?>

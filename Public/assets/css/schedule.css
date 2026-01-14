@@ -1,0 +1,426 @@
+    .available-schedule-items {
+        min-height: 30px;
+        max-height: 25vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+    }
+
+    /* --- Slot Durumları ve Vurgular --- */
+
+    .dummy {
+        padding: 15px !important;
+    }
+
+    .slot-unavailable {
+        background-color: #fff5f5;
+        border: 1px dashed #feb2b2;
+        opacity: 0.85;
+        cursor: not-allowed;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .slot-unavailable::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: repeating-linear-gradient(45deg,
+                rgba(255, 255, 255, 0.5),
+                rgba(255, 255, 255, 0.5) 10px,
+                rgba(254, 178, 178, 0.1) 10px,
+                rgba(254, 178, 178, 0.1) 20px);
+        pointer-events: none;
+    }
+
+    .slot-unavailable::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 4px 10px;
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        color: #e53e3e;
+        z-index: 5;
+        content: "Müsait Değil";
+    }
+
+    .unavailable-for-classroom::after {
+        content: "Uygun Derslik Yok";
+    }
+
+    .unavailable-for-lecturer::after {
+        content: "Hoca Dolu";
+    }
+
+    .unavailable-for-program::after {
+        content: "Program Çakışması";
+    }
+
+    /* Tercih Edilen Saatler */
+    .slot-preferred {
+        background-color: #f0fff4;
+        border: 1px dashed #9ae6b4;
+        position: relative;
+    }
+
+    .slot-preferred::after {
+        content: "Tercih Edilen";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 2px 8px;
+        border-radius: 12px;
+        color: #38a169;
+        white-space: nowrap;
+    }
+
+    /* Temel Tablo Stilleri */
+    .schedule-table-container {
+        overflow-x: auto;
+        margin-bottom: 2rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+        /* Mobilde scroll olması için */
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        border: 1px solid #e9ecef;
+        padding: 12px;
+        text-align: center;
+        vertical-align: middle;
+        height: 1px;
+        /* Rowspan içindeki h-100 elemanların esnemesi için */
+    }
+
+    /* Başlık Stilleri */
+    .schedule-table thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Saat Sütunu */
+    .time-slot {
+        width: 100px;
+        font-weight: bold;
+        color: #6c757d;
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+
+    /* Ders Hücresi Stilleri */
+    .lesson-card {
+        padding: 8px;
+        border-radius: 6px;
+        background-color: #e3f2fd;
+        /* Varsayılan mavi ton */
+        border-left: 4px solid #2196f3;
+        text-align: left;
+        transition: all 0.2s ease;
+        margin-bottom: 4px;
+        font-size: 0.9rem;
+        position: relative;
+        /* Checkbox için eklendi */
+    }
+
+    .lesson-card.h-100 {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 15px !important;
+        gap: 8px;
+    }
+
+    .lesson-card.h-100 .lesson-name {
+        font-size: 1.1rem;
+        margin-bottom: 0;
+        line-height: 1.3;
+    }
+
+    .lesson-card.h-100 .lesson-meta {
+        font-size: 0.85rem;
+    }
+
+    .lesson-card.h-100 .lesson-observer-item {
+        margin-bottom: 4px;
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .lesson-card.h-100 .lesson-observer-item:last-child {
+        border-bottom: none;
+    }
+
+    .lesson-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toplu işlem checkbox stilleri */
+    .lesson-bulk-checkbox {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        z-index: 15;
+        opacity: 0.4;
+        transition: opacity 0.2s;
+    }
+
+    .lesson-card:hover .lesson-bulk-checkbox,
+    .lesson-bulk-checkbox:checked {
+        opacity: 1;
+    }
+
+    .lesson-card.selected-lesson {
+        outline: 2px solid #2196f3;
+        box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+    }
+
+    /* Ders Bilgileri */
+    .lesson-name {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 4px;
+        color: #1976d2;
+    }
+
+    .lesson-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #546e7a;
+    }
+
+    .lesson-lecturer {
+        margin-right: 8px;
+    }
+
+    /* Boş Hücre */
+    .empty-slot {
+        color: #adb5bd;
+        font-style: italic;
+        font-size: 0.85rem;
+        min-height: 35px;
+        position: relative;
+        /* İkon pozisyonlama için */
+    }
+
+    /* Not İkonu */
+    .note-icon {
+        position: absolute;
+        top: 2px;
+        left: 4px;
+        color: #ffca28;
+        /* Uyarı / Not rengi (Amber) */
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
+        transition: transform 0.2s, color 0.2s;
+        z-index: 10;
+        font-size: 1rem;
+    }
+
+    .note-icon:hover {
+        color: #ff8f00;
+        transform: scale(1.2);
+    }
+
+    /* Drag & Drop Hedef Alanı (Geliştirme için) */
+    .drop-zone {
+        border: 2px dashed transparent;
+        transition: all 0.3s;
+    }
+
+    .drop-zone.active {
+        background-color: #e8f5e9;
+        border-color: #4caf50;
+    }
+
+
+    /* Gruplu Dersler İçin Ek Stiller */
+    .lesson-group-container {
+        display: flex;
+        gap: 4px;
+        height: 100%;
+    }
+
+    .lesson-group-container .lesson-card {
+        flex: 1;
+        margin-bottom: 0;
+        min-width: 0;
+        /* İçerik taşmasını önler */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+
+    .lesson-group-container .lesson-name {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lesson-group-container .lesson-meta {
+        font-size: 0.75rem;
+    }
+
+    .lesson-group-container .lesson-lecturer,
+    .lesson-group-container .lesson-classroom {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* --- Ders Türü ve Renk Tanımlamaları --- */
+
+    /* Varsayılan Değerler (Lesson Card temel) */
+    .lesson-card {
+        --bg-start: #e3f2fd;
+        /* Normal Mavi */
+        --border-color: #2196f3;
+        --text-color-primary: #1565c0;
+
+        background-color: var(--bg-start);
+        border-left: 4px solid var(--border-color);
+        color: #546e7a;
+    }
+
+    .lesson-card .lesson-name {
+        color: var(--text-color-primary);
+    }
+
+    /* 1. Ders Türleri (Base Types) */
+
+    /* Normal Ders */
+    .lesson-type-normal {
+        --bg-start: #e3f2fd;
+        --border-color: #2196f3;
+        --text-color-primary: #1565c0;
+    }
+
+    /* Lab Dersi (Turuncu) */
+    .lesson-type-lab {
+        --bg-start: #fff3e0;
+        --border-color: #ff9800;
+        --text-color-primary: #e65100;
+    }
+
+    /* UZEM / Uzaktan Eğitim (Yeşil) */
+    .lesson-type-uzem {
+        --bg-start: #e0f2f1;
+        --border-color: #009688;
+        --text-color-primary: #00695c;
+    }
+
+    /* Bağlı Ders (Gri) */
+    .lesson-type-child {
+        --bg-start: #f5f5f5;
+        --border-color: #9e9e9e;
+        --text-color-primary: #424242;
+        color: #616161;
+    }
+
+    /* Ana Ders (Mor) */
+    .lesson-type-parent {
+        --bg-start: #f3e5f5;
+        --border-color: #9c27b0;
+        --text-color-primary: #7b1fa2;
+    }
+
+    /* 2. Grup Tanımlamaları (Gradient Mixins) */
+    /* Grup rengi border'ı ezmez, sadece background gradient ve opsiyonel text rengi ekler */
+
+    /* Grup A (Indigo) */
+    .lesson-group-1 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, #e8eaf6 100%);
+        /*border-color: #3f51b5 !important;*/
+        border-width: 2px;
+
+    }
+
+
+    /* Grup B (Pink) */
+    .lesson-group-2 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, #fce4ec 100%);
+        /*border-color: #e91e63 !important;*/
+        border-width: 2px;
+    }
+
+    /* Grup C (Deep Purple) */
+    .lesson-group-3 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, #ede7f6 100%);
+        /*border-color: #673ab7 !important;*/
+        border-width: 2px;
+    }
+
+    /* Grup D (Cyan) */
+    .lesson-group-4 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, #e0f7fa 100%);
+        /*border-color: #009688 !important;*/
+        border-width: 2px;
+    }
+
+    /* Context Menu Styles */
+    .context-menu {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        padding: 6px 0;
+        min-width: 200px;
+        transition: opacity 0.2s ease;
+    }
+
+    .context-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #333;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.2s;
+    }
+
+    .context-menu-item:hover {
+        background-color: #f1f3f5;
+        color: #007bff;
+    }
+
+    .context-menu-item i {
+        font-size: 16px;
+    }
+
+    .toast-body {
+        white-space: pre-wrap;
+    }

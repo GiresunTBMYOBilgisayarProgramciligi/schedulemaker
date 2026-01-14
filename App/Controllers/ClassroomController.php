@@ -44,7 +44,7 @@ class ClassroomController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
 
@@ -88,7 +88,7 @@ class ClassroomController extends Controller
                 // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
                 throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             } else {
-                throw new Exception($e->getMessage(), (int)$e->getCode(), $e);
+                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
             }
         }
     }
@@ -100,12 +100,7 @@ class ClassroomController extends Controller
     public function delete(int $id): void
     {
         $classroom = (new Classroom())->find($id) ?: throw new Exception("Silinecek derslik bulunamadı");
-        // ilişkili tüm programı sil //todo bu silme işlemi findLessonSchedules da olduğu gibi olmalı
-        $schedules = (new Schedule())->get()->where(["owner_type" => "classroom", "owner_id" => $id])->all();
-        foreach ($schedules as $schedule) {
-            $schedule->delete();
-        }
-
+        (new ScheduleController())->wipeResourceSchedules('classroom', $id);
         $classroom->delete();
     }
 

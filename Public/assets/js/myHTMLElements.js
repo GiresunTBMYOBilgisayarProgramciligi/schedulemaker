@@ -11,7 +11,7 @@ class Modal {
         this.confirmButton = "";
         this.modal = "";
 
-        this.spinner = ""
+        this.sizes = { "sm": "modal-sm", "md": "modal-md", "lg": "modal-lg", "xl": "modal-xl" };
         this.isOpen = false;
 
         if (existingModalId) {
@@ -20,6 +20,7 @@ class Modal {
             this.initializeModal();
         }
     }
+
 
     useExistingModal(modalId) {
         this.modal = document.getElementById(modalId);
@@ -41,9 +42,7 @@ class Modal {
      *
      * @param size sm,lg,xl modal size
      */
-    initializeModal(size = "sm") {//todo arkaplan rengi için de sını f seçimi ekle Tosastta olduğu gibi
-        let sizes = {"sm": "modal-sm", "lg": "modal-lg", "xl": "modal-xl"}
-
+    initializeModal() {//todo arkaplan rengi için de sını f seçimi ekle Tosastta olduğu gibi
         this.modal = document.createElement("div");
         this.modal.classList.add("modal", "fade");
         this.modal.id = "ajaxModal";
@@ -52,7 +51,7 @@ class Modal {
         this.modal.setAttribute("aria-hidden", "true");
 
         this.dialog = document.createElement("div");
-        this.dialog.classList.add("modal-dialog", sizes[size]);
+        this.dialog.classList.add("modal-dialog", "modal-dialog-scrollable");
 
         this.content = document.createElement("div");
         this.content.classList.add("modal-content");
@@ -102,9 +101,15 @@ class Modal {
         this.modal.appendChild(this.dialog);
     }
 
-    prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true) {
+    prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true, size = "sm") {
         this.title.innerHTML = title?.trim();
         this.body.innerHTML = content.trim()
+
+        // Boyutlandırma mantığı
+        Object.values(this.sizes).forEach(sizeClass => this.dialog.classList.remove(sizeClass));
+        if (this.sizes[size]) {
+            this.dialog.classList.add(this.sizes[size]);
+        }
 
         if (!showConfirmButton) {
             this.confirmButton.remove();
@@ -151,7 +156,7 @@ class Modal {
             this.modal.remove();
         });
     }
-    hideModal(){
+    hideModal() {
         // Bootstrap modal kapatma işlemi
         const bootstrapModal = bootstrap.Modal.getInstance(this.modal);
         if (bootstrapModal) {
@@ -227,7 +232,11 @@ class Toast {
         `;
         this.header.appendChild(this.closeButton);
 
-        this.body.textContent = message;
+        if (Array.isArray(message)) {
+            this.body.innerHTML = `<ul class="mb-0 ps-3">${message.map(m => `<li>${m}</li>`).join('')}</ul>`;
+        } else {
+            this.body.textContent = message;
+        }
 
         // Tipine göre sınıf ekle
         this.toast.classList.remove("text-bg-success", "text-bg-danger", "text-bg-info", "text-bg-warning");

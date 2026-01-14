@@ -12,6 +12,7 @@ class Lesson extends Model
 {
     public ?int $id = null;
     public ?string $code = null;
+    public ?int $group_no = null;
     public ?string $name = null;
     public ?int $size = null;
     public ?int $hours = null;
@@ -48,62 +49,240 @@ class Lesson extends Model
      */
     public ?int $placed_size = 0;
     public ?int $remaining_size = 0;
-    protected array $excludeFromDb = ['placed_hours', 'placed_size', 'remaining_size'];
+
+    public ?User $lecturer = null;
+    public ?Department $department = null;
+    public ?Program $program = null;
+    public ?Lesson $parentLesson = null;
+    public array $childLessons = [];
+    public array $schedules = [];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
     protected string $table_name = "lessons";
 
     /**
-     * @return User|null
+     * @param array $results
+     * @param array $options
+     * @return array
      * @throws Exception
      */
-    public function getLecturer(): User|null
+    public function getSchedulesRelation(array $results, array $options = []): array
     {
-        if (is_null($this->lecturer_id)) {
-            return new User(); //hoca tanımlı değilse boş kullanıcı dön
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $query = (new Schedule())->get()
+            ->where([
+                'owner_type' => 'lesson',
+                'owner_id' => ['in' => $ids]
+            ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
         }
-        return (new User())->find($this->lecturer_id);
+
+        $schedules = $query->all();
+
+        $schedulesGrouped = [];
+        foreach ($schedules as $schedule) {
+            $schedulesGrouped[$schedule->owner_id][] = $schedule;
+        }
+
+        foreach ($results as &$row) {
+            $row['schedules'] = $schedulesGrouped[$row['id']] ?? [];
+        }
+        return $results;
     }
 
     /**
-     * Dersin ait olduğu Bölüm/Department sınıfını döndürür
-     * @return Department|null
+     * @param array $results
+     * @param array $options
+     * @return array
      * @throws Exception
      */
-    public function getDepartment(): Department|null
+    public function getLecturerRelation(array $results, array $options = []): array
     {
-        return (new Department())->find($this->department_id);
+        $userIds = array_unique(array_column($results, 'lecturer_id'));
+        if (empty($userIds))
+            return $results;
+
+        $query = (new User())->get()->where(['id' => ['in' => $userIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $users = $query->all();
+        $usersKeyed = [];
+        foreach ($users as $user) {
+            $usersKeyed[$user->id] = $user;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['lecturer_id']) && isset($usersKeyed[$row['lecturer_id']])) {
+                $row['lecturer'] = $usersKeyed[$row['lecturer_id']];
+            } else {
+                $row['lecturer'] = null;
+            }
+        }
+        return $results;
     }
 
     /**
-     * Dersin ait olduğu program modelini döndürür
-     * @return Program|null
+     * @param array $results
+     * @param array $options
+     * @return array
      * @throws Exception
      */
-    public function getProgram(): Program|null
+    public function getDepartmentRelation(array $results, array $options = []): array
     {
-        return (new Program())->find($this->program_id);
+        $deptIds = array_unique(array_column($results, 'department_id'));
+        if (empty($deptIds))
+            return $results;
+
+        $query = (new Department())->get()->where(['id' => ['in' => $deptIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $departments = $query->all();
+        $departmentsKeyed = [];
+        foreach ($departments as $dept) {
+            $departmentsKeyed[$dept->id] = $dept;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['department_id']) && isset($departmentsKeyed[$row['department_id']])) {
+                $row['department'] = $departmentsKeyed[$row['department_id']];
+            } else {
+                $row['department'] = null;
+            }
+        }
+        return $results;
     }
 
     /**
-     * @return Lesson|null
+     * @param array $results
+     * @param array $options
+     * @return array
      * @throws Exception
      */
-    public function getParentLesson(): Lesson|null
+    public function getProgramRelation(array $results, array $options = []): array
     {
-        return (new Lesson())->find($this->parent_lesson_id);
+        $progIds = array_unique(array_column($results, 'program_id'));
+        if (empty($progIds))
+            return $results;
 
+        $query = (new Program())->get()->where(['id' => ['in' => $progIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $programs = $query->all();
+        $programsKeyed = [];
+        foreach ($programs as $prog) {
+            $programsKeyed[$prog->id] = $prog;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['program_id']) && isset($programsKeyed[$row['program_id']])) {
+                $row['program'] = $programsKeyed[$row['program_id']];
+            } else {
+                $row['program'] = null;
+            }
+        }
+        return $results;
     }
 
     /**
+     * @param array $results
+     * @param array $options
+     * @return array
      * @throws Exception
      */
-    public function getChildLessonList(): array
+    public function getParentLessonRelation(array $results, array $options = []): array
     {
-        return (new Lesson())->get()->where(["parent_lesson_id" => $this->id])->all();
+        $parentIds = array_unique(array_column($results, 'parent_lesson_id'));
+        // remove nulls
+        $parentIds = array_filter($parentIds);
+        if (empty($parentIds))
+            return $results;
+
+        $query = (new Lesson())->get()->where(['id' => ['in' => $parentIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
+        $lessonsKeyed = [];
+        foreach ($lessons as $lesson) {
+            $lessonsKeyed[$lesson->id] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['parent_lesson_id']) && isset($lessonsKeyed[$row['parent_lesson_id']])) {
+                $row['parentLesson'] = $lessonsKeyed[$row['parent_lesson_id']];
+            } else {
+                $row['parentLesson'] = null;
+            }
+        }
+        return $results;
     }
 
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getChildLessonsRelation(array $results, array $options = []): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $query = (new Lesson())->get()->where(['parent_lesson_id' => ['in' => $ids]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
+        $lessonsGrouped = [];
+        foreach ($lessons as $lesson) {
+            $lessonsGrouped[$lesson->parent_lesson_id][] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            $row['childLessons'] = $lessonsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @return string
+     */
     public function getFullName(): string
     {
         return trim($this->name . " (" . $this->code . ")");
+    }
+
+    /**
+     * Bağlı derslerin (veli ve tüm çocuklar) ID listesini döner.
+     * @return array
+     */
+    public function getLinkedLessonIds(): array
+    {
+        $rootId = $this->parent_lesson_id ?: $this->id;
+        $ids = [$rootId];
+        $children = (new Lesson())->get()->where(['parent_lesson_id' => $rootId])->all();
+        foreach ($children as $child) {
+            $ids[] = $child->id;
+        }
+        return array_unique($ids);
     }
 
     /**
@@ -128,79 +307,164 @@ class Lesson extends Model
      */
     public function IsScheduleComplete(string $type = "lesson"): bool
     {
-        $result = false;
-        if ($type == "lesson") {
-            //ders saati ile schedule programındaki satır saysı eşleşmiyorsa ders tamamlanmamış demektir
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $isExam = in_array($type, $examTypes);
+
+        if ($isExam) {
+            $linkedIds = $this->getLinkedLessonIds();
+            // Toplam grup mevcudunu hesapla
+            $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
+
+            // Tüm bağlı derslerin programlarını çek
             $schedules = (new Schedule())->get()->where([
-                'owner_id' => $this->id,
-                'semester_no' => $this->semester_no,
                 'owner_type' => 'lesson',
-                'academic_year' => $this->academic_year,
-                'type' => 'lesson',
-                'semester' => $this->semester
-            ])->all();
-            $this->placed_hours = 0;
-            foreach ($schedules as $schedule) {
-                for ($i = 0; $i <= getSettingValue('maxDayIndex', 'lesson', 4); $i++) {
-                    if (!is_null($schedule->{"day$i"})) {
-                        $this->placed_hours++;
-                    }
-                }
-            }
-
-            if ($this->placed_hours == $this->hours) {
-                $result = true;
-            }
-        } elseif ($type == "exam") {
-            // İlgili dönem/yıl için sınıf sahibi (owner_type=classroom) exam kayıtlarını al ve ders bazında kapasite topla
-            $examSchedules = (new Schedule())->get()->where([
-                'owner_type' => 'classroom',
-                'type' => 'exam',
+                'owner_id' => ['in' => $linkedIds],
+                'type' => $type,
                 'semester' => $this->semester,
-                'academic_year' => $this->academic_year,
-            ])->all();
+                'academic_year' => $this->academic_year
+            ])->with('items')->all();
+        } else {
+            $targetSize = isset($this->hours) ? $this->hours : 0;
+            $schedules = (new Schedule())->get()->where([
+                'owner_type' => 'lesson',
+                'owner_id' => $this->id,
+                'type' => $type,
+                'semester' => $this->semester,
+                'academic_year' => $this->academic_year
+            ])->with('items')->all();
+        }
 
-            // Ders bazında yerleştirilen kapasite
-            $placedCapacityByLesson = [];
-            $classroomCache = [];
-            // maxExamDayIndex ayarı
-            $maxExamDayIndex = getSettingValue('maxExamDayIndex', 'exam', 5);
+        $items = [];
+        foreach ($schedules as $schedule) {
+            foreach ($schedule->items as $item) {
+                $items[] = $item;
+            }
+        }
 
-            foreach ($examSchedules as $schedule) {
-                // owner_id derslik id'sidir (sınıf sahibi kayıt)
-                $classroomId = $schedule->owner_id;
-                if (!isset($classroomCache[$classroomId])) {
-                    $classroomCache[$classroomId] = (new Classroom())->find($classroomId);
-                }
-                $examSize = (int) ($classroomCache[$classroomId]->exam_size ?? 0);
-                for ($i = 0; $i <= $maxExamDayIndex; $i++) {
-                    $day = $schedule->{"day" . $i};
-                    if (is_array($day)) {
-                        if (isset($day[0]) && is_array($day[0])) {
-                            foreach ($day as $grp) {
-                                if (isset($grp['lesson_id'])) {
-                                    $lid = (int) $grp['lesson_id'];
-                                    $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                                }
-                            }
-                        } else {
-                            if (isset($day['lesson_id'])) {
-                                $lid = (int) $day['lesson_id'];
-                                $placedCapacityByLesson[$lid] = ($placedCapacityByLesson[$lid] ?? 0) + $examSize;
-                            }
+        $this->placed_size = 0;
+        if ($targetSize <= 0) {
+            $this->remaining_size = 0;
+            $this->placed_hours = 0;
+            return true;
+        }
+
+        if (empty($items)) {
+            $this->remaining_size = $targetSize;
+            $this->placed_hours = 0;
+            return false;
+        }
+
+        if ($isExam) {
+            // Aynı slotta (hafta, gün, saat) birden fazla derslikte sınav olabilir.
+            // Kullanıcı talebi: Derslik programlarına bakılmalı.
+            $uniqueClassroomSlots = []; // [ 'week-day-start-classId' => assignment_data ]
+
+            foreach ($items as $item) {
+                $detail = is_string($item->detail) ? json_decode($item->detail, true) : $item->detail;
+                if (isset($detail['assignments']) && is_array($detail['assignments'])) {
+                    foreach ($detail['assignments'] as $assignment) {
+                        $classId = $assignment['classroom_id'] ?? null;
+                        if ($classId) {
+                            $key = "{$item->week_index}_{$item->day_index}_{$item->start_time}_{$classId}";
+                            $uniqueClassroomSlots[$key] = [
+                                'classroom_id' => $classId,
+                                'week' => $item->week_index,
+                                'day' => $item->day_index,
+                                'start' => $item->start_time
+                            ];
                         }
                     }
                 }
             }
 
-            // Kalan öğrenci sayısı = ders mevcudu - yerleştirilen toplam kapasite
-            $this->placed_size = (int) ($placedCapacityByLesson[$this->id] ?? 0);
-            $this->remaining_size = max(0, (int) $this->size - $this->placed_size);
-            if ($this->remaining_size <= 0) {
-                $result = true;
+            foreach ($uniqueClassroomSlots as $slot) {
+                // Her derslik için o zamandaki resmi program kaydını (owner_type=classroom) bul
+                $classroomSchedule = (new Schedule())->get()->where([
+                    'owner_type' => 'classroom',
+                    'owner_id' => $slot['classroom_id'],
+                    'type' => $type,
+                    'semester' => $this->semester,
+                    'academic_year' => $this->academic_year
+                ])->first();
+
+                if ($classroomSchedule) {
+                    $classroomItem = (new ScheduleItem())->get()->where([
+                        'schedule_id' => $classroomSchedule->id,
+                        'week_index' => $slot['week'],
+                        'day_index' => $slot['day'],
+                        'start_time' => $slot['start']
+                    ])->first();
+
+                    if ($classroomItem) {
+                        $cDetail = is_string($classroomItem->detail) ? json_decode($classroomItem->detail, true) : $classroomItem->detail;
+                        if (isset($cDetail['assignments']) && is_array($cDetail['assignments'])) {
+                            foreach ($cDetail['assignments'] as $asgn) {
+                                if ($asgn['classroom_id'] == $slot['classroom_id']) {
+                                    $this->placed_size += (int) ($asgn['classroom_exam_size'] ?? 0);
+                                    break;
+                                }
+                            }
+                        } else {
+                            // Geriye dönük uyumluluk: getSlotDatas üzerinden
+                            foreach ($classroomItem->getSlotDatas() as $gd) {
+                                if (isset($gd->classroom) && $gd->classroom->id == $slot['classroom_id']) {
+                                    $this->placed_size += (int) ($gd->classroom->exam_size ?? 0);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            $this->logger()->debug("IsScheduleComplete(exam-classroom-verified) lesson {$this->id}: target={$targetSize}, placed={$this->placed_size}");
+        } else {
+            $lessonDuration = getSettingValue('duration', 'lesson', 50);
+            $breakDuration = getSettingValue('break', 'lesson', 10);
+            $totalSlotDuration = $lessonDuration + $breakDuration;
+
+            foreach ($items as $item) {
+                if ($item->status === 'unavailable' || $item->status === 'preferred') {
+                    continue;
+                }
+                $start = \DateTime::createFromFormat('H:i:s', $item->start_time) ?: \DateTime::createFromFormat('H:i', $item->start_time);
+                $end = \DateTime::createFromFormat('H:i:s', $item->end_time) ?: \DateTime::createFromFormat('H:i', $item->end_time);
+
+                if ($start && $end) {
+                    $diffMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
+                    $this->placed_size += round($diffMinutes / $totalSlotDuration);
+                }
+            }
+            $this->placed_hours = $this->placed_size;
         }
 
-        return $result;
+        $this->remaining_size = $targetSize - $this->placed_size;
+
+        return $this->remaining_size <= 0;
+    }
+
+    public function getScheduleCSSClass(): string
+    {
+        $isChild = !is_null($this->parent_lesson_id);
+
+        // 1. Ders Türü Belirleme
+        $typeClass = "lesson-type-normal"; // Varsayılan
+        if ($isChild) {
+            $typeClass = "lesson-type-child";
+        } elseif ($this->classroom_type == 2) {
+            $typeClass = "lesson-type-lab";
+        } elseif ($this->classroom_type == 3) {
+            $typeClass = "lesson-type-uzem";
+        }
+
+        // 2. Grup Belirleme (Opsiyonel Ek Sınıf)
+        $groupClass = "";
+        if ($this->group_no > 0) {
+            $groupClass = "lesson-group-" . $this->group_no;
+        }
+
+        // Nihai Sınıf Listesi
+        $finalClass = trim("$typeClass $groupClass");
+
+        return $finalClass;
     }
 }

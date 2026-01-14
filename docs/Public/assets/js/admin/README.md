@@ -1,0 +1,10 @@
+[🏠 Ana Sayfa](../../../../README.md) / [Public](../../../README.md) / [assets](../../README.md) / [js](../README.md) / **admin**
+
+---
+# Admin Paneli Scriptleri
+
+Bu dizindeki alt bileşenler:
+
+*   **[editSchedule](./editSchedule.md)**
+*   **[ScheduleCard](./ScheduleCard/README.md)**
+*   **[SingleScheduleHandler](./SingleScheduleHandler.md)**

@@ -1,6 +1,6 @@
 <?php
 /**
- * @var array $departments \App\Models\Department->getDepartmentsList())
+ * @var array $departments
  * @var \App\Models\Department $department
  * @var \App\Models\Program $program
  * @var string $page_title
