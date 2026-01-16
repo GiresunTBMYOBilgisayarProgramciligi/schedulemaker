@@ -93,6 +93,13 @@ class UserController extends Controller
                             'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
                         ]);
                     }
+                    // Log the login
+                    $userObj = new User();
+                    $userObj->fill((array) $user);
+                    $this->logger()->info($userObj->getFullName() . " giriş yaptı.", $this->logContext([
+                        'user_id' => $user->id,
+                        'username' => $userObj->getFullName()
+                    ]));
                 } else
                     throw new Exception("Şifre Yanlış");
             } else

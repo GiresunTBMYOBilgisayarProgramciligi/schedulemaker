@@ -24,6 +24,16 @@ class Department extends Model
     protected array $excludeFromDb = ['chairperson', 'programs', 'users', 'lessons'];
     protected string $table_name = "departments";
 
+    public function getLabel(): string
+    {
+        return "bölüm";
+    }
+
+    public function getLogDetail(): string
+    {
+        return $this->name ?? "ID: " . $this->id;
+    }
+
     /**
      * @param array $results
      * @param array $options

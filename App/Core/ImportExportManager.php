@@ -187,6 +187,10 @@ class ImportExportManager
                 }
             }
             $db->commit();
+
+            $username = $this->logContext()['username'] ?? "Sistem";
+            $this->logger()->info("$username Excel'den kullanıcıları içe aktardı. Eklendi: $addedCount, Güncellendi: $updatedCount, Hatalı: $errorCount", $this->logContext());
+
         } catch (Exception $e) {
             $db->rollBack();
             throw $e;
@@ -555,6 +559,10 @@ class ImportExportManager
     {
         // Önce filtreleri doğrula (AjaxRouter zaten yapmıştı ama garantiye alalım)
         $filters = (new FilterValidator())->validate($filters, "exportScheduleAction");
+
+        $username = $this->logContext()['username'] ?? "Sistem";
+        $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
+        $this->logger()->info("$username $ownerType bazlı ders programı çıktısı aldı. Filtreler: " . json_encode($filters, JSON_UNESCAPED_UNICODE), $this->logContext());
 
         // Kullanıcı tercihlerini al (Filtreler doğrulandıktan sonra)
         $showOptions = [

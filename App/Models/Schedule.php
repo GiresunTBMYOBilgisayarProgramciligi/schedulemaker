@@ -122,14 +122,20 @@ class Schedule extends Model
 
         return $instance;
     }
+    public function getScheduleTypeName(): string
+    {
+        return in_array($this->type, ['midterm-exam', 'final-exam', 'makeup-exam']) ? "sınav" : "ders";
+    }
+
     public function getScheduleScreenName(): string
     {
+        $typeLabel = $this->getScheduleTypeName() === "sınav" ? "Sınav" : "Ders";
         return match ($this->owner_type) {
-            "user" => (new User())->find($this->owner_id)?->getFullName() . " Ders Programı",
-            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName() . " Ders Programı",
-            "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . " Ders Programı",
-            "classroom" => (new Classroom())->find($this->owner_id)?->name . " Ders Programı",
-            default => "Ders Programı",
+            "user" => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
+            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
+            "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . ". Sınıf $typeLabel Programı",
+            "classroom" => (new Classroom())->find($this->owner_id)?->name . " $typeLabel Programı",
+            default => "$typeLabel Programı",
         };
     }
 }

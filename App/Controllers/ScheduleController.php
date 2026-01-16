@@ -729,6 +729,33 @@ class ScheduleController extends Controller
             if ($isInitiator) {
                 $this->database->commit();
             }
+
+            // Log the action
+            $user = (new UserController())->getCurrentUser();
+            $username = $user ? $user->getFullName() : "Sistem";
+            $scheduleId = $itemsData[0]['schedule_id'] ?? null;
+            $schedule = $scheduleId ? (new Schedule())->find($scheduleId) : null;
+            $screenName = $schedule ? $schedule->getScheduleScreenName() : "";
+            $typeLabel = $schedule ? $schedule->getScheduleTypeName() : "sınav";
+
+            // Tüm geçerli derslerin isimlerini topla
+            $lessonNames = [];
+            foreach ($itemsData as $item) {
+                $lId = $item['data'][0]['lesson_id'] ?? null;
+                if ($lId) {
+                    $lessonObj = (new Lesson())->find($lId);
+                    if ($lessonObj) {
+                        $name = $lessonObj->getFullName();
+                        if (!in_array($name, $lessonNames)) {
+                            $lessonNames[] = $name;
+                        }
+                    }
+                }
+            }
+            $lessonName = !empty($lessonNames) ? implode(", ", $lessonNames) : "Bilinmeyen Ders";
+
+            $this->logger()->info("$username $typeLabel programını düzenledi: Eklendi/Güncellendi. Program: $screenName, Ders: $lessonName", $this->logContext());
+
             return $createdIds;
         } catch (\Throwable $e) {
             if ($isInitiator) {
@@ -1001,6 +1028,35 @@ class ScheduleController extends Controller
             if ($isInitiator) {
                 $this->database->commit();
             }
+
+            // Log the action
+            $user = (new UserController())->getCurrentUser();
+            $username = $user ? $user->getFullName() : "Sistem";
+            $scheduleId = $itemsData[0]['schedule_id'] ?? null;
+            $schedule = $scheduleId ? (new Schedule())->find($scheduleId) : null;
+            $screenName = $schedule ? $schedule->getScheduleScreenName() : "";
+            $typeLabel = $schedule ? $schedule->getScheduleTypeName() : "ders";
+
+            // Tüm geçerli derslerin isimlerini topla
+            $lessonNames = [];
+            foreach ($itemsData as $item) {
+                if (!in_array($item['status'], ['preferred', 'unavailable'])) {
+                    $lId = $item['data']['lesson_id'] ?? null;
+                    if ($lId) {
+                        $lessonObj = (new Lesson())->find($lId);
+                        if ($lessonObj) {
+                            $name = $lessonObj->getFullName();
+                            if (!in_array($name, $lessonNames)) {
+                                $lessonNames[] = $name;
+                            }
+                        }
+                    }
+                }
+            }
+            $lessonName = !empty($lessonNames) ? implode(", ", $lessonNames) : "Bilinmeyen Ders";
+
+            $this->logger()->info("$username $typeLabel programını düzenledi: Eklendi/Güncellendi. Program: $screenName, Ders: $lessonName", $this->logContext());
+
             return $createdIds;
         } catch (\Throwable $e) {
             if ($isInitiator) {
@@ -1631,8 +1687,22 @@ class ScheduleController extends Controller
 
     public function deleteScheduleItems(array $items, bool $expandGroup = true): array
     {
-
-        //$this->logger()->debug("Delete ScheduleItems Data: ", ['items' => $items]);
+        // Log için silinmeden önce tüm ders adlarını topla
+        $lessonNames = [];
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                if (isset($item['id'])) {
+                    $si = (new ScheduleItem())->where(['id' => (int) $item['id']])->first();
+                    if ($si) {
+                        $name = $this->getLessonNameFromItem($si);
+                        if ($name && $name !== "Bilinmeyen Ders" && !in_array($name, $lessonNames)) {
+                            $lessonNames[] = $name;
+                        }
+                    }
+                }
+            }
+        }
+        $lessonName = !empty($lessonNames) ? implode(", ", $lessonNames) : "Bilinmeyen Ders";
 
         /**
          * silinen yada güncellenen ScheduleItem id'leri
@@ -1804,6 +1874,23 @@ class ScheduleController extends Controller
             if ($isInitiator) {
                 $this->database->commit();
             }
+
+            // Log the action
+            $user = (new UserController())->getCurrentUser();
+            $username = $user ? $user->getFullName() : "Sistem";
+
+            $scheduleId = $items[0]['schedule_id'] ?? null;
+            if (!$scheduleId && !empty($deletedIds)) {
+                $firstDeleted = (new ScheduleItem())->where(['id' => $deletedIds[0]])->first();
+                $scheduleId = $firstDeleted ? $firstDeleted->schedule_id : null;
+            }
+
+            $schedule = $scheduleId ? (new Schedule())->find($scheduleId) : null;
+            $screenName = $schedule ? $schedule->getScheduleScreenName() : "";
+            $typeLabel = $schedule ? $schedule->getScheduleTypeName() : "program";
+
+            $this->logger()->info("$username $typeLabel programını düzenledi: Silindi. Program: $screenName, Ders: $lessonName", $this->logContext());
+
         } catch (\Exception $e) {
             if ($isInitiator) {
                 $this->database->rollBack();

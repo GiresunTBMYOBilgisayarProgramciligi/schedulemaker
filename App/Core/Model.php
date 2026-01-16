@@ -28,7 +28,7 @@ class Model
             self::$database = Database::getConnection();
         }
     }
-        /**
+    /**
      * Shared application logger for all models.
      */
     protected function logger(): Logger
@@ -43,6 +43,22 @@ class Model
     protected function logContext(array $extra = []): array
     {
         return Log::context($this, $extra);
+    }
+
+    /**
+     * Modelin Türkçe adını döner (örn: ders, kullanıcı, derslik)
+     */
+    public function getLabel(): string
+    {
+        return $this->table_name;
+    }
+
+    /**
+     * Log mesajında gösterilecek detayı döner (örn: [BM101] Ders Adı)
+     */
+    public function getLogDetail(): string
+    {
+        return $this->id ? "ID: " . $this->id : "";
     }
     /*
      * Quey Builder
@@ -555,7 +571,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-            $this->logger()->info("Veri Eklendi", $this->logContext([$this]));
+            $this->logger()->info("Yeni " . $this->getLabel() . " ekledi: " . $this->getLogDetail(), $this->logContext([$this]));
         }
     }
 
@@ -590,7 +606,7 @@ class Model
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
-        $this->logger()->info("Veri Güncellendi", $this->logContext());
+        $this->logger()->info($this->getLabel() . " güncellendi: " . $this->getLogDetail(), $this->logContext());
         return $statement->execute();
     }
 
@@ -628,7 +644,7 @@ class Model
         if (!$statement->execute()) {
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
-            $this->logger()->info("Veri Silindi", $this->logContext(['statement' => $statement]));
+            $this->logger()->info($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
             return true;
         }
     }

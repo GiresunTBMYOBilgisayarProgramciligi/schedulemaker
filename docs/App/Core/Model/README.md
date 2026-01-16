@@ -42,4 +42,6 @@
 *   [sum()](./sum.md): Belirli bir sütunun toplamını döner.
 *   [is_data_serialized()](./is_data_serialized.md): Verinin seri halde olup olmadığını kontrol eder.
 *   [getArray()](./getArray.md): Model verilerini dizi olarak döner.
+*   [getLabel()](./getLabel.md): Modelin Türkçe etiket adını döner.
+*   [getLogDetail()](./getLogDetail.md): Loglarda gösterilecek nesne detayını döner.
 *   [getDepartmentProgramsList()](./getDepartmentProgramsList.md): Bölüme bağlı program listesini hazırlar.

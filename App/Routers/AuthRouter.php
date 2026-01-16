@@ -23,6 +23,11 @@ class AuthRouter extends Router
      */
     public function LogoutAction()
     {
+        $user = (new UserController())->getCurrentUser();
+        if ($user) {
+            $this->logger()->info($user->getFullName() . " çıkış yaptı.", $this->logContext());
+        }
+
         // Tüm session verilerini temizle
         session_unset();
 

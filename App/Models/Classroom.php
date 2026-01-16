@@ -25,6 +25,16 @@ class Classroom extends Model
     public array $schedules = [];
     protected array $excludeFromDb = ['schedules'];
     protected string $table_name = "classrooms";
+
+    public function getLabel(): string
+    {
+        return "derslik";
+    }
+
+    public function getLogDetail(): string
+    {
+        return $this->name ?? "ID: " . $this->id;
+    }
     /**
      * @param array $results
      * @param array $options

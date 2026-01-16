@@ -21,6 +21,16 @@ class Program extends Model
     protected array $excludeFromDb = ['department', 'users', 'lecturers', 'lessons', 'schedules'];
     protected string $table_name = "programs";
 
+    public function getLabel(): string
+    {
+        return "program";
+    }
+
+    public function getLogDetail(): string
+    {
+        return $this->name ?? "ID: " . $this->id;
+    }
+
     public function getSchedulesRelation(array $results, array $options = []): array
     {
         $ids = array_column($results, 'id');

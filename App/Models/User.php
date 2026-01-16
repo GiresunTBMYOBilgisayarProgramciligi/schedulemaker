@@ -33,6 +33,16 @@ class User extends Model
     protected array $excludeFromDb = ['department', 'program', 'schedules', 'lessons'];
     protected string $table_name = "users";
 
+    public function getLabel(): string
+    {
+        return "kullanıcı";
+    }
+
+    public function getLogDetail(): string
+    {
+        return $this->getFullName();
+    }
+
     /**
      * @param array $results
      * @param array $options

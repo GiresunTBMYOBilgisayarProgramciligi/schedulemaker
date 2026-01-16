@@ -56,8 +56,18 @@ class Lesson extends Model
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
     public array $schedules = [];
-    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
     protected string $table_name = "lessons";
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
+
+    public function getLabel(): string
+    {
+        return "ders";
+    }
+
+    public function getLogDetail(): string
+    {
+        return $this->getFullName();
+    }
 
     /**
      * @param array $results
