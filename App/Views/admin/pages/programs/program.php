@@ -86,7 +86,7 @@ use function App\Helpers\isAuthorized;
                                 <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-primary">Programı
                                     Düzenle</a>
                             <?php endif; ?>
-                            <?php if (isAuthorized("submanager", false, $program) and $currentUser->role == "department_head"): ?>
+                            <?php if (isAuthorized("submanager", false, $program) or $currentUser->role == "department_head"): ?>
                                 <a href="/admin/addlesson/<?= $program->id ?>" class="btn btn-success">Ders Ekle</a>
                                 <a href="/admin/adduser/<?= $program->department_id ?>/<?= $program->id ?>"
                                     class="btn btn-success">Hoca Ekle</a>

@@ -129,6 +129,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     // Select elementinin change olayını tetikle
                     programSelect.dispatchEvent(new Event("change"));
+
+                    // Eğer önceden seçilmesi gereken bir program varsa
+                    const selectedProgramId = programSelect.getAttribute('data-selected');
+                    if (selectedProgramId && selectedProgramId !== "0") {
+                        programSelect.value = selectedProgramId;
+                        programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli
+                        programSelect.dispatchEvent(new Event("change"));
+                    }
                 })
                 .catch(error => {
                     new Toast().prepareToast("Hata", "Programları alırken bir hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
@@ -169,5 +177,10 @@ document.addEventListener("DOMContentLoaded", function () {
             placeholder: placeholder
         });
     });
+
+    // Eğer sayfa yüklendiğinde bölüm seçili gelmişse (Yönlendirme ile gelmişse)
+    if (departmentSelect && departmentSelect.value !== "0") {
+        departmentSelect.dispatchEvent(new Event("change"));
+    }
 
 });

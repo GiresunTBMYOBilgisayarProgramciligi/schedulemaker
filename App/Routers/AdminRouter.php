@@ -107,8 +107,6 @@ class AdminRouter extends Router
      */
     public function AddUserAction(?int $department_id = null, ?int $program_id = null)
     {
-        // todo bir program sayfasında yada bölüm sayfasında hoca ekle utonuna tıklandığında o bölüm ve program otomatik seçili gelmeli 
-        // GET metodu ile yapılabilir
         if ($department_id) {
             $department = (new Department())->find($department_id) ?: throw new Exception("Bölüm Bulunamadı");
             if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
@@ -131,6 +129,8 @@ class AdminRouter extends Router
             "page_title" => "Kullanıcı Ekle",
             "userController" => new UserController(),
             "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "department_id" => $department_id,
+            "program_id" => $program_id
         ]);
 
         $this->callView("admin/users/adduser");
@@ -296,7 +296,7 @@ class AdminRouter extends Router
         $this->callView("admin/lessons/listlessons");
     }
 
-    public function AddLessonAction()
+    public function AddLessonAction(?int $program_id = null)
     {
         if (!isAuthorized("department_head")) {
             throw new Exception("Ders ekleme yetkiniz yok");
@@ -307,12 +307,19 @@ class AdminRouter extends Router
             "page_title" => "Ders Ekle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "lessonController" => new LessonController(),
-            "classroomTypes" => (new ClassroomController())->getTypeList()
+            "classroomTypes" => (new ClassroomController())->getTypeList(),
+            "program_id" => $program_id
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ['admin', 'user']])->all();
         } else
             $this->view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
+        if ($program_id) {
+            $program = (new Program())->find($program_id);
+            if ($program) {
+                $this->view_data['department_id'] = $program->department_id;
+            }
+        }
         $this->callView("admin/lessons/addlesson");
     }
 

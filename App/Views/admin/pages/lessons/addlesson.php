@@ -20,7 +20,9 @@ use function App\Helpers\getSettingValue;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0"><?= $page_title ?></h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -47,27 +49,23 @@ use function App\Helpers\getSettingValue;
                                 <div class="row">
                                     <div class="col-md-1">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="code">Kodu</label>
+                                            <label class="form-label" for="code">Kodu</label>
                                             <input type="text" class="form-control" id="code" name="code"
-                                                   placeholder="Kodu"
-                                                   required>
+                                                placeholder="Kodu" required>
                                         </div>
                                     </div>
                                     <div class="col-md-1">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="group_no">Grup No</label>
+                                            <label class="form-label" for="group_no">Grup No</label>
                                             <input type="number" class="form-control" id="group_no" name="group_no"
-                                                   placeholder="Grup No"
-                                                   value="0"
-                                                   min="0"
-                                                   required>
+                                                placeholder="Grup No" value="0" min="0" required>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="type">Türü</label>
+                                            <label class="form-label" for="type">Türü</label>
                                             <select class="form-select" id="type" name="type" required>
-                                                <?php foreach ($lessonController->getTypeList() as $id=>$type): ?>
+                                                <?php foreach ($lessonController->getTypeList() as $id => $type): ?>
                                                     <option value="<?= $id ?>"><?= $type ?></option>
                                                 <?php endforeach ?>
                                             </select>
@@ -75,9 +73,9 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="semester_no">Yarıyılı</label>
+                                            <label class="form-label" for="semester_no">Yarıyılı</label>
                                             <select class="form-select" id="semester_no" name="semester_no" required>
-                                                <?php foreach ($lessonController->getSemesterNoList() as $key=>$value): ?>
+                                                <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
                                                     <option value="<?= $key ?>"><?= $value ?></option>
                                                 <?php endforeach ?>
                                             </select>
@@ -85,37 +83,40 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="name">Adı</label>
+                                            <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" required>
+                                                placeholder="Adı" required>
 
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="hours">Ders Saati</label>
+                                            <label class="form-label" for="hours">Ders Saati</label>
                                             <input type="number" class="form-control" id="hours" name="hours"
-                                                   placeholder="Ders Saati" required>
+                                                placeholder="Ders Saati" required>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" required>
+                                            <label class="form-label" for="lecturer_id">Dersin Hocası</label>
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
+                                                required>
                                                 <option></option>
                                                 <?php foreach ($lecturers as $lecturer): ?>
-                                                    <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
+                                                    <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
+                                                    </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="classroom_type">Sınıf Türü</label>
-                                            <select class="form-select" id="classroom_type" name="classroom_type" required>
-                                                <?php foreach ($classroomTypes as $id=>$classroomType): ?>
+                                            <label class="form-label" for="classroom_type">Sınıf Türü</label>
+                                            <select class="form-select" id="classroom_type" name="classroom_type"
+                                                required>
+                                                <?php foreach ($classroomTypes as $id => $classroomType): ?>
                                                     <option value="<?= $id ?>"><?= $classroomType ?></option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -123,40 +124,45 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <div class="col-md-1">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="size">Mevcut</label>
+                                            <label class="form-label" for="size">Mevcut</label>
                                             <input type="number" class="form-control" id="size" name="size"
-                                                   placeholder="Mevcut" required>
+                                                placeholder="Mevcut" required>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id" required>
-                                                <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                            <label class="form-label" for="department_id">Bölüm</label>
+                                            <select class="form-select tom-select" id="department_id"
+                                                name="department_id" required>
+                                                <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>"><?= $department->name ?></option>
+                                                    <option value="<?= $department->id ?>" <?= (isset($department_id) && $department_id == $department->id) ? 'selected' : '' ?>>
+                                                        <?= $department->name ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label"  for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id" required>
+                                            <label class="form-label" for="program_id">Program</label>
+                                            <select class="form-select" id="program_id" name="program_id" required
+                                                data-selected="<?= $program_id ?? '' ?>">
                                                 <option>İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    
+
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
+                                            <label class="col-form-label"
+                                                for="settings[general][academic_year]">Dönem</label>
                                             <div class="input-group ">
                                                 <select class="form-select" id="academic_year" name="academic_year">
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>"
+                                                            <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                             <?= $year . ' - ' . $year + 1 ?>
                                                         </option>
                                                     <?php endfor; ?>
