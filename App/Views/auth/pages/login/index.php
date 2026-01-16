@@ -118,7 +118,6 @@
     <script src="/assets/js/gettext.php"></script>
     <script src="/assets/js/myHTMLElements.js"></script>
     <script src="/assets/js/ajax.js"></script>
-    <script type="module" src="/assets/js/custom.js"></script>
 
     <!--end::Script-->
 </body>

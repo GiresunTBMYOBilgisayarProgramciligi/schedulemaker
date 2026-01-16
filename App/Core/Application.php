@@ -39,8 +39,12 @@ class Application
     public function __construct()
     {
         $this->ParseURL();
-        $this->router = "App\\Routers\\" . $this->router;//namespace
-        $this->router = new $this->router;
+        $class = "App\\Routers\\" . $this->router;//namespace
+        if (!class_exists($class)) {
+            throw new Exception("Router class '$class' not found.");
+        }
+        /** @var object $this->router */
+        $this->router = new $class;
         if (method_exists($this->router, $this->action)) {
             call_user_func_array([$this->router, $this->action], $this->parameters);
         } else {

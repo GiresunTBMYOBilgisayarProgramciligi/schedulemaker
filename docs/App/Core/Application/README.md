@@ -11,8 +11,8 @@ Bir kullanıcı `/ajax/saveScheduleItem` adresine istek attığında süreç şu
 
 1.  **Giriş**: İstek `index.php` üzerinden uygulamaya girer. `Application` sınıfı başlatılır.
 2.  **İlklendirme**: `.env` dosyası ve yapılandırmalar yüklenir. Veritabanı bağlantısı (`Database`) ve `AssetManager` hazır hale getirilir.
-3.  **Routing**: URL, `Router` (veya `AjaxRouter`) tarafında analiz edilir.
-4.  **Controller & Action**: Router, `ScheduleController` sınıfını başlatır ve `saveScheduleItems` metoduna veriyi gönderir.
+3.  **Routing**: URL analiz edilerek ilgili Router sınıfının varlığı kontrol edilir. Sınıf bulunamazsa hata fırlatılır.
+4.  **Action**: Router içerisinde talebi karşılayacak metod çalıştırılır.
 5.  **Logic & DB**: Controller iş mantığını (çakışma kontrolü vb.) çalıştırır ve `Model` sınıfları üzerinden veritabanına yazar.
 6.  **Response**: Sonuç JSON/HTML formatında istemciye geri döner.
 
