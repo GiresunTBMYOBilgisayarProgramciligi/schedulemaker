@@ -762,20 +762,20 @@ class ScheduleCard {
     }
 
     async fetchAvailableClassrooms(classroomSelect, hours) {
+        const segments = this.generateScheduleItems(hours, null);
         let data = new FormData();
         data.append("schedule_id", this.id);
-        data.append("hours", hours);
-        data.append("startTime", this.draggedLesson.end_element.dataset.startTime);
-        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
+        data.append("items", JSON.stringify(segments));
         data.append("lesson_id", this.draggedLesson.lesson_id);
+        data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
         data.append("week_index", this.currentWeekIndex);
         await this.fetchOptions("/ajax/getAvailableClassroomForSchedule", classroomSelect, data, "Bir Sınıf Seçin");
     }
 
     async fetchAvailableObservers(observerSelect, hours) {
+        const segments = this.generateScheduleItems(hours, null);
         let data = new FormData();
-        data.append("hours", hours);
-        data.append("startTime", this.draggedLesson.end_element.dataset.startTime);
+        data.append("items", JSON.stringify(segments));
         data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
         data.append("week_index", this.currentWeekIndex);
         data.append("type", this.type);

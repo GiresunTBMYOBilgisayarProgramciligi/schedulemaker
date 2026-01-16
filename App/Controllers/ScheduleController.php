@@ -1455,7 +1455,8 @@ class ScheduleController extends Controller
         $schedule = (new Schedule())->where(["id" => $filters['schedule_id']])->with("items")->first() ?: throw new Exception("Uygun derslikleri berlirlemek için Program bulunamadı");
 
         /**
-         * dersin derslik türü ile aynı türdeki bütün derslikler scheduleları ile birlikte çağırılacak. ama schedule'ları henüz oluşturulmamış olabileceğinden bütün derslikler alınacak ve owner_type classroom olanve diğer bilgileri gelen schedule ile aynı olan schedule'ler firstOrCreate ile çağırılacak
+         * dersin derslik türü ile aynı türdeki bütün derslikler scheduleları ile birlikte çağırılacak. ama schedule'ları henüz oluşturulmamış olabileceğinden bütün derslikler alınacak
+         * ve owner_type classroom olan ve diğer bilgileri gelen schedule ile aynı olan schedule'ler firstOrCreate ile çağırılacak
          * filters['startTime'] ve filters['hours'] bilgisine göre endTime hesaplanacak
          * bütün dersliklerin schedule itemleri arasında belirtilen bağlangıç saati ve hesaplanan bitiş saati arasında bir schedule item varsa o derslik uygun olmayacaktır.
          * bu schedule'lerin 
@@ -1473,8 +1474,7 @@ class ScheduleController extends Controller
         }
 
         $availableClassrooms = [];
-        $startTime = new \DateTime($filters['startTime']);
-        $endTime = (clone $startTime)->modify('+' . $this->lessonHourToMinute($schedule->type, $filters['hours']) . ' minutes');
+        $itemsToCheck = json_decode($filters['items'], true) ?: [];
 
         foreach ($classrooms as $classroom) {
             $classroomSchedule = (new Schedule())->firstOrCreate([
@@ -1486,7 +1486,7 @@ class ScheduleController extends Controller
                 'academic_year' => $schedule->academic_year
             ]);
 
-            $items = (new ScheduleItem())->get()->where([
+            $existingItems = (new ScheduleItem())->get()->where([
                 'schedule_id' => $classroomSchedule->id,
                 'day_index' => $filters['day_index'],
                 'week_index' => $filters['week_index']
@@ -1495,10 +1495,12 @@ class ScheduleController extends Controller
             $isAvailable = true;
             // UZEM (3) tipi sınıflar her zaman uygun sayılır
             if ($classroom->type != 3) {
-                foreach ($items as $item) {
-                    if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
-                        $isAvailable = false;
-                        break;
+                foreach ($itemsToCheck as $checkItem) {
+                    foreach ($existingItems as $existingItem) {
+                        if ($this->checkOverlap($checkItem['start_time'], $checkItem['end_time'], $existingItem->start_time, $existingItem->end_time)) {
+                            $isAvailable = false;
+                            break 2;
+                        }
                     }
                 }
             }
@@ -1525,8 +1527,7 @@ class ScheduleController extends Controller
         $observers = (new UserController())->getListByFilters($observerFilters);
 
         $availableObservers = [];
-        $startTime = new \DateTime($filters['startTime']);
-        $endTime = (clone $startTime)->modify('+' . $this->lessonHourToMinute($filters['type'], $filters['hours']) . ' minutes');
+        $itemsToCheck = json_decode($filters['items'], true) ?: [];
 
         foreach ($observers as $observer) {
             $userSchedule = (new Schedule())->firstOrCreate([
@@ -1538,17 +1539,19 @@ class ScheduleController extends Controller
                 'academic_year' => $filters['academic_year']
             ]);
 
-            $items = (new ScheduleItem())->get()->where([
+            $existingItems = (new ScheduleItem())->get()->where([
                 'schedule_id' => $userSchedule->id,
                 'day_index' => $filters['day_index'],
                 'week_index' => $filters['week_index']
             ])->all();
 
             $isAvailable = true;
-            foreach ($items as $item) {
-                if ($this->checkOverlap($startTime->format('H:i'), $endTime->format('H:i'), $item->start_time, $item->end_time)) {
-                    $isAvailable = false;
-                    break;
+            foreach ($itemsToCheck as $checkItem) {
+                foreach ($existingItems as $existingItem) {
+                    if ($this->checkOverlap($checkItem['start_time'], $checkItem['end_time'], $existingItem->start_time, $existingItem->end_time)) {
+                        $isAvailable = false;
+                        break 2;
+                    }
                 }
             }
 

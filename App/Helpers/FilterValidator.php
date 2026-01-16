@@ -148,13 +148,13 @@ class FilterValidator
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [
-                'required' => ["schedule_id", 'hours', "startTime", "lesson_id", "day_index", "week_index"],
-                'optional' => [],
+                'required' => ["schedule_id", "items", "lesson_id", "day_index", "week_index"],
+                'optional' => ['hours', "startTime"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableObservers" => [
-                'required' => ["type", 'hours', "startTime", "day_index", "week_index"],
-                'optional' => [],
+                'required' => ["type", "items", "day_index", "week_index"],
+                'optional' => ['hours', "startTime"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "saveSchedulePreferenceAction" => [
