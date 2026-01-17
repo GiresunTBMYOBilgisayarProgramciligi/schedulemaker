@@ -23,7 +23,7 @@ use App\Models\User;
 use Exception;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 /**
  * todo Router görevi sedece gelen isteiği ilgili Controller a yönlendirmek. gerekl işlemleri ve dönülecek view i controller belirler.
@@ -51,12 +51,6 @@ class AjaxRouter extends Router
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
         }
-        $userController = new UserController();
-        // todo burada oturum kontrolü yapmak ana sayfadaki oturumsuz işlemleri engelleyebiliyor. yapılmazsa ne olur?
-        //if (!$userController->isLoggedIn()) {
-        //  throw new Exception("Oturumunuz sona ermiş. Lütfen tekrar giriş yapın", 330);
-        //} else $userController->getCurrentUser();
-        // todo ki zaten else kısmında getCurrent user ı tek başına çağırarak işe yaramadığını görmüş oluyorum ama düşünmek lazım
     }
 
     /**
@@ -125,9 +119,7 @@ class AjaxRouter extends Router
         if (is_null($userData['program_id']) or $userData['program_id'] == '0') {
             unset($userData['program_id']);
         }
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Kullanıcı oluşturma yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
         (new UserController())->saveNew($userData);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla eklendi.",
@@ -156,9 +148,7 @@ class AjaxRouter extends Router
         }
         $new_user = new User();
         $new_user->fill($userData);
-        if (!isAuthorized("submanager", false, $new_user)) {
-            throw new Exception("Kullanıcı bilgilerini güncelleme yetkiniz yok");
-        }
+        Gate::authorize("update", $new_user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
         $userId = $usersController->updateUser($new_user);
 
         $this->response = array(
@@ -173,10 +163,9 @@ class AjaxRouter extends Router
      */
     public function deleteUserAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception();
-        }
-        (new UserController())->delete($this->data['id']);
+        $user = (new User())->find($this->data['id']);
+        Gate::authorize("delete", $user, "Kullanıcı Silme yetkiniz yok");
+        $user->delete();
 
         $this->response = array(
             "msg" => "Kullanıcı başarıyla Silindi.",
@@ -209,9 +198,7 @@ class AjaxRouter extends Router
         }
         $new_lesson = new Lesson();
         $new_lesson->fill($lessonData);
-        if (!isAuthorized("submanager", false, $new_lesson)) {
-            throw new Exception("Yeni Ders oluşturma yetkiniz yok");
-        }
+        Gate::authorize("create", $new_lesson, "Yeni Ders oluşturma yetkiniz yok");
 
         $lesson = $lessonController->saveNew($new_lesson);
         if (!$lesson) {
@@ -244,16 +231,14 @@ class AjaxRouter extends Router
         /**
          * Hoca ve altı yetkive dersi veren kullanıcı ise
          */
-        if (isAuthorized("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
+        if (Gate::allowsRole("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
             $lessonData = [];
             $lessonData['id'] = $this->data['id'];
             $lessonData['size'] = $this->data['size'];
         }
         $lesson = new Lesson();
         $lesson->fill($lessonData);
-        if (!isAuthorized("submanager", false, $lesson)) {
-            throw new Exception("Ders güncelleme yetkiniz yok");
-        }
+        Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
 
         $lesson = $lessonController->updateLesson($lesson);
         $this->response = array(
@@ -270,16 +255,7 @@ class AjaxRouter extends Router
     public function deleteLessonAction(): void
     {
         $lesson = (new Lesson())->find($this->data['id']) ?: throw new Exception("Ders bulunamadı");
-        $currentUser = (new UserController())->getCurrentUser();
-        if (!isAuthorized("submanager", false, $lesson)) {
-            throw new Exception("Bu dersi silme yetkiniz yok");
-        }
-        /**
-         * Hoca altında yetki ve dersin sahibi değilse
-         */
-        if ($currentUser->id != $lesson->lecturer_id and isAuthorized("lecturer", true)) {
-            throw new Exception("Bu dersi silme yetkiniz yok");
-        }
+        Gate::authorize("delete", $lesson, "Bu dersi silme yetkiniz yok");
         (new LessonController())->delete($lesson->id);
 
         $this->response = array(
@@ -296,9 +272,7 @@ class AjaxRouter extends Router
     {
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
             $lessonController = new LessonController();
-            if (!isAuthorized('submanager')) {
-                throw new Exception("Ders birleştirme yetkiniz yok");
-            }
+            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
             $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
             $this->response = array(
                 "msg" => "Dersler Başarıyla birleştirildi.",
@@ -317,9 +291,7 @@ class AjaxRouter extends Router
     public function deleteParentLessonAction(): void
     {
         if (key_exists("id", $this->data)) {
-            if (!isAuthorized('submanager')) {
-                throw new Exception("Ders birşeltirmesi kaldırma yetkiniz yok");
-            }
+            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
             $lessonController = new LessonController();
             $lessonController->deleteParentLesson($this->data['id']);
             $this->response = array(
@@ -341,9 +313,7 @@ class AjaxRouter extends Router
      */
     public function addClassroomAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Yeni derslik oluşturma yetkiniz yok");
-        }
+        Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
         $classroomController = new ClassroomController();
         $classroomController->saveNew($this->data);
 
@@ -359,14 +329,11 @@ class AjaxRouter extends Router
      */
     public function updateClassroomAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Derslik güncelleme yetkiniz yok");
-        }
-
         $classroomController = new ClassroomController();
         $classroomData = $this->data;
         $classroom = new Classroom();
         $classroom->fill($classroomData);
+        Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
         $classroom = $classroomController->updateClassroom($classroom);
         $this->response = array(
             "msg" => "Derslik başarıyla Güncellendi.",
@@ -380,10 +347,10 @@ class AjaxRouter extends Router
      */
     public function deleteClassroomAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Derslik silme yetkiniz yok");
-        }
-        (new ClassroomController())->delete($this->data['id']);
+        $classroom = (new Classroom())->find($this->data['id']) ?: throw new Exception("Derslik bulunamadı");
+        Gate::authorize("delete", $classroom, "Derslik silme yetkiniz yok");
+        (new ScheduleController())->wipeResourceSchedules('classroom', $classroom->id);
+        $classroom->delete();
 
         $this->response = array(
             "msg" => "Derslik başarıyla silindi.",
@@ -400,9 +367,7 @@ class AjaxRouter extends Router
      */
     public function addDepartmentAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Yeni Bölüm oluşturma yetkiniz yok");
-        }
+        Gate::authorize("create", Department::class, "Yeni Bölüm oluşturma yetkiniz yok");
 
         $departmentController = new DepartmentController();
         $departmentController->saveNew($this->data);
@@ -419,9 +384,7 @@ class AjaxRouter extends Router
     public function updateDepartmentAction(): void
     {
         $department = (new Department())->find($this->data['id']);
-        if (!isAuthorized("submanager", false, $department)) {
-            throw new Exception("Bölüm Güncelleme yetkiniz yok");
-        }
+        Gate::authorize("update", $department, "Bölüm Güncelleme yetkiniz yok");
 
         $departmentController = new DepartmentController();
         $departmentController->updateDepartment($this->data);
@@ -437,9 +400,8 @@ class AjaxRouter extends Router
      */
     public function deleteDepartmentAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bölüm silme yetkiniz yok");
-        }
+        $department = (new Department())->find($this->data['id']);
+        Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
         (new DepartmentController())->delete($this->data['id']);
 
         $this->response = array(
@@ -457,9 +419,7 @@ class AjaxRouter extends Router
      */
     public function addProgramAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Yeni Program oluşturma yetkiniz yok");
-        }
+        Gate::authorize("create", Program::class, "Yeni Program oluşturma yetkiniz yok");
         $programController = new ProgramController();
         $programData = $this->data;
         $new_program = new Program();
@@ -484,9 +444,7 @@ class AjaxRouter extends Router
         $programController = new ProgramController();
         $programData = $this->data;
         $program = (new Program())->find($programData["id"]);
-        if (!isAuthorized("submanager", false, $program)) {
-            throw new Exception("Program güncelleme yetkiniz yok");
-        }
+        Gate::authorize("update", $program, "Program güncelleme yetkiniz yok");
 
         $programId = $programController->updateProgram($programData);
 
@@ -503,9 +461,7 @@ class AjaxRouter extends Router
      */
     public function deleteProgramAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Program silme yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Program silme yetkiniz yok");
         (new ProgramController())->delete($this->data['id']);
 
         $this->response = array(
@@ -583,9 +539,7 @@ class AjaxRouter extends Router
      */
     public function getAvailableClassroomForScheduleAction(): void
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Uygun ders listesini almak için yetkiniz yok");
-        }
+        Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
         $scheduleController = new ScheduleController();
         $classrooms = $scheduleController->availableClassrooms($this->data);
         $this->response['status'] = "success";
@@ -600,9 +554,7 @@ class AjaxRouter extends Router
      */
     public function getAvailableObserversForScheduleAction(): void
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Uygun gözetmen listesini almak için yetkiniz yok");
-        }
+        Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
         $scheduleController = new ScheduleController();
         $observers = $scheduleController->availableObservers($this->data);
         $this->response['status'] = "success";
@@ -1096,9 +1048,7 @@ class AjaxRouter extends Router
      */
     public function saveSettingsAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bu işlemi yapmak için yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
         $settingsController = new SettingsController();
         foreach ($this->data['settings'] as $group => $settings) {
             $settingData['group'] = $group;

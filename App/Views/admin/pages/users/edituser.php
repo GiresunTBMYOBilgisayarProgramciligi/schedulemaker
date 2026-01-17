@@ -8,7 +8,7 @@
  * @var $page_title
  */
 
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -88,7 +88,7 @@ use function App\Helpers\isAuthorized;
                                         <div class="mb-3">
                                             <label class="form-label" for="role">Rol</label>
                                             <select class="form-select" id="role"
-                                                    name="role" <?= isAuthorized("submanager") ? "" : "disabled" ?>>
+                                                    name="role" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
                                                 <?php foreach ($userController->getRoleList() as $role => $value): ?>
                                                     <option value="<?= $role ?>"
                                                         <?= $role == $user->role ? "selected" : "" ?>><?= $value ?></option>
@@ -99,7 +99,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
-                                            <select class="form-select" id="title" name="title" <?= isAuthorized("submanager") ? "" : "disabled" ?>>
+                                            <select class="form-select" id="title" name="title" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
                                                 <?php $titleList = $userController->getTitleList();
                                                 array_unshift($titleList, "");
                                                 foreach ($titleList as $title): ?>

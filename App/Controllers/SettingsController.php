@@ -4,8 +4,8 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Setting;
+use App\Core\Gate;
 use Exception;
-use function App\Helpers\isAuthorized;
 
 class SettingsController extends Controller
 {
@@ -118,9 +118,7 @@ class SettingsController extends Controller
      */
     public function clearLogsAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bu işlemi yapmak için yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
         try {
             $this->database->exec("TRUNCATE TABLE logs");
         } catch (Exception $e) {

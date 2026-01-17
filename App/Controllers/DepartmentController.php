@@ -8,7 +8,6 @@ use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
-use function App\Helpers\isAuthorized;
 
 class DepartmentController extends Controller
 {
@@ -41,7 +40,6 @@ class DepartmentController extends Controller
      */
     public function saveNew(array $department_data): int
     {
-        $this->logger()->info('Create department requested', $this->logContext(['payload' => ['name' => $department_data['name'] ?? null, 'chairperson_id' => $department_data['chairperson_id'] ?? null]]));
         try {
             $new_department = new Department();
             $new_department->fill($department_data);
@@ -92,10 +90,8 @@ class DepartmentController extends Controller
      */
     public function delete(int $id): void
     {
-        $this->logger()->info('Delete department requested', $this->logContext(['department_id' => $id]));
         $department = (new Department())->find($id) ?: throw new Exception("Silinecek Bölüm bulunamadı");
         //todo silinen bölüm ile ilgili diğer silme işlemleri
         $department->delete();
-        $this->logger()->info('Department deleted', $this->logContext(['department_id' => $id]));
     }
 }

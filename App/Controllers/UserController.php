@@ -12,7 +12,6 @@ use App\Core\Gate;
 use Exception;
 use PDO;
 use PDOException;
-use function App\Helpers\isAuthorized;
 
 class UserController extends Controller
 {
@@ -213,17 +212,17 @@ class UserController extends Controller
             "user" => "Kullanıcı",
             "lecturer" => "Akademisyen",
         ];
-        if (isAuthorized("admin")) {
+        if (Gate::allowsRole("admin")) {
             $list = array_merge(
                 $list,
                 ["department_head" => "Bölüm Başkanı", "submanager" => "Müdür Yardımcısı", "manager" => "Müdür", "admin" => "Yönetici"]
             );
-        } elseif (isAuthorized("manager")) {
+        } elseif (Gate::allowsRole("manager")) {
             $list = array_merge(
                 $list,
                 ["department_head" => "Bölüm Başkanı", "submanager" => "Müdür Yardımcısı", "manager" => "Müdür"]
             );
-        } elseif (isAuthorized("submanager")) {
+        } elseif (Gate::allowsRole("submanager")) {
             $list = array_merge(
                 $list,
                 ["department_head" => "Bölüm Başkanı",]
@@ -305,58 +304,6 @@ class UserController extends Controller
         return $this->getListByFilters($filters)[0] ?? false;
     }
 
-    /**
-     * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
-     * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
-     * @param int $actionLevel "admin" => 10,
-     * "manager" => 9,
-     * "submanager" => 8,
-     * "department_head" => 7,
-     * "lecturer" => 6,
-     * "user" => 5
-     * @param bool $reverse eğer true girilmişse belirtilen rolden düşük roller için yetki verir
-     * @param null $model Kullanıcı ile ilişkisi kontrol edilecek olan model
-     * @return bool
-     * @throws Exception
-     */
-    public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
-    {
-        $userController = new UserController();
-        $user = $userController->getCurrentUser();
-        if (!$user)
-            return false;
-
-        $isOwner = false;
-        if (!is_null($model)) {
-            // Model bazlı sahiplik kontrolünü Gate (Policies) üzerinden yap
-            // Varsayılan olarak 'update' aksiyonu sahiplik kontrolü için kullanılır
-            try {
-                $isOwner = Gate::check('update', $model);
-            } catch (Exception $e) {
-                // Politika bulunamazsa veya hata oluşursa sahiplik varsayılan olarak false
-                $isOwner = false;
-            }
-        }
-
-        $roleLevels = [
-            "admin" => 10,
-            "manager" => 9,
-            "submanager" => 8,
-            "department_head" => 7,
-            "lecturer" => 6,
-            "user" => 5
-        ];
-
-        $userRole = $user->role ?? 'user';
-        $userLevel = $roleLevels[$userRole] ?? 5;
-
-        $isAuthorizedRole = match ($reverse) {
-            true => $userLevel <= $actionLevel,
-            false => $userLevel >= $actionLevel
-        };
-
-        return $isAuthorizedRole or $isOwner;
-    }
 
     /**
      * @param int $id Silinecek dersin id numarası

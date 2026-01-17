@@ -9,7 +9,7 @@
  */
 
 use App\Models\Lesson;
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -68,11 +68,15 @@ use function App\Helpers\isAuthorized;
                                 <dd class="col-sm-4"><?= $lesson->semester_no . ". Yarıyıl" ?></dd>
                                 <dt class="col-sm-2">Bölüm</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/department/<?= $lesson->department_id ?>"><?= $lesson->department->name ?></a>
+                                    <a href="/admin/department/<?= $lesson->department_id ?>">
+                                        <?= $lesson->department->name ?>
+                                    </a>
                                 </dd>
                                 <dt class="col-sm-2">Program</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/program/<?= $lesson->program_id ?>"><?= $lesson->program->name ?></a>
+                                    <a href="/admin/program/<?= $lesson->program_id ?>">
+                                        <?= $lesson->program->name ?>
+                                    </a>
                                 </dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
                                 <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
@@ -128,11 +132,15 @@ use function App\Helpers\isAuthorized;
                             </dl>
                         </div>
                         <div class="card-footer text-end">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                data-bs-target="#CombineLessonModal">Ders Birleştir
-                            </button>
-                            <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
-                            <?php if (isAuthorized("department_head")): ?>
+                            <?php if (Gate::allowsRole("department_head")): ?>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#CombineLessonModal">Ders Birleştir
+                                </button>
+                            <?php endif; ?>
+                            <?php if (Gate::check("update", $lesson)): ?>
+                                <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-primary">Dersi Düzenle</a>
+                            <?php endif; ?>
+                            <?php if (Gate::check("delete", $lesson)): ?>
                                 <form action="/ajax/deletelesson/<?= $lesson->id ?>" class="ajaxFormDelete d-inline"
                                     method="post">
                                     <input type="hidden" name="id" value="<?= $lesson->id ?>">

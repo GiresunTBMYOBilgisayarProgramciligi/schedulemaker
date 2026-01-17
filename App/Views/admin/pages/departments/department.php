@@ -7,8 +7,7 @@
  * @var \App\Models\User $currentUser
  */
 
-use function App\Helpers\isAuthorized;
-
+use App\Core\Gate;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -77,16 +76,16 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer">
-                            <?php if (isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("update", $department)): ?>
                                 <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-primary">Bölümü
                                     Düzenle</a>
                                 <a href="/admin/addprogram/<?= $department->id ?>" class="btn btn-success">Program
                                     Ekle</a>
                             <?php endif; ?>
-                            <?php if ((isAuthorized("submanager", false, $department) and $currentUser->role == "department_head") or isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("edit", $department)): ?>
                                 <a href="/admin/adduser/<?= $department->id ?>" class="btn btn-success">Hoca Ekle</a>
                             <?php endif; ?>
-                            <?php if (isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("delete", $department)): ?>
                                 <form action="/ajax/deletedepartment/<?= $department->id ?>" class="ajaxFormDelete d-inline"
                                     id="deleteProgram-<?= $department->id ?>" method="post">
                                     <input type="hidden" name="id" value="<?= $department->id ?>">
@@ -128,24 +127,24 @@ use function App\Helpers\isAuthorized;
                                             <td><?= $program->name ?></td>
                                             <td><?= $program->department?->name ?? '' ?></td>
                                             <td>
-                                                <?php if (isAuthorized("department_head", false, $program)): ?>
+                                                <?php if (Gate::check("view", $program)): ?>
                                                     <div class="dropdown">
                                                         <button type="button" class="btn btn-primary dropdown-toggle"
                                                             data-bs-toggle="dropdown" aria-expanded="false">
                                                             İşlemler
                                                         </button>
                                                         <ul class="dropdown-menu">
-                                                            <?php if (isAuthorized("submanager", false, $program)): ?>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        href="/admin/program/<?= $program->id ?>">Gör</a>
-                                                                </li>
-                                                            <?php endif; ?>
-                                                            <?php if (isAuthorized("submanager")): ?>
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="/admin/program/<?= $program->id ?>">Gör</a>
+                                                            </li>
+                                                            <?php if (Gate::check("update", $program)): ?>
                                                                 <li>
                                                                     <a class="dropdown-item"
                                                                         href="/admin/editprogram/<?= $program->id ?>">Düzenle</a>
                                                                 </li>
+                                                            <?php endif; ?>
+                                                            <?php if (Gate::check("delete", $program)): ?>
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>
@@ -196,7 +195,7 @@ use function App\Helpers\isAuthorized;
                                         <th>Ünvanı Adı Soyadı</th>
                                         <th>e-Posta</th>
                                         <th>Program</th>
-                                        <?php if (isAuthorized("department_head")): ?>
+                                        <?php if (Gate::allowsRole("department_head")): ?>
                                             <th>İşlemler</th>
                                         <?php endif; ?>
                                     </tr>
@@ -207,7 +206,7 @@ use function App\Helpers\isAuthorized;
                                             <td><?= $lecturer->getFullName() ?></td>
                                             <td><?= $lecturer->mail ?></td>
                                             <td><?= $lecturer->program?->name ?? '' ?></td>
-                                            <?php if (isAuthorized("department_head")): ?>
+                                            <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td>
                                                     <div class="dropdown">
                                                         <button type="button" class="btn btn-primary dropdown-toggle"
@@ -223,7 +222,7 @@ use function App\Helpers\isAuthorized;
                                                                 <a class="dropdown-item"
                                                                     href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
                                                             </li>
-                                                            <?php if (isAuthorized("submanager")): ?>
+                                                            <?php if (Gate::check("delete", $lecturer)): ?>
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>
@@ -292,7 +291,7 @@ use function App\Helpers\isAuthorized;
                                             <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
                                             <td><?= $lesson->program?->name ?? '' ?></td>
                                             <td>
-                                                <?php if (isAuthorized("submanager", false, $lesson)): ?>
+                                                <?php if (Gate::check("view", $lesson)): ?>
                                                     <div class="dropdown">
                                                         <button type="button" class="btn btn-primary dropdown-toggle"
                                                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -303,11 +302,13 @@ use function App\Helpers\isAuthorized;
                                                                 <a class="dropdown-item"
                                                                     href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
                                                             </li>
+                                                            <?php if (Gate::check("edit", $lesson)): ?>
                                                             <li>
                                                                 <a class="dropdown-item"
                                                                     href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
                                                             </li>
-                                                            <?php if (isAuthorized("submanager", false, $lesson) and $currentUser->id == $department->chairperson_id): ?>
+                                                            <?php endif; ?>
+                                                            <?php if (Gate::check("delete", $lesson)): ?>
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>

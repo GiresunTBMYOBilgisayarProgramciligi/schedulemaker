@@ -5,7 +5,7 @@
  * @var array $users
  */
 
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -16,7 +16,9 @@ use function App\Helpers\isAuthorized;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0"><?= $page_title ?></h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -54,7 +56,7 @@ use function App\Helpers\isAuthorized;
                         <tbody>
                             <?php foreach ($users as $user): ?>
                                 <tr>
-                                    <!--<td><?php /*= $user->id */?></td>-->
+                                    <!--<td><?php /*= $user->id */ ?></td>-->
                                     <td><?= $user->getFullName() ?></td>
                                     <td><?= $user->mail ?></td>
                                     <td><?= $user->department->name ?? '' ?></td>
@@ -76,7 +78,7 @@ use function App\Helpers\isAuthorized;
                                                     <a class="dropdown-item"
                                                         href="/admin/edituser/<?= $user->id ?>">Düzenle</a>
                                                 </li>
-                                                <?php if (isAuthorized("submanager")): ?>
+                                                <?php if (Gate::check("delete", $user)): ?>
                                                     <li>
                                                         <hr class="dropdown-divider">
                                                     </li>

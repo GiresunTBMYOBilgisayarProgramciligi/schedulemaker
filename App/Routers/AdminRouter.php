@@ -20,11 +20,11 @@ use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Log;
 use App\Models\Program;
+use App\Core\Gate;
 use App\Models\User;
 use Exception;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
-use function App\Helpers\isAuthorized;
 
 /**
  * AdminRouter Sınıfı
@@ -75,11 +75,14 @@ class AdminRouter extends Router
             "programs" => (new Program())->get()->where(['active' => true])->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])->all(),
             "page_title" => "Anasayfa"
         ]);
-        //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
-        if (!is_null($this->currentUser->program_id))
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
-        else
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
+            //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
+            if (!is_null($this->currentUser->program_id)) {
+                $this->assetManager->addCss("/assets/css/schedule.css");
+                $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
+            } else {
+                $this->assetManager->addCss("/assets/css/schedule.css");
+                $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
+            }
         $this->callView("admin/index/index");
     }
 
@@ -88,9 +91,7 @@ class AdminRouter extends Router
      */
     public function ListUsersAction()
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Kullanıcı listesini görme yetkiniz yok");
-        }
+        Gate::authorize("view", User::class, false, "Kullanıcı listesini görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Listesi",
@@ -109,20 +110,18 @@ class AdminRouter extends Router
     {
         if ($department_id) {
             $department = (new Department())->find($department_id) ?: throw new Exception("Bölüm Bulunamadı");
-            if (!(isAuthorized("submanager") or $this->currentUser->id == $department->chairperson_id)) {
+            if (!(Gate::authorize("update", $department))) {
                 throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
             }
         }
         if ($program_id) {
             $program = (new Program())->find($program_id) ?: throw new Exception("Program bulunamadı");
-            if (!(isAuthorized("submanager") or $this->currentUser->id == $program?->getDepartment()?->chairperson_id)) {
+            if (!(Gate::authorize("update", $program))) {
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
         }
         if (!(isset($department) or isset($program))) {
-            if (!isAuthorized("submanager")) {
-                throw new Exception("Yeni kullanıcı ekleme yetkiniz yok");
-            }
+            Gate::authorizeRole("submanager", false, "Yeni kullanıcı ekleme yetkiniz yok");
         }
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
@@ -149,9 +148,7 @@ class AdminRouter extends Router
                 throw new Exception("Kullanıcı bulunamadı");
         }
 
-        if (!isAuthorized("submanager", false, $user)) {
-            throw new Exception("Bu profili görme yetkiniz yok");
-        }
+        Gate::authorize("view", $user, "Bu profili görme yetkiniz yok");
         $this->assetManager->loadPageAssets('profilepage');
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
@@ -214,9 +211,7 @@ class AdminRouter extends Router
         } else {
             $user = (new User())->find($id) ?: throw new Exception("Kullanıcı bulunamadı");
         }
-        if (!isAuthorized("submanager", false, $user)) {
-            throw new Exception("Kullanıcı düzenleme yetkiniz yok");
-        }
+        Gate::authorize("update", $user, "Kullanıcı düzenleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "user" => $user,
@@ -230,9 +225,7 @@ class AdminRouter extends Router
 
     public function importUsersAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Kullanıcı İçe aktarma yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Kullanıcı İçe aktarma yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => " Kullanıcı İçe aktar",
@@ -257,9 +250,7 @@ class AdminRouter extends Router
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
-        if (!isAuthorized("submanager", false, $lesson)) {
-            throw new Exception("Bu dersi görme yetkiniz yok");
-        }
+        Gate::authorize("view", $lesson, "Bu dersi görme yetkiniz yok");
         $this->assetManager->loadPageAssets('singlepages');
         $this->view_data = array_merge($this->view_data, [
             "lesson" => $lesson,
@@ -280,9 +271,7 @@ class AdminRouter extends Router
 
     public function ListLessonsAction()
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Ders listesini görme yetkiniz yok");
-        }
+        Gate::authorize("view", Lesson::class, false, "Ders listesini görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $lessonController = new LessonController();
         $this->view_data = array_merge($this->view_data, [
@@ -298,9 +287,7 @@ class AdminRouter extends Router
 
     public function AddLessonAction(?int $program_id = null)
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Ders ekleme yetkiniz yok");
-        }
+        Gate::authorize("create", Lesson::class, false, "Ders ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $userController = new UserController();
         $this->view_data = array_merge($this->view_data, [
@@ -332,11 +319,9 @@ class AdminRouter extends Router
         if (!is_null($id)) {
             $lesson = (new Lesson())->find($id) ?: throw new Exception("Ders bulunamadı");
         } else {
-            throw new Exception("Belirtilen ders bulunamadı");
+            throw new Exception("Ders id numarası belirtilmelidir");
         }
-        if (!isAuthorized("submanager", false, $lesson)) {
-            throw new Exception("Bu dersi düzenleme yetkiniz yok");
-        }
+        Gate::authorize("update", $lesson, "Bu dersi düzenleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "lessonController" => new LessonController(),
@@ -360,9 +345,7 @@ class AdminRouter extends Router
 
     public function importLessonsAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Ders İçe aktarma yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Ders İçe aktarma yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => " Ders İçe aktar",
@@ -378,9 +361,7 @@ class AdminRouter extends Router
      */
     public function classroomAction($id = null)
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Derslik sayfasını görme yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Derslik sayfasını görme yetkiniz yok");
         if (!is_null($id)) {
             $classroom = (new Classroom())->where(['id' => $id])->with(['schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Derslik bulunamadı");
         } else {
@@ -405,9 +386,7 @@ class AdminRouter extends Router
 
     public function ListClassroomsAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Derslik listesini görme yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Derslik listesini görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $classroomController = new ClassroomController();
         $this->view_data = array_merge($this->view_data, [
@@ -420,9 +399,7 @@ class AdminRouter extends Router
 
     public function AddClassroomAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Yeni derslik ekleme yetkiniz yok");
-        }
+        Gate::authorize("create", Classroom::class, "Yeni derslik ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $classroomController = new ClassroomController();
         $this->view_data = array_merge($this->view_data, [
@@ -437,12 +414,10 @@ class AdminRouter extends Router
      */
     public function editClassroomAction($id = null)
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bu dersliği düzenleme yetkiniz yok");
-        }
         $classroomController = new ClassroomController();
         if (!is_null($id)) {
             $classroom = (new Classroom())->find($id) ?: throw new Exception("Derslik bulunamadı");
+            Gate::authorize("update", $classroom, "Bu dersliği düzenleme yetkiniz yok");
         } else {
             throw new Exception("Derslik Bulunamadı");
         }
@@ -467,9 +442,7 @@ class AdminRouter extends Router
         } else {
             throw new Exception("İd belirtilmemiş");
         }
-        if (!isAuthorized("submanager", false, $department)) {
-            throw new Exception("Bu bölüm sayfasını görme yetkiniz yok");
-        }
+        Gate::authorize("view", $department, "Bu bölüm sayfasını görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->assetManager->loadPageAssets('singlepages');
         $this->view_data = array_merge($this->view_data, [
@@ -481,22 +454,18 @@ class AdminRouter extends Router
 
     public function ListDepartmentsAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bölümler listesini görmek için yetkiniz yok");
-        }
+        Gate::authorize("view", Department::class, false, "Bölümler listesini görmek için yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "departments" => (new Department())->get()->with(["chairperson"])->all(),
             "page_title" => "Bölüm Listesi"
         ]);
-        $this->callView("admin/departments/listdepartments");
+        $this->callView("admin/departmnew ents/listdepnts");
     }
 
     public function AddDepartmentAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Yeni Bölüm ekleme yetkiniz yok");
-        }
+        Gate::authorize("create", Department::class, "Yeni Bölüm ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Bölüm Ekle",
@@ -510,12 +479,10 @@ class AdminRouter extends Router
      */
     public function editDepartmentAction($id = null)
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Bu bölümü düzenleme yetkiniz yok");
-        }
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
             $department = (new Department())->find($id) ?: throw new Exception("Bölüm bulunamadı");
+            Gate::authorize("update", $department, "Bu bölümü düzenleme yetkiniz yok");
         } else {
             throw new Exception("Bölüm bulunamadı");
         }
@@ -542,9 +509,7 @@ class AdminRouter extends Router
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }
-        if (!isAuthorized("submanager", false, $program)) {
-            throw new Exception("Bu programı görüntülemek için yetkiniz yok");
-        }
+        Gate::authorize("view", $program, "Bu programı görüntülemek için yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->assetManager->loadPageAssets('singlepages');
 
@@ -562,9 +527,7 @@ class AdminRouter extends Router
      */
     public function ListProgramsAction(): void
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Programlar listesini görmek için yetkiniz yok");
-        }
+        Gate::authorize("view", Program::class, false, "Programlar listesini görmek için yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "programs" => (new Program())->get()->with(['department'])->all(),
@@ -575,9 +538,7 @@ class AdminRouter extends Router
 
     public function AddProgramAction($department_id = null)
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Program ekleme yetkiniz yok");
-        }
+        Gate::authorize("create", Program::class, false, "Program ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Program Ekle",
@@ -589,18 +550,13 @@ class AdminRouter extends Router
 
     public function editProgramAction($id = null)
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Program düzenleme yetkiniz yok");
-        }
         $programController = new ProgramController();
         if (!is_null($id)) {
             $program = (new Program())->find($id) ?: throw new Exception("Program bulunamadı");
-            if (!$program) {
-                throw new Exception("Belirtilen Program bulunamadı");
-            }
         } else {
             throw new Exception("Program id numarası belirtilmelidir");
         }
+        Gate::authorize("update", $program, "Program düzenleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "programController" => $programController,
@@ -620,14 +576,11 @@ class AdminRouter extends Router
      */
     public function EditScheduleAction($department_id = null)
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Ders programı düzenleme yetkiniz yok");
-        }
+        Gate::authorizeRole("department_head", false, "Ders programı düzenleme yetkiniz yok");
         $this->assetManager->loadPageAssets('editschedule');
-        $userController = new UserController();
-        if ($userController->canUserDoAction(8)) {
+        if (Gate::allowsRole("submanager")) {
             $departments = (new Department())->get()->where(['active' => true])->all();
-        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+        } elseif (Gate::allowsRole("department_head") and $this->currentUser->role == "department_head") {
             $departments = (new Department())->get()->where(['active' => true, 'id' => $this->currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
@@ -647,14 +600,12 @@ class AdminRouter extends Router
 
     public function EditExamScheduleAction($department_id = null)
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Sınav programı düzenleme yetkiniz yok");
-        }
+        Gate::authorizeRole("department_head", false, "Sınav programı düzenleme yetkiniz yok");
         $this->assetManager->loadPageAssets('editexamschedule');
         $userController = new UserController();
-        if ($userController->canUserDoAction(8)) {
+        if (Gate::allowsRole("submanager")) {
             $departments = (new Department())->get()->where(['active' => true])->all();
-        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+        } elseif (Gate::allowsRole("department_head") and $this->currentUser->role == "department_head") {
             $departments = (new Department())->get()->where(['active' => true, 'id' => $this->currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
@@ -677,14 +628,12 @@ class AdminRouter extends Router
      */
     public function exportScheduleAction()
     {
-        if (!isAuthorized("department_head")) {
-            throw new Exception("Ders programı Dışa aktarma yetkiniz yok");
-        }
+        Gate::authorizeRole("department_head", false, "Ders programı Dışa aktarma yetkiniz yok");
         $userController = new UserController();
         $this->assetManager->loadPageAssets('exportschedule');
-        if ($userController->canUserDoAction(8)) {
+        if (Gate::allowsRole("submanager")) {
             $departments = (new Department())->get()->where(['active' => true])->all();
-        } elseif ($userController->canUserDoAction(7) and $this->currentUser->role == "department_head") {
+        } elseif (Gate::allowsRole("department_head") and $this->currentUser->role == "department_head") {
             $departments = [(new Department())->find($this->currentUser->department_id)] ?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
@@ -707,9 +656,7 @@ class AdminRouter extends Router
      */
     public function SettingsAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Ayarlar sayfasına erişim yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Ayarlar sayfasına erişim yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ayarlar",
@@ -720,9 +667,7 @@ class AdminRouter extends Router
 
     public function LogsAction()
     {
-        if (!isAuthorized("submanager")) {
-            throw new Exception("Kayıtlara erişim yetkiniz yok");
-        }
+        Gate::authorizeRole("submanager", false, "Kayıtlara erişim yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $logs = (new Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
         $this->view_data = array_merge($this->view_data, [

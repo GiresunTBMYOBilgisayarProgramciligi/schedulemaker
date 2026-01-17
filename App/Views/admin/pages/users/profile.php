@@ -7,7 +7,7 @@
  * @var string $scheduleHTML
  */
 
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -75,7 +75,7 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
-                            <?php if (isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("delete",$user)): ?>
                                 <form action="/ajax/deleteuser/<?= $user->id ?>"
                                       class="ajaxFormDelete"
                                       id="deleteUser-<?= $user->id ?>"

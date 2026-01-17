@@ -8,7 +8,7 @@ use App\Controllers\UserController;
 use Exception;
 
 /**
- * @param null $default İstenen ayar bulunamazsa dönülecek ön tanımlı değer
+ * @param mixed $default İstenen ayar bulunamazsa dönülecek ön tanımlı değer
  * @throws Exception
  */
 function getSettingValue($key = null, $group = "general", $default = null)
@@ -74,30 +74,6 @@ function getClassFromSemesterNo($semesterNo): string
     };
 }
 
-/**
- * işlemlerin yapılıp yapılamayacağına dair kontrolü yapan fonksiyon.
- * Eğer işlem için gerekli yetki seviyesi kullanıcının yetki seviyesinden küçükse kullanıcı işlemi yapmaya yetkilidir.
- * @param string $role "admin","manager", "submanager", "department_head", "lecturer", "user"
- * @param bool $reverse eğer true girilmişse belirtilen rolden düşük roller için yetki verir
- * @param null $model Denetim yapılan model
- * @return bool
- * @throws Exception
- */
-function isAuthorized(string $role, bool $reverse = false, $model = null): bool
-{
-    $roleLevels = [
-        "admin" => 10,
-        "manager" => 9,
-        "submanager" => 8,
-        "department_head" => 7,
-        "lecturer" => 6,
-        "user" => 5
-    ];
-    if (!isset($roleLevels[$role]))
-        throw new Exception("Yetkilendirme işlemi için doğru bir yetki belirtilmemiş: " . $role);
-
-    return UserController::canUserDoAction($roleLevels[$role], $reverse, $model);
-}
 
 /**
  * bir dizi içerisinde belirtilen string ile başlayan ilk anahtarı döner. Yoksa null döner

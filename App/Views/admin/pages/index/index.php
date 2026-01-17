@@ -10,6 +10,7 @@
  * @var \App\Models\User $currentUser
  * @var array $programs
  */
+use App\Core\Gate;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -111,7 +112,7 @@
                 <!-- ./col -->
             </div>
             <!-- /.row -->
-            <?php if (\App\Helpers\isAuthorized("manager", true)): ?>
+            <?php if (Gate::allowsRole("manager", true)): ?>
                 <h4><?= $currentUser->program->name ?? '' ?> Ders Programı</h4>
                 <?= $scheduleHTML ?>
             <?php else: ?>

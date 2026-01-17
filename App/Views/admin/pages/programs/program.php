@@ -8,7 +8,7 @@
  * @var \App\Models\User $currentUser
  */
 
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -82,16 +82,16 @@ use function App\Helpers\isAuthorized;
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
-                            <?php if (isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("update", $program)): ?>
                                 <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-primary">Programı
                                     Düzenle</a>
                             <?php endif; ?>
-                            <?php if (isAuthorized("submanager", false, $program) and $currentUser->role == "department_head"): ?>
+                            <?php if (Gate::check("update", $program)): ?>
                                 <a href="/admin/addlesson/<?= $program->id ?>" class="btn btn-success">Ders Ekle</a>
                                 <a href="/admin/adduser/<?= $program->department_id ?>/<?= $program->id ?>"
                                     class="btn btn-success">Hoca Ekle</a>
                             <?php endif; ?>
-                            <?php if (isAuthorized("submanager")): ?>
+                            <?php if (Gate::check("delete", $program)): ?>
                                 <form action="/ajax/deleteprogram/<?= $program->id ?>" class="ajaxFormDelete d-inline"
                                     id="deleteProgram-<?= $program->id ?>" method="post">
                                     <input type="hidden" name="id" value="<?= $program->id ?>">
@@ -121,7 +121,7 @@ use function App\Helpers\isAuthorized;
                                     <tr>
                                         <th scope="col">Ünvanı Adı Soyadı</th>
                                         <th scope="col">e-Posta</th>
-                                        <?php if (isAuthorized("department_head")): ?>
+                                        <?php if (Gate::allowsRole("department_head")): ?>
                                             <th scope="col" class="text-center">İşlemler</th>
                                         <?php endif; ?>
                                     </tr>
@@ -131,7 +131,7 @@ use function App\Helpers\isAuthorized;
                                         <tr>
                                             <td><?= $lecturer->getFullName() ?></td>
                                             <td><?= $lecturer->mail ?></td>
-                                            <?php if (isAuthorized("department_head")): ?>
+                                            <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
                                                     <div class="dropdown">
                                                         <button type="button" class="btn btn-primary dropdown-toggle"
@@ -147,7 +147,7 @@ use function App\Helpers\isAuthorized;
                                                                 <a class="dropdown-item"
                                                                     href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
                                                             </li>
-                                                            <?php if (isAuthorized("submanager")): ?>
+                                                            <?php if (Gate::check("delete", $lecturer)): ?>
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>
@@ -218,7 +218,7 @@ use function App\Helpers\isAuthorized;
                                             <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
                                             <td><?= $lesson->getClassroomTypeName() ?></td>
                                             <td class="text-center">
-                                                <?php if (isAuthorized("submanager", false, $lesson)): ?>
+                                                <?php if (Gate::check("view", $lesson)): ?>
                                                     <div class="dropdown">
                                                         <button type="button" class="btn btn-primary dropdown-toggle"
                                                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -229,11 +229,13 @@ use function App\Helpers\isAuthorized;
                                                                 <a class="dropdown-item"
                                                                     href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
                                                             </li>
+                                                            <?php if (Gate::check("update", $lesson)): ?>
                                                             <li>
                                                                 <a class="dropdown-item"
                                                                     href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
                                                             </li>
-                                                            <?php if (isAuthorized("submanager", false, $lesson) and $currentUser->id == $program->department?->chairperson_id): ?>
+                                                            <?php endif; ?>
+                                                            <?php if (Gate::check("delete", $lesson)): ?>
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>

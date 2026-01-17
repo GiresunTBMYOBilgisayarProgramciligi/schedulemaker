@@ -11,8 +11,7 @@
  * @var array $classroomTypes
  */
 
-use function App\Helpers\getSettingValue;
-use function App\Helpers\isAuthorized;
+use App\Core\Gate;
 
 ?>
 <!--begin::App Main-->
@@ -57,7 +56,7 @@ use function App\Helpers\isAuthorized;
                                                    placeholder="Kodu"
                                                    value="<?= $lesson->code ?>"
                                                    required
-                                                <?= isAuthorized("department_head") ? "" : "disabled" ?>
+                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>
                                             >
                                         </div>
                                     </div>
@@ -68,13 +67,14 @@ use function App\Helpers\isAuthorized;
                                                    placeholder="Grup No"
                                                    value="<?= $lesson->group_no ?>"
                                                    min="0"
+                                                   <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>
                                                    required>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="type">Türü</label>
-                                            <select class="form-select" id="type" name="type" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select" id="type" name="type" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lessonController->getTypeList() as $id=>$type): ?>
                                                     <option value="<?= $id ?>"
                                                         <?= $id == $lesson->type ? "selected" : "" ?>><?= $type ?></option>
@@ -86,7 +86,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="semester_no">Yarıyılı</label>
-                                            <select class="form-select" id="semester_no" name="semester_no" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select" id="semester_no" name="semester_no" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
                                                     <option value="<?= $key ?>"
                                                         <?= $key == $lesson->semester_no ? "selected" : "" ?>><?= $value ?></option>
@@ -98,14 +98,14 @@ use function App\Helpers\isAuthorized;
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $lesson->name ?>" required <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                                   placeholder="Adı" value="<?= $lesson->name ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="hours">Ders Saati</label>
                                             <input type="number" class="form-control" id="hours" name="hours"
-                                                   placeholder="Ders Saati" value="<?= $lesson->hours ?>" required <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                                   placeholder="Ders Saati" value="<?= $lesson->hours ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                 </div>
@@ -142,7 +142,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select tom-select" id="department_id" name="department_id" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
@@ -156,7 +156,7 @@ use function App\Helpers\isAuthorized;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id" <?= isAuthorized("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select" id="program_id" name="program_id" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lesson->getDepartmentProgramsList() as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $lesson->program_id ? 'selected' : '' ?>>

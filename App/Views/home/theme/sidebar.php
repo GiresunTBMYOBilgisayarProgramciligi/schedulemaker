@@ -2,7 +2,6 @@
 /**
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
  */
-use function App\Helpers\isAuthorized;
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -30,12 +29,7 @@ use function App\Helpers\isAuthorized;
         <!-- Sidebar Menu -->
         <nav class="mt-2">
             <!--begin::Sidebar Menu-->
-            <ul
-                    class="nav sidebar-menu flex-column"
-                    data-lte-toggle="treeview"
-                    role="menu"
-                    data-accordion="false"
-            >
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu" data-accordion="false">
                 <!-- Başlangıç-->
                 <li class="nav-item">
                     <a href="/admin" class="nav-link ">
