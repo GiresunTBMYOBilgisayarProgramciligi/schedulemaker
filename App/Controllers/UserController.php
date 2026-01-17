@@ -8,6 +8,7 @@ use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Core\Gate;
 use Exception;
 use PDO;
 use PDOException;
@@ -320,89 +321,23 @@ class UserController extends Controller
      */
     public static function canUserDoAction(int $actionLevel, bool $reverse = false, $model = null): bool
     {
-        $user = (new UserController)->getCurrentUser();
+        $userController = new UserController();
+        $user = $userController->getCurrentUser();
         if (!$user)
             return false;
+
         $isOwner = false;
         if (!is_null($model)) {
-            switch (get_class($model)) {
-                case "App\Models\User":
-                    /*
-                     * Aktif kullanıcı model kullanıcısı ise yada
-                     * Aktif kullanıcı model kullanıcısının bölüm başkanı ise
-                     */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = ($user->id == $model->id or ($department && $user->id == $department->chairperson_id));
-                    break;
-
-                case "App\Models\Lesson":
-                    /*
-                     * Aktif kullanıcı Dersin sahibi ise yada
-                     * Aktif kullanıcı Dersin bölüm başkanı ise
-                     */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = ($model->lecturer_id == $user->id or ($department && $user->id == $department->chairperson_id));
-                    break;
-
-                case "App\Models\Program":
-                    /*
-                     * Aktif kullanıcı Programın bölüm başkanı ise
-                     */
-                    $department = (new Department())->find($model->department_id);
-                    $isOwner = (($department && $user->id == $department->chairperson_id) or $user->program_id == $model->id);
-                    break;
-
-                case "App\Models\Department":
-                    /*
-                     * Aktif kullanıcı Bölüm başkanı ise
-                     */
-                    $isOwner = ($user->id == $model->chairperson_id or $user->department_id == $model->id);
-                    break;
-
-                case "App\Models\Schedule":
-                    /*
-                     * owner_type program, user, lesson, classroom
-                     */
-                    switch ($model->owner_type) {
-                        case "program":
-                            $program = (new Program())->where(["id" => $model->owner_id])->with(['department'])->first();
-                            if ($program) {
-                                $isOwner = ($program->department->chairperson_id == $user->id);
-                            } else {
-                                $isOwner = false;
-                            }
-                            break;
-
-                        case "user":
-                            $ScheduleUser = (new User())->where(["id" => $model->owner_id])->with(['department'])->first();
-                            if ($ScheduleUser) {
-
-                                if (!$ScheduleUser->department) {
-                                    $isOwner = true; // eğer hoca bir bölüme ait değilse tüm bölümlere ait sayılır
-                                } else {
-                                    $isOwner = ($ScheduleUser->department->chairperson_id == $user->id or $ScheduleUser->id == $user->id);
-                                }
-                            } else {
-                                $isOwner = false;
-                            }
-                            break;
-
-                        case "lesson":
-                            $lesson = (new Lesson())->where(["id" => $model->owner_id])->with(['department'])->first();
-                            if ($lesson) {
-                                $isOwner = ($lesson->department->chairperson_id == $user->id);
-                            } else {
-                                $isOwner = false;
-                            }
-                            break;
-
-                        case "classroom":
-                            $isOwner = true; // Sınıf için denetim yok
-                            break;
-                    }
-                    break;
+            // Model bazlı sahiplik kontrolünü Gate (Policies) üzerinden yap
+            // Varsayılan olarak 'update' aksiyonu sahiplik kontrolü için kullanılır
+            try {
+                $isOwner = Gate::check('update', $model);
+            } catch (Exception $e) {
+                // Politika bulunamazsa veya hata oluşursa sahiplik varsayılan olarak false
+                $isOwner = false;
             }
         }
+
         $roleLevels = [
             "admin" => 10,
             "manager" => 9,
@@ -411,10 +346,15 @@ class UserController extends Controller
             "lecturer" => 6,
             "user" => 5
         ];
+
+        $userRole = $user->role ?? 'user';
+        $userLevel = $roleLevels[$userRole] ?? 5;
+
         $isAuthorizedRole = match ($reverse) {
-            true => $roleLevels[$user->role] <= $actionLevel,
-            false => $roleLevels[$user->role] >= $actionLevel
+            true => $userLevel <= $actionLevel,
+            false => $userLevel >= $actionLevel
         };
+
         return $isAuthorizedRole or $isOwner;
     }
 

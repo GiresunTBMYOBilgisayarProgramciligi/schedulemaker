@@ -93,10 +93,10 @@ function isAuthorized(string $role, bool $reverse = false, $model = null): bool
         "lecturer" => 6,
         "user" => 5
     ];
-    if (!$roleLevels[$role])
-        throw new Exception("Yetkilendirme işlemi için doğru bir yetki belirtilmemiş");
-    return (new UserController())->canUserDoAction($roleLevels[$role], $reverse, $model);
+    if (!isset($roleLevels[$role]))
+        throw new Exception("Yetkilendirme işlemi için doğru bir yetki belirtilmemiş: " . $role);
 
+    return UserController::canUserDoAction($roleLevels[$role], $reverse, $model);
 }
 
 /**
