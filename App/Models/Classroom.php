@@ -26,6 +26,16 @@ class Classroom extends Model
     protected array $excludeFromDb = ['schedules'];
     protected string $table_name = "classrooms";
 
+    /**
+     * @throws Exception
+     */
+    protected function afterDelete(): void
+    {
+        if ($this->id) {
+            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('classroom', $this->id);
+        }
+    }
+
     public function getLabel(): string
     {
         return "derslik";

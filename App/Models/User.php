@@ -33,6 +33,16 @@ class User extends Model
     protected array $excludeFromDb = ['department', 'program', 'schedules', 'lessons'];
     protected string $table_name = "users";
 
+    /**
+     * @throws Exception
+     */
+    protected function afterDelete(): void
+    {
+        if ($this->id) {
+            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('user', $this->id);
+        }
+    }
+
     public function getLabel(): string
     {
         return "kullanıcı";

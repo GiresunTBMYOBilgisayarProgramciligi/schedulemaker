@@ -21,6 +21,22 @@ class Program extends Model
     protected array $excludeFromDb = ['department', 'users', 'lecturers', 'lessons', 'schedules'];
     protected string $table_name = "programs";
 
+    /**
+     * @throws Exception
+     */
+    protected function afterDelete(): void
+    {
+        if ($this->id) {
+            // Programa ait dersleri sil (Lesson::delete silme hooklarını tetikler)
+            $lessons = (new Lesson())->get()->where(['program_id' => $this->id])->all();
+            foreach ($lessons as $lesson) {
+                $lesson->delete();
+            }
+
+            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('program', $this->id);
+        }
+    }
+
     public function getLabel(): string
     {
         return "program";

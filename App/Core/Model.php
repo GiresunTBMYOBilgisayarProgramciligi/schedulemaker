@@ -611,6 +611,16 @@ class Model
     }
 
     /**
+     * Silme işlemi başarıyla uygulandıktan sonra çalıştırılacak hook.
+     * Alt sınıflar bu metodu override ederek silme sonrası işlemlerini (ilişkili veri temizliği vb.) yapabilir.
+     * @return void
+     */
+    protected function afterDelete(): void
+    {
+        // Varsayılan olarak bir şey yapmaz.
+    }
+
+    /**
      * Kayıt silme
      * @return bool
      * @throws Exception
@@ -645,6 +655,8 @@ class Model
             throw new Exception('Kayıt bulunamadı veya silinemedi.');
         } else {
             $this->logger()->info($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
+            // Silme sonrası hook'u çalıştır
+            $this->afterDelete();
             return true;
         }
     }

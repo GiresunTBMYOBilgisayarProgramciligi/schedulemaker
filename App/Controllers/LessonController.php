@@ -120,17 +120,6 @@ class LessonController extends Controller
     }
 
     /**
-     * @param int $id Silinecek dersin id numarası
-     * @throws Exception
-     */
-    public function delete(int $id): void
-    {
-        $lesson = (new Lesson())->find($id) ?: throw new Exception("Silinecek Ders bulunamadı");
-        (new ScheduleController())->wipeResourceSchedules('lesson', $id);
-        $lesson->delete();
-    }
-
-    /**
      * En yüksek dönem numarasını verir.
      * @return int|null
      */

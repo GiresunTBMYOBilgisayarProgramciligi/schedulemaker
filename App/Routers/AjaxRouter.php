@@ -256,7 +256,7 @@ class AjaxRouter extends Router
     {
         $lesson = (new Lesson())->find($this->data['id']) ?: throw new Exception("Ders bulunamadı");
         Gate::authorize("delete", $lesson, "Bu dersi silme yetkiniz yok");
-        (new LessonController())->delete($lesson->id);
+        $lesson->delete();
 
         $this->response = array(
             "msg" => "Ders Başarıyla Silindi.",
@@ -349,7 +349,6 @@ class AjaxRouter extends Router
     {
         $classroom = (new Classroom())->find($this->data['id']) ?: throw new Exception("Derslik bulunamadı");
         Gate::authorize("delete", $classroom, "Derslik silme yetkiniz yok");
-        (new ScheduleController())->wipeResourceSchedules('classroom', $classroom->id);
         $classroom->delete();
 
         $this->response = array(
@@ -402,7 +401,7 @@ class AjaxRouter extends Router
     {
         $department = (new Department())->find($this->data['id']);
         Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
-        (new DepartmentController())->delete($this->data['id']);
+        $department->delete();
 
         $this->response = array(
             "msg" => "Bölüm Başarıyla Silindi.",
@@ -461,8 +460,9 @@ class AjaxRouter extends Router
      */
     public function deleteProgramAction(): void
     {
-        Gate::authorizeRole("submanager", false, "Program silme yetkiniz yok");
-        (new ProgramController())->delete($this->data['id']);
+        $program = (new Program())->find($this->data['id']) ?: throw new Exception("Program bulunamadı");
+        Gate::authorize("delete", $program, "Program silme yetkiniz yok");
+        $program->delete();
 
         $this->response = array(
             "msg" => "Program Başarıyla Silindi.",

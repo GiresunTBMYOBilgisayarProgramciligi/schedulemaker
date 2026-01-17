@@ -83,15 +83,4 @@ class DepartmentController extends Controller
             }
         }
     }
-
-    /**
-     * @param int $id Silinecek dersin id numarası
-     * @throws Exception
-     */
-    public function delete(int $id): void
-    {
-        $department = (new Department())->find($id) ?: throw new Exception("Silinecek Bölüm bulunamadı");
-        //todo silinen bölüm ile ilgili diğer silme işlemleri
-        $department->delete();
-    }
 }

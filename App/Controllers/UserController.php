@@ -303,16 +303,4 @@ class UserController extends Controller
         $filters = $this->parseAcademicName($fullName);
         return $this->getListByFilters($filters)[0] ?? false;
     }
-
-
-    /**
-     * @param int $id Silinecek dersin id numarası
-     * @throws Exception
-     */
-    public function delete(int $id): void
-    {
-        $user = (new User())->find($id) ?: throw new Exception("Silinecek Kullanıcı bulunamadı");
-        (new ScheduleController())->wipeResourceSchedules('user', $id);
-        $user->delete();
-    }
 }

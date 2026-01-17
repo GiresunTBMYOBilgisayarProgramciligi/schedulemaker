@@ -59,6 +59,16 @@ class Lesson extends Model
     protected string $table_name = "lessons";
     protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
 
+    /**
+     * @throws Exception
+     */
+    protected function afterDelete(): void
+    {
+        if ($this->id) {
+            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('lesson', $this->id);
+        }
+    }
+
     public function getLabel(): string
     {
         return "ders";

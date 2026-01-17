@@ -77,15 +77,4 @@ class ProgramController extends Controller
             }
         }
     }
-
-    /**
-     * @param int $id Silinecek dersin id numarası
-     * @throws Exception
-     */
-    public function delete(int $id): void
-    {
-        $program = (new Program())->find($id) ?: throw new Exception("Silinecek Program bulunamadı");
-        (new ScheduleController())->wipeResourceSchedules('program', $id);
-        $program->delete();
-    }
 }

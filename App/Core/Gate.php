@@ -104,7 +104,6 @@ class Gate
     public static function allowsRole(string $role, bool $reverse = false): bool
     {
         $user = (new UserController())->getCurrentUser();
-        Log::logger()->debug("user: " . var_export($user->getArray(), true));
         if (!$user) {
             return false;
         }
