@@ -36,11 +36,9 @@ class User extends Model
     /**
      * @throws Exception
      */
-    protected function afterDelete(): void
+    protected function beforeDelete(): void
     {
-        if ($this->id) {
-            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('user', $this->id);
-        }
+        (new \App\Controllers\ScheduleController())->wipeResourceSchedules('user', $this->id);
     }
 
     public function getLabel(): string

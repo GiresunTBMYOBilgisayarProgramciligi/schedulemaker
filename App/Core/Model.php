@@ -611,17 +611,9 @@ class Model
     }
 
     /**
-     * Silme işlemi başarıyla uygulandıktan sonra çalıştırılacak hook.
-     * Alt sınıflar bu metodu override ederek silme sonrası işlemlerini (ilişkili veri temizliği vb.) yapabilir.
-     * @return void
-     */
-    protected function afterDelete(): void
-    {
-        // Varsayılan olarak bir şey yapmaz.
-    }
-
-    /**
-     * Kayıt silme
+     * Veritabanından kaydı siler.
+     * Silme işlemi transaction (işlem) içerisine alınmıştır.
+     * Silme öncesinde beforeDelete() hook'u çağrılır.
      * @return bool
      * @throws Exception
      */
@@ -636,29 +628,56 @@ class Model
             throw new Exception("Birincil yönetici hesabı silinemez.");
         }
 
-        if ($this->id) {
-            $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
-            $statement = self::$database->prepare($sql);
-            $statement->bindValue(':id', $this->id);
-        } elseif ($this->whereClause) {
-            $sql = "DELETE FROM {$this->table_name} WHERE " . $this->whereClause;
-            $statement = self::$database->prepare($sql);
-            // Parametreleri bağla
-            foreach ($this->parameters as $key => $value) {
-                $statement->bindValue($key, $value);
-            }
-        } else {
-            throw new Exception('Silinecek kayıt belirtilmemiş. ID yok veya where koşulu sağlanmamış.');
+        $isInitiator = !self::$database->inTransaction();
+        if ($isInitiator) {
+            self::$database->beginTransaction();
         }
 
-        if (!$statement->execute()) {
-            throw new Exception('Kayıt bulunamadı veya silinemedi.');
-        } else {
+        try {
+            // Silme işlemi öncesinde hook'u çalıştır (İlişkili veriler silinebilir)
+            $this->beforeDelete();
+
+            if ($this->id) {
+                $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
+                $statement = self::$database->prepare($sql);
+                $statement->bindValue(':id', $this->id);
+            } elseif ($this->whereClause) {
+                $sql = "DELETE FROM {$this->table_name} WHERE " . $this->whereClause;
+                $statement = self::$database->prepare($sql);
+                // Parametreleri bağla
+                foreach ($this->parameters as $key => $value) {
+                    $statement->bindValue($key, $value);
+                }
+            } else {
+                throw new Exception('Silinecek kayıt belirtilmemiş. ID yok veya where koşulu sağlanmamış.');
+            }
+
+            if (!$statement->execute()) {
+                throw new Exception('Kayıt bulunamadı veya silinemedi.');
+            }
+
             $this->logger()->info($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
-            // Silme sonrası hook'u çalıştır
-            $this->afterDelete();
+
+            if ($isInitiator) {
+                self::$database->commit();
+            }
             return true;
+        } catch (\Throwable $e) {
+            if ($isInitiator) {
+                self::$database->rollBack();
+            }
+            throw $e;
         }
+    }
+
+    /**
+     * Silme işlemi öncesinde çalıştırılacak hook.
+     * Alt sınıflar bu metodu override ederek silme öncesi işlemlerini (ilişkili veri temizliği vb.) yapabilir.
+     * @return void
+     */
+    protected function beforeDelete(): void
+    {
+        // Varsayılan olarak bir şey yapmaz.
     }
 
     /**

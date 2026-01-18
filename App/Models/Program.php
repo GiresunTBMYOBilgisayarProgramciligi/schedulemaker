@@ -24,16 +24,15 @@ class Program extends Model
     /**
      * @throws Exception
      */
-    protected function afterDelete(): void
+    protected function beforeDelete(): void
     {
-        if ($this->id) {
-            // Programa ait dersleri sil (Lesson::delete silme hooklarını tetikler)
-            $lessons = (new Lesson())->get()->where(['program_id' => $this->id])->all();
-            foreach ($lessons as $lesson) {
-                $lesson->delete();
-            }
+        // Önce ilişkili programları temizle
+        (new \App\Controllers\ScheduleController())->wipeResourceSchedules('program', $this->id);
 
-            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('program', $this->id);
+        // Sonra bağlı tüm dersleri sil (Böylece derslerin hookları tetiklenir)
+        $lessons = (new Lesson())->get()->where(['program_id' => $this->id])->all();
+        foreach ($lessons as $lesson) {
+            $lesson->delete();
         }
     }
 

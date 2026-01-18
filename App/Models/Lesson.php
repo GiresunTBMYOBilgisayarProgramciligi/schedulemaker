@@ -62,11 +62,9 @@ class Lesson extends Model
     /**
      * @throws Exception
      */
-    protected function afterDelete(): void
+    protected function beforeDelete(): void
     {
-        if ($this->id) {
-            (new \App\Controllers\ScheduleController())->wipeResourceSchedules('lesson', $this->id);
-        }
+        (new \App\Controllers\ScheduleController())->wipeResourceSchedules('lesson', $this->id);
     }
 
     public function getLabel(): string

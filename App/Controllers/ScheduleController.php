@@ -1621,68 +1621,24 @@ class ScheduleController extends Controller
 
     public function wipeResourceSchedules(string $ownerType, int $ownerId): void
     {
-        $this->logger()->info("wipeResourceSchedules START for $ownerType ID: $ownerId");
+        $this->logger()->debug("wipeResourceSchedules START for $ownerType ID: $ownerId");
 
         // 1. Varlığın kendi ana programlarını ve bu programlara ait tüm itemları sil
         $schedules = (new Schedule())->get()->where(['owner_type' => $ownerType, 'owner_id' => $ownerId])->all();
+        $this->logger()->debug("wipeResourceSchedules schedules count: " . count($schedules));
+        $this->logger()->debug("wipeResourceSchedules schedules: " . json_encode($schedules));
         foreach ($schedules as $schedule) {
-            // ScheduleItem'ları manuel silmek gerekebilir çünkü DB tarafında Cascade olmayabilir
             $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            $this->logger()->debug("wipeResourceSchedules items count: " . count($items));
+            $this->logger()->debug("wipeResourceSchedules items: " . json_encode($items));
             foreach ($items as $item) {
-                $item->delete();
+                // deleteScheduleItems metodu sibling'leri de bulup silecektir.
+                $this->deleteScheduleItems([$item->getArray()], false);
             }
             $schedule->delete();
         }
 
-        // 2. Diğer programlarda bu varlığın geçtiği ScheduleItem'ları bul ve temizle
-        $idKey = match ($ownerType) {
-            'lesson' => 'lesson_id',
-            'user' => 'lecturer_id',
-            'classroom' => 'classroom_id',
-            default => null,
-        };
-
-        if ($idKey) {
-            // Veri serialized formatta olduğu için LIKE ile arama yapıyoruz.
-            // Örn: "lesson_id";i:123; veya "lesson_id";s:3:"123";
-            $searchTermInteger = "\"$idKey\";i:$ownerId;";
-            $searchTermString = "\"$idKey\";s:" . strlen((string) $ownerId) . ":\"$ownerId\";";
-
-            $termInt = "%$searchTermInteger%";
-            $termStr = "%$searchTermString%";
-
-            $itemsInt = (new ScheduleItem())->get()
-                ->where(['data' => ['like' => $termInt]])
-                ->all();
-
-            $itemsStr = (new ScheduleItem())->get()
-                ->where(['data' => ['like' => $termStr]])
-                ->all();
-
-            $itemsToClean = array_merge($itemsInt, $itemsStr);
-            // Unique items
-            $idMap = [];
-            foreach ($itemsToClean as $it) {
-                $idMap[$it->id] = $it;
-            }
-            $itemsToClean = array_values($idMap);
-
-            if (!empty($itemsToClean)) {
-                $deleteData = [];
-                foreach ($itemsToClean as $item) {
-                    $deleteData[] = [
-                        'id' => $item->id,
-                        'start_time' => $item->start_time,
-                        'end_time' => $item->end_time,
-                        'data' => $item->data
-                    ];
-                }
-                // deleteScheduleItems metodu sibling'leri de bulup silecektir.
-                // Request objesi beklediği durumlar olabilir ama array desteği var.
-                $this->deleteScheduleItems($deleteData, false);
-            }
-        }
-        $this->logger()->info("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
+        $this->logger()->debug("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
     }
 
     public function deleteScheduleItems(array $items, bool $expandGroup = true): array
@@ -1725,19 +1681,16 @@ class ScheduleController extends Controller
         try {
             foreach ($items as $itemData) {
                 $id = (int) ($itemData['id'] ?? 0);
-                $this->logger()->debug("Checking Item ID in Loop: $id");
                 if (!$id)
                     continue;
 
                 if (in_array($id, $processedSiblingIds)) {
-                    $this->logger()->debug("Skipping ID $id (Already processed as sibling)");
                     continue;
                 }
 
                 // Ana öğeyi ve program tipini bul
                 $scheduleItem = (new ScheduleItem())->where(['id' => $id])->with('schedule')->first();
                 if (!$scheduleItem) {
-                    $this->logger()->debug("ScheduleItem $id not found in DB.");
                     continue;
                 }
 
@@ -1766,7 +1719,6 @@ class ScheduleController extends Controller
                 }
 
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
-                $this->logger()->debug("Found Siblings for ID $id: " . implode(', ', $siblingIds));
 
                 // 3. Bu kardeş grubu için İSTEKTEKİ (BULK) TÜM silme aralıklarını ve DERS ID'lerini topla
                 $rawIntervals = [];
@@ -1790,25 +1742,22 @@ class ScheduleController extends Controller
                                             // Tüm grubu dahil et (Grup = Parent + Tüm Çocuklar)
                                             $lObj = (new Lesson())->where(['id' => $lId])->with(['childLessons', 'parentLesson'])->first();
                                             if ($lObj) {
-                                                $allRelatedIds = [];
                                                 if ($lObj->parent_lesson_id) {
-                                                    $allRelatedIds[] = (int) $lObj->parent_lesson_id;
+                                                    if (!in_array((int) $lObj->parent_lesson_id, $targetLessonIds))
+                                                        $targetLessonIds[] = (int) $lObj->parent_lesson_id;
+
                                                     // Parent'ın diğer çocuklarını da bulmak için parent'ı yükle
                                                     $parentObj = (new Lesson())->where(['id' => $lObj->parent_lesson_id])->with(['childLessons'])->first();
-                                                    if ($parentObj && !empty($parentObj->childLessons)) {
-                                                        foreach ($parentObj->childLessons as $child) {
-                                                            $allRelatedIds[] = (int) $child->id;
+                                                    if ($parentObj) {
+                                                        foreach ($parentObj->childLessons as $cl) {
+                                                            if (!in_array((int) $cl->id, $targetLessonIds))
+                                                                $targetLessonIds[] = (int) $cl->id;
                                                         }
                                                     }
                                                 } elseif (!empty($lObj->childLessons)) {
-                                                    foreach ($lObj->childLessons as $child) {
-                                                        $allRelatedIds[] = (int) $child->id;
-                                                    }
-                                                }
-
-                                                foreach ($allRelatedIds as $rId) {
-                                                    if (!in_array($rId, $targetLessonIds)) {
-                                                        $targetLessonIds[] = $rId;
+                                                    foreach ($lObj->childLessons as $cl) {
+                                                        if (!in_array((int) $cl->id, $targetLessonIds))
+                                                            $targetLessonIds[] = (int) $cl->id;
                                                     }
                                                 }
                                             }
@@ -1819,7 +1768,6 @@ class ScheduleController extends Controller
                         }
                     }
                 }
-                $targetLessonIds = array_unique($targetLessonIds);
 
                 // Aralıkları sırala ve birleştir (bitişik dersler tek interval olsun)
                 usort($rawIntervals, fn($a, $b) => strcmp($a['start'], $b['start']));
@@ -1843,13 +1791,6 @@ class ScheduleController extends Controller
                 if (empty($mergedIntervals))
                     continue;
 
-                $this->logger()->debug("Processing Sibling Group for ID $id: ", [
-                    'siblingCount' => count($siblings),
-                    'ids' => $siblingIds,
-                    'intervals' => $mergedIntervals,
-                    'targetLessonIds' => $targetLessonIds
-                ]);
-
                 // 4. Her bir kardeşe silme/parçalama işlemini uygula
                 // Önemli: Önce tüm kardeşleri siliyoruz ki oluşturulacak parçalarla çakışmasın (Duplicate Entry önlemi)
                 foreach ($siblings as $sibling) {
@@ -1869,7 +1810,6 @@ class ScheduleController extends Controller
                 }
 
                 $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
-                $this->logger()->debug("Finished Sibling Group for ID $id. Processed IDs: ", ['list' => $processedSiblingIds]);
             }
             if ($isInitiator) {
                 $this->database->commit();

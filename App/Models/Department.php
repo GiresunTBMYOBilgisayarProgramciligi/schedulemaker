@@ -27,20 +27,18 @@ class Department extends Model
     /**
      * @throws Exception
      */
-    protected function afterDelete(): void
+    protected function beforeDelete(): void
     {
-        if ($this->id) {
-            // Bölüme ait programları sil (Program::delete silme hooklarını tetikler)
-            $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
-            foreach ($programs as $program) {
-                $program->delete();
-            }
+        // Bölüm silindiğinde ona bağlı tüm programları sil (Böylece programların hookları tetiklenir)
+        $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
+        foreach ($programs as $program) {
+            $program->delete();
+        }
 
-            // Bölüme ait dersleri sil (Lesson::delete silme hooklarını tetikler)
-            $lessons = (new Lesson())->get()->where(['department_id' => $this->id])->all();
-            foreach ($lessons as $lesson) {
-                $lesson->delete();
-            }
+        // Programı olmayan direkt bölüme bağlı dersler varsa (nadir durum ama mümkün)
+        $lessons = (new Lesson())->get()->where(['department_id' => $this->id])->all();
+        foreach ($lessons as $lesson) {
+            $lesson->delete();
         }
     }
 
