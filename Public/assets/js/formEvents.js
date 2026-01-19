@@ -178,8 +178,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Eğer sayfa yüklendiğinde bölüm seçili gelmişse (Yönlendirme ile gelmişse)
-    if (departmentSelect && departmentSelect.value !== "0") {
+    // Eğer sayfa yüklendiğinde bölüm seçili gelmişse ve program seçili değilse (Yönlendirme ile gelmişse)
+    if (departmentSelect && departmentSelect.value !== "0" && programSelect.value === "0") {
         departmentSelect.dispatchEvent(new Event("change"));
     }
 
