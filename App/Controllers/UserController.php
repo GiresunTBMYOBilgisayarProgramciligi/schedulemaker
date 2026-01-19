@@ -149,47 +149,16 @@ class UserController extends Controller
     public function updateUser(User $user): int
     {
         try {
+            $excluded = ['register_date', 'last_login'];
+
             // Şifre kontrolü ve hash işlemi
             if (!empty($user->password)) {
                 $user->password = password_hash($user->password, PASSWORD_DEFAULT);
             } else {
-                $user->password = null;
+                $excluded[] = 'password';
             }
 
-            // Kullanıcı verilerini filtrele
-            /*
-             * Array filter boş değerleri siliyor böylece şifre null değilse ise null değeri diziden silinmiş oluyor.
-             * Bu ekleme şifre boş bırakıldığında şifrenin silinmesi hatasını çözmek için eklendi
-             */
-            $userData = $user->getArray(array_filter([
-                'id',
-                'register_date',
-                'last_login',
-                !is_null($user->password) ? null : 'password'
-            ]), true);
-
-            // Sorgu ve parametreler için ayarlamalar
-            $columns = [];
-            $parameters = [];
-
-            foreach ($userData as $key => $value) {
-                $columns[] = "$key = :$key";
-                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
-            }
-
-            // WHERE koşulu için ID ekleniyor
-            $parameters["id"] = $user->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $user->update($excluded);
             return $user->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {

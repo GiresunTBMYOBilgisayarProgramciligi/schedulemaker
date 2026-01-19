@@ -59,29 +59,7 @@ class ClassroomController extends Controller
     public function updateClassroom(Classroom $classroom): int
     {
         try {
-            $classroomData = $classroom->getArray(['table_name', 'database', 'id'], true);
-            // Sorgu ve parametreler için ayarlamalar
-            $columns = [];
-            $parameters = [];
-
-            foreach ($classroomData as $key => $value) {
-                $columns[] = "$key = :$key";
-                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
-            }
-
-            // WHERE koşulu için ID ekleniyor
-            $parameters["id"] = $classroom->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $classroom->update();
             return $classroom->id;
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {

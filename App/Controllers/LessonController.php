@@ -76,38 +76,10 @@ class LessonController extends Controller
         }
     }
 
-    /**
-     * @param Lesson $lesson
-     * @return int
-     * @throws Exception
-     */
     public function updateLesson(Lesson $lesson): int
     {
         try {
-            // Lesson nesnesinden filtrelenmiş verileri al
-            $lessonData = $lesson->getArray(['table_name', 'database', 'id']);
-            // Sorgu ve placeholder'lar için başlangıç ayarları
-            $columns = [];
-            $parameters = [];
-
-            foreach ($lessonData as $key => $value) {
-                $columns[] = "$key = :$key";
-                $parameters[$key] = $value; // NULL dahil her değeri parametre olarak alıyoruz
-            }
-
-            // WHERE koşulu ekleniyor
-            $parameters["id"] = $lesson->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $lesson->update();
             return $lesson->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {

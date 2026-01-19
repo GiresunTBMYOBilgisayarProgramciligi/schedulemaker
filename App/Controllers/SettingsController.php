@@ -49,36 +49,10 @@ class SettingsController extends Controller
         }
     }
 
-    /**
-     * @param Setting $setting
-     * @return int
-     * @throws Exception
-     */
     public function updateSetting(Setting $setting): int
     {
         try {
-            $settingData = $setting->getArray(['table_name', "database", "id"]);
-            // Sorgu ve parametreler için ayarlamalar
-            $columns = [];
-            $parameters = [];
-
-            foreach ($settingData as $key => $value) {
-                $columns[] = "`$key` = :$key";
-                $parameters[$key] = $value; // NULL dahil tüm değerler parametre olarak ekleniyor
-            }
-
-            // WHERE koşulu için ID ekleniyor
-            $parameters["id"] = $setting->id;
-
-            // Dinamik SQL sorgusu oluştur
-            $query = sprintf(
-                "UPDATE %s SET %s WHERE id = :id",
-                $this->table_name,
-                implode(", ", $columns)
-            );
-            // Sorguyu hazırla ve çalıştır
-            $stmt = $this->database->prepare($query);
-            $stmt->execute($parameters);
+            $setting->update();
             return $setting->id;
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {

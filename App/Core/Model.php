@@ -548,10 +548,12 @@ class Model
             throw new Exception('Model düzgün oluşturulmamış: Tablo adı eksik.');
         }
         $data = $this->getArray(['id', "register_date", "last_login"]);
-        //dizi türündeki veriler serialize ediliyor
+        //dizi türündeki veriler serialize ediliyor. DateTime nesneleri string'e çevriliyor.
         array_walk($data, function (&$value) {
             if (is_array($value)) {
                 $value = serialize($value);
+            } elseif ($value instanceof \DateTime) {
+                $value = $value->format('Y-m-d H:i:s');
             }
         });
         $fields = array_keys($data);
@@ -579,26 +581,28 @@ class Model
     /**
      * @throws Exception
      */
-    public function update(): bool
+    public function update(array $additionalExclusions = [], bool $acceptNull = true): bool
     {
         // Alt sınıfta table_name tanımlı mı kontrol et
         if (empty($this->table_name) || empty($this->id)) {
             throw new Exception('Model düzgün oluşturulmamış: ID veya Tablo adı eksik.');
         }
-        $data = $this->getArray(['id'], true);
+        $data = $this->getArray(array_merge(['id'], $additionalExclusions), $acceptNull);
 
-        // dizi türündeki veriler serialize ediliyor
+        // dizi türündeki veriler serialize ediliyor. DateTime nesneleri string'e çevriliyor.
         array_walk($data, function (&$value) {
             if (is_array($value)) {
                 $value = serialize($value);
+            } elseif ($value instanceof \DateTime) {
+                $value = $value->format('Y-m-d H:i:s');
             }
         });
 
         $setStatements = array_map(function ($field) {
-            return "{$field} = :{$field}";
+            return "`{$field}`" . " = :{$field}";
         }, array_keys($data));
 
-        $sql = "UPDATE {$this->table_name} SET " . implode(', ', $setStatements) . " WHERE id = :id";
+        $sql = "UPDATE `{$this->table_name}` SET " . implode(', ', $setStatements) . " WHERE `id` = :id";
 
         $statement = self::$database->prepare($sql);
         $statement->bindValue(':id', $this->id);
