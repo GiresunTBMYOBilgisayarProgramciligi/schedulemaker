@@ -293,6 +293,15 @@ class AssetManager
                     'path' => "/assets/css/schedule.css"
                 ]
             ]
+        ],
+        'loginpage' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/ajax.js'
+                ],
+            ],
+            'css' => [
+            ]
         ]
     ];
 

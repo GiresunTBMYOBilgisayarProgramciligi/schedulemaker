@@ -8,9 +8,16 @@ use Exception;
 
 class AuthRouter extends Router
 {
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
     public function LoginAction()
     {
-        $this->callView("auth/login");
+        $this->view_data["page_title"] = "Giriş Yap";
+        $this->assetManager->loadPageAssets('loginpage');
+        $this->callView("auth/login/index");
     }
 
     public function RegisterAction()
@@ -65,7 +72,7 @@ class AuthRouter extends Router
                 }
 
                 $response = array(
-                    "msg" => "Kullanıcı başarıyla Giriş yaptı.",
+                    "msg" => "Kullanıcı başarıyla Giriş yaptı. Yönlendiriliyor...",
                     "redirect" => $redirect,
                     "status" => "success"
                 );
