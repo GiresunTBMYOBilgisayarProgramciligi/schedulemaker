@@ -1,4 +1,5 @@
 let dataTable = new DataTable('.dataTable', {
+    pageLength: 25,
     // config options...
     language: {
         url: '/assets/js/datatable_tr.json'
