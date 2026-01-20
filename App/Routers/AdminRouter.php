@@ -460,7 +460,7 @@ class AdminRouter extends Router
             "departments" => (new Department())->get()->with(["chairperson"])->all(),
             "page_title" => "Bölüm Listesi"
         ]);
-        $this->callView("admin/departmnew ents/listdepnts");
+        $this->callView("admin/departments/listdepartments");
     }
 
     public function AddDepartmentAction()
