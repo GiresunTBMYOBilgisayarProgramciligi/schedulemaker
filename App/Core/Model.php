@@ -573,7 +573,7 @@ class Model
 
         if ($statement->execute()) {
             $this->id = self::$database->lastInsertId();
-            $this->logger()->info("Yeni " . $this->getLabel() . " ekledi: " . $this->getLogDetail(), $this->logContext([$this]));
+            $this->logger()->debug("Yeni " . $this->getLabel() . " ekledi: " . $this->getLogDetail(), $this->logContext([$this]));
         }
     }
 
@@ -610,7 +610,7 @@ class Model
         foreach ($data as $field => $value) {
             $statement->bindValue(":{$field}", $value);
         }
-        $this->logger()->info($this->getLabel() . " güncellendi: " . $this->getLogDetail(), $this->logContext());
+        $this->logger()->debug($this->getLabel() . " güncellendi: " . $this->getLogDetail(), $this->logContext());
         return $statement->execute();
     }
 
@@ -660,7 +660,7 @@ class Model
                 throw new Exception('Kayıt bulunamadı veya silinemedi.');
             }
 
-            $this->logger()->info($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
+            $this->logger()->debug($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
 
             if ($isInitiator) {
                 self::$database->commit();
