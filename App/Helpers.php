@@ -107,3 +107,75 @@ function getAppVersion(): string
     $composerData = json_decode(file_get_contents($composerFile), true);
     return $composerData['version'] ?? '0.0.0';
 }
+
+/**
+ * Ders isimlerini Türkçe kurallarına ve Roman rakamlarına uygun şekilde formatlar.
+ * @param string|null $name
+ * @return string
+ */
+function formatLessonName(?string $name): string
+{
+    if (empty($name))
+        return "";
+
+    // Roman rakamları listesi (I'den XII'ye kadar sık kullanılanlar)
+    $romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+    // Kelime parçalarını formatlayan iç yardımcı fonksiyon.
+    $formatPart = function ($part) use ($romanNumerals) {
+        if (empty($part))
+            return "";
+
+        // Roman rakamı kontrolü (noktalama temizlenmiş haliyle)
+        $cleanPart = trim($part, ".,;:/");
+        $upperPart = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $cleanPart), "UTF-8");
+
+        if (in_array($upperPart, $romanNumerals)) {
+            // Kelime içindeki roman rakamı kısmını büyük yap, gerisini (noktalama) koru
+            return str_ireplace($cleanPart, $upperPart, $part);
+        }
+
+        // Türkçe Title Case (Her kelimenin ilk harfi büyük)
+        $firstChar = mb_substr($part, 0, 1, "UTF-8");
+        $rest = mb_substr($part, 1, null, "UTF-8");
+
+        // İlk harf i/ı ise düzelt
+        if ($firstChar === 'i')
+            $firstChar = 'İ';
+        elseif ($firstChar === 'ı')
+            $firstChar = 'I';
+        else
+            $firstChar = mb_strtoupper($firstChar, "UTF-8");
+
+        // Kalan harfler küçültülür (İ/I düzeltmeleriyle)
+        $rest = str_replace(['İ', 'I'], ['i', 'ı'], $rest);
+        $rest = mb_strtolower($rest, "UTF-8");
+
+        return $firstChar . $rest;
+    };
+
+    $words = explode(' ', $name);
+    foreach ($words as &$word) {
+        if (empty($word))
+            continue;
+
+        // Parantez içindeki grup belirteçlerini kontrol et: (A), (B), (ME) vb.
+        if (preg_match('/^\((.+)\)$/', $word, $matches)) {
+            $inner = $matches[1];
+            // İçerideki harfi büyüt (tr-TR)
+            $inner = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $inner), "UTF-8");
+            $word = "(" . $inner . ")";
+            continue;
+        }
+
+        // Kelime içinde tire (-) varsa parçalara ayırıp her parçayı formatla
+        if (str_contains($word, '-')) {
+            $parts = explode('-', $word);
+            $formattedParts = array_map($formatPart, $parts);
+            $word = implode('-', $formattedParts);
+        } else {
+            $word = $formatPart($word);
+        }
+    }
+    return implode(' ', $words);
+}

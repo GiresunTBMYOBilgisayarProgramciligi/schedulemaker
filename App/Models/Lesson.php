@@ -7,6 +7,7 @@ use App\Controllers\LessonController;
 use App\Core\Model;
 use Exception;
 use function App\Helpers\getSettingValue;
+use function App\Helpers\formatLessonName;
 
 class Lesson extends Model
 {
@@ -70,6 +71,19 @@ class Lesson extends Model
     public function getLabel(): string
     {
         return "ders";
+    }
+
+    /**
+     * @param array $data
+     * @return void
+     * @throws Exception
+     */
+    public function fill(array $data = []): void
+    {
+        if (isset($data['name'])) {
+            $data['name'] = formatLessonName($data['name']);
+        }
+        parent::fill($data);
     }
 
     public function getLogDetail(): string

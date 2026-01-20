@@ -28,6 +28,7 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
+use function App\Helpers\formatLessonName;
 
 class ImportExportManager
 {
@@ -306,9 +307,9 @@ class ImportExportManager
                     continue;
                 }
                 $lessonData = [
-                    'code' => $code,
+                    'code' => strtoupper($code),
                     'group_no' => $group_no,
-                    'name' => $name,
+                    'name' => formatLessonName($name),
                     'size' => $size,
                     'hours' => $hours,
                     'type' => array_search(trim($type), (new LessonController())->getTypeList()),
@@ -325,12 +326,12 @@ class ImportExportManager
                 if ($lesson) {
                     $lesson->fill($lessonData);
                     $lessonsController->updateLesson($lesson);
-                    $updatedLessons[] = $lesson->getFullName();
+                    $updatedLessons[$lesson->id] = $lesson->getFullName();
                 } else {
                     $lesson = new Lesson();
                     $lesson->fill($lessonData);
                     $lessonsController->saveNew($lesson);
-                    $addedLessons[] = $lesson->getFullName();
+                    $addedLessons[$lesson->id] = $lesson->getFullName();
                 }
             }
             $db->commit();

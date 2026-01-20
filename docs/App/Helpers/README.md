@@ -14,12 +14,11 @@
 ### 3. `getSemesterNumbers($semester)`
 *   Güz/Bahar dönemine göre uygun yarıyıl numaralarını (tek/çift) filtreler.
 
-### 4. `isAuthorized(string $role, bool $reverse, $model)`
-*   Kullanıcının belirtilen yetki seviyesine sahip olup olmadığını kontrol eder.
+### 4. `formatLessonName($name)`
+*   Ders isimlerini Türkçe büyük harf kurallarına ve Roman rakamlarına (I, II, III vb.) uygun şekilde formatlar.
 
 ### 5. `find_key_starting_with(array $array, string $prefix)`
 *   Dizi içinde belirli bir ön ek ile başlayan anahtarı bulur.
-
 
 ### 6. `getAppVersion()`
 *   `composer.json` dosyasından uygulamanın versiyon numarasını okur ve döner.

@@ -7,11 +7,49 @@
  * @returns {string}
  */
 function capitalizeWordsTR(value) {
+    if (!value) return "";
+
+    // Roman rakamları listesi (I'den XII'ye kadar sık kullanılanlar)
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+    // Kelime parçalarını formatlayan iç yardımcı fonksiyon
+    const formatPart = (part) => {
+        if (!part) return "";
+
+        // Roman rakamı kontrolü (noktalama temizlenmiş haliyle)
+        const cleanPart = part.replace(/[.,;:/]$/, "");
+        const upperPart = cleanPart.replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase();
+
+        if (romanNumerals.includes(upperPart)) {
+            // Kelime içindeki roman rakamı kısmını büyük yap, gerisini (noktalama) koru
+            return part.replace(cleanPart, upperPart);
+        } else {
+            // Türkçe Title Case (Her kelimenin ilk harfi büyük)
+            const firstChar = part.charAt(0).toLocaleUpperCase('tr-TR');
+            const rest = part.slice(1).toLocaleLowerCase('tr-TR');
+            return firstChar + rest;
+        }
+    };
+
     let words = String(value).split(" ");
 
     // Map ile her kelimeyi düzenle
     words = words.map((word) => {
-        return String(word).charAt(0).toLocaleUpperCase('tr-TR') + String(word).slice(1).toLocaleLowerCase('tr-TR');
+        if (!word) return "";
+
+        // Parantez içindeki grup belirteçlerini kontrol et: (A), (B), (ME) vb.
+        const groupMatch = word.match(/^\((.+)\)$/);
+        if (groupMatch) {
+            const inner = groupMatch[1];
+            return "(" + inner.replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase() + ")";
+        }
+
+        // Kelime içinde tire (-) varsa parçalara ayırıp her parçayı formatla
+        if (word.includes("-")) {
+            return word.split("-").map(formatPart).join("-");
+        } else {
+            return formatPart(word);
+        }
     });
 
     return words.join(" ");

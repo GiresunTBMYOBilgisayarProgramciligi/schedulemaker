@@ -14,6 +14,7 @@ Excel dosyasındaki ders bilgilerini okuyarak veritabanına kaydeder.
     - **Hata Yakalama**: Eğer hoca veya bölüm bulunamazsa, satırı atlar ve hata listesine ekler.
 4.  **Tekillik Denetimi**: Ders kodu, program ID ve grup numarası kombinasyonuyla dersin daha önce kaydedilip kaydedilmediğine bakar.
 5.  **Kayıt/Güncelleme**: 
+    - **İsim Formatlama**: Ders isimleri kaydedilmeden veya güncellenmeden önce `formatLessonName` yardımcı fonksiyonu ile Türkçe büyük harf kurallarına ve Roman rakamlarına (I, II, III vb.) uygun şekilde formatlanır.
     - Ders varsa: Mevcut kaydı Excel'deki yeni verilerle günceller.
     - Ders yoksa: Yeni bir `Lesson` modeli oluşturup kaydeder.
 6.  **Bitiş**: Tüm satırlar başarıyla işlendiyse `commit()` yapılır, aksi takdirde `rollBack()` uygulanır.
