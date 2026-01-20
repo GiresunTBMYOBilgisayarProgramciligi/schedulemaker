@@ -1,6 +1,32 @@
 let dataTable = new DataTable('.dataTable', {
+    layout: {
+        topStart: {
+            pageLength: {
+                menu: [10, 25, 50, 100]
+            },
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="bi bi-file-earmark-excel me-1"></i> Excel',
+                    className: 'btn btn-success btn-sm',
+                    exportOptions: {
+                        columns: ':not(.no-export)'
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: '<i class="bi bi-file-earmark-pdf me-1"></i> PDF',
+                    className: 'btn btn-danger btn-sm',
+                    exportOptions: {
+                        columns: ':not(.no-export)'
+                    }
+                }
+            ]
+        },
+        topEnd: 'search'
+    },
     pageLength: 25,
-    // config options...
+    lengthMenu: [10, 25, 50, 100],
     language: {
         url: '/assets/js/datatable_tr.json'
     },
@@ -11,6 +37,13 @@ let dataTable = new DataTable('.dataTable', {
         api.columns().every(function () {
             let column = this;
             let header = column.header();
+            let headerText = header.textContent.trim();
+
+            // "İşlemler" sütununu dışa aktarmadan hariç tutmak için işaretle
+            if (headerText === "İşlemler") {
+                $(column.header()).addClass('no-export');
+                $(column.nodes()).addClass('no-export');
+            }
 
             if (header.classList.contains("filterable")) {
                 header.style.whiteSpace = 'nowrap'; // satır kaymalarını önlemek için

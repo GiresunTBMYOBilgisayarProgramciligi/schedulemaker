@@ -120,7 +120,10 @@ class AssetManager
         'listpages' => [
             'css' => [
                 [//dataTables
-                    'path' => '/assets/node_modules/datatables.net-bs/css/dataTables.bootstrap.min.css'
+                    'path' => '/assets/node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css'
+                ],
+                [//dataTables Buttons
+                    'path' => '/assets/node_modules/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css'
                 ]
             ],
             'js' => [
@@ -131,7 +134,25 @@ class AssetManager
                     'path' => '/assets/node_modules/datatables.net/js/dataTables.min.js'
                 ],
                 [//dataTables Bootstrap 5 integration
-                    'path' => '/assets/node_modules/datatables.net-bs/js/dataTables.bootstrap.min.js'
+                    'path' => '/assets/node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js'
+                ],
+                [//JSZip (Excel için)
+                    'path' => '/assets/node_modules/jszip/dist/jszip.min.js'
+                ],
+                [//pdfMake (PDF için)
+                    'path' => '/assets/node_modules/pdfmake/build/pdfmake.min.js'
+                ],
+                [//pdfMake fonts
+                    'path' => '/assets/node_modules/pdfmake/build/vfs_fonts.js'
+                ],
+                [//DataTables Buttons core
+                    'path' => '/assets/node_modules/datatables.net-buttons/js/dataTables.buttons.min.js'
+                ],
+                [//DataTables Buttons Bootstrap 5 integration
+                    'path' => '/assets/node_modules/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js'
+                ],
+                [//HTML5 export buttons
+                    'path' => '/assets/node_modules/datatables.net-buttons/js/buttons.html5.min.js'
                 ],
                 [
                     'path' => '/assets/js/data_table.js'
