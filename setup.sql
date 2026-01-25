@@ -158,6 +158,26 @@ ALTER TABLE users
     ADD FOREIGN KEY (program_id) REFERENCES programs (id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 /* password is 123456 */
-insert into users(password, mail, name, last_name, title, role, approved)
-values ('$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC', 'admin@admin.com', 'Admin', 'Admin', 'Admin',
-        'admin', true);
+insert into users (password, mail, name, last_name, title, role, approved)values ('$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC', 'admin@admin.com', 'Admin', 'Admin', 'Admin', 'admin', true);
+
+-- Polimorfik ve Hiyerarşik Silmeler İçin Trigger'lar
+CREATE TRIGGER trg_dept_del_prog BEFORE DELETE ON departments FOR EACH ROW 
+DELETE FROM programs WHERE department_id = OLD.id;
+
+CREATE TRIGGER trg_dept_del_less BEFORE DELETE ON departments FOR EACH ROW 
+DELETE FROM lessons WHERE department_id = OLD.id AND program_id IS NULL;
+
+CREATE TRIGGER trg_prog_del_less BEFORE DELETE ON programs FOR EACH ROW 
+DELETE FROM lessons WHERE program_id = OLD.id;
+
+CREATE TRIGGER trg_prog_del_sched BEFORE DELETE ON programs FOR EACH ROW 
+DELETE FROM schedules WHERE owner_type = 'program' AND owner_id = OLD.id;
+
+CREATE TRIGGER trg_lesson_del_sched BEFORE DELETE ON lessons FOR EACH ROW 
+DELETE FROM schedules WHERE owner_type = 'lesson' AND owner_id = OLD.id;
+
+CREATE TRIGGER trg_user_del_sched BEFORE DELETE ON users FOR EACH ROW 
+DELETE FROM schedules WHERE owner_type = 'user' AND owner_id = OLD.id;
+
+CREATE TRIGGER trg_class_del_sched BEFORE DELETE ON classrooms FOR EACH ROW 
+DELETE FROM schedules WHERE owner_type = 'classroom' AND owner_id = OLD.id;

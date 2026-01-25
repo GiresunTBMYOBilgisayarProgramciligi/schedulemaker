@@ -29,14 +29,14 @@ class Department extends Model
      */
     protected function beforeDelete(): void
     {
-        // Bölüm silindiğinde ona bağlı tüm programları sil (Böylece programların hookları tetiklenir)
+        // 1. Önce bağlı programları sil (Bu işlem programların beforeDelete hooklarını tetikler)
         $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
         foreach ($programs as $program) {
             $program->delete();
         }
 
-        // Programı olmayan direkt bölüme bağlı dersler varsa (nadir durum ama mümkün)
-        $lessons = (new Lesson())->get()->where(['department_id' => $this->id])->all();
+        // 2. Program bağımsız dersleri sil (Eğer herhangi bir programa bağlı olmayan dersler varsa)
+        $lessons = (new Lesson())->get()->where(['department_id' => $this->id, 'program_id' => null])->all();
         foreach ($lessons as $lesson) {
             $lesson->delete();
         }

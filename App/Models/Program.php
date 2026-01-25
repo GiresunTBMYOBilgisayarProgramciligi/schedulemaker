@@ -26,10 +26,10 @@ class Program extends Model
      */
     protected function beforeDelete(): void
     {
-        // Önce ilişkili programları temizle
+        // 1. Polimorfik kardeş kayıtları (sibling items) ve bu programın kendi takvimini temizle
         (new \App\Controllers\ScheduleController())->wipeResourceSchedules('program', $this->id);
 
-        // Sonra bağlı tüm dersleri sil (Böylece derslerin hookları tetiklenir)
+        // 2. Bağlı tüm dersleri PHP üzerinden sil (Böylece derslerin beforeDelete hookları tetiklenir ve hoca/derslik takvimleri temizlenir)
         $lessons = (new Lesson())->get()->where(['program_id' => $this->id])->all();
         foreach ($lessons as $lesson) {
             $lesson->delete();

@@ -38,6 +38,7 @@ class User extends Model
      */
     protected function beforeDelete(): void
     {
+        // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
         (new \App\Controllers\ScheduleController())->wipeResourceSchedules('user', $this->id);
     }
 
