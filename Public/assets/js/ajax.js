@@ -206,6 +206,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     new Toast().prepareToast("Hata", error, "danger");
                 }
                 console.error(error);
+            }).finally(() => {
+                if (form) {
+                    form.reset();
+                }
             });
     }
 });
