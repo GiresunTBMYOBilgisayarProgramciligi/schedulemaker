@@ -208,6 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error(error);
             }).finally(() => {
                 if (form) {
+                    //işlemler tamamlandıktan sonra form resetleniyor. 
                     form.reset();
                 }
             });
