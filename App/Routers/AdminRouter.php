@@ -289,7 +289,6 @@ class AdminRouter extends Router
     {
         Gate::authorize("create", Lesson::class, false, "Ders ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
-        $userController = new UserController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ders Ekle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
