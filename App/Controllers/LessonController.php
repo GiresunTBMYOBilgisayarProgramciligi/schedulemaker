@@ -127,6 +127,13 @@ class LessonController extends Controller
             }
 
             /*
+             * Saat kontrolü: Üst dersin saati çocuk dersten az olamaz.
+             */
+            if ($parentLesson->hours < $childLesson->hours) {
+                throw new Exception("Üst dersin ({$parentLesson->hours} saat) ders saati, bağlanacak dersten ({$childLesson->hours} saat) az olamaz.");
+            }
+
+            /*
              * Çocuk dersin daha önceden kaydedilmiş bir programı varsa silinmeli.
              * Hoca, ders, program, derslik programlarının hepsinin silinmesi lazım.
              * ÖNEMLİ: Bu işlem dersler bağlanmadan ÖNCE yapılmalı, aksi takdirde ebeveyn dersin programı da silinir.
