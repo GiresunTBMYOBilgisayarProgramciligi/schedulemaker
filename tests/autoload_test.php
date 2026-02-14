@@ -7,6 +7,11 @@
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+// .env dosyasını yükle
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../App');
+$dotenv->load();
+
 require_once __DIR__ . '/../App/Core/Database.php';
 require_once __DIR__ . '/../App/Core/Log.php';
 
