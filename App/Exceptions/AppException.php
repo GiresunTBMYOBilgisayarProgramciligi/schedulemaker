@@ -64,4 +64,21 @@ abstract class AppException extends Exception
             'context' => $this->context
         ];
     }
+
+    /**
+     * Exception'ı string'e çevirir - context bilgisini dahil eder
+     * Bu sayede loglarda tüm detaylar görünür
+     * @return string
+     */
+    public function __toString(): string
+    {
+        $base = parent::__toString();
+
+        if (!empty($this->context)) {
+            $contextJson = json_encode($this->context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $base .= "\nContext: " . $contextJson;
+        }
+
+        return $base;
+    }
 }

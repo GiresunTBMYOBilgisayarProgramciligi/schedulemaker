@@ -861,11 +861,11 @@ class ScheduleCard {
         let scheduleItems = [];
         let itemsToProcess = Array.isArray(input) ? input : [{
             hours: parseInt(input.hours || input),
-            data: {
+            data: [{  // FIX: eski sistem array of objects bekliyor
                 "lesson_id": this.draggedLesson.lesson_id,
                 "lecturer_id": this.draggedLesson.lecturer_id,
                 "classroom_id": classroom?.id || null
-            },
+            }],
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
             detail: input.assignments ? { assignments: input.assignments } : null
         }];

@@ -19,6 +19,11 @@ class ValidationException extends AppException
         array $validationErrors = [],
         array $context = []
     ) {
+        // Validation error'larını mesaja ekle (log'da görünsün)
+        if (!empty($validationErrors)) {
+            $message .= ': ' . implode('; ', $validationErrors);
+        }
+
         $context['validation_errors'] = $validationErrors;
         parent::__construct($message, $context);
     }

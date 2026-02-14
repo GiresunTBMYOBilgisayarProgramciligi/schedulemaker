@@ -68,9 +68,20 @@ class ScheduleItemValidator extends BaseValidator
             } elseif (!is_array($data['data'])) {
                 $errors[] = 'data array olmalı';
             } else {
-                // data içeriği kontrolü
-                if (!isset($data['data'][0]['lesson_id'])) {
-                    $errors[] = 'data içinde lesson_id gerekli';
+                // ESKİ SİSTEM FORMAT: data ARRAY OF OBJECTS olmalı
+                // Single: [{"lesson_id": "503", "lecturer_id": "158", ...}]
+                // Group:  [{"lesson_id": "503", ...}, {"lesson_id": "504", ...}]
+
+                // En az 1 eleman olmalı
+                if (count($data['data']) === 0) {
+                    $errors[] = 'data boş olamaz';
+                } else {
+                    // İlk elemanı kontrol et
+                    if (!is_array($data['data'][0])) {
+                        $errors[] = 'data[0] array olmalı (eski format: array of objects)';
+                    } elseif (!isset($data['data'][0]['lesson_id'])) {
+                        $errors[] = 'data[0] içinde lesson_id gerekli';
+                    }
                 }
             }
         }

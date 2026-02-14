@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\Core\FeatureFlags;
 use App\Core\View;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
@@ -11,6 +12,7 @@ use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
+use App\Services\ScheduleService;
 use Exception;
 use PDOException;
 use function App\Helpers\find_key_starting_with;
@@ -768,11 +770,71 @@ class ScheduleController extends Controller
 
     /**
      * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
+     * 
+     * Feature Flag: use_new_schedule_service = '1' ise yeni ScheduleService kullanılır
+     * 
      * @param array $itemsData JSON decode edilmiş items dizisi
      * @return array
      * @throws Exception
      */
     public function saveScheduleItems(array $itemsData): array
+    {
+        // GEÇŞ KURALI: Group item'lar için henüz yeni service kullanma
+        // Yeni service v1.0 sadece basit INSERT yapar, group merge mantığı v2.0'da olacak
+        $hasGroupItems = false;
+        foreach ($itemsData as $item) {
+            if (isset($item['status']) && $item['status'] === 'group') {
+                $hasGroupItems = true;
+                break;
+            }
+        }
+
+        // Feature Flag: Yeni service kullanımı (sadece non-group items için)
+        if (FeatureFlags::useNewScheduleService() && !$hasGroupItems) {
+            $this->logger()->debug("Using NEW ScheduleService", $this->logContext());
+            $service = new ScheduleService();
+            $result = $service->saveScheduleItems($itemsData);
+
+            // Return formatını eski sistemle uyumlu hale getir
+            return $this->formatServiceResultToLegacy($result);
+        }
+
+        // Eski sistem (group items veya feature flag kapalıysa)
+        $this->logger()->debug("Using LEGACY saveScheduleItems", $this->logContext());
+        return $this->legacySaveScheduleItems($itemsData);
+    }
+
+    /**
+     * Service result'ını eski formata çevirir (backward compatibility)
+     * 
+     * Eski format: [{owner_type: [id1, id2, ...]}, ...]
+     * Yeni format: [id1, id2, ...]
+     * 
+     * AjaxRouter.php:642-644 nested foreach bekliyor
+     * 
+     * @param \App\DTOs\SaveScheduleResult $result
+     * @return array
+     */
+    private function formatServiceResultToLegacy(\App\DTOs\SaveScheduleResult $result): array
+    {
+        // Eski sistem nested array bekliyor: [{'id': [1,2,3]}]
+        // v1.0 sadece tek schedule'a kayıt yapıyor, gerçek formatı döndüremiyoruz
+        // Geçici çözüm: id'leri 'id' anahtarı altında topla
+        return [
+            [
+                'id' => $result->createdIds
+            ]
+        ];
+    }
+
+    /**
+     * ESKİ SİSTEM (DEPRECATED) - Yeni sisteme geçtikten sonra silinecek
+     * Itemleri kaydeder, çakışmaları kontrol eder ve 'preferred' çakışmalarını çözer
+     * @param array $itemsData JSON decode edilmiş items dizisi
+     * @return array
+     * @throws Exception
+     */
+    private function legacySaveScheduleItems(array $itemsData): array
     {
         $this->logger()->debug("saveScheduleItems START. Item Count: " . count($itemsData));
 
@@ -1319,9 +1381,27 @@ class ScheduleController extends Controller
      */
     private function checkItemConflict(array $itemData, array &$errors = []): void
     {
-        $lessonId = $itemData['data']['lesson_id'];
-        $lecturerId = $itemData['data']['lecturer_id'];
-        $classroomId = $itemData['data']['classroom_id'];
+        // ESKİ SİSTEM FORMAT: data = [{"lesson_id": "503", "lecturer_id": "158", ...}]
+        // data genellikle array olarak gelir ama bazen JSON string de olabilir (veritabanından geliyorsa)
+        $data = $itemData['data'];
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        // Validation: data array of objects olmalı
+        if (!is_array($data) || !isset($data[0]) || !is_array($data[0])) {
+            throw new Exception("Geçersiz data formatı - array of objects bekleniyor");
+        }
+
+        // İlk item'dan bilgileri al (single item için tek eleman, group item için birden fazla)
+        $lessonId = $data[0]['lesson_id'] ?? null;
+        $lecturerId = $data[0]['lecturer_id'] ?? null;
+        $classroomId = $data[0]['classroom_id'] ?? null;
+
+        if (!$lessonId) {
+            throw new Exception("lesson_id bulunamadı");
+        }
+
         $dayIndex = $itemData['day_index'];
         $startTime = $itemData['start_time'];
         $endTime = $itemData['end_time'];
@@ -1479,7 +1559,9 @@ class ScheduleController extends Controller
                     }
 
                     // Hoca aynı olmamalı
-                    if ($sd->lecturer && $sd->lecturer->id == $newItemData['data']['lecturer_id']) {
+                    // ESKİ SİSTEM FORMAT: data = [{"lesson_id": "503", "lecturer_id": "158", ...}]
+                    $newLecturerId = $newItemData['data'][0]['lecturer_id'] ?? null;
+                    if ($sd->lecturer && $newLecturerId && $sd->lecturer->id == $newLecturerId) {
                         return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName();
                     }
 
