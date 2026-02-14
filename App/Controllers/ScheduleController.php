@@ -2094,6 +2094,7 @@ class ScheduleController extends Controller
 
     /**
      * Verilen item üzerinde belirtilen aralıkları siler (Flatten Timeline Yaklaşımı)
+     * todo duration ve break veri tabanından çekilmeli
      */
     private function processItemDeletion(ScheduleItem $item, array $deleteIntervals, array $targetLessonIds = [], int $duration = 50, int $break = 10, bool $deleteOriginal = true): array
     {
