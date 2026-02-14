@@ -1373,27 +1373,21 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Tek bir item için tüm olasılıkları (Hoca, Sınıf, Program, Ders) kontrol eder
-     * İlgili schedule ve itemleri bulup çakışma kontrolüne gönderir
-     * @param array $itemData
-     * @param array $errors Hataların toplanacağı dizi (referans)
-     * @throws Exception
+     * checkItemConflict - ConflictResolver kullanarak çakışma kontrolü yapar
+     * TODO: Bu metod ScheduleService'e taşınacak
      */
     private function checkItemConflict(array $itemData, array &$errors = []): void
     {
-        // ESKİ SİSTEM FORMAT: data = [{"lesson_id": "503", "lecturer_id": "158", ...}]
-        // data genellikle array olarak gelir ama bazen JSON string de olabilir (veritabanından geliyorsa)
+        // Data parse + validation
         $data = $itemData['data'];
         if (is_string($data)) {
             $data = json_decode($data, true);
         }
 
-        // Validation: data array of objects olmalı
         if (!is_array($data) || !isset($data[0]) || !is_array($data[0])) {
             throw new Exception("Geçersiz data formatı - array of objects bekleniyor");
         }
 
-        // İlk item'dan bilgileri al (single item için tek eleman, group item için birden fazla)
         $lessonId = $data[0]['lesson_id'] ?? null;
         $lecturerId = $data[0]['lecturer_id'] ?? null;
         $classroomId = $data[0]['classroom_id'] ?? null;
@@ -1402,17 +1396,35 @@ class ScheduleController extends Controller
             throw new Exception("lesson_id bulunamadı");
         }
 
-        $dayIndex = $itemData['day_index'];
-        $startTime = $itemData['start_time'];
-        $endTime = $itemData['end_time'];
-
         $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
-        if (!$lesson)
+        if (!$lesson) {
             throw new Exception("Ders bulunamadı");
+        }
 
-        // Kontrol edilecek schedule sahipleri
+        // Owner'ları belirle
+        $owners = $this->determineOwners($itemData, $lesson, $lecturerId, $classroomId);
+
+        // Target schedule'ı bul
+        $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+        if (!$targetSchedule) {
+            throw new Exception("Hedef Program bulunamadı");
+        }
+
+        // ConflictResolver kullanarak conflict check
+        $conflictResolver = new \App\Services\Helpers\ConflictResolver();
+        $conflictErrors = $conflictResolver->checkConflicts($itemData, $owners, $targetSchedule, $lesson);
+
+        $errors = array_merge($errors, $conflictErrors);
+    }
+
+    /**
+     * Item için owner'ları belirler (user, classroom, program, lesson)
+     */
+    private function determineOwners(array $itemData, Lesson $lesson, ?int $lecturerId, ?int $classroomId): array
+    {
         $owners = [];
         $examAssignments = $itemData['detail']['assignments'] ?? null;
+
         if ($examAssignments) {
             // Sınav (Çoklu Atama)
             $owners[] = ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no];
@@ -1425,13 +1437,13 @@ class ScheduleController extends Controller
             // Normal Ders
             $owners = [
                 ['type' => 'user', 'id' => $lecturerId],
-                ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId], // UZEM ise derslik çakışmasına bakma
+                ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId],
                 ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
                 ['type' => 'lesson', 'id' => $lesson->id]
             ];
         }
 
-        // Child Lessons (Bağlı Alt Dersler) için de çakışma kontrolü yapılmalı
+        // Child Lessons için de owner ekle
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
                 $owners[] = ['type' => 'lesson', 'id' => $childLesson->id];
@@ -1441,56 +1453,7 @@ class ScheduleController extends Controller
             }
         }
 
-        // Item'in ekleneceği Schedule'ı bul (Dönem ve Yıl bilgisi için)
-        $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
-        if (!$targetSchedule)
-            throw new Exception("Hedef Program bulunamadı");
-
-        $semester = $targetSchedule->semester;
-        $academicYear = $targetSchedule->academic_year;
-
-        foreach ($owners as $owner) {
-            $ownerType = $owner['type'];
-            $ownerId = $owner['id'];
-
-            if (!$ownerId)
-                continue;
-
-            $scheduleFilters = [
-                'owner_type' => $ownerType,
-                'owner_id' => $ownerId,
-                'semester' => $semester,
-                'academic_year' => $academicYear,
-                'type' => $targetSchedule->type
-            ];
-
-            if ($ownerType == 'program') {
-                $scheduleFilters['semester_no'] = isset($owner['semester_no']) ? $owner['semester_no'] : $lesson->semester_no;
-            } else {
-                $scheduleFilters['semester_no'] = null;
-            }
-
-            $relatedSchedules = (new Schedule())->get()->where($scheduleFilters)->all();
-
-            foreach ($relatedSchedules as $relatedSchedule) {
-                // İlgili schedule ve gün için itemları getir
-                $dayItems = (new ScheduleItem())->get()->where([
-                    'schedule_id' => $relatedSchedule->id,
-                    'day_index' => $dayIndex,
-                    'week_index' => $itemData['week_index'] ?? 0
-                ])->all();
-
-                foreach ($dayItems as $existingItem) {
-                    // Zaman çakışması kontrolü
-                    if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
-                        $error = $this->resolveConflict($itemData, $existingItem, $lesson, $relatedSchedule);
-                        if ($error) {
-                            $errors[] = $error;
-                        }
-                    }
-                }
-            }
-        }
+        return $owners;
     }
 
     /**
