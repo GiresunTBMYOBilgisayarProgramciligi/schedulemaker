@@ -574,6 +574,9 @@ class AjaxRouter extends Router
 
             $this->response['status'] = "success";
         } catch (\Throwable $e) {
+            // Exception'ı error.log'a yaz
+            $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $this->data]);
+
             $msg = $e->getMessage();
             $msgArray = explode("\n", $msg);
             $this->response = [
