@@ -13,6 +13,8 @@ use App\Repositories\ScheduleRepository;
 use App\Validators\ScheduleItemValidator;
 use Exception;
 
+use function getSettingValue;
+
 /**
  * Schedule Service
  * 
@@ -156,6 +158,10 @@ class ScheduleService extends BaseService
 
     /**
      * Ders saati limitlerini kontrol eder
+     * 
+     * Normal dersler için: Aşım varsa exception fırlatır
+     * Child lessons için: Aşım varsa fazla saatleri otomatik temizler
+     * 
      * @param array $lessonIds
      * @param string $scheduleType
      * @throws Exception
@@ -172,13 +178,197 @@ class ScheduleService extends BaseService
             $lesson->IsScheduleComplete($scheduleType);
 
             if ($lesson->remaining_size < 0) {
-                $errorMsg = ($scheduleType === 'lesson')
-                    ? "{$lesson->getFullName()} dersinin toplam saati aşılıyor. (Fazla: " . abs($lesson->remaining_size) . " saat)"
-                    : "{$lesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($lesson->remaining_size) . " kişi)";
+                // Child lesson kontrolü
+                if ($lesson->parent_id !== null) {
+                    // Child lesson → Fazla saatleri otomatik temizle
+                    $this->logger->info("Child lesson hour limit exceeded, cleaning up", $this->logContext([
+                        'lesson_id' => $lesson->id,
+                        'lesson_name' => $lesson->getFullName(),
+                        'parent_id' => $lesson->parent_id,
+                        'excess_hours' => abs($lesson->remaining_size)
+                    ]));
 
-                throw new Exception($errorMsg);
+                    $this->cleanupExcessChildHours($lesson, $scheduleType);
+                } else {
+                    // Normal lesson → Exception fırlat (mevcut davranış)
+                    $errorMsg = ($scheduleType === 'lesson')
+                        ? "{$lesson->getFullName()} dersinin toplam saati aşılıyor. (Fazla: " . abs($lesson->remaining_size) . " saat)"
+                        : "{$lesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Fazla: " . abs($lesson->remaining_size) . " kişi)";
+
+                    throw new Exception($errorMsg);
+                }
             }
         }
+    }
+
+    /**
+     * Child lesson'ın fazla olan schedule item'larını siler veya kısaltır
+     * 
+     * Parent ders ile child ders saati farklı olduğunda, child'a parent kadar
+     * saat eklenebilir. Bu durumda child'ın toplam saati aşılır. Bu metod,
+     * child'ın fazla olan saatlerini son eklenenlerden başlayarak siler veya kısaltır.
+     * 
+     * **Slot-Based Yaklaşım:**
+     * - Duration: 50dk, Break: 10dk → 1 slot = 60dk
+     * - Item'lar slot cinsinden işlenir
+     * - Eğer son item fazlaysa → Item kısaltılır (end_time güncellenir)
+     * - Tam slot silme gerekiyorsa → Item silinir
+     * 
+     * **Örnek:**
+     * - Parent: 4 saat/hafta
+     * - Child: 2 saat/hafta
+     * - Parent'a 4 saatlik item eklendi → Child'a da 4 saat eklendi
+     * - Child fazla: 2 saat (2 slot)
+     * → Son eklenen item'ları 2 slot azalt
+     * 
+     * @param Lesson $childLesson Child lesson entity'si
+     * @param string $scheduleType Schedule tipi ('lesson', 'midterm-exam', etc.)
+     * @return void
+     */
+    private function cleanupExcessChildHours(Lesson $childLesson, string $scheduleType): void
+    {
+        $excessSlots = abs($childLesson->remaining_size);
+
+        $this->logger->warning(
+            "Child lesson hour limit exceeded, cleaning up excess hours",
+            $this->logContext([
+                'lesson_id' => $childLesson->id,
+                'lesson_name' => $childLesson->getFullName(),
+                'excess_slots' => $excessSlots,
+                'schedule_type' => $scheduleType
+            ])
+        );
+
+        // Bu child lesson'a ait lesson schedule'ları bul
+        // (Sadece owner_type='lesson' schedule'ları - program schedule'lara dokunma)
+        $childSchedules = $this->scheduleRepo->findBy([
+            'owner_type' => 'lesson',
+            'owner_id' => $childLesson->id,
+            'type' => $scheduleType
+        ]);
+
+        if (empty($childSchedules)) {
+            $this->logger->error("No lesson schedules found for child lesson", $this->logContext([
+                'lesson_id' => $childLesson->id
+            ]));
+            return;
+        }
+
+        // Sistem ayarlarından slot bilgilerini al
+        $group = ($scheduleType === 'lesson') ? 'lesson' : 'exam';
+        $duration = (int) getSettingValue('duration', $group, 50);
+        $breakTime = (int) getSettingValue('break', $group, 10);
+        $slotSize = $duration + $breakTime; // Dakika cinsinden
+
+        // Her schedule'dan fazla slot'ları sil/kısalt
+        $totalDeleted = 0;
+        $totalShortened = 0;
+        $slotsToRemove = $excessSlots;
+
+        foreach ($childSchedules as $schedule) {
+            if ($slotsToRemove <= 0) {
+                break;
+            }
+
+            // En son eklenen item'ları bul (id DESC)
+            $items = (new ScheduleItem())
+                ->where(['schedule_id' => $schedule->id])
+                ->orderBy('id', 'DESC')
+                ->get()
+                ->all();
+
+            foreach ($items as $item) {
+                if ($slotsToRemove <= 0) {
+                    break;
+                }
+
+                // Item'ın kaç slot olduğunu hesapla
+                $itemSlots = $this->calculateItemSlots($item, $slotSize);
+
+                if ($itemSlots <= $slotsToRemove) {
+                    // Tüm item'ı sil
+                    $item->delete();
+                    $totalDeleted++;
+                    $slotsToRemove -= $itemSlots;
+
+                    $this->logger->debug("Deleted excess child lesson item", $this->logContext([
+                        'item_id' => $item->id,
+                        'item_slots' => $itemSlots,
+                        'remaining_to_remove' => $slotsToRemove
+                    ]));
+                } else {
+                    // Item'ı kısalt (end_time güncelle)
+                    $newSlots = $itemSlots - $slotsToRemove;
+                    $newEndTime = $this->calculateNewEndTime($item->start_time, $newSlots, $slotSize);
+
+                    $item->end_time = $newEndTime;
+                    $item->update();
+                    $totalShortened++;
+
+                    $this->logger->debug("Shortened excess child lesson item", $this->logContext([
+                        'item_id' => $item->id,
+                        'old_slots' => $itemSlots,
+                        'new_slots' => $newSlots,
+                        'old_end_time' => $item->end_time,
+                        'new_end_time' => $newEndTime
+                    ]));
+
+                    $slotsToRemove = 0; // İşlem tamamlandı
+                }
+            }
+        }
+
+        $this->logger->info("Child lesson excess hours cleaned up", $this->logContext([
+            'lesson_id' => $childLesson->id,
+            'deleted_items' => $totalDeleted,
+            'shortened_items' => $totalShortened,
+            'excess_slots' => $excessSlots
+        ]));
+    }
+
+    /**
+     * Schedule item'ın kaç slot olduğunu hesaplar
+     * 
+     * **Slot-Based Hesaplama:**
+     * - 1 slot = duration + break (örn: 50 + 10 = 60 dk)
+     * - 08:00-08:50 → 1 slot
+     * - 08:00-09:50 → 2 slot
+     * 
+     * @param ScheduleItem $item
+     * @param int $slotSizeMinutes Slot boyutu (dakika)
+     * @return int Slot sayısı
+     */
+    private function calculateItemSlots(ScheduleItem $item, int $slotSizeMinutes): int
+    {
+        $start = strtotime($item->start_time);
+        $end = strtotime($item->end_time);
+        $totalMinutes = ($end - $start) / 60;
+
+        // Slot sayısını hesapla (yukarı yuvarla)
+        return (int) ceil($totalMinutes / $slotSizeMinutes);
+    }
+
+    /**
+     * Yeni end_time hesaplar (slot bazlı)
+     * 
+     * @param string $startTime Başlangıç saati (HH:MM)
+     * @param int $slots Slot sayısı
+     * @param int $slotSizeMinutes Slot boyutu (dakika)
+     * @return string Yeni end_time (HH:MM)
+     */
+    private function calculateNewEndTime(string $startTime, int $slots, int $slotSizeMinutes): string
+    {
+        $start = strtotime($startTime);
+
+        // Son slot'un ders bitiş zamanı (break dahil değil)
+        $duration = (int) getSettingValue('duration', 'lesson', 50);
+        $breakTime = (int) getSettingValue('break', 'lesson', 10);
+
+        // Slot sayısı kadar iler - son slot'ta break yok
+        $totalMinutes = ($slots - 1) * $slotSizeMinutes + $duration;
+        $end = $start + ($totalMinutes * 60);
+
+        return date('H:i', $end);
     }
 
     // ==================== MULTI-SCHEDULE KAYDETME ====================

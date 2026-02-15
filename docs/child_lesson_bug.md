@@ -26,5 +26,21 @@ $child = Lesson::create(['lesson_hour' => 2]);
 
 ## Çözüm Durumu
 
-- [ ] LessonService'de fix edilecek
-- [ ] Test case yazılacak
+- [x] ScheduleService'de fix edildi
+- [x] `checkLessonHourLimits()` child lesson kontrolü eklendi
+- [x] `cleanupExcessChildHours()` metodu implement edildi
+- [x] Slot-based silme/kısaltma desteği
+- [ ] Test case yazılacak (manual test yapılabilir)
+
+## Implementation Detayları
+
+**Dosya:** `App/Services/ScheduleService.php`
+
+**Yeni Metotlar:**
+- `cleanupExcessChildHours()` - Child'ın fazla saatlerini sil/kısalt
+- `calculateItemSlots()` - Item'ın kaç slot olduğunu hesapla
+- `calculateNewEndTime()` - Slot bazlı yeni end_time hesapla
+
+**Davranış:**
+- Normal ders aşımı → Exception fırlat (eski davranış)
+- Child lesson aşımı → Fazla saatleri otomatik temizle (yeni davranış)
