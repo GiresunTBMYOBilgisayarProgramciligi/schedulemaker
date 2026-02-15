@@ -158,6 +158,8 @@ class ScheduleRepository extends BaseRepository
             $conditions['semester_no'] = $semesterNo;
         }
 
-        return $this->model->where($conditions)->first();
+        /** @var Schedule $schedule */
+        $schedule = new $this->modelClass;
+        return $schedule->where($conditions)->first();
     }
 }
