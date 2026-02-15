@@ -108,4 +108,56 @@ class ScheduleRepository extends BaseRepository
 
         return $results;
     }
+
+    /**
+     * Belirtilen owner ve dönem için schedule arar
+     * 
+     * Schedule'lar owner + dönem + tip kombinasyonu ile unique'tir.
+     * Bu metod mevcut schedule'ı kontrol etmek için kullanılır.
+     * 
+     * **Unique Constraint:**
+     * - owner_type + owner_id + academic_year + semester + type (+ semester_no)
+     * 
+     * **Kullanım Örnekleri:**
+     * 
+     * 1. Öğretim üyesi ders programı:
+     *    findByOwnerAndPeriod('user', 146, '2023-2024', 'Güz', 'lesson')
+     * 
+     * 2. Program dersi (3. dönem):
+     *    findByOwnerAndPeriod('program', 531, '2023-2024', 'Güz', 'lesson', 3)
+     * 
+     * 3. Derslik sınav programı:
+     *    findByOwnerAndPeriod('classroom', 1, '2023-2024', 'Güz', 'final-exam')
+     * 
+     * @param string $ownerType Owner tipi ('user', 'program', 'lesson', 'classroom')
+     * @param int $ownerId Owner ID'si
+     * @param string $academicYear Akademik yıl (örn: '2023-2024')
+     * @param string $semester Dönem ('Güz', 'Bahar', 'Yaz')
+     * @param string $type Schedule tipi ('lesson', 'midterm-exam', 'final-exam', 'makeup-exam')
+     * @param int|null $semesterNo Dönem numarası (sadece program schedule'lar için, opsiyonel)
+     * @return Schedule|null Bulunan schedule veya null
+     */
+    public function findByOwnerAndPeriod(
+        string $ownerType,
+        int $ownerId,
+        string $academicYear,
+        string $semester,
+        string $type,
+        ?int $semesterNo = null
+    ): ?Schedule {
+        $conditions = [
+            'owner_type' => $ownerType,
+            'owner_id' => $ownerId,
+            'academic_year' => $academicYear,
+            'semester' => $semester,
+            'type' => $type
+        ];
+
+        // Program schedule'lar için semester_no da kontrol et
+        if ($semesterNo !== null) {
+            $conditions['semester_no'] = $semesterNo;
+        }
+
+        return $this->model->where($conditions)->first();
+    }
 }

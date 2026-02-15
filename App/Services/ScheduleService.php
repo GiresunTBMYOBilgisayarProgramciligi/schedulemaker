@@ -89,14 +89,15 @@ class ScheduleService extends BaseService
                 $isDummy = $dto->isDummy();
                 $lesson = null;
 
+                // Dummy olmayan itemlar için lesson bilgisini al (child lessons ile birlikte)
                 if (!$isDummy && isset($dto->data['lesson_id'])) {
-                    $lesson = (new Lesson())->where(['id' => $dto->data['lesson_id']])->first();
+                    $lesson = (new Lesson())->where(['id' => $dto->data['lesson_id']])->with(['childLessons'])->first();
                     if (!$lesson) {
                         throw new Exception("Lesson not found: {$dto->data['lesson_id']}");
                     }
                 }
 
-                // Basit çakışma kontrolü
+                // Basit çakışma kontrolü (v1.0)
                 $conflicts = $this->itemRepo->findConflicting(
                     $dto->scheduleId,
                     $dto->dayIndex,
@@ -114,19 +115,13 @@ class ScheduleService extends BaseService
                     // TODO v2: Conflict resolution (preferred handling, error throwing)
                 }
 
-                // Item oluştur ve kaydet
-                $newItem = new ScheduleItem();
-                $newItem->schedule_id = $dto->scheduleId;
-                $newItem->day_index = $dto->dayIndex;
-                $newItem->week_index = $dto->weekIndex;
-                $newItem->start_time = $dto->startTime;
-                $newItem->end_time = $dto->endTime;
-                $newItem->status = $dto->status;
-                $newItem->data = $dto->data;
-                $newItem->detail = $dto->detail;
-                $newItem->create();
+                // MULTI-SCHEDULE KAYDETME: Tüm ilgili schedule'lara kaydet
+                $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule);
+                $createdIds = array_merge($createdIds, $itemIds);
 
-                $createdIds[] = $newItem->id;
+                $this->logger->debug("Item #{$index} saved to " . count($itemIds) . " schedules", $this->logContext([
+                    'item_ids' => $itemIds
+                ]));
 
                 // Etkilenen ders ID'lerini kaydet
                 if (!$isDummy && $lesson) {
@@ -186,30 +181,320 @@ class ScheduleService extends BaseService
         }
     }
 
-    /**
-     * TODO v2: Çakışma çözümleme
-     * - Preferred conflict handling
-     * - Normal conflict error throwing
-     * - Unavailable slot handling
-     */
+    // ==================== MULTI-SCHEDULE KAYDETME ====================
 
     /**
-     * TODO v2: Multi-schedule kaydetme
-     * - Owner'lar belirleme (user, classroom, program, lesson)
-     * - Her owner için ayrı schedule oluşturma
-     * - Child lesson handling
+     * Schedule item için ilgili tüm owner'ları (sahip programlar/kullanıcılar) belirler
+     * 
+     * Bu metod bir schedule item'ın hangi programlara, derslere, kullanıcılara ve dersliklere
+     * ait olduğunu belirler. Her owner için ayrı bir schedule item oluşturulacaktır.
+     * 
+     * **Dummy Items (Preferred/Unavailable):**
+     * Sadece ilgili target schedule'a kaydedilir (örn: bir hocanın tercih ettiği slot sadece o hocanın programına eklenir)
+     * 
+     * **Normal Ders:**
+     * - Program schedule (dersin bağlı olduğu program)
+     * - Lesson schedule (dersin kendisi)
+     * - User schedule (öğretim üyesi)
+     * - Classroom schedule (derslik, UZEM değilse)
+     * 
+     * **Sınav (Exam Assignments):**
+     * Sınav atamaları ($dto->detail['assignments']) sınavda görevli gözlemciler ve kullanılacak derslikleri içerir.
+     * Örnek: [{'observer_id': 146, 'classroom_id': 3}, {'observer_id': 152, 'classroom_id': 5}]
+     * Her gözlemci ve derslik için ayrı schedule item oluşturulur.
+     * 
+     * @param ScheduleItemData $dto Schedule item verisi
+     * @param Lesson|null $lesson İlgili ders entity'si (dummy items için null olabilir)
+     * @return array Owner listesi, her biri ['type' => 'user|program|lesson|classroom', 'id' => int] formatında
+     * @throws Exception Dummy olmayan item için lesson yoksa
      */
+    private function determineOwners(ScheduleItemData $dto, ?Lesson $lesson): array
+    {
+        $owners = [];
+
+        // Dummy items (preferred/unavailable) → Sadece target schedule
+        if ($dto->isDummy()) {
+            $targetSchedule = $this->scheduleRepo->find($dto->scheduleId);
+            if ($targetSchedule) {
+                return [
+                    [
+                        'type' => $targetSchedule->owner_type,
+                        'id' => $targetSchedule->owner_id,
+                        'semester_no' => $targetSchedule->semester ?? null
+                    ]
+                ];
+            }
+            return [];
+        }
+
+        // Normal ders/sınav
+        if (!$lesson) {
+            throw new Exception("Lesson required for non-dummy items");
+        }
+
+        // SINAV KONTROLÜ: detail->assignments varsa bu bir sınav programı demektir
+        // assignments: Sınavda görevlendirilmiş gözlemciler ve kullanılacak derslikler
+        // Örnek: [{'observer_id': 146, 'classroom_id': 3}, {'observer_id': 152, 'classroom_id': 5}]
+        $examAssignments = $dto->detail['assignments'] ?? null;
+
+        if ($examAssignments) {
+            // SINAV - Çoklu gözlemci/derslik atamaları
+            $owners = $this->determineExamOwners($lesson, $examAssignments);
+        } else {
+            // NORMAL DERS - Tek öğretim üyesi, tek derslik
+            $owners = $this->determineLessonOwners($dto, $lesson);
+        }
+
+        // Child lessons dahil et (bağlı alt dersler varsa)
+        if (!empty($lesson->childLessons)) {
+            $childOwners = $this->determineChildLessonOwners($lesson->childLessons);
+            $owners = array_merge($owners, $childOwners);
+        }
+
+        return $owners;
+    }
 
     /**
-     * TODO v2: Group item processing
-     * - Merge/split logic
-     * - Time slot overlapping
+     * Normal ders için owner listesini belirler
+     * 
+     * Bir normal ders için 4 owner olabilir:
+     * 1. Program - Dersin bağlı olduğu program
+     * 2. Lesson - Dersin kendisi
+     * 3. User - Dersi veren öğretim üyesi
+     * 4. Classroom - Dersin yapıldığı derslik (UZEM değilse)
+     * 
+     * **UZEM Kuralı:** 
+     * classroom_type = 3 olan dersler UZEM (Uzaktan Eğitim) dersidir.
+     * Bu dersler fiziksel derslik kullanmadığı için classroom schedule oluşturulmaz.
+     * 
+     * @param ScheduleItemData $dto Schedule item verisi, içinde lecturer_id ve classroom_id var
+     * @param Lesson $lesson Ders entity'si, program_id ve classroom_type bilgilerini içerir
+     * @return array Owner listesi [['type' => 'user|program|lesson|classroom', 'id' => int], ...]
      */
+    private function determineLessonOwners(ScheduleItemData $dto, Lesson $lesson): array
+    {
+        $lecturerId = $dto->data['lecturer_id'] ?? null;
+        $classroomId = $dto->data['classroom_id'] ?? null;
+
+        $owners = [
+            ['type' => 'user', 'id' => $lecturerId],
+            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+            ['type' => 'lesson', 'id' => $lesson->id]
+        ];
+
+        // UZEM dersleri için classroom schedule oluşturma
+        // classroom_type: 1=Normal, 2=Lab, 3=UZEM
+        if ($lesson->classroom_type != 3 && $classroomId) {
+            $owners[] = ['type' => 'classroom', 'id' => $classroomId];
+        }
+
+        return $owners;
+    }
 
     /**
-     * TODO v3: Exam assignment
-     * - Observer assignment
-     * - Classroom assignment
-     * - Cross-schedule replication
+     * Sınav için owner listesini belirler
+     * 
+     * Sınav programları normal derslerden farklıdır:
+     * - Bir sınavda birden fazla gözlemci olabilir
+     * - Birden fazla derslik kullanılabilir
+     * - Her gözlemci ve derslik için ayrı schedule item oluşturulur
+     * 
+     * **Exam Assignments Formatı:**
+     * ```php
+     * [
+     *   ['observer_id' => 146, 'classroom_id' => 3],  // Ahmet Hoca, A101'de
+     *   ['observer_id' => 152, 'classroom_id' => 5]   // Mehmet Hoca, B202'de
+     * ]
+     * ```
+     * 
+     * @param Lesson $lesson Sınav dersi entity'si
+     * @param array $examAssignments Gözlemci-derslik atamaları
+     * @return array Owner listesi, her assignment için user ve classroom owner'ı içerir
      */
+    private function determineExamOwners(Lesson $lesson, array $examAssignments): array
+    {
+        $owners = [
+            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
+            ['type' => 'lesson', 'id' => $lesson->id]
+        ];
+
+        // Her sınav ataması için gözlemci ve derslik owner'ı ekle
+        foreach ($examAssignments as $assignment) {
+            $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
+            $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
+        }
+
+        return $owners;
+    }
+
+    /**
+     * Bağlı alt dersler (child lessons) için owner listesini belirler
+     * 
+     * **Child Lesson Nedir?**
+     * Bazı dersler başka derslere bağlıdır. Örneğin:
+     * - "Veritabanı" dersi (parent) → Bilgisayar Programcılığı programına ait
+     * - "Veritabanı-Lab" dersi (child) → Yönetim Bilişim Sistemleri programına ait
+     * 
+     * Parent ders programlandığında, child'ın da kendi programına eklenmesi gerekir.
+     * 
+     * **is_child Metadata:**
+     * Child lesson owner'ları 'is_child' = true ve 'child_lesson_id' bilgisi taşır.
+     * Bu sayede schedule item'da hangi child'a ait olduğu bilinir.
+     * 
+     * @param array $childLessons Child lesson entity'leri dizisi
+     * @return array Owner listesi, her child için lesson ve (varsa) program owner'ı
+     */
+    private function determineChildLessonOwners(array $childLessons): array
+    {
+        $owners = [];
+
+        foreach ($childLessons as $childLesson) {
+            // Child lesson'un kendi schedule'ı
+            $owners[] = [
+                'type' => 'lesson',
+                'id' => $childLesson->id,
+                'is_child' => true,
+                'child_lesson_id' => $childLesson->id
+            ];
+
+            // Child lesson'un programı varsa
+            if ($childLesson->program_id) {
+                $owners[] = [
+                    'type' => 'program',
+                    'id' => $childLesson->program_id,
+                    'semester_no' => $childLesson->semester_no,
+                    'is_child' => true,
+                    'child_lesson_id' => $childLesson->id
+                ];
+            }
+        }
+
+        return $owners;
+    }
+
+    /**
+     * Belirtilen owner için schedule bulur, yoksa oluşturur
+     * 
+     * Schedule'lar akademik yıl, dönem ve tipe göre unique'tir:
+     * - owner_type + owner_id + academic_year + semester + type → Unique constraint
+     * 
+     * **Örnek:**
+     * - Ahmet Hoca (user_id=146)
+     * - 2023-2024 Güz dönemi
+     * - Ders programı (type='lesson')
+     * → Bu kriterlere uyan schedule varsa kullan, yoksa oluştur
+     * 
+     * @param array $owner Owner bilgisi ['type' => 'user', 'id' => 146, 'semester_no' => 3]
+     * @param string $academicYear Akademik yıl (örn: '2023-2024')
+     * @param string $semester Dönem ('Güz', 'Bahar', 'Yaz')
+     * @param string $type Schedule tipi ('lesson', 'midterm-exam', 'final-exam', 'makeup-exam')
+     * @return Schedule Bulunan veya yeni oluşturulan schedule
+     */
+    private function findOrCreateSchedule(
+        array $owner,
+        string $academicYear,
+        string $semester,
+        string $type
+    ): Schedule {
+        // Önce varolan schedule'ı ara
+        $existing = $this->scheduleRepo->findByOwnerAndPeriod(
+            $owner['type'],
+            $owner['id'],
+            $academicYear,
+            $semester,
+            $type,
+            $owner['semester_no'] ?? null
+        );
+
+        if ($existing) {
+            return $existing;
+        }
+
+        // Yoksa yeni schedule oluştur
+        $schedule = new Schedule();
+        $schedule->owner_type = $owner['type'];
+        $schedule->owner_id = $owner['id'];
+        $schedule->academic_year = $academicYear;
+        $schedule->semester = $semester;
+        $schedule->type = $type;
+
+        // Program schedule'ları için semester_no gerekli
+        if (isset($owner['semester_no'])) {
+            $schedule->semester_no = $owner['semester_no'];
+        }
+
+        $schedule->create();
+
+        return $schedule;
+    }
+
+    /**
+     * Schedule item'ı tüm ilgili owner'ların schedule'larına kaydeder
+     * 
+     * **İşlem Akışı:**
+     * 1. Owner'ları belirle (determineOwners)
+     * 2. Her owner için:
+     *    a. Schedule bul veya oluştur (findOrCreateSchedule)
+     *    b. Schedule item oluştur ve kaydet
+     * 3. Oluşturulan tüm item ID'lerini döndür
+     * 
+     * **Örnek:**
+     * Input: Pazartesi 09:00-10:50, Algorithm dersi, Ahmet Hoca, A101
+     * Output: [45, 46, 47, 48] → 4 ayrı schedule item ID'si
+     * - ID 45: Program schedule item (Bilgisayar Programcılığı)
+     * - ID 46: Lesson schedule item (Algorithm)
+     * - ID 47: User schedule item (Ahmet Hoca)
+     * - ID 48: Classroom schedule item (A101)
+     * 
+     * **Child Lesson Metadata:**
+     * Child lesson'lar için oluşturulan item'larda detail['child_lesson_id'] bilgisi eklenir.
+     * Bu sayede hangi child'a ait olduğu bilinir.
+     * 
+     * @param ScheduleItemData $dto Schedule item verisi
+     * @param Lesson|null $lesson İlgili ders (dummy items için null)
+     * @param Schedule $sourceSchedule Kaynak schedule (akademik yıl/dönem bilgisi için)
+     * @return array Oluşturulan schedule item ID'leri
+     */
+    private function saveToMultipleSchedules(
+        ScheduleItemData $dto,
+        ?Lesson $lesson,
+        Schedule $sourceSchedule
+    ): array {
+        $owners = $this->determineOwners($dto, $lesson);
+        $createdIds = [];
+
+        foreach ($owners as $owner) {
+            // Owner için schedule bul/oluştur
+            $targetSchedule = $this->findOrCreateSchedule(
+                $owner,
+                $sourceSchedule->academic_year,
+                $sourceSchedule->semester,
+                $sourceSchedule->type
+            );
+
+            // Item oluştur
+            $item = new ScheduleItem();
+            $item->schedule_id = $targetSchedule->id;
+            $item->day_index = $dto->dayIndex;
+            $item->week_index = $dto->weekIndex;
+            $item->start_time = $dto->startTime;
+            $item->end_time = $dto->endTime;
+            $item->status = $dto->status;
+            $item->data = $dto->data;
+            $item->detail = $dto->detail;
+
+            // Child lesson metadata ekle
+            if (isset($owner['is_child']) && $owner['is_child']) {
+                if (!is_array($item->detail)) {
+                    $item->detail = [];
+                }
+                $item->detail['child_lesson_id'] = $owner['child_lesson_id'];
+            }
+
+            $item->create();
+            $createdIds[] = $item->id;
+        }
+
+        return $createdIds;
+    }
 }
