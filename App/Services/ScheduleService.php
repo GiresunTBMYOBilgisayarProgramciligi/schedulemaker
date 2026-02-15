@@ -93,10 +93,19 @@ class ScheduleService extends BaseService
                 $lesson = null;
 
                 // Dummy olmayan itemlar için lesson bilgisini al (child lessons ile birlikte)
-                if (!$isDummy && isset($dto->data['lesson_id'])) {
-                    $lesson = (new Lesson())->where(['id' => $dto->data['lesson_id']])->with(['childLessons'])->first();
-                    if (!$lesson) {
-                        throw new Exception("Lesson not found: {$dto->data['lesson_id']}");
+                if (!$isDummy) {
+                    $lessonId = null;
+
+                    // data bir array of arrays, ilk elemanı kontrol et
+                    if (!empty($dto->data) && isset($dto->data[0]['lesson_id'])) {
+                        $lessonId = $dto->data[0]['lesson_id'];
+                    }
+
+                    if ($lessonId) {
+                        $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
+                        if (!$lesson) {
+                            throw new Exception("Lesson not found: {$lessonId}");
+                        }
                     }
                 }
 
@@ -464,16 +473,35 @@ class ScheduleService extends BaseService
      */
     private function determineLessonOwners(ScheduleItemData $dto, Lesson $lesson): array
     {
-        $lecturerId = $dto->data['lecturer_id'] ?? null;
-        $classroomId = $dto->data['classroom_id'] ?? null;
+        // data bir array of arrays: [{lesson_id: 489, lecturer_id: 147, classroom_id: 1}]
+        $lecturerId = null;
+        $classroomId = null;
 
-        $owners = [
-            ['type' => 'user', 'id' => $lecturerId],
-            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
-            ['type' => 'lesson', 'id' => $lesson->id]
-        ];
+        if (!empty($dto->data) && isset($dto->data[0])) {
+            $lecturerId = $dto->data[0]['lecturer_id'] ?? null;
+            $classroomId = $dto->data[0]['classroom_id'] ?? null;
+        }
 
-        // UZEM dersleri için classroom schedule oluşturma
+        $owners = [];
+
+        // Lesson owner (her zaman var)
+        $owners[] = ['type' => 'lesson', 'id' => $lesson->id];
+
+        // Program owner (varsa)
+        if ($lesson->program_id) {
+            $owners[] = [
+                'type' => 'program',
+                'id' => $lesson->program_id,
+                'semester_no' => $lesson->semester_no
+            ];
+        }
+
+        // User owner (varsa)
+        if ($lecturerId) {
+            $owners[] = ['type' => 'user', 'id' => $lecturerId];
+        }
+
+        // Classroom owner (UZEM değilse ve classroom varsa)
         // classroom_type: 1=Normal, 2=Lab, 3=UZEM
         if ($lesson->classroom_type != 3 && $classroomId) {
             $owners[] = ['type' => 'classroom', 'id' => $classroomId];
