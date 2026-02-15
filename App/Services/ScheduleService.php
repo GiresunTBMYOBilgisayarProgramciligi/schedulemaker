@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\DeleteScheduleResult;
 use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
 use App\Exceptions\ValidationException;
@@ -13,7 +14,7 @@ use App\Repositories\ScheduleRepository;
 use App\Validators\ScheduleItemValidator;
 use Exception;
 
-use function getSettingValue;
+use function App\Helpers\getSettingValue;
 
 /**
  * Schedule Service
@@ -687,4 +688,426 @@ class ScheduleService extends BaseService
 
         return $createdIds;
     }
+
+    // ==================== DELETE OPERATIONS ====================
+
+    /**
+     * Mevcut item'dan owner'ları belirler (sibling bulma için)
+     * 
+     * `determineOwners()` ile benzer mantık ama mevcut bir item'dan çalışır.
+     * Sibling bulma işleminde hangi schedule'lara bakılacağını belirlemek için kullanılır.
+     * 
+     * **Önemli:** Child lesson owner'ları da dahil edilir!
+     * 
+     * @param ScheduleItem $item Schedule item
+     * @param array $lessonIds İlgili ders ID'leri
+     * @return array Owner listesi [['type' => 'user', 'id' => 146], ...]
+     */
+    private function determineOwnersFromItem(ScheduleItem $item, array $lessonIds): array
+    {
+        $owners = [];
+
+        // Item'ın slotData'sından bilgi çek
+        $slotDatas = $item->getSlotDatas();
+
+        foreach ($slotDatas as $slotData) {
+            $lesson = $slotData->lesson;
+            if (!$lesson) {
+                continue;
+            }
+
+            // Sadece hedef lesson ID'ler arasındaysa işle
+            if (!in_array((int) $lesson->id, $lessonIds)) {
+                continue;
+            }
+
+            // Lesson ve program owner'ları
+            $owners[] = ['type' => 'lesson', 'id' => $lesson->id, 'semester_no' => null];
+
+            if ($lesson->program_id) {
+                $owners[] = [
+                    'type' => 'program',
+                    'id' => $lesson->program_id,
+                    'semester_no' => $lesson->semester_no
+                ];
+            }
+
+            // Child lessons (önemli!)
+            if (!empty($lesson->childLessons)) {
+                foreach ($lesson->childLessons as $childLesson) {
+                    $owners[] = [
+                        'type' => 'lesson',
+                        'id' => $childLesson->id,
+                        'semester_no' => null
+                    ];
+
+                    if ($childLesson->program_id) {
+                        $owners[] = [
+                            'type' => 'program',
+                            'id' => $childLesson->program_id,
+                            'semester_no' => $childLesson->semester_no
+                        ];
+                    }
+                }
+            }
+
+            // Parent lesson varsa onu ve kardeşlerini de ekle
+            if ($lesson->parent_lesson_id) {
+                $parent = (new Lesson())
+                    ->where(['id' => $lesson->parent_lesson_id])
+                    ->with(['childLessons'])
+                    ->first();
+
+                if ($parent) {
+                    $owners[] = ['type' => 'lesson', 'id' => $parent->id, 'semester_no' => null];
+
+                    if ($parent->program_id) {
+                        $owners[] = [
+                            'type' => 'program',
+                            'id' => $parent->program_id,
+                            'semester_no' => $parent->semester_no
+                        ];
+                    }
+
+                    // Parent'ın diğer child'ları
+                    foreach ($parent->childLessons as $sibling) {
+                        if ($sibling->id !== $lesson->id) {
+                            $owners[] = ['type' => 'lesson', 'id' => $sibling->id, 'semester_no' => null];
+
+                            if ($sibling->program_id) {
+                                $owners[] = [
+                                    'type' => 'program',
+                                    'id' => $sibling->program_id,
+                                    'semester_no' => $sibling->semester_no
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Lecturer (User) owner
+            if ($slotData->lecturer) {
+                $owners[] = ['type' => 'user', 'id' => $slotData->lecturer->id, 'semester_no' => null];
+            }
+
+            // Classroom owner (UZEM değilse)
+            if ($slotData->classroom && $lesson->classroom_type != 3) {
+                $owners[] = ['type' => 'classroom', 'id' => $slotData->classroom->id, 'semester_no' => null];
+            }
+        }
+
+        // Unique yap
+        $uniqueOwners = [];
+        foreach ($owners as $owner) {
+            $key = $owner['type'] . '_' . $owner['id'] . '_' . ($owner['semester_no'] ?? 'null');
+            $uniqueOwners[$key] = $owner;
+        }
+
+        return array_values($uniqueOwners);
+    }
+
+    /**
+     * Sibling item'ları bulur (multi-schedule kaydetme ile eklenen kopyalar)
+     * 
+     * **Sibling Nedir?**
+     * Aynı ders item'ının farklı schedule'lardaki kopyaları:
+     * - Program schedule
+     * - Lesson schedule
+     * - User schedule
+     * - Classroom schedule
+     * - Child lesson'ların schedule'ları (!)
+     * 
+     * **Zaman Çakışması:**
+     * Sadece baseItem ile çakışan item'lar sibling sayılır.
+     * Aynı günde farklı saatlerdeki item'lar sibling değildir.
+     * 
+     * @param ScheduleItem $baseItem Kaynak item
+     * @param array $lessonIds İlgili ders ID'leri
+     * @return array ScheduleItem[]
+     */
+    private function findSiblingItems(ScheduleItem $baseItem, array $lessonIds): array
+    {
+        $siblingsKeyed = [$baseItem->id => $baseItem];
+
+        $baseSchedule = $this->scheduleRepo->find($baseItem->schedule_id);
+        if (!$baseSchedule) {
+            return array_values($siblingsKeyed);
+        }
+
+        // Owner'ları belirle (determineOwners mantığı ile)
+        $owners = $this->determineOwnersFromItem($baseItem, $lessonIds);
+
+        // Her owner için ilgili schedule'ları bul
+        foreach ($owners as $owner) {
+            $scheduleFilters = [
+                'semester' => $baseSchedule->semester,
+                'academic_year' => $baseSchedule->academic_year,
+                'type' => $baseSchedule->type,
+                'owner_type' => $owner['type'],
+                'owner_id' => $owner['id'],
+                'semester_no' => $owner['semester_no']
+            ];
+
+            $schedules = (new Schedule())->get()->where($scheduleFilters)->all();
+
+            foreach ($schedules as $schedule) {
+                // İlgili schedule ve gün için item'ları getir
+                $items = (new ScheduleItem())->get()->where([
+                    'schedule_id' => $schedule->id,
+                    'day_index' => $baseItem->day_index,
+                    'week_index' => $baseItem->week_index
+                ])->all();
+
+                foreach ($items as $item) {
+                    // Zaman çakışması kontrolü
+                    if (
+                        $this->checkTimeOverlap(
+                            $baseItem->start_time,
+                            $baseItem->end_time,
+                            $item->start_time,
+                            $item->end_time
+                        )
+                    ) {
+                        if (!isset($siblingsKeyed[$item->id])) {
+                            $siblingsKeyed[$item->id] = $item;
+                        }
+                    }
+                }
+            }
+        }
+
+        return array_values($siblingsKeyed);
+    }
+
+    /**
+     * Zaman çakışması kontrolü
+     * 
+     * @param string $start1
+     * @param string $end1
+     * @param string $start2
+     * @param string $end2
+     * @return bool
+     */
+    private function checkTimeOverlap(
+        string $start1,
+        string $end1,
+        string $start2,
+        string $end2
+    ): bool {
+        $s1 = strtotime($start1);
+        $e1 = strtotime($end1);
+        $s2 = strtotime($start2);
+        $e2 = strtotime($end2);
+
+        return !($e1 <= $s2 || $s1 >= $e2);
+    }
+
+    /**
+     * Schedule item'ları siler (multi-schedule aware)
+     * 
+     * @param array $itemsData Silinecek item'lar
+     * @param bool $expandGroup Child lesson grubu genişletilsin mi?
+     * @return DeleteScheduleResult
+     * @throws Exception
+     */
+    public function deleteScheduleItems(
+        array $itemsData,
+        bool $expandGroup = true
+    ): DeleteScheduleResult {
+        $deletedIds = [];
+        $createdItemIds = [];
+        $processedSiblingIds = [];
+
+        $isInitiator = !$this->db->inTransaction();
+        if ($isInitiator) {
+            $this->beginTransaction();
+        }
+
+        try {
+            foreach ($itemsData as $itemData) {
+                $id = (int)($itemData['id'] ?? 0);
+                if (!$id) {
+                    continue;
+                }
+
+                if (in_array($id, $processedSiblingIds)) {
+                    continue;
+                }
+
+                $scheduleItem = (new ScheduleItem())
+                    ->where(['id' => $id])
+                    ->with('schedule')
+                    ->first();
+
+                if (!$scheduleItem) {
+                    continue;
+                }
+
+                $type = 'lesson';
+                if ($scheduleItem->schedule && in_array($scheduleItem->schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                    $type = 'exam';
+                }
+
+                $duration = (int)getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+                $break = (int)getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+
+                $baseLessonIds = [];
+                foreach ($scheduleItem->getSlotDatas() as $sd) {
+                    if ($sd->lesson) {
+                        $baseLessonIds[] = (int)$sd->lesson->id;
+                    }
+                }
+
+                $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
+                $siblingIds = array_map(fn($s) => (int)$s->id, $siblings);
+
+                $rawIntervals = [];
+                $targetLessonIds = [];
+
+                foreach ($itemsData as $reqItem) {
+                    if (in_array((int)$reqItem['id'], $siblingIds)) {
+                        $rawIntervals[] = [
+                            'start' => substr($reqItem['start_time'] ?? $scheduleItem->start_time, 0, 5),
+                            'end' => substr($reqItem['end_time'] ?? $scheduleItem->end_time, 0, 5)
+                        ];
+
+                        if (!empty($reqItem['data'])) {
+                            foreach ($reqItem['data'] as $d) {
+                                if (isset($d['lesson_id'])) {
+                                    $lId = (int)$d['lesson_id'];
+                                    if (!in_array($lId, $targetLessonIds)) {
+                                        $targetLessonIds[] = $lId;
+
+                                        if ($expandGroup) {
+                                            $lObj = (new Lesson())
+                                                ->where(['id' => $lId])
+                                                ->with(['childLessons', 'parentLesson'])
+                                                ->first();
+
+                                            if ($lObj) {
+                                                if ($lObj->parent_lesson_id) {
+                                                    if (!in_array((int)$lObj->parent_lesson_id, $targetLessonIds)) {
+                                                        $targetLessonIds[] = (int)$lObj->parent_lesson_id;
+                                                    }
+
+                                                    $parentObj = (new Lesson())
+                                                        ->where(['id' => $lObj->parent_lesson_id])
+                                                        ->with(['childLessons'])
+                                                        ->first();
+
+                                                    if ($parentObj) {
+                                                        foreach ($parentObj->childLessons as $cl) {
+                                                            if (!in_array((int)$cl->id, $targetLessonIds)) {
+                                                                $targetLessonIds[] = (int)$cl->id;
+                                                            }
+                                                        }
+                                                    }
+                                                } elseif (!empty($lObj->childLessons)) {
+                                                    foreach ($lObj->childLessons as $cl) {
+                                                        if (!in_array((int)$cl->id, $targetLessonIds)) {
+                                                            $targetLessonIds[] = (int)$cl->id;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                usort($rawIntervals, fn($a, $b) => strcmp($a['start'], $b['start']));
+                $mergedIntervals = [];
+
+                foreach ($rawIntervals as $interval) {
+                    if (empty($mergedIntervals)) {
+                        $mergedIntervals[] = $interval;
+                    } else {
+                        $lastIdx = count($mergedIntervals) - 1;
+                        $lastEnd = $mergedIntervals[$lastIdx]['end'];
+                        $gapMinutes = (strtotime($interval['start']) - strtotime($lastEnd)) / 60;
+
+                        if ($gapMinutes >= 0 && $gapMinutes <= $break) {
+                            $mergedIntervals[$lastIdx]['end'] = max($mergedIntervals[$lastIdx]['end'], $interval['end']);
+                        } else {
+                            $mergedIntervals[] = $interval;
+                        }
+                    }
+                }
+
+                if (empty($mergedIntervals)) {
+                    continue;
+                }
+
+                foreach ($siblings as $sibling) {
+                    $sibling->delete();
+                    $deletedIds[] = $sibling->id;
+                }
+
+                foreach ($siblings as $sibling) {
+                    $result = $this->processItemDeletion(
+                        $sibling,
+                        $mergedIntervals,
+                        $targetLessonIds,
+                        $duration,
+                        $break,
+                        false
+                    );
+
+                    if (!empty($result['created'])) {
+                        foreach ($result['created'] as $createdItem) {
+                            $createdItemIds[] = $createdItem->id;
+                        }
+                    }
+                }
+
+                $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
+            }
+
+            if ($isInitiator) {
+                $this->commit();
+            }
+
+            $this->logger->info(
+                "Schedule item'lar silindi: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
+                $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
+            );
+
+            return DeleteScheduleResult::success($deletedIds, $createdItemIds);
+
+        } catch (Exception $e) {
+            if ($isInitiator) {
+                $this->rollback();
+            }
+
+            $this->logger->error(
+                "Silme işlemi başarısız: " . $e->getMessage(),
+                $this->logContext(['exception' => $e])
+            );
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Item parçalama (flatten timeline) - geçici stub
+     */
+    private function processItemDeletion(
+        ScheduleItem $item,
+        array $deleteIntervals,
+        array $targetLessonIds = [],
+        int $duration = 50,
+        int $break = 10,
+        bool $deleteOriginal = true
+    ): array {
+        if ($deleteOriginal) {
+            $item->delete();
+        }
+        
+        return ['deleted' => true, 'created' => []];
+    }
 }
+
