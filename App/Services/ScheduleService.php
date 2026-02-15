@@ -926,7 +926,7 @@ class ScheduleService extends BaseService
 
         try {
             foreach ($itemsData as $itemData) {
-                $id = (int)($itemData['id'] ?? 0);
+                $id = (int) ($itemData['id'] ?? 0);
                 if (!$id) {
                     continue;
                 }
@@ -949,24 +949,24 @@ class ScheduleService extends BaseService
                     $type = 'exam';
                 }
 
-                $duration = (int)getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
-                $break = (int)getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+                $duration = (int) getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+                $break = (int) getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
 
                 $baseLessonIds = [];
                 foreach ($scheduleItem->getSlotDatas() as $sd) {
                     if ($sd->lesson) {
-                        $baseLessonIds[] = (int)$sd->lesson->id;
+                        $baseLessonIds[] = (int) $sd->lesson->id;
                     }
                 }
 
                 $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
-                $siblingIds = array_map(fn($s) => (int)$s->id, $siblings);
+                $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
 
                 $rawIntervals = [];
                 $targetLessonIds = [];
 
                 foreach ($itemsData as $reqItem) {
-                    if (in_array((int)$reqItem['id'], $siblingIds)) {
+                    if (in_array((int) $reqItem['id'], $siblingIds)) {
                         $rawIntervals[] = [
                             'start' => substr($reqItem['start_time'] ?? $scheduleItem->start_time, 0, 5),
                             'end' => substr($reqItem['end_time'] ?? $scheduleItem->end_time, 0, 5)
@@ -975,7 +975,7 @@ class ScheduleService extends BaseService
                         if (!empty($reqItem['data'])) {
                             foreach ($reqItem['data'] as $d) {
                                 if (isset($d['lesson_id'])) {
-                                    $lId = (int)$d['lesson_id'];
+                                    $lId = (int) $d['lesson_id'];
                                     if (!in_array($lId, $targetLessonIds)) {
                                         $targetLessonIds[] = $lId;
 
@@ -987,8 +987,8 @@ class ScheduleService extends BaseService
 
                                             if ($lObj) {
                                                 if ($lObj->parent_lesson_id) {
-                                                    if (!in_array((int)$lObj->parent_lesson_id, $targetLessonIds)) {
-                                                        $targetLessonIds[] = (int)$lObj->parent_lesson_id;
+                                                    if (!in_array((int) $lObj->parent_lesson_id, $targetLessonIds)) {
+                                                        $targetLessonIds[] = (int) $lObj->parent_lesson_id;
                                                     }
 
                                                     $parentObj = (new Lesson())
@@ -998,15 +998,15 @@ class ScheduleService extends BaseService
 
                                                     if ($parentObj) {
                                                         foreach ($parentObj->childLessons as $cl) {
-                                                            if (!in_array((int)$cl->id, $targetLessonIds)) {
-                                                                $targetLessonIds[] = (int)$cl->id;
+                                                            if (!in_array((int) $cl->id, $targetLessonIds)) {
+                                                                $targetLessonIds[] = (int) $cl->id;
                                                             }
                                                         }
                                                     }
                                                 } elseif (!empty($lObj->childLessons)) {
                                                     foreach ($lObj->childLessons as $cl) {
-                                                        if (!in_array((int)$cl->id, $targetLessonIds)) {
-                                                            $targetLessonIds[] = (int)$cl->id;
+                                                        if (!in_array((int) $cl->id, $targetLessonIds)) {
+                                                            $targetLessonIds[] = (int) $cl->id;
                                                         }
                                                     }
                                                 }
@@ -1093,7 +1093,25 @@ class ScheduleService extends BaseService
     }
 
     /**
-     * Item parçalama (flatten timeline) - geçici stub
+     * Item parçalama (flatten timeline logic)
+     * 
+     * **Flatten Timeline Yaklaşımı:**
+     * 1. Item'ı slot bazlı parçalara ayır (duration + break)
+     * 2. Silme aralıklarını uygula
+     * 3. Break temizliği (yalnız kalan break'leri sil)
+     * 4. Kalan parçaları birleştir
+     * 
+     * **Partial Delete:**
+     * - Zaman bazlı: Belirli saatleri sil
+     * - Ders bazlı: Group item'dan belirli dersleri çıkar
+     * 
+     * @param ScheduleItem $item Item
+     * @param array $deleteIntervals Silme aralıkları [['start' => '09:00', 'end' => '10:00'], ...]
+     * @param array $targetLessonIds Silinecek ders ID'leri (boşsa tümü)
+     * @param int $duration Ders süresi (dakika)
+     * @param int $break Teneffüs süresi (dakika)
+     * @param bool $deleteOriginal Original item'ı sil mi?
+     * @return array ['deleted' => bool, 'created' => ScheduleItem[]]
      */
     private function processItemDeletion(
         ScheduleItem $item,
@@ -1103,11 +1121,415 @@ class ScheduleService extends BaseService
         int $break = 10,
         bool $deleteOriginal = true
     ): array {
+        $startStr = $item->getShortStartTime();
+        $endStr = $item->getShortEndTime();
+
+        // 1. Kritik noktaları topla (Zaman çizelgesini düzleştir)
+        $points = [$startStr, $endStr];
+
+        // İç slot sınırlarını ekle (Duration ve Break geçişleri)
+        $current = strtotime($startStr);
+        $endUnix = strtotime($endStr);
+
+        while ($current < $endUnix) {
+            // Ders sonu
+            $current += ($duration * 60);
+
+            if ($current <= $endUnix) {
+                $pointStr = date("H:i", $current);
+                if (!in_array($pointStr, $points)) {
+                    $points[] = $pointStr;
+                }
+
+                // Teneffüs sonu
+                if ($current < $endUnix) {
+                    $current += ($break * 60);
+                    $pointStr = date("H:i", $current);
+                    if (!in_array($pointStr, $points)) {
+                        $points[] = $pointStr;
+                    }
+                }
+            }
+        }
+
+        // Silme aralığı sınırlarını ekle
+        foreach ($deleteIntervals as $del) {
+            $dStart = substr($del['start'], 0, 5);
+            $dEnd = substr($del['end'], 0, 5);
+
+            if ($dStart > $startStr && $dStart < $endStr) {
+                $points[] = $dStart;
+            }
+            if ($dEnd > $startStr && $dEnd < $endStr) {
+                $points[] = $dEnd;
+            }
+        }
+
+        $points = array_unique($points);
+        sort($points);
+
+        $dataList = $item->data ?: [];
+
+        // 2. Dilimler (segments) üzerinden geç
+        $segments = [];
+        for ($i = 0; $i < count($points) - 1; $i++) {
+            $pStart = $points[$i];
+            $pEnd = $points[$i + 1];
+
+            if ($pStart >= $pEnd) {
+                continue;
+            }
+
+            // Bu dilimin tipi (break vs lesson)
+            $diff = (strtotime($pEnd) - strtotime($pStart)) / 60;
+            $isBreak = ($diff == $break);
+
+            // Bu dilim silinecek mi?
+            $isDeleteZone = false;
+            foreach ($deleteIntervals as $del) {
+                if ($del['start'] <= $pStart && $del['end'] >= $pEnd) {
+                    $isDeleteZone = true;
+                    break;
+                }
+            }
+
+            $currentData = $dataList;
+            $shouldKeep = true;
+
+            if ($isDeleteZone) {
+                if (!empty($targetLessonIds)) {
+                    // Sadece belirli dersleri çıkar (partial delete)
+                    $currentData = array_values(array_filter($dataList, function ($l) use ($targetLessonIds) {
+                        return !in_array((int) $l['lesson_id'], $targetLessonIds);
+                    }));
+                } else {
+                    // Tüm item siliniyor
+                    $currentData = [];
+                }
+            }
+
+            // Dummy öğeler (Preferred/Unavailable) için data boştur
+            $isSpecial = in_array($item->status, ['preferred', 'unavailable']);
+            $wasPreferred = ($item->detail['preferred'] ?? false);
+
+            if (empty($currentData)) {
+                if ($isSpecial) {
+                    $shouldKeep = !$isDeleteZone;
+                } elseif ($wasPreferred && $isDeleteZone) {
+                    // Üzerinde ders olan preferred alan siliniyorsa, alanı preferred olarak geri kazan
+                    $shouldKeep = true;
+                } else {
+                    $shouldKeep = false;
+                }
+            }
+
+            // Segment orijinal öğenin zaman aralığı içinde olmalı
+            if ($pStart < $startStr || $pEnd > $endStr) {
+                continue;
+            }
+
+            $segments[] = [
+                'start' => $pStart,
+                'end' => $pEnd,
+                'data' => $currentData,
+                'isBreak' => $isBreak,
+                'shouldKeep' => $shouldKeep
+            ];
+        }
+
+        // 3. Teneffüs Temizliği (Break Sanitization)
+        // Bir teneffüs ancak hem öncesindeki hem sonrasındaki ders tutuluyorsa tutulur
+        for ($i = 0; $i < count($segments); $i++) {
+            if ($segments[$i]['isBreak']) {
+                $prevKept = ($i > 0 && $segments[$i - 1]['shouldKeep']);
+                $nextKept = ($i < count($segments) - 1 && $segments[$i + 1]['shouldKeep']);
+
+                if (!$prevKept || !$nextKept) {
+                    $segments[$i]['shouldKeep'] = false;
+                    $segments[$i]['data'] = [];
+                }
+            }
+        }
+
+        // 4. Parçaları birleştir (merge contiguous segments with same data)
+        $newSegments = [];
+        foreach ($segments as $seg) {
+            if (!$seg['shouldKeep']) {
+                continue;
+            }
+
+            $lastIdx = count($newSegments) - 1;
+            if (
+                $lastIdx >= 0 &&
+                $newSegments[$lastIdx]['end'] === $seg['start'] &&
+                serialize($newSegments[$lastIdx]['data']) === serialize($seg['data'])
+            ) {
+                // Birleştir
+                $newSegments[$lastIdx]['end'] = $seg['end'];
+            } else {
+                // Yeni segment
+                $newSegments[] = [
+                    'start' => $seg['start'],
+                    'end' => $seg['end'],
+                    'data' => $seg['data']
+                ];
+            }
+        }
+
+        // 5. Veritabanı güncelleme
         if ($deleteOriginal) {
             $item->delete();
         }
-        
-        return ['deleted' => true, 'created' => []];
+
+        $createdItems = [];
+        if (!empty($newSegments)) {
+            foreach ($newSegments as $seg) {
+                $newItem = new ScheduleItem();
+                $newItem->schedule_id = $item->schedule_id;
+                $newItem->day_index = $item->day_index;
+                $newItem->week_index = $item->week_index;
+                $newItem->start_time = $seg['start'];
+                $newItem->end_time = $seg['end'];
+
+                // Status belirleme
+                if (in_array($item->status, ['preferred', 'unavailable'])) {
+                    $newItem->status = $item->status;
+                } elseif ($item->detail['preferred'] ?? false) {
+                    // Preferred alanda parça oluştuysa
+                    if (empty($seg['data'])) {
+                        $newItem->status = 'preferred';
+                    } else {
+                        // Hala ders varsa status belirlenir
+                        $isGroup = false;
+                        foreach ($seg['data'] as $d) {
+                            $lessonId = $d['lesson_id'] ?? null;
+                            if ($lessonId) {
+                                $lesson = (new Lesson())->find($lessonId);
+                                if ($lesson && $lesson->group_no > 0) {
+                                    $isGroup = true;
+                                    break;
+                                }
+                            }
+                        }
+                        $newItem->status = $isGroup ? 'group' : 'single';
+                    }
+                } else {
+                    // Normal item
+                    $isGroup = false;
+                    foreach ($seg['data'] as $d) {
+                        $lessonId = $d['lesson_id'] ?? null;
+                        if ($lessonId) {
+                            $lesson = (new Lesson())->find($lessonId);
+                            if ($lesson && $lesson->group_no > 0) {
+                                $isGroup = true;
+                                break;
+                            }
+                        }
+                    }
+                    $newItem->status = $isGroup ? 'group' : 'single';
+                }
+
+                $newItem->data = $seg['data'];
+                $newItem->detail = $item->detail;
+                $newItem->create();
+                $createdItems[] = $newItem;
+            }
+        }
+
+        return ['deleted' => true, 'created' => $createdItems];
+    }
+
+    /**
+     * Group item'ları merge et (flatten timeline ile)
+     * 
+     * **Flatten Timeline Yaklaşımı:**
+     * 1. Çakışan tüm group item'ları topla
+     * 2. Tüm başlangıç/bitiş noktalarını belirle
+     * 3. Her aralık için çakışan item'ların data'larını merge et
+     * 4. Duplicate lesson'ları temizle
+     * 5. Bitişik ve aynı data'lı segmentleri birleştir
+     * 6. Eski item'ları sil, yeni item'ları oluştur
+     * 
+     * **Örnek:**
+     * ```
+     * Item A: 09:00-10:00 [Ders 1, Ders 2]
+     * Item B: 09:30-11:00 [Ders 3, Ders 4]
+     * Yeni:   09:00-10:00 [Ders 5]
+     * 
+     * Sonuç:
+     * - 09:00-09:30 → [Ders 1, Ders 2, Ders 5]
+     * - 09:30-10:00 → [Ders 1, Ders 2, Ders 3, Ders 4, Ders 5]
+     * - 10:00-11:00 → [Ders 3, Ders 4]
+     * ```
+     * 
+     * @param int $scheduleId Schedule ID
+     * @param int $dayIndex Gün index
+     * @param int $weekIndex Hafta index
+     * @param string $startTime Başlangıç saati (HH:MM)
+     * @param string $endTime Bitiş saati (HH:MM)
+     * @param array $newData Yeni item'ın data'sı [['lesson_id' => 1, ...], ...]
+     * @param array|null $newDetail Yeni item'ın detail'i
+     * @return array Created item IDs
+     */
+    public function mergeGroupItems(
+        int $scheduleId,
+        int $dayIndex,
+        int $weekIndex,
+        string $startTime,
+        string $endTime,
+        array $newData,
+        ?array $newDetail = null
+    ): array {
+        // 1. İlgili günün tüm 'group' itemlerini çek
+        $allDayItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $scheduleId,
+            'day_index' => $dayIndex,
+            'week_index' => $weekIndex,
+            'status' => 'group'
+        ])->all();
+
+        // Sadece zaman çakışanları filtrele
+        $involvedItems = array_filter($allDayItems, function ($item) use ($startTime, $endTime) {
+            return $this->checkTimeOverlap(
+                $startTime,
+                $endTime,
+                $item->getShortStartTime(),
+                $item->getShortEndTime()
+            );
+        });
+
+        // Eğer hiç çakışma yoksa direkt oluştur
+        if (empty($involvedItems)) {
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $scheduleId;
+            $newItem->day_index = $dayIndex;
+            $newItem->week_index = $weekIndex;
+            $newItem->start_time = $startTime;
+            $newItem->end_time = $endTime;
+            $newItem->status = 'group';
+            $newItem->data = $newData;
+            $newItem->detail = $newDetail;
+            $newItem->create();
+            return [$newItem->id];
+        }
+
+        // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
+        // Tüm başlangıç ve bitiş noktalarını topla
+        $startTime = substr($startTime, 0, 5);
+        $endTime = substr($endTime, 0, 5);
+        $points = [$startTime, $endTime];
+
+        foreach ($involvedItems as $item) {
+            $points[] = $item->getShortStartTime();
+            $points[] = $item->getShortEndTime();
+        }
+
+        $points = array_unique($points);
+        sort($points);
+
+        // 3. Aralıkları yeniden oluştur ve merge et
+        $pendingItems = [];
+
+        for ($i = 0; $i < count($points) - 1; $i++) {
+            $pStart = $points[$i];
+            $pEnd = $points[$i + 1];
+
+            // Aralık uzunluğu kontrolü
+            if ($pStart >= $pEnd) {
+                continue;
+            }
+
+            $mergedData = [];
+            $mergedDetail = [];
+
+            // Yeni veri bu aralığı kapsıyor mu?
+            if ($startTime <= $pStart && $endTime >= $pEnd) {
+                $mergedData = array_merge($mergedData, $newData);
+                if ($newDetail) {
+                    $mergedDetail = array_merge($mergedDetail, $newDetail);
+                }
+            }
+
+            // Mevcut itemler bu aralığı kapsıyor mu?
+            foreach ($involvedItems as $item) {
+                if ($item->getShortStartTime() <= $pStart && $item->getShortEndTime() >= $pEnd) {
+                    $itemData = $item->data;
+                    if (is_array($itemData)) {
+                        $mergedData = array_merge($mergedData, $itemData);
+                    }
+
+                    $itemDetail = $item->detail;
+                    if (is_array($itemDetail)) {
+                        $mergedDetail = array_merge($mergedDetail, $itemDetail);
+                    }
+                }
+            }
+
+            // Data varsa listeye ekle
+            if (!empty($mergedData)) {
+                // Duplicate lesson'ları temizle (lesson_id bazlı)
+                $uniqueData = [];
+                $seenLessonIds = [];
+
+                foreach ($mergedData as $d) {
+                    $lid = $d['lesson_id'] ?? null;
+                    if ($lid && !in_array($lid, $seenLessonIds)) {
+                        $seenLessonIds[] = $lid;
+                        $uniqueData[] = $d;
+                    } elseif (!$lid) {
+                        $uniqueData[] = $d;
+                    }
+                }
+
+                // Optimization: Eğer bir önceki item ile datalar ve detail aynı ise zaman aralığını uzat
+                $lastIdx = count($pendingItems) - 1;
+                if ($lastIdx >= 0) {
+                    $lastItem = &$pendingItems[$lastIdx];
+                    if (
+                        $lastItem['end'] == $pStart &&
+                        json_encode($lastItem['data']) === json_encode($uniqueData) &&
+                        json_encode($lastItem['detail']) === json_encode($mergedDetail)
+                    ) {
+                        // Birleştir
+                        $lastItem['end'] = $pEnd;
+                        continue;
+                    }
+                }
+
+                // Yeni segment ekle
+                $pendingItems[] = [
+                    'start' => $pStart,
+                    'end' => $pEnd,
+                    'data' => $uniqueData,
+                    'detail' => $mergedDetail
+                ];
+            }
+        }
+
+        // 4. Veritabanı İşlemleri
+        // Eski itemleri sil
+        foreach ($involvedItems as $item) {
+            $item->delete();
+        }
+
+        $createdGroupIds = [];
+        // Yeni itemleri oluştur
+        foreach ($pendingItems as $pItem) {
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $scheduleId;
+            $newItem->day_index = $dayIndex;
+            $newItem->week_index = $weekIndex;
+            $newItem->start_time = $pItem['start'];
+            $newItem->end_time = $pItem['end'];
+            $newItem->status = 'group';
+            $newItem->data = $pItem['data'];
+            $newItem->detail = !empty($pItem['detail']) ? $pItem['detail'] : null;
+            $newItem->create();
+            $createdGroupIds[] = $newItem->id;
+        }
+
+        return $createdGroupIds;
     }
 }
+
 
