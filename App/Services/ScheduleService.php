@@ -699,15 +699,25 @@ class ScheduleService extends BaseService
             $item->start_time = $dto->startTime;
             $item->end_time = $dto->endTime;
             $item->status = $dto->status;
-            $item->data = $dto->data;
-            $item->detail = $dto->detail;
 
-            // Child lesson metadata ekle
+            // Child lesson için child lesson data kullan
             if (isset($owner['is_child']) && $owner['is_child']) {
+                // Child lesson için data oluştur
+                $childLessonId = $owner['child_lesson_id'];
+                $item->data = array_map(function ($d) use ($childLessonId) {
+                    $childData = $d;
+                    $childData['lesson_id'] = $childLessonId;
+                    return $childData;
+                }, $dto->data);
+
                 if (!is_array($item->detail)) {
                     $item->detail = [];
                 }
-                $item->detail['child_lesson_id'] = $owner['child_lesson_id'];
+                $item->detail['child_lesson_id'] = $childLessonId;
+            } else {
+                // Normal owner için parent data kullan
+                $item->data = $dto->data;
+                $item->detail = $dto->detail;
             }
 
             $item->create();
