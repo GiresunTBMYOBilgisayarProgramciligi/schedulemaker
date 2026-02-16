@@ -1084,10 +1084,15 @@ class ScheduleController extends Controller
                                                         if (!in_array((int) $cl->id, $targetLessonIds))
                                                             $targetLessonIds[] = (int) $cl->id;
                                                     }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
+                }
 
                 // Aralıkları sırala ve birleştir (bitişik dersler tek interval olsun)
                 usort($rawIntervals, fn($a, $b) => strcmp($a['start'], $b['start']));
@@ -1549,7 +1554,7 @@ class ScheduleController extends Controller
                             foreach ($seg['data'] as $d) {
                                 $lessonId = $d['lesson_id'] ?? null;
                                 if ($lessonId) {
-                                    $lesson = (new \App\Models\Lesson())->find($lessonId);
+                                    $lesson = (new Lesson())->find($lessonId);
                                     if ($lesson && $lesson->group_no > 0) {
                                         $isGroup = true;
                                         break;
@@ -1565,11 +1570,10 @@ class ScheduleController extends Controller
                         foreach ($seg['data'] as $d) {
                             $lessonId = $d['lesson_id'] ?? null;
                             if ($lessonId) {
-                                $lesson = (new \App\Models\Lesson())->find($lessonId);
-                                    if ($lesson && $lesson->group_no > 0) {
-                                        $isGroup = true;
-                                        break;
-                                    }
+                                $lesson = (new Lesson())->find($lessonId);
+                                if ($lesson && $lesson->group_no > 0) {
+                                    $isGroup = true;
+                                    break;
                                 }
                             }
                         }
