@@ -380,7 +380,6 @@ class ScheduleCard {
         }
 
         const modal = new Modal();
-        modal.initializeModal("xl");
         modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true, "xl");
 
         // Sayfaya git butonu ekle
