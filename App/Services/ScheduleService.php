@@ -414,6 +414,7 @@ class ScheduleService extends BaseService
 
         // Dummy items (preferred/unavailable) → Sadece target schedule
         if ($dto->isDummy()) {
+            /** @var Schedule $targetSchedule */
             $targetSchedule = $this->scheduleRepo->find($dto->scheduleId);
             if ($targetSchedule) {
                 return [
@@ -573,7 +574,8 @@ class ScheduleService extends BaseService
                 'type' => 'lesson',
                 'id' => $childLesson->id,
                 'is_child' => true,
-                'child_lesson_id' => $childLesson->id
+                'child_lesson_id' => $childLesson->id,
+                'lesson_hours' => $childLesson->hours  // Duration bilgisi (DB column: hours)
             ];
 
             // Child lesson'un programı varsa
@@ -583,7 +585,8 @@ class ScheduleService extends BaseService
                     'id' => $childLesson->program_id,
                     'semester_no' => $childLesson->semester_no,
                     'is_child' => true,
-                    'child_lesson_id' => $childLesson->id
+                    'child_lesson_id' => $childLesson->id,
+                    'lesson_hours' => $childLesson->hours  // Duration bilgisi (DB column: hours)
                 ];
             }
         }
@@ -682,8 +685,53 @@ class ScheduleService extends BaseService
         $owners = $this->determineOwners($dto, $lesson);
         $createdIds = [];
 
+        // DEBUG: Owner listesini logla
+        $this->logger->debug('saveToMultipleSchedules: Owner list determined', [
+            'username' => $this->currentUser->username ?? 'System',
+            'user_id' => $this->currentUser->id ?? null,
+            'class' => self::class,
+            'method' => __FUNCTION__,
+            'owner_count' => count($owners),
+            'owners' => array_map(function ($o) {
+                return [
+                    'type' => $o['type'],
+                    'id' => $o['id'],
+                    'is_child' => $o['is_child'] ?? false,
+                    'child_lesson_id' => $o['child_lesson_id'] ?? null
+                ];
+            }, $owners),
+            'lesson_id' => $lesson ? $lesson->id : null,
+            'lesson_name' => $lesson ? $lesson->name : null
+        ]);
+
+        // Ana ders için saat kontrolü (Hata fırlatılacaksa burada fırlatılır)
+        if ($lesson && !$dto->isDummy()) {
+            $lesson->IsScheduleComplete($sourceSchedule->type);
+
+            // Eklenecek slot sayısını hesapla
+            $lessonDuration = (int) getSettingValue('duration', 'lesson', 50);
+            $breakTime = (int) getSettingValue('break', 'lesson', 10);
+            $slotSize = $lessonDuration + $breakTime;
+
+            $addedMinutes = $this->getItemDurationMinutes($dto->startTime, $dto->endTime);
+            $addedSlots = round($addedMinutes / $slotSize);
+
+            // Eğer ana dersin saati aşılıyorsa hata fırlat
+            if ($lesson->remaining_size < $addedSlots) {
+                $errorMsg = ($sourceSchedule->type === 'lesson')
+                    ? "{$lesson->getFullName()} dersinin toplam saati aşılıyor. (Kalan: {$lesson->remaining_size} saat, Eklenmek istenen: {$addedSlots} saat)"
+                    : "{$lesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Kalan: {$lesson->remaining_size}, Eklenmek istenen: {$addedSlots})";
+
+                throw new \Exception($errorMsg);
+            }
+        }
+
+        // Child lesson'lar için transaction içi takip (bu loop içinde eklenenler)
+        $childLessonHoursAdded = [];
+
         foreach ($owners as $owner) {
             // Owner için schedule bul/oluştur
+            /** @var Schedule $targetSchedule */
             $targetSchedule = $this->findOrCreateSchedule(
                 $owner,
                 $sourceSchedule->academic_year,
@@ -691,7 +739,7 @@ class ScheduleService extends BaseService
                 $sourceSchedule->type
             );
 
-            // Item oluştur
+            // Item oluştur (kopya)
             $item = new ScheduleItem();
             $item->schedule_id = $targetSchedule->id;
             $item->day_index = $dto->dayIndex;
@@ -700,10 +748,53 @@ class ScheduleService extends BaseService
             $item->end_time = $dto->endTime;
             $item->status = $dto->status;
 
-            // Child lesson için child lesson data kullan
+            // Child lesson kontrolü
             if (isset($owner['is_child']) && $owner['is_child']) {
-                // Child lesson için data oluştur
                 $childLessonId = $owner['child_lesson_id'];
+
+                // Child lesson verisini çek
+                $childLesson = (new Lesson())->find($childLessonId);
+                if (!$childLesson) {
+                    continue;
+                }
+
+                $childLesson->IsScheduleComplete($sourceSchedule->type);
+
+                // Bu loop içinde daha önce bu child için ne kadar eklendi?
+                $alreadyAddedSlots = $childLessonHoursAdded[$childLessonId] ?? 0;
+                $currentRemaining = $childLesson->remaining_size - $alreadyAddedSlots;
+
+                if ($currentRemaining <= 0) {
+                    $this->logger->debug("Child lesson already full, skipping schedule #{$targetSchedule->id}", [
+                        'lesson_id' => $childLessonId,
+                        'lesson_name' => $childLesson->getFullName()
+                    ]);
+                    continue;
+                }
+
+                // Eklenecek slot sayısı
+                $lessonDuration = (int) getSettingValue('duration', 'lesson', 50);
+                $breakTime = (int) getSettingValue('break', 'lesson', 10);
+                $slotSize = $lessonDuration + $breakTime;
+
+                $parentMinutes = $this->getItemDurationMinutes($dto->startTime, $dto->endTime);
+                $parentSlots = round($parentMinutes / $slotSize);
+
+                // Eğer child'a sığmıyorsa kısalt
+                $slotsToAdd = min($parentSlots, $currentRemaining);
+                if ($slotsToAdd < $parentSlots) {
+                    $item->end_time = $this->calculateEndTime($dto->startTime, $slotsToAdd);
+                    $this->logger->warning("Child lesson partially full, shortening item duration", [
+                        'lesson_id' => $childLessonId,
+                        'original_slots' => $parentSlots,
+                        'added_slots' => $slotsToAdd
+                    ]);
+                }
+
+                // Tracking güncelle
+                $childLessonHoursAdded[$childLessonId] = ($childLessonHoursAdded[$childLessonId] ?? 0) + $slotsToAdd;
+
+                // Data güncelle (child lesson id ile)
                 $item->data = array_map(function ($d) use ($childLessonId) {
                     $childData = $d;
                     $childData['lesson_id'] = $childLessonId;
@@ -715,11 +806,12 @@ class ScheduleService extends BaseService
                 }
                 $item->detail['child_lesson_id'] = $childLessonId;
             } else {
-                // Normal owner için parent data kullan
+                // Normal owner
                 $item->data = $dto->data;
                 $item->detail = $dto->detail;
             }
 
+            // Kaydet
             $item->create();
             $createdIds[] = $item->id;
         }
@@ -868,6 +960,7 @@ class ScheduleService extends BaseService
     {
         $siblingsKeyed = [$baseItem->id => $baseItem];
 
+        /** @var Schedule $baseSchedule */
         $baseSchedule = $this->scheduleRepo->find($baseItem->schedule_id);
         if (!$baseSchedule) {
             return array_values($siblingsKeyed);
@@ -883,9 +976,12 @@ class ScheduleService extends BaseService
                 'academic_year' => $baseSchedule->academic_year,
                 'type' => $baseSchedule->type,
                 'owner_type' => $owner['type'],
-                'owner_id' => $owner['id'],
-                'semester_no' => $owner['semester_no']
+                'owner_id' => $owner['id']
             ];
+
+            if (isset($owner['semester_no'])) {
+                $scheduleFilters['semester_no'] = $owner['semester_no'];
+            }
 
             $schedules = (new Schedule())->get()->where($scheduleFilters)->all();
 
@@ -1567,6 +1663,69 @@ class ScheduleService extends BaseService
         }
 
         return $createdGroupIds;
+    }
+
+    // ==================== CHILD LESSON HOUR CONTROL HELPERS ====================
+
+    /**
+     * Schedule'daki belirli bir lesson için mevcut scheduled hours'ı hesapla
+     * 
+     * @param int $scheduleId Schedule ID
+     * @param int $lessonId Lesson ID
+     * @return float Scheduled hours (saat cinsinden)
+     */
+    private function calculateScheduledHours(int $scheduleId, int $lessonId): float
+    {
+        $items = (new ScheduleItem())->get()->where([
+            'schedule_id' => $scheduleId
+        ])->all();
+
+        $totalMinutes = 0;
+        foreach ($items as $item) {
+            // Check if this item belongs to this lesson
+            $itemData = is_array($item->data) ? $item->data : json_decode($item->data, true);
+            if (isset($itemData[0]['lesson_id']) && $itemData[0]['lesson_id'] == $lessonId) {
+                $totalMinutes += $this->getItemDurationMinutes($item->start_time, $item->end_time);
+            }
+        }
+
+        // Convert to hours
+        return $totalMinutes / 60;
+    }
+
+    /**
+     * İki zaman arasındaki duration'ı dakika cinsinden hesapla
+     * 
+     * @param string $startTime HH:MM format
+     * @param string $endTime HH:MM format
+     * @return int Duration in minutes
+     */
+    private function getItemDurationMinutes(string $startTime, string $endTime): int
+    {
+        $start = \DateTime::createFromFormat('H:i', $startTime);
+        $end = \DateTime::createFromFormat('H:i', $endTime);
+
+        if (!$start || !$end) {
+            return 0;
+        }
+
+        return ($end->getTimestamp() - $start->getTimestamp()) / 60;
+    }
+
+    /**
+     * Start time'dan itibaren N saat sonraki end time'ı hesapla
+     * 
+     * @param string $startTime HH:MM format
+     * @param float $hours Hours to add
+     * @return string End time in HH:MM format
+     */
+    private function calculateEndTime(string $startTime, float $hours): string
+    {
+        $start = new \DateTime($startTime);
+        $minutes = (int) ($hours * 60);
+        $end = clone $start;
+        $end->modify("+{$minutes} minutes");
+        return $end->format('H:i');
     }
 }
 
