@@ -1253,7 +1253,7 @@ class ScheduleCard {
                 itemsToMove.push({ element: el, data: data });
                 itemsToDelete.push(data);
                 totalHours += hours;
-                detailedItems.push({ hours, data: data.data[0], status: data.status, originalElement: el });
+                detailedItems.push({ hours, data: data.data, status: data.status, originalElement: el });
                 if (!classroom) classroom = { id: el.dataset.classroomId, name: el.querySelector('.lesson-classroom')?.innerText || "", size: el.dataset.classroomSize, exam_size: el.dataset.classroomExamSize };
             }
         });
