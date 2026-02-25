@@ -779,18 +779,8 @@ class ScheduleController extends Controller
      */
     public function saveScheduleItems(array $itemsData): array
     {
-        // GEÇŞ KURALI: Group item'lar için henüz yeni service kullanma
-        // Yeni service v1.0 sadece basit INSERT yapar, group merge mantığı v2.0'da olacak
-        $hasGroupItems = false;
-        foreach ($itemsData as $item) {
-            if (isset($item['status']) && $item['status'] === 'group') {
-                $hasGroupItems = true;
-                break;
-            }
-        }
-
-        // Feature Flag: Yeni service kullanımı (sadece non-group items için)
-        if (FeatureFlags::useNewScheduleService() && !$hasGroupItems) {
+        // Feature Flag: Yeni service kullanımı (group dahil tüm item türleri destekleniyor)
+        if (FeatureFlags::useNewScheduleService()) {
             $this->logger()->debug("Using NEW ScheduleService", $this->logContext());
             $service = new ScheduleService();
             $result = $service->saveScheduleItems($itemsData);
@@ -799,7 +789,7 @@ class ScheduleController extends Controller
             return $this->formatServiceResultToLegacy($result);
         }
 
-        // Eski sistem (group items veya feature flag kapalıysa)
+        // Eski sistem (feature flag kapalıysa)
         $this->logger()->debug("Using LEGACY saveScheduleItems", $this->logContext());
         return $this->legacySaveScheduleItems($itemsData);
     }
