@@ -116,7 +116,7 @@ use function App\Helpers\getSettingValue;
                                                                 if (!empty($slotData->lesson->childLessons)) {
                                                                     foreach ($slotData->lesson->childLessons as $child) {
                                                                         if ($child->program) {
-                                                                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($slotData->lesson->semester_no);
+                                                                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($child->semester_no);
                                                                         }
                                                                     }
                                                                 }
