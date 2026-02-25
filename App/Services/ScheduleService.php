@@ -726,7 +726,30 @@ class ScheduleService extends BaseService
             }
         }
 
-        // Child lesson'lar için transaction içi takip (bu loop içinde eklenenler)
+        // Child lesson'lar için döngü ÖNCESİNDE remaining_size hesapla ve önbelleğe al.
+        // Önemli: Döngü içinde IsScheduleComplete çağrıldığında, bir önceki owner'a yapılan
+        // kayıt (commit olmasa da) aynı lesson'ın diğer schedule'larında "dolu" görünmesine
+        // neden olur. Bu önbellek sayesinde tüm child owner'lar aynı başlangıç noktasından başlar.
+        $childLessonRemaining = []; // [ lessonId => remaining_slots ]
+        foreach ($owners as $owner) {
+            if (!isset($owner['is_child']) || !$owner['is_child']) {
+                continue;
+            }
+            $childLessonId = $owner['child_lesson_id'];
+            if (isset($childLessonRemaining[$childLessonId])) {
+                continue; // Aynı child lesson zaten hesaplandı
+            }
+            $childLesson = (new Lesson())->find($childLessonId);
+            if ($childLesson) {
+                $childLesson->IsScheduleComplete($sourceSchedule->type);
+                $childLessonRemaining[$childLessonId] = [
+                    'lesson' => $childLesson,
+                    'remaining' => (int) ($childLesson->remaining_size ?? 0),
+                ];
+            }
+        }
+
+        // Her owner için bu loop içinde kaç slot eklendi takibi
         $childLessonHoursAdded = [];
 
         foreach ($owners as $owner) {
@@ -752,17 +775,17 @@ class ScheduleService extends BaseService
             if (isset($owner['is_child']) && $owner['is_child']) {
                 $childLessonId = $owner['child_lesson_id'];
 
-                // Child lesson verisini çek
-                $childLesson = (new Lesson())->find($childLessonId);
-                if (!$childLesson) {
-                    continue;
+                // Önbellekten remaining_size al (döngü başında DB sorgusu yapıldı)
+                if (!isset($childLessonRemaining[$childLessonId])) {
+                    continue; // Child lesson bulunamadı, atla
                 }
+                $childLesson = $childLessonRemaining[$childLessonId]['lesson'];
+                $baseRemaining = $childLessonRemaining[$childLessonId]['remaining'];
 
-                $childLesson->IsScheduleComplete($sourceSchedule->type);
-
-                // Bu loop içinde daha önce bu child için ne kadar eklendi?
-                $alreadyAddedSlots = $childLessonHoursAdded[$childLessonId] ?? 0;
-                $currentRemaining = $childLesson->remaining_size - $alreadyAddedSlots;
+                // Bu owner için daha önce bu child'dan eklendi mi? (schedule bazında takip)
+                $trackingKey = "{$childLessonId}_{$owner['type']}";
+                $alreadyAddedSlots = $childLessonHoursAdded[$trackingKey] ?? 0;
+                $currentRemaining = $baseRemaining - $alreadyAddedSlots;
 
                 if ($currentRemaining <= 0) {
                     $this->logger->debug("Child lesson already full, skipping schedule #{$targetSchedule->id}", [
@@ -791,8 +814,8 @@ class ScheduleService extends BaseService
                     ]);
                 }
 
-                // Tracking güncelle
-                $childLessonHoursAdded[$childLessonId] = ($childLessonHoursAdded[$childLessonId] ?? 0) + $slotsToAdd;
+                // Tracking güncelle (owner type bazlı: lesson ve program owner'ları birbirini etkilemesin)
+                $childLessonHoursAdded[$trackingKey] = ($childLessonHoursAdded[$trackingKey] ?? 0) + $slotsToAdd;
 
                 // Data güncelle (child lesson id ile)
                 $item->data = array_map(function ($d) use ($childLessonId) {
