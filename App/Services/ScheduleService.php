@@ -12,7 +12,6 @@ use App\Models\ScheduleItem;
 use App\Repositories\ScheduleItemRepository;
 use App\Repositories\ScheduleRepository;
 use App\Validators\ScheduleItemValidator;
-use App\Services\Helpers\ConflictResolver;
 use Exception;
 
 use function App\Helpers\getSettingValue;
@@ -38,7 +37,6 @@ class ScheduleService extends BaseService
     private ScheduleRepository $scheduleRepo;
     private ScheduleItemRepository $itemRepo;
     private ScheduleItemValidator $validator;
-    private ConflictResolver $conflictResolver;
 
     public function __construct()
     {
@@ -46,7 +44,6 @@ class ScheduleService extends BaseService
         $this->scheduleRepo = new ScheduleRepository();
         $this->itemRepo = new ScheduleItemRepository();
         $this->validator = new ScheduleItemValidator();
-        $this->conflictResolver = new ConflictResolver();
     }
 
     /**
@@ -112,8 +109,25 @@ class ScheduleService extends BaseService
                     }
                 }
 
+                // Basit çakışma kontrolü (v1.0)
+                $conflicts = $this->itemRepo->findConflicting(
+                    $dto->scheduleId,
+                    $dto->dayIndex,
+                    $dto->weekIndex,
+                    $dto->startTime,
+                    $dto->endTime
+                );
+
+                if (!empty($conflicts)) {
+                    // V1: Sadece logluyoruz, çözümleme v2'de
+                    $this->logger->warning("Conflict detected for item #$index", $this->logContext([
+                        'conflicts' => count($conflicts),
+                        'schedule_id' => $dto->scheduleId
+                    ]));
+                    // TODO v2: Conflict resolution (preferred handling, error throwing)
+                }
+
                 // MULTI-SCHEDULE KAYDETME: Tüm ilgili schedule'lara kaydet
-                // Not: Çakışma ve saat kontrolleri saveToMultipleSchedules içinde yapılıyor
                 $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule);
                 $createdIds = array_merge($createdIds, $itemIds);
 
@@ -153,163 +167,6 @@ class ScheduleService extends BaseService
     }
 
     /**
-     * Sınav Itemlerini kaydeder ve kardeş programlara yansıtır.
-     * Sınavlara özel veri süzme ve referans mantığı içerir.
-     * 
-     * @param array $itemsData Ham item verileri
-     * @return SaveScheduleResult
-     * @throws Exception
-     */
-    public function saveExamScheduleItems(array $itemsData): SaveScheduleResult
-    {
-        $this->logger->debug("ScheduleService::saveExamScheduleItems START", $this->logContext(['count' => count($itemsData)]));
-
-        $this->beginTransaction();
-
-        $createdIds = [];
-        $affectedLessonIds = [];
-
-        try {
-            foreach ($itemsData as $index => $itemData) {
-                // DTO'ya dönüştür
-                $dto = ScheduleItemData::fromArray($itemData);
-
-                // Lesson bilgisini al
-                $lessonId = $dto->data[0]['lesson_id'] ?? null;
-                /** @var \App\Models\Lesson $lesson */
-                $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons', 'parentLesson'])->first();
-                if (!$lesson) {
-                    throw new Exception("Ders bulunamadı");
-                }
-
-                // Hedef Schedule bilgileri
-                /** @var \App\Models\Schedule $targetSchedule */
-                $targetSchedule = $this->scheduleRepo->find($dto->scheduleId);
-                if (!$targetSchedule) {
-                    throw new Exception("Hedef Program bulunamadı: {$dto->scheduleId}");
-                }
-
-                // 1. ADIM: Çakışma Kontrolü Yap
-                $owners = $this->determineExamOwners($lesson, $dto->detail['assignments'] ?? []);
-                $errors = $this->conflictResolver->checkConflicts($itemData, $owners, $targetSchedule, $lesson);
-
-                if (!empty($errors)) {
-                    $errors = array_unique($errors);
-                    throw new Exception(implode("\n", $errors));
-                }
-
-                // 2. ADIM: Program ve Ders Kayıtlarını Yap (Süzülmüş veri ile)
-                $mainLesson = $lesson->parent_lesson_id ? $lesson->parentLesson : $lesson;
-                $programOwners = [];
-                $programOwners[] = ['type' => 'lesson', 'id' => $mainLesson->id];
-                $programOwners[] = ['type' => 'program', 'id' => $mainLesson->program_id, 'semester_no' => $mainLesson->semester_no];
-
-                if (!empty($mainLesson->childLessons)) {
-                    foreach ($mainLesson->childLessons as $child) {
-                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id];
-                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no];
-                    }
-                }
-
-                // Unique owners
-                $uniqueProgramOwners = [];
-                foreach ($programOwners as $po) {
-                    $key = $po['type'] . '_' . $po['id'] . '_' . ($po['semester_no'] ?? '');
-                    $uniqueProgramOwners[$key] = $po;
-                }
-
-                $primaryProgramItemId = null;
-                foreach ($uniqueProgramOwners as $owner) {
-                    /** @var \App\Models\Schedule $relSchedule */
-                    $relSchedule = $this->findOrCreateSchedule(
-                        $owner,
-                        $targetSchedule->academic_year,
-                        $targetSchedule->semester,
-                        $targetSchedule->type
-                    );
-
-                    // VERİ SÜZME: Program ve Ders için sadece lesson_id kalacak
-                    $filteredData = [
-                        [
-                            'lesson_id' => $mainLesson->id,
-                            'lecturer_id' => null,
-                            'classroom_id' => null
-                        ]
-                    ];
-
-                    $newItem = new ScheduleItem();
-                    $newItem->schedule_id = $relSchedule->id;
-                    $newItem->day_index = $dto->dayIndex;
-                    $newItem->week_index = $dto->weekIndex;
-                    $newItem->start_time = $dto->startTime;
-                    $newItem->end_time = $dto->endTime;
-                    $newItem->status = 'single';
-                    $newItem->data = $filteredData;
-                    $newItem->detail = $dto->detail;
-                    $newItem->create();
-
-                    $createdIds[] = $newItem->id;
-
-                    if ($relSchedule->id == $targetSchedule->id) {
-                        $primaryProgramItemId = $newItem->id;
-                    }
-                }
-
-                // 3. ADIM: Gözetmen ve Derslik Kayıtlarını Yap (Tam veri + Referans)
-                $assignments = $dto->detail['assignments'] ?? [];
-                foreach ($assignments as $assignment) {
-                    $assignmentOwners = [
-                        ['type' => 'user', 'id' => $assignment['observer_id'], 'classroom_id' => $assignment['classroom_id']],
-                        ['type' => 'classroom', 'id' => $assignment['classroom_id'], 'observer_id' => $assignment['observer_id']]
-                    ];
-
-                    foreach ($assignmentOwners as $ao) {
-                        /** @var \App\Models\Schedule $relSchedule */
-                        $relSchedule = $this->findOrCreateSchedule(
-                            $ao,
-                            $targetSchedule->academic_year,
-                            $targetSchedule->semester,
-                            $targetSchedule->type
-                        );
-
-                        $fullData = [
-                            [
-                                'lesson_id' => $lessonId,
-                                'lecturer_id' => ($ao['type'] == 'user') ? $ao['id'] : $ao['observer_id'],
-                                'classroom_id' => ($ao['type'] == 'classroom') ? $ao['id'] : $ao['classroom_id']
-                            ]
-                        ];
-
-                        $newItem = new ScheduleItem();
-                        $newItem->schedule_id = $relSchedule->id;
-                        $newItem->day_index = $dto->dayIndex;
-                        $newItem->week_index = $dto->weekIndex;
-                        $newItem->start_time = $dto->startTime;
-                        $newItem->end_time = $dto->endTime;
-                        $newItem->status = 'single';
-                        $newItem->data = $fullData;
-                        $newItem->detail = [
-                            'program_item_id' => $primaryProgramItemId,
-                            'reference_type' => 'exam_assignment'
-                        ];
-                        $newItem->create();
-                        $createdIds[] = $newItem->id;
-                    }
-                }
-                $affectedLessonIds[] = $mainLesson->id;
-            }
-
-            $this->commit();
-            return SaveScheduleResult::success($createdIds, count($itemsData));
-
-        } catch (Exception $e) {
-            $this->rollback();
-            $this->logger->error("Failed to save exam schedule items: " . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    /**
      * Ders saati limitlerini kontrol eder
      * 
      * Normal dersler için: Aşım varsa exception fırlatır
@@ -322,7 +179,6 @@ class ScheduleService extends BaseService
     private function checkLessonHourLimits(array $lessonIds, string $scheduleType): void
     {
         foreach ($lessonIds as $lessonId) {
-            /** @var \App\Models\Lesson $lesson */
             $lesson = (new Lesson())->find($lessonId);
             if (!$lesson) {
                 continue;
@@ -333,12 +189,12 @@ class ScheduleService extends BaseService
 
             if ($lesson->remaining_size < 0) {
                 // Child lesson kontrolü
-                if ($lesson->parent_lesson_id !== null) {
+                if ($lesson->parent_id !== null) {
                     // Child lesson → Fazla saatleri otomatik temizle
                     $this->logger->info("Child lesson hour limit exceeded, cleaning up", $this->logContext([
                         'lesson_id' => $lesson->id,
                         'lesson_name' => $lesson->getFullName(),
-                        'parent_id' => $lesson->parent_lesson_id,
+                        'parent_id' => $lesson->parent_id,
                         'excess_hours' => abs($lesson->remaining_size)
                     ]));
 
@@ -763,7 +619,6 @@ class ScheduleService extends BaseService
         string $type
     ): Schedule {
         // Önce varolan schedule'ı ara
-        /** @var \App\Models\Schedule $existing */
         $existing = $this->scheduleRepo->findByOwnerAndPeriod(
             $owner['type'],
             $owner['id'],
@@ -871,9 +726,8 @@ class ScheduleService extends BaseService
             }
         }
 
-        // Çocuk dersler için transaction içi takip (bu loop içinde eklenenler)
+        // Child lesson'lar için transaction içi takip (bu loop içinde eklenenler)
         $childLessonHoursAdded = [];
-        $errors = [];
 
         foreach ($owners as $owner) {
             // Owner için schedule bul/oluştur
@@ -884,34 +738,6 @@ class ScheduleService extends BaseService
                 $sourceSchedule->semester,
                 $sourceSchedule->type
             );
-
-            // ÇAKIŞMA KONTROLÜ (v2.0)
-            $conflictingItems = (new ScheduleItem())->get()->where([
-                'schedule_id' => $targetSchedule->id,
-                'day_index' => $dto->dayIndex,
-                'week_index' => $dto->weekIndex
-            ])->all();
-
-            foreach ($conflictingItems as $existingItem) {
-                if ($this->checkTimeOverlap($dto->startTime, $dto->endTime, $existingItem->start_time, $existingItem->end_time)) {
-                    if ($existingItem->status === 'preferred') {
-                        // Tercih edilen saati böl veya kısalt
-                        $this->resolvePreferredConflict($dto->startTime, $dto->endTime, $existingItem);
-                    } else {
-                        // Hard conflict kontrolü (eğer dummy değilse)
-                        if (!$dto->isDummy()) {
-                            $error = $this->resolveConflict($dto, $existingItem, $lesson, $targetSchedule);
-                            if ($error) {
-                                $errors[] = $error;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!empty($errors)) {
-                continue; // Hatalar varsa bu owner için item oluşturma, diğerlerine bak (toplu fırlatılacak)
-            }
 
             // Item oluştur (kopya)
             $item = new ScheduleItem();
@@ -927,7 +753,6 @@ class ScheduleService extends BaseService
                 $childLessonId = $owner['child_lesson_id'];
 
                 // Child lesson verisini çek
-                /** @var \App\Models\Lesson $childLesson */
                 $childLesson = (new Lesson())->find($childLessonId);
                 if (!$childLesson) {
                     continue;
@@ -990,152 +815,8 @@ class ScheduleService extends BaseService
             $item->create();
             $createdIds[] = $item->id;
         }
-        if (!empty($errors)) {
-            $errors = array_unique($errors);
-            throw new Exception(implode("\n", $errors));
-        }
 
         return $createdIds;
-    }
-
-    /**
-     * Zaman çakışması tespit edildiğinde çözüm üretir veya hata mesajı döner
-     * 
-     * @param ScheduleItemData $dto Yeni eklenecek item verisi
-     * @param ScheduleItem $existingItem Mevcut çakışan item
-     * @param Lesson $newLesson Yeni eklenen ders
-     * @param Schedule $currentSchedule Çakışmanın yaşandığı program
-     * @return string|null Hata mesajı veya null
-     */
-    private function resolveConflict(ScheduleItemData $dto, ScheduleItem $existingItem, Lesson $newLesson, Schedule $currentSchedule): ?string
-    {
-        // Kendi kendisiyle çakışıyorsa (update durumu vs) yoksay
-        if (isset($dto->id) && $dto->id == $existingItem->id) {
-            return null;
-        }
-
-        $crashInfo = "{$currentSchedule->getScheduleScreenName()} ({$existingItem->getShortStartTime()} - {$existingItem->getShortEndTime()})";
-
-        switch ($existingItem->status) {
-            case 'unavailable':
-                return "{$crashInfo}: Bu saat aralığı 'Uygun Değil' olarak işaretlenmiş.";
-            case 'single':
-                return "{$crashInfo}: Bu saatte zaten bir ders mevcut: " . $this->getLessonNameFromItem($existingItem);
-            case 'group':
-                // Yeni ders aynı zamanda grup dersi olmalı
-                if ($newLesson->group_no < 1) {
-                    return "{$crashInfo}: Grup dersi üzerine normal ders eklenemez.";
-                }
-
-                // Mevcut gruptaki dersleri kontrol et
-                $slotDatas = $existingItem->getSlotDatas();
-                foreach ($slotDatas as $sd) {
-                    if (!$sd->lesson)
-                        continue;
-
-                    // Dersler farklı olmalı
-                    if ($sd->lesson->id == $newLesson->id) {
-                        return "{$crashInfo}: Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).";
-                    }
-
-                    // Hoca aynı olmamalı
-                    $newLecturerId = $dto->data[0]['lecturer_id'] ?? null;
-                    if ($sd->lecturer && $newLecturerId && $sd->lecturer->id == $newLecturerId) {
-                        return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName();
-                    }
-
-                    // Grup numaraları farklı olmalı
-                    if ($sd->lesson->group_no == $newLesson->group_no) {
-                        return "{$crashInfo}: Aynı grup numarasına sahip dersler çakışamaz.";
-                    }
-                }
-                break;
-            case 'preferred':
-                // preferred resolvePreferredConflict tarafından hallediliyor
-                break;
-            default:
-                return "{$crashInfo}: Çakışma tespit edildi (Durum: {$existingItem->status})";
-        }
-
-        return null;
-    }
-
-    /**
-     * Preferred item ile çakışma durumunda preferred item'ı günceller (kısaltır veya böler)
-     */
-    private function resolvePreferredConflict(string $newStart, string $newEnd, ScheduleItem $preferredItem): void
-    {
-        $newStart = substr($newStart, 0, 5);
-        $newEnd = substr($newEnd, 0, 5);
-        $prefStart = $preferredItem->getShortStartTime();
-        $prefEnd = $preferredItem->getShortEndTime();
-
-        // 1. Tam Kapsama -> Sil
-        if ($newStart <= $prefStart && $newEnd >= $prefEnd) {
-            $preferredItem->delete();
-            return;
-        }
-
-        // 2. Sondan Örtüşme (Pref: 10-12, New: 11-13 -> Pref: 10-11)
-        if ($newStart > $prefStart && $newStart < $prefEnd && $newEnd >= $prefEnd) {
-            $preferredItem->end_time = $newStart;
-            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
-                $preferredItem->delete();
-            } else {
-                $preferredItem->update();
-            }
-            return;
-        }
-
-        // 3. Baştan Örtüşme (Pref: 10-12, New: 09-11 -> Pref: 11-12)
-        if ($newStart <= $prefStart && $newEnd > $prefStart && $newEnd < $prefEnd) {
-            $preferredItem->start_time = $newEnd;
-            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
-                $preferredItem->delete();
-            } else {
-                $preferredItem->update();
-            }
-            return;
-        }
-
-        // 4. Ortada Kalma (Pref: 10-14, New: 11-12 -> Pref: 10-11 VE Pref: 12-14)
-        if ($newStart > $prefStart && $newEnd < $prefEnd) {
-            $oldEnd = $preferredItem->end_time;
-
-            // Mevcutu kısalt (Sol parça)
-            $preferredItem->end_time = $newStart;
-            $preferredItem->update();
-
-            // Yeni parça oluştur (Sağ parça)
-            $rightPart = new ScheduleItem();
-            $rightPart->schedule_id = $preferredItem->schedule_id;
-            $rightPart->day_index = $preferredItem->day_index;
-            $rightPart->week_index = $preferredItem->week_index;
-            $rightPart->start_time = $newEnd;
-            $rightPart->end_time = $oldEnd;
-            $rightPart->status = 'preferred';
-            $rightPart->data = $preferredItem->data;
-            $rightPart->detail = $preferredItem->detail;
-            $rightPart->create();
-        }
-    }
-
-    /**
-     * Hata mesajlarında göstermek için Item içindeki lesson_id'den ders adını bulur
-     */
-    private function getLessonNameFromItem(ScheduleItem $item): string
-    {
-        $slotDatas = $item->getSlotDatas();
-        if (!empty($slotDatas)) {
-            $names = [];
-            foreach ($slotDatas as $sd) {
-                if ($sd->lesson) {
-                    $names[] = $sd->lesson->getFullName();
-                }
-            }
-            return !empty($names) ? implode(", ", $names) : "Bilinmeyen Ders";
-        }
-        return "Bilinmeyen Öğe";
     }
 
     // ==================== DELETE OPERATIONS ====================
@@ -1160,7 +841,6 @@ class ScheduleService extends BaseService
         $slotDatas = $item->getSlotDatas();
 
         foreach ($slotDatas as $slotData) {
-            /** @var \App\Models\Lesson $lesson */
             $lesson = $slotData->lesson;
             if (!$lesson) {
                 continue;
@@ -1203,7 +883,6 @@ class ScheduleService extends BaseService
 
             // Parent lesson varsa onu ve kardeşlerini de ekle
             if ($lesson->parent_lesson_id) {
-                /** @var \App\Models\Lesson $parent */
                 $parent = (new Lesson())
                     ->where(['id' => $lesson->parent_lesson_id])
                     ->with(['childLessons'])
@@ -1390,7 +1069,6 @@ class ScheduleService extends BaseService
                     continue;
                 }
 
-                /** @var \App\Models\ScheduleItem $scheduleItem */
                 $scheduleItem = (new ScheduleItem())
                     ->where(['id' => $id])
                     ->with('schedule')
@@ -1436,7 +1114,6 @@ class ScheduleService extends BaseService
                                         $targetLessonIds[] = $lId;
 
                                         if ($expandGroup) {
-                                            /** @var \App\Models\Lesson $lObj */
                                             $lObj = (new Lesson())
                                                 ->where(['id' => $lId])
                                                 ->with(['childLessons', 'parentLesson'])
@@ -1448,7 +1125,6 @@ class ScheduleService extends BaseService
                                                         $targetLessonIds[] = (int) $lObj->parent_lesson_id;
                                                     }
 
-                                                    /** @var \App\Models\Lesson $parentObj */
                                                     $parentObj = (new Lesson())
                                                         ->where(['id' => $lObj->parent_lesson_id])
                                                         ->with(['childLessons'])
@@ -1762,7 +1438,6 @@ class ScheduleService extends BaseService
                         foreach ($seg['data'] as $d) {
                             $lessonId = $d['lesson_id'] ?? null;
                             if ($lessonId) {
-                                /** @var \App\Models\Lesson $lesson */
                                 $lesson = (new Lesson())->find($lessonId);
                                 if ($lesson && $lesson->group_no > 0) {
                                     $isGroup = true;
