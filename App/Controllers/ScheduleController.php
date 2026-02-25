@@ -2274,7 +2274,7 @@ class ScheduleController extends Controller
                             foreach ($seg['data'] as $d) {
                                 $lessonId = $d['lesson_id'] ?? null;
                                 if ($lessonId) {
-                                    $lesson = (new \App\Models\Lesson())->find($lessonId);
+                                    $lesson = (new Lesson())->find($lessonId);
                                     if ($lesson && $lesson->group_no > 0) {
                                         $isGroup = true;
                                         break;
@@ -2290,7 +2290,7 @@ class ScheduleController extends Controller
                         foreach ($seg['data'] as $d) {
                             $lessonId = $d['lesson_id'] ?? null;
                             if ($lessonId) {
-                                $lesson = (new \App\Models\Lesson())->find($lessonId);
+                                $lesson = (new Lesson())->find($lessonId);
                                 if ($lesson && $lesson->group_no > 0) {
                                     $isGroup = true;
                                     break;
