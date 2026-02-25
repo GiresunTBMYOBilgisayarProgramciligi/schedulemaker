@@ -805,67 +805,6 @@ class ScheduleController extends Controller
         ];
     }
 
-    /**
-     * Preferred item ile çakışma durumunda preferred item'i günceller (kısaltır veya böler)
-     */
-    private function resolvePreferredConflict(string $newStart, string $newEnd, ScheduleItem $preferredItem): void
-    {
-        // Zamanları H:i formatına normalize et
-        $newStart = substr($newStart, 0, 5);
-        $newEnd = substr($newEnd, 0, 5);
-        $prefStart = $preferredItem->getShortStartTime();
-        $prefEnd = $preferredItem->getShortEndTime();
-
-        // Durum 1: Yeni item preferred item'i tamamen kapsıyor -> Sil
-        if ($newStart <= $prefStart && $newEnd >= $prefEnd) {
-            $preferredItem->delete();
-            return;
-        }
-
-        // Durum 2: Yeni item son taraftan örtüşüyor (Örn: Pref 10-12, New 11-13 -> Pref 10-11)
-        if ($newStart > $prefStart && $newStart < $prefEnd && $newEnd >= $prefEnd) {
-            $preferredItem->end_time = $newStart;
-            // Eğer süre sıfıra indiyse sil
-            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
-                $preferredItem->delete();
-            } else {
-                $preferredItem->update();
-            }
-            return;
-        }
-
-        // Durum 3: Yeni item baş taraftan örtüşüyor (Örn: Pref 10-12, New 09-11 -> Pref 11-12)
-        if ($newStart <= $prefStart && $newEnd > $prefStart && $newEnd < $prefEnd) {
-            $preferredItem->start_time = $newEnd;
-            // Eğer süre sıfıra indiyse sil
-            if ($preferredItem->getShortStartTime() >= $preferredItem->getShortEndTime()) {
-                $preferredItem->delete();
-            } else {
-                $preferredItem->update();
-            }
-            return;
-        }
-
-        // Durum 4: Yeni item ortada (Örn: Pref 10-14, New 11-12 -> Pref 10-11 VE Pref 12-14)
-        if ($newStart > $prefStart && $newEnd < $prefEnd) {
-            // Mevcutu kısalt (Sol parça)
-            $preferredItem->end_time = $newStart;
-            $preferredItem->update();
-
-            // Yeni parça oluştur (Sağ parça)
-            $rightPart = new ScheduleItem();
-            $rightPart->schedule_id = $preferredItem->schedule_id;
-            $rightPart->day_index = $preferredItem->day_index;
-            $rightPart->start_time = $newEnd;
-            $rightPart->end_time = $prefEnd;
-            $rightPart->status = 'preferred';
-            // data ve detail kopyalanıyor
-            $rightPart->data = $preferredItem->data;
-            $rightPart->detail = $preferredItem->detail;
-            $rightPart->create();
-            return;
-        }
-    }
 
     /*********************
      *  Çakışma VE UYGUNLUK KONTROL İŞLEMLERİ
@@ -1005,74 +944,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Zaman çakışması tespit edildiğinde, Items status durumuna göre bunun bir hata olup olmadığına karar verir.
-     * Status: unavailable ve single -> Hata
-     * Status: group -> Grup kurallarına uyuyorsa Hata Yok, uymuyorsa Hata
-     * Status: preferred -> Hata Yok
-     * @param array $newItemData Yeni eklenecek item verisi
-     * @param ScheduleItem $existingItem Mevcut çakışan item
-     * @param Lesson $newLesson Yeni eklenen ders
-     * @param Schedule $currentSchedule Çakışmanın yaşandığı program (Hata mesajında isim göstermek için)
-     * @return string|null Çakışma kuralı ihlal edilirse hata mesajı döner, yoksa null
-     */
-    private function resolveConflict(array $newItemData, ScheduleItem $existingItem, Lesson $newLesson, Schedule $currentSchedule): ?string
-    {
-        // Kendi kendisiyle çakışıyorsa (update durumu vs) yoksay
-        if (isset($newItemData['id']) && $newItemData['id'] == $existingItem->id) {
-            return null;
-        }
-
-        $crashInfo = "{$currentSchedule->getScheduleScreenName()} ({$existingItem->start_time} - {$existingItem->end_time})";
-
-        // Status Kontrolü
-        switch ($existingItem->status) {
-            case 'unavailable':
-                return "{$crashInfo}: Bu saat aralığı uygun değil.";
-            case 'single':
-                // Single ders varsa üzerine ders eklenemez
-                return "{$crashInfo}: Bu saatte zaten bir ders mevcut: " . $this->getLessonNameFromItem($existingItem);
-            case 'group':
-                // Grup mantığı
-                // Yeni ders aynı zamanda grup dersi olmalı (Lesson group_no > 0)
-                if ($newLesson->group_no < 1) {
-                    return "{$crashInfo}: Grup dersi üzerine normal ders eklenemez.";
-                }
-
-                // Mevcut gruptaki dersleri kontrol et
-                $slotDatas = $existingItem->getSlotDatas();
-                foreach ($slotDatas as $sd) {
-                    if (!$sd->lesson)
-                        continue;
-
-                    // Dersler farklı olmalı
-                    if ($sd->lesson->id == $newLesson->id) {
-                        return "{$crashInfo}: Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).";
-                    }
-
-                    // Hoca aynı olmamalı
-                    // ESKİ SİSTEM FORMAT: data = [{"lesson_id": "503", "lecturer_id": "158", ...}]
-                    $newLecturerId = $newItemData['data'][0]['lecturer_id'] ?? null;
-                    if ($sd->lecturer && $newLecturerId && $sd->lecturer->id == $newLecturerId) {
-                        return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName();
-                    }
-
-                    // Grup numaraları farklı olmalı
-                    if ($sd->lesson->group_no == $newLesson->group_no) {
-                        return "{$crashInfo}: Aynı grup numarasına sahip dersler çakışamaz.";
-                    }
-                }
-
-                // Buraya geldiyse uygundur (Farklı ders, farklı grup, ikisi de grup)
-                break;
-            case 'preferred':
-                // Tercih edilen saat, çakışma yok
-                break;
-            default:
-                return "{$crashInfo}: Bilinmeyen durum: " . $existingItem->status;
-        }
-        return null;
-    }
-    /**
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür
      * @param array $filters
      * @return array
@@ -1190,28 +1061,6 @@ class ScheduleController extends Controller
         }
 
         return $availableObservers;
-    }
-
-    public function wipeResourceSchedules(string $ownerType, int $ownerId): void
-    {
-        $this->logger()->debug("wipeResourceSchedules START for $ownerType ID: $ownerId");
-
-        // 1. Varlığın kendi ana programlarını ve bu programlara ait tüm itemları sil
-        $schedules = (new Schedule())->get()->where(['owner_type' => $ownerType, 'owner_id' => $ownerId])->all();
-        $this->logger()->debug("wipeResourceSchedules schedules count: " . count($schedules));
-        $this->logger()->debug("wipeResourceSchedules schedules: " . json_encode($schedules));
-        foreach ($schedules as $schedule) {
-            $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
-            $this->logger()->debug("wipeResourceSchedules items count: " . count($items));
-            $this->logger()->debug("wipeResourceSchedules items: " . json_encode($items));
-            foreach ($items as $item) {
-                // deleteScheduleItems metodu sibling'leri de bulup silecektir.
-                $this->deleteScheduleItems([$item->getArray()], false);
-            }
-            $schedule->delete();
-        }
-
-        $this->logger()->debug("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
     }
 
     public function deleteScheduleItems(array $items, bool $expandGroup = true): array

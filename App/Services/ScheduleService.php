@@ -1073,6 +1073,42 @@ class ScheduleService extends BaseService
      * @return DeleteScheduleResult
      * @throws Exception
      */
+    /**
+     * Bir kaynağa ait tüm schedule'ları ve item'larını temizler.
+     * Model beforeDelete hook'larından çağrılır.
+     *
+     * @param string $ownerType 'lesson' | 'user' | 'classroom' | 'program'
+     * @param int $ownerId
+     */
+    public function wipeResourceSchedules(string $ownerType, int $ownerId): void
+    {
+        $this->logger->debug("wipeResourceSchedules START for $ownerType ID: $ownerId");
+
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => $ownerType,
+            'owner_id' => $ownerId
+        ])->all();
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
+            foreach ($items as $item) {
+                // deleteScheduleItems sibling'leri de bulup siler
+                $this->deleteScheduleItems([$item->getArray()], false);
+            }
+            $schedule->delete();
+        }
+
+        $this->logger->debug("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
+    }
+
+    /**
+     * Schedule item'larını siler ve sibling'leri de temizler.
+     *
+     * @param array $itemsData
+     * @param bool $expandGroup
+     * @return DeleteScheduleResult
+     * @throws Exception
+     */
     public function deleteScheduleItems(
         array $itemsData,
         bool $expandGroup = true

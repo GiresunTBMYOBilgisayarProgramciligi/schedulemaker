@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Lesson;
 use App\Models\Schedule;
+use App\Services\ScheduleService;
 use Exception;
 use PDO;
 use PDOException;
@@ -138,7 +139,7 @@ class LessonController extends Controller
              * Hoca, ders, program, derslik programlarının hepsinin silinmesi lazım.
              * ÖNEMLİ: Bu işlem dersler bağlanmadan ÖNCE yapılmalı, aksi takdirde ebeveyn dersin programı da silinir.
              */
-            (new ScheduleController())->wipeResourceSchedules('lesson', $childLesson->id);
+            (new ScheduleService())->wipeResourceSchedules('lesson', $childLesson->id);
 
             // İlişkiyi güncelle
             $childLesson->parent_lesson_id = $parentLesson->id;
@@ -147,7 +148,7 @@ class LessonController extends Controller
             //Başka derse bağlanan derse bağlı dersler varsa onlarda bu derse bağlanır
             foreach ($childLesson->childLessons as $child) {
                 // Alt çocukların programlarını da temizle (Eğer varsa)
-                (new ScheduleController())->wipeResourceSchedules('lesson', $child->id);
+                (new ScheduleService())->wipeResourceSchedules('lesson', $child->id);
 
                 $child->parent_lesson_id = $parentLesson->id;
                 $child->update();
@@ -240,7 +241,7 @@ class LessonController extends Controller
         $lesson = (new Lesson())->find($lessonId) ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
 
         // İlişkiyi kaldırmadan önce derse ait program kayıtlarını temizle
-        (new ScheduleController())->wipeResourceSchedules('lesson', $lessonId);
+        (new ScheduleService())->wipeResourceSchedules('lesson', $lessonId);
 
         $lesson->parent_lesson_id = null;
         $lesson->update();

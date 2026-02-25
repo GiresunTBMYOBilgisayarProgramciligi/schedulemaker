@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Controllers\ClassroomController;
 use App\Controllers\LessonController;
 use App\Core\Model;
+use App\Services\ScheduleService;
 use Exception;
 use function App\Helpers\getSettingValue;
 use function App\Helpers\formatLessonName;
@@ -66,7 +67,7 @@ class Lesson extends Model
     protected function beforeDelete(): void
     {
         // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
-        (new \App\Controllers\ScheduleController())->wipeResourceSchedules('lesson', $this->id);
+        (new ScheduleService())->wipeResourceSchedules('lesson', $this->id);
     }
 
     public function getLabel(): string

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Controllers\ClassroomController;
 use App\Core\Model;
+use App\Services\ScheduleService;
 use Exception;
 
 class Classroom extends Model
@@ -32,7 +33,7 @@ class Classroom extends Model
     protected function beforeDelete(): void
     {
         // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
-        (new \App\Controllers\ScheduleController())->wipeResourceSchedules('classroom', $this->id);
+        (new ScheduleService())->wipeResourceSchedules('classroom', $this->id);
     }
 
     public function getLabel(): string
