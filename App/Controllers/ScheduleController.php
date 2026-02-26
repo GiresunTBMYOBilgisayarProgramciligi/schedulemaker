@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\View;
-use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -23,15 +22,12 @@ class ScheduleController extends Controller
     protected string $table_name = 'schedules';//todo artık tek tablo değil bu tablo adı nerelerde kullanılacak? 
     protected string $modelName = "App\Models\Schedule";
 
-    public FilterValidator $validator;
-
     /********************************
      * Yardımcı ve Hazırlık Metodları
      ********************************/
     public function __construct()
     {
         parent::__construct();
-        $this->validator = new FilterValidator();
     }
     /**
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
@@ -213,7 +209,7 @@ class ScheduleController extends Controller
      */
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
-        $filters = $this->validator->validate($filters, "createScheduleExcelTable");
+        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "createScheduleExcelTable");
 
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0)
@@ -364,7 +360,7 @@ class ScheduleController extends Controller
     private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
-        $filters = $this->validator->validate($filters, "prepareScheduleCard");
+        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
         if (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
@@ -481,7 +477,7 @@ class ScheduleController extends Controller
      */
     public function getAvailableLessonsHTML(array $filters = [], bool $preference_mode = false): string
     {
-        $filters = $this->validator->validate($filters, "prepareScheduleCard");
+        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır
         if (in_array($filters['owner_type'] ?? '', ['user', 'classroom', 'lesson'])) {
@@ -512,7 +508,7 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        $filters = $this->validator->validate($filters, "getSchedulesHTML");
+        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
         if (key_exists("semester_no", $filters)) {

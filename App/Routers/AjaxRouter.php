@@ -545,8 +545,7 @@ class AjaxRouter extends Router
     public function getAvailableClassroomForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "availableClassrooms");
+        $filters = (new FilterValidator())->validate($this->data, "availableClassrooms");
         $service = new AvailabilityService();
         $classrooms = $service->availableClassrooms($filters);
         $this->response['status'] = "success";
@@ -561,8 +560,7 @@ class AjaxRouter extends Router
     public function getAvailableObserversForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "availableObservers");
+        $filters = (new FilterValidator())->validate($this->data, "availableObservers");
         $service = new ExamService();
         $observers = $service->availableObservers($filters);
         $this->response['status'] = "success";
@@ -578,8 +576,7 @@ class AjaxRouter extends Router
     public function checkScheduleCrashAction(): void
     {
         try {
-            $scheduleController = new ScheduleController();
-            $filters = $scheduleController->validator->validate($this->data, "checkScheduleCrash");
+            $filters = (new FilterValidator())->validate($this->data, "checkScheduleCrash");
             $service = new ConflictService();
             $service->checkScheduleCrash($filters);
 
@@ -739,8 +736,7 @@ class AjaxRouter extends Router
      */
     public function checkLecturerScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkLecturerScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkLecturerScheduleAction");
 
         $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
             ?: throw new Exception("Ders bulunamadı");
@@ -811,8 +807,7 @@ class AjaxRouter extends Router
      */
     public function checkClassroomScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkClassroomScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkClassroomScheduleAction");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
@@ -915,8 +910,7 @@ class AjaxRouter extends Router
      */
     public function checkProgramScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkProgramScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkProgramScheduleAction");
 
         $lesson = (new Lesson())->where([
             'id' => $filters['lesson_id'],
