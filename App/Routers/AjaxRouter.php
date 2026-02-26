@@ -11,6 +11,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Core\ImportExportManager;
 use App\Core\Router;
+use App\Services\ScheduleService;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Department;
@@ -993,7 +994,6 @@ class AjaxRouter extends Router
     {
         $this->logger()->debug("Delete ScheduleItemsAction Data: ", ['data' => $this->data]);
 
-        $scheduleController = new ScheduleController();
         $items = json_decode($this->data['items'], true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -1006,8 +1006,9 @@ class AjaxRouter extends Router
         }
 
         try {
-            $result = $scheduleController->deleteScheduleItems($items);
-            $this->response = array_merge(["status" => "success"], $result);
+            $service = new ScheduleService();
+            $result = $service->deleteScheduleItems($items);
+            $this->response = $result->toArray();
         } catch (Exception $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
             $this->response = [
