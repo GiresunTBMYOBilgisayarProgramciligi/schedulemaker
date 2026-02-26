@@ -12,6 +12,9 @@ use App\Controllers\UserController;
 use App\Core\ImportExportManager;
 use App\Core\Router;
 use App\Services\ScheduleService;
+use App\Services\ExamService;
+use App\Services\ConflictService;
+use App\Services\AvailabilityService;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Department;
@@ -535,54 +538,59 @@ class AjaxRouter extends Router
     }
 
     /**
-     * Ders programı seçiminde Eklenen derse uygun olan sınıf listesini hazırlar.
+     * Ders veya sınav programı seçiminde eklenen derse uygun derslik listesini hazırlar.
+     * Schedule tipi exam ise UZEM hariç tümü; ders ise classroom_type filtresi uygulanır.
      * @throws Exception
      */
     public function getAvailableClassroomForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
         $scheduleController = new ScheduleController();
-        $classrooms = $scheduleController->availableClassrooms($this->data);
+        $filters = $scheduleController->validator->validate($this->data, "availableClassrooms");
+        $service = new AvailabilityService();
+        $classrooms = $service->availableClassrooms($filters);
         $this->response['status'] = "success";
         $this->response['classrooms'] = $classrooms;
         $this->sendResponse();
     }
 
     /**
-     * todo 
-     * Ders programı seçiminde Eklenen derse uygun olan gözetmen listesini hazırlar.
+     * Sınav atamalarında müsait gözetmenlerin listesini hazırlar.
      * @throws Exception
      */
     public function getAvailableObserversForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
         $scheduleController = new ScheduleController();
-        $observers = $scheduleController->availableObservers($this->data);
+        $filters = $scheduleController->validator->validate($this->data, "availableObservers");
+        $service = new ExamService();
+        $observers = $service->availableObservers($filters);
         $this->response['status'] = "success";
         $this->response['observers'] = $observers;
         $this->sendResponse();
     }
 
     /**
-     * todo
+     * Ders veya sınav programına eklenmek istenen item için çakışma kontrolü yapar.
+     * Her iki program tipi için de çalışır; iç mantık schedule.type ve assignments'a göre ayrım yapar.
      * @throws Exception
      */
     public function checkScheduleCrashAction(): void
     {
         try {
             $scheduleController = new ScheduleController();
-            $scheduleController->checkScheduleCrash($this->data);
+            $filters = $scheduleController->validator->validate($this->data, "checkScheduleCrash");
+            $service = new ConflictService();
+            $service->checkScheduleCrash($filters);
 
             $this->response['status'] = "success";
         } catch (\Throwable $e) {
-            // Exception'ı error.log'a yaz
             $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $this->data]);
-
             $msg = $e->getMessage();
             $msgArray = explode("\n", $msg);
             $this->response = [
                 "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : $msg
+                "msg" => count($msgArray) > 1 ? $msgArray : $msg,
             ];
         }
         $this->sendResponse();
@@ -678,19 +686,19 @@ class AjaxRouter extends Router
      */
     public function saveExamScheduleItemAction(): void
     {
-        $scheduleController = new ScheduleController();
         $items = json_decode($this->data['items'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->response = [
                 "status" => "error",
-                "msg" => "Geçersiz veri formatı"
+                "msg" => "Geçersiz veri formatı",
             ];
             $this->sendResponse();
             return;
         }
 
         try {
-            $createdIds = $scheduleController->saveExamScheduleItems($items);
+            $service = new ExamService();
+            $createdIds = $service->saveExamScheduleItems($items);
             if (!empty($createdIds)) {
                 $createdItems = [];
                 foreach ($createdIds as $groupedIds) {
@@ -708,7 +716,7 @@ class AjaxRouter extends Router
                     "status" => "success",
                     "msg" => "Sınav programı başarıyla kaydedildi.",
                     "createdIds" => $createdIds,
-                    "createdItems" => $createdItems
+                    "createdItems" => $createdItems,
                 ];
             }
         } catch (\Throwable $e) {
@@ -717,11 +725,12 @@ class AjaxRouter extends Router
             $msgArray = explode("\n", $msg);
             $this->response = [
                 "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
             ];
         }
         $this->sendResponse();
     }
+
 
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner

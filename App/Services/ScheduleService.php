@@ -6,6 +6,7 @@ use App\DTOs\DeleteScheduleResult;
 use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
 use App\Exceptions\ValidationException;
+use App\Services\ExamService;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -517,39 +518,14 @@ class ScheduleService extends BaseService
     }
 
     /**
-     * Sınav için owner listesini belirler
-     * 
-     * Sınav programları normal derslerden farklıdır:
-     * - Bir sınavda birden fazla gözlemci olabilir
-     * - Birden fazla derslik kullanılabilir
-     * - Her gözlemci ve derslik için ayrı schedule item oluşturulur
-     * 
-     * **Exam Assignments Formatı:**
-     * ```php
-     * [
-     *   ['observer_id' => 146, 'classroom_id' => 3],  // Ahmet Hoca, A101'de
-     *   ['observer_id' => 152, 'classroom_id' => 5]   // Mehmet Hoca, B202'de
-     * ]
-     * ```
-     * 
-     * @param Lesson $lesson Sınav dersi entity'si
-     * @param array $examAssignments Gözlemci-derslik atamaları
-     * @return array Owner listesi, her assignment için user ve classroom owner'ı içerir
+     * Sınav için owner listesini belirler.
+     * ExamService'e delege edilir.
+     *
+     * @deprecated ExamService::determineExamOwners kullanın
      */
     private function determineExamOwners(Lesson $lesson, array $examAssignments): array
     {
-        $owners = [
-            ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
-            ['type' => 'lesson', 'id' => $lesson->id]
-        ];
-
-        // Her sınav ataması için gözlemci ve derslik owner'ı ekle
-        foreach ($examAssignments as $assignment) {
-            $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
-            $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
-        }
-
-        return $owners;
+        return (new ExamService())->determineExamOwners($lesson, $examAssignments);
     }
 
     /**
@@ -1158,6 +1134,13 @@ class ScheduleService extends BaseService
                 }
 
                 $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
+                if ($type === 'exam') {
+                    // Sınav item'ları için ExamService'deki sibling bulma mantığı kullanılır
+                    $examSiblings = (new ExamService())->findExamSiblingItems($scheduleItem);
+                    if (count($examSiblings) > 1) {
+                        $siblings = $examSiblings;
+                    }
+                }
                 $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
 
                 $rawIntervals = [];
