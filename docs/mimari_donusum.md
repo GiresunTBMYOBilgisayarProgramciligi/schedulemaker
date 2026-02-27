@@ -29,7 +29,6 @@ HTTP Request
 - Thin Controllers — Sadece routing ve response
 - Service Layer — İş mantığı
 - Repository Layer — Veri erişimi
-- Feature Flags — Kademeli geçiş, hızlı rollback
 
 ---
 
