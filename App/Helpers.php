@@ -70,7 +70,10 @@ function getClassFromSemesterNo($semesterNo): string
         $semesterNo < 3 => 1,
         $semesterNo < 5 => 2,
         $semesterNo < 7 => 3,
-        $semesterNo >= 9 => 4,
+        $semesterNo < 9 => 4,
+        $semesterNo < 11 => 5,
+        $semesterNo < 13 => 6,
+        $semesterNo > 13 => 6,
     };
 }
 
