@@ -8,7 +8,7 @@ use App\Services\LessonService;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
-use App\Controllers\UserController;
+use App\Services\UserService;
 use App\Core\ImportExportManager;
 use App\Core\Router;
 use App\Services\ScheduleService;
@@ -114,9 +114,6 @@ class AjaxRouter extends Router
     public function addNewUserAction(): void
     {
         $userData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
-         */
         if (is_null($userData['department_id']) or $userData['department_id'] == '0') {
             unset($userData['department_id']);
         }
@@ -124,7 +121,7 @@ class AjaxRouter extends Router
             unset($userData['program_id']);
         }
         Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
-        (new UserController())->saveNew($userData);
+        (new UserService())->saveNew($userData);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla eklendi.",
             "status" => "success",
@@ -139,11 +136,7 @@ class AjaxRouter extends Router
      */
     public function updateUserAction(): void
     {
-        $usersController = new UserController();
         $userData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
-         */
         if (isset($userData['department_id']) and $userData['department_id'] == '0') {
             $userData['department_id'] = null;
         }
@@ -153,8 +146,7 @@ class AjaxRouter extends Router
         $new_user = new User();
         $new_user->fill($userData);
         Gate::authorize("update", $new_user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
-        $userId = $usersController->updateUser($new_user);
-
+        (new UserService())->updateUser($new_user);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla Güncellendi.",
             "status" => "success",

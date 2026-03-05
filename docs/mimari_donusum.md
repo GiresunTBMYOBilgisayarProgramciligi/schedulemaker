@@ -76,14 +76,12 @@ Bu 3 servis oluşturulduğunda LessonController, UserController, ClassroomContro
   - `createLesson`, `updateLesson`, `deleteLesson`
   - `connectChildLesson`, `disconnectChildLesson`
   - `calculateTotalHours`, `isScheduleComplete`
-- [ ] **UserService** — Kullanıcı yönetimi + auth
-  - `createUser`, `updateUser`, `deleteUser`
-  - `login`, `logout`, `changePassword`
+- [x] **UserService** — saveNew (password_hash), updateUser, login (session/cookie/last_login)
 - [ ] **ClassroomService** — Derslik CRUD + müsaitlik
   - `createClassroom`, `updateClassroom`, `deleteClassroom`
   - `findAvailableClassrooms`
-- [ ] LessonController → LessonService entegrasyonu
-- [ ] UserController → UserService entegrasyonu
+- [x] LessonController → LessonService entegrasyonu
+- [x] UserController → UserService entegrasyonu
 - [ ] ClassroomController → ClassroomService entegrasyonu
 
 ---
