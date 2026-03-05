@@ -3,15 +3,9 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Models\Department;
-use App\Models\Lesson;
-use App\Models\Program;
-use App\Models\Schedule;
 use App\Models\User;
 use App\Core\Gate;
 use Exception;
-use PDO;
-use PDOException;
 
 class UserController extends Controller
 {
@@ -66,109 +60,6 @@ class UserController extends Controller
             return false;
     }
 
-    /**
-     * @param array $loginData
-     * @return void
-     * @throws Exception
-     * @see AjaxRouter->loginAction()
-     */
-    public function login(array $loginData): void
-    {
-        $loginData = (object) $loginData;
-        $stmt = $this->database->prepare("SELECT * FROM users WHERE mail = :mail");
-        $stmt->bindParam(':mail', $loginData->mail);
-        $stmt->execute();
-
-        if ($stmt) {
-            $user = $stmt->fetch(\PDO::FETCH_OBJ);
-            if ($user) {
-                if (password_verify($loginData->password, $user->password)) {
-                    if (!$loginData->remember_me) {
-                        $_SESSION[$_ENV["SESSION_KEY"]] = $user->id;
-                    } else {
-                        setcookie($_ENV["COOKIE_KEY"], $user->id, [
-                            'expires' => time() + (86400 * 30),
-                            'path' => '/',
-                            'httponly' => true,     // JavaScript erişimini engeller
-                            'samesite' => 'Strict', // CSRF saldırılarına karşı koruma
-                        ]);
-                    }
-                    // Log the login
-                    $userObj = new User();
-                    $userObj->fill((array) $user);
-                    $this->logger()->info($userObj->getFullName() . " giriş yaptı.", $this->logContext([
-                        'user_id' => $user->id,
-                        'username' => $userObj->getFullName()
-                    ]));
-                } else
-                    throw new Exception("Şifre Yanlış");
-            } else
-                throw new Exception("Kullanıcı kayıtlı değil");
-        } else
-            throw new Exception("Hiçbir kullanıcı kayıtlı değil");
-        // Update las login date
-        $sql = "UPDATE $this->table_name SET last_login = NOW() WHERE id = ?";
-        $stmt = $this->database->prepare($sql);
-        $stmt->execute([$user->id]);
-    }
-
-    /**
-     * User modeli ile gelen verilele yani kullanıcı oluşturur
-     * @param array $userData
-     * @return int
-     * @throws Exception
-     * @see AjaxRouter->addUserAction
-     */
-    public function saveNew(array $userData): int
-    {
-        try {
-            // Yeni kullanıcı verilerini bir dizi olarak alın
-            $userData["password"] = password_hash($userData["password"] ?? "123456", PASSWORD_DEFAULT);
-
-            $new_user = new User();
-            $new_user->fill($userData);
-            $new_user->create();
-            return $new_user->id;
-        } catch (PDOException $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
-            }
-        }
-    }
-
-    /**
-     * User modeli ile gele kullanıcı bilgilerini günceller
-     * @param User $user
-     * @return int
-     * @throws Exception,
-     * @see AjaxRouter->updateUserAction
-     */
-    public function updateUser(User $user): int
-    {
-        try {
-            $excluded = ['register_date', 'last_login'];
-
-            // Şifre kontrolü ve hash işlemi
-            if (!empty($user->password)) {
-                $user->password = password_hash($user->password, PASSWORD_DEFAULT);
-            } else {
-                $excluded[] = 'password';
-            }
-
-            $user->update($excluded);
-            return $user->id;
-        } catch (Exception $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
-            }
-        }
-    }
 
     /**
      * Formlarda listelenecek Rol, yetki listesi

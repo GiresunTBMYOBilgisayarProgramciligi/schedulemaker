@@ -84,10 +84,14 @@ Bu 3 servis oluşturulduğunda LessonController, UserController, ClassroomContro
 
 ---
 
-### ⏸️ Faz 5: Test + Legacy Temizlik (PLANLI)
-- [ ] Unit testler (servisler için öncelik)
-- [ ] Feature flag'leri kaldırma
-- [ ] ScheduleController legacy metot temizliği
+### ✅ Faz 5: Controller Temizliği (TAMAMLANDI)
+- [x] FeatureFlags tamamen kaldırıldı (kod + DB)
+- [x] LessonController — saveNew, updateLesson, combineLesson, deleteParentLesson silindi
+- [x] UserController — saveNew, updateUser, login silindi  
+- [x] Her iki controller artık yalnızca view/query yardımcısı
+- [x] Gereksiz importlar temizlendi
+
+> 📋 Unit testler ve diğer geri kalan işler için: [kalan_isler.md](kalan_isler.md)
 
 ---
 
