@@ -4,7 +4,7 @@ namespace App\Routers;
 
 use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
-use App\Controllers\LessonController;
+use App\Services\LessonService;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
@@ -186,11 +186,7 @@ class AjaxRouter extends Router
      */
     public function addLessonAction(): void
     {
-        $lessonController = new LessonController();
         $lessonData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar siliniyor
-         */
         if (empty($lessonData['lecturer_id'])) {
             throw new Exception("Hoca Seçmelisiniz");
         }
@@ -204,7 +200,7 @@ class AjaxRouter extends Router
         $new_lesson->fill($lessonData);
         Gate::authorize("create", $new_lesson, "Yeni Ders oluşturma yetkiniz yok");
 
-        $lesson = $lessonController->saveNew($new_lesson);
+        $lesson = (new LessonService())->saveNew($new_lesson);
         if (!$lesson) {
             throw new Exception("Ders eklenemedi");
         } else {
@@ -221,20 +217,13 @@ class AjaxRouter extends Router
      */
     public function updateLessonAction(): void
     {
-        $lessonController = new LessonController();
         $lessonData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
-         */
         if ($lessonData['department_id'] == '0') {
             $lessonData['department_id'] = null;
         }
         if ($lessonData['program_id'] == '0') {
             $lessonData['program_id'] = null;
         }
-        /**
-         * Hoca ve altı yetkive dersi veren kullanıcı ise
-         */
         if (Gate::allowsRole("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
             $lessonData = [];
             $lessonData['id'] = $this->data['id'];
@@ -244,11 +233,10 @@ class AjaxRouter extends Router
         $lesson->fill($lessonData);
         Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
 
-        $lesson = $lessonController->updateLesson($lesson);
+        (new LessonService())->updateLesson($lesson);
         $this->response = array(
             "msg" => "Ders başarıyla Güncellendi.",
             "status" => "success",
-
         );
         $this->sendResponse();
     }
@@ -275,17 +263,19 @@ class AjaxRouter extends Router
     public function combineLessonAction(): void
     {
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
-            $lessonController = new LessonController();
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
+            (new LessonService())->combineLesson(
+                (int) $this->data['parent_lesson_id'],
+                (int) $this->data['child_lesson_id']
+            );
             $this->response = array(
                 "msg" => "Dersler Başarıyla birleştirildi.",
                 "status" => "success",
                 "redirect" => "self"
             );
-        } else
+        } else {
             throw new Exception("Birleştirmek için dersler belirtilmemiş");
-
+        }
         $this->sendResponse();
     }
 
@@ -296,16 +286,15 @@ class AjaxRouter extends Router
     {
         if (key_exists("id", $this->data)) {
             Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
-            $lessonController = new LessonController();
-            $lessonController->deleteParentLesson($this->data['id']);
+            (new LessonService())->deleteParentLesson((int) $this->data['id']);
             $this->response = array(
                 "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
                 "status" => "success",
                 "redirect" => "self"
             );
-        } else
+        } else {
             throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
-
+        }
         $this->sendResponse();
     }
 

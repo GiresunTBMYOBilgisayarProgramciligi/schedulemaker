@@ -72,7 +72,7 @@ HTTP Request
 
 Bu 3 servis oluşturulduğunda LessonController, UserController, ClassroomController da ince dispatcher'a dönüşecek:
 
-- [ ] **LessonService** — Ders CRUD + child lesson yönetimi + hour hesaplamaları
+- [x] **LessonService** — saveNew, updateLesson, combineLesson (schedule sync dahil), deleteParentLesson
   - `createLesson`, `updateLesson`, `deleteLesson`
   - `connectChildLesson`, `disconnectChildLesson`
   - `calculateTotalHours`, `isScheduleComplete`
