@@ -2,7 +2,7 @@
 
 namespace App\Routers;
 
-use App\Controllers\ClassroomController;
+use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
 use App\Services\LessonService;
 use App\Controllers\ProgramController;
@@ -299,9 +299,7 @@ class AjaxRouter extends Router
     public function addClassroomAction(): void
     {
         Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
-        $classroomController = new ClassroomController();
-        $classroomController->saveNew($this->data);
-
+        (new ClassroomService())->saveNew($this->data);
         $this->response = array(
             "msg" => "Derslik başarıyla eklendi.",
             "status" => "success",
@@ -314,12 +312,11 @@ class AjaxRouter extends Router
      */
     public function updateClassroomAction(): void
     {
-        $classroomController = new ClassroomController();
         $classroomData = $this->data;
         $classroom = new Classroom();
         $classroom->fill($classroomData);
         Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
-        $classroom = $classroomController->updateClassroom($classroom);
+        (new ClassroomService())->updateClassroom($classroom);
         $this->response = array(
             "msg" => "Derslik başarıyla Güncellendi.",
             "status" => "success",
