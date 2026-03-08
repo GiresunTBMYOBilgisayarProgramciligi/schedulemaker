@@ -716,4 +716,23 @@ class Model
 
         return isset($result->total) ? (float) $result->total : 0.0;
     }
+
+    /**
+     * Belirtilen sütunun maksimum değerini döner
+     * @param string $column Sütun adı
+     * @return int|float|null
+     */
+    public function max(string $column): int|float|null
+    {
+        $query = $this->buildQuery();
+        $sql = preg_replace('/SELECT .* FROM/', "SELECT MAX(`$column`) as max_val FROM", $query['sql']);
+
+        // LIMIT ve OFFSET'i kaldır
+        $sql = preg_replace('/LIMIT \d+( OFFSET \d+)?/', '', $sql);
+        $statement = self::$database->prepare($sql);
+        $statement->execute($query['parameters']);
+        $result = $statement->fetch(PDO::FETCH_OBJ);
+
+        return $result->max_val ?? null;
+    }
 }

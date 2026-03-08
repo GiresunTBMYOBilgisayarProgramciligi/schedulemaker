@@ -8,6 +8,8 @@ use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\UserController;
+use App\Services\LessonService;
+use App\Services\UserService;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
@@ -91,6 +93,7 @@ class ImportExportManager
     public function importUsersFromExcel(): array
     {
         $userController = new UserController();
+        $userService = new UserService();
         $departmentController = new DepartmentController();
         $programController = new ProgramController();
         $addedCount = 0;
@@ -178,10 +181,10 @@ class ImportExportManager
                 if ($user) {
                     $user->fill($userData);
                     $user->password = null;
-                    $userController->updateUser($user);
+                    $userService->updateUser($user);
                     $updatedCount++;
                 } else {
-                    $userController->saveNew($userData);
+                    $userService->saveNew($userData);
                     $addedCount++;
                     // Yeni eklenen kullanıcıyı da cache'e alalım (id'si oluştu)
                     $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
@@ -215,6 +218,7 @@ class ImportExportManager
         $departmentController = new DepartmentController();
         $programController = new ProgramController();
         $lessonsController = new LessonController();
+        $lessonService = new LessonService();
         $errorCount = 0;
         $errors = [];
         $addedLessons = [];
@@ -325,7 +329,7 @@ class ImportExportManager
                 $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
                 if ($lesson) {
                     $lesson->fill($lessonData);
-                    $lessonsController->updateLesson($lesson);
+                    $lessonService->updateLesson($lesson);
                     $updatedLessons[$lesson->id] = $lesson->getFullName();
                 } else {
                     $lesson = new Lesson();

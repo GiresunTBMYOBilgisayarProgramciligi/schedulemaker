@@ -55,6 +55,8 @@ class AjaxRouter extends Router
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
         }
+        // Oturumdaki kullanıcıyı bir kez çekip tüm action metodlarında kullanıma hazırla
+        $this->currentUser = (new \App\Controllers\UserController())->getCurrentUser() ?: null;
     }
 
     /**
@@ -210,24 +212,44 @@ class AjaxRouter extends Router
     public function updateLessonAction(): void
     {
         $lessonData = $this->data;
-        if ($lessonData['department_id'] == '0') {
-            $lessonData['department_id'] = null;
-        }
-        if ($lessonData['program_id'] == '0') {
-            $lessonData['program_id'] = null;
-        }
-        if (Gate::allowsRole("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
-            $lessonData = [];
-            $lessonData['id'] = $this->data['id'];
-            $lessonData['size'] = $this->data['size'];
-        }
-        $lesson = new Lesson();
-        $lesson->fill($lessonData);
-        Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
 
-        (new LessonService())->updateLesson($lesson);
+        // Hoca yetkisindeki kullanıcı yalnızca kendi dersinin mevcut/sınıf türünü güncelleyebilir.
+        // Güvenlik için lecturer_id POST'tan değil DB'den alınır (disabled alan POST'a gelmez).
+        $lessonFromDb = (new Lesson())->find((int)($lessonData['id'] ?? 0));
+        $isLecturerOwnLesson = Gate::allowsRole("lecturer", true)
+            && $lessonFromDb
+            && $this->currentUser
+            && $lessonFromDb->lecturer_id == $this->currentUser->id;
+
+        if ($isLecturerOwnLesson) {
+            // DB'den gelen nesneyi doğrudan kullan — sadece izin verilen alanları güncelle.
+            // new Lesson() + fill() yapılırsa diğer alanlar (code vb.) null kalır ve UNIQUE hatası oluşur.
+            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+            $lessonFromDb->size           = $this->data['size'];
+            $lessonFromDb->classroom_type = $this->data['classroom_type'] ?? $lessonFromDb->classroom_type;
+            (new LessonService())->updateLesson($lessonFromDb);
+        } else {
+            // Admin/yetkili güncelleme: bölüm ve program zorunlu
+            if (!isset($lessonData['department_id']) || $lessonData['department_id'] == '0') {
+                $lessonData['department_id'] = null;
+            }
+            if (!isset($lessonData['program_id']) || $lessonData['program_id'] == '0') {
+                $lessonData['program_id'] = null;
+            }
+            if (empty($lessonData['department_id'])) {
+                throw new Exception("Bölüm Seçmelisiniz");
+            }
+            if (empty($lessonData['program_id'])) {
+                throw new Exception("Program Seçmelisiniz");
+            }
+            $lesson = new Lesson();
+            $lesson->fill($lessonData);
+            Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
+            (new LessonService())->updateLesson($lesson);
+        }
+
         $this->response = array(
-            "msg" => "Ders başarıyla Güncellendi.",
+            "msg"    => "Ders başarıyla Güncellendi.",
             "status" => "success",
         );
         $this->sendResponse();

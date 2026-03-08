@@ -113,7 +113,8 @@ use App\Core\Gate;
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id">
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
+                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option></option>
                                                 <?php foreach ($lecturers as $lecturer): ?>
                                                     <option value="<?= $lecturer->id ?>"
@@ -172,7 +173,8 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="col-form-label" for="settings[general][academic_year]">Dönem</label>
                                             <div class="input-group ">
-                                                <select class="form-select" id="academic_year" name="academic_year">
+                                                <select class="form-select" id="academic_year" name="academic_year"
+                                                    <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
                                                         <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $lesson->academic_year == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                             <?= $year . ' - ' . $year + 1 ?>
@@ -180,7 +182,8 @@ use App\Core\Gate;
                                                     <?php endfor; ?>
                                                 </select>
                                                 <span class="input-group-text"> - </span>
-                                                <select class="form-select" id="semester" name="semester">
+                                                <select class="form-select" id="semester" name="semester"
+                                                    <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                     <option value="Güz" <?= $lesson->semester == 'Güz' ? 'selected' : '' ?>>Güz</option>
                                                     <option value="Bahar" <?= $lesson->semester == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
                                                     <option value="Yaz" <?= $lesson->semester == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
