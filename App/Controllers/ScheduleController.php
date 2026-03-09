@@ -166,6 +166,7 @@ class ScheduleController extends Controller
             $lessonFilters = array_merge($lessonFilters, [
                 'lecturer_id' => $schedule->owner_id,
             ]);
+            unset($lessonFilters["!type"]); // staj derslerini dahil et
         } elseif ($schedule->owner_type == "lesson") {
             $lessonFilters = array_merge($lessonFilters, [
                 'id' => $schedule->owner_id,
