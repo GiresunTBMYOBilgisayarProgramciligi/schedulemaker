@@ -63,15 +63,15 @@
                                 <td><?= $lesson->code ?></td>
                                 <td><?= $lesson->group_no ?></td>
                                 <td
-                                    <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName().'('.$lesson->parentLesson->program->name.') Dersine bağlı"' : '' ?>
+                                    <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName().'('.($lesson->parentLesson->program?->name ?? 'Bilinmiyor').') Dersine bağlı"' : '' ?>
                                 ><?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?></td>
                                 <td><?= $lesson->getTypeName() ?></td>
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
                                 <td><?= $lesson->semester_no ?></td>
                                 <td><?= $lesson->lecturer->getFullName() ?></td>
-                                <td><?= $lesson->department->name ?></td>
-                                <td><?= $lesson->program->name ?></td>
+                                <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
+                                <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->semester ?></td>
                                 <td><?= $lesson->academic_year ?></td>
                                 <td><?= $lesson->getClassroomTypeName() ?></td>

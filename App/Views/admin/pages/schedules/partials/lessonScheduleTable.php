@@ -97,7 +97,7 @@ use function App\Helpers\getSettingValue;
                                                     }
 
                                                     $popoverAttr = "";
-                                                    
+
                                                     if ($isChild && isset($slotData->lesson->parentLesson)) {
                                                         $parent = $slotData->lesson->parentLesson;
                                                         $popoverTitle = "Birleştirilmiş Ders";
@@ -112,17 +112,17 @@ use function App\Helpers\getSettingValue;
                                                         <span class="lesson-name">
                                                             <?php if ($schedule->owner_type !== 'program'): ?>
                                                                 <?php
-                                                                $programNames = [$slotData->lesson->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no)];
+                                                                $programNames = [$slotData->lesson->program->name . "-" . getClassFromSemesterNo($slotData->lesson->semester_no)];
                                                                 if (!empty($slotData->lesson->childLessons)) {
                                                                     foreach ($slotData->lesson->childLessons as $child) {
                                                                         if ($child->program) {
-                                                                            $programNames[] = $child->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no);
+                                                                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($child->semester_no);
                                                                         }
                                                                     }
                                                                 }
 
                                                                 if (empty($programNames) && $slotData->lesson->program) {
-                                                                    $programNames[] = $slotData->lesson->program->name."-".getClassFromSemesterNo($slotData->lesson->semester_no);
+                                                                    $programNames[] = $slotData->lesson->program->name . "-" . getClassFromSemesterNo($slotData->lesson->semester_no);
                                                                 }
 
                                                                 // Unique ve virgülle birleştir

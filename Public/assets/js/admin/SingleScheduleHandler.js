@@ -459,11 +459,11 @@ class SingleScheduleHandler {
                         start_time: cell.dataset.startTime,
                         end_time: cell.dataset.endTime,
                         status: lessonData.status,
-                        data: isDummy ? null : {
+                        data: isDummy ? null : [{
                             lesson_id: lessonData.lessonId,
                             lecturer_id: lessonData.lecturerId,
                             classroom_id: lessonData.classroomId || 0
-                        },
+                        }],
                         detail: description && description.trim() !== "" ? { description: description } : null
                     };
                 } else {
@@ -795,8 +795,7 @@ SingleScheduleHandler.prototype.showScheduleInModal = function (ownerType, owner
     const type = scheduleCard ? scheduleCard.dataset.type : "lesson";
 
     const modal = new Modal();
-    modal.initializeModal("xl");
-    modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true);
+    modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true,"xl");
 
     // Sayfaya git butonu ekle
     let url = "";
@@ -820,9 +819,18 @@ SingleScheduleHandler.prototype.showScheduleInModal = function (ownerType, owner
     const data = new FormData();
     data.append('owner_type', ownerType);
     data.append('owner_id', ownerId);
-    data.append('semester', semester);
-    data.append('academic_year', academicYear);
-    data.append('type', type);
+    // Undefined değerleri ekleme - FilterValidator default değerleri kullanacak
+    if (semester && semester !== 'undefined') {
+        data.append('semester', semester);
+    }
+    if (academicYear && academicYear !== 'undefined') {
+        data.append('academic_year', academicYear);
+    }
+    if (type && type !== 'undefined') {
+        data.append('type', type);
+    } else {
+        data.append('type', 'lesson'); // Default fallback
+    }
     data.append('only_table', 'true');
 
     fetch('/ajax/getScheduleHTML', {

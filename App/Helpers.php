@@ -2,7 +2,7 @@
 //todo App/Helpers içerisine taşınabilir.
 namespace App\Helpers;
 
-use App\Controllers\LessonController;
+use App\Models\Lesson;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use Exception;
@@ -51,7 +51,7 @@ function getSemesterNumbers(?string $semester = null): array
     $semester = $semester ?? getSettingValue('semester');
 
     // Geçerli dönem sayısını al
-    $semester_count = (new LessonController())->getMaxSemesterNo() ?? 4;
+    $semester_count = (new Lesson())->get()->max('semester_no') ?? 4;
 
     // Güz döneminde **tek**, Bahar döneminde **çift** sayılar seçilmeli
     return array_values(array_filter(range(1, $semester_count), function ($semester_no) use ($semester) {

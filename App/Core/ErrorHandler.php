@@ -60,21 +60,20 @@ class ErrorHandler
         // Hatayı logla
         $this->logException($exception);
 
-        /*// İstisna türüne göre farklı şablonları göster
-        if ($exception instanceof \App\Core\Exceptions\DatabaseException) {
-            // Veritabanı hatası durumunda özel şablon
-            $this->renderErrorView('database_error', $exception, 500);
-        } elseif ($exception instanceof \App\Core\Exceptions\NotFoundException) {
-            // 404 hatası durumunda özel şablon
-            $this->renderErrorView('not_found', $exception, 404);
-        } elseif ($exception instanceof \App\Core\Exceptions\ValidationException) {
-            // Doğrulama hatası durumunda özel şablon
-            $this->renderErrorView('validation_error', $exception, 400);
+        // İstisna türüne göre farklı HTTP yanıtları ver
+        if ($exception instanceof \App\Exceptions\ValidationException) {
+            // Validation hatası - 400 Bad Request
+            $this->renderErrorView('error', $exception, 400);
+        } elseif ($exception instanceof \App\Exceptions\LessonHourExceededException) {
+            // Ders saati aşımı - 422 Unprocessable Entity  
+            $this->renderErrorView('error', $exception, 422);
+        } elseif ($exception instanceof \App\Exceptions\ScheduleConflictException) {
+            // Schedule çakışması - 409 Conflict
+            $this->renderErrorView('error', $exception, 409);
         } else {
-            // Diğer tüm hatalar için genel şablon
+            // Diğer tüm hatalar için genel şablon - 500 Internal Server Error
             $this->renderErrorView('error', $exception, 500);
-        }*/
-        $this->renderErrorView('error', $exception, 500);
+        }
 
     }
 

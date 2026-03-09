@@ -380,7 +380,6 @@ class ScheduleCard {
         }
 
         const modal = new Modal();
-        modal.initializeModal("xl");
         modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true, "xl");
 
         // Sayfaya git butonu ekle
@@ -861,11 +860,11 @@ class ScheduleCard {
         let scheduleItems = [];
         let itemsToProcess = Array.isArray(input) ? input : [{
             hours: parseInt(input.hours || input),
-            data: {
+            data: [{  // FIX: eski sistem array of objects bekliyor
                 "lesson_id": this.draggedLesson.lesson_id,
                 "lecturer_id": this.draggedLesson.lecturer_id,
                 "classroom_id": classroom?.id || null
-            },
+            }],
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
             detail: input.assignments ? { assignments: input.assignments } : null
         }];
@@ -1253,7 +1252,7 @@ class ScheduleCard {
                 itemsToMove.push({ element: el, data: data });
                 itemsToDelete.push(data);
                 totalHours += hours;
-                detailedItems.push({ hours, data: data.data[0], status: data.status, originalElement: el });
+                detailedItems.push({ hours, data: data.data, status: data.status, originalElement: el });
                 if (!classroom) classroom = { id: el.dataset.classroomId, name: el.querySelector('.lesson-classroom')?.innerText || "", size: el.dataset.classroomSize, exam_size: el.dataset.classroomExamSize };
             }
         });

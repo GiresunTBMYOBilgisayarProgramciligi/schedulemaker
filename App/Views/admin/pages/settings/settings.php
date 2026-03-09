@@ -147,6 +147,32 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label class="col-form-label"
+                                                    for="settings[lesson][day_start][value]">Gün Başlangıç Saati</label>
+                                                <input type="hidden" name="settings[lesson][day_start][type]"
+                                                    value="string">
+                                                <input type="time" class="form-control"
+                                                    id="settings[lesson][day_start][value]"
+                                                    name="settings[lesson][day_start][value]"
+                                                    value="<?= @$settings['lesson']['day_start'] ?? '08:00' ?>">
+                                                <div class="form-text">Ders programı gün başlangıç saati. Varsayılan
+                                                    08:00</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[lesson][day_end][value]">Gün
+                                                    Bitiş Saati</label>
+                                                <input type="hidden" name="settings[lesson][day_end][type]"
+                                                    value="string">
+                                                <input type="time" class="form-control"
+                                                    id="settings[lesson][day_end][value]"
+                                                    name="settings[lesson][day_end][value]"
+                                                    value="<?= @$settings['lesson']['day_end'] ?? '17:00' ?>">
+                                                <div class="form-text">Ders programı gün bitiş saati. Varsayılan 17:00
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label"
                                                     for="settings[lesson][duration][value]">Ders Süresi (Dakika)</label>
                                                 <input type="hidden" name="settings[lesson][duration][type]"
                                                     value="integer">
@@ -278,6 +304,32 @@
                                                 </select>
                                                 <div class="form-text">Sınav takviminde haftanın dahil edileceği son
                                                     günü belirler. Varsayılan: Cumartesi.</div>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[exam][day_start][value]">Gün
+                                                    Başlangıç Saati</label>
+                                                <input type="hidden" name="settings[exam][day_start][type]"
+                                                    value="string">
+                                                <input type="time" class="form-control"
+                                                    id="settings[exam][day_start][value]"
+                                                    name="settings[exam][day_start][value]"
+                                                    value="<?= @$settings['exam']['day_start'] ?? '08:00' ?>">
+                                                <div class="form-text">Sınav programı gün başlangıç saati. Varsayılan
+                                                    08:00</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[exam][day_end][value]">Gün
+                                                    Bitiş Saati</label>
+                                                <input type="hidden" name="settings[exam][day_end][type]"
+                                                    value="string">
+                                                <input type="time" class="form-control"
+                                                    id="settings[exam][day_end][value]"
+                                                    name="settings[exam][day_end][value]"
+                                                    value="<?= @$settings['exam']['day_end'] ?? '17:00' ?>">
+                                                <div class="form-text">Sınav programı gün bitiş saati. Varsayılan 17:00
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="row mb-3">

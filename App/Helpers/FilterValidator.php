@@ -68,6 +68,8 @@ class FilterValidator
             'show_code' => ['type' => 'int'],//Ders kodu gösterilsin mi?
             'show_lecturer' => ['type' => 'int'],//Hoca adı gösterilsin mi?
             'show_program' => ['type' => 'int'],//Program adı gösterilsin mi?
+            'start_time' => ['type' => 'string'],//Item başlangıç saati (H:i veya H:i:s)
+            'end_time' => ['type' => 'string'],  //Item bitiş saati (H:i veya H:i:s)
         ];
 
         // 2. Her işlem için kuralları tanımla
