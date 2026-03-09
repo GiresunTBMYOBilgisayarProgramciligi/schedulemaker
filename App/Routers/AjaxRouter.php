@@ -69,7 +69,14 @@ class AjaxRouter extends Router
             isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
         ) {
-            $this->data = $_POST;
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            if (str_contains($contentType, 'application/json')) {
+                // JSON body — $_POST boş gelir, php://input'tan oku
+                $body = file_get_contents('php://input');
+                $this->data = json_decode($body, true) ?? [];
+            } else {
+                $this->data = $_POST;
+            }
             $this->files = $_FILES;
             return true;
         } else
@@ -272,19 +279,130 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Ders birleştirme önizleme — DB değişikliği yapmaz.
+     * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.
+     * @throws Exception
+     */
+    public function previewCombineLessonAction(): void
+    {
+        $parentId = (int) ($this->data['parent_lesson_id'] ?? 0);
+        $childId  = (int) ($this->data['child_lesson_id'] ?? 0);
+
+        if (!$parentId || !$childId) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
+        Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+
+        $parentLesson = (new Lesson())->find($parentId)
+            ?: throw new Exception("Üst ders bulunamadı");
+        $childLesson  = (new Lesson())->find($childId)
+            ?: throw new Exception("Bağlanacak ders bulunamadı");
+
+        $hoursDiff = $parentLesson->hours - $childLesson->hours;
+
+        if ($hoursDiff <= 0) {
+            $this->response = ['needs_confirmation' => false];
+            $this->sendResponse();
+            return;
+        }
+
+        // Parent'ın ders programı var mı?
+        $parentSchedule = (new Schedule())
+            ->get()
+            ->where(['owner_type' => 'lesson', 'owner_id' => $parentId])
+            ->with(['items'])
+            ->first();
+
+        if (!$parentSchedule || empty($parentSchedule->items)) {
+            $this->response = ['needs_confirmation' => false];
+            $this->sendResponse();
+            return;
+        }
+
+        // Ayarlardan ders süresi ve mola bilgisini al
+        $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
+        $break    = (int) getSettingValue('break', 'lesson', 10);    // dakika
+
+        $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+        $slots = [];
+        foreach ($parentSchedule->items as $item) {
+            if (in_array($item->status, ['unavailable', 'preferred'])) {
+                continue;
+            }
+            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start) continue;
+
+            // İtem kaç saat içeriyor?
+            $slotStart = clone $start;
+            $slotIndex = 0;
+
+            // Saatleri tek tek üret: süre+mola adımlarıyla
+            while (true) {
+                $slotEnd = clone $slotStart;
+                $slotEnd->modify("+{$duration} minutes");
+
+                $slots[] = [
+                    'id'         => "{$item->id}_{$slotIndex}",
+                    'item_id'    => $item->id,
+                    'slot_index' => $slotIndex,
+                    'day_name'   => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
+                    'day_index'  => $item->day_index,
+                    'start_time' => $slotStart->format('H:i'),
+                    'end_time'   => $slotEnd->format('H:i'),
+                ];
+
+                // Bir sonraki slot başlangıcı: mola ekle
+                $slotStart = clone $slotEnd;
+                $slotStart->modify("+{$break} minutes");
+                $slotIndex++;
+
+                // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd) break;
+            }
+        }
+
+        // Gün ve saate göre sırala
+        usort($slots, fn($a, $b) => $a['day_index'] <=> $b['day_index'] ?: $a['start_time'] <=> $b['start_time']);
+
+        $this->response = [
+            'needs_confirmation' => true,
+            'hours_diff'         => $hoursDiff,
+            'parent_hours'       => $parentLesson->hours,
+            'child_hours'        => $childLesson->hours,
+            'items'              => $slots,
+        ];
+        $this->sendResponse();
+    }
+
+    /**
      * @throws Exception
      */
     public function combineLessonAction(): void
     {
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+
+            // items_to_remove: ["itemId_slotIndex", ...] formatını parse et
+            // Örn: ["606_2", "606_3"] → {606: [2, 3]}
+            $rawRemove = (array) ($this->data['items_to_remove'] ?? []);
+            $slotsToSkip = []; // [item_id => [slot_index, ...]]
+            foreach ($rawRemove as $entry) {
+                [$itemId, $slotIdx] = explode('_', (string) $entry, 2);
+                $slotsToSkip[(int)$itemId][] = (int)$slotIdx;
+            }
+
             (new LessonService())->combineLesson(
                 (int) $this->data['parent_lesson_id'],
-                (int) $this->data['child_lesson_id']
+                (int) $this->data['child_lesson_id'],
+                $slotsToSkip
             );
             $this->response = array(
-                "msg" => "Dersler Başarıyla birleştirildi.",
-                "status" => "success",
+                "msg"      => "Dersler Başarıyla birleştirildi.",
+                "status"   => "success",
                 "redirect" => "self"
             );
         } else {

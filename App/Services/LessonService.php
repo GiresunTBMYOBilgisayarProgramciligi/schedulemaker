@@ -6,6 +6,7 @@ use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
+use function App\Helpers\getSettingValue;
 
 /**
  * Ders yönetimi iş mantığı servisi.
@@ -72,20 +73,14 @@ class LessonService extends BaseService
     // ──────────────────────────────────────────
 
     /**
-     * Child dersi parent derse bağlar ve mevcut schedule'ı child için senkronize eder.
-     *
-     * İşlem sırası:
-     * 1. Validasyonlar (zaten bağlı mı? saat yeterli mi?)
-     * 2. Child dersin eski schedule'larını sil (parent'ı korumak için bağlamadan ÖNCE)
-     * 3. parent_lesson_id güncelle
-     * 4. Child'ın kendi child'larını parent'a bağla
-     * 5. Parent'ın mevcut schedule item'larını child için kopyala
+     * Çocuk dersi üst derse bağlar ve mevcut schedule'ı senkronize eder.
      *
      * @param int $parentLessonId
      * @param int $childLessonId
+     * @param array $slotsToSkip Kopyalanmayacak slotlar [item_id => [slot_index, ...]]
      * @throws Exception
      */
-    public function combineLesson(int $parentLessonId, int $childLessonId): void
+    public function combineLesson(int $parentLessonId, int $childLessonId, array $slotsToSkip = []): void
     {
         $this->logger->info('Ders birleştirme başlatıldı', [
             'parent_id' => $parentLessonId,
@@ -149,8 +144,8 @@ class LessonService extends BaseService
                 $grandChild->update();
             }
 
-            // Parent'ın mevcut schedule'ı varsa child için item kopyala
-            $this->syncChildScheduleFromParent($parentLesson, $childLesson);
+            // Parent'ın mevcut schedule'ı varsa child için item kopyala (seçilen slotlar hariç)
+            $this->syncChildScheduleFromParent($parentLesson, $childLesson, $slotsToSkip);
 
             if ($isInitiator) {
                 $this->db->commit();
@@ -195,13 +190,15 @@ class LessonService extends BaseService
     // ──────────────────────────────────────────
 
     /**
-     * Parent dersin mevcut schedule item'larını child ders ve programı için kopyalar.
+     * Parent dersin schedule item'larını child için kopyalar.
+     * Belirli slot'lar harici tutulabilir; saat aralıklı item'lar bireysel 1-saatlik item'lara ayrılır.
      *
      * @param Lesson $parentLesson
      * @param Lesson $childLesson
+     * @param array  $slotsToSkip Kopyalanmayacak slotlar [item_id => [slot_index, ...]]
      * @throws Exception
      */
-    private function syncChildScheduleFromParent(Lesson $parentLesson, Lesson $childLesson): void
+    private function syncChildScheduleFromParent(Lesson $parentLesson, Lesson $childLesson, array $slotsToSkip = []): void
     {
         /** @var Schedule $parentSchedule */
         $parentSchedule = (new Schedule())
@@ -211,43 +208,88 @@ class LessonService extends BaseService
             ->first();
 
         if (!$parentSchedule) {
-            return; // Parent'ın henüz schedule'ı yoksa yapacak bir şey yok
+            return;
         }
 
+        $duration = (int) \App\Helpers\getSettingValue('duration', 'lesson', 50);
+        $break    = (int) \App\Helpers\getSettingValue('break', 'lesson', 10);
+
         foreach ($parentSchedule->items as $item) {
-            $itemData = $this->buildChildItemData($item, $parentLesson, $childLesson);
+            $skippedSlots = $slotsToSkip[$item->id] ?? [];
 
-            $owners = [
-                ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
-                ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no],
-            ];
+            if (empty($skippedSlots)) {
+                // Hiç slot silinmiyor — item'ı olduğu gibi kopyala (mevcut davranış)
+                $this->copyItemToChild($parentSchedule, $item, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson);
+                continue;
+            }
 
-            foreach ($owners as $owner) {
-                if (!$owner['id']) {
-                    continue;
+            // Bazı slotlar silinecek — item'ı bireysel 1-saatlik parçalara ayır, seçilenleri atla
+            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start) continue;
+
+            $slotStart = clone $start;
+            $slotIndex = 0;
+
+            while (true) {
+                $slotEnd = clone $slotStart;
+                $slotEnd->modify("+{$duration} minutes");
+
+                if (!in_array($slotIndex, $skippedSlots)) {
+                    // Bu slot kopyalanacak: yeni baş/bitiş zamanlarıyla tek item oluştur
+                    $partialItem = clone $item;
+                    $partialItem->id         = null; // yeni kayıt
+                    $partialItem->start_time = $slotStart->format('H:i:s');
+                    $partialItem->end_time   = $slotEnd->format('H:i:s');
+                    $this->copyItemToChild($parentSchedule, $partialItem, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson);
                 }
 
-                $scheduleFilters = [
-                    'owner_type' => $owner['type'],
-                    'owner_id' => $owner['id'],
-                    'semester' => $parentSchedule->semester,
-                    'academic_year' => $parentSchedule->academic_year,
-                    'type' => $parentSchedule->type,
-                    'semester_no' => $owner['type'] === 'program' ? $owner['semester_no'] : null,
-                ];
+                $slotStart = clone $slotEnd;
+                $slotStart->modify("+{$break} minutes");
+                $slotIndex++;
 
-                $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
-
-                $newItem = new ScheduleItem();
-                $newItem->schedule_id = $childSchedule->id;
-                $newItem->day_index = $item->day_index;
-                $newItem->start_time = $item->start_time;
-                $newItem->end_time = $item->end_time;
-                $newItem->status = $item->status;
-                $newItem->data = $itemData;
-                $newItem->detail = $item->detail;
-                $newItem->create();
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd) break;
             }
+        }
+    }
+
+    /**
+     * Tek bir schedule item'\u0131 child ders için gerekli owner'lara kopyalar.
+     */
+    private function copyItemToChild(Schedule $parentSchedule, ScheduleItem $item, array $itemData, Lesson $childLesson): void
+    {
+        $owners = [
+            ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
+            ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no],
+        ];
+
+        foreach ($owners as $owner) {
+            if (!$owner['id']) {
+                continue;
+            }
+
+            $scheduleFilters = [
+                'owner_type'   => $owner['type'],
+                'owner_id'     => $owner['id'],
+                'semester'     => $parentSchedule->semester,
+                'academic_year' => $parentSchedule->academic_year,
+                'type'         => $parentSchedule->type,
+                'semester_no'  => $owner['type'] === 'program' ? $owner['semester_no'] : null,
+            ];
+
+            $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $childSchedule->id;
+            $newItem->day_index   = $item->day_index;
+            $newItem->start_time  = $item->start_time;
+            $newItem->end_time    = $item->end_time;
+            $newItem->status      = $item->status;
+            $newItem->data        = $itemData;
+            $newItem->detail      = $item->detail;
+            $newItem->create();
         }
     }
 

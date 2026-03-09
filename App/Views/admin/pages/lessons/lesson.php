@@ -208,7 +208,7 @@ use App\Core\Gate;
     <div class="modal-dialog">
         <div class="modal-content">
             <form action="/ajax/combineLesson" name="CombineLesson" id="CombineLesson" method="post"
-                class="ajaxFormCombineLesson" title="Dersler birleştiriliyor">
+                title="Dersler birleştiriliyor">
                 <div class="modal-body">
                     <div class="accordion " id="accordionCombineLesson">
                         <div class="accordion-item">
@@ -289,6 +289,28 @@ use App\Core\Gate;
                     <button type="submit" class="btn btn-primary" id="modalConfirm">Birleştir</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Saat Farkı Seçim Modalı -->
+<div class="modal" tabindex="-1" id="CombineLessonConfirmModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ders Saati Seçimi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" id="hoursDiffAlert"></div>
+                <p class="mb-2 fw-semibold">Aşağıdaki dersi hangi saaten <strong>kaldırılacak?</strong></p>
+                <p class="text-muted small">Bağlanacak ders için program oluşturulurken seçtiğiniz saatler <strong>kopyalanmaz</strong>.</p>
+                <div id="itemSelectionList" class="list-group mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="confirmCombineBtn" disabled>Birleştir</button>
+            </div>
         </div>
     </div>
 </div>
