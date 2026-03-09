@@ -142,12 +142,12 @@
 - [✅] Grup item'dan tek ders sil → Diğer ders kalan item'da görünmeli
 
 ### 5.7 Çakışma Raporu
-- [ ] `checkScheduleCrash` → Çakışan item'lar varsa listele
+- [✅] `checkScheduleCrash` → Çakışan item'lar varsa listele
 
 ### 5.8 Hoca / Derslik / Program Schedule Kontrolü
-- [ ] `checkLecturerScheduleAction` → Doğru sonuç
-- [ ] `checkClassroomScheduleAction` → Doğru sonuç
-- [ ] `checkProgramScheduleAction` → Doğru sonuç
+- [✅] `checkLecturerScheduleAction` → Doğru sonuç
+- [✅] `checkClassroomScheduleAction` → Doğru sonuç
+- [✅] `checkProgramScheduleAction` → Doğru sonuç
 
 ---
 
@@ -169,26 +169,26 @@
 ## 7. 📤 Dışa Aktarma İşlemleri
 
 ### 7.1 Excel Dışa Aktarma
-- [ ] Ders programını Excel olarak dışa aktar → Dosya indirildi
-- [ ] Excel içeriğini kontrol et → Doğru veriler, "İşlemler" sütunu yok
+- [✅] Ders programını Excel olarak dışa aktar → Dosya indirildi
+- [✅] Excel içeriğini kontrol et → Doğru veriler, "İşlemler" sütunu yok
 
 ### 7.2 PDF Dışa Aktarma
-- [ ] Ders programını PDF olarak dışa aktar → Dosya indirildi/yeni sekmede açıldı
+- [✅] Ders programını PDF olarak dışa aktar → Dosya indirildi/yeni sekmede açıldı
 
 ### 7.3 ICS (Takvim) Dışa Aktarma
-- [ ] Ders programını ICS olarak dışa aktar → Dosya indirildi
-- [ ] Takvim uygulamasına içe aktar → Etkinliklerin doğru göründüğünü doğrula
+- [✅] Ders programını ICS olarak dışa aktar → Dosya indirildi
+- [✅] Takvim uygulamasına içe aktar → Etkinliklerin doğru göründüğünü doğrula
 
 ---
 
 ## 8. ⚙️ Ayarlar
 
 ### 8.1 Ayarları Güncelleme
-- [ ] **Admin → Ayarlar** sayfasını aç
-- [ ] Bir ayarı değiştir → Kaydet → "Ayarlar kaydedildi" bekleniyor
+- [✅] **Admin → Ayarlar** sayfasını aç
+- [✅] Bir ayarı değiştir → Kaydet → "Ayarlar kaydedildi" bekleniyor
 
 ### 8.2 Logları Temizleme
-- [ ] Log temizle butonuna tıkla → Başarı mesajı bekleniyor
+- [✅] Log temizle butonuna tıkla → Başarı mesajı bekleniyor
 
 ---
 
