@@ -42,7 +42,7 @@ Ana algoritmalar şunlardır:
 *   [checkItemConflict()](./checkItemConflict.md)
 *   [checkOverlap()](./checkOverlap.md)
 *   [resolveConflict()](./resolveConflict.md)
-*   [availableLessons()](./availableLessons.md)
+*   [availableLessons()](../../Services/AvailabilityService/availableLessons.md)
 *   [availableClassrooms()](./availableClassrooms.md)
 *   [availableObservers()](./availableObservers.md)
 

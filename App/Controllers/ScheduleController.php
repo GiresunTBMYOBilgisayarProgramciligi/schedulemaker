@@ -10,6 +10,7 @@ use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
+use App\Services\AvailabilityService;
 use App\Services\ScheduleService;
 use Exception;
 use function App\Helpers\find_key_starting_with;
@@ -113,94 +114,6 @@ class ScheduleController extends Controller
      * Görünüm ve Veri Hazırlama
      ********************************/
 
-    /**
-     * Ders programı tamamlanmamış olan derslerin bilgilerini döner.
-     * @param array $filters
-     * @return array
-     * @throws Exception
-     */
-    public function availableLessons(Schedule $schedule, bool $preferenceMode = false): array
-    {
-        if ($preferenceMode && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
-            // Sadece tercih modunda Preferred ve Unavailable kartlarını döndür
-            return [
-                (object) [
-                    'id' => 'dummy-preferred',
-                    'name' => '',
-                    'code' => 'PREF',
-                    'status' => 'preferred',
-                    'hours' => 1,
-                    'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
-                    'is_dummy' => true
-                ],
-                (object) [
-                    'id' => 'dummy-unavailable',
-                    'name' => '',
-                    'code' => 'UNAV',
-                    'status' => 'unavailable',
-                    'hours' => 1,
-                    'lecturer_id' => $schedule->owner_id,
-                    'is_dummy' => true
-                ]
-            ];
-        }
-
-        $available_lessons = [];
-
-        $lessonFilters = [
-            'semester' => $schedule->semester,
-            'academic_year' => $schedule->academic_year,
-            '!type' => 4// staj dersleri dahil değil
-        ];
-
-        if ($schedule->owner_type == "program") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'program_id' => $schedule->owner_id,
-            ]);
-        } elseif ($schedule->owner_type == "classroom") {
-            $classroom = (new Classroom())->find($schedule->owner_id);
-            $lessonFilters = array_merge($lessonFilters, [
-                'classroom_type' => $classroom->type,
-            ]);
-        } elseif ($schedule->owner_type == "user") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'lecturer_id' => $schedule->owner_id,
-            ]);
-            unset($lessonFilters["!type"]); // staj derslerini dahil et
-        } elseif ($schedule->owner_type == "lesson") {
-            $lessonFilters = array_merge($lessonFilters, [
-                'id' => $schedule->owner_id,
-            ]);
-        }
-
-        // Eğer program schedule'ı ise semester_no filtresini ekle
-        if ($schedule->semester_no !== null) {
-            $lessonFilters['semester_no'] = $schedule->semester_no;
-        }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
-        $this->logger()->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id);
-
-        /**
-         * Programa ait tüm derslerin program tamamlanma durumları kontrol ediliyor.
-         * @var Lesson $lesson Model allmetodu sonucu oluşan sınıfı PHP strom tanımıyor. otomatik tamamlama olması için ekliyorum
-         */
-        foreach ($lessonsList as $lesson) {
-            $isComplete = $lesson->IsScheduleComplete($schedule->type);
-            if (!$isComplete) {
-                //Ders Programı tamamlanmamışsa
-
-                if ($schedule->type == 'lesson') {
-                    $lesson->hours -= $lesson->placed_hours;// kalan saat dersin saati olarak güncelleniyor
-                } elseif (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-                    $lesson->size = $lesson->remaining_size;// kalan mevcut dersin mevcudu  olarak güncelleniyor
-                }
-
-                $available_lessons[] = $lesson;
-            }
-        }
-
-        return $available_lessons;
-    }
     /**
      * todo yeni tablo düzenine göre düzenlenecek
      * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmuş bir dizi döner
@@ -369,7 +282,7 @@ class ScheduleController extends Controller
         }
 
         $schedule = (new Schedule())->firstOrCreate($filters);
-        $availableLessons = ($only_table) ? [] : $this->availableLessons($schedule, $preference_mode);
+        $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
         $scheduleRows = $this->prepareScheduleRows($schedule, "html");
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
@@ -489,7 +402,7 @@ class ScheduleController extends Controller
         $schedule = null;
 
         $schedule = (new Schedule())->firstOrCreate($filters);
-        $availableLessons = $this->availableLessons($schedule, $preference_mode);
+        $availableLessons = (new AvailabilityService())->availableLessons($schedule, $preference_mode);
 
         return View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
