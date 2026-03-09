@@ -72,14 +72,14 @@
 
 ### 2.5 Ders Birleştirme (Child Lesson)
 - [✅] İki ders seç → "Ders Birleştir" işlemi yap
-- [ ] Birleştirme sonrası child dersin programının parent'tan kopyalandığını doğrula
-- [ ] Child dersin kendi bağımsız schedule'ının silindiğini doğrula
-- [ ] Aynı derse zaten bağlı bir dersi tekrar birleştirmeye çalış → Hata bekleniyor
-- [ ] Parent'ın saati child'dan az olduğunda birleştir → "Saat az olamaz" hatası bekleniyor
+- [✅] Birleştirme sonrası child dersin programının parent'tan kopyalandığını doğrula
+- [✅] Child dersin kendi bağımsız schedule'ının silindiğini doğrula
+- [✅] Aynı derse zaten bağlı bir dersi tekrar birleştirmeye çalış → Hata bekleniyor
+- [✅] Parent'ın saati child'dan az olduğunda birleştir → "Saat az olamaz" hatası bekleniyor
 
 ### 2.6 Ders Bağlantısı Kaldırma
-- [ ] Birleşik dersi seç → "Bağlantıyı Kaldır"
-- [ ] Child'ın schedule'larının silindiğini doğrula, parent'ın korunduğunu doğrula
+- [✅] Birleşik dersi seç → "Bağlantıyı Kaldır"
+- [✅] Child'ın schedule'larının silindiğini doğrula, parent'ın korunduğunu doğrula
 
 ---
 
