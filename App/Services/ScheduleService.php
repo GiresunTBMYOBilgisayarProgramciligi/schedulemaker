@@ -1419,15 +1419,20 @@ class ScheduleService extends BaseService
         }
 
         // 3. Teneffüs Temizliği (Break Sanitization)
-        // Bir teneffüs ancak hem öncesindeki hem sonrasındaki ders tutuluyorsa tutulur
+        // Bir teneffüs ancak hem öncesindeki hem sonrasındaki ders tutuluyorsa ve verileri tamamen aynıysa tutulur
         for ($i = 0; $i < count($segments); $i++) {
             if ($segments[$i]['isBreak']) {
                 $prevKept = ($i > 0 && $segments[$i - 1]['shouldKeep']);
                 $nextKept = ($i < count($segments) - 1 && $segments[$i + 1]['shouldKeep']);
 
-                if (!$prevKept || !$nextKept) {
+                $isDataSame = ($prevKept && $nextKept && serialize($segments[$i - 1]['data']) === serialize($segments[$i + 1]['data']));
+
+                if (!$isDataSame) {
                     $segments[$i]['shouldKeep'] = false;
                     $segments[$i]['data'] = [];
+                } else {
+                    // Teneffüs her iki tarafın verisini alır (Böylece rahatça merge olabilir)
+                    $segments[$i]['data'] = $segments[$i - 1]['data'];
                 }
             }
         }

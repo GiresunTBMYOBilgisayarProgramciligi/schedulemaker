@@ -137,9 +137,9 @@
 - [✅] Müsait olmayan slot'a ders eklemeye çalış → Hata bekleniyor
 
 ### 5.6 Ders Programı Silme
-- [ ] Tek item sil → Sadece o item silinmeli (tüm schedule kopyaları)
-- [ ] Partial silme (büyük bloğun bir saatini sil) → Kalan saat ayrı item olarak oluşmalı
-- [ ] Grup item'dan tek ders sil → Diğer ders kalan item'da görünmeli
+- [✅] Tek item sil → Sadece o item silinmeli (tüm schedule kopyaları)
+- [✅] Partial silme (büyük bloğun bir saatini sil) → Kalan saat ayrı item olarak oluşmalı
+- [✅] Grup item'dan tek ders sil → Diğer ders kalan item'da görünmeli
 
 ### 5.7 Çakışma Raporu
 - [ ] `checkScheduleCrash` → Çakışan item'lar varsa listele
