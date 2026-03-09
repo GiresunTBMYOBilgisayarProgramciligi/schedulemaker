@@ -427,7 +427,7 @@ class ScheduleService extends BaseService
                     [
                         'type' => $targetSchedule->owner_type,
                         'id' => $targetSchedule->owner_id,
-                        'semester_no' => $targetSchedule->semester ?? null
+                        'semester_no' => $targetSchedule->semester_no ?? null
                     ]
                 ];
             }
@@ -606,7 +606,7 @@ class ScheduleService extends BaseService
             $academicYear,
             $semester,
             $type,
-            $owner['semester_no'] ?? null
+            isset($owner['semester_no']) && $owner['semester_no'] !== '' ? (int) $owner['semester_no'] : null
         );
 
         if ($existing) {

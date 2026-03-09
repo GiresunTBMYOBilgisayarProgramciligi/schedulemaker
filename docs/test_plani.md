@@ -115,26 +115,26 @@
 ## 5. 📅 Ders Programı İşlemleri
 
 ### 5.1 Program Görüntüleme
-- [ ] Ders programı sayfasını aç (program / hoca / derslik bazlı)
-- [ ] Uygun dersler listesinin yüklendiğini doğrula  
-- [ ] Uygun derslikler listesinin yüklendiğini doğrula
+- [✅] Ders programı sayfasını aç (program / hoca / derslik bazlı)
+- [✅] Uygun dersler listesinin yüklendiğini doğrula  
+- [✅] Uygun derslikler listesinin yüklendiğini doğrula
 
 ### 5.2 Ders Programı Ekleme (Tek Item)
-- [ ] Ders listesinden bir ders sürükle/seç → Bir hücreye bırak
-- [ ] Derslik seç → Kaydet
-- [ ] Item'ın program, ders, hoca ve derslik schedule'larında oluştuğunu doğrula
+- [✅] Ders listesinden bir ders sürükle/seç → Bir hücreye bırak
+- [✅] Derslik seç → Kaydet
+- [✅] Item'ın program, ders, hoca ve derslik schedule'larında oluştuğunu doğrula
 
 ### 5.3 Ders Programı Ekleme (Grup Item)
-- [ ] İki farklı grubu aynı hücreye yerleştir → Grup item oluştuğunu doğrula
+- [✅] İki farklı grubu aynı hücreye yerleştir → Grup item oluştuğunu doğrula
 
 ### 5.4 Çakışma Kontrolü
-- [ ] Aynı hocayı aynı saatte iki farklı derse ekle → Çakışma uyarısı bekleniyor
-- [ ] Aynı dersliği aynı saatte iki derse ekle → Çakışma uyarısı bekleniyor
-- [ ] Aynı programı aynı saatte iki derse ekle → Çakışma uyarısı bekleniyor
+- [✅] Aynı hocayı aynı saatte iki farklı derse ekle → Çakışma uyarısı bekleniyor
+- [✅] Aynı dersliği aynı saatte iki derse ekle → Çakışma uyarısı bekleniyor
+- [✅] Aynı programı aynı saatte iki derse ekle → Çakışma uyarısı bekleniyor
 
 ### 5.5 Preferred / Unavailable Slot
-- [ ] Tercih edilen slot üzerine ders ekle → Preferred kaldırılıp ders yerleşmeli
-- [ ] Müsait olmayan slot'a ders eklemeye çalış → Hata bekleniyor
+- [✅] Tercih edilen slot üzerine ders ekle → Preferred kaldırılıp ders yerleşmeli
+- [✅] Müsait olmayan slot'a ders eklemeye çalış → Hata bekleniyor
 
 ### 5.6 Ders Programı Silme
 - [ ] Tek item sil → Sadece o item silinmeli (tüm schedule kopyaları)
