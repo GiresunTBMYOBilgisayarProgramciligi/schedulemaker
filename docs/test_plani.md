@@ -86,29 +86,29 @@
 ## 3. 🏫 Derslik İşlemleri
 
 ### 3.1 Derslik Ekleme
-- [ ] **Admin → Derslikler → Yeni Derslik**
-- [ ] Ad, kapasite, tür doldur → Kaydet
-- [ ] Aynı isimle tekrar ekle → Hata mesajı bekleniyor
+- [✅] **Admin → Derslikler → Yeni Derslik**
+- [✅] Ad, kapasite, tür doldur → Kaydet
+- [✅] Aynı isimle tekrar ekle → Hata mesajı bekleniyor
 
 ### 3.2 Derslik Güncelleme
-- [ ] Eklenen dersliği bul → Kapasiteyi güncelle → Başarı bekleniyor
+- [✅] Eklenen dersliği bul → Kapasiteyi güncelle → Başarı bekleniyor
 
 ### 3.3 Derslik Silme
-- [ ] Test dersliğini sil → Başarı bekleniyor
+- [✅] Test dersliğini sil → Başarı bekleniyor
 
 ---
 
 ## 4. 🏛️ Bölüm ve Program İşlemleri
 
 ### 4.1 Bölüm Ekleme / Güncelleme / Silme
-- [ ] Yeni bölüm ekle → Başarı
-- [ ] Bölüm adını güncelle → Başarı
-- [ ] Test bölümünü sil → Başarı
+- [✅] Yeni bölüm ekle → Başarı
+- [✅] Bölüm adını güncelle → Başarı
+- [✅] Test bölümünü sil → Başarı
 
 ### 4.2 Program Ekleme / Güncelleme / Silme
-- [ ] Bir bölüme yeni program ekle → Başarı
-- [ ] Program adını güncelle → Başarı
-- [ ] Test programını sil → Başarı
+- [✅] Bir bölüme yeni program ekle → Başarı
+- [✅] Program adını güncelle → Başarı
+- [✅] Test programını sil → Başarı
 
 ---
 
