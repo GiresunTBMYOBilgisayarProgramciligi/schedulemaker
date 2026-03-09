@@ -19,7 +19,7 @@ class Setting extends Model
     public ?\DateTime $updated_at = null;
 
     protected string $table_name = 'settings';
-    protected array $excludeFromDb = [];
+    protected array $excludeFromDb = ['created_at', 'updated_at', 'database', 'table_name'];
 
     protected array $dateFields = ['created_at', 'updated_at'];
 

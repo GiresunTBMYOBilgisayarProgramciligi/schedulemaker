@@ -252,6 +252,7 @@ class AdminRouter extends Router
         }
         Gate::authorize("view", $lesson, "Bu dersi görme yetkiniz yok");
         $this->assetManager->loadPageAssets('singlepages');
+        $this->assetManager->addJs('/assets/js/admin/combineLesson.js');
         $this->view_data = array_merge($this->view_data, [
             "lesson" => $lesson,
             "page_title" => $lesson->name . " Sayfası",

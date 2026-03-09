@@ -2,15 +2,19 @@
 
 namespace App\Routers;
 
-use App\Controllers\ClassroomController;
+use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
-use App\Controllers\LessonController;
+use App\Services\LessonService;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
-use App\Controllers\UserController;
+use App\Services\UserService;
 use App\Core\ImportExportManager;
 use App\Core\Router;
+use App\Services\ScheduleService;
+use App\Services\ExamService;
+use App\Services\ConflictService;
+use App\Services\AvailabilityService;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Department;
@@ -51,6 +55,8 @@ class AjaxRouter extends Router
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
         }
+        // Oturumdaki kullanıcıyı bir kez çekip tüm action metodlarında kullanıma hazırla
+        $this->currentUser = (new \App\Controllers\UserController())->getCurrentUser() ?: null;
     }
 
     /**
@@ -63,7 +69,14 @@ class AjaxRouter extends Router
             isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
             strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
         ) {
-            $this->data = $_POST;
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            if (str_contains($contentType, 'application/json')) {
+                // JSON body — $_POST boş gelir, php://input'tan oku
+                $body = file_get_contents('php://input');
+                $this->data = json_decode($body, true) ?? [];
+            } else {
+                $this->data = $_POST;
+            }
             $this->files = $_FILES;
             return true;
         } else
@@ -110,9 +123,6 @@ class AjaxRouter extends Router
     public function addNewUserAction(): void
     {
         $userData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar kullanıcı verisinden siliniyor
-         */
         if (is_null($userData['department_id']) or $userData['department_id'] == '0') {
             unset($userData['department_id']);
         }
@@ -120,7 +130,7 @@ class AjaxRouter extends Router
             unset($userData['program_id']);
         }
         Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
-        (new UserController())->saveNew($userData);
+        (new UserService())->saveNew($userData);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla eklendi.",
             "status" => "success",
@@ -135,11 +145,7 @@ class AjaxRouter extends Router
      */
     public function updateUserAction(): void
     {
-        $usersController = new UserController();
         $userData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
-         */
         if (isset($userData['department_id']) and $userData['department_id'] == '0') {
             $userData['department_id'] = null;
         }
@@ -149,8 +155,7 @@ class AjaxRouter extends Router
         $new_user = new User();
         $new_user->fill($userData);
         Gate::authorize("update", $new_user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
-        $userId = $usersController->updateUser($new_user);
-
+        (new UserService())->updateUser($new_user);
         $this->response = array(
             "msg" => "Kullanıcı başarıyla Güncellendi.",
             "status" => "success",
@@ -182,11 +187,7 @@ class AjaxRouter extends Router
      */
     public function addLessonAction(): void
     {
-        $lessonController = new LessonController();
         $lessonData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar siliniyor
-         */
         if (empty($lessonData['lecturer_id'])) {
             throw new Exception("Hoca Seçmelisiniz");
         }
@@ -200,7 +201,7 @@ class AjaxRouter extends Router
         $new_lesson->fill($lessonData);
         Gate::authorize("create", $new_lesson, "Yeni Ders oluşturma yetkiniz yok");
 
-        $lesson = $lessonController->saveNew($new_lesson);
+        $lesson = (new LessonService())->saveNew($new_lesson);
         if (!$lesson) {
             throw new Exception("Ders eklenemedi");
         } else {
@@ -217,34 +218,46 @@ class AjaxRouter extends Router
      */
     public function updateLessonAction(): void
     {
-        $lessonController = new LessonController();
         $lessonData = $this->data;
-        /*
-         * Eğer bölüm ve program seçilmediyse o alarlar null olarak atanıyor
-         */
-        if ($lessonData['department_id'] == '0') {
-            $lessonData['department_id'] = null;
-        }
-        if ($lessonData['program_id'] == '0') {
-            $lessonData['program_id'] = null;
-        }
-        /**
-         * Hoca ve altı yetkive dersi veren kullanıcı ise
-         */
-        if (Gate::allowsRole("lecturer", true) and $lessonData['lecturer_id'] == $this->currentUser->id) {
-            $lessonData = [];
-            $lessonData['id'] = $this->data['id'];
-            $lessonData['size'] = $this->data['size'];
-        }
-        $lesson = new Lesson();
-        $lesson->fill($lessonData);
-        Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
 
-        $lesson = $lessonController->updateLesson($lesson);
+        // Hoca yetkisindeki kullanıcı yalnızca kendi dersinin mevcut/sınıf türünü güncelleyebilir.
+        // Güvenlik için lecturer_id POST'tan değil DB'den alınır (disabled alan POST'a gelmez).
+        $lessonFromDb = (new Lesson())->find((int)($lessonData['id'] ?? 0));
+        $isLecturerOwnLesson = Gate::allowsRole("lecturer", true)
+            && $lessonFromDb
+            && $this->currentUser
+            && $lessonFromDb->lecturer_id == $this->currentUser->id;
+
+        if ($isLecturerOwnLesson) {
+            // DB'den gelen nesneyi doğrudan kullan — sadece izin verilen alanları güncelle.
+            // new Lesson() + fill() yapılırsa diğer alanlar (code vb.) null kalır ve UNIQUE hatası oluşur.
+            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+            $lessonFromDb->size           = $this->data['size'];
+            $lessonFromDb->classroom_type = $this->data['classroom_type'] ?? $lessonFromDb->classroom_type;
+            (new LessonService())->updateLesson($lessonFromDb);
+        } else {
+            // Admin/yetkili güncelleme: bölüm ve program zorunlu
+            if (!isset($lessonData['department_id']) || $lessonData['department_id'] == '0') {
+                $lessonData['department_id'] = null;
+            }
+            if (!isset($lessonData['program_id']) || $lessonData['program_id'] == '0') {
+                $lessonData['program_id'] = null;
+            }
+            if (empty($lessonData['department_id'])) {
+                throw new Exception("Bölüm Seçmelisiniz");
+            }
+            if (empty($lessonData['program_id'])) {
+                throw new Exception("Program Seçmelisiniz");
+            }
+            $lesson = new Lesson();
+            $lesson->fill($lessonData);
+            Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
+            (new LessonService())->updateLesson($lesson);
+        }
+
         $this->response = array(
-            "msg" => "Ders başarıyla Güncellendi.",
+            "msg"    => "Ders başarıyla Güncellendi.",
             "status" => "success",
-
         );
         $this->sendResponse();
     }
@@ -266,22 +279,135 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Ders birleştirme önizleme — DB değişikliği yapmaz.
+     * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.
+     * @throws Exception
+     */
+    public function previewCombineLessonAction(): void
+    {
+        $parentId = (int) ($this->data['parent_lesson_id'] ?? 0);
+        $childId  = (int) ($this->data['child_lesson_id'] ?? 0);
+
+        if (!$parentId || !$childId) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
+        Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+
+        $parentLesson = (new Lesson())->find($parentId)
+            ?: throw new Exception("Üst ders bulunamadı");
+        $childLesson  = (new Lesson())->find($childId)
+            ?: throw new Exception("Bağlanacak ders bulunamadı");
+
+        $hoursDiff = $parentLesson->hours - $childLesson->hours;
+
+        if ($hoursDiff <= 0) {
+            $this->response = ['needs_confirmation' => false];
+            $this->sendResponse();
+            return;
+        }
+
+        // Parent'ın ders programı var mı?
+        $parentSchedule = (new Schedule())
+            ->get()
+            ->where(['owner_type' => 'lesson', 'owner_id' => $parentId])
+            ->with(['items'])
+            ->first();
+
+        if (!$parentSchedule || empty($parentSchedule->items)) {
+            $this->response = ['needs_confirmation' => false];
+            $this->sendResponse();
+            return;
+        }
+
+        // Ayarlardan ders süresi ve mola bilgisini al
+        $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
+        $break    = (int) getSettingValue('break', 'lesson', 10);    // dakika
+
+        $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+        $slots = [];
+        foreach ($parentSchedule->items as $item) {
+            if (in_array($item->status, ['unavailable', 'preferred'])) {
+                continue;
+            }
+            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start) continue;
+
+            // İtem kaç saat içeriyor?
+            $slotStart = clone $start;
+            $slotIndex = 0;
+
+            // Saatleri tek tek üret: süre+mola adımlarıyla
+            while (true) {
+                $slotEnd = clone $slotStart;
+                $slotEnd->modify("+{$duration} minutes");
+
+                $slots[] = [
+                    'id'         => "{$item->id}_{$slotIndex}",
+                    'item_id'    => $item->id,
+                    'slot_index' => $slotIndex,
+                    'day_name'   => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
+                    'day_index'  => $item->day_index,
+                    'start_time' => $slotStart->format('H:i'),
+                    'end_time'   => $slotEnd->format('H:i'),
+                ];
+
+                // Bir sonraki slot başlangıcı: mola ekle
+                $slotStart = clone $slotEnd;
+                $slotStart->modify("+{$break} minutes");
+                $slotIndex++;
+
+                // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd) break;
+            }
+        }
+
+        // Gün ve saate göre sırala
+        usort($slots, fn($a, $b) => $a['day_index'] <=> $b['day_index'] ?: $a['start_time'] <=> $b['start_time']);
+
+        $this->response = [
+            'needs_confirmation' => true,
+            'hours_diff'         => $hoursDiff,
+            'parent_hours'       => $parentLesson->hours,
+            'child_hours'        => $childLesson->hours,
+            'items'              => $slots,
+        ];
+        $this->sendResponse();
+    }
+
+    /**
      * @throws Exception
      */
     public function combineLessonAction(): void
     {
         if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
-            $lessonController = new LessonController();
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $lessonController->combineLesson($this->data['parent_lesson_id'], $this->data['child_lesson_id']);
+
+            // items_to_remove: ["itemId_slotIndex", ...] formatını parse et
+            // Örn: ["606_2", "606_3"] → {606: [2, 3]}
+            $rawRemove = (array) ($this->data['items_to_remove'] ?? []);
+            $slotsToSkip = []; // [item_id => [slot_index, ...]]
+            foreach ($rawRemove as $entry) {
+                [$itemId, $slotIdx] = explode('_', (string) $entry, 2);
+                $slotsToSkip[(int)$itemId][] = (int)$slotIdx;
+            }
+
+            (new LessonService())->combineLesson(
+                (int) $this->data['parent_lesson_id'],
+                (int) $this->data['child_lesson_id'],
+                $slotsToSkip
+            );
             $this->response = array(
-                "msg" => "Dersler Başarıyla birleştirildi.",
-                "status" => "success",
+                "msg"      => "Dersler Başarıyla birleştirildi.",
+                "status"   => "success",
                 "redirect" => "self"
             );
-        } else
+        } else {
             throw new Exception("Birleştirmek için dersler belirtilmemiş");
-
+        }
         $this->sendResponse();
     }
 
@@ -292,16 +418,15 @@ class AjaxRouter extends Router
     {
         if (key_exists("id", $this->data)) {
             Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
-            $lessonController = new LessonController();
-            $lessonController->deleteParentLesson($this->data['id']);
+            (new LessonService())->deleteParentLesson((int) $this->data['id']);
             $this->response = array(
                 "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
                 "status" => "success",
                 "redirect" => "self"
             );
-        } else
+        } else {
             throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
-
+        }
         $this->sendResponse();
     }
 
@@ -314,9 +439,7 @@ class AjaxRouter extends Router
     public function addClassroomAction(): void
     {
         Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
-        $classroomController = new ClassroomController();
-        $classroomController->saveNew($this->data);
-
+        (new ClassroomService())->saveNew($this->data);
         $this->response = array(
             "msg" => "Derslik başarıyla eklendi.",
             "status" => "success",
@@ -329,12 +452,11 @@ class AjaxRouter extends Router
      */
     public function updateClassroomAction(): void
     {
-        $classroomController = new ClassroomController();
         $classroomData = $this->data;
         $classroom = new Classroom();
         $classroom->fill($classroomData);
         Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
-        $classroom = $classroomController->updateClassroom($classroom);
+        (new ClassroomService())->updateClassroom($classroom);
         $this->response = array(
             "msg" => "Derslik başarıyla Güncellendi.",
             "status" => "success",
@@ -534,51 +656,56 @@ class AjaxRouter extends Router
     }
 
     /**
-     * Ders programı seçiminde Eklenen derse uygun olan sınıf listesini hazırlar.
+     * Ders veya sınav programı seçiminde eklenen derse uygun derslik listesini hazırlar.
+     * Schedule tipi exam ise UZEM hariç tümü; ders ise classroom_type filtresi uygulanır.
      * @throws Exception
      */
     public function getAvailableClassroomForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
-        $scheduleController = new ScheduleController();
-        $classrooms = $scheduleController->availableClassrooms($this->data);
+        $filters = (new FilterValidator())->validate($this->data, "availableClassrooms");
+        $service = new AvailabilityService();
+        $classrooms = $service->availableClassrooms($filters);
         $this->response['status'] = "success";
         $this->response['classrooms'] = $classrooms;
         $this->sendResponse();
     }
 
     /**
-     * todo 
-     * Ders programı seçiminde Eklenen derse uygun olan gözetmen listesini hazırlar.
+     * Sınav atamalarında müsait gözetmenlerin listesini hazırlar.
      * @throws Exception
      */
     public function getAvailableObserversForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
-        $scheduleController = new ScheduleController();
-        $observers = $scheduleController->availableObservers($this->data);
+        $filters = (new FilterValidator())->validate($this->data, "availableObservers");
+        $service = new ExamService();
+        $observers = $service->availableObservers($filters);
         $this->response['status'] = "success";
         $this->response['observers'] = $observers;
         $this->sendResponse();
     }
 
     /**
-     * todo
+     * Ders veya sınav programına eklenmek istenen item için çakışma kontrolü yapar.
+     * Her iki program tipi için de çalışır; iç mantık schedule.type ve assignments'a göre ayrım yapar.
      * @throws Exception
      */
     public function checkScheduleCrashAction(): void
     {
         try {
-            $scheduleController = new ScheduleController();
-            $scheduleController->checkScheduleCrash($this->data);
+            $filters = (new FilterValidator())->validate($this->data, "checkScheduleCrash");
+            $service = new ConflictService();
+            $service->checkScheduleCrash($filters);
 
             $this->response['status'] = "success";
         } catch (\Throwable $e) {
+            $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $this->data]);
             $msg = $e->getMessage();
             $msgArray = explode("\n", $msg);
             $this->response = [
                 "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : $msg
+                "msg" => count($msgArray) > 1 ? $msgArray : $msg,
             ];
         }
         $this->sendResponse();
@@ -674,19 +801,19 @@ class AjaxRouter extends Router
      */
     public function saveExamScheduleItemAction(): void
     {
-        $scheduleController = new ScheduleController();
         $items = json_decode($this->data['items'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $this->response = [
                 "status" => "error",
-                "msg" => "Geçersiz veri formatı"
+                "msg" => "Geçersiz veri formatı",
             ];
             $this->sendResponse();
             return;
         }
 
         try {
-            $createdIds = $scheduleController->saveExamScheduleItems($items);
+            $service = new ExamService();
+            $createdIds = $service->saveExamScheduleItems($items);
             if (!empty($createdIds)) {
                 $createdItems = [];
                 foreach ($createdIds as $groupedIds) {
@@ -704,7 +831,7 @@ class AjaxRouter extends Router
                     "status" => "success",
                     "msg" => "Sınav programı başarıyla kaydedildi.",
                     "createdIds" => $createdIds,
-                    "createdItems" => $createdItems
+                    "createdItems" => $createdItems,
                 ];
             }
         } catch (\Throwable $e) {
@@ -713,11 +840,12 @@ class AjaxRouter extends Router
             $msgArray = explode("\n", $msg);
             $this->response = [
                 "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
             ];
         }
         $this->sendResponse();
     }
+
 
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
@@ -726,8 +854,7 @@ class AjaxRouter extends Router
      */
     public function checkLecturerScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkLecturerScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkLecturerScheduleAction");
 
         $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
             ?: throw new Exception("Ders bulunamadı");
@@ -798,8 +925,7 @@ class AjaxRouter extends Router
      */
     public function checkClassroomScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkClassroomScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkClassroomScheduleAction");
 
         $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
@@ -902,8 +1028,7 @@ class AjaxRouter extends Router
      */
     public function checkProgramScheduleAction(): void
     {
-        $scheduleController = new ScheduleController();
-        $filters = $scheduleController->validator->validate($this->data, "checkProgramScheduleAction");
+        $filters = (new FilterValidator())->validate($this->data, "checkProgramScheduleAction");
 
         $lesson = (new Lesson())->where([
             'id' => $filters['lesson_id'],
@@ -990,7 +1115,6 @@ class AjaxRouter extends Router
     {
         $this->logger()->debug("Delete ScheduleItemsAction Data: ", ['data' => $this->data]);
 
-        $scheduleController = new ScheduleController();
         $items = json_decode($this->data['items'], true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -1003,8 +1127,9 @@ class AjaxRouter extends Router
         }
 
         try {
-            $result = $scheduleController->deleteScheduleItems($items);
-            $this->response = array_merge(["status" => "success"], $result);
+            $service = new ScheduleService();
+            $result = $service->deleteScheduleItems($items);
+            $this->response = $result->toArray();
         } catch (Exception $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
             $this->response = [

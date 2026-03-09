@@ -3,6 +3,7 @@
 namespace App\Routers;
 
 use App\Controllers\UserController;
+use App\Services\UserService;
 use App\Core\Router;
 use Exception;
 
@@ -58,8 +59,8 @@ class AuthRouter extends Router
                 strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
             ) {
                 $loginData = $_POST;
-                $usersController = new UserController();
-                $usersController->login([
+                $userService = new UserService();
+                $userService->login([
                     'mail' => $loginData['mail'],
                     'password' => $loginData['password'],
                     "remember_me" => isset($loginData['remember_me'])
