@@ -199,7 +199,12 @@ class ConflictResolver
      */
     private function checkOverlap(string $start1, string $end1, string $start2, string $end2): bool
     {
-        return ($start1 < $end2) && ($end1 > $start2);
+        $s1 = substr($start1, 0, 5);
+        $e1 = substr($end1, 0, 5);
+        $s2 = substr($start2, 0, 5);
+        $e2 = substr($end2, 0, 5);
+
+        return ($s1 < $e2) && ($e1 > $s2);
     }
 
     /**

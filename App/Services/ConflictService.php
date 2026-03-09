@@ -158,6 +158,11 @@ class ConflictService extends BaseService
         string $start2,
         string $end2
     ): bool {
-        return ($start1 < $end2) && ($start2 < $end1);
+        $s1 = substr($start1, 0, 5);
+        $e1 = substr($end1, 0, 5);
+        $s2 = substr($start2, 0, 5);
+        $e2 = substr($end2, 0, 5);
+
+        return ($s1 < $e2) && ($s2 < $e1);
     }
 }
