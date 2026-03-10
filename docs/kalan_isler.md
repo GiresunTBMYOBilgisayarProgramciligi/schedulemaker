@@ -83,3 +83,5 @@ Mimari dönüşüm tamamlandıktan sonra PHPStan level 5+ çalıştırılmalı.
 - [x] Faz 4: LessonService, UserService, ClassroomService
 - [x] Controller temizliği: Servis'e taşınan metotlar silindi
 - [x] AjaxRouter: Tüm iş mantığı çağrıları servis'lere yönlendirildi
+- [x] availableLessons() → AvailabilityService'e taşındı
+- [x] checkLecturerScheduleAction, checkClassroomScheduleAction, checkProgramScheduleAction logic → AvailabilityService'e taşındı

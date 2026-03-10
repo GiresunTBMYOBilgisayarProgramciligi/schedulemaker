@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Classroom;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use DateTime;
 use Exception;
 use function App\Helpers\getSettingValue;
 
@@ -187,6 +189,225 @@ class AvailabilityService extends BaseService
         }
 
         return $available_lessons;
+    }
+
+    /**
+     * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
+     *
+     * @param array $filters Validated filtreler:
+     *   lesson_id, type, semester, academic_year, week_index
+     * @return array [unavailableCells => ..., preferredCells => ...]
+     * @throws Exception
+     */
+    public function getLecturerAvailability(array $filters): array
+    {
+        $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
+            ?: throw new Exception("Ders bulunamadı");
+        $lecturer = $lesson->lecturer;
+
+        $slots = $this->getTimeSlots($filters['type']);
+        $unavailableCells = [];
+        $preferredCells = [];
+
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'user',
+            'owner_id' => $lecturer->id,
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->with(['items'])->all();
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                        if ($item->status === 'preferred') {
+                            $preferredCells[$rowIndex + 1][$item->day_index + 1] = true;
+                        } else {
+                            $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return [
+            "unavailableCells" => $unavailableCells,
+            "preferredCells" => $preferredCells
+        ];
+    }
+
+    /**
+     * Dersliklerin doluluk durumuna göre müsait olmayan hücreleri döner.
+     *
+     * @param array $filters Validated filtreler:
+     *   lesson_id, type, semester, academic_year, week_index
+     * @return array [unavailableCells => ...]
+     * @throws Exception
+     */
+    public function getClassroomAvailability(array $filters): array
+    {
+        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
+        $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
+
+        $slots = $this->getTimeSlots($filters['type']);
+        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+
+        $classroomOccupancy = [];
+        $classroomIds = array_column($classrooms, 'id');
+        $classroomTypes = [];
+        foreach ($classrooms as $c) {
+            $classroomTypes[$c->id] = (int) $c->type;
+        }
+
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'classroom',
+            'owner_id' => ['in' => $classroomIds],
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+        ])->all();
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                        if (isset($classroomTypes[$schedule->owner_id]) && $classroomTypes[$schedule->owner_id] === 3) {
+                            continue;
+                        }
+                        $classroomOccupancy[$rowIndex + 1][$item->day_index + 1][$schedule->owner_id] = true;
+                    }
+                }
+            }
+        }
+
+        $result = [];
+        foreach ($slots as $rowIndex => $slot) {
+            $rowKey = $rowIndex + 1;
+            for ($dayIndex = 0; $dayIndex <= $maxDayIndex; $dayIndex++) {
+                $colKey = $dayIndex + 1;
+                $hasAvailable = false;
+
+                foreach ($classroomIds as $id) {
+                    if (!isset($classroomOccupancy[$rowKey][$colKey][$id])) {
+                        $hasAvailable = true;
+                        break;
+                    }
+                }
+
+                if (!$hasAvailable) {
+                    if (!isset($result[$rowKey])) {
+                        $result[$rowKey] = [];
+                    }
+                    $result[$rowKey][$colKey] = true;
+                }
+            }
+        }
+
+        return ["unavailableCells" => $result];
+    }
+
+    /**
+     * Program bazlı çakışmaları kontrol eder.
+     *
+     * @param array $filters Validated filtreler:
+     *   lesson_id, type, semester, academic_year, week_index
+     * @return array [unavailableCells => ...]
+     * @throws Exception
+     */
+    public function getProgramAvailability(array $filters): array
+    {
+        $lesson = (new Lesson())->where([
+            'id' => $filters['lesson_id'],
+        ])->with(['program', 'childLessons'])->first() ?: throw new Exception("Ders bulunamadı");
+        $program = $lesson->program;
+
+        $slots = $this->getTimeSlots($filters['type']);
+        $unavailableCells = [];
+
+        $schedules = (new Schedule())->get()->where([
+            'owner_type' => 'program',
+            'owner_id' => $program->id,
+            'type' => $filters['type'],
+            'semester' => $filters['semester'],
+            'academic_year' => $filters['academic_year'],
+            'semester_no' => $lesson->semester_no
+        ])->all();
+
+        if (!empty($lesson->childLessons)) {
+            foreach ($lesson->childLessons as $childLesson) {
+                if ($childLesson->program_id) {
+                    $childSchedules = (new Schedule())->get()->where([
+                        'owner_type' => 'program',
+                        'owner_id' => $childLesson->program_id,
+                        'type' => $filters['type'],
+                        'semester' => $filters['semester'],
+                        'academic_year' => $filters['academic_year'],
+                        'semester_no' => $childLesson->semester_no
+                    ])->all();
+                    $schedules = array_merge($schedules, $childSchedules);
+                }
+            }
+        }
+
+        foreach ($schedules as $schedule) {
+            $items = (new ScheduleItem())->get()->where([
+                'schedule_id' => $schedule->id,
+                'week_index' => $filters['week_index']
+            ])->all();
+
+            foreach ($items as $item) {
+                $itemStart = substr($item->start_time, 0, 5);
+                $itemEnd = substr($item->end_time, 0, 5);
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                        $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
+                    }
+                }
+            }
+        }
+
+        return ["unavailableCells" => $unavailableCells];
+    }
+
+    /**
+     * Ayarlara göre zaman dilimlerini (slots) oluşturur.
+     */
+    private function getTimeSlots(string $scheduleType): array
+    {
+        $type = in_array($scheduleType, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $duration = (int) getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $break = (int) getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
+
+        $slots = [];
+        $start = new DateTime('08:00');
+        $end = new DateTime('17:00');
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+        return $slots;
     }
 
     /**
