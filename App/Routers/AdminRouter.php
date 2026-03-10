@@ -438,7 +438,7 @@ class AdminRouter extends Router
     {
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program']], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
+            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program', 'parentLesson'=>['with'=>['program']]]], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -505,7 +505,7 @@ class AdminRouter extends Router
     public function programAction($id = null)
     {
         if (!is_null($id)) {
-            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer']], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
+            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer', 'parentLesson'=>['with'=>['program']]]], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }

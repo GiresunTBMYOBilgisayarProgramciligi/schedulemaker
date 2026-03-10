@@ -282,7 +282,11 @@ use App\Core\Gate;
                                     <?php foreach ($department->lessons as $lesson): ?>
                                         <tr>
                                             <td><?= $lesson->code ?></td>
-                                            <td><?= $lesson->name ?></td>
+                                            <td
+                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName().'('.($lesson->parentLesson->program?->name ?? 'Bilinmiyor').') Dersine bağlı"' : '' ?>
+                                            >
+                                                <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                            </td>
                                             <td><?= $lesson->getTypeName() ?></td>
                                             <td><?= $lesson->hours ?></td>
                                             <td><?= $lesson->semester_no ?></td>
