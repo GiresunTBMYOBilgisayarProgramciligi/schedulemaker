@@ -112,29 +112,72 @@ class ConflictService extends BaseService
 
         if ($examAssignments) {
             // Sınav → program + ders + her atama için gözetmen ve derslik
-            $owners[] = ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no];
-            $owners[] = ['type' => 'lesson', 'id' => $lesson->id];
+            $owners[] = [
+                'type' => 'program',
+                'id' => $lesson->program_id,
+                'semester_no' => $lesson->semester_no,
+                'lesson_context' => $lesson
+            ];
+            $owners[] = [
+                'type' => 'lesson',
+                'id' => $lesson->id,
+                'lesson_context' => $lesson
+            ];
 
             foreach ($examAssignments as $assignment) {
-                $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
-                $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
+                $owners[] = [
+                    'type' => 'classroom',
+                    'id' => $assignment['classroom_id'],
+                    'lesson_context' => $lesson
+                ];
+                $owners[] = [
+                    'type' => 'user',
+                    'id' => $assignment['observer_id'],
+                    'lesson_context' => $lesson
+                ];
             }
         } else {
             // Normal ders → hoca + derslik + program + ders
             $owners = [
-                ['type' => 'user', 'id' => $lecturerId],
-                ['type' => 'classroom', 'id' => ($lesson->classroom_type == 3) ? null : $classroomId],
-                ['type' => 'program', 'id' => $lesson->program_id, 'semester_no' => $lesson->semester_no],
-                ['type' => 'lesson', 'id' => $lesson->id],
+                [
+                    'type' => 'user',
+                    'id' => $lecturerId,
+                    'lesson_context' => $lesson
+                ],
+                [
+                    'type' => 'classroom',
+                    'id' => ($lesson->classroom_type == 3) ? null : $classroomId,
+                    'lesson_context' => $lesson
+                ],
+                [
+                    'type' => 'program',
+                    'id' => $lesson->program_id,
+                    'semester_no' => $lesson->semester_no,
+                    'lesson_context' => $lesson
+                ],
+                [
+                    'type' => 'lesson',
+                    'id' => $lesson->id,
+                    'lesson_context' => $lesson
+                ],
             ];
         }
 
         // Child lesson'lar için de owner ekle
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
-                $owners[] = ['type' => 'lesson', 'id' => $childLesson->id];
+                $owners[] = [
+                    'type' => 'lesson',
+                    'id' => $childLesson->id,
+                    'lesson_context' => $childLesson
+                ];
                 if ($childLesson->program_id) {
-                    $owners[] = ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no];
+                    $owners[] = [
+                        'type' => 'program',
+                        'id' => $childLesson->program_id,
+                        'semester_no' => $childLesson->semester_no,
+                        'lesson_context' => $childLesson
+                    ];
                 }
             }
         }

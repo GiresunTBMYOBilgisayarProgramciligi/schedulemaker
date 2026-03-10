@@ -556,7 +556,8 @@ class ScheduleService extends BaseService
                 'id' => $childLesson->id,
                 'is_child' => true,
                 'child_lesson_id' => $childLesson->id,
-                'lesson_hours' => $childLesson->hours  // Duration bilgisi (DB column: hours)
+                'lesson_hours' => $childLesson->hours,  // Duration bilgisi (DB column: hours)
+                'lesson_context' => $childLesson
             ];
 
             // Child lesson'un programı varsa
@@ -567,7 +568,8 @@ class ScheduleService extends BaseService
                     'semester_no' => $childLesson->semester_no,
                     'is_child' => true,
                     'child_lesson_id' => $childLesson->id,
-                    'lesson_hours' => $childLesson->hours  // Duration bilgisi (DB column: hours)
+                    'lesson_hours' => $childLesson->hours,  // Duration bilgisi (DB column: hours)
+                    'lesson_context' => $childLesson
                 ];
             }
         }
@@ -663,7 +665,17 @@ class ScheduleService extends BaseService
         ?Lesson $lesson,
         Schedule $sourceSchedule
     ): array {
-        $owners = $this->determineOwners($dto, $lesson);
+        $owners = array_map(function ($o) use ($lesson) {
+            // Eğer owner bir child lesson ile ilişkili değilse, mevcut dersi bağlam olarak ekle
+            if (!isset($o['is_child']) || !$o['is_child']) {
+                $o['lesson_context'] = $lesson;
+            } else {
+                // Child lesson için lesson_context zaten determineChildLessonOwners veya benzeri bir yerde eklenmeli
+                // Veya burada child lesson nesnesi çekilip eklenebilir.
+                // optimize etmek için determineChildLessonOwners metodunu güncelliyoruz.
+            }
+            return $o;
+        }, $this->determineOwners($dto, $lesson));
         $createdIds = [];
 
         // DEBUG: Owner listesini logla
@@ -1572,7 +1584,12 @@ class ScheduleService extends BaseService
         ?Lesson $lesson,
         Schedule $sourceSchedule
     ): array {
-        $owners = $this->determineOwners($dto, $lesson);
+        $owners = array_map(function ($o) use ($lesson) {
+            if (!isset($o['is_child']) || !$o['is_child']) {
+                $o['lesson_context'] = $lesson;
+            }
+            return $o;
+        }, $this->determineOwners($dto, $lesson));
         $createdIds = [];
 
         // Child lesson önbelleği (remaining_size döngü başında bir kez hesaplanır)

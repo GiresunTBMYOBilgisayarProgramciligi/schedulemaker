@@ -40,6 +40,7 @@ class ConflictResolver
         foreach ($owners as $owner) {
             $ownerType = $owner['type'];
             $ownerId = $owner['id'];
+            $lessonContext = $owner['lesson_context'] ?? $lesson;
 
             if (!$ownerId) {
                 continue;
@@ -55,7 +56,7 @@ class ConflictResolver
             ];
 
             if ($ownerType == 'program') {
-                $scheduleFilters['semester_no'] = $owner['semester_no'] ?? $lesson->semester_no;
+                $scheduleFilters['semester_no'] = $owner['semester_no'] ?? $lessonContext->semester_no;
             } else {
                 $scheduleFilters['semester_no'] = null;
             }
@@ -73,7 +74,7 @@ class ConflictResolver
                 foreach ($dayItems as $existingItem) {
                     // Zaman çakışması kontrolü
                     if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
-                        $error = $this->resolveConflict($itemData, $existingItem, $lesson, $relatedSchedule);
+                        $error = $this->resolveConflict($itemData, $existingItem, $lessonContext, $relatedSchedule);
                         if ($error) {
                             $errors[] = $error;
                         }
@@ -168,8 +169,14 @@ class ConflictResolver
             }
 
             // Dersler farklı olmalı
-            if ($sd->lesson->id == $newLesson->id) {
-                return "{$crashInfo}: Aynı ders aynı saatte tekrar eklenemez (Grup olsa bile).";
+            // Not: Eğer birleştirilmiş ders ise, parent dersleri de kontrol etmeliyiz
+            $newLessonId = (int) $newLesson->id;
+            $existingLessonId = (int) $sd->lesson->id;
+            $newParentId = $newLesson->parent_lesson_id ? (int) $newLesson->parent_lesson_id : $newLessonId;
+            $existingParentId = $sd->lesson->parent_lesson_id ? (int) $sd->lesson->parent_lesson_id : $existingLessonId;
+
+            if ($newLessonId == $existingLessonId || $newParentId == $existingParentId) {
+                return "{$crashInfo}: Aynı ders (veya birleşmiş hali) aynı saatte tekrar eklenemez (Grup olsa bile).";
             }
 
             // Hoca aynı olmamalı

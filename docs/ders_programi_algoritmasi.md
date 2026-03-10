@@ -116,7 +116,9 @@ FOR EACH owner IN owners:
                 resolvePreferredConflict(new_time, existingItem)
             ELSE:
                 # Çakışma kurallarını kontrol et
-                error = resolveConflict(newItemData, existingItem, lesson, schedule)
+                # Not: owner listesindeki 'lesson_context' (ana ders veya çocuk ders) kullanılır
+                lessonContext = owner.lesson_context ?: lesson
+                error = resolveConflict(newItemData, existingItem, lessonContext, schedule)
                 IF error:
                     THROW EXCEPTION(error)
 ```
@@ -187,8 +189,10 @@ Sonuç: ÇAKIYOR
 Çakışma tespit edildiğinde kuralları kontrol eder.
 
 ```
-GİRDİ: newItemData, existingItem, newLesson, currentSchedule
-ÇIKTI: error message veya null
+#### Gruplandırılmış ve Birleştirilmiş Ders Kuralları:
+
+- **Ders Bağlamı (Lesson Context)**: Birleştirilmiş derslerde, her program (bölüm) kendi çocuk ders sayfasını görür. Çakışma kontrolü yapılırken program bazlı olarak o programda kayıtlı olan fiziksel `Lesson` nesnesi (`lesson_context`) baz alınır. Bu sayede ana dersin grubu ile çocuk dersin grubunun farklı olması durumunda hatalı çakışmalar önlenir.
+- **Kardeş Kontrolü**: Aynı dersin veya birleşmiş halinin (parent_id eşleşmesi) aynı saatte tekrar eklenmesi çakışma sebebi sayılır (Grup dersi olsa bile).
 ```
 
 #### Kurallar:
