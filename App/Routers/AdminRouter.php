@@ -91,7 +91,7 @@ class AdminRouter extends Router
      */
     public function ListUsersAction()
     {
-        Gate::authorize("view", User::class, false, "Kullanıcı listesini görme yetkiniz yok");
+        Gate::authorize("view", User::class, "Kullanıcı listesini görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Kullanıcı Listesi",
@@ -319,7 +319,7 @@ class AdminRouter extends Router
 
     public function AddLessonAction(?int $program_id = null)
     {
-        Gate::authorize("create", Lesson::class, false, "Ders ekleme yetkiniz yok");
+        Gate::authorize("create", Lesson::class, "Yeni ders ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Ders Ekle",
@@ -485,7 +485,7 @@ class AdminRouter extends Router
 
     public function ListDepartmentsAction()
     {
-        Gate::authorize("view", Department::class, false, "Bölümler listesini görmek için yetkiniz yok");
+        Gate::authorize("view", Department::class, "Bölümler listesini görmek için yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "departments" => (new Department())->get()->with(["chairperson"])->all(),
@@ -547,7 +547,42 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "program" => $program,
             "page_title" => $program->name . " Sayfası",
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $program->id, 'type' => 'lesson'], preference_mode: true),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'program',
+                    'owner_id' => $program->id,
+                    'type' => 'lesson',
+                ],
+                preference_mode: true,
+                no_card: false
+            ),
+            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'program',
+                    'owner_id' => $program->id,
+                    'type' => 'midterm-exam'
+                ],
+                preference_mode: true,
+                no_card: false
+            ),
+            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'program',
+                    'owner_id' => $program->id,
+                    'type' => 'final-exam'
+                ],
+                preference_mode: true,
+                no_card: false
+            ),
+            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'program',
+                    'owner_id' => $program->id,
+                    'type' => 'makeup-exam'
+                ],
+                preference_mode: true,
+                no_card: false
+            ),
         ]);
         $this->callView("admin/programs/program");
     }
@@ -558,7 +593,7 @@ class AdminRouter extends Router
      */
     public function ListProgramsAction(): void
     {
-        Gate::authorize("view", Program::class, false, "Programlar listesini görmek için yetkiniz yok");
+        Gate::authorize("view", Program::class, "Programlar listesini görmek için yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $this->view_data = array_merge($this->view_data, [
             "programs" => (new Program())->get()->with(['department'])->all(),
@@ -569,7 +604,7 @@ class AdminRouter extends Router
 
     public function AddProgramAction($department_id = null)
     {
-        Gate::authorize("create", Program::class, false, "Program ekleme yetkiniz yok");
+        Gate::authorize("create", Program::class, "Program ekleme yetkiniz yok");
         $this->assetManager->loadPageAssets('formpages');
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Program Ekle",

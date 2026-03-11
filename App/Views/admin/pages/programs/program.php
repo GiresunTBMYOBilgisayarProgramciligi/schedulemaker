@@ -266,7 +266,62 @@ use App\Core\Gate;
                 </div>
             </div>
             <!--end::Row-->
-            <?= $scheduleHTML ?>
+            <!--begin::Row-->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card card-primary card-outline card-tabs">
+                        <div class="card-header p-0 border-bottom-0">
+                            <ul class="nav nav-tabs" id="programTabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="schedule-tab" data-bs-toggle="pill" href="#schedule"
+                                        role="tab" aria-controls="schedule" aria-selected="true">Ders Programı</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="exams-tab" data-bs-toggle="pill" href="#exams" role="tab"
+                                        aria-controls="exams" aria-selected="false">Sınav Programı</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content" id="programTabsContent">
+                                <div class="tab-pane fade show active" id="schedule" role="tabpanel"
+                                    aria-labelledby="schedule-tab">
+                                    <?= $scheduleHTML ?>
+                                </div>
+                                <div class="tab-pane fade" id="exams" role="tabpanel" aria-labelledby="exams-tab">
+                                    <!-- Nested Tabs for Exams -->
+                                    <ul class="nav nav-tabs mb-3" id="examTabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="midterm-tab" data-bs-toggle="tab"
+                                                href="#midterm" role="tab">Ara Sınav</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="final-tab" data-bs-toggle="tab" href="#final"
+                                                role="tab">Final</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="makeup-tab" data-bs-toggle="tab" href="#makeup"
+                                                role="tab">Bütünleme</a>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content" id="examTabsContent">
+                                        <div class="tab-pane fade show active" id="midterm" role="tabpanel">
+                                            <?= $midtermScheduleHTML ?>
+                                        </div>
+                                        <div class="tab-pane fade" id="final" role="tabpanel">
+                                            <?= $finalScheduleHTML ?>
+                                        </div>
+                                        <div class="tab-pane fade" id="makeup" role="tabpanel">
+                                            <?= $makeupScheduleHTML ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                </div>
+            </div>
         </div>
         <!--end::Container-->
     </div>
