@@ -110,7 +110,7 @@ class AvailabilityService extends BaseService
      */
     public function availableLessons(Schedule $schedule, bool $preferenceMode = false): array
     {
-        if ($preferenceMode && in_array($schedule->owner_type, ['user', 'classroom', 'lesson'])) {
+        if ($preferenceMode) {
             // Sadece tercih modunda Preferred ve Unavailable kartlarını döndür
             return [
                 (object) [
