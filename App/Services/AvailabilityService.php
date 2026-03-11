@@ -188,7 +188,65 @@ class AvailabilityService extends BaseService
             }
         }
 
+        if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+            $available_lessons = $this->groupExamLessons($available_lessons);
+        }
+
         return $available_lessons;
+    }
+
+    /**
+     * Sınav programı için gruplu dersleri (aynı kod, farklı grup) tek bir ders olarak birleştirir.
+     * Parent-child (birleştirilmiş) dersleri bu mantığın dışında tutar.
+     *
+     * @param array $lessons
+     * @return array
+     */
+    private function groupExamLessons(array $lessons): array
+    {
+        $grouped = [];
+        $result = [];
+
+        foreach ($lessons as $lesson) {
+            // Parent-child (birleştirilmiş) dersler mevcut yapısını korur (Kullanıcı Talebi)
+            if ($lesson->parent_lesson_id !== null) {
+                $result[] = $lesson;
+                continue;
+            }
+
+            // group_no > 0 olanları kod bazlı grupla
+            if ($lesson->group_no > 0) {
+                $grouped[$lesson->code][] = $lesson;
+            } else {
+                $result[] = $lesson;
+            }
+        }
+
+        foreach ($grouped as $code => $groupLessons) {
+            if (count($groupLessons) <= 1) {
+                $result = array_merge($result, $groupLessons);
+                continue;
+            }
+
+            // Birden fazla grup varsa birleştir
+            $representative = $groupLessons[0];
+            $totalSize = 0;
+            $groupNumbers = [];
+
+            foreach ($groupLessons as $l) {
+                $totalSize += $l->size;
+                $groupNumbers[] = $l->group_no;
+            }
+
+            sort($groupNumbers);
+            // İsim güncelleme (Sadece gösterim amaçlı)
+            $representative->name .= " (Grup " . implode(", ", $groupNumbers) . ")";
+            $representative->size = $totalSize;
+
+            $result[] = $representative;
+        }
+
+        return $result;
     }
 
     /**

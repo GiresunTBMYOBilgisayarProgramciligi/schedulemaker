@@ -346,6 +346,23 @@ class Lesson extends Model
 
         if ($isExam) {
             $linkedIds = $this->getLinkedLessonIds();
+
+            // Aynı koda sahip diğer grupları da bağlantılı ID'lere ekle (Kullanıcı Talebi)
+            if ($this->group_no > 0) {
+                $siblings = (new Lesson())->get()->where([
+                    'code' => $this->code,
+                    'program_id' => $this->program_id,
+                    'semester' => $this->semester,
+                    'academic_year' => $this->academic_year,
+                    'semester_no' => $this->semester_no,
+                    'group_no' => ['>' => 0],
+                    'id' => ['!=' => $this->id]
+                ])->all();
+                foreach ($siblings as $sibling) {
+                    $linkedIds = array_merge($linkedIds, $sibling->getLinkedLessonIds());
+                }
+            }
+            $linkedIds = array_unique($linkedIds);
             // Toplam grup mevcudunu hesapla
             $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
 

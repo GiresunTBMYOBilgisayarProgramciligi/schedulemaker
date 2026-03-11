@@ -76,14 +76,31 @@ class ExamService extends BaseService
 
                 // ── 1. Program ve Ders Owner'larını Belirle ──────────────────────
                 $mainLesson = $lesson->parent_lesson_id ? $lesson->parentLesson : $lesson;
-                $programOwners = [
-                    ['type' => 'lesson', 'id' => $mainLesson->id],
-                    ['type' => 'program', 'id' => $mainLesson->program_id, 'semester_no' => $mainLesson->semester_no],
-                ];
 
-                foreach ($mainLesson->childLessons ?? [] as $child) {
-                    $programOwners[] = ['type' => 'lesson', 'id' => $child->id];
-                    $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no];
+                // Gruplu dersleri bul (aynı kod, aynı program, aynı dönem)
+                $allGroupLessons = [$mainLesson];
+                if ($mainLesson->group_no > 0) {
+                    $siblings = (new Lesson())->get()->where([
+                        'code' => $mainLesson->code,
+                        'program_id' => $mainLesson->program_id,
+                        'semester' => $mainLesson->semester,
+                        'academic_year' => $mainLesson->academic_year,
+                        'semester_no' => $mainLesson->semester_no,
+                        'group_no' => ['>' => 0],
+                        'id' => ['!=' => $mainLesson->id]
+                    ])->all();
+                    $allGroupLessons = array_merge($allGroupLessons, $siblings);
+                }
+
+                $programOwners = [];
+                foreach ($allGroupLessons as $gl) {
+                    $programOwners[] = ['type' => 'lesson', 'id' => $gl->id];
+                    $programOwners[] = ['type' => 'program', 'id' => $gl->program_id, 'semester_no' => $gl->semester_no];
+
+                    foreach ($gl->childLessons ?? [] as $child) {
+                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id];
+                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no];
+                    }
                 }
 
                 // Unique owner'lar (aynı program birden fazla çocuk derse sahip olabilir)

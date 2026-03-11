@@ -136,6 +136,33 @@ class ConflictService extends BaseService
                     'lesson_context' => $lesson
                 ];
             }
+
+            // Sınav programında aynı koda sahip diğer grupları da dahil et (Kullanıcı Talebi: Tek ders olarak işleme girme)
+            if ($lesson->group_no > 0) {
+                $siblings = (new Lesson())->get()->where([
+                    'code' => $lesson->code,
+                    'program_id' => $lesson->program_id,
+                    'semester' => $lesson->semester,
+                    'academic_year' => $lesson->academic_year,
+                    'semester_no' => $lesson->semester_no,
+                    'group_no' => ['>' => 0],
+                    'id' => ['!=' => $lesson->id]
+                ])->all();
+
+                foreach ($siblings as $sibling) {
+                    $owners[] = [
+                        'type' => 'program',
+                        'id' => $sibling->program_id,
+                        'semester_no' => $sibling->semester_no,
+                        'lesson_context' => $sibling
+                    ];
+                    $owners[] = [
+                        'type' => 'lesson',
+                        'id' => $sibling->id,
+                        'lesson_context' => $sibling
+                    ];
+                }
+            }
         } else {
             // Normal ders → hoca + derslik + program + ders
             $owners = [
