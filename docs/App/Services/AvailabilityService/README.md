@@ -9,3 +9,4 @@
 
 *   [availableLessons()](./availableLessons.md)
 *   [availableClassrooms()](./availableClassrooms.md)
+*   [getProgramAvailability()](./getProgramAvailability.md)

@@ -351,7 +351,7 @@ class AvailabilityService extends BaseService
             'academic_year' => $filters['academic_year'],
             'semester_no' => $lesson->semester_no
         ])->all();
-
+        // çocuk derslerin programları da dahil ediliyor
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
                 if ($childLesson->program_id) {
@@ -378,8 +378,29 @@ class AvailabilityService extends BaseService
                 $itemStart = substr($item->start_time, 0, 5);
                 $itemEnd = substr($item->end_time, 0, 5);
 
+                $overlap = false;
                 foreach ($slots as $rowIndex => $slot) {
                     if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                        // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
+                        if ($lesson->group_no > 0 && $item->status === 'group' && !empty($item->data)) {
+                            $sameGroupExists = false;
+                            foreach ($item->data as $slotData) {
+                                // $slotData içerisinde ders bilgisi alınmalı. 
+                                // ScheduleItem modelindeki getSlotDatas() mantığına benzer bir kontrol
+                                if (isset($slotData['lesson_id'])) {
+                                    $itemLesson = (new Lesson())->find($slotData['lesson_id']);
+                                    if ($itemLesson && $itemLesson->group_no == $lesson->group_no) {
+                                        $sameGroupExists = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!$sameGroupExists) {
+                                continue; // Farklı gruplar çakışabilir, bu item'ı atla
+                            }
+                        }
+
                         $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                     }
                 }
