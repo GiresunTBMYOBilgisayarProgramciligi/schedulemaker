@@ -133,7 +133,7 @@ class ExamService extends BaseService
                     // Sınav program/ders kaydında yalnızca lesson_id
                     $filteredData = [
                         [
-                            'lesson_id' => $mainLesson->id,
+                            'lesson_id' => ($owner['type'] === 'lesson') ? $owner['id'] : $mainLesson->id,
                             'lecturer_id' => null,
                             'classroom_id' => null,
                         ]

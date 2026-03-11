@@ -114,14 +114,20 @@ class ScheduleItem extends Model
                 throw new \Exception("ScheduleItem ID: {$this->id} için ders (ID: {$dayData['lesson_id']}) bulunamadı.");
             }
 
-            $lecturer = (new User())->get()->where(['id' => $dayData['lecturer_id']])->first();
-            if ($lecturer === null) {
-                throw new \Exception("ScheduleItem ID: {$this->id} için öğretim elemanı (ID: {$dayData['lecturer_id']}) bulunamadı.");
+            $lecturer = null;
+            if (!empty($dayData['lecturer_id'])) {
+                $lecturer = (new User())->get()->where(['id' => $dayData['lecturer_id']])->first();
+                if ($lecturer === null) {
+                    throw new \Exception("ScheduleItem ID: {$this->id} için öğretim elemanı (ID: {$dayData['lecturer_id']}) bulunamadı.");
+                }
             }
 
-            $classroom = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first();
-            if ($classroom === null) {
-                throw new \Exception("ScheduleItem ID: {$this->id} için derslik (ID: {$dayData['classroom_id']}) bulunamadı.");
+            $classroom = null;
+            if (!empty($dayData['classroom_id'])) {
+                $classroom = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first();
+                if ($classroom === null) {
+                    throw new \Exception("ScheduleItem ID: {$this->id} için derslik (ID: {$dayData['classroom_id']}) bulunamadı.");
+                }
             }
 
             $slotDatas[] = (object) [

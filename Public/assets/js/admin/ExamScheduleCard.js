@@ -438,12 +438,6 @@ class ExamScheduleCard extends ScheduleCard {
             });
     }
 
-
-
-
-
-
-
     /**
      * Çoklu tablo (haftalık yapı) desteği için generateScheduleItems metodunu override eder.
      */
@@ -451,11 +445,11 @@ class ExamScheduleCard extends ScheduleCard {
         let scheduleItems = [];
         let itemsToProcess = Array.isArray(input) ? input : [{
             hours: parseInt(input.hours || input),
-            data: {
+            data: [{
                 "lesson_id": this.draggedLesson.lesson_id,
                 "lecturer_id": this.draggedLesson.lecturer_id,
                 "classroom_id": classroom?.id || null
-            },
+            }],
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
             detail: input.assignments ? { assignments: input.assignments } : null
         }];
@@ -493,7 +487,7 @@ class ExamScheduleCard extends ScheduleCard {
                             'start_time': cell.dataset.startTime,
                             'end_time': null,
                             'status': itemInfo.status,
-                            'data': itemInfo.data,
+                            'data': Array.isArray(itemInfo.data) ? itemInfo.data : [itemInfo.data],
                             'detail': itemInfo.detail || null
                         };
                     }
@@ -687,7 +681,7 @@ class ExamScheduleCard extends ScheduleCard {
 
                 detailedItems.push({
                     hours,
-                    data: data.data[0],
+                    data: data.data,
                     status: data.status,
                     originalElement: el,
                     detail: detail // Taşıma sırasında atamaları koru
