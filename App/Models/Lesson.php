@@ -363,9 +363,9 @@ class Lesson extends Model
                 }
             }
             $linkedIds = array_unique($linkedIds);
+            
             // Toplam grup mevcudunu hesapla
             $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
-
             // Tüm bağlı derslerin programlarını çek
             $schedules = (new Schedule())->get()->where([
                 'owner_type' => 'lesson',

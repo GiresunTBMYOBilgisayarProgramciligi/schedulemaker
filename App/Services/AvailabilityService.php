@@ -230,18 +230,17 @@ class AvailabilityService extends BaseService
 
             // Birden fazla grup varsa birleştir
             $representative = $groupLessons[0];
-            $totalSize = 0;
             $groupNumbers = [];
 
             foreach ($groupLessons as $l) {
-                $totalSize += $l->size;
                 $groupNumbers[] = $l->group_no;
             }
 
             sort($groupNumbers);
             // İsim güncelleme (Sadece gösterim amaçlı)
             $representative->name .= " (Grup " . implode(", ", $groupNumbers) . ")";
-            $representative->size = $totalSize;
+            // size ve remaining_size zaten IsScheduleComplete tarafından grup toplamı olarak set edilmişti.
+            // Onları tekrar toplamaya gerek yok (Kullanıcı Geri Bildirimi: "iki katı gözüküyor")
 
             $result[] = $representative;
         }
