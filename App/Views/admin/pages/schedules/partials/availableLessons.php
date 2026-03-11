@@ -39,12 +39,11 @@ use App\Core\Log;
             /** @var Lesson $lesson */
             $status = $lesson->getScheduleCSSClass();
         }
-        $lessonName = $lesson->name;
+        $lessonName = $isDummy ? $lesson->name :$lesson->getFullName(addGroup:true);
         if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
-            $lessonName = $lesson->name . ' (' . ($lesson->program?->name."-".getClassFromSemesterNo($lesson->semester_no) ?? "") . ')';
+            $lessonName = $lesson->getFullName(addProgram:true, addClassNumber:true,addGroup:true);
         }
 
-        // Badge yerine sağ alta gelecek metin
         $infoText = "";
         if ($isDummy) {
             $infoText = "";

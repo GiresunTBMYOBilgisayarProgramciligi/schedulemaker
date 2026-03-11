@@ -187,7 +187,7 @@ class AvailabilityService extends BaseService
                 $available_lessons[] = $lesson;
             }
         }
-
+        // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
         if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
             $available_lessons = $this->groupExamLessons($available_lessons);
         }
@@ -239,8 +239,6 @@ class AvailabilityService extends BaseService
             sort($groupNumbers);
             // İsim güncelleme (Sadece gösterim amaçlı)
             $representative->name .= " (Grup " . implode(", ", $groupNumbers) . ")";
-            // size ve remaining_size zaten IsScheduleComplete tarafından grup toplamı olarak set edilmişti.
-            // Onları tekrar toplamaya gerek yok (Kullanıcı Geri Bildirimi: "iki katı gözüküyor")
 
             $result[] = $representative;
         }
