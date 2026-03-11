@@ -263,7 +263,38 @@ class AdminRouter extends Router
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
                 ],
-                preference_mode: true
+                preference_mode: true,
+                no_card: true
+            ),
+            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'lesson',
+                    'owner_id' => $lesson->id,
+                    'type' => 'midterm-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
+            ),
+            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'lesson',
+                    'owner_id' => $lesson->id,
+                    'type' => 'final-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
+            ),
+            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'lesson',
+                    'owner_id' => $lesson->id,
+                    'type' => 'makeup-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true,
+                no_card: true
             ),
             'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester'), 'academic_year' => getSettingValue('academic_year')])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->all(),
         ]);
