@@ -311,10 +311,7 @@ class Lesson extends Model
             $name .= ($this->group_no > 0 ? " (" . $groupLetters[$this->group_no] . ")" : '');
         }
         if ($addProgram) {
-            $name .= " - " . ($this->program->name ?? '');
-        }
-        if ($addClassNumber) {
-            $name .= " - " . (getClassFromSemesterNo($this->semester_no) ?? '');
+            $name .= " (" . $this->program->name . ($addClassNumber ? " - ". getClassFromSemesterNo($this->semester_no) : "") . ")" ?? '';
         }
         return trim($name);
     }
