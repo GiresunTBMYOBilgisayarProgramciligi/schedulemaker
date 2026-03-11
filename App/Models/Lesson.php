@@ -7,6 +7,7 @@ use App\Controllers\LessonController;
 use App\Core\Model;
 use App\Services\ScheduleService;
 use Exception;
+use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 use function App\Helpers\formatLessonName;
 
@@ -90,7 +91,7 @@ class Lesson extends Model
 
     public function getLogDetail(): string
     {
-        return $this->getFullName();
+        return $this->getFullName(true);
     }
 
     /**
@@ -299,9 +300,23 @@ class Lesson extends Model
     /**
      * @return string
      */
-    public function getFullName(): string
+    public function getFullName(bool $addCode = false, bool $addGroup = false, bool $addProgram = false, bool $addClassNumber = false): string
     {
-        return trim($this->name . " (" . $this->code . ")");
+        $name = $this->name;
+        if ($addCode) {
+            $name .= " (" . $this->code . ")";
+        }
+        if ($addGroup) {
+            $groupLetters=[1=>'A',2=>'B',3=>'C',4=>'D',5=>'E',6=>'F',7=>'G',8=>'H',9=>'I',10=>'J',11=>'K',12=>'L',13=>'M',14=>'N',15=>'O',16=>'P',17=>'Q',18=>'R',19=>'S',20=>'T',21=>'U',22=>'V',23=>'W',24=>'X',25=>'Y',26=>'Z'];
+            $name .= ($this->group_no > 0 ? " (" . $groupLetters[$this->group_no] . ")" : '');
+        }
+        if ($addProgram) {
+            $name .= " - " . ($this->program->name ?? '');
+        }
+        if ($addClassNumber) {
+            $name .= " - " . (getClassFromSemesterNo($this->semester_no) ?? '');
+        }
+        return trim($name);
     }
 
     /**

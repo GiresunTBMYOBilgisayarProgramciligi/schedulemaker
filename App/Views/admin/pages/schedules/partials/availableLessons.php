@@ -29,7 +29,7 @@ use App\Core\Log;
         if (!$isDummy) {
             $isChild = !is_null($lesson->parent_lesson_id);
             $parentLesson = $isChild ? (new Lesson())->where(['id' => $lesson->parent_lesson_id])->with(['program'])->first() : null;
-            $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName() . '(' . ($parentLesson->program?->name ?? "") . ') dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
+            $popover = $isChild ? 'data-bs-toggle="popover" title="Birleştirilmiş Ders" data-bs-content="Bu ders ' . $parentLesson->getFullName(addCode: true, addProgram: true) . ' dersine bağlı olduğu için düzenlenemez." data-bs-trigger="hover"' : "";
         }
 
         $status = "";

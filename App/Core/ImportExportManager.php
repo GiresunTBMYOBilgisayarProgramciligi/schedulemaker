@@ -330,12 +330,12 @@ class ImportExportManager
                 if ($lesson) {
                     $lesson->fill($lessonData);
                     $lessonService->updateLesson($lesson);
-                    $updatedLessons[$lesson->id] = $lesson->getFullName();
+                    $updatedLessons[$lesson->id] = $lesson->getFullName(true);
                 } else {
                     $lesson = new Lesson();
                     $lesson->fill($lessonData);
                     $lessonsController->saveNew($lesson);
-                    $addedLessons[$lesson->id] = $lesson->getFullName();
+                    $addedLessons[$lesson->id] = $lesson->getFullName(true);
                 }
             }
             $db->commit();
@@ -439,7 +439,7 @@ class ImportExportManager
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $lecturer = (new User())->find($filters["owner_id"]);
                     $scheduleFilters[] = [
-                        'file_title' => $lecturer->getFullName() . " Ders Programı",
+                        'file_title' => $lecturer->getFullName(true) . " Ders Programı",
                         'title' => $lecturer->getFullName() . " Ders Programı",
                         'type' => 'user',
                         'filter' => [
@@ -517,8 +517,8 @@ class ImportExportManager
                     // id numarası belirtilen kullanıcı Modeli oluşturulur
                     $lesson = (new Lesson())->find($filters["owner_id"]);
                     $scheduleFilters[] = [
-                        'file_title' => $lesson->getFullName() . " Ders Programı",
-                        'title' => $lesson->getFullName() . " Ders Programı",
+                        'file_title' => $lesson->getFullName(true) . " Ders Programı",
+                        'title' => $lesson->getFullName(true) . " Ders Programı",
                         'type' => 'lesson',
                         'filter' => [
                             "semester_no" => null,
@@ -535,7 +535,7 @@ class ImportExportManager
                     foreach ($lessons as $lesson) {
                         $scheduleFilters[] = [
                             'file_title' => "Tüm Hocalar Ders Programı",
-                            'title' => $lesson->getFullName() . " Ders Programı",
+                            'title' => $lesson->getFullName(true) . " Ders Programı",
                             'type' => 'lesson',
                             'filter' => [
                                 "semester_no" => null,

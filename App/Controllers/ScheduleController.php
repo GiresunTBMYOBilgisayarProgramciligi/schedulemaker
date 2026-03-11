@@ -350,7 +350,7 @@ class ScheduleController extends Controller
             'user' => (new User())->find($filters['owner_id'])->getFullName(),
             'program' => (new Program())->find($filters['owner_id'])->name,
             'classroom' => (new Classroom())->find($filters['owner_id'])->name,
-            'lesson' => (new Lesson())->find($filters['owner_id'])->getFullName(),
+            'lesson' => (new Lesson())->find($filters['owner_id'])->getFullName(true),
             default => ""
         };
 

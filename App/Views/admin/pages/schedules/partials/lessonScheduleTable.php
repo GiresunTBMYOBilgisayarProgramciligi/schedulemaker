@@ -101,7 +101,7 @@ use function App\Helpers\getSettingValue;
                                                     if ($isChild && isset($slotData->lesson->parentLesson)) {
                                                         $parent = $slotData->lesson->parentLesson;
                                                         $popoverTitle = "Birleştirilmiş Ders";
-                                                        $popoverContent = "Bu ders " . $parent->getFullName() . "(" . ($parent->program?->name ?? "") . ") dersine bağlı olduğu için düzenlenemez.";
+                                                        $popoverContent = "Bu ders " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlı olduğu için düzenlenemez.";
                                                         $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
                                                     }
                                                     ?>
@@ -112,26 +112,10 @@ use function App\Helpers\getSettingValue;
                                                         <span class="lesson-name">
                                                             <?php if ($schedule->owner_type !== 'program'): ?>
                                                                 <?php
-                                                                $programNames = [$slotData->lesson->program->name . "-" . getClassFromSemesterNo($slotData->lesson->semester_no)];
-                                                                if (!empty($slotData->lesson->childLessons)) {
-                                                                    foreach ($slotData->lesson->childLessons as $child) {
-                                                                        if ($child->program) {
-                                                                            $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($child->semester_no);
-                                                                        }
-                                                                    }
-                                                                }
-
-                                                                if (empty($programNames) && $slotData->lesson->program) {
-                                                                    $programNames[] = $slotData->lesson->program->name . "-" . getClassFromSemesterNo($slotData->lesson->semester_no);
-                                                                }
-
-                                                                // Unique ve virgülle birleştir
-                                                                $programNamesStr = implode(', ', array_unique($programNames));
-
-                                                                echo $slotData->lesson->name . ($programNamesStr ? " ($programNamesStr)" : "");
+                                                                echo $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true);
                                                                 ?>
                                                             <?php else: ?>
-                                                                <?= $slotData->lesson->name ?>
+                                                                <?= $slotData->lesson->getFullName(addGroup: true) ?>
                                                             <?php endif; ?>
                                                         </span>
                                                         <div class="lesson-meta">
@@ -141,7 +125,25 @@ use function App\Helpers\getSettingValue;
                                                             <span class="lesson-classroom">
                                                                 <?= $slotData->classroom?->name ?>
                                                             </span>
+                                                            
                                                         </div>
+                                                        <span class="child-lessons">
+                                                                <?php
+                                                                $childLessonNames = [];
+                                                                
+                                                                if (!empty($slotData->lesson->childLessons)) {
+                                                                    foreach ($slotData->lesson->childLessons as $child) {
+                                                                        if ($child->program) {
+                                                                            $childLessonNames[] = $child->getFullName(addGroup: true,addProgram: true,addClassNumber: true);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                // Unique ve virgülle birleştir
+                                                                $childLessonNamesStr = implode('<br>', array_unique($childLessonNames));
+
+                                                                echo $childLessonNamesStr ? " ($childLessonNamesStr)" : "";
+                                                                ?>
+                                                            </span>
                                                     </div>
                                                 <?php endforeach ?>
                                             <?php else: ?>

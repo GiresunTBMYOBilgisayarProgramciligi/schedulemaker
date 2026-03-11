@@ -449,7 +449,7 @@ class ExamService extends BaseService
             if ($lId) {
                 $lessonObj = (new Lesson())->find($lId);
                 if ($lessonObj) {
-                    $name = $lessonObj->getFullName();
+                    $name = $lessonObj->getFullName(addCode: true, addProgram: true,addGroup: true,addClassNumber: true);
                     if (!in_array($name, $lessonNames)) {
                         $lessonNames[] = $name;
                     }

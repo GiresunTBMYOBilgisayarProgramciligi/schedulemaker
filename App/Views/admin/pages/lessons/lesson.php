@@ -91,7 +91,7 @@ use App\Core\Gate;
                                     <dd class="col-sm-10 p-0">
                                         <a class="link-dark link-underline-opacity-0"
                                             href="/admin/lesson/<?= $lesson->parentLesson->id ?>">
-                                            <?= $lesson->parentLesson->getFullName() . "-" . ($lesson->parentLesson->program->name ?? '') ?>
+                                            <?= $lesson->parentLesson->getFullName(addCode: true, addProgram: true) ?>
                                         </a>
                                         <form action="/ajax/deleteParentLesson" method="post"
                                             class="d-inline ajaxDeleteParentLesson">
@@ -113,8 +113,7 @@ use App\Core\Gate;
                                                 <li class="list-group-item">
                                                     <a href="/admin/lesson/<?= $childLesson->id ?>"
                                                         class="link-dark link-underline-opacity-0">
-                                                        <?= $childLesson->getFullName() . "-" .
-                                                            ($childLesson->program->name ?? '') ?>
+                                                        <?= $childLesson->getFullName(addCode: true, addProgram: true) ?>
                                                     </a>
                                                     <form action="/ajax/deleteParentLesson" method="post"
                                                         class="d-inline ajaxDeleteParentLesson">
@@ -293,7 +292,7 @@ use App\Core\Gate;
                                                 echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
-                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?>
+                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName(addCode: true) ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -329,7 +328,7 @@ use App\Core\Gate;
                                                 echo '<option disabled>' . $programName . '</option>';
                                             }
                                             ?>
-                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName() ?>
+                                            <option value="<?= $combineLesson->id ?>"><?= $combineLesson->getFullName(addCode: true) ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>

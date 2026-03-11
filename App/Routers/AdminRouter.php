@@ -357,7 +357,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
-            "page_title" => $lesson->getFullName() . " Düzenle",
+            "page_title" => $lesson->getFullName(true) . " Düzenle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "programController" => new ProgramController(),
             "classroomTypes" => (new ClassroomController())->getTypeList()

@@ -199,7 +199,7 @@ class ScheduleService extends BaseService
                     // Child lesson → Fazla saatleri otomatik temizle
                     $this->logger->info("Child lesson hour limit exceeded, cleaning up", $this->logContext([
                         'lesson_id' => $lesson->id,
-                        'lesson_name' => $lesson->getFullName(),
+                        'lesson_name' => $lesson->getFullName(true,true,true,true),
                         'parent_id' => $lesson->parent_id,
                         'excess_hours' => abs($lesson->remaining_size)
                     ]));
@@ -249,7 +249,7 @@ class ScheduleService extends BaseService
             "Child lesson hour limit exceeded, cleaning up excess hours",
             $this->logContext([
                 'lesson_id' => $childLesson->id,
-                'lesson_name' => $childLesson->getFullName(),
+                'lesson_name' => $childLesson->getFullName(true),
                 'excess_slots' => $excessSlots,
                 'schedule_type' => $scheduleType
             ])

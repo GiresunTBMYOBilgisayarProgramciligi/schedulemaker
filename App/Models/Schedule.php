@@ -132,7 +132,7 @@ class Schedule extends Model
         $typeLabel = $this->getScheduleTypeName() === "sınav" ? "Sınav" : "Ders";
         return match ($this->owner_type) {
             "user" => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
-            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
+            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName(true) . " $typeLabel Programı",
             "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . ". Sınıf $typeLabel Programı",
             "classroom" => (new Classroom())->find($this->owner_id)?->name . " $typeLabel Programı",
             default => "$typeLabel Programı",

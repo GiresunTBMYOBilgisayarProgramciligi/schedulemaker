@@ -110,9 +110,9 @@ class LessonService extends BaseService
             // Child zaten başka bir derse bağlıysa hata
             if ($childLesson->parentLesson) {
                 throw new Exception(
-                    $childLesson->program->name . " - " . $childLesson->name
+                    $childLesson->getFullName(addCode:true,addProgram:true)
                     . " zaten "
-                    . $childLesson->parentLesson->program->name . " - " . $childLesson->parentLesson->getFullName()
+                    . $childLesson->parentLesson->getFullName(addCode:true,addProgram:true)
                     . " dersine bağlı"
                 );
             }
