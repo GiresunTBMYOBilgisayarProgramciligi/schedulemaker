@@ -253,10 +253,27 @@ class ScheduleController extends Controller
                         if ($row['days'][$dayKey] === null) {
                             $row['days'][$dayKey] = $scheduleItem;
                         } else {
-                            if (!is_array($row['days'][$dayKey])) {
-                                $row['days'][$dayKey] = [$row['days'][$dayKey]];
+                            // Çakışma durumu: preferred/unavailable olan item'ı yoksay, gerçek item'ı koru
+                            $existing = $row['days'][$dayKey];
+
+                            if (is_array($existing)) {
+                                // Zaten array ise atla (savunma amaçlı)
+                                continue;
                             }
-                            $row['days'][$dayKey][] = $scheduleItem;
+
+                            if (in_array($scheduleItem->status, ['preferred', 'unavailable'])) {
+                                // Yeni gelen preferred/unavailable ise, mevcut item'ı koru
+                                continue;
+                            } elseif (in_array($existing->status, ['preferred', 'unavailable'])) {
+                                // Mevcut olan preferred/unavailable ise, yeni gerçek item'ı koy
+                                $row['days'][$dayKey] = $scheduleItem;
+                            } else {
+                                // İkisi de gerçek item — array'e dönüştür (mevcut davranış, group vs.)
+                                if (!is_array($row['days'][$dayKey])) {
+                                    $row['days'][$dayKey] = [$row['days'][$dayKey]];
+                                }
+                                $row['days'][$dayKey][] = $scheduleItem;
+                            }
                         }
                     }
                 }

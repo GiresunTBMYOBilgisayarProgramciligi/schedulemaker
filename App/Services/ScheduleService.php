@@ -827,6 +827,39 @@ class ScheduleService extends BaseService
                 $item->detail = $dto->detail;
             }
 
+            // Preferred/unavailable item için çakışma kontrolü
+            // Eğer kaydedilecek item dummy (preferred/unavailable) ise ve hedef schedule'da
+            // o zaman diliminde gerçek bir ders (single/group) varsa, preferred item kaydedilmez.
+            if ($dto->isDummy()) {
+                $conflicts = $this->itemRepo->findConflicting(
+                    $targetSchedule->id,
+                    $dto->dayIndex,
+                    $dto->weekIndex,
+                    $item->start_time,
+                    $item->end_time
+                );
+
+                if (!empty($conflicts)) {
+                    $hasRealConflict = false;
+                    foreach ($conflicts as $conflict) {
+                        if (!in_array($conflict->status, ['preferred', 'unavailable'])) {
+                            $hasRealConflict = true;
+                            break;
+                        }
+                    }
+                    if ($hasRealConflict) {
+                        $this->logger->warning("Preferred/unavailable item skipped due to existing lesson conflict", $this->logContext([
+                            'schedule_id' => $targetSchedule->id,
+                            'day_index' => $dto->dayIndex,
+                            'start_time' => $item->start_time,
+                            'end_time' => $item->end_time,
+                            'status' => $dto->status
+                        ]));
+                        continue; // Bu owner için kaydetme
+                    }
+                }
+            }
+
             // Kaydet
             $item->create();
             $createdIds[] = $item->id;

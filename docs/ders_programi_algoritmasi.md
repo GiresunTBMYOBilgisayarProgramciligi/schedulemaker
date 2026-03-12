@@ -600,6 +600,11 @@ Bu sayede ana derste yapılan her değişiklik otomatik olarak tüm bağlı ders
 - Child lesson'ların kendi özel programları temizlenir
 - Parent üzerindeki tüm değişiklikler child'lara otomatik yansır
 
+### 7. Preferred/Unavailable Çakışma Kuralları
+- Preferred/unavailable item kaydedilirken hedef schedule'da aynı zaman diliminde gerçek ders (single/group) varsa, preferred item kaydedilmez
+- Tablo oluştururken (prepareScheduleRows) aynı zaman dilimine denk gelen preferred ve gerçek ders çakıştığında, gerçek ders tercih edilir ve preferred item yok sayılır
+- Bu kurallar, view katmanında "Attempt to read property on array" hatalarının önüne geçer
+
 ---
 
 ## Akış Diyagramı
