@@ -13,9 +13,9 @@ use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\ScheduleService;
 use Exception;
-use function App\Helpers\find_key_starting_with;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
+use App\Helpers\FilterValidator;
 
 class ScheduleController extends Controller
 {
@@ -123,7 +123,7 @@ class ScheduleController extends Controller
      */
     public function createScheduleExcelTable(array $filters = []): array|bool
     {
-        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "createScheduleExcelTable");
+        $filters = (new FilterValidator())->validate($filters, "createScheduleExcelTable");
 
         $schedules = (new Schedule())->get()->where($filters)->all();
         if (count($schedules) == 0)
@@ -291,7 +291,7 @@ class ScheduleController extends Controller
     private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
-        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "prepareScheduleCard");
+        $filters = (new FilterValidator())->validate($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
         if (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
@@ -408,7 +408,7 @@ class ScheduleController extends Controller
      */
     public function getAvailableLessonsHTML(array $filters = [], bool $preference_mode = false): string
     {
-        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "prepareScheduleCard");
+        $filters = (new FilterValidator())->validate($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır
         if (in_array($filters['owner_type'] ?? '', ['user', 'classroom', 'lesson'])) {
@@ -439,7 +439,8 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        $filters = (new \App\Helpers\FilterValidator())->validate($filters, "getSchedulesHTML");
+        $this->logger()->debug("getSchedulesHTML için Filter alındı", ['filters' => $filters]);
+        $filters = (new FilterValidator())->validate($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
         if (key_exists("semester_no", $filters)) {

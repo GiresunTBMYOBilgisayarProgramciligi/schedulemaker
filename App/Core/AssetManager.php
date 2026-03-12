@@ -195,7 +195,7 @@ class AssetManager
                     'path' => '/assets/js/admin/LessonScheduleCard.js'
                 ],
                 [
-                    'path' => '/assets/js/admin/editSchedule.js'
+                    'path' => '/assets/js/admin/initializeScheduleCards.js'
                 ],
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
@@ -228,7 +228,7 @@ class AssetManager
                     'path' => '/assets/js/admin/ExamScheduleCard.js'
                 ],
                 [
-                    'path' => '/assets/js/admin/editSchedule.js'
+                    'path' => '/assets/js/admin/initializeScheduleCards.js'
                 ],
                 [//Select arama işlemi için
                     'path' => '/assets/node_modules/tom-select/dist/js/tom-select.base.min.js'
@@ -267,6 +267,12 @@ class AssetManager
         'profilepage' => [
             'js' => [
                 [
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/initializeScheduleCards.js'
+                ],
+                [
                     'path' => '/assets/js/admin/SingleScheduleHandler.js'
                 ],
                 [
@@ -281,6 +287,12 @@ class AssetManager
         ],
         'singlepages' => [
             'js' => [
+                [
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/initializeScheduleCards.js'
+                ],
                 [
                     'path' => '/assets/js/admin/SingleScheduleHandler.js'
                 ],
@@ -299,6 +311,12 @@ class AssetManager
         ],
         'classroompage' => [
             'js' => [
+                [
+                    'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/initializeScheduleCards.js'
+                ],
                 [
                     'path' => '/assets/js/admin/SingleScheduleHandler.js'
                 ],

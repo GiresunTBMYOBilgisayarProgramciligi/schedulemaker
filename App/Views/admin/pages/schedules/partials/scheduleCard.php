@@ -1,5 +1,6 @@
 <?php
 use App\Models\Schedule;
+use function App\Helpers\getSettingValue;
 /**
  * @var Schedule $schedule
  * @var string $cardTitle

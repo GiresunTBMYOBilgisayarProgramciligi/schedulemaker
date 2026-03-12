@@ -56,6 +56,8 @@ class ScheduleCard {
         this.duration = parseInt(this.card.dataset.duration) || 50;
         this.breakDuration = parseInt(this.card.dataset.break) || 0;
         this.academic_year = this.card.dataset.academicYear || null;
+        this.type = this.card.dataset.type || null;
+        this.preference_mode = this.card.dataset.preferenceMode === 'true' || this.card.dataset.preferenceMode === '1';
 
         if (this.card.dataset.semesterNo) {
             try {

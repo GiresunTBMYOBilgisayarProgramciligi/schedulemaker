@@ -7,8 +7,10 @@ class SingleScheduleHandler {
         this.draggedLesson = null;
         this.selectedLessonElements = new Set();
         this.selectedScheduleItemIds = new Set();
+        
         this.initialize();
     }
+
 
     initialize() {
         this.initDraggableItems();
@@ -16,8 +18,6 @@ class SingleScheduleHandler {
         this.initDeleteZones();
         this.initModals();
         this.initBulkSelection();
-        this.initPopovers();
-        this.initContextMenu();
         console.log("SingleScheduleHandler initialized");
     }
 
@@ -70,12 +70,7 @@ class SingleScheduleHandler {
         });
     }
 
-    initPopovers(container = document) {
-        const popoverTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="popover"]'));
-        popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
-        });
-    }
+
 
     initDeleteZones() {
         // available-schedule-items zaten drop-zone olarak işaretlendi
@@ -209,7 +204,7 @@ class SingleScheduleHandler {
                 this.bsModal.hide();
 
                 const scheduleData = this.prepareScheduleData(dropZone, hours, description, lessonData);
-                await this.saveItem(scheduleData);
+                await this.saveItem(scheduleData, dropZone.closest('.schedule-card'));
                 resolve();
             };
             saveBtn.addEventListener('click', handler);
@@ -377,13 +372,11 @@ class SingleScheduleHandler {
             }
 
             // UI'dan eskileri sil ve parçalananları (split) göster
-            // NOT: Önce sync, sonra clear yapılması split olan parçaların ID'si güncellendiği için 
-            // clear tarafından yanlışlıkla silinmesini engeller.
-            if (deleteResult.createdItems) this.syncTableItems(deleteResult.createdItems);
-            this.clearTableItemsByIds(deleteResult.deletedIds || itemsToDelete.map(it => it.id));
+            // YENİ YAPI: Eskisi gibi manuel DOM manipülasyonu yerine refreshScheduleCard kullanacağız. 
+            // Fakat burada silme + kaydetme ardışık yapıldığı için refresh'i saveItem sonrasına bırakıyoruz.
 
             // 4. Silme başarılıysa yeni öğeleri (taşınan kısmı) kaydet
-            const saveResult = await this.saveItem(newItems, false);
+            const saveResult = await this.saveItem(newItems, dropZone.closest('.schedule-card'), true);
             if (saveResult && saveResult.status === 'success') {
                 this.clearSelection();
                 new Toast().prepareToast("Başarılı", "Öğeler başarıyla taşındı.", "success");
@@ -391,6 +384,7 @@ class SingleScheduleHandler {
                 // Kayıt başarısızsa bilgi ver (Silindi ama kaydedilemedi durumu)
                 console.error("Save failed after delete:", saveResult);
                 new Toast().prepareToast("Hata", "Öğeler silindi ancak yeni konuma kaydedilemedi. Sayfayı yenileyerek durumu kontrol edin.", "warning");
+                await this.refreshScheduleCard();
             }
 
         } catch (error) {
@@ -516,7 +510,7 @@ class SingleScheduleHandler {
         };
     }
 
-    async saveItem(items) {
+    async saveItem(items, targetCardElement = null, autoRefresh = true) {
         try {
             const formData = new FormData();
             formData.append('items', JSON.stringify(items));
@@ -530,12 +524,17 @@ class SingleScheduleHandler {
             const result = await response.json();
 
             if (result.status === 'success') {
-                // createdItems önceliklidir çünkü tam nesne verisi (day_index, timing vb.) içerir
-                if (result.createdItems && Array.isArray(result.createdItems)) {
-                    this.syncTableItems(result.createdItems);
-                } else if (result.createdIds) {
-                    // Eğer sadece ID dönmüşse (eskiden olduğu gibi), sync kısıtlı çalışır
-                    this.syncTableItems(result.createdIds);
+                if (autoRefresh) {
+                    if (targetCardElement) {
+                        await this.refreshScheduleCard(targetCardElement);
+                    } else {
+                        // Eğer belirli bir kart gelmediyse tüm kartları yenile. 
+                        // Genelde taşıma - silme işlemlerinde etkilenen tüm verileri garantilemek için.
+                        for (const card of this.scheduleCards) {
+                            await card.refreshScheduleCard();
+                        }
+                        this.initBulkSelection();
+                    }
                 }
                 return result;
             } else {
@@ -587,10 +586,12 @@ class SingleScheduleHandler {
 
                     const result = await response.json();
                     if (result.status === 'success') {
-                        // Önce parçaları senkronize et, sonra eskileri sil
-                        if (result.createdItems) this.syncTableItems(result.createdItems);
-                        this.clearTableItemsByIds(result.deletedIds || itemsToDelete.map(it => it.id));
-
+                        // Tüm kartları yeniliyoruz çünkü silinen öğe herhangi bir karta veya birden fazla karta ait olabilir.
+                        for (const card of this.scheduleCards) {
+                            await card.refreshScheduleCard();
+                        }
+                        this.initBulkSelection();
+                        
                         this.clearSelection();
                         new Toast().prepareToast("Başarılı", "Silme işlemi tamamlandı.", "success");
                     } else {
@@ -610,95 +611,24 @@ class SingleScheduleHandler {
         });
     }
 
-    syncTableItems(items) {
-        if (!items || !Array.isArray(items)) return;
-        const scheduleCard = document.querySelector('.schedule-card');
-        const table = scheduleCard ? scheduleCard.querySelector('table.schedule-table') : document.querySelector('table.schedule-table');
-        if (!table) return;
-
-        const currentScheduleId = scheduleCard ? scheduleCard.dataset.scheduleId : null;
-
-        items.forEach(item => {
-            // Eğer item sadece bir ID veya geçersiz bir nesne ise atla
-            if (!item || typeof item !== 'object' || !item.id) return;
-            if (currentScheduleId && item.schedule_id != currentScheduleId) return;
-
-            const dayIndex = parseInt(item.day_index);
-            const itemStart = item.start_time.substring(0, 5);
-            const itemEnd = item.end_time.substring(0, 5);
-
-            for (let i = 1; i < table.rows.length; i++) {
-                const cell = table.rows[i].cells[dayIndex + 1];
-                if (!cell) continue;
-
-                const cellStart = cell.dataset.startTime;
-                if (cellStart >= itemStart && cellStart < itemEnd) {
-                    cell.dataset.scheduleItemId = item.id;
-                    cell.innerHTML = this.createDummySlotHTML(item);
-                }
+    async refreshScheduleCard(targetCardElement) {
+        if (!targetCardElement) {
+            for (const card of window.scheduleCards) {
+                await card.refreshScheduleCard();
             }
-        });
-
-        this.initPopovers(table);
-    }
-
-    clearTableItemsByIds(deletedIds) {
-        if (!deletedIds || deletedIds.length === 0) return;
-        const idSet = new Set(deletedIds.map(id => id.toString()));
-        const scheduleCard = document.querySelector('.schedule-card');
-        const table = scheduleCard ? scheduleCard.querySelector('table.schedule-table') : document.querySelector('table.schedule-table');
-        if (!table || !table.rows) return;
-
-        for (let i = 1; i < table.rows.length; i++) {
-            const row = table.rows[i];
-            for (let j = 1; j < row.cells.length; j++) {
-                const cell = row.cells[j];
-                const cellId = cell.dataset.scheduleItemId;
-                if (cellId && idSet.has(cellId.toString())) {
-                    delete cell.dataset.scheduleItemId;
-                    cell.innerHTML = '<div class="empty-slot"></div>';
-                }
-            }
-        }
-    }
-
-    createDummySlotHTML(item) {
-        const scheduleCard = document.querySelector('.schedule-card');
-        // Sunucu tarafındaki mantıkla hizalama: preference_mode draggable ve checkbox durumunu belirler
-        const preferenceMode = scheduleCard ? (scheduleCard.dataset.preferenceMode === 'true' || scheduleCard.dataset.preferenceMode === '1') : false;
-
-        // onlyTable eskiden kullanılıyordu ancak sunucu tarafında bu kontrol preference_mode ile yapılıyor.
-        // Yine de eski kodun mantığını tamamen kırmamak adına onlyTable değişkenini koruyoruz ama kullanımı azalıyor.
-        const onlyTable = scheduleCard ? (scheduleCard.dataset.onlyTable === 'true' || scheduleCard.dataset.onlyTable === '1') : false;
-
-        const statusClass = item.status === 'preferred' ? 'slot-preferred' : 'slot-unavailable';
-
-        let detail = item.detail;
-        if (typeof detail === 'string') {
-            try { detail = JSON.parse(detail); } catch (e) { detail = {}; }
+            this.initBulkSelection();
+            return;
         }
 
-        // Draggable özelliği ve checkbox preferenceMode'a bağlı olmalı
-        let html = `<div class="empty-slot dummy ${statusClass}" 
-                        draggable="${preferenceMode ? 'true' : 'false'}" 
-                        data-schedule-item-id="${item.id}" 
-                        data-status="${item.status}"
-                        data-detail='${JSON.stringify(item.detail || {})}'>`;
-
-        if (preferenceMode) {
-            html += `<input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">`;
+        const scheduleId = targetCardElement.dataset.scheduleId;
+        const cardInstance = window.scheduleCards.find(c => c.id == scheduleId);
+        
+        if (cardInstance) {
+            await cardInstance.refreshScheduleCard();
+            this.initBulkSelection();
+        } else {
+            console.error("ScheduleCard instance is not available for refresh.");
         }
-
-        if (detail && detail.description) {
-            html += `<div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
-                          data-bs-trigger="hover" data-bs-content="${detail.description}"
-                          data-bs-original-title="Açıklama">
-                        <i class="bi bi-chat-square-text-fill"></i>
-                    </div>`;
-        }
-
-        html += `</div>`;
-        return html;
     }
 }
 
@@ -706,146 +636,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.singleScheduleHandler = new SingleScheduleHandler();
 });
 
-/**
- * Ders kartları için sağ tık menüsünü başlatır
- */
-SingleScheduleHandler.prototype.initContextMenu = function () {
-    document.addEventListener('contextmenu', (event) => {
-        const lessonCard = event.target.closest('.lesson-card');
-        if (!lessonCard || lessonCard.classList.contains('dummy')) return;
 
-        event.preventDefault();
-        this.showContextMenu(event.pageX, event.pageY, lessonCard);
-    });
-
-    document.addEventListener('click', () => {
-        const menu = document.getElementById('lesson-context-menu');
-        if (menu) menu.remove();
-    });
-};
-
-/**
- * Özel sağ tık menüsünü gösterir
- */
-SingleScheduleHandler.prototype.showContextMenu = function (x, y, lessonCard) {
-    const oldMenu = document.getElementById('lesson-context-menu');
-    if (oldMenu) oldMenu.remove();
-
-    const menu = document.createElement('div');
-    menu.id = 'lesson-context-menu';
-    menu.className = 'context-menu';
-    menu.style.position = 'absolute';
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-    menu.style.zIndex = '2000';
-
-    let menuItems = [];
-    const lecturerId = lessonCard.dataset.lecturerId;
-    const lecturerName = lessonCard.dataset.lecturerName || 'Hoca';
-    const classroomId = lessonCard.dataset.classroomId;
-    const classroomName = lessonCard.dataset.classroomName || 'Derslik';
-    const programId = lessonCard.dataset.programId;
-    const programName = lessonCard.dataset.programName || 'Program';
-    if (programId) {
-        menuItems.push({
-            text: `${programName} programını göster`,
-            icon: 'bi-book',
-            onClick: () => this.showScheduleInModal('program', programId, `${programName} Programı`)
-        });
-    }
-    if (classroomId) {
-        menuItems.push({
-            text: `${classroomName} programını göster`,
-            icon: 'bi-door-open',
-            onClick: () => this.showScheduleInModal('classroom', classroomId, `${classroomName} Programı`)
-        });
-    }
-
-    if (lecturerId) {
-        menuItems.push({
-            text: `${lecturerName} programını göster`,
-            icon: 'bi-person-badge',
-            onClick: () => this.showScheduleInModal('user', lecturerId, `${lecturerName} Programı`)
-        });
-    }
-
-    menuItems.forEach(item => {
-        const menuItem = document.createElement('div');
-        menuItem.className = 'context-menu-item';
-        menuItem.innerHTML = `<i class="bi ${item.icon} me-2"></i>${item.text}`;
-        menuItem.onclick = item.onClick;
-        menu.appendChild(menuItem);
-    });
-
-    document.body.appendChild(menu);
-};
-
-/**
- * Belirtilen programı modal içerisinde gösterir
- */
-SingleScheduleHandler.prototype.showScheduleInModal = function (ownerType, ownerId, title) {
-    if (!ownerId) {
-        new Toast().prepareToast("Hata", "ID bilgisi eksik", "danger");
-        return;
-    }
-
-    const scheduleCard = document.querySelector('.schedule-card');
-    const semester = scheduleCard ? scheduleCard.dataset.semester : "";
-    const academicYear = scheduleCard ? scheduleCard.dataset.academicYear : "";
-    const type = scheduleCard ? scheduleCard.dataset.type : "lesson";
-
-    const modal = new Modal();
-    modal.prepareModal(title, '<div class="text-center"><div class="spinner-border" role="status"></div></div>', false, true,"xl");
-
-    // Sayfaya git butonu ekle
-    let url = "";
-    switch (ownerType) {
-        case 'user': url = `/admin/profile/${ownerId}`; break;
-        case 'classroom': url = `/admin/classroom/${ownerId}`; break;
-        case 'program': url = `/admin/program/${ownerId}`; break;
-        case 'lesson': url = `/admin/lesson/${ownerId}`; break;
-    }
-
-    if (url) {
-        const goBtn = document.createElement('button');
-        goBtn.className = 'btn btn-info';
-        goBtn.innerHTML = '<i class="bi bi-box-arrow-up-right me-1"></i> Sayfaya Git';
-        goBtn.onclick = () => window.open(url, '_blank');
-        modal.footer.prepend(goBtn);
-    }
-
-    modal.showModal();
-
-    const data = new FormData();
-    data.append('owner_type', ownerType);
-    data.append('owner_id', ownerId);
-    // Undefined değerleri ekleme - FilterValidator default değerleri kullanacak
-    if (semester && semester !== 'undefined') {
-        data.append('semester', semester);
-    }
-    if (academicYear && academicYear !== 'undefined') {
-        data.append('academic_year', academicYear);
-    }
-    if (type && type !== 'undefined') {
-        data.append('type', type);
-    } else {
-        data.append('type', 'lesson'); // Default fallback
-    }
-    data.append('only_table', 'true');
-
-    fetch('/ajax/getScheduleHTML', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: data
-    }).then(response => response.json())
-        .then(result => {
-            if (result.status === 'success') {
-                modal.body.innerHTML = result.HTML;
-            } else {
-                modal.body.innerHTML = `<div class="alert alert-danger">${result.msg || "Program yüklenemedi"}</div>`;
-            }
-        }).catch(error => {
-            console.error(error);
-            modal.body.innerHTML = '<div class="alert alert-danger">Sistem hatası oluştu.</div>';
-        });
-};
