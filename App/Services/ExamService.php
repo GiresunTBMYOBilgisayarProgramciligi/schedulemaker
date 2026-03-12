@@ -94,12 +94,12 @@ class ExamService extends BaseService
 
                 $programOwners = [];
                 foreach ($allGroupLessons as $gl) {
-                    $programOwners[] = ['type' => 'lesson', 'id' => $gl->id];
-                    $programOwners[] = ['type' => 'program', 'id' => $gl->program_id, 'semester_no' => $gl->semester_no];
+                    $programOwners[] = ['type' => 'lesson', 'id' => $gl->id, 'actual_lesson_id' => $gl->id];
+                    $programOwners[] = ['type' => 'program', 'id' => $gl->program_id, 'semester_no' => $gl->semester_no, 'actual_lesson_id' => $gl->id];
 
                     foreach ($gl->childLessons ?? [] as $child) {
-                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id];
-                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no];
+                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id, 'actual_lesson_id' => $child->id];
+                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no, 'actual_lesson_id' => $child->id];
                     }
                 }
 
@@ -133,7 +133,7 @@ class ExamService extends BaseService
                     // Sınav program/ders kaydında yalnızca lesson_id
                     $filteredData = [
                         [
-                            'lesson_id' => ($owner['type'] === 'lesson') ? $owner['id'] : $mainLesson->id,
+                            'lesson_id' => $owner['actual_lesson_id'] ?? (($owner['type'] === 'lesson') ? $owner['id'] : $mainLesson->id),
                             'lecturer_id' => null,
                             'classroom_id' => null,
                         ]

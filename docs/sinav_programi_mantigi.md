@@ -43,11 +43,12 @@ Sınav çakışmaları şu prensiplere göre denetlenir:
 - Belirtilen gün ve saatte halihazırda başka bir sınavda (Vize/Final/Büt) görevli olup olmadıklarını kontrol eder.
 - Sadece boşta olanları listeler.
 
-## 6. Gruplu Derslerin Birleştirilmesi (YENİ)
+## 6. Gruplu Derslerin Birleştirilmesi ve Child Dersler (YENİ)
 Aynı programa (`program_id`) ve döneme (`semester_no`) ait, ders kodu (`code`) aynı olan ancak grup numaraları (`group_no`) farklı olan dersler, sınav programı düzenleme listesinde **tek bir kart** olarak birleştirilir.
 - **Öğrenci Sayısı:** Tüm grupların toplam mevcudu otomatik olarak toplanır ve tek bir mevcudiyet olarak gösterilir.
 - **Toplu İşlem:** Bu kart programa eklendiğinde, aynı koda sahip tüm gruplar için otomatik olarak sınav kaydı oluşturulur ve çakışma kontrolleri tüm gruplar için eş zamanlı yapılır.
 - **İstisna:** `parent_lesson_id` üzerinden birbirine bağlı olan "birleştirilmiş (merged)" dersler bu otomatik gruplamanın dışındadır ve mevcut ilişkisel yapılarını korurlar.
+- **Kayıt Mantığı:** Eskiden tüm programlara "ana dersin (`mainLesson`)" `lesson_id`'si kaydediliyordu. Yapılan değişiklikle beraber artık programlar `childLessons` dahil her derse ait olan programa kayıt işlemini kendi (`actual_lesson_id`) gerçek `lesson_id`'si ile yapar. Bu sayede program ara yüzünde her ders "Kendi Grubu" veya "Kendi Bölümü" ile net şekilde görülür.
 
 ## 7. Sibling (Kardeş) Item İlişkisi
 Bir sınav item'ı silindiğinde veya taşındığında, ona bağlı olan tüm gözetmen ve derslik kayıtları da (`findExamSiblingItems` üzerinden) bulunur. `program_item_id` referans zinciri sayesinde, ana sınav silindiğinde tüm atamalar otomatik olarak temizlenir.
