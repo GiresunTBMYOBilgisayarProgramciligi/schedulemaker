@@ -166,7 +166,7 @@ class AvailabilityService extends BaseService
         if ($schedule->semester_no !== null) {
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program'])->all();
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program','childLessons'])->all();
         $this->logger->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id, $this->logContext());
 
         /**
@@ -189,7 +189,7 @@ class AvailabilityService extends BaseService
         }
         // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
         if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-            $available_lessons = $this->groupExamLessons($available_lessons);
+            $available_lessons = $this->groupExamLessons($available_lessons, $schedule->type);
         }
 
         return $available_lessons;
@@ -197,21 +197,33 @@ class AvailabilityService extends BaseService
 
     /**
      * Sınav programı için gruplu dersleri (aynı kod, farklı grup) tek bir ders olarak birleştirir.
-     * Parent-child (birleştirilmiş) dersleri bu mantığın dışında tutar.
+     * Çocuk dersleri (parent-child/birleştirilmiş) olan ana derslerin mevcutları,
+     * çocuk derslerin kalan mevcutlarıyla toplanarak doğru toplam üzerinden gözetmen ataması sağlanır.
      *
      * @param array $lessons
+     * @param string $scheduleType Sınav tipi (midterm-exam, final-exam, makeup-exam)
      * @return array
      */
-    private function groupExamLessons(array $lessons): array
+    private function groupExamLessons(array $lessons, string $scheduleType = 'midterm-exam'): array
     {
         $grouped = [];
         $result = [];
 
         foreach ($lessons as $lesson) {
-            // Parent-child (birleştirilmiş) dersler mevcut yapısını korur (Kullanıcı Talebi)
-            if ($lesson->parent_lesson_id !== null) {
-                $result[] = $lesson;
-                continue;
+            // Çocuk dersleri varsa, hangi programlara ait olduklarını ders adına ekle (gösterim amaçlı).
+            // NOT: Ana dersin remaining_size'ı IsScheduleComplete() tarafından getLinkedLessonIds()
+            // üzerinden hesaplandığından çocuk dersler zaten dahildir — ayrıca size eklenmez.
+            if (!empty($lesson->childLessons)) {
+                $mergedPrograms = [];
+                foreach ($lesson->childLessons as $childLesson) {
+                    if ($childLesson->program) {
+                        $mergedPrograms[] = $childLesson->program->name;
+                    }
+                }
+                // Birleştirilen programları ders adına ekle (gösterim amaçlı)
+                if (!empty($mergedPrograms)) {
+                    $lesson->name .= ' [' . implode(', ', $mergedPrograms) . ']';
+                }
             }
 
             // group_no > 0 olanları kod bazlı grupla

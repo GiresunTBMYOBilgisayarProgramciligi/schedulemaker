@@ -112,9 +112,9 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                     <?php endif; ?>
                                                     <span class="lesson-name">
                                                         <?php if ($schedule->owner_type !== 'program'): ?>
-                                                            <?= $slotData->lesson->name . ' (' . ($slotData->lesson->program?->name ?? "") . ')'; ?>
+                                                            <?= $slotData->lesson->getFullName(addProgram: true); ?>
                                                         <?php else: ?>
-                                                            <?= $slotData->lesson->name ?>
+                                                            <?= $slotData->lesson->getFullName(addProgram: true) ?>
                                                         <?php endif; ?>
                                                     </span>
                                                     <div class="lesson-meta">
