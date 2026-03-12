@@ -923,80 +923,6 @@ class ScheduleCard {
         return scheduleItems;
     }
 
-    moveLessonListToTable(scheduleItems, classroom, createdIds = []) {
-        let idIndex = 0;
-        scheduleItems.forEach(item => {
-            let itemStartTime = item.start_time;
-            let itemEndTime = item.end_time;
-            let targetDayIndex = parseInt(item.day_index, 10);
-            let colIndex = targetDayIndex + 1;
-
-            let currentDataId = item.id;
-            if (createdIds && createdIds[idIndex]) {
-                const groupedIds = createdIds[idIndex];
-                const targetIds = groupedIds[this.owner_type] || groupedIds['program'];
-                if (targetIds && targetIds.length > 0) currentDataId = targetIds[0];
-            }
-            idIndex++;
-
-            const sourceElement = item.originalElement || this.draggedLesson.HTMLElement;
-
-            for (let i = 0; i < this.table.rows.length; i++) {
-                let row = this.table.rows[i];
-                let cell = row.cells[colIndex];
-                if (!cell) continue;
-
-                let cellStartTime = cell.dataset.startTime || (row.cells[0]?.innerText.trim().substring(0, 5));
-
-                if (cellStartTime && cellStartTime >= itemStartTime && cellStartTime < itemEndTime) {
-                    let emptySlot = cell.querySelector('.empty-slot');
-                    if (emptySlot) emptySlot.remove();
-
-                    cell.dataset.scheduleItemId = currentDataId;
-
-                    let container = (item.status === 'group') ? (cell.querySelector('.lesson-group-container') || document.createElement('div')) : cell;
-                    if (item.status === 'group' && !cell.querySelector('.lesson-group-container')) {
-                        container.classList.add('lesson-group-container');
-                        cell.appendChild(container);
-                    }
-
-                    let lessonCard = sourceElement.cloneNode(true);
-                    lessonCard.classList.remove('selected-lesson');
-                    const bulkCb = lessonCard.querySelector('.lesson-bulk-checkbox');
-                    if (bulkCb) bulkCb.checked = false;
-
-                    lessonCard.className = lessonCard.className.replace('col-md-4', '').replace('p-0', '').replace('ps-1', '').replace('frame', '').trim();
-                    if (!lessonCard.classList.contains('lesson-card')) lessonCard.classList.add('lesson-card');
-
-                    if (!lessonCard.querySelector('.lesson-bulk-checkbox')) {
-                        const bulkCheckbox = document.createElement('input');
-                        bulkCheckbox.type = 'checkbox';
-                        bulkCheckbox.className = 'lesson-bulk-checkbox';
-                        bulkCheckbox.title = 'Toplu işlem için seç';
-                        lessonCard.prepend(bulkCheckbox);
-                    }
-
-                    lessonCard.setAttribute('draggable', 'true');
-                    lessonCard.dataset.scheduleItemId = currentDataId;
-                    lessonCard.dataset.classroomId = classroom.id;
-                    lessonCard.dataset.classroomSize = classroom.size;
-                    lessonCard.dataset.classroomExamSize = classroom.exam_size;
-
-                    let classroomSpan = lessonCard.querySelector('.lesson-classroom');
-                    if (classroomSpan) classroomSpan.innerHTML = `${classroom.name}`;
-
-                    let lessonNameSpan = lessonCard.querySelector('.lesson-name');
-                    if (lessonNameSpan) new bootstrap.Tooltip(lessonNameSpan);
-
-                    lessonCard.addEventListener('dragstart', this.dragStartHandler.bind(this));
-                    lessonCard.id = lessonCard.id.replace("available", "scheduleTable") + '-' + this.table.querySelectorAll('[id^=\"' + lessonCard.id + '\"]').length;
-
-                    container.appendChild(lessonCard);
-                }
-            }
-        });
-    }
-
     async checkCrashBackEnd(scheduleItems) {
         let data = new FormData();
         data.append("items", JSON.stringify(scheduleItems));
@@ -1276,14 +1202,5 @@ class ScheduleCard {
         this.resetDraggedLesson();
     }
 
-    /**
-     * Kullanılabilir dersler listesini AJAX ile yeniler
-     * @deprecated use refreshScheduleCard instead
-     */
-    async refreshAvailableLessons() {
-        // Deprecated, maintained only if called from outside, but should be removed.
-        // For now, let's proxy to refreshScheduleCard to be safe or just warn.
-        console.warn("refreshAvailableLessons is deprecated, use refreshScheduleCard");
-        await this.refreshScheduleCard();
-    }
+
 }

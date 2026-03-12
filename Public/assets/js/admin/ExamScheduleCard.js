@@ -715,9 +715,7 @@ class ExamScheduleCard extends ScheduleCard {
                     let saveResult = await this.saveScheduleItems(newItems);
                     if (saveResult) {
                         // 6. UI Güncelleme
-                        itemsToMove.forEach(item => item.element.remove());
-                        this.moveLessonListToTable(newItems, classroom, saveResult);
-                        this.refreshAvailableLessons();
+                        await this.refreshScheduleCard();
                     }
                 }
             }

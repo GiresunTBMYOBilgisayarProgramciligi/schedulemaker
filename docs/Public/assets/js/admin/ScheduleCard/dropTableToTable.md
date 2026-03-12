@@ -14,6 +14,5 @@ Tablo içindeki bir dersi (veya seçili birden fazla dersi) başka bir hücreye 
     - Önce eski konumdaki kayıtları sunucudan siler (`deleteScheduleItems`).
     - Ardından yeni konumdaki kayıtları sunucuya ekler (`saveScheduleItems`).
 6.  **Görsel Güncelleme**:
-    - Eski hücredeki ders kartlarını temizler.
-    - Yeni hücreye güncel kartları yerleştirir (`moveLessonListToTable`).
+    - `refreshScheduleCard()` çağrılarak sunucudan güncel program HTML yapısı alınır ve UI yenilenir.
 7.  **Hata Yönetimi**: Eğer silme veya ekleme adımlarında hata oluşursa kullanıcıya bildirir.

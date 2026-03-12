@@ -15,7 +15,7 @@ Sınav programı, normal ders programına göre daha karmaşık atama süreçler
     - Aynı hoca/gözetmen aynı saatte farklı sınavda olamaz.
     - Aynı derslik aynı saatte farklı sınavda olamaz.
     - Ancak aynı dersin farklı grupları/şubeleri aynı saatte farklı dersliklerde bulunabilir.
-- **moveLessonListToTable**: Sınav tabloya eklendiğinde, her hücreye ilgili gözetmen ve derslik bilgisini (`lesson-observers-list`) yazdırır. Kalan mevcudu (kapasiteye göre) günceller.
+
 - **showContextMenu**: Sağ tık menüsünü sınava özel olarak düzenler. Sınava atanmış tüm gözetmen hocaların ve dersliklerin programlarını görüntüleme seçeneklerini dinamik olarak menüye ekler.
 
 ## Önemli Metodlar
@@ -32,5 +32,4 @@ Sınavların çakışma kurallarını denetler:
 - Derslik çakışması.
 - Aynı saat diliminde farklı derslerin sınavlarının yapılamaması kuralı.
 
-### [moveLessonListToTable]
-Ders kartlarını tabloya yerleştirirken sınav detaylarını (Gözetmen/Derslik eşleşmeleri) kart üzerine işler.
+
