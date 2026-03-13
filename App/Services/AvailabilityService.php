@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Core\Log;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -306,6 +307,10 @@ class AvailabilityService extends BaseService
                             $existingItem->end_time
                         )
                     ) {
+                        if ($existingItem->status == "preferred") {
+                            $observer->title = "**" . $observer->title;
+                            continue;
+                        }
                         $isAvailable = false;
                         break 2;
                     }
