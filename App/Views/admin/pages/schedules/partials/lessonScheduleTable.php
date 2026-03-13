@@ -183,10 +183,3 @@ use function App\Helpers\getSettingValue;
         </table>
     <?php endforeach; ?>
 </div>
-<script>
-    // Re-initialize Bootstrap Popovers
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.map(function (popoverTriggerEl) {
-        new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
-    });
-</script>
