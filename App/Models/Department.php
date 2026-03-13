@@ -25,6 +25,32 @@ class Department extends Model
     protected string $table_name = "departments";
 
     /**
+     * Bir bölüm pasif yapıldığnda alt programları da pasif yapılacak. Bu işlerm için Model update metotu ovverride ediliyor.
+     * @throws Exception
+     */
+    public function update(array $additionalExclusions = [], bool $acceptNull = true): bool
+    {
+        // Mevcut aktiflik durumunu kontrol et (Veritabanındaki eski hali)
+        $oldDepartment = (new self())->get()->where(['id' => $this->id])->first();
+        $this->logger()->debug("this->active", [$this->active]);
+        $this->logger()->debug("oldDepartment->active", [$oldDepartment?->active]);
+        $wasActive = $oldDepartment?->active ?? false;
+
+        $result = parent::update($additionalExclusions, $acceptNull);
+
+        // Eğer güncelleme başarılıysa ve bölüm aktiften pasife çekildiyse
+        if ($result && $wasActive && $this->active === null) {
+            $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
+            foreach ($programs as $program) {
+                $program->active = null;
+                $program->update();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * @throws Exception
      */
     protected function beforeDelete(): void

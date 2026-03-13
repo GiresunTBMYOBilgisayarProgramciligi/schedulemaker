@@ -13,3 +13,4 @@ Fakültedeki bölümleri temsil eden modeldir.
 *   **Özellikler**: `id`, `name`, `chairperson_id`, `active`.
 *   **İlişkiler**: `programs` (HasMany) ve `users` (HasMany) ile bağlıdır.
 *   **Metodlar**: `getChairperson()` metodu ile bölüm başkanını döner.
+*   **Özellik**: `update()` metodu override edilmiştir. Bir bölüm pasif (`active = false`) yapıldığında, bu bölüme bağlı tüm programlar da otomatik olarak pasif duruma getirilir.
