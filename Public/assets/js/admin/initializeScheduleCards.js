@@ -22,6 +22,8 @@ window.initializeScheduleCards = function () {
 
     // Önceki kart referanslarını temizle
     window.scheduleCards = [];
+    // Preference Mode (Hoca Tercihleri) için SingleScheduleHandler referanslarını temizle
+    window.singleScheduleHandlerList=[];
 
     scheduleCardElements.forEach((scheduleCardElement) => {
         const type = scheduleCardElement.dataset.type;

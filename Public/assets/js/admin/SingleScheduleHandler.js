@@ -7,23 +7,34 @@ class SingleScheduleHandler {
         this.draggedLesson = null;
         this.selectedLessonElements = new Set();
         this.selectedScheduleItemIds = new Set();
+        this.ScheduleCard = null;
+        this.modal = new Modal();
     }
 
     bindToCard(cardInstance) {
-        const cardElement = cardInstance.card;
+        if (this.ScheduleCard && this.ScheduleCard.id === cardInstance.id) {
+            console.log(`[SingleScheduleHandler] Already bound to Card: ${cardInstance.id}. Updating reference.`);
+            this.ScheduleCard = cardInstance;
+            return;
+        }
+
+        this.ScheduleCard = cardInstance;
         console.log(`[SingleScheduleHandler] Binding to Card: ${cardInstance.id}, Type: ${cardInstance.type}`);
 
-        this.initModals(cardInstance);
-        this.initDraggableItems(cardElement);
-        this.initDropZones(cardElement);
-        this.initBulkSelection(cardElement);
+        this.initDraggableItems();
+        this.initDropZones();
+        this.initBulkSelection();
     }
 
-    initDraggableItems(container = document) {
+    initDraggableItems() {
+        const container = this.ScheduleCard.card;
+        if (container.dataset.draggableInitialized) return;
+        container.dataset.draggableInitialized = 'true';
+
         container.addEventListener('dragstart', (e) => {
-            const dragTarget = e.target.closest('.slot-preferred') || 
-                             e.target.closest('.slot-unavailable');
-            
+            const dragTarget = e.target.closest('.slot-preferred') ||
+                e.target.closest('.slot-unavailable');
+
             if (dragTarget) {
                 console.debug("SingleScheduleHandler.dragStart", e);
                 this.draggedLesson = dragTarget;
@@ -33,9 +44,9 @@ class SingleScheduleHandler {
         });
 
         container.addEventListener('dragend', (e) => {
-            const dragTarget = e.target.closest('.slot-preferred') || 
-                             e.target.closest('.slot-unavailable');
-            
+            const dragTarget = e.target.closest('.slot-preferred') ||
+                e.target.closest('.slot-unavailable');
+
             if (dragTarget) {
                 console.debug("SingleScheduleHandler.dragEnd", e);
                 dragTarget.classList.remove('dragging');
@@ -44,7 +55,11 @@ class SingleScheduleHandler {
         });
     }
 
-    initDropZones(container = document) {
+    initDropZones() {
+        const container = this.ScheduleCard.card;
+        if (container.dataset.dropZonesInitialized) return;
+        container.dataset.dropZonesInitialized = 'true';
+
         container.addEventListener('dragover', (e) => {
             const dropZone = e.target.closest('.drop-zone');
             if (dropZone) {
@@ -79,11 +94,6 @@ class SingleScheduleHandler {
         });
     }
 
-    initModals(cardInstance) {
-        // Modallar artık handleTableDrop ve handleDeleteDrop içerisinde 
-        // myHTMLElements.js'deki Modal sınıfı kullanılarak dinamik olarak oluşturuluyor.
-    }
-
     async handleTableDrop(dropZone) {
         const lessonData = this.draggedLesson.dataset;
         const status = lessonData.status;
@@ -95,17 +105,13 @@ class SingleScheduleHandler {
             return;
         }
 
-        const cardElement = dropZone.closest('.schedule-card');
-        const cardId = cardElement.dataset.scheduleId;
-        const cardInstance = window.scheduleCards.find(c => c.id == cardId);
-        
+        const cardInstance = this.ScheduleCard;
+
         const scheduleType = cardInstance?.type || 'lesson';
         let maxHours = ['midterm-exam', 'final-exam', 'makeup-exam'].includes(scheduleType) ? 18 : 8;
 
         // Modal oluştur
-        const modal = new Modal();
-        modal.modal.id = `singleScheduleModal-${cardId}`;
-        document.body.appendChild(modal.modal);
+        this.modal.modal.id = `singleScheduleModal-${this.ScheduleCard.id}`;
 
         const formHtml = `
             <form id="singleScheduleForm">
@@ -121,33 +127,33 @@ class SingleScheduleHandler {
             </form>
         `;
 
-        modal.prepareModal("Program Öğesi Ekle", formHtml, true, true, "md");
-        modal.confirmButton.textContent = "Kaydet";
-        
+        this.modal.prepareModal("Program Öğesi Ekle", formHtml, true, true, "md");
+        this.modal.confirmButton.textContent = "Kaydet";
+
         // Enter tuşu desteği
-        modal.modal.addEventListener('keydown', (e) => {
+        this.modal.modal.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 if (e.target.tagName === 'TEXTAREA') return;
                 e.preventDefault();
                 e.stopPropagation();
-                modal.confirmButton.click();
+                this.modal.confirmButton.click();
             }
         });
 
         // Focus ayarı
-        modal.modal.addEventListener('shown.bs.modal', () => {
+        this.modal.modal.addEventListener('shown.bs.modal', () => {
             setTimeout(() => {
-                const input = modal.modal.querySelector('#modalHours');
+                const input = this.modal.modal.querySelector('#modalHours');
                 if (input) input.focus();
             }, 100);
         });
 
-        modal.showModal();
+        this.modal.showModal();
 
         return new Promise((resolve) => {
             const handler = async () => {
-                const hoursInput = modal.modal.querySelector('#modalHours');
-                const descInput = modal.modal.querySelector('#modalDescription');
+                const hoursInput = this.modal.modal.querySelector('#modalHours');
+                const descInput = this.modal.modal.querySelector('#modalDescription');
                 const hours = parseInt(hoursInput.value);
                 const description = descInput.value;
 
@@ -156,36 +162,37 @@ class SingleScheduleHandler {
                     return;
                 }
 
-                modal.confirmButton.removeEventListener('click', handler);
-                modal.hideModal();
+                this.modal.confirmButton.removeEventListener('click', handler);
+                this.modal.closeModal();
 
                 const scheduleData = this.prepareScheduleData(dropZone, hours, description, lessonData);
-                await this.saveItem(scheduleData, cardElement);
+                await this.saveItem(scheduleData, this.ScheduleCard.card);
                 resolve();
             };
-            modal.confirmButton.addEventListener('click', handler);
+            this.modal.confirmButton.addEventListener('click', handler);
 
-            modal.modal.addEventListener('hidden.bs.modal', () => {
-                modal.confirmButton.removeEventListener('click', handler);
+            this.modal.modal.addEventListener('hidden.bs.modal', () => {
+                this.modal.confirmButton.removeEventListener('click', handler);
             }, { once: true });
         });
     }
 
-    initBulkSelection(container = document) {
-        const table = container.querySelector('table.schedule-table') || container;
-        if (!table) return;
+    initBulkSelection() {
+        const container = this.ScheduleCard.card;
+        if (container.dataset.bulkSelectionInitialized) return;
+        container.dataset.bulkSelectionInitialized = 'true';
 
         // Checkbox değişimlerini dinle
-        table.addEventListener('change', (event) => {
+        container.addEventListener('change', (event) => {
             if (event.target.classList.contains('lesson-bulk-checkbox')) {
                 const checkbox = event.target;
                 const slot = checkbox.closest('.empty-slot') || checkbox.closest('.lesson-card');
-                this.updateSelectionState(slot, checkbox.checked);
+                if (slot) this.updateSelectionState(slot, checkbox.checked);
             }
         });
 
         // Kart tıklamalarını dinle (Tek ve Çift Tıklama)
-        table.addEventListener('click', (event) => {
+        container.addEventListener('click', (event) => {
             const slot = event.target.closest('.empty-slot') || event.target.closest('.lesson-card');
             if (!slot) return;
 
@@ -201,7 +208,7 @@ class SingleScheduleHandler {
             }
         });
 
-        table.addEventListener('dblclick', (event) => {
+        container.addEventListener('dblclick', (event) => {
             const slot = event.target.closest('.empty-slot') || event.target.closest('.lesson-card');
             if (!slot) return;
 
@@ -212,6 +219,8 @@ class SingleScheduleHandler {
             if (!cell) return;
 
             const cellIndex = cell.cellIndex; // Günü temsil eder
+            const table = container.querySelector('table.schedule-table');
+            if (!table) return;
 
             // Aynı GÜN içindeki aynı STATUS'e sahip tüm slotları seç
             const sameDaySlots = table.querySelectorAll(`tr td:nth-child(${cellIndex + 1}) .empty-slot[data-status="${status}"]`);
@@ -374,13 +383,13 @@ class SingleScheduleHandler {
     }
 
     prepareScheduleData(dropZone, hours, description, lessonData) {
-        const scheduleCard = dropZone.closest('.schedule-card');
+        const scheduleCard = this.ScheduleCard.card;
         if (!scheduleCard) return [];
 
         const table = scheduleCard.querySelector('table.schedule-table');
         if (!table) return [];
 
-        const scheduleId = scheduleCard.dataset.scheduleId;
+        const scheduleId = this.ScheduleCard.id;
         const colIndex = dropZone.cellIndex;
         const startRowIndex = dropZone.closest('tr').rowIndex;
         const isDummy = ['preferred', 'unavailable'].includes(lessonData.status);
@@ -516,28 +525,23 @@ class SingleScheduleHandler {
 
         if (itemsToDelete.length === 0) return;
 
-        const cardElement = this.draggedLesson.closest('.schedule-card');
-        const cardId = cardElement?.dataset.scheduleId || 'global';
-
         const message = itemsToDelete.length > 1
             ? `${itemsToDelete.length} adet öğeyi silmek istediğinize emin misiniz?`
             : "Bu öğeyi silmek istediğinize emin misiniz?";
 
         // Modal oluştur
-        const modal = new Modal();
-        modal.modal.id = `deleteConfirmModal-${cardId}`;
-        document.body.appendChild(modal.modal);
+        this.modal.modal.id = `deleteConfirmModal-${this.ScheduleCard.id}`;
 
-        modal.prepareModal("Silme Onayı", `<p id="deleteModalMessage">${message}</p>`, true, true, "sm");
-        modal.confirmButton.textContent = "Sil";
-        modal.confirmButton.classList.replace('btn-success', 'btn-danger');
+        this.modal.prepareModal("Silme Onayı", `<p id="deleteModalMessage">${message}</p>`, true, true, "sm");
+        this.modal.confirmButton.textContent = "Sil";
+        this.modal.confirmButton.classList.replace('btn-success', 'btn-danger');
 
-        modal.showModal();
+        this.modal.showModal();
 
         return new Promise((resolve) => {
             const handler = async () => {
-                modal.confirmButton.removeEventListener('click', handler);
-                modal.hideModal();
+                this.modal.confirmButton.removeEventListener('click', handler);
+                this.modal.closeModal();
 
                 try {
                     const formData = new FormData();
@@ -555,7 +559,7 @@ class SingleScheduleHandler {
                         for (const card of window.scheduleCards) {
                             await card.refreshScheduleCard();
                         }
-                        
+
                         this.clearSelection();
                         new Toast().prepareToast("Başarılı", "Silme işlemi tamamlandı.", "success");
                     } else {
@@ -567,10 +571,10 @@ class SingleScheduleHandler {
                 }
                 resolve();
             };
-            modal.confirmButton.addEventListener('click', handler);
+            this.modal.confirmButton.addEventListener('click', handler);
 
-            modal.modal.addEventListener('hidden.bs.modal', () => {
-                modal.confirmButton.removeEventListener('click', handler);
+            this.modal.modal.addEventListener('hidden.bs.modal', () => {
+                this.modal.confirmButton.removeEventListener('click', handler);
             }, { once: true });
         });
     }
@@ -585,7 +589,7 @@ class SingleScheduleHandler {
 
         const scheduleId = targetCardElement.dataset.scheduleId;
         const cardInstance = window.scheduleCards.find(c => c.id == scheduleId);
-        
+
         if (cardInstance) {
             await cardInstance.refreshScheduleCard();
         } else {
@@ -593,9 +597,3 @@ class SingleScheduleHandler {
         }
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    window.singleScheduleHandler = new SingleScheduleHandler();
-});
-
-

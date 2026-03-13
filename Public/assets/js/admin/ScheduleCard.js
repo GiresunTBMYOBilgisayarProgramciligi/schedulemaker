@@ -95,9 +95,10 @@ class ScheduleCard {
          * Preference Mode (Hoca Tercihleri) durumunda olay yönetimini SingleScheduleHandler'a devret.
          */
         if (this.preference_mode) {
-            if (window.singleScheduleHandler) {
-                window.singleScheduleHandler.bindToCard(this);
+            if (!window.singleScheduleHandlerList[this.id]) {
+                window.singleScheduleHandlerList[this.id] = new SingleScheduleHandler();
             }
+            window.singleScheduleHandlerList[this.id].bindToCard(this);
             this.initStickyHeaders(); // Sticky header'lar her durumda çalışmalı
             return;
         }
