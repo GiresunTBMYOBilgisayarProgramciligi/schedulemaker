@@ -71,9 +71,13 @@ class ScheduleCard {
 
         await this.bindCardEvents();
 
+        this.initContextMenu();
+        
+        if (this.preference_mode) return; // preference mode'da bulk selection ve context menu init etme SingleScheduleHandler'da yapılacak.
+
         // Event delegation methods should be initialized only once
         this.initBulkSelection();
-        this.initContextMenu();
+        
     }
 
     async bindCardEvents() {
@@ -85,6 +89,17 @@ class ScheduleCard {
             Object.keys(schedule).forEach((key) => {
                 this[key] = schedule[key];
             });
+        }
+
+        /**
+         * Preference Mode (Hoca Tercihleri) durumunda olay yönetimini SingleScheduleHandler'a devret.
+         */
+        if (this.preference_mode) {
+            if (window.singleScheduleHandler) {
+                window.singleScheduleHandler.bindToCard(this);
+            }
+            this.initStickyHeaders(); // Sticky header'lar her durumda çalışmalı
+            return;
         }
 
         const dragableElements = this.card.querySelectorAll('[draggable="true"]');
@@ -1023,6 +1038,7 @@ class ScheduleCard {
     }
 
     dragStartHandler(event) {
+        console.debug("ScheduleCard.dragStartHandler", event);
         this.isDragging = true;
         const lessonElement = event.target.closest(".lesson-card");
         if (!lessonElement) return;
@@ -1063,6 +1079,7 @@ class ScheduleCard {
 
             this.dropZone = element;
             const rawData = event.dataTransfer.getData("text/plain");
+            console.debug("Raw Data:", rawData);
             if (!rawData) {
                 this.resetDraggedLesson();
                 return;

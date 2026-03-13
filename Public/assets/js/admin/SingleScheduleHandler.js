@@ -7,54 +7,64 @@ class SingleScheduleHandler {
         this.draggedLesson = null;
         this.selectedLessonElements = new Set();
         this.selectedScheduleItemIds = new Set();
-        
-        this.initialize();
     }
 
+    bindToCard(cardInstance) {
+        const cardElement = cardInstance.card;
+        console.log(`[SingleScheduleHandler] Binding to Card: ${cardInstance.id}`);
 
-    initialize() {
-        this.initDraggableItems();
-        this.initDropZones();
         this.initModals();
-        this.initBulkSelection();
-        console.log("SingleScheduleHandler initialized");
+        this.initDraggableItems(cardElement);
+        this.initDropZones(cardElement);
+        this.initBulkSelection(cardElement);
     }
 
-    initDraggableItems() {
-        document.addEventListener('dragstart', (e) => {
-            if (e.target.classList.contains('lesson-card') || e.target.classList.contains('slot-preferred') || e.target.classList.contains('slot-unavailable')) {
-                this.draggedLesson = e.target;
-                e.dataTransfer.setData('text/plain', e.target.id);
-                e.target.classList.add('dragging');
+    initDraggableItems(container = document) {
+        container.addEventListener('dragstart', (e) => {
+            const dragTarget = e.target.closest('.slot-preferred') || 
+                             e.target.closest('.slot-unavailable');
+            
+            if (dragTarget) {
+                console.debug("SingleScheduleHandler.dragStart", e);
+                this.draggedLesson = dragTarget;
+                e.dataTransfer.setData('text/plain', dragTarget.id);
+                dragTarget.classList.add('dragging');
             }
         });
 
-        document.addEventListener('dragend', (e) => {
-            if (e.target.classList.contains('lesson-card') || e.target.classList.contains('slot-preferred') || e.target.classList.contains('slot-unavailable')) {
-                e.target.classList.remove('dragging');
+        container.addEventListener('dragend', (e) => {
+            const dragTarget = e.target.closest('.slot-preferred') || 
+                             e.target.closest('.slot-unavailable');
+            
+            if (dragTarget) {
+                console.debug("SingleScheduleHandler.dragEnd", e);
+                dragTarget.classList.remove('dragging');
                 this.draggedLesson = null;
             }
         });
     }
 
-    initDropZones() {
-        document.addEventListener('dragover', (e) => {
-            if (e.target.closest('.drop-zone')) {
+    initDropZones(container = document) {
+        container.addEventListener('dragover', (e) => {
+            const dropZone = e.target.closest('.drop-zone');
+            if (dropZone) {
                 e.preventDefault();
-                e.target.closest('.drop-zone').classList.add('drag-over');
+                dropZone.classList.add('drag-over');
             }
         });
 
-        document.addEventListener('dragleave', (e) => {
-            if (e.target.closest('.drop-zone')) {
-                e.target.closest('.drop-zone').classList.remove('drag-over');
+        container.addEventListener('dragleave', (e) => {
+            const dropZone = e.target.closest('.drop-zone');
+            if (dropZone) {
+                dropZone.classList.remove('drag-over');
             }
         });
 
-        document.addEventListener('drop', async (e) => {
+        container.addEventListener('drop', async (e) => {
             const dropZone = e.target.closest('.drop-zone');
             if (dropZone && this.draggedLesson) {
                 e.preventDefault();
+                e.stopPropagation(); // Card'ın kendi dropHandler'ına gitmesini engelle (eğer o da bir şekilde bağlıysa)
                 dropZone.classList.remove('drag-over');
 
                 // Eğer tabloya (schedule-table) bırakıldıysa
@@ -208,8 +218,8 @@ class SingleScheduleHandler {
         });
     }
 
-    initBulkSelection() {
-        const table = document.querySelector('table.schedule-table');
+    initBulkSelection(container = document) {
+        const table = container.querySelector('table.schedule-table') || container;
         if (!table) return;
 
         // Checkbox değişimlerini dinle
@@ -582,7 +592,6 @@ class SingleScheduleHandler {
                         for (const card of window.scheduleCards) {
                             await card.refreshScheduleCard();
                         }
-                        this.initBulkSelection();
                         
                         this.clearSelection();
                         new Toast().prepareToast("Başarılı", "Silme işlemi tamamlandı.", "success");
@@ -608,7 +617,6 @@ class SingleScheduleHandler {
             for (const card of window.scheduleCards) {
                 await card.refreshScheduleCard();
             }
-            this.initBulkSelection();
             return;
         }
 
@@ -617,7 +625,6 @@ class SingleScheduleHandler {
         
         if (cardInstance) {
             await cardInstance.refreshScheduleCard();
-            this.initBulkSelection();
         } else {
             console.error("ScheduleCard instance is not available for refresh.");
         }
