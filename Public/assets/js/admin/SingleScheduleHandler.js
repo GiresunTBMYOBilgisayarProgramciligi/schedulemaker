@@ -15,7 +15,6 @@ class SingleScheduleHandler {
     initialize() {
         this.initDraggableItems();
         this.initDropZones();
-        this.initDeleteZones();
         this.initModals();
         this.initBulkSelection();
         console.log("SingleScheduleHandler initialized");
@@ -68,12 +67,6 @@ class SingleScheduleHandler {
                 }
             }
         });
-    }
-
-
-
-    initDeleteZones() {
-        // available-schedule-items zaten drop-zone olarak işaretlendi
     }
 
     initModals() {
@@ -481,7 +474,6 @@ class SingleScheduleHandler {
         return scheduleItems;
     }
 
-
     /**
      * Bir slot veya kart elementinden silme verilerini hazırlar
      */
@@ -530,7 +522,7 @@ class SingleScheduleHandler {
                     } else {
                         // Eğer belirli bir kart gelmediyse tüm kartları yenile. 
                         // Genelde taşıma - silme işlemlerinde etkilenen tüm verileri garantilemek için.
-                        for (const card of this.scheduleCards) {
+                        for (const card of window.scheduleCards) {
                             await card.refreshScheduleCard();
                         }
                         this.initBulkSelection();
@@ -587,7 +579,7 @@ class SingleScheduleHandler {
                     const result = await response.json();
                     if (result.status === 'success') {
                         // Tüm kartları yeniliyoruz çünkü silinen öğe herhangi bir karta veya birden fazla karta ait olabilir.
-                        for (const card of this.scheduleCards) {
+                        for (const card of window.scheduleCards) {
                             await card.refreshScheduleCard();
                         }
                         this.initBulkSelection();
