@@ -563,6 +563,7 @@ class AvailabilityService extends BaseService
     /**
      * İki zaman aralığının çakışıp çakışmadığını kontrol eder.
      * H:i:s formatını otomatik normalize eder.
+     * H:i:s formatını otomatik normalize eder.
      */
     private function checkTimeOverlap(
         string $start1,
@@ -570,6 +571,11 @@ class AvailabilityService extends BaseService
         string $start2,
         string $end2
     ): bool {
+        $start1 = substr($start1, 0, 5);
+        $end1 = substr($end1, 0, 5);
+        $start2 = substr($start2, 0, 5);
+        $end2 = substr($end2, 0, 5);
+
         $start1 = substr($start1, 0, 5);
         $end1 = substr($end1, 0, 5);
         $start2 = substr($start2, 0, 5);
