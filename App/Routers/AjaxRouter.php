@@ -679,7 +679,7 @@ class AjaxRouter extends Router
     {
         Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
         $filters = (new FilterValidator())->validate($this->data, "availableObservers");
-        $service = new ExamService();
+        $service = new AvailabilityService();
         $observers = $service->availableObservers($filters);
         $this->response['status'] = "success";
         $this->response['observers'] = $observers;

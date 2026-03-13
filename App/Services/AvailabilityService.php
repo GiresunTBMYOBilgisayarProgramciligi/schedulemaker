@@ -259,6 +259,68 @@ class AvailabilityService extends BaseService
     }
 
     /**
+     * Sınav atamalarında müsait gözetmenlerin listesini döndürür.
+     *
+     * Gözetmen havuzu: lecturer, department_head, manager, submanager
+     * Belirtilen gün/hafta/zaman aralığında çakışan gözetmenler filtrelenir.
+     *
+     * @param array $filters Validated filtreler:
+     *   type, semester, academic_year, day_index, week_index, items (JSON)
+     * @return \App\Models\User[] Müsait gözetmenler
+     * @throws Exception
+     */
+    public function availableObservers(array $filters = []): array
+    {
+        $observerFilters = [
+            'role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]
+        ];
+        $observers = (new \App\Controllers\UserController())->getListByFilters($observerFilters);
+        $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];
+
+        $availableObservers = [];
+
+        foreach ($observers as $observer) {
+            $userSchedule = (new Schedule())->firstOrCreate([
+                'type' => $filters['type'],
+                'owner_type' => 'user',
+                'owner_id' => $observer->id,
+                'semester_no' => null,
+                'semester' => $filters['semester'],
+                'academic_year' => $filters['academic_year'],
+            ]);
+
+            $existingItems = (new ScheduleItem())->get()->where([
+                'schedule_id' => $userSchedule->id,
+                'day_index' => $filters['day_index'],
+                'week_index' => $filters['week_index'],
+            ])->all();
+
+            $isAvailable = true;
+            foreach ($itemsToCheck as $checkItem) {
+                foreach ($existingItems as $existingItem) {
+                    if (
+                        $this->checkTimeOverlap(
+                            $checkItem['start_time'],
+                            $checkItem['end_time'],
+                            $existingItem->start_time,
+                            $existingItem->end_time
+                        )
+                    ) {
+                        $isAvailable = false;
+                        break 2;
+                    }
+                }
+            }
+
+            if ($isAvailable) {
+                $availableObservers[] = $observer;
+            }
+        }
+
+        return $availableObservers;
+    }
+
+    /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      *
      * @param array $filters Validated filtreler:
@@ -500,7 +562,7 @@ class AvailabilityService extends BaseService
 
     /**
      * İki zaman aralığının çakışıp çakışmadığını kontrol eder.
-     * (Start1 < End2) && (Start2 < End1)
+     * H:i:s formatını otomatik normalize eder.
      */
     private function checkTimeOverlap(
         string $start1,
@@ -508,6 +570,11 @@ class AvailabilityService extends BaseService
         string $start2,
         string $end2
     ): bool {
+        $start1 = substr($start1, 0, 5);
+        $end1 = substr($end1, 0, 5);
+        $start2 = substr($start2, 0, 5);
+        $end2 = substr($end2, 0, 5);
+
         return ($start1 < $end2) && ($start2 < $end1);
-    }
+    }    
 }
