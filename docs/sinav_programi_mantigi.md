@@ -38,7 +38,7 @@ Sınav çakışmaları şu prensiplere göre denetlenir:
 `ConflictService`, gelen veride `assignments` olup olmadığına bakarak sınav çakışma mantığını otomatik olarak devreye sokar.
 
 ## 5. Müsait Gözetmen Bulma
-`ExamService::availableObservers` metodu:
+`AvailabilityService::availableObservers` metodu:
 - Tüm hocaları ve yetkili personeli (Gözetmen Havuzu) tarar.
 - Belirtilen gün ve saatte halihazırda başka bir sınavda (Vize/Final/Büt) görevli olup olmadıklarını kontrol eder.
 - Sadece boşta olanları listeler.
