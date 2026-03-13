@@ -738,7 +738,7 @@ class ImportExportManager
             }
 
             // Ders Adı
-            $lessonName = $data->lesson->name;
+            $lessonName = $data->lesson->getFullName(addGroup: true);
             if ($options['show_code'] && !empty($data->lesson->code)) {
                 $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
             }
