@@ -11,9 +11,9 @@ class SingleScheduleHandler {
 
     bindToCard(cardInstance) {
         const cardElement = cardInstance.card;
-        console.log(`[SingleScheduleHandler] Binding to Card: ${cardInstance.id}`);
+        console.log(`[SingleScheduleHandler] Binding to Card: ${cardInstance.id}, Type: ${cardInstance.type}`);
 
-        this.initModals();
+        this.initModals(cardInstance);
         this.initDraggableItems(cardElement);
         this.initDropZones(cardElement);
         this.initBulkSelection(cardElement);
@@ -79,99 +79,9 @@ class SingleScheduleHandler {
         });
     }
 
-    initModals() {
-        //todo: MyHTMLElements.js ile Modal kullan
-        // Bootstrap modal elementini oluştur (eğer yoksa)
-        if (!document.getElementById('singleScheduleModal')) {
-            const modalHtml = `
-            <div class="modal fade" id="singleScheduleModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Program Öğesi Ekle</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="singleScheduleForm">
-                                <div class="mb-3">
-                                    <label class="form-label">Süre (Saat)</label>
-                                    <input type="number" class="form-control" name="hours" id="modalHours" min="1" max="8">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Açıklama</label>
-                                    <textarea class="form-control" name="description" id="modalDescription" rows="3" placeholder="Açıklama giriniz..."></textarea>
-                                    <div class="invalid-feedback">"Müsait Değil" durumu için açıklama girmek zorunludur.</div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                            <button type="button" class="btn btn-primary" id="saveSingleItem">Kaydet</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            // Form submit davranışını engelle ve Enter tuşu ile kaydetmeyi sağla
-            // Global Modal Keydown Handler
-            // Form submit, Close button enter, vb. hepsini yakalar
-            const modalEl = document.getElementById('singleScheduleModal');
-            if (modalEl) {
-                modalEl.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        // Textarea içinde Enter'a basılırsa yeni satıra geçsin, engelleme
-                        if (e.target.tagName === 'TEXTAREA') return;
-
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        // Eğer focus kapatma butonundaysa hiçbir şey yapma (kapanmasın)
-                        if (e.target.classList.contains('btn-close')) {
-                            // İstenirse burada focus inputa atılabilir
-                            document.getElementById('modalHours').focus();
-                            return;
-                        }
-
-                        // Diğer durumlarda (input vb.) kaydet butonunu tetikle
-                        document.getElementById('saveSingleItem').click();
-                    }
-                });
-            }
-        }
-
-        if (!document.getElementById('deleteConfirmModal')) {
-            const deleteModalHtml = `
-            <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Silme Onayı</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p id="deleteModalMessage">Seçili öğeleri silmek istediğinize emin misiniz?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Sil</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-            document.body.insertAdjacentHTML('beforeend', deleteModalHtml);
-        }
-
-        this.bsModal = new bootstrap.Modal(document.getElementById('singleScheduleModal'));
-        this.deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-
-        // Modal açıldığında inputa focuslan (timeout ile garantiye al)
-        document.getElementById('singleScheduleModal').addEventListener('shown.bs.modal', function () {
-            setTimeout(() => {
-                const input = document.getElementById('modalHours');
-                if (input) input.focus();
-            }, 100);
-        });
+    initModals(cardInstance) {
+        // Modallar artık handleTableDrop ve handleDeleteDrop içerisinde 
+        // myHTMLElements.js'deki Modal sınıfı kullanılarak dinamik olarak oluşturuluyor.
     }
 
     async handleTableDrop(dropZone) {
@@ -185,35 +95,78 @@ class SingleScheduleHandler {
             return;
         }
 
-        // Yeni ekleme (Modal aç)
-        document.getElementById('modalDescription').value = '';
-        document.getElementById('modalDescription').classList.remove('is-invalid');
-        document.getElementById('modalHours').value = '1';
+        const cardElement = dropZone.closest('.schedule-card');
+        const cardId = cardElement.dataset.scheduleId;
+        const cardInstance = window.scheduleCards.find(c => c.id == cardId);
+        
+        const scheduleType = cardInstance?.type || 'lesson';
+        let maxHours = ['midterm-exam', 'final-exam', 'makeup-exam'].includes(scheduleType) ? 18 : 8;
 
-        this.bsModal.show();
+        // Modal oluştur
+        const modal = new Modal();
+        modal.modal.id = `singleScheduleModal-${cardId}`;
+        document.body.appendChild(modal.modal);
+
+        const formHtml = `
+            <form id="singleScheduleForm">
+                <div class="mb-3">
+                    <label class="form-label" for="modalHours">Süre (Saat)</label>
+                    <input type="number" class="form-control" name="hours" id="modalHours" min="1" max="${maxHours}" value="1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Açıklama</label>
+                    <textarea class="form-control" name="description" id="modalDescription" rows="3" placeholder="Açıklama giriniz..."></textarea>
+                    <div class="invalid-feedback">"Müsait Değil" durumu için açıklama girmek zorunludur.</div>
+                </div>
+            </form>
+        `;
+
+        modal.prepareModal("Program Öğesi Ekle", formHtml, true, true, "md");
+        modal.confirmButton.textContent = "Kaydet";
+        
+        // Enter tuşu desteği
+        modal.modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.target.tagName === 'TEXTAREA') return;
+                e.preventDefault();
+                e.stopPropagation();
+                modal.confirmButton.click();
+            }
+        });
+
+        // Focus ayarı
+        modal.modal.addEventListener('shown.bs.modal', () => {
+            setTimeout(() => {
+                const input = modal.modal.querySelector('#modalHours');
+                if (input) input.focus();
+            }, 100);
+        });
+
+        modal.showModal();
 
         return new Promise((resolve) => {
-            const saveBtn = document.getElementById('saveSingleItem');
             const handler = async () => {
-                const hours = parseInt(document.getElementById('modalHours').value);
-                const description = document.getElementById('modalDescription').value;
+                const hoursInput = modal.modal.querySelector('#modalHours');
+                const descInput = modal.modal.querySelector('#modalDescription');
+                const hours = parseInt(hoursInput.value);
+                const description = descInput.value;
 
                 if (status === 'unavailable' && !description.trim()) {
-                    document.getElementById('modalDescription').classList.add('is-invalid');
+                    descInput.classList.add('is-invalid');
                     return;
                 }
 
-                saveBtn.removeEventListener('click', handler);
-                this.bsModal.hide();
+                modal.confirmButton.removeEventListener('click', handler);
+                modal.hideModal();
 
                 const scheduleData = this.prepareScheduleData(dropZone, hours, description, lessonData);
-                await this.saveItem(scheduleData, dropZone.closest('.schedule-card'));
+                await this.saveItem(scheduleData, cardElement);
                 resolve();
             };
-            saveBtn.addEventListener('click', handler);
+            modal.confirmButton.addEventListener('click', handler);
 
-            document.getElementById('singleScheduleModal').addEventListener('hidden.bs.modal', () => {
-                saveBtn.removeEventListener('click', handler);
+            modal.modal.addEventListener('hidden.bs.modal', () => {
+                modal.confirmButton.removeEventListener('click', handler);
             }, { once: true });
         });
     }
@@ -563,18 +516,28 @@ class SingleScheduleHandler {
 
         if (itemsToDelete.length === 0) return;
 
+        const cardElement = this.draggedLesson.closest('.schedule-card');
+        const cardId = cardElement?.dataset.scheduleId || 'global';
+
         const message = itemsToDelete.length > 1
             ? `${itemsToDelete.length} adet öğeyi silmek istediğinize emin misiniz?`
             : "Bu öğeyi silmek istediğinize emin misiniz?";
-        document.getElementById('deleteModalMessage').textContent = message;
 
-        this.deleteModal.show();
+        // Modal oluştur
+        const modal = new Modal();
+        modal.modal.id = `deleteConfirmModal-${cardId}`;
+        document.body.appendChild(modal.modal);
+
+        modal.prepareModal("Silme Onayı", `<p id="deleteModalMessage">${message}</p>`, true, true, "sm");
+        modal.confirmButton.textContent = "Sil";
+        modal.confirmButton.classList.replace('btn-success', 'btn-danger');
+
+        modal.showModal();
 
         return new Promise((resolve) => {
-            const confirmBtn = document.getElementById('confirmDeleteBtn');
             const handler = async () => {
-                confirmBtn.removeEventListener('click', handler);
-                this.deleteModal.hide();
+                modal.confirmButton.removeEventListener('click', handler);
+                modal.hideModal();
 
                 try {
                     const formData = new FormData();
@@ -604,10 +567,10 @@ class SingleScheduleHandler {
                 }
                 resolve();
             };
-            confirmBtn.addEventListener('click', handler);
+            modal.confirmButton.addEventListener('click', handler);
 
-            document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
-                confirmBtn.removeEventListener('click', handler);
+            modal.modal.addEventListener('hidden.bs.modal', () => {
+                modal.confirmButton.removeEventListener('click', handler);
             }, { once: true });
         });
     }
