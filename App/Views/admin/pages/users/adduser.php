@@ -38,7 +38,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card ">
-                        <form id="addUserForm" action="/ajax/addNewUser" method="post" class="ajaxForm"
+                        <form id="addUserForm" action="/ajax/addNewUser" method="post" class="ajaxForm js-reset-on-success"
                             title="Yeni Kullanıcı Ekle">
                             <div class="card-body pb-0">
                                 <div class="row">

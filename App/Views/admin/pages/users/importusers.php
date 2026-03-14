@@ -35,8 +35,8 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card ">
-                        <form id="importUserForm" action="/ajax/importUsers" method="post" class="ajaxForm" enctype="multipart/form-data"
-                              title="Kullanıcıları içe aktar">
+                        <form id="importUserForm" action="/ajax/importUsers" method="post" class="ajaxForm js-reset-on-success" enctype="multipart/form-data"
+                               title="Kullanıcıları içe aktar">
                             <div class="card-body pb-0">
                                 <div class="row">
                                     <div class="mb-3">

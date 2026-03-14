@@ -36,7 +36,7 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <form action="/ajax/addProgram" method="post" class="ajaxForm" title="Yeni Program Ekle">
+                        <form action="/ajax/addProgram" method="post" class="ajaxForm js-reset-on-success" title="Yeni Program Ekle">
                             <div class="card-body pb-0">
                                 <div class="row">
                                     <div class="col-md-5">

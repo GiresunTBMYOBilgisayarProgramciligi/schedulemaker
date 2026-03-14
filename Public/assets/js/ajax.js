@@ -187,12 +187,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     modal.body.innerHTML = message;
                 }
 
-                if (data.status === "success") {
-                    if (!form.classList.contains("updateForm")) {
-                        form.reset();
-                    }
-                }
-
                 if (modal) {
                     modal.cancelButton.addEventListener("click", handleRedirect);
                 }
@@ -208,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 console.error(error);
             }).finally(() => {
-                if (form) {
+                if (form && form.classList.contains("js-reset-on-success")) {
                     //işlemler tamamlandıktan sonra form resetleniyor. 
                     form.reset();
                 }
