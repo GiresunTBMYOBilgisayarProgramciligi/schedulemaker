@@ -14,6 +14,7 @@ class LessonScheduleCard extends ScheduleCard {
             let scheduleModal = new Modal();
             let maxHours = this.draggedLesson.lesson_hours;
             let initialHours = this.draggedLesson.lesson_hours;
+            let sizeString = this.draggedLesson.size>0 ? this.draggedLesson.size+" Öğrenci için " : "";
 
             let modalContentHTML = `
             <form>
@@ -24,7 +25,7 @@ class LessonScheduleCard extends ScheduleCard {
                     <label for="selected_hours">Süre (Saat)</label>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Derslik Seçin</label>
+                    <label class="form-label">${sizeString}Derslik Seçin</label>
                     <select id="classroom" class="form-select" required></select>
                 </div>
             </form>`;
