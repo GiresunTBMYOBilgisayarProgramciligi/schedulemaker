@@ -79,7 +79,8 @@
                                                 <form action="/ajax/deletedepartment/<?=$department->id?>"
                                                       class="ajaxFormDelete"
                                                       id="deleteProgram-<?=$department->id?>"
-                                                      method="post">
+                                                      method="post"
+                                                      data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
                                                     <input type="hidden" name="id"
                                                            value="<?=$department->id?>">
                                                     <input type="submit" class="dropdown-item" value="Sil">

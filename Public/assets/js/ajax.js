@@ -50,8 +50,9 @@ document.addEventListener("DOMContentLoaded", function () {
         let lessonRow = event.target.closest('tr');
         event.preventDefault();
         const form = event.target;
+        const confirmMessage = form.getAttribute('data-confirm-message') || gettext.deleteMessage;
         let confirmDeleteModal = new Modal();
-        confirmDeleteModal.prepareModal(gettext.confirmDelete, gettext.deleteMessage, true)
+        confirmDeleteModal.prepareModal(gettext.confirmDelete, confirmMessage, true)
         confirmDeleteModal.confirmButton.textContent = gettext.delete
         confirmDeleteModal.showModal()
         confirmDeleteModal.confirmButton.addEventListener("click", () => {

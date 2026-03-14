@@ -80,7 +80,8 @@
                                                 <form action="/ajax/deleteprogram/<?=$program->id?>"
                                                       class="ajaxFormDelete"
                                                       id="deleteProgram-<?=$program->id?>"
-                                                      method="post">
+                                                      method="post"
+                                                      data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
                                                     <input type="hidden" name="id"
                                                            value="<?=$program->id?>">
                                                     <input type="submit" class="dropdown-item" value="Sil">
