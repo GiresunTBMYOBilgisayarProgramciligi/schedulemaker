@@ -89,6 +89,12 @@ use function App\Helpers\getSettingValue;
                                                     if ($schedule->owner_type !== 'program') {
                                                         $dataAttrs['data-program-id'] = $slotData->lesson->program_id;
                                                         $dataAttrs['data-program-name'] = $slotData->lesson->program?->name;
+                                                        if (count($slotData->lesson->childLessons) > 0) {
+                                                            foreach ($slotData->lesson->childLessons as $childLesson) {
+                                                                $dataAttrs['data-child-lessons-' . $childLesson->id . '-program-id'] = $childLesson->program_id;
+                                                                $dataAttrs['data-child-lessons-' . $childLesson->id . '-program-name'] = $childLesson->program?->name;
+                                                            }
+                                                        }
                                                     }
 
                                                     $attrString = "";

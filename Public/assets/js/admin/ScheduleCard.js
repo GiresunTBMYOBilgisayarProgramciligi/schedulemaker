@@ -380,6 +380,22 @@ class ScheduleCard {
                 onClick: () => this.showScheduleInModal('lesson', lessonId, `${lessonName} Programı`)
             });
         }
+
+        // Çocuk derslerin programlarını ekle (data-child-lessons-ID-program-id formatını tara)
+        lessonCard.getAttributeNames().forEach(attrName => {
+            const match = attrName.match(/^data-child-lessons-(\d+)-program-id$/);
+            if (match) {
+                const childId = match[1];
+                const programId = lessonCard.getAttribute(attrName);
+                const programName = lessonCard.getAttribute(`data-child-lessons-${childId}-program-name`) || 'Program';
+
+                menuItems.push({
+                    text: `${programName} programını göster`,
+                    icon: 'bi-book-half',
+                    onClick: () => this.showScheduleInModal('program', programId, `${programName} Programı`)
+                });
+            }
+        });
         menuItems.forEach(item => {
             const menuItem = document.createElement('div');
             menuItem.className = 'context-menu-item';
