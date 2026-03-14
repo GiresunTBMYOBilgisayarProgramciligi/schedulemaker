@@ -298,8 +298,19 @@ Yeni Durumu:
 
 ---
 
-### 5. processGroupItemSaving - Grup Item İşleme
+### 5. Zaman Çizelgesi Yönetimi ve Dilimleme (TimelineService)
 
+`ScheduleService` sınıfının en karmaşık işlemlerinden biri olan zaman çizelgesini yönetme (ekleme, silme, parçalama) işlemleri `App\Services\TimelineService` sınıfına delege edilmiştir.
+
+Bu servis, **Flatten Timeline (Düzleştirilmiş Zaman Çizelgesi)** yaklaşımını kullanarak program öğelerini atomik dilimlere ayırır, işler ve tekrar birleştirir.
+
+#### 5.1. Flatten Timeline (Düzleştirme) Yaklaşımı
+1. Mevcut ve yeni öğelerin tüm kritik zaman noktaları (başlangıç, bitiş, teneffüs sınırları) toplanır.
+2. Bu noktalara göre çizelge küçük parçalara (segment) bölünür.
+3. Her parça için veriler (data) ve kurallar (isBreak, shouldKeep) uygulanır.
+4. Bitişken ve aynı veriye sahip parçalar birleştirilerek nihai program öğeleri oluşturulur.
+
+#### 5.2. mergeGroupItems - Grup Item İşleme
 Grup statusundaki itemleri birleştirir ve yeniden oluşturur.
 
 ```

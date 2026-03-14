@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Helpers\TimeHelper;
 use Exception;
 
 /**
@@ -210,29 +211,5 @@ class ConflictService extends BaseService
         }
 
         return $owners;
-    }
-
-    /**
-     * İki zaman aralığının çakışıp çakışmadığını kontrol eder.
-     * Mantık: (Start1 < End2) && (Start2 < End1)
-     *
-     * @param string $start1 H:i
-     * @param string $end1   H:i
-     * @param string $start2 H:i
-     * @param string $end2   H:i
-     * @return bool Çakışma varsa true
-     */
-    public function checkTimeOverlap(
-        string $start1,
-        string $end1,
-        string $start2,
-        string $end2
-    ): bool {
-        $s1 = substr($start1, 0, 5);
-        $e1 = substr($end1, 0, 5);
-        $s2 = substr($start2, 0, 5);
-        $e2 = substr($end2, 0, 5);
-
-        return ($s1 < $e2) && ($s2 < $e1);
     }
 }

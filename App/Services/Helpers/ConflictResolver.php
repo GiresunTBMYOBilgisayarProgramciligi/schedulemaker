@@ -5,6 +5,7 @@ namespace App\Services\Helpers;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Helpers\TimeHelper;
 use Exception;
 
 /**
@@ -73,7 +74,7 @@ class ConflictResolver
 
                 foreach ($dayItems as $existingItem) {
                     // Zaman çakışması kontrolü
-                    if ($this->checkOverlap($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
+                    if (TimeHelper::isOverlapping($startTime, $endTime, $existingItem->start_time, $existingItem->end_time)) {
                         $error = $this->resolveConflict($itemData, $existingItem, $lessonContext, $relatedSchedule);
                         if ($error) {
                             $errors[] = $error;
@@ -195,24 +196,6 @@ class ConflictResolver
         return null;
     }
 
-    /**
-     * İki zaman aralığının çakışıp çakışmadığını kontrol eder
-     * 
-     * @param string $start1 Birinci aralık başlangıç
-     * @param string $end1 Birinci aralık bitiş
-     * @param string $start2 İkinci aralık başlangıç
-     * @param string $end2 İkinci aralık bitiş
-     * @return bool Çakışma varsa true
-     */
-    private function checkOverlap(string $start1, string $end1, string $start2, string $end2): bool
-    {
-        $s1 = substr($start1, 0, 5);
-        $e1 = substr($end1, 0, 5);
-        $s2 = substr($start2, 0, 5);
-        $e2 = substr($end2, 0, 5);
-
-        return ($s1 < $e2) && ($e1 > $s2);
-    }
 
     /**
      * Schedule item'dan ders ismini alır

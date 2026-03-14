@@ -10,6 +10,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use DateTime;
 use Exception;
+use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -79,7 +80,7 @@ class AvailabilityService extends BaseService
                 foreach ($itemsToCheck as $checkItem) {
                     foreach ($existingItems as $existingItem) {
                         if (
-                            $this->checkTimeOverlap(
+                            TimeHelper::isOverlapping(
                                 $checkItem['start_time'],
                                 $checkItem['end_time'],
                                 $existingItem->start_time,
@@ -300,7 +301,7 @@ class AvailabilityService extends BaseService
             foreach ($itemsToCheck as $checkItem) {
                 foreach ($existingItems as $existingItem) {
                     if (
-                        $this->checkTimeOverlap(
+                        TimeHelper::isOverlapping(
                             $checkItem['start_time'],
                             $checkItem['end_time'],
                             $existingItem->start_time,
@@ -358,11 +359,8 @@ class AvailabilityService extends BaseService
             ])->all();
 
             foreach ($items as $item) {
-                $itemStart = substr($item->start_time, 0, 5);
-                $itemEnd = substr($item->end_time, 0, 5);
-
                 foreach ($slots as $rowIndex => $slot) {
-                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                    if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         if ($item->status === 'preferred') {
                             $preferredCells[$rowIndex + 1][$item->day_index + 1] = true;
                         } else {
@@ -419,11 +417,8 @@ class AvailabilityService extends BaseService
             ])->all();
 
             foreach ($items as $item) {
-                $itemStart = substr($item->start_time, 0, 5);
-                $itemEnd = substr($item->end_time, 0, 5);
-
                 foreach ($slots as $rowIndex => $slot) {
-                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                    if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         if (isset($classroomTypes[$schedule->owner_id]) && $classroomTypes[$schedule->owner_id] === 3) {
                             continue;
                         }
@@ -509,12 +504,9 @@ class AvailabilityService extends BaseService
             ])->all();
 
             foreach ($items as $item) {
-                $itemStart = substr($item->start_time, 0, 5);
-                $itemEnd = substr($item->end_time, 0, 5);
-
                 $overlap = false;
                 foreach ($slots as $rowIndex => $slot) {
-                    if ($this->checkTimeOverlap($itemStart, $itemEnd, $slot['start'], $slot['end'])) {
+                    if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
                         if ($lesson->group_no > 0 && $item->status === 'group' && !empty($item->data)) {
                             $sameGroupExists = false;
@@ -565,21 +557,4 @@ class AvailabilityService extends BaseService
         return $slots;
     }
 
-    /**
-     * İki zaman aralığının çakışıp çakışmadığını kontrol eder.
-     * H:i:s formatını otomatik normalize eder.
-     */
-    private function checkTimeOverlap(
-        string $start1,
-        string $end1,
-        string $start2,
-        string $end2
-    ): bool {
-        $start1 = substr($start1, 0, 5);
-        $end1 = substr($end1, 0, 5);
-        $start2 = substr($start2, 0, 5);
-        $end2 = substr($end2, 0, 5);
-
-        return ($start1 < $end2) && ($start2 < $end1);
-    }
 }

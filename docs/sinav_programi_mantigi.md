@@ -8,7 +8,7 @@ Sistemde üç ana sınav tipi tanımlıdır:
 - `final-exam` (Final)
 - `makeup-exam` (Bütünleme)
 
-Bu tiplerdeki programlar `ExamService` üzerinden yönetilir ve normal ders programı (`lesson`) mantığından ayrıştırılır.
+Bu tiplerdeki programlar `ExamService` üzerinden yönetilir ve normal ders programı (`lesson`) mantığından ayrıştırılır. Ancak, sınav süresi hesaplamaları ve çakışma kontrollerinde `App\Helpers\TimeHelper` ve `App\Services\TimelineService` yardımcı sınıfları ortaklaşa kullanılır.
 
 ## 2. Çoklu Atama (Assignments) Yapısı
 Normal derslerin aksine, bir sınav aynı anda **birden fazla derslikte** ve **birden fazla gözetmenle** gerçekleştirilebilir. 
