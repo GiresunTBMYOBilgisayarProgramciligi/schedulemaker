@@ -65,6 +65,7 @@ function toUpperCaseTR(value) {
 }
 // Input elementi için maskeleme fonksiyonu
 function initializeCodeMask(inputElement) {
+    return; // MAske devre dışı bırakıldı
     // Değişiklikleri dinle
     inputElement.addEventListener('input', function (e) {
         let value = toUpperCaseTR(e.target.value); // Otomatik büyük harfe çevir
@@ -120,7 +121,8 @@ function initializeCodeMask(inputElement) {
 function validateCourseCode(code) {
     // Format: AAA-NNN veya AAA-NNN.N
     const pattern = /^[A-ZĞÜŞİÖÇI]{2,4}-\d{3}(?:\.\d)?$/;
-    return pattern.test(code);
+    //return pattern.test(code);
+    return true;// Validasyon devre dışı bırakıldı
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -190,7 +192,10 @@ document.addEventListener("DOMContentLoaded", function () {
      * CodeIput varsa maske uygula
      */
     if (codeInput) {
-        initializeCodeMask(codeInput);
+        initializeCodeMask(codeInput);// DEVRE DIŞI
+        codeInput.addEventListener("input", (event) => {
+            event.target.value = toUpperCaseTR(event.target.value);
+        });
     }
     // Name alanını her kelimenin ilk harfi büyük olacak şekilde düzenle
     if (nameInput) {
