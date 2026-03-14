@@ -300,7 +300,7 @@ class Lesson extends Model
     /**
      * @return string
      */
-    public function getFullName(bool $addCode = false, bool $addGroup = false, bool $addProgram = false, bool $addClassNumber = false): string
+    public function getFullName(bool $addCode = false, bool $addGroup = false, bool $addProgram = false, bool $addClassNumber = false, bool $addSize = false): string
     {
         $name = $this->name;
         if ($addCode) {
@@ -315,6 +315,9 @@ class Lesson extends Model
             if ($programName) {
                 $name .= " (" . $programName . ($addClassNumber ? " - ". getClassFromSemesterNo($this->semester_no) : "") . ")";
             }
+        }
+        if ($addSize) {
+            $name .= " (" . $this->size . " öğrenci)";
         }
         return trim($name);
     }
