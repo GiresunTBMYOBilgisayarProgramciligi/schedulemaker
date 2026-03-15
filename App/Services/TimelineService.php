@@ -124,7 +124,7 @@ class TimelineService
      * @param bool $wasPreferred Orijinal alanın preferred olup olmadığı
      * @return string Yeni status
      */
-    public function determineStatus(array $data, string $originalStatus, bool $wasPreferred = false): string
+    public function determineStatus(array $data, string $originalStatus, bool $wasPreferred = false, array $lessonGroups = []): string
     {
         if (in_array($originalStatus, ['preferred', 'unavailable'])) {
             return $originalStatus;
@@ -138,6 +138,16 @@ class TimelineService
         foreach ($data as $d) {
             $lessonId = $d['lesson_id'] ?? null;
             if ($lessonId) {
+                // Eğer lessonGroups parametresi ile grup bilgileri geldiyse (testler için)
+                if (isset($lessonGroups[$lessonId])) {
+                    if ($lessonGroups[$lessonId] > 0) {
+                        $isGroup = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                // Normal akış: DB'den çek
                 $lesson = (new Lesson())->find($lessonId);
                 if ($lesson && $lesson->group_no > 0) {
                     $isGroup = true;

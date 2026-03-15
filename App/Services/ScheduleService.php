@@ -24,16 +24,6 @@ use function App\Helpers\getSettingValue;
  * 
  * Schedule ve ScheduleItem işlemleri için iş mantığı katmanı
  * 
- * v1.0 - Basit versiyon:
- * - saveScheduleItems: Temel kaydetme işlemi
- * - Validation
- * - Repository kullanımı
- * 
- * TODO (v2.0):
- * - Conflict resolution
- * - Group item processing
- * - Child lesson handling
- * - Exam assignment
  */
 class ScheduleService extends BaseService
 {

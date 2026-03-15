@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="DEBUG" value="false"/>
+        <env name="LOG_PATH" value="Logs"/>
+        <env name="SESSION_KEY" value="schedule_session_test_"/>
+        <env name="COOKIE_KEY" value="schedule_cookie_test_"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_USER" value="schedule_user"/>
+        <env name="DB_PASS" value="123456"/>
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_NAME" value="schedulemaker_test"/>
+    </php>
+    <source>
+        <include>
+            <directory>App</directory>
+        </include>
+    </source>
+</phpunit>

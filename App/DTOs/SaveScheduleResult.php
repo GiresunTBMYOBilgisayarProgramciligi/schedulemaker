@@ -17,7 +17,8 @@ readonly class SaveScheduleResult
     public function __construct(
         public array $createdIds = [],
         public int $totalProcessed = 0,
-        public array $warnings = []
+        public array $warnings = [],
+        public bool $success = true
     ) {
     }
 

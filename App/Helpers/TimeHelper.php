@@ -27,7 +27,8 @@ class TimeHelper
             return 0;
         }
 
-        return ($end->getTimestamp() - $start->getTimestamp()) / 60;
+        $duration = ($end->getTimestamp() - $start->getTimestamp()) / 60;
+        return max(0, (int)$duration);
     }
 
     /**
@@ -53,13 +54,14 @@ class TimeHelper
      * @param int $slots Slot sayısı
      * @param int $slotSizeMinutes Slot boyutu (dakika)
      * @param string $type Tip ('lesson' veya 'exam')
+     * @param int|null $customDuration Manuel süre (dakika) - Testler için
      * @return string HH:MM formatında yeni bitiş saati
      */
-    public static function calculateEndTimeBySlots(string $startTime, int $slots, int $slotSizeMinutes, string $type = 'lesson'): string
+    public static function calculateEndTimeBySlots(string $startTime, int $slots, int $slotSizeMinutes, string $type = 'lesson', ?int $customDuration = null): string
     {
         $start = strtotime($startTime);
         
-        $duration = (int) getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
+        $duration = $customDuration ?? (int) getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
 
         // Slot sayısı kadar ilerle - son slot'ta ara/teneffüs (break) yok
         $totalMinutes = ($slots - 1) * $slotSizeMinutes + $duration;
