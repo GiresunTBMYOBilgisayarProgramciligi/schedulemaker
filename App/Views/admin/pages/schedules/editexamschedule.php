@@ -95,11 +95,11 @@ use function App\Helpers\getSettingValue;
                                         data-bs-target="#lecturer-tab-pane" type="button" role="tab"
                                         aria-controls="lecturer-tab-pane" aria-selected="false">Hoca</button>
                                 </li>
-                                <li class="nav-item" role="presentation">
+                                <!-- <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="classroom-tab" data-bs-toggle="tab"
                                         data-bs-target="#classroom-tab-pane" type="button" role="tab"
                                         aria-controls="classroom-tab-pane" aria-selected="false">Derslik</button>
-                                </li>
+                                </li> -->
                             </ul>
 
                             <!-- Tabs content -->
