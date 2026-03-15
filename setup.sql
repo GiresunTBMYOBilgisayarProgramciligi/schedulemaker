@@ -118,6 +118,7 @@ create table if not exists lessons
 (
     id             int AUTO_INCREMENT,
     code           varchar(50) NOT NULL,
+    group_no       int NOT NULL DEFAULT 0,
     name           text        NOT NULL,
     size           int,
     hours          int         NOT NULL DEFAULT 2,
@@ -129,7 +130,7 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
-    group_no       int NOT NULL DEFAULT 0,
+    parent_lesson_id int,    
     primary key (id),
     unique (code, program_id, group_no),
     foreign key (lecturer_id) references users (id) on delete set null,
