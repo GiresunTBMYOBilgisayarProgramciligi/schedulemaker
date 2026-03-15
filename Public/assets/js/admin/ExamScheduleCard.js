@@ -550,34 +550,14 @@ class ExamScheduleCard extends ScheduleCard {
         toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
 
         try {
-            let classroomData = null, programData = null, lecturerData = null;
+            let programData = null
 
             switch (this.owner_type) {
                 case 'user': {
-                    const [classroomRes, programRes] = await Promise.all([
-                        fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                    const [programRes] = await Promise.all([
                         fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
                     ]);
-                    classroomData = await classroomRes.json();
                     programData = await programRes.json();
-                    break;
-                }
-                case 'program': {
-                    const [classroomRes, lecturerRes] = await Promise.all([
-                        fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
-                    ]);
-                    classroomData = await classroomRes.json();
-                    lecturerData = await lecturerRes.json();
-                    break;
-                }
-                case 'classroom': {
-                    const [programRes, lecturerRes] = await Promise.all([
-                        fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
-                    ]);
-                    programData = await programRes.json();
-                    lecturerData = await lecturerRes.json();
                     break;
                 }
             }
@@ -607,11 +587,6 @@ class ExamScheduleCard extends ScheduleCard {
                 });
             };
 
-            if (classroomData && classroomData.status !== "error") applyCells(classroomData.unavailableCells, ["slot-unavailable", "unavailable-for-classroom"]);
-            if (lecturerData && lecturerData.status !== "error") {
-                applyCells(lecturerData.unavailableCells, ["slot-unavailable", "unavailable-for-lecturer"]);
-                applyCells(lecturerData.preferredCells, ["slot-preferred"]);
-            }
             if (programData && programData.status !== "error") applyCells(programData.unavailableCells, ["slot-unavailable", "unavailable-for-program"]);
 
             return true;
