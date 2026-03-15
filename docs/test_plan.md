@@ -46,8 +46,32 @@ Proje için üç katmanlı bir test yaklaşımı benimsenecektir:
 3. **Otomatikleştirme**:
     - Git push öncesi testlerin çalışması sağlanır (İsteğe bağlı).
 
-## 5. Doğrulama
+## 6. İleri Seviye Test Teknikleri ve Varyasyonlar
 
-Testler çalıştırıldığında:
-- Tüm Unit testler %100 başarıyla geçmelidir.
-- Kod kapsama (Code Coverage) oranı kritik servisler için %80 üzerine çıkarılmalıdır.
+Testlerin kalitesini ve kapsama alanını artırmak için aşağıdaki yaklaşımlar uygulanmalıdır:
+
+### 6.1. Data Providers (Veri Sağlayıcılar)
+Aynı mantığı farklı veri setleriyle test etmek için kullanılır.
+- **Kullanım**: Bir metodun farklı girdi kombinasyonları (doğru format, yanlış format, sınır değerler) için nasıl davrandığını tek bir test metoduyla kontrol edin.
+- **Örnek**: `TimeHelper::isOverlapping` için çakışan, çakışmayan, ucu ucuna değen tüm senaryoları bir dizi içinde tanımlayın.
+
+### 6.2. Sınır Değer Analizi (Edge Cases)
+Hataların en sık görüldüğü uç noktaları hedefleyin:
+- **Zaman**: Günün başlangıcı (00:00) ve bitişi (23:59).
+- **Miktar**: 0 saatlik ders, hoca sınırı tam dolmuş hoca, boş sınıf mevcudu.
+- **Veri Tipleri**: Beklenen dizi yerine null veya boş string gelmesi durumu.
+
+### 6.3. Negatif Testler
+Sistemin sadece doğru veriyi işlemesi değil, yanlış veriyi de güvenli bir şekilde reddetmesi gerekir:
+- Geçersiz bir email ile kullanıcı kaydı denemesi.
+- Bitiş saati başlangıç saatinden önce olan bir ders öğesi kaydı.
+- Beklenen hata fırlatıldığının (`expectException`) doğrulanması.
+
+### 6.4. Entegrasyon Varyasyonları (Senaryo Bazlı)
+Gerçek dünya senaryolarını simüle edin:
+- **Çakışma Senaryosu**: Aynı hocaya aynı saatte iki farklı programda ders atanması durumunda sistemin engelleme yapması.
+- **Kapasite Senaryosu**: Laboratuvar kapasitesinin üzerinde öğrenci içeren bir dersin atanması durumunda uyarı verilmesi.
+- **Transaction Testi**: Çoklu kayıt sırasında bir adımda hata oluştuğunda, o ana kadar yapılmış tüm veritabanı işlemlerinin geri alınması (Rollback).
+
+### 6.5. Mocking (Taklit Etme)
+Ağır veya dışa bağımlı işlemler (E-posta gönderimi, dış API çağrıları) `createMock()` kullanılarak taklit edilmeli, böylece testler hızlı ve izole kalmalıdır.
