@@ -166,7 +166,9 @@ class AvailabilityService extends BaseService
             $lessonFilters = array_merge($lessonFilters, [
                 'lecturer_id' => $schedule->owner_id,
             ]);
-            unset($lessonFilters["!type"]); // staj derslerini dahil et
+            if($schedule->type == 'lesson') {
+                unset($lessonFilters["!type"]); // staj derslerini dahil et
+            }
         } elseif ($schedule->owner_type == "lesson") {
             $lessonFilters = array_merge($lessonFilters, [
                 'id' => $schedule->owner_id,
