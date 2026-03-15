@@ -2,7 +2,7 @@
 
 namespace App\Services\Helpers;
 
-use function getSettingValue;
+use function App\Helpers\getSettingValue;
 
 /**
  * Timeline yönetimi için helper service
@@ -212,13 +212,6 @@ class TimelineManager
         ];
     }
 
-    /**
-     * Verilen gün için boş zaman aralıklarını bulur
-     * 
-     * @param array $items Gün içindeki schedule items
-     * @param string $scheduleType Schedule tipi ('lesson', 'midterm-exam', 'final-exam', 'makeup-exam')
-     * @return array Boş aralıklar [['start' => '10:00', 'end' => '11:00'], ...]
-     */
     public function findFreeSlots(array $items, string $scheduleType = 'lesson'): array
     {
         // Sistem ayarlarından gün başlangıç ve bitiş saatlerini al
@@ -289,5 +282,43 @@ class TimelineManager
         }
 
         return $freeSlots;
+    }
+
+    /**
+     * Ayarlara göre zaman dilimlerini (slots) oluşturur.
+     * 
+     * @param string $scheduleType Program tipi ('lesson', 'midterm-exam', etc.)
+     * @return array Zaman dilimleri [['start' => '08:00', 'end' => '08:50'], ...]
+     */
+    public function getTimeSlots(string $scheduleType): array
+    {
+        $group = in_array($scheduleType, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        
+        $dayStart = getSettingValue('day_start', $group, '08:00');
+        $dayEnd = getSettingValue('day_end', $group, '17:00');
+        $duration = (int) getSettingValue('duration', $group, $group === 'exam' ? 30 : 50);
+        $break = (int) getSettingValue('break', $group, $group === 'exam' ? 0 : 10);
+
+        $slots = [];
+        $start = new \DateTime($dayStart);
+        $end = new \DateTime($dayEnd);
+        
+        while ($start < $end) {
+            $slotStart = clone $start;
+            $slotEnd = (clone $start)->modify("+$duration minutes");
+            
+            if ($slotEnd > $end) {
+                break;
+            }
+
+            $slots[] = [
+                'start' => $slotStart->format('H:i'), 
+                'end' => $slotEnd->format('H:i')
+            ];
+            
+            $start = (clone $slotEnd)->modify("+$break minutes");
+        }
+        
+        return $slots;
     }
 }

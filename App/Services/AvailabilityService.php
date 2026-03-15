@@ -11,6 +11,7 @@ use App\Models\ScheduleItem;
 use DateTime;
 use Exception;
 use App\Helpers\TimeHelper;
+use App\Services\Helpers\TimelineManager;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -21,6 +22,14 @@ use function App\Helpers\getSettingValue;
  */
 class AvailabilityService extends BaseService
 {
+    private TimelineManager $timelineManager;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->timelineManager = new TimelineManager();
+    }
+
     /**
      * Belirtilen filtrelere uygun dersliklerin listesini döndürür.
      *
@@ -340,7 +349,7 @@ class AvailabilityService extends BaseService
             ?: throw new Exception("Ders bulunamadı");
         $lecturer = $lesson->lecturer;
 
-        $slots = $this->getTimeSlots($filters['type']);
+        $slots = $this->timelineManager->getTimeSlots($filters['type']);
         $unavailableCells = [];
         $preferredCells = [];
 
@@ -391,7 +400,7 @@ class AvailabilityService extends BaseService
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
 
-        $slots = $this->getTimeSlots($filters['type']);
+        $slots = $this->timelineManager->getTimeSlots($filters['type']);
         $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
 
@@ -469,7 +478,7 @@ class AvailabilityService extends BaseService
         ])->with(['program', 'childLessons'])->first() ?: throw new Exception("Ders bulunamadı");
         $program = $lesson->program;
 
-        $slots = $this->getTimeSlots($filters['type']);
+        $slots = $this->timelineManager->getTimeSlots($filters['type']);
         $unavailableCells = [];
 
         $schedules = (new Schedule())->get()->where([
@@ -535,26 +544,4 @@ class AvailabilityService extends BaseService
 
         return ["unavailableCells" => $unavailableCells];
     }
-
-    /**
-     * Ayarlara göre zaman dilimlerini (slots) oluşturur.
-     */
-    private function getTimeSlots(string $scheduleType): array
-    {
-        $type = in_array($scheduleType, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
-        $duration = (int) getSettingValue('duration', $type, $type === 'exam' ? 30 : 50);
-        $break = (int) getSettingValue('break', $type, $type === 'exam' ? 0 : 10);
-
-        $slots = [];
-        $start = new DateTime('08:00');
-        $end = new DateTime('17:00');
-        while ($start < $end) {
-            $slotStart = clone $start;
-            $slotEnd = (clone $start)->modify("+$duration minutes");
-            $slots[] = ['start' => $slotStart->format('H:i'), 'end' => $slotEnd->format('H:i')];
-            $start = (clone $slotEnd)->modify("+$break minutes");
-        }
-        return $slots;
-    }
-
 }
