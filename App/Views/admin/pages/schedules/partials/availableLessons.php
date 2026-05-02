@@ -39,10 +39,19 @@ use App\Core\Log;
             /** @var Lesson $lesson */
             $status = $lesson->getScheduleCSSClass();
         }
-        $lessonName = $isDummy ? $lesson->name :$lesson->getFullName(addGroup:true);
-        if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
-            $lessonName = $lesson->getFullName(addProgram:true, addClassNumber:true,addGroup:true);
+        //Sınav programında sadece dersin adını yaz
+        if($schedule->type == 'lesson'){
+            $lessonName = $isDummy ? $lesson->name : $lesson->getFullName(addGroup:true);
+            if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
+                $lessonName = $lesson->getFullName(addProgram:true, addClassNumber:true,addGroup:true);
+            }
+        }else{
+            $lessonName = $isDummy ? $lesson->name : $lesson->getFullName();
+            if (!$isDummy && in_array($schedule->owner_type, ['user', 'classroom'])) {
+                $lessonName = $lesson->getFullName(addProgram:true, addClassNumber:true);
+            }
         }
+        
 
         $infoText = "";
         if ($isDummy) {
