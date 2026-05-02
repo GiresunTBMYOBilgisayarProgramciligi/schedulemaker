@@ -65,7 +65,7 @@ use App\Core\Log;
             //Sağ-tık menü için isimler
             'data-program-name' => $isDummy ? null :$lesson->program?->name,
             'data-lecturer-name' => $isDummy ? null :$lesson->lecturer?->getFullName(),
-            'data-lesson-name' => $isDummy ? null :$lesson->name,
+            'data-lesson-name' => $isDummy ? null :$lesson->getFullName(addCode:true),
         ];
 
         if ($isDummy) {
