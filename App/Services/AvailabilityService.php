@@ -239,15 +239,16 @@ class AvailabilityService extends BaseService
 
             // Birden fazla grup varsa birleştir
             $representative = $groupLessons[0];
-            $groupNumbers = [];
+            $groupLetters = [];
 
             foreach ($groupLessons as $l) {
-                $groupNumbers[] = $l->group_no;
+                // Grup numarasını harfe çevir: chr(64+1)='A', chr(64+2)='B', ..., chr(64+26)='Z'
+                $groupLetters[] = chr(64 + $l->group_no);
             }
 
-            sort($groupNumbers);
+            sort($groupLetters);
             // İsim güncelleme (Sadece gösterim amaçlı)
-            $representative->name .= " (Grup " . implode(", ", $groupNumbers) . ")";
+            $representative->name .= " (Grup " . implode(", ", $groupLetters) . ")";
 
             $result[] = $representative;
         }
