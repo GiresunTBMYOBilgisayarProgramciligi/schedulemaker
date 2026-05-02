@@ -223,22 +223,6 @@ class AvailabilityService extends BaseService
         $result = [];
 
         foreach ($lessons as $lesson) {
-            // Çocuk dersleri varsa, hangi programlara ait olduklarını ders adına ekle (gösterim amaçlı).
-            // NOT: Ana dersin remaining_size'ı IsScheduleComplete() tarafından getLinkedLessonIds()
-            // üzerinden hesaplandığından çocuk dersler zaten dahildir — ayrıca size eklenmez.
-            if (!empty($lesson->childLessons)) {
-                $mergedPrograms = [];
-                foreach ($lesson->childLessons as $childLesson) {
-                    if ($childLesson->program) {
-                        $mergedPrograms[] = $childLesson->program->name;
-                    }
-                }
-                // Birleştirilen programları ders adına ekle (gösterim amaçlı)
-                if (!empty($mergedPrograms)) {
-                    $lesson->name .= ' [' . implode(', ', $mergedPrograms) . ']';
-                }
-            }
-
             // group_no > 0 olanları kod bazlı grupla
             if ($lesson->group_no > 0) {
                 $grouped[$lesson->code][] = $lesson;
