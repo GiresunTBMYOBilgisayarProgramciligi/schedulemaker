@@ -102,6 +102,23 @@ use App\Core\Log;
                         <?= $infoText ?>
                     </span>
                 </div>
+                <span class="child-lessons">
+                    <?php
+                    $childLessonNames = [];
+                    if (!empty($lesson->childLessons)) {
+                        echo "<small>Bağlı Dersler</small> <br>";
+                        foreach ($lesson->childLessons as $child) {
+                            if ($child->program) {
+                                $childLessonNames[] = $child->getFullName(addGroup: true,addProgram: true,addClassNumber: true);
+                            }
+                        }
+                    }
+                    // Unique ve virgülle birleştir
+                    $childLessonNamesStr = implode('<br>', array_unique($childLessonNames));
+
+                    echo $childLessonNamesStr ? " ($childLessonNamesStr)" : "";
+                    ?>
+                </span>
             </div>
         </div>
     <?php endforeach; ?>

@@ -134,22 +134,23 @@ use function App\Helpers\getSettingValue;
                                                             
                                                         </div>
                                                         <span class="child-lessons">
-                                                                <?php
-                                                                $childLessonNames = [];
-                                                                
-                                                                if (!empty($slotData->lesson->childLessons)) {
-                                                                    foreach ($slotData->lesson->childLessons as $child) {
-                                                                        if ($child->program) {
-                                                                            $childLessonNames[] = $child->getFullName(addGroup: true,addProgram: true,addClassNumber: true);
-                                                                        }
+                                                            <?php
+                                                            $childLessonNames = [];
+                                                            
+                                                            if (!empty($slotData->lesson->childLessons)) {
+                                                                echo "<small>Bağlı Dersler</small> <br>";
+                                                                foreach ($slotData->lesson->childLessons as $child) {
+                                                                    if ($child->program) {
+                                                                        $childLessonNames[] = $child->getFullName(addGroup: true,addProgram: true,addClassNumber: true);
                                                                     }
                                                                 }
-                                                                // Unique ve virgülle birleştir
-                                                                $childLessonNamesStr = implode('<br>', array_unique($childLessonNames));
+                                                            }
+                                                            // Unique ve virgülle birleştir
+                                                            $childLessonNamesStr = implode('<br>', array_unique($childLessonNames));
 
-                                                                echo $childLessonNamesStr ? " ($childLessonNamesStr)" : "";
-                                                                ?>
-                                                            </span>
+                                                            echo $childLessonNamesStr ? " ($childLessonNamesStr)" : "";
+                                                            ?>
+                                                        </span>
                                                     </div>
                                                 <?php endforeach ?>
                                             <?php else: ?>
