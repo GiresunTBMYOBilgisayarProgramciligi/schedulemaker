@@ -508,6 +508,18 @@ class Lesson extends Model
 
         $this->remaining_size = $targetSize - $this->placed_size;
 
+        // Sınav programı: ignore_remaining bayrağı kontrolü
+        // Kullanıcı kapasite farkını kabul ettiyse, kalan mevcudu yok sayarak programı tamamlanmış kabul et
+        if ($isExam && $this->remaining_size > 0) {
+            foreach ($items as $item) {
+                $detail = is_string($item->detail) ? json_decode($item->detail, true) : $item->detail;
+                if (isset($detail['ignore_remaining']) && $detail['ignore_remaining'] === true) {
+                    $this->remaining_size = 0;
+                    break;
+                }
+            }
+        }
+
         return $this->remaining_size <= 0;
     }
 

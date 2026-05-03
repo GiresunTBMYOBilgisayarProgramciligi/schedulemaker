@@ -52,3 +52,11 @@ Aynı programa (`program_id`) ve döneme (`semester_no`) ait, ders kodu (`code`)
 
 ## 7. Sibling (Kardeş) Item İlişkisi
 Bir sınav item'ı silindiğinde veya taşındığında, ona bağlı olan tüm gözetmen ve derslik kayıtları da (`findExamSiblingItems` üzerinden) bulunur. `program_item_id` referans zinciri sayesinde, ana sınav silindiğinde tüm atamalar otomatik olarak temizlenir.
+
+## 8. Kalan Mevcudu Yok Sayma (ignore_remaining)
+Sınav programında bir dersin mevcudu ile seçilen derslik kapasitesi arasında küçük farklar olabilir (örn: 36 öğrenci, 35 kişilik derslik). Bu durumda:
+
+- Sınav atama modalında derslik kapasitesi ders mevcudundan az olduğunda "Kalan mevcudu yok say" seçeneği görünür.
+- Kullanıcı bu seçeneği işaretlediğinde, kaydedilen schedule item'ın `detail` alanına `ignore_remaining: true` bayrağı eklenir.
+- `Lesson::IsScheduleComplete()` metodu, `remaining_size > 0` olduğunda item'ların detail alanında bu bayrağı arar. Bayrak bulunursa `remaining_size` sıfırlanır ve ders tamamlanmış kabul edilir.
+- Bu sayede küçük kapasite farkları nedeniyle ders "tamamlanmamış" olarak listede kalmaz.

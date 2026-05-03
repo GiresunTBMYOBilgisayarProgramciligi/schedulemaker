@@ -133,17 +133,24 @@ class ExamScheduleCard extends ScheduleCard {
                     <div class="col-md-6">
                         <div class="alert alert-info py-2 px-3 mb-0">
                            <small><strong>Ders Mevcudu:</strong> <span id="lesson-size">${lessonSize}</span></small><br>
-                           <small><strong>Toplam Kapasite:</strong> <span id="total-capacity">0</span></small>
+                           <small><strong>Toplam Kapasite:</strong> <span id="total-capacity">0</span></small><br>
+                           <small class="text-danger d-none" id="remaining-info"><strong>Kalan Mevcut:</strong> <span id="remaining-count">0</span></small>
                         </div>
                     </div>
                 </div>
                 <div id="classroom-observer-rows" class="mb-2">
                     <!-- Satırlar buraya gelecek -->
                 </div>
-                <div>
+                <div class="d-flex justify-content-between align-items-center">
                     <button type="button" class="btn btn-sm btn-outline-primary" id="add-row-btn">
                         <i class="bi bi-plus-circle me-1"></i>Yeni Derslik/Gözetmen Ekle
                     </button>
+                    <div class="form-check d-none" id="ignore-remaining-wrapper">
+                        <input class="form-check-input" type="checkbox" id="ignore-remaining-check">
+                        <label class="form-check-label small text-warning" for="ignore-remaining-check">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Kalan mevcudu yok say
+                        </label>
+                    </div>
                 </div>
             </form>`;
 
@@ -154,6 +161,10 @@ class ExamScheduleCard extends ScheduleCard {
             let addRowBtn = scheduleModal.body.querySelector("#add-row-btn");
             let hoursInput = scheduleModal.body.querySelector("#selected_hours");
             let totalCapacitySpan = scheduleModal.body.querySelector("#total-capacity");
+            let remainingInfo = scheduleModal.body.querySelector("#remaining-info");
+            let remainingCount = scheduleModal.body.querySelector("#remaining-count");
+            let ignoreRemainingWrapper = scheduleModal.body.querySelector("#ignore-remaining-wrapper");
+            let ignoreRemainingCheck = scheduleModal.body.querySelector("#ignore-remaining-check");
 
             const updateCapacity = () => {
                 let total = 0;
@@ -164,10 +175,17 @@ class ExamScheduleCard extends ScheduleCard {
                     }
                 });
                 totalCapacitySpan.innerText = total;
+                let remaining = lessonSize - total;
                 if (total < lessonSize) {
                     totalCapacitySpan.classList.add("text-danger");
+                    remainingInfo.classList.remove("d-none");
+                    remainingCount.innerText = remaining;
+                    ignoreRemainingWrapper.classList.remove("d-none");
                 } else {
                     totalCapacitySpan.classList.remove("text-danger");
+                    remainingInfo.classList.add("d-none");
+                    ignoreRemainingWrapper.classList.add("d-none");
+                    ignoreRemainingCheck.checked = false;
                 }
             };
 
@@ -288,7 +306,10 @@ class ExamScheduleCard extends ScheduleCard {
                 }
 
                 if (parseInt(totalCapacitySpan.innerText) < lessonSize) {
-                    if (!confirm("Seçilen dersliklerin kapasitesi ders mevcudundan az. Devam etmek istiyor musunuz?")) {
+                    if (ignoreRemainingCheck.checked) {
+                        // Kalan mevcudu yok say: detail'e ignore_remaining ekle
+                        selectedData.ignore_remaining = true;
+                    } else if (!confirm("Seçilen dersliklerin kapasitesi ders mevcudundan az. Devam etmek istiyor musunuz?")) {
                         return;
                     }
                 }
@@ -451,7 +472,7 @@ class ExamScheduleCard extends ScheduleCard {
                 "classroom_id": classroom?.id || null
             }],
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
-            detail: input.assignments ? { assignments: input.assignments } : null
+            detail: input.assignments ? { assignments: input.assignments, ...(input.ignore_remaining ? { ignore_remaining: true } : {}) } : null
         }];
 
         const extractDay = (val) => {
