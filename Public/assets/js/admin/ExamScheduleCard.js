@@ -147,8 +147,8 @@ class ExamScheduleCard extends ScheduleCard {
                     </button>
                     <div class="form-check d-none" id="ignore-remaining-wrapper">
                         <input class="form-check-input" type="checkbox" id="ignore-remaining-check">
-                        <label class="form-check-label small text-warning" for="ignore-remaining-check">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Kalan mevcudu yok say
+                        <label class="form-check-label small" for="ignore-remaining-check">
+                            <i class="bi bi-exclamation-triangle me-1 text-danger"></i>Kalan mevcudu yok say
                         </label>
                     </div>
                 </div>
