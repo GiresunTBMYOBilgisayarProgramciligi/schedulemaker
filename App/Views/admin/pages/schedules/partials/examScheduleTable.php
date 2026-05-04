@@ -60,7 +60,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 <td class="<?= $dropZone ?>" rowspan="<?= $rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
-                                    data-day-index="<?= $dayIndex ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                    data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
 
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container h-100">
@@ -186,7 +186,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 </td>
                             <?php else: ?>
                                 <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= $dayIndex ?>">
+                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                     <div class="empty-slot"></div>
                                 </td>
                             <?php endif; ?>

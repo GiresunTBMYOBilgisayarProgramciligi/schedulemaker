@@ -7,7 +7,7 @@ Sürüklenen ders kartı bir tablo hücresine veya tekrar listeye bırakıldığ
 
 ## Mantık (Algoritma)
 1.  **Hazırlık**: Varsayılan davranışları engeller ve sürükleme stilini (`.dragging`) kaldırır.
-2.  **Hedef Belirleme**: Bırakılan yer bir tablo hücresi (`<td>`) ise:
+2.  **Hedef Belirleme**: Bırakılan yer bir tablo hücresi (`<td>`) ise hücrenin `dataset.dayIndex` attribute'undan gün bilgisini, `dataset.startTime`'dan saat bilgisini alır:
     - Hücreden `day` ve `time` (saat) bilgilerini alır.
     - **Çakışma Kontrolü**: `checkCrash()` metodunu çağırarak dersin oraya sığıp sığmadığını, hoca/derslik çakışması olup olmadığını denetler.
     - **İşlem Tipi**:

@@ -349,13 +349,7 @@ class ExamScheduleCard extends ScheduleCard {
                 }
 
                 // Sadece ilgili güne ait hücreyi bul
-                const extractDay = (val) => {
-                    if (val === undefined || val === null) return -1;
-                    const match = val.toString().match(/\d+/);
-                    return match ? parseInt(match[0]) : -1;
-                };
-
-                let cell = Array.from(row.cells).find(c => extractDay(c.dataset.dayIndex) === targetDayIndex);
+                let cell = Array.from(row.cells).find(c => parseInt(c.dataset.dayIndex) === targetDayIndex);
 
                 if (!cell) {
                     console.error("checkCrash: Cell not found for targetDayIndex", targetDayIndex, "in row", startRowIndex + i, ". Available dayIndexes:", Array.from(row.cells).map(c => c.dataset.dayIndex));
@@ -419,8 +413,7 @@ class ExamScheduleCard extends ScheduleCard {
         if (itemData) {
             const cell = element.closest('td');
             if (cell && cell.dataset.dayIndex !== undefined) {
-                const match = cell.dataset.dayIndex.toString().match(/\d+/);
-                itemData.day_index = match ? parseInt(match[0]) : itemData.day_index;
+                itemData.day_index = parseInt(cell.dataset.dayIndex);
             }
 
             // Sınav programı için veri süzme (Program/Ders programında hoca ve derslik null olmalı)
@@ -474,13 +467,6 @@ class ExamScheduleCard extends ScheduleCard {
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
             detail: input.assignments ? { assignments: input.assignments, ...(input.ignore_remaining ? { ignore_remaining: true } : {}) } : null
         }];
-
-        const extractDay = (val) => {
-            if (val === undefined || val === null) return -1;
-            const match = val.toString().match(/\d+/);
-            return match ? parseInt(match[0]) : -1;
-        };
-
         const targetDayIndex = parseInt(this.draggedLesson.end_element.dataset.dayIndex);
         const targetTable = this.draggedLesson.end_element.closest('table');
         const startRowIndex = this.draggedLesson.end_element.closest('tr').rowIndex;
@@ -496,7 +482,7 @@ class ExamScheduleCard extends ScheduleCard {
                 if (rowIndex >= targetTable.rows.length) break;
 
                 let row = targetTable.rows[rowIndex];
-                let cell = Array.from(row.cells).find(c => extractDay(c.dataset.dayIndex) === targetDayIndex);
+                let cell = Array.from(row.cells).find(c => parseInt(c.dataset.dayIndex) === targetDayIndex);
 
                 if (cell && (cell.classList.contains("drop-zone") || cell === this.draggedLesson.end_element) && !cell.querySelector('.slot-unavailable')) {
                     if (!currentItem) {
@@ -585,12 +571,6 @@ class ExamScheduleCard extends ScheduleCard {
 
             toast.closeToast();
 
-            const extractDay = (val) => {
-                if (val === undefined || val === null) return -1;
-                const match = val.toString().match(/\d+/);
-                return match ? parseInt(match[0]) : -1;
-            };
-
             const applyCells = (map, classes = []) => {
                 if (!map) return;
                 Object.keys(map).forEach(rowKey => {
@@ -598,7 +578,7 @@ class ExamScheduleCard extends ScheduleCard {
                     if (!isNaN(r) && this.table.rows[r]) {
                         Object.keys(map[rowKey]).forEach(colKey => {
                             const targetDay = parseInt(colKey, 10) - 1;
-                            const cell = Array.from(this.table.rows[r].cells).find(c => extractDay(c.dataset.dayIndex) === targetDay);
+                            const cell = Array.from(this.table.rows[r].cells).find(c => parseInt(c.dataset.dayIndex) === targetDay);
                             if (cell) {
                                 const emptySlot = cell.querySelector('.empty-slot');
                                 if (emptySlot) emptySlot.classList.add(...classes);

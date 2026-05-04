@@ -218,12 +218,12 @@ class SingleScheduleHandler {
             const cell = slot.closest('td');
             if (!cell) return;
 
-            const cellIndex = cell.cellIndex; // Günü temsil eder
+            const dayIdx = cell.dataset.dayIndex;
             const table = container.querySelector('table.schedule-table');
             if (!table) return;
 
             // Aynı GÜN içindeki aynı STATUS'e sahip tüm slotları seç
-            const sameDaySlots = table.querySelectorAll(`tr td:nth-child(${cellIndex + 1}) .empty-slot[data-status="${status}"]`);
+            const sameDaySlots = table.querySelectorAll(`tr td[data-day-index="${dayIdx}"] .empty-slot[data-status="${status}"]`);
 
             sameDaySlots.forEach(s => {
                 const cb = s.querySelector('.lesson-bulk-checkbox');
@@ -296,7 +296,7 @@ class SingleScheduleHandler {
         }
 
         const scheduleId = scheduleCard.dataset.scheduleId;
-        const targetDayIndex = dropZone.cellIndex - 1;
+        const targetDayIndex = parseInt(dropZone.dataset.dayIndex);
         const targetStartTime = dropZone.dataset.startTime;
 
         // 2. Yeni konumları ve verileri hazırla (Bağıl ofsetleri koru)
@@ -390,7 +390,6 @@ class SingleScheduleHandler {
         if (!table) return [];
 
         const scheduleId = this.ScheduleCard.id;
-        const colIndex = dropZone.cellIndex;
         const startRowIndex = dropZone.closest('tr').rowIndex;
         const isDummy = ['preferred', 'unavailable'].includes(lessonData.status);
 
@@ -404,7 +403,7 @@ class SingleScheduleHandler {
             if (rowIndex >= table.rows.length) break;
 
             const row = table.rows[rowIndex];
-            const cell = row.cells[colIndex];
+            const cell = Array.from(row.cells).find(c => c.dataset.dayIndex == dropZone.dataset.dayIndex);
 
             // Hücre uygunluğu: Drop-zone olmalı ve içinde 'unavailable' (öğle arası dahil) olmamalı
             // NOT: createDummySlotHTML içindeki .slot-unavailable sınıfı burada belirleyici
@@ -414,7 +413,7 @@ class SingleScheduleHandler {
                 if (!currentItem) {
                     currentItem = {
                         schedule_id: scheduleId,
-                        day_index: colIndex - 1,
+                        day_index: parseInt(dropZone.dataset.dayIndex),
                         start_time: cell.dataset.startTime,
                         end_time: cell.dataset.endTime,
                         status: lessonData.status,

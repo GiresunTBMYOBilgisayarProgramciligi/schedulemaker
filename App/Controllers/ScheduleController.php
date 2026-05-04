@@ -43,6 +43,10 @@ class ScheduleController extends Controller
         if ($maxDayIndex === null)
             throw new Exception("maxDayIndex belirtilmelidir");
         $emptyWeek = [];
+        /*
+         * todo buradaki eptyweek excel dosyası için day1 ve classroom1 gibi değerler aldığı için index olarak day1 şeklinde tanımlanıyor. ama proje genelinde dayindex int olarak tanımlı. Bu nedenle int dönüştürme yapılıyor
+         * Bu sistem kullanışlı değil. daha iyi bir sistem geliştirilmeli. Excell aktarımı düzenlenmeli
+         */
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
             if ($type == 'excel')

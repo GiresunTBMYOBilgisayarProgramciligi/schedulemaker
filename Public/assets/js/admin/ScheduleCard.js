@@ -232,7 +232,7 @@ class ScheduleCard {
         return {
             id: ds.scheduleItemId,
             schedule_id: this.id,
-            day_index: parseInt(cell.cellIndex - 1),
+            day_index: parseInt(cell.dataset.dayIndex),
             week_index: parseInt(this.table?.dataset?.weekIndex || 0),
             start_time: cell.dataset.startTime,
             end_time: cell.dataset.endTime,
@@ -916,7 +916,7 @@ class ScheduleCard {
                 if (rowIndex >= this.table.rows.length) break;
 
                 let row = this.table.rows[rowIndex];
-                let cell = row.cells[this.draggedLesson.end_element.cellIndex];
+                let cell = Array.from(row.cells).find(c => c.dataset.dayIndex == this.draggedLesson.end_element.dataset.dayIndex);
 
                 if (cell && cell.classList.contains("drop-zone") && !cell.querySelector('.slot-unavailable')) {
                     if (!currentItem) {
@@ -1119,7 +1119,7 @@ class ScheduleCard {
                     }
                 } else {
                     this.draggedLesson.end_element = this.dropZone;
-                    this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+
                     await this.dropTableToTable(true);
                     this.clearSelection();
                     // refresh is handled inside dropTableToTable
@@ -1128,13 +1128,13 @@ class ScheduleCard {
                 this.draggedLesson.end_element = this.dropZone;
                 if (this.draggedLesson.start_element === "list") {
                     if (!isToList) {
-                        this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+
                         await this.dropListToTable();
                     }
                 } else {
                     if (isToList) await this.dropTableToList();
                     else {
-                        this.draggedLesson.end_element.dataset.dayIndex = this.dropZone.cellIndex - 1;
+
                         await this.dropTableToTable();
                     }
                 }

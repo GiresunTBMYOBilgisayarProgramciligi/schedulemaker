@@ -7,7 +7,7 @@ Dersin tabloya yerleştirilmeden önce frontend tarafında mevcut hücreler üze
 
 ## Mantık (Algoritma)
 1.  **Girdi Analizi**: Eklenecek saat sayısını (`selectedHours`) ve (varsa) hedef dersliği alır.
-2.  **Hücre Taraması**: Sürüklenen dersin bırakıldığı hücreden başlayarak, dersin süresi kadar alt satırları (saatleri) kontrol eder.
+2.  **Hücre Taraması**: Sürüklenen dersin bırakıldığı hücreden başlayarak, dersin süresi kadar alt satırları (saatleri) kontrol eder. Hücre, `dataset.dayIndex` attribute'u üzerinden bulunur (rowspan desteği için `cellIndex` yerine `dataset.dayIndex` kullanılır).
 3.  **Hücre Kontrolü**:
     - Satırın sınır dışına çıkıp çıkmadığına bakar.
     - Hücrenin `drop-zone` olup olmadığını ve kısıtlı (`slot-unavailable`) olup olmadığını kontrol eder.

@@ -46,12 +46,12 @@ use function App\Helpers\getSettingValue;
                                 <?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                                 <?= $scheduleRow['slotEndTime']->format('H:i') ?>
                             </td>
-                            <?php foreach ($scheduleRow['days'] as $scheduleItem): ?>
+                            <?php foreach ($scheduleRow['days'] as $dayIndex => $scheduleItem): ?>
                                 <?php if ($scheduleItem):
                                     $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
-                                        data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                        data-schedule-item-id="<?= $scheduleItem->id ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <?php if ($scheduleItem->status === 'group'): ?>
                                             <div class="lesson-group-container">
                                             <?php endif; ?>
@@ -178,7 +178,7 @@ use function App\Helpers\getSettingValue;
                                     </td>
                                 <?php else: ?>
                                     <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                        data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>">
+                                        data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <div class="empty-slot"></div>
                                     </td>
                                 <?php endif; ?>

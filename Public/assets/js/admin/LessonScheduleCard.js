@@ -102,7 +102,7 @@ class LessonScheduleCard extends ScheduleCard {
                     return;
                 }
 
-                let cell = row.cells[this.draggedLesson.end_element.cellIndex];
+                let cell = Array.from(row.cells).find(c => c.dataset.dayIndex == this.draggedLesson.end_element.dataset.dayIndex);
                 if (!cell || !cell.classList.contains("drop-zone") || cell.querySelector('.slot-unavailable')) {
                     if (cell && cell.querySelector('.slot-unavailable')) {
                         new Toast().prepareToast("Dikkat", "Uygun olmayan ders saatleri atlandı.", "info");
