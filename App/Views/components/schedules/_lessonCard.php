@@ -56,7 +56,7 @@ if ($type === 'lesson') {
         <?php endif; ?>
     </span>
 
-    <div class="lesson-meta">
+    <div class="lesson-meta flex-wrap">
         <?php if ($type === 'exam' && isset($scheduleItem->detail['assignments']) && is_array($scheduleItem->detail['assignments'])): ?>
             <div class="lesson-observers-list w-100">
                 <?php foreach ($scheduleItem->detail['assignments'] as $assignment): ?>
@@ -71,16 +71,18 @@ if ($type === 'lesson') {
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <span class="lesson-lecturer">
-                <?= $slotData->lecturer?->getFullName() ?>
-            </span>
-            <span class="lesson-classroom">
-                <?= $slotData->classroom?->name ?>
-            </span>
+            <div class="d-flex justify-content-between w-100">
+                <span class="lesson-lecturer">
+                    <?= $slotData->lecturer?->getFullName() ?>
+                </span>
+                <span class="lesson-classroom">
+                    <?= $slotData->classroom?->name ?>
+                </span>
+            </div>
         <?php endif; ?>
-    </div>
 
-    <?= View::renderComponent('schedules/_childLessons', [
-        'slotData' => $slotData
-    ]) ?>
+        <?= View::renderComponent('schedules/_childLessons', [
+            'slotData' => $slotData
+        ]) ?>
+    </div>
 </div>
