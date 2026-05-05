@@ -131,7 +131,10 @@
         font-weight: bold;
         color: #6c757d;
         background-color: #f8f9fa;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        line-height: 1.4;
     }
 
     /* Ders Hücresi Stilleri */
@@ -169,7 +172,7 @@
 
     .lesson-card.h-100 .lesson-observer-item {
         margin-bottom: 4px;
-        padding: 2px 0;
+        padding: 0 3px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.03);
     }
 
@@ -423,4 +426,57 @@
 
     .toast-body {
         white-space: pre-wrap;
+    }
+
+    /* Öğle Arası Stili */
+    .lunch-break-row {
+        background: linear-gradient(90deg, #f8f9fa 0%, #fff3e0 50%, #f8f9fa 100%);
+    }
+
+    .lunch-break-cell {
+        text-align: center;
+        color: #e65100;
+        font-weight: 600;
+        letter-spacing: 3px;
+        font-size: 0.8rem;
+        padding: 6px 0;
+        position: relative;
+    }
+
+    .lunch-break-cell::before,
+    .lunch-break-cell::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 30%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #ffcc80, transparent);
+    }
+
+    .lunch-break-cell::before {
+        left: 5%;
+    }
+
+    .lunch-break-cell::after {
+        right: 5%;
+    }
+
+    /* Gözetmen Listesi Stili */
+    .lesson-observers-list {
+        max-height: 120px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        padding-right: 4px;
+    }
+
+    .lesson-observer-item {
+        padding: 3px 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.5);
+        margin-bottom: 2px;
+        font-size: 0.78rem;
+    }
+
+    .lesson-observer-item:hover {
+        background: rgba(255, 255, 255, 0.8);
     }

@@ -94,4 +94,25 @@ class View
             throw new Exception("Partial view dosyası bulunamadı: " . $fullPath);
         }
     }
+
+    /**
+     * Ortak bir bileşeni (component) render eder
+     * @param string $componentName Bileşen adı (örn: 'schedules/_lessonCard')
+     * @param array $data Bileşen içerisinde kullanılacak veriler
+     * @return string Render edilen HTML içeriği
+     * @throws Exception
+     */
+    public static function renderComponent(string $componentName, array $data = []): string
+    {
+        $fullPath = $_ENV['VIEWS_PATH'] . '/components/' . $componentName . '.php';
+
+        if (file_exists($fullPath)) {
+            extract($data);
+            ob_start();
+            include $fullPath;
+            return ob_get_clean();
+        } else {
+            throw new Exception("Component view dosyası bulunamadı: " . $fullPath);
+        }
+    }
 }

@@ -1,5 +1,6 @@
 <?php
 use App\Models\Schedule;
+use App\Helpers\ScheduleViewHelper;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
@@ -17,7 +18,8 @@ use function App\Helpers\getSettingValue;
         $dayHeaders = $weekHeaders[$weekIndex] ?? [];
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>">
+        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>"
+               role="grid" aria-label="Ders Programı">
             <thead>
                 <tr>
                     <th class="time-slot">Saat</th>
@@ -30,15 +32,12 @@ use function App\Helpers\getSettingValue;
                 <?php foreach ($scheduleRows as $scheduleRow): ?>
                     <?php if ($scheduleRow['slotStartTime']->format('H:i') === '12:00'): ?>
                         <!-- Öğle Arası -->
-                        <tr style="background-color: #fcfcfc;">
+                        <tr class="lunch-break-row">
                             <td class="time-slot">
                                 <?= $scheduleRow['slotStartTime']->format('H:i') ?> -
                                 <?= $scheduleRow['slotEndTime']->modify('+10 minutes')->format('H:i') ?>
                             </td>
-                            <td colspan="<?= count($dayHeaders) ?>"
-                                style="text-align: center; color: #888; font-weight: bold; letter-spacing: 2px;">ÖĞLE
-                                ARASI
-                            </td>
+                            <td class="lunch-break-cell" colspan="<?= count($dayHeaders) ?>">ÖĞLE ARASI</td>
                         </tr>
                     <?php else: ?>
                         <tr>
@@ -54,122 +53,32 @@ use function App\Helpers\getSettingValue;
                                         data-schedule-item-id="<?= $scheduleItem->id ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <?php if ($scheduleItem->status === 'group'): ?>
                                             <div class="lesson-group-container">
-                                            <?php endif; ?>
+                                        <?php endif; ?>
 
                                             <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                                 <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
                                                     $isChild = !is_null($slotData->lesson->parent_lesson_id);
-                                                    $draggable = "true";
-                                                    if (
-                                                        $isChild or
-                                                        $schedule->academic_year != getSettingValue('academic_year') or
-                                                        $schedule->semester != getSettingValue('semester') or
-                                                        (isset($only_table) && $only_table) or
-                                                        (isset($preference_mode) && $preference_mode)
-                                                    ) {
-                                                        $draggable = "false";
-                                                    }
-                                                    $dataAttrs = [
+                                                    $draggable = ScheduleViewHelper::isDraggable(
+                                                        $slotData,
+                                                        $schedule,
+                                                        isset($only_table) && $only_table,
+                                                        isset($preference_mode) && $preference_mode
+                                                    );
+                                                    echo \App\Core\View::renderComponent('schedules/_lessonCard', [
+                                                        'scheduleItem' => $scheduleItem,
+                                                        'slotData' => $slotData,
+                                                        'schedule' => $schedule,
                                                         'draggable' => $draggable,
-                                                        'class' => "lesson-card " . $slotData->lesson->getScheduleCSSClass(),
-                                                        'data-schedule-item-id' => $scheduleItem->id,
-                                                        'data-group-no' => $slotData->lesson->group_no,
-                                                        'data-lesson-id' => $slotData->lesson->id,
-                                                        'data-lesson-code' => $slotData->lesson->code,
-                                                        'data-lesson-name' => $slotData->lesson->getFullName(addCode:true),
-                                                        'data-size' => $slotData->lesson->size,
-                                                        'data-lecturer-id' => $slotData->lecturer->id,
-                                                        'data-lecturer-name' => $slotData->lecturer->getFullName(),
-                                                        'data-classroom-id' => $slotData->classroom->id,
-                                                        'data-classroom-name' => $slotData->classroom->name,
-                                                        'data-classroom-size' => $slotData->classroom->class_size,
-                                                        'data-classroom-exam-size' => $slotData->classroom->exam_size,
-                                                        'data-status' => $scheduleItem->status,
-                                                    ];
-                                                    if ($schedule->owner_type !== 'program') {
-                                                        $dataAttrs['data-program-id'] = $slotData->lesson->program_id;
-                                                        $dataAttrs['data-program-name'] = $slotData->lesson->program?->name;
-                                                        if (count($slotData->lesson->childLessons) > 0) {
-                                                            foreach ($slotData->lesson->childLessons as $childLesson) {
-                                                                $dataAttrs['data-child-lessons-' . $childLesson->id . '-program-id'] = $childLesson->program_id;
-                                                                $dataAttrs['data-child-lessons-' . $childLesson->id . '-program-name'] = $childLesson->program?->name;
-                                                            }
-                                                        }
-                                                    }
-
-                                                    $attrString = "";
-                                                    foreach ($dataAttrs as $key => $val) {
-                                                        $attrString .= " $key=\"" . htmlspecialchars($val) . "\"";
-                                                    }
-
-                                                    $popoverAttr = "";
-
-                                                    if ($isChild && isset($slotData->lesson->parentLesson)) {
-                                                        $parent = $slotData->lesson->parentLesson;
-                                                        $popoverTitle = "Birleştirilmiş Ders";
-                                                        $popoverContent = "Bu ders " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlı olduğu için düzenlenemez.";
-                                                        $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
-                                                    }
-                                                    ?>
-                                                    <div <?= $attrString ?>                             <?= $popoverAttr ?>>
-                                                        <?php if ((!isset($only_table) or !$only_table) && (!isset($preference_mode) or !$preference_mode)): ?>
-                                                            <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
-                                                        <?php endif; ?>
-                                                        <span class="lesson-name">
-                                                            <?php if ($schedule->owner_type !== 'program'): ?>
-                                                                <?php
-                                                                echo $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true);
-                                                                ?>
-                                                            <?php else: ?>
-                                                                <?= $slotData->lesson->getFullName(addGroup: true) ?>
-                                                            <?php endif; ?>
-                                                        </span>
-                                                        <div class="lesson-meta">
-                                                            <span class="lesson-lecturer">
-                                                                <?= $slotData->lecturer?->getFullName() ?>
-                                                            </span>
-                                                            <span class="lesson-classroom">
-                                                                <?= $slotData->classroom?->name ?>
-                                                            </span>
-                                                            
-                                                        </div>
-                                                        <span class="child-lessons">
-                                                            <?php
-                                                            $childLessonNames = [];
-                                                            
-                                                            if (!empty($slotData->lesson->childLessons)) {
-                                                                echo "<small>Bağlı Dersler</small> <br>";
-                                                                foreach ($slotData->lesson->childLessons as $child) {
-                                                                    if ($child->program) {
-                                                                        $childLessonNames[] = $child->getFullName(addGroup: true,addProgram: true,addClassNumber: true);
-                                                                    }
-                                                                }
-                                                            }
-                                                            // Unique ve virgülle birleştir
-                                                            $childLessonNamesStr = implode('<br>', array_unique($childLessonNames));
-
-                                                            echo $childLessonNamesStr ? " ($childLessonNamesStr)" : "";
-                                                            ?>
-                                                        </span>
-                                                    </div>
-                                                <?php endforeach ?>
+                                                        'type' => 'lesson',
+                                                        'only_table' => $only_table ?? false,
+                                                        'preference_mode' => $preference_mode ?? false
+                                                    ]);
+                                                endforeach; ?>
                                             <?php else: ?>
-                                                <div class="empty-slot dummy <?= $scheduleItem->getSlotCSSClass() ?>"
-                                                    draggable="<?= (isset($preference_mode) && $preference_mode) ? 'true' : 'false' ?>"
-                                                    data-schedule-item-id="<?= $scheduleItem->id ?>" data-status="<?= $scheduleItem->status ?>"
-                                                    data-detail='<?= json_encode($scheduleItem->detail) ?>'>
-                                                    <?php if (isset($preference_mode) && $preference_mode): ?>
-                                                        <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
-                                                    <?php endif; ?>
-                                                    <?php if (is_array($scheduleItem->detail) && array_key_exists('description', $scheduleItem->detail)): ?>
-                                                        <div class="note-icon" data-bs-toggle="popover" data-bs-placement="left"
-                                                            data-bs-trigger="hover"
-                                                            data-bs-content="<?= htmlspecialchars($scheduleItem->detail['description']) ?>"
-                                                            data-bs-original-title="Açıklama">
-                                                            <i class="bi bi-chat-square-text-fill"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </div>
+                                                <?= \App\Core\View::renderComponent('schedules/_emptySlot', [
+                                                    'scheduleItem' => $scheduleItem,
+                                                    'preference_mode' => $preference_mode ?? false
+                                                ]) ?>
                                             <?php endif; ?>
 
                                             <?php if ($scheduleItem->status === 'group'): ?>
