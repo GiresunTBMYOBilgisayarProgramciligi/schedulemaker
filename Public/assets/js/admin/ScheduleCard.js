@@ -109,6 +109,8 @@ class ScheduleCard {
         dragableElements.forEach(element => {
             element.removeEventListener('dragstart', this.dragStartHandler); // prevent duplicate binding
             element.addEventListener('dragstart', this.dragStartHandler.bind(this));
+            element.removeEventListener('dragend', this.dragEndHandler);
+            element.addEventListener('dragend', this.dragEndHandler.bind(this));
         });
 
         dropZones.forEach(element => {
@@ -572,6 +574,7 @@ class ScheduleCard {
         const dragableElements = listClone.querySelectorAll('[draggable="true"]');
         dragableElements.forEach(element => {
             element.addEventListener('dragstart', this.dragStartHandler.bind(this));
+            element.addEventListener('dragend', this.dragEndHandler.bind(this));
         });
 
         if (listClone.classList.contains('drop-zone')) {
@@ -1057,10 +1060,12 @@ class ScheduleCard {
     dragStartHandler(event) {
         console.debug("ScheduleCard.dragStartHandler", event);
         this.isDragging = true;
+        this.card.classList.add('is-dragging');
         const lessonElement = event.target.closest(".lesson-card");
         if (!lessonElement) return;
 
         this.setDraggedLesson(lessonElement, event);
+        this.setEmptySlotPlaceholders();
 
         if (this.selectedLessonElements.size > 0 && this.selectedLessonElements.has(lessonElement)) {
             event.dataTransfer.setData("text/plain", JSON.stringify({ type: 'bulk', ids: Array.from(this.selectedScheduleItemIds) }));
@@ -1151,6 +1156,43 @@ class ScheduleCard {
     dragOverHandler(event) {
         event.preventDefault();
         event.dataTransfer.effectAllowed = "move";
+    }
+
+    dragEndHandler(event) {
+        this.isDragging = false;
+        this.card.classList.remove('is-dragging');
+        this.clearCells();
+        if (this.removeLessonDropZone) {
+            this.removeLessonDropZone.style.border = "";
+            const tooltip = bootstrap.Tooltip.getInstance(this.removeLessonDropZone);
+            if (tooltip) tooltip.hide();
+        }
+    }
+
+    setEmptySlotPlaceholders() {
+        const dropZones = this.table.querySelectorAll('td.drop-zone');
+        const headers = this.table.querySelectorAll('thead th');
+        
+        dropZones.forEach(td => {
+            const dayIndex = parseInt(td.dataset.dayIndex);
+            let dayText = "";
+            const headerCell = headers[dayIndex + 1];
+            if (headerCell) {
+                // innerText kullanarak <br> etiketlerinin ve görsel boşlukların yeni satır (\n) olarak alınmasını sağlıyoruz
+                dayText = headerCell.innerText.trim();
+            }
+            
+            const startTime = td.dataset.startTime || "";
+            const endTime = td.dataset.endTime || "";
+            
+            // Gün/Tarih bilgisinin altına saati ekliyoruz
+            const placeholderText = `${dayText}\n${startTime} - ${endTime}`;
+            
+            const emptySlot = td.querySelector('.empty-slot');
+            if (emptySlot) {
+                emptySlot.setAttribute('data-placeholder', placeholderText);
+            }
+        });
     }
 
     async dropListToTable() {
