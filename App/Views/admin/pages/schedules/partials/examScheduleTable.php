@@ -21,8 +21,8 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
         $totalRows = count($scheduleRows);
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>"
-               role="grid" aria-label="Sınav Programı - Hafta <?= $weekIndex + 1 ?>">
+        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>" role="grid"
+            aria-label="Sınav Programı - Hafta <?= $weekIndex + 1 ?>">
             <thead>
                 <tr>
                     <th class="time-slot">Saat</th>
@@ -63,44 +63,46 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 <td class="<?= $dropZone ?>" rowspan="<?= $rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
-                                    data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>" data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                    data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>"
+                                    data-schedule-item-id="<?= $scheduleItem->id ?>">
 
                                     <?php if ($scheduleItem->status === 'group'): ?>
                                         <div class="lesson-group-container h-100">
-                                    <?php endif; ?>
+                                        <?php endif; ?>
 
-                                    <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
-                                        <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
-                                            $draggable = ScheduleViewHelper::isDraggable(
-                                                $slotData,
-                                                $schedule,
-                                                isset($only_table) && $only_table,
-                                                isset($preference_mode) && $preference_mode
-                                            );
-                                            echo \App\Core\View::renderComponent('schedules/_lessonCard', [
+                                        <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
+                                            <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                                $draggable = ScheduleViewHelper::isDraggable(
+                                                    $slotData,
+                                                    $schedule,
+                                                    isset($only_table) && $only_table,
+                                                    isset($preference_mode) && $preference_mode
+                                                );
+                                                echo \App\Core\View::renderComponent('schedules/_lessonCard', [
+                                                    'scheduleItem' => $scheduleItem,
+                                                    'slotData' => $slotData,
+                                                    'schedule' => $schedule,
+                                                    'draggable' => $draggable,
+                                                    'type' => 'exam',
+                                                    'only_table' => $only_table ?? false,
+                                                    'preference_mode' => $preference_mode ?? false
+                                                ]);
+                                            endforeach; ?>
+                                        <?php else: ?>
+                                            <?= \App\Core\View::renderComponent('schedules/_emptySlotDummy', [
                                                 'scheduleItem' => $scheduleItem,
-                                                'slotData' => $slotData,
-                                                'schedule' => $schedule,
-                                                'draggable' => $draggable,
-                                                'type' => 'exam',
-                                                'only_table' => $only_table ?? false,
                                                 'preference_mode' => $preference_mode ?? false
-                                            ]);
-                                        endforeach; ?>
-                                    <?php else: ?>
-                                        <?= \App\Core\View::renderComponent('schedules/_emptySlot', [
-                                            'scheduleItem' => $scheduleItem,
-                                            'preference_mode' => $preference_mode ?? false
-                                        ]) ?>
-                                    <?php endif; ?>
+                                            ]) ?>
+                                        <?php endif; ?>
 
-                                    <?php if ($scheduleItem->status === 'group'): ?>
-                                    </div>
+                                        <?php if ($scheduleItem->status === 'group'): ?>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             <?php else: ?>
                                 <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
+                                    data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
+                                    data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                     <div class="empty-slot"></div>
                                 </td>
                             <?php endif; ?>

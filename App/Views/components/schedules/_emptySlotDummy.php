@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Boş slot partial'ı
+ * Boş Dummy slot partial'ı Tercih edilen yada uygun olmayan derslerde kullanılır.
  *
  * Hem ders hem sınav programı tablolarında ortak kullanılır.
  * İçi boş olan ve status'e göre CSS sınıfı alan slotları render eder.

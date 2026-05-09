@@ -18,8 +18,8 @@ use function App\Helpers\getSettingValue;
         $dayHeaders = $weekHeaders[$weekIndex] ?? [];
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>"
-               role="grid" aria-label="Ders Programı">
+        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>" role="grid"
+            aria-label="Ders Programı">
             <thead>
                 <tr>
                     <th class="time-slot">Saat</th>
@@ -50,10 +50,11 @@ use function App\Helpers\getSettingValue;
                                     $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
-                                        data-schedule-item-id="<?= $scheduleItem->id ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
+                                        data-schedule-item-id="<?= $scheduleItem->id ?>"
+                                        data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <?php if ($scheduleItem->status === 'group'): ?>
                                             <div class="lesson-group-container">
-                                        <?php endif; ?>
+                                            <?php endif; ?>
 
                                             <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                                 <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
@@ -75,7 +76,7 @@ use function App\Helpers\getSettingValue;
                                                     ]);
                                                 endforeach; ?>
                                             <?php else: ?>
-                                                <?= \App\Core\View::renderComponent('schedules/_emptySlot', [
+                                                <?= \App\Core\View::renderComponent('schedules/_emptySlotDummy', [
                                                     'scheduleItem' => $scheduleItem,
                                                     'preference_mode' => $preference_mode ?? false
                                                 ]) ?>
@@ -87,7 +88,8 @@ use function App\Helpers\getSettingValue;
                                     </td>
                                 <?php else: ?>
                                     <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
-                                        data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>" data-day-index="<?= (int)filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
+                                        data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
+                                        data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <div class="empty-slot"></div>
                                     </td>
                                 <?php endif; ?>
