@@ -1178,8 +1178,13 @@ class ScheduleCard {
             let dayText = "";
             const headerCell = headers[dayIndex + 1];
             if (headerCell) {
-                // innerText kullanarak <br> etiketlerinin ve görsel boşlukların yeni satır (\n) olarak alınmasını sağlıyoruz
-                dayText = headerCell.innerText.trim();
+                // Sticky header aktifken orijinal başlık görünmez (visibility: hidden) olduğu için
+                // innerText boş döner. Bu yüzden innerHTML üzerinden <br> etiketlerini \n'e çevirip
+                // textContent alıyoruz.
+                let html = headerCell.innerHTML.replace(/<br\s*[\/]?>/gi, '\n');
+                let tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                dayText = tempDiv.textContent.trim();
             }
             
             const startTime = td.dataset.startTime || "";
