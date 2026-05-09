@@ -260,6 +260,7 @@
     .drop-zone {
         border: 2px dashed transparent;
         transition: all 0.3s;
+        min-width: 100px;
     }
 
     .drop-zone.active {
