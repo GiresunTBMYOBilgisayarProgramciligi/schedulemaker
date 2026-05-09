@@ -80,9 +80,10 @@ if ($type === 'lesson') {
                 </span>
             </div>
         <?php endif; ?>
-
-        <?= View::renderComponent('schedules/_childLessons', [
-            'slotData' => $slotData
-        ]) ?>
+        <?php if (!($schedule->owner_type == 'user' && $type == "exam")): ?>
+            <?= View::renderComponent('schedules/_childLessons', [
+                'slotData' => $slotData
+            ]) ?>
+        <?php endif; ?>
     </div>
 </div>
