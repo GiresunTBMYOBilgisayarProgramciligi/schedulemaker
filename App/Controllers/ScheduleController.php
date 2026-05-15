@@ -100,20 +100,6 @@ class ScheduleController extends Controller
         return $schedule;
     }
 
-    public function lessonHourToMinute($scheduleType, $hours): int
-    {
-        if ($scheduleType === 'lesson') {
-            $duration = getSettingValue('duration', 'lesson', 50);
-            $break = getSettingValue('break', 'lesson', 10);
-            return $hours * ($duration + $break);
-        } elseif ($scheduleType === 'midterm-exam' || $scheduleType === 'final-exam' || $scheduleType === 'makeup-exam') {
-            $duration = getSettingValue('duration', 'exam', 30);
-            $break = getSettingValue('break', 'exam', 0);
-            return $hours * ($duration + $break);
-        }
-        return 0;
-    }
-
     /********************************
      * Görünüm ve Veri Hazırlama
      ********************************/
