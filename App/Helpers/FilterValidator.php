@@ -129,11 +129,6 @@ class FilterValidator
                 'optional' => [],
                 'defaults' => ['semester', 'academic_year']
             ],
-            'createScheduleExcelTable' => [
-                'required' => ['type', "owner_type"],
-                'optional' => ['owner_id',],
-                'defaults' => ['semester', 'academic_year']
-            ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
                 'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],

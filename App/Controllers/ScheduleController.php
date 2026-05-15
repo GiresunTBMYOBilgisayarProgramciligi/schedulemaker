@@ -119,55 +119,6 @@ class ScheduleController extends Controller
      ********************************/
 
     /**
-     * todo yeni tablo düzenine göre düzenlenecek
-     * Filter ile belirlenmiş alanlara uyan Schedule modelleri ile doldurulmuş bir dizi döner
-     * @param array $filters
-     * @return array|bool
-     * @throws Exception
-     */
-    public function createScheduleExcelTable(array $filters = []): array|bool
-    {
-        $filters = (new FilterValidator())->validate($filters, "createScheduleExcelTable");
-
-        $schedules = (new Schedule())->get()->where($filters)->all();
-        if (count($schedules) == 0)
-            return false; // program boş ise false dön
-
-        $scheduleRows = $this->prepareScheduleRows($schedules[0], 'excel');
-        $scheduleArray = [];
-
-        // Günler dinamik olarak oluşturuluyor
-        $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-        $headerRow = ['']; // ilk hücre boş olacak (saat için)
-
-        /*
-         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
-         */
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        $type = in_array($filters['type'], $examTypes) ? 'exam' : 'lesson';
-        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        //todo aşağıdaki kodlar geçersiz. iki haftalık düzen için yapay zekanın düzenlemesi. Ama o şekilde kullanılmayacak
-        for ($i = 0; $i <= $maxDayIndex; $i++) {
-            $headerRow[] = $days[$i % 7]; // Gün adı
-            if (isset($filters['owner_type']) and $filters['owner_type'] != 'classroom')
-                $headerRow[] = 'S';       // Sütun başlığı (Sınıf)
-        }
-
-        $scheduleArray[] = $headerRow;
-
-        // Satırları doldur
-        foreach ($scheduleRows as $time => $tableRow) {
-            $row = [$time];
-            foreach ($tableRow as $day) {
-                $row[] = $day;
-            }
-            $scheduleArray[] = $row;
-        }
-
-        return $scheduleArray;
-    }
-
-    /**
      * Ders programı tablosunun verilerini oluşturur
      * Sadece tek bir tablo için veri oluşturur. Farklı dönem numaraları birleştirilecekse bu işlem sonradan yapılmalı.
      * @throws Exception
