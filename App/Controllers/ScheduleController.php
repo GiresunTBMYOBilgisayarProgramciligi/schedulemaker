@@ -20,7 +20,7 @@ use App\Helpers\FilterValidator;
 class ScheduleController extends Controller
 {
 
-    protected string $table_name = 'schedules';//todo artık tek tablo değil bu tablo adı nerelerde kullanılacak? 
+
     protected string $modelName = "App\Models\Schedule";
 
     /********************************
