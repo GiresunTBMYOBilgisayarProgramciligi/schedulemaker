@@ -6,7 +6,7 @@ use App\Helpers\ScheduleViewHelper;
  * Available lessons panelindeki tek bir ders kartı component'i.
  *
  * Hem gerçek dersler hem dummy kartlar (preferred/unavailable) için kullanılır.
- * Frame wrapper (col-md-4) dahildir.
+ * Frame wrapper (col-md-3) dahildir.
  *
  * Beklenen değişkenler:
  * @var \App\Models\Lesson|object $lesson  Lesson modeli veya dummy obje
@@ -32,9 +32,9 @@ if (!$isDummy && !is_null($lesson->parent_lesson_id)) {
     }
 }
 ?>
-<div class='frame col-md-4 p-1'>
+<div class='frame col-md-3 p-1'>
     <div <?= $attrString ?> <?= $popoverAttr ?>>
-        <span class="lesson-name" title="<?= htmlspecialchars($lesson->code ?? '') ?>">
+        <span class="lesson-name" title="<?= htmlspecialchars($lessonName) ?>">
             <?= htmlspecialchars($lessonName) ?>
         </span>
 

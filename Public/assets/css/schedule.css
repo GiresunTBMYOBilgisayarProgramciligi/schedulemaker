@@ -2,6 +2,7 @@
         min-height: 30px;
         max-height: 25vh;
         overflow-y: auto;
+        overflow-x: hidden;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         margin-bottom: 15px;
     }
@@ -47,6 +48,24 @@
 
     .available-schedule-items .accordion-item:last-child {
         border-bottom: none;
+    }
+
+    /* Available Panel — Kompakt Lesson Card */
+    .available-schedule-items .lesson-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .available-schedule-items .lesson-lecturer {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .available-schedule-items .lesson-classroom {
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     /* --- Slot Durumları ve Vurgular --- */
