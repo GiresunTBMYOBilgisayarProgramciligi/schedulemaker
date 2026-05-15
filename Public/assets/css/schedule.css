@@ -6,6 +6,49 @@
         margin-bottom: 15px;
     }
 
+    /* Available Lessons Accordion Gruplama */
+    .available-schedule-items .accordion-flush {
+        --bs-accordion-btn-padding-x: 0.5rem;
+        --bs-accordion-btn-padding-y: 0.25rem;
+    }
+
+    .available-schedule-items .accordion-button {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        box-shadow: none;
+    }
+
+    .available-schedule-items .accordion-button:not(.collapsed) {
+        color: #1565c0;
+        background-color: #e8f0fe;
+    }
+
+    .available-schedule-items .accordion-button:focus {
+        box-shadow: none;
+    }
+
+    .available-schedule-items .accordion-button::after {
+        width: 0.8rem;
+        height: 0.8rem;
+        background-size: 0.8rem;
+    }
+
+    .available-schedule-items .accordion-body {
+        padding: 4px;
+    }
+
+    .available-schedule-items .accordion-item {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .available-schedule-items .accordion-item:last-child {
+        border-bottom: none;
+    }
+
     /* --- Slot Durumları ve Vurgular --- */
 
     .dummy {
