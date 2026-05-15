@@ -94,6 +94,129 @@ class ScheduleViewHelper
     }
 
     /**
+     * Available lessons panelindeki ders kartı için data attribute dizisi oluşturur.
+     *
+     * Tablo içindeki buildLessonCardAttributes'ten farklı olarak ScheduleItem yerine
+     * doğrudan Lesson modeli veya dummy obje ile çalışır.
+     *
+     * @param object $lesson Lesson modeli veya dummy obje
+     * @param Schedule $schedule Üst schedule nesnesi
+     * @param bool $isDummy Dummy kart mı (preferred/unavailable)
+     * @return array Key-value şeklinde HTML attribute dizisi
+     */
+    public static function buildAvailableLessonAttributes(
+        object   $lesson,
+        Schedule $schedule,
+        bool     $isDummy = false
+    ): array
+    {
+        // Draggable belirleme
+        $draggable = 'true';
+        if (!$isDummy) {
+            if (!is_null($lesson->parent_lesson_id)
+                || $schedule->academic_year != getSettingValue('academic_year')
+                || $schedule->semester != getSettingValue('semester')
+            ) {
+                $draggable = 'false';
+            }
+        }
+
+        // CSS sınıfı belirleme
+        if ($isDummy) {
+            $status = $lesson->status ?? '';
+            $cssClass = "dummy w-100 slot-" . $status;
+        } else {
+            /** @var \App\Models\Lesson $lesson */
+            $cssClass = "lesson-card w-100 " . $lesson->getScheduleCSSClass();
+        }
+
+        $attrs = [
+            'id' => 'available-lesson-' . $lesson->id,
+            'draggable' => $draggable,
+            'class' => $cssClass,
+            'data-lesson-id' => $lesson->id,
+            'data-lesson-hours' => $lesson->hours ?? 1,
+            'data-group-no' => $isDummy ? 0 : $lesson->group_no,
+            'data-lesson-code' => $lesson->code,
+            'data-lecturer-id' => $lesson->lecturer_id ?? null,
+            'data-status' => $isDummy ? ($lesson->status ?? '') : '',
+            'data-program-id' => $isDummy ? null : $lesson->program_id,
+            'data-size' => $isDummy ? null : ($lesson->size ?? 0),
+            // Sağ-tık menü için isimler
+            'data-program-name' => $isDummy ? null : ($lesson->program->name ?? null),
+            'data-lecturer-name' => $isDummy ? null : ($lesson->lecturer?->getFullName()),
+            'data-lesson-name' => $isDummy ? null : $lesson->getFullName(addCode: true),
+        ];
+
+        if ($isDummy) {
+            $attrs['data-is-dummy'] = 'true';
+        }
+
+        return $attrs;
+    }
+
+    /**
+     * Available lessons panelindeki ders adını formatlar.
+     *
+     * Schedule tipi ve owner type'a göre farklı formatlama uygular.
+     *
+     * @param object $lesson Lesson modeli veya dummy obje
+     * @param Schedule $schedule Üst schedule nesnesi
+     * @param bool $isDummy Dummy kart mı
+     * @return string Formatlanmış ders adı
+     */
+    public static function getAvailableLessonName(
+        object   $lesson,
+        Schedule $schedule,
+        bool     $isDummy = false
+    ): string
+    {
+        if ($isDummy) {
+            return $lesson->name ?? '';
+        }
+
+        /** @var \App\Models\Lesson $lesson */
+        if ($schedule->type === 'lesson') {
+            // Ders programında grup bilgisi eklenir
+            if (in_array($schedule->owner_type, ['user', 'classroom'])) {
+                return $lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true);
+            }
+            return $lesson->getFullName(addGroup: true);
+        }
+
+        // Sınav programında sadece ders adı
+        if (in_array($schedule->owner_type, ['user', 'classroom'])) {
+            return $lesson->getFullName(addProgram: true, addClassNumber: true);
+        }
+        return $lesson->getFullName();
+    }
+
+    /**
+     * Available lessons panelindeki bilgi metnini üretir.
+     *
+     * Ders programı → "X Saat", Sınav programı → "X Kişi"
+     *
+     * @param object $lesson Lesson modeli veya dummy obje
+     * @param Schedule $schedule Üst schedule nesnesi
+     * @param bool $isDummy Dummy kart mı
+     * @return string Bilgi metni
+     */
+    public static function getAvailableLessonInfoText(
+        object   $lesson,
+        Schedule $schedule,
+        bool     $isDummy = false
+    ): string
+    {
+        if ($isDummy) {
+            return '';
+        }
+
+        return $schedule->type === 'lesson'
+            ? ($lesson->hours ?? 0) . ' Saat'
+            : ($lesson->size ?? 0) . ' Kişi';
+    }
+
+    /**
      * Ders kartının sürüklenebilir olup olmadığını belirler.
      *
      * @param object $slotData Slot verisi
