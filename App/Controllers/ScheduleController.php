@@ -55,51 +55,6 @@ class ScheduleController extends Controller
         return $emptyWeek;
     }
 
-    /**
-     * todo yeni tablo düzenine göre düzenlenecek Buna artık gerek yok gibi
-     * Başlangıç saatine ve ders saat miktarına göre saat dizisi oluşturur
-     * @param string $startTimeRange Dersin ilk saat aralığı Örn. 08.00 - 08.50
-     * @param int $hours
-     * @return array
-     */
-    public function generateTimesArrayFromText(string $startTimeRange, int $hours, string $type = 'lesson'): array
-    {
-        $schedule = [];
-
-        // Başlangıç ve bitiş saatlerini ayır
-        [$start, $end] = explode("-", $startTimeRange);
-        $currentTime = \DateTime::createFromFormat('H.i', trim($start));
-
-        for ($i = 0; $i < $hours; $i++) {
-            // Eğer ders ise ve saat 12 ise öğle arası için atla
-            if ($type === 'lesson' && $currentTime->format('H') == '12') {
-                $currentTime->modify('+1 hour');
-            }
-
-            $startFormatted = $currentTime->format('H.i');
-
-            if (in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-                $duration = getSettingValue('duration', 'exam', 30);
-                $break = getSettingValue('break', 'exam', 0);
-                $endTime = clone $currentTime;
-                $endTime->modify("+$duration minutes");
-                $endFormatted = $endTime->format('H.i');
-                $schedule[] = "$startFormatted - $endFormatted";
-                $currentTime = $endTime->modify("+$break minutes");
-            } else {
-                $duration = getSettingValue('duration', 'lesson', 50);
-                $break = getSettingValue('break', 'lesson', 10);
-                $endTime = clone $currentTime;
-                $endTime->modify("+$duration minutes");
-                $endFormatted = $endTime->format('H.i');
-                $schedule[] = "$startFormatted - $endFormatted";
-                $currentTime = $endTime->modify("+$break minutes");
-            }
-        }
-
-        return $schedule;
-    }
-
     /********************************
      * Görünüm ve Veri Hazırlama
      ********************************/
