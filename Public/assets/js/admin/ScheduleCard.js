@@ -22,6 +22,7 @@ class ScheduleCard {
             'schedule_item_id': null,
             'lesson_id': null,
             'lesson_code': null,
+            'lesson_name': null,
             'lecturer_id': null,
             'group_no': null,
             'day_index': null,
@@ -1175,27 +1176,33 @@ class ScheduleCard {
         
         dropZones.forEach(td => {
             const dayIndex = parseInt(td.dataset.dayIndex);
-            let dayText = "";
+            let dayName = "";
+            let dateText = "";
             const headerCell = headers[dayIndex + 1];
             if (headerCell) {
-                // Sticky header aktifken orijinal başlık görünmez (visibility: hidden) olduğu için
-                // innerText boş döner. Bu yüzden innerHTML üzerinden <br> etiketlerini \n'e çevirip
-                // textContent alıyoruz.
-                let html = headerCell.innerHTML.replace(/<br\s*[\/]?>/gi, '\n');
-                let tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                dayText = tempDiv.textContent.trim();
+                dayName = Array.from(headerCell.childNodes)
+                    .find(node => node.nodeType === Node.TEXT_NODE)
+                    ?.textContent.trim() || "";
+                
+                const smallTag = headerCell.querySelector('small');
+                if (smallTag) {
+                    dateText = smallTag.textContent.trim();
+                }
             }
             
             const startTime = td.dataset.startTime || "";
             const endTime = td.dataset.endTime || "";
             
-            // Gün/Tarih bilgisinin altına saati ekliyoruz
-            const placeholderText = `${dayText}\n${startTime} - ${endTime}`;
+            let placeholderText = dayName;
+            if (dateText) placeholderText += `\n${dateText}`;
+            placeholderText += `\n${startTime} - ${endTime}`;
             
             const emptySlot = td.querySelector('.empty-slot');
             if (emptySlot) {
                 emptySlot.setAttribute('data-placeholder', placeholderText);
+                if (dateText) {
+                    emptySlot.setAttribute('data-date', dateText);
+                }
             }
         });
     }

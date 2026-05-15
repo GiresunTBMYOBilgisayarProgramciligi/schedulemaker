@@ -19,3 +19,6 @@ Dikey kaydırma (vertical scroll) sırasında yapışkan başlıkların ne zaman
 
 ## [handleHorizontalScroll()](./handleHorizontalScroll.md)
 Tablo yatayda kaydırıldığında, üstteki sabitlenmiş başlığın da tabloyla eşzamanlı kaymasını sağlar.
+
+## setEmptySlotPlaceholders()
+Tablodaki tüm `drop-zone` hücrelerini tarar, her biri için o sütunun başlığından (`thead th`) tarih ve gün bilgisini okur, satırın başlangıç/bitiş saatini birleştirerek ilgili `.empty-slot` elementlerine `data-placeholder` ve `data-date` nitelikleri olarak yazar. Sürükleme sırasında gün/saat gösterimi için kullanılır.

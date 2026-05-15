@@ -153,7 +153,14 @@ class ExamScheduleCard extends ScheduleCard {
                     </div>
                 </div>
             </form>`;
-
+            
+            const startTime = this.draggedLesson.end_element.dataset.startTime;
+            const dayIndex = this.draggedLesson.end_element.dataset.dayIndex;
+            const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+            const emptySlot = this.draggedLesson.end_element.querySelector('.empty-slot');
+            const dateText = emptySlot && emptySlot.dataset.date ? ` (${emptySlot.dataset.date})` : "";
+            
+            title = `${this.draggedLesson.lesson_name} - ${days[dayIndex]}${dateText} - ${startTime}`;
             scheduleModal.prepareModal(title, modalContentHTML, true, false, "lg");
             scheduleModal.showModal();
 

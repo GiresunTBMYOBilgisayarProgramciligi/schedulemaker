@@ -25,6 +25,7 @@ Gelişmiş sınav atama penceresidir.
 - Dinamik satır ekleme (Derslik + Gözetmen).
 - Otomatik kapasite hesaplama.
 - Mevcut kontrolü (Kapasite yetersizse kullanıcıyı uyarır).
+- Sınav atama modalının başlığına gün adını, varsa tarihi (`data-date` üzerinden) ve saati ekleyerek "Ders Adı - Gün (Tarih) - Saat" formatında yazar.
 - **Kalan mevcudu yok say:** Derslik kapasitesi ders mevcudundan az olduğunda "Kalan mevcudu yok say" seçeneği otomatik görünür. İşaretlendiğinde `detail.ignore_remaining = true` bayrağı kaydedilir ve backend bu dersi tamamlanmış kabul eder.
 
 ### [checkCrash]

@@ -1,7 +1,6 @@
 <?php
 use App\Models\Schedule;
 use App\Helpers\ScheduleViewHelper;
-use function App\Helpers\getSettingValue;
 
 /**
  * @var array $weekRows
