@@ -8,7 +8,6 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\Schedule;
-use App\Models\ScheduleItem;
 use App\Models\User;
 use App\Services\AvailabilityService;
 use App\Services\ScheduleService;
@@ -19,13 +18,8 @@ use App\Helpers\FilterValidator;
 
 class ScheduleController extends Controller
 {
-
-
     protected string $modelName = "App\Models\Schedule";
 
-    /********************************
-     * Yardımcı ve Hazırlık Metodları
-     ********************************/
     public function __construct()
     {
         parent::__construct();
