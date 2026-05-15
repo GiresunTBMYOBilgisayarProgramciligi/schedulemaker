@@ -23,6 +23,7 @@ Sınav programı, normal ders programına göre daha karmaşık atama süreçler
 ### [openAssignmentModal]
 Gelişmiş sınav atama penceresidir. 
 - Dinamik satır ekleme (Derslik + Gözetmen).
+- **TomSelect Entegrasyonu:** Derslik ve gözetmen select elementlerine TomSelect uygulanır. AJAX ile option'lar doldurulduktan sonra initialize edilir. TomSelect instance'ları bir `Map` ile takip edilir, satır silindiğinde `destroy()` çağrılır. Seçili seçenekler diğer satırlardaki dropdown'larda `d-none` class'ı ile gizlenir.
 - Otomatik kapasite hesaplama.
 - Mevcut kontrolü (Kapasite yetersizse kullanıcıyı uyarır).
 - Sınav atama modalının başlığına gün adını, varsa tarihi (`data-date` üzerinden) ve saati ekleyerek "Ders Adı - Gün (Tarih) - Saat" formatında yazar.

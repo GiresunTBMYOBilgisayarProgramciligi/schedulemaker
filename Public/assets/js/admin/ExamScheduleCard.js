@@ -196,31 +196,44 @@ class ExamScheduleCard extends ScheduleCard {
                 }
             };
 
+            // TomSelect instance'larını takip etmek için
+            const tomSelectInstances = new Map();
+
             const updateOptionsVisibility = () => {
                 const selectedClassrooms = Array.from(rowsContainer.querySelectorAll(".classroom-select")).map(s => s.value).filter(v => v);
                 const selectedObservers = Array.from(rowsContainer.querySelectorAll(".observer-select")).map(s => s.value).filter(v => v);
 
-                rowsContainer.querySelectorAll(".classroom-select").forEach(select => {
-                    const currentValue = select.value;
-                    Array.from(select.options).forEach(option => {
-                        if (option.value && option.value !== currentValue && selectedClassrooms.includes(option.value)) {
-                            option.style.display = 'none';
-                        } else {
-                            option.style.display = '';
-                        }
-                    });
+                tomSelectInstances.forEach((ts, select) => {
+                    if (select.classList.contains('classroom-select')) {
+                        const currentValue = ts.getValue();
+                        Object.keys(ts.options).forEach(optValue => {
+                            if (optValue && optValue !== currentValue && selectedClassrooms.includes(optValue)) {
+                                ts.getOption(optValue)?.classList.add('d-none');
+                            } else if (optValue) {
+                                ts.getOption(optValue)?.classList.remove('d-none');
+                            }
+                        });
+                    } else if (select.classList.contains('observer-select')) {
+                        const currentValue = ts.getValue();
+                        Object.keys(ts.options).forEach(optValue => {
+                            if (optValue && optValue !== currentValue && selectedObservers.includes(optValue)) {
+                                ts.getOption(optValue)?.classList.add('d-none');
+                            } else if (optValue) {
+                                ts.getOption(optValue)?.classList.remove('d-none');
+                            }
+                        });
+                    }
                 });
+            };
 
-                rowsContainer.querySelectorAll(".observer-select").forEach(select => {
-                    const currentValue = select.value;
-                    Array.from(select.options).forEach(option => {
-                        if (option.value && option.value !== currentValue && selectedObservers.includes(option.value)) {
-                            option.style.display = 'none';
-                        } else {
-                            option.style.display = '';
-                        }
-                    });
+            const initTomSelect = (selectElement, placeholder) => {
+                const ts = new TomSelect(selectElement, {
+                    placeholder: placeholder,
+                    allowEmptyOption: true,
+                    dropdownParent: 'body',
                 });
+                tomSelectInstances.set(selectElement, ts);
+                return ts;
             };
 
             const addRow = async (isFirst = false) => {
@@ -254,8 +267,12 @@ class ExamScheduleCard extends ScheduleCard {
                     this.fetchAvailableObservers(observerSelect, hoursInput.value)
                 ]);
 
+                // TomSelect'leri AJAX verileri doldurulduktan sonra initialize et
+                //const classroomTS = initTomSelect(classroomSelect, 'Derslik seçin...');
+                const observerTS = initTomSelect(observerSelect, 'Gözetmen seçmek için yazmaya başlayın...');
+
                 if (isFirst && this.draggedLesson.lecturer_id) {
-                    observerSelect.value = this.draggedLesson.lecturer_id;
+                    observerTS.setValue(this.draggedLesson.lecturer_id);
                 }
 
                 classroomSelect.addEventListener("change", () => {
@@ -266,6 +283,11 @@ class ExamScheduleCard extends ScheduleCard {
 
                 if (!isFirst) {
                     rowElement.querySelector(".remove-row-btn").addEventListener("click", () => {
+                        // TomSelect instance'larını temizle
+                        //const cTS = tomSelectInstances.get(classroomSelect);
+                        const oTS = tomSelectInstances.get(observerSelect);
+                        if (cTS) { cTS.destroy(); tomSelectInstances.delete(classroomSelect); }
+                        if (oTS) { oTS.destroy(); tomSelectInstances.delete(observerSelect); }
                         rowElement.remove();
                         updateCapacity();
                         updateOptionsVisibility();

@@ -561,3 +561,8 @@
     .lesson-observer-item:hover {
         background: rgba(255, 255, 255, 0.8);
     }
+
+    /* TomSelect dropdown'un Bootstrap modal üzerinde görünmesi için */
+    .ts-dropdown {
+        z-index: 1060 !important;
+    }
