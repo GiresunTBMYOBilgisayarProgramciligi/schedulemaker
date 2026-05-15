@@ -590,6 +590,10 @@ class ScheduleCard {
         });
 
         this.stickyWrapper.prepend(listClone);
+
+        // Klonlanan listedeki popover'ları yeniden initialize et
+        const popoverTriggers = listClone.querySelectorAll('[data-bs-toggle="popover"]');
+        popoverTriggers.forEach(el => new bootstrap.Popover(el, { trigger: 'hover' }));
     }
 
     async getSchedule() {
