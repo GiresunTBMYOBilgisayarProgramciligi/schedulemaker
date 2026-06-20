@@ -27,7 +27,6 @@ $attrString = ScheduleViewHelper::renderAttributes(
         $type
     )
 );
-
 $popoverAttr = "";
 if ($type === 'lesson') {
     $isChild = !is_null($slotData->lesson->parent_lesson_id);
@@ -35,6 +34,14 @@ if ($type === 'lesson') {
         $parent = $slotData->lesson->parentLesson;
         $popoverTitle = "Birleştirilmiş Ders";
         $popoverContent = "Bu ders " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlı olduğu için düzenlenemez.";
+        $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+    }
+} elseif ($type === 'exam') {
+    $isChild = !is_null($slotData->lesson->exam_parent_lesson_id);
+    if ($isChild && isset($slotData->lesson->examParentLesson)) {
+        $parent = $slotData->lesson->examParentLesson;
+        $popoverTitle = "Sınav Birleştirmesi";
+        $popoverContent = "Bu dersin sınavı, " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlıdır.";
         $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
     }
 }
@@ -82,7 +89,8 @@ if ($type === 'lesson') {
         <?php endif; ?>
         <?php if (!($schedule->owner_type == 'user' && $type == "exam")): ?>
             <?= View::renderComponent('schedules/_childLessons', [
-                'slotData' => $slotData
+                'slotData' => $slotData,
+                'type' => $type
             ]) ?>
         <?php endif; ?>
     </div>

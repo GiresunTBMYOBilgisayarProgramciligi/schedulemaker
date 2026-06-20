@@ -75,14 +75,14 @@ class AdminRouter extends Router
             "programs" => (new Program())->get()->where(['active' => true])->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])->all(),
             "page_title" => "Anasayfa"
         ]);
-            //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
-            if (!is_null($this->currentUser->program_id)) {
-                $this->assetManager->addCss("/assets/css/schedule.css");
-                $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
-            } else {
-                $this->assetManager->addCss("/assets/css/schedule.css");
-                $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
-            }
+        //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
+        if (!is_null($this->currentUser->program_id)) {
+            $this->assetManager->addCss("/assets/css/schedule.css");
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
+        } else {
+            $this->assetManager->addCss("/assets/css/schedule.css");
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
+        }
         $this->callView("admin/index/index");
     }
 
@@ -246,13 +246,17 @@ class AdminRouter extends Router
             /**
              * @var Lesson $lesson
              */
-            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->first() ?: throw new Exception("Ders bulunamadı");
+            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']], 'examParentLesson' => ['with' => ['program']], 'examChildLessons' => ['with' => ['program']]])->first() ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
         Gate::authorize("view", $lesson, "Bu dersi görme yetkiniz yok");
         $this->assetManager->loadPageAssets('singlepages');
+        $this->assetManager->addJs('/assets/js/formEvents.js');//tom select için gerekli
         $this->assetManager->addJs('/assets/js/admin/combineLesson.js');
+        $this->assetManager->addJs('/assets/js/admin/combineExamLesson.js');
+        $this->assetManager->addJs('/assets/node_modules/tom-select/dist/js/tom-select.base.min.js');
+        $this->assetManager->addCss('/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css');
         $this->view_data = array_merge($this->view_data, [
             "lesson" => $lesson,
             "page_title" => $lesson->name . " Sayfası",
@@ -297,6 +301,8 @@ class AdminRouter extends Router
                 no_card: true
             ),
             'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester'), 'academic_year' => getSettingValue('academic_year')])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->all(),
+            // Sınav birleştirme listesi: Aynı akademik yıl + dönem, hoca kısıtı yok
+            'examCombineLessonList' => (new Lesson())->get()->where(['!id' => $lesson->id, 'semester' => getSettingValue('semester'), 'academic_year' => getSettingValue('academic_year')])->with(['program'])->all(),
         ]);
         $this->callView("admin/lessons/lesson");
     }
@@ -469,7 +475,7 @@ class AdminRouter extends Router
     {
         $departmentController = new DepartmentController();
         if (!is_null($id)) {
-            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program', 'parentLesson'=>['with'=>['program']]]], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
+            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program', 'parentLesson' => ['with' => ['program']]]], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -536,7 +542,7 @@ class AdminRouter extends Router
     public function programAction($id = null)
     {
         if (!is_null($id)) {
-            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer', 'parentLesson'=>['with'=>['program']]]], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
+            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer', 'parentLesson' => ['with' => ['program']]]], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }

@@ -130,12 +130,15 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
-    parent_lesson_id int,    
+    parent_lesson_id int,
+    exam_parent_lesson_id int,
     primary key (id),
     unique (code, program_id, group_no),
     foreign key (lecturer_id) references users (id) on delete set null,
     foreign key (department_id) references departments (id) on delete set null,
-    foreign key (program_id) references programs (id) on delete set null
+    foreign key (program_id) references programs (id) on delete set null,
+    foreign key (parent_lesson_id) references lessons (id) on delete set null,
+    foreign key (exam_parent_lesson_id) references lessons (id) on delete set null
 
 ) ENGINE = INNODB;
 

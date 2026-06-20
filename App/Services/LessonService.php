@@ -133,14 +133,16 @@ class LessonService extends BaseService
             // Child'ın mevcut schedule'larını sil (bağlamadan ÖNCE — parent korunur)
             (new ScheduleService())->wipeResourceSchedules('lesson', $childLesson->id);
 
-            // Bağlantıyı kur
+            // Bağlantıyı kur (ders + sınav birleştirme)
             $childLesson->parent_lesson_id = $parentLesson->id;
+            $childLesson->exam_parent_lesson_id = $parentLesson->id;
             $childLesson->update();
 
             // Child'ın alt child'larını da parent'a bağla
             foreach ($childLesson->childLessons as $grandChild) {
                 (new ScheduleService())->wipeResourceSchedules('lesson', $grandChild->id);
                 $grandChild->parent_lesson_id = $parentLesson->id;
+                $grandChild->exam_parent_lesson_id = $parentLesson->id;
                 $grandChild->update();
             }
 
@@ -186,8 +188,234 @@ class LessonService extends BaseService
     }
 
     // ──────────────────────────────────────────
+    // Sınav Birleştirme (exam_parent_lesson_id)
+    // ──────────────────────────────────────────
+
+    /**
+     * Sınav için dersleri birleştirir (exam_parent_lesson_id).
+     * Ders programını etkilemez, sadece sınav programında ortak sınav grubu oluşturur.
+     * Hoca kısıtı yoktur — farklı hocaların dersleri birleştirilebilir.
+     *
+     * @param int $parentLessonId Üst ders ID'si
+     * @param int $childLessonId Alt ders ID'si
+     * @throws Exception
+     */
+    public function combineExamLesson(int $parentLessonId, int $childLessonId): void
+    {
+        $this->logger->info('Sınav birleştirme başlatıldı', [
+            'parent_id' => $parentLessonId,
+            'child_id' => $childLessonId,
+        ]);
+
+        $isInitiator = !$this->db->inTransaction();
+        if ($isInitiator) {
+            $this->db->beginTransaction();
+        }
+
+        try {
+            /** @var Lesson $parentLesson */
+            $parentLesson = (new Lesson())
+                ->where(['id' => $parentLessonId])
+                ->with(['examParentLesson', 'examChildLessons', 'program'])
+                ->first()
+                ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
+
+            /** @var Lesson $childLesson */
+            $childLesson = (new Lesson())
+                ->where(['id' => $childLessonId])
+                ->with(['examParentLesson', 'examChildLessons', 'program'])
+                ->first()
+                ?: throw new Exception("Birleştirilecek ders bulunamadı");
+
+            // Kendine bağlama kontrolü
+            if ($parentLessonId === $childLessonId) {
+                throw new Exception("Bir ders kendisiyle birleştirilemez.");
+            }
+
+            // Child zaten başka bir sınav ebeveynine bağlıysa hata
+            if ($childLesson->examParentLesson) {
+                throw new Exception(
+                    $childLesson->getFullName(addCode: true, addProgram: true)
+                    . " zaten sınav programında "
+                    . $childLesson->examParentLesson->getFullName(addCode: true, addProgram: true)
+                    . " dersine bağlı"
+                );
+            }
+
+            // Eğer parent kendisi de bir exam child'sa gerçek ebeveyni kullan
+            if ($parentLesson->examParentLesson) {
+                $parentLesson = $parentLesson->examParentLesson
+                    ?: throw new Exception("Bağlanmak istenilen dersin sınav üst ebeveyni bulunamadı");
+            }
+
+            // Child'ın mevcut sınav schedule'larını temizle
+            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+            $scheduleService = new ScheduleService();
+            $examSchedules = (new \App\Models\Schedule())->get()->where([
+                'owner_type' => 'lesson',
+                'owner_id' => $childLesson->id,
+                'type' => ['in' => $examTypes]
+            ])->all();
+            foreach ($examSchedules as $examSchedule) {
+                $items = (new ScheduleItem())->get()->where(['schedule_id' => $examSchedule->id])->all();
+                foreach ($items as $item) {
+                    $scheduleService->deleteScheduleItems([$item->getArray()], false);
+                }
+            }
+
+            // Sınav birleştirme bağlantısını kur
+            $childLesson->exam_parent_lesson_id = $parentLesson->id;
+            $childLesson->update();
+
+            // Child'ın exam alt child'larını da parent'a bağla
+            foreach ($childLesson->examChildLessons as $grandChild) {
+                $grandChild->exam_parent_lesson_id = $parentLesson->id;
+                $grandChild->update();
+            }
+
+            // Parent'ın mevcut sınav programı varsa child için kopyala
+            $this->syncExamChildFromParent($parentLesson, $childLesson);
+
+            if ($isInitiator) {
+                $this->db->commit();
+            }
+
+            $this->logger->info('Sınav birleştirme tamamlandı', [
+                'parent_id' => $parentLesson->id,
+                'child_id' => $childLesson->id,
+            ]);
+        } catch (Exception $e) {
+            if ($isInitiator) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Sınav birleştirme bağlantısını kaldırır.
+     * Ders programını etkilemez, sadece sınav schedule'larını temizler.
+     *
+     * @param int $lessonId Child dersin ID'si
+     * @throws Exception
+     */
+    public function deleteExamParentLesson(int $lessonId): void
+    {
+        $this->logger->info('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
+
+        /** @var Lesson $lesson */
+        $lesson = (new Lesson())->find($lessonId)
+            ?: throw new Exception("Sınav ebeveyni silinecek ders bulunamadı");
+
+        // Sadece sınav schedule'larını temizle
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $scheduleService = new ScheduleService();
+        $examSchedules = (new \App\Models\Schedule())->get()->where([
+            'owner_type' => 'lesson',
+            'owner_id' => $lesson->id,
+            'type' => ['in' => $examTypes]
+        ])->all();
+        foreach ($examSchedules as $examSchedule) {
+            $items = (new ScheduleItem())->get()->where(['schedule_id' => $examSchedule->id])->all();
+            foreach ($items as $item) {
+                $scheduleService->deleteScheduleItems([$item->getArray()], false);
+            }
+        }
+
+        $lesson->exam_parent_lesson_id = null;
+        $lesson->update();
+
+        $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
+    }
+
+    // ──────────────────────────────────────────
     // Yardımcı (Private)
     // ──────────────────────────────────────────
+
+    /**
+     * Parent dersin sınav schedule item'larını child için kopyalar.
+     * Sadece ders ve program owner'larına kopyalama yapar.
+     * Gözetmen/derslik atamaları kopyalanmaz — ExamService::saveExamScheduleItems
+     * zaten exam child'ların owner'larını da kaydeder.
+     *
+     * @param Lesson $parentLesson
+     * @param Lesson $childLesson
+     * @throws \Exception
+     */
+    private function syncExamChildFromParent(Lesson $parentLesson, Lesson $childLesson): void
+    {
+        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+
+        // Parent'ın sınav schedule'larını bul
+        $parentExamSchedules = (new Schedule())->get()->where([
+            'owner_type' => 'lesson',
+            'owner_id' => $parentLesson->id,
+            'type' => ['in' => $examTypes]
+        ])->with(['items'])->all();
+
+        if (empty($parentExamSchedules)) {
+            return;
+        }
+
+        foreach ($parentExamSchedules as $parentSchedule) {
+            if (empty($parentSchedule->items)) {
+                continue;
+            }
+
+            // Child ders ve program owner'ları
+            $owners = [
+                ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
+                ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no],
+            ];
+
+            foreach ($parentSchedule->items as $item) {
+                // Sadece program/ders item'larını kopyala (gözetmen/derslik atamaları hariç)
+                $detail = $item->detail;
+                if (isset($detail['reference_type']) && $detail['reference_type'] === 'exam_assignment') {
+                    continue;
+                }
+
+                foreach ($owners as $owner) {
+                    if (!$owner['id']) {
+                        continue;
+                    }
+
+                    $scheduleFilters = [
+                        'owner_type' => $owner['type'],
+                        'owner_id' => $owner['id'],
+                        'semester' => $parentSchedule->semester,
+                        'academic_year' => $parentSchedule->academic_year,
+                        'type' => $parentSchedule->type,
+                        'semester_no' => $owner['type'] === 'program' ? $owner['semester_no'] : null,
+                    ];
+
+                    $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+
+                    $newItem = new ScheduleItem();
+                    $newItem->schedule_id = $childSchedule->id;
+                    $newItem->day_index = $item->day_index;
+                    $newItem->week_index = $item->week_index;
+                    $newItem->start_time = $item->start_time;
+                    $newItem->end_time = $item->end_time;
+                    $newItem->status = $item->status;
+                    $newItem->data = [
+                        [
+                            'lesson_id' => $childLesson->id,
+                            'lecturer_id' => null,
+                            'classroom_id' => null,
+                        ]
+                    ];
+                    $newItem->detail = $item->detail;
+                    $newItem->create();
+                }
+            }
+        }
+
+        $this->logger->info('Sınav programı child\'a kopyalandı', [
+            'parent_id' => $parentLesson->id,
+            'child_id' => $childLesson->id,
+        ]);
+    }
 
     /**
      * Parent dersin schedule item'larını child için kopyalar.

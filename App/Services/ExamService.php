@@ -59,7 +59,7 @@ class ExamService extends BaseService
                 $lessonId = $itemData['data'][0]['lesson_id'] ?? $itemData['data']['lesson_id'] ?? null;
                 $lesson = (new Lesson())
                     ->where(['id' => $lessonId])
-                    ->with(['childLessons', 'parentLesson'])
+                    ->with(['childLessons', 'parentLesson', 'examChildLessons', 'examParentLesson'])
                     ->first();
 
                 if (!$lesson) {
@@ -75,7 +75,12 @@ class ExamService extends BaseService
                 $academicYear = $targetSchedule->academic_year;
 
                 // ── 1. Program ve Ders Owner'larını Belirle ──────────────────────
-                $mainLesson = $lesson->parent_lesson_id ? $lesson->parentLesson : $lesson;
+                // Sınav programında sadece exam_parent_lesson_id dikkate alınır
+                // (parent_lesson_id ders programı içindir, sınav programını etkilemez)
+                $mainLesson = $lesson;
+                if ($lesson->exam_parent_lesson_id && $lesson->examParentLesson) {
+                    $mainLesson = $lesson->examParentLesson;
+                }
 
                 // Gruplu dersleri bul (aynı kod, aynı program, aynı dönem)
                 $allGroupLessons = [$mainLesson];
@@ -97,9 +102,10 @@ class ExamService extends BaseService
                     $programOwners[] = ['type' => 'lesson', 'id' => $gl->id, 'actual_lesson_id' => $gl->id];
                     $programOwners[] = ['type' => 'program', 'id' => $gl->program_id, 'semester_no' => $gl->semester_no, 'actual_lesson_id' => $gl->id];
 
-                    foreach ($gl->childLessons ?? [] as $child) {
-                        $programOwners[] = ['type' => 'lesson', 'id' => $child->id, 'actual_lesson_id' => $child->id];
-                        $programOwners[] = ['type' => 'program', 'id' => $child->program_id, 'semester_no' => $child->semester_no, 'actual_lesson_id' => $child->id];
+                    // Sınav birleştirme (exam_parent_lesson_id) ile bağlı dersler
+                    foreach ($gl->examChildLessons ?? [] as $examChild) {
+                        $programOwners[] = ['type' => 'lesson', 'id' => $examChild->id, 'actual_lesson_id' => $examChild->id];
+                        $programOwners[] = ['type' => 'program', 'id' => $examChild->program_id, 'semester_no' => $examChild->semester_no, 'actual_lesson_id' => $examChild->id];
                     }
                 }
 

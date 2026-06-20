@@ -31,9 +31,10 @@ class ScheduleViewHelper
         string       $type = 'lesson'
     ): array
     {
-        $cssClass = "lesson-card " . $slotData->lesson->getScheduleCSSClass();
-        if ($type === 'exam') {
-            $cssClass = "lesson-card h-100 m-0 " . $slotData->lesson->getScheduleCSSClass();
+        $isExam = ($type === 'exam');
+        $cssClass = "lesson-card " . $slotData->lesson->getScheduleCSSClass($isExam);
+        if ($isExam) {
+            $cssClass = "lesson-card h-100 m-0 " . $slotData->lesson->getScheduleCSSClass(true);
         }
 
         $attrs = [
@@ -66,11 +67,16 @@ class ScheduleViewHelper
             $attrs['data-program-id'] = $slotData->lesson->program_id;
             $attrs['data-program-name'] = $slotData->lesson->program?->name;
 
-            // Lesson tablosunda child lesson program bilgileri de eklenir
+            // Child lesson program bilgileri
             if ($type === 'lesson' && count($slotData->lesson->childLessons) > 0) {
                 foreach ($slotData->lesson->childLessons as $childLesson) {
                     $attrs['data-child-lessons-' . $childLesson->id . '-program-id'] = $childLesson->program_id;
                     $attrs['data-child-lessons-' . $childLesson->id . '-program-name'] = $childLesson->program?->name;
+                }
+            } elseif ($type === 'exam' && count($slotData->lesson->examChildLessons ?? []) > 0) {
+                foreach ($slotData->lesson->examChildLessons as $examChild) {
+                    $attrs['data-child-lessons-' . $examChild->id . '-program-id'] = $examChild->program_id;
+                    $attrs['data-child-lessons-' . $examChild->id . '-program-name'] = $examChild->program?->name;
                 }
             }
         }
@@ -113,7 +119,13 @@ class ScheduleViewHelper
         // Draggable belirleme
         $draggable = 'true';
         if (!$isDummy) {
-            if (!is_null($lesson->parent_lesson_id)
+            // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
+            $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+            $isChild = $isExam
+                ? !is_null($lesson->exam_parent_lesson_id)
+                : !is_null($lesson->parent_lesson_id);
+
+            if ($isChild
                 || $schedule->academic_year != getSettingValue('academic_year')
                 || $schedule->semester != getSettingValue('semester')
             ) {
@@ -127,7 +139,8 @@ class ScheduleViewHelper
             $cssClass = "dummy w-100 slot-" . $status;
         } else {
             /** @var \App\Models\Lesson $lesson */
-            $cssClass = "lesson-card w-100 " . $lesson->getScheduleCSSClass();
+            $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+            $cssClass = "lesson-card w-100 " . $lesson->getScheduleCSSClass($isExam);
         }
 
         $attrs = [
@@ -232,7 +245,12 @@ class ScheduleViewHelper
         bool     $preferenceMode = false
     ): bool
     {
-        if (!is_null($slotData->lesson->parent_lesson_id)) {
+        // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
+        $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+        $isChild = $isExam
+            ? !is_null($slotData->lesson->exam_parent_lesson_id)
+            : !is_null($slotData->lesson->parent_lesson_id);
+        if ($isChild) {
             return false;
         }
         if ($schedule->academic_year != \App\Helpers\getSettingValue('academic_year')) {

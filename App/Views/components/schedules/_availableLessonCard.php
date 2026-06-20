@@ -23,12 +23,22 @@ $infoText = ScheduleViewHelper::getAvailableLessonInfoText($lesson, $schedule, $
 
 // Popover: Birleştirilmiş (child) dersler için
 $popoverAttr = '';
-if (!$isDummy && !is_null($lesson->parent_lesson_id)) {
-    $parent = $lesson->parentLesson ?? null;
-    if ($parent) {
-        $popoverTitle = 'Birleştirilmiş Ders';
-        $popoverContent = 'Bu ders ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlı olduğu için düzenlenemez.';
-        $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+if (!$isDummy) {
+    $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+    if ($isExam && !is_null($lesson->exam_parent_lesson_id)) {
+        $parent = $lesson->examParentLesson ?? null;
+        if ($parent) {
+            $popoverTitle = 'Sınav Birleştirmesi';
+            $popoverContent = 'Bu dersin sınavı, ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlıdır.';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+        }
+    } elseif (!$isExam && !is_null($lesson->parent_lesson_id)) {
+        $parent = $lesson->parentLesson ?? null;
+        if ($parent) {
+            $popoverTitle = 'Birleştirilmiş Ders';
+            $popoverContent = 'Bu ders ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlı olduğu için düzenlenemez.';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+        }
     }
 }
 ?>
@@ -53,7 +63,8 @@ if (!$isDummy && !is_null($lesson->parent_lesson_id)) {
 
         <?php if (!$isDummy): ?>
             <?= View::renderComponent('schedules/_childLessons', [
-                'lesson' => $lesson
+                'lesson' => $lesson,
+                'type' => in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson'
             ]) ?>
         <?php endif; ?>
     </div>

@@ -41,6 +41,7 @@ class Lesson extends Model
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
     public ?int $parent_lesson_id = null;
+    public ?int $exam_parent_lesson_id = null;
     /**
      * Ders programına eklemeye uygun olmayan saat miktarı. Bu saatler zaten programa eklenmiş
      * @var int|null
@@ -58,9 +59,11 @@ class Lesson extends Model
     public ?Program $program = null;
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
+    public ?Lesson $examParentLesson = null;
+    public array $examChildLessons = [];
     public array $schedules = [];
     protected string $table_name = "lessons";
-    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
 
     /**
      * @throws Exception
@@ -298,6 +301,74 @@ class Lesson extends Model
     }
 
     /**
+     * Sınav birleştirme: Üst ders ilişkisi (exam_parent_lesson_id)
+     *
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getExamParentLessonRelation(array $results, array $options = []): array
+    {
+        $parentIds = array_unique(array_filter(array_column($results, 'exam_parent_lesson_id')));
+        if (empty($parentIds))
+            return $results;
+
+        $query = (new Lesson())->get()->where(['id' => ['in' => $parentIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
+        $lessonsKeyed = [];
+        foreach ($lessons as $lesson) {
+            $lessonsKeyed[$lesson->id] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            if (isset($row['exam_parent_lesson_id']) && isset($lessonsKeyed[$row['exam_parent_lesson_id']])) {
+                $row['examParentLesson'] = $lessonsKeyed[$row['exam_parent_lesson_id']];
+            } else {
+                $row['examParentLesson'] = null;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Sınav birleştirme: Alt dersler ilişkisi (exam_parent_lesson_id ile bağlı dersler)
+     *
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getExamChildLessonsRelation(array $results, array $options = []): array
+    {
+        $ids = array_column($results, 'id');
+        if (empty($ids))
+            return $results;
+
+        $query = (new Lesson())->get()->where(['exam_parent_lesson_id' => ['in' => $ids]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $lessons = $query->all();
+        $lessonsGrouped = [];
+        foreach ($lessons as $lesson) {
+            $lessonsGrouped[$lesson->exam_parent_lesson_id][] = $lesson;
+        }
+
+        foreach ($results as &$row) {
+            $row['examChildLessons'] = $lessonsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
      * @return string
      */
     public function getFullName(bool $addCode = false, bool $addGroup = false, bool $addProgram = false, bool $addClassNumber = false, bool $addSize = false): string
@@ -331,6 +402,21 @@ class Lesson extends Model
         $rootId = $this->parent_lesson_id ?: $this->id;
         $ids = [$rootId];
         $children = (new Lesson())->get()->where(['parent_lesson_id' => $rootId])->all();
+        foreach ($children as $child) {
+            $ids[] = $child->id;
+        }
+        return array_unique($ids);
+    }
+
+    /**
+     * Sınav birleştirme ile bağlı derslerin (exam parent ve tüm exam child'lar) ID listesini döner.
+     * @return array
+     */
+    public function getExamLinkedLessonIds(): array
+    {
+        $rootId = $this->exam_parent_lesson_id ?: $this->id;
+        $ids = [$rootId];
+        $children = (new Lesson())->get()->where(['exam_parent_lesson_id' => $rootId])->all();
         foreach ($children as $child) {
             $ids[] = $child->id;
         }
@@ -523,9 +609,12 @@ class Lesson extends Model
         return $this->remaining_size <= 0;
     }
 
-    public function getScheduleCSSClass(): string
+    public function getScheduleCSSClass(bool $isExam = false): string
     {
-        $isChild = !is_null($this->parent_lesson_id);
+        // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
+        $isChild = $isExam
+            ? !is_null($this->exam_parent_lesson_id)
+            : !is_null($this->parent_lesson_id);
 
         // 1. Ders Türü Belirleme
         $typeClass = "lesson-type-normal"; // Varsayılan

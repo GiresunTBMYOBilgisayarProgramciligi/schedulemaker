@@ -96,6 +96,17 @@ class ExamScheduleCard extends ScheduleCard {
             });
         }
 
+        // Dersi düzenle butonu
+        const lessonId = lessonCard.dataset.lessonId;
+        if (lessonId) {
+            const lessonName = lessonCard.dataset.lessonName || 'Ders';
+            menuItems.push({
+                text: `${lessonName} sayfasını aç`,
+                icon: 'bi-pencil-square',
+                onClick: () => window.open(`/admin/lesson/${lessonId}`, '_blank')
+            });
+        }
+
         menuItems.forEach(item => {
             const menuItem = document.createElement('div');
             menuItem.className = 'context-menu-item';
@@ -410,9 +421,9 @@ class ExamScheduleCard extends ScheduleCard {
                         let currentBase = currentMatch ? currentMatch[1] : newLessonCode;
 
                         if (existBase !== currentBase) {
-                            console.error("checkCrash: Base lesson mismatch", existBase, currentBase, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
-                            console.error("checkCrash error: Base lesson mismatch"); reject("Sınav programında aynı saate farklı dersler konulamaz.");
-                            return;
+                            // Sınav birleştirme (exam_parent_lesson_id) durumunda farklı ders kodları
+                            // aynı zaman diliminde olabilir. Kontrolü backend'e bırakıyoruz.
+                            console.warn("checkCrash: Base lesson mismatch (may be exam combined)", existBase, currentBase, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
                         }
 
                         if (existClassroomId == newClassroomId) {

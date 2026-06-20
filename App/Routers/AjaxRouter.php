@@ -430,6 +430,117 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * Sınav birleştirme — farklı hocaların derslerini sınav için birleştirir.
+     * @throws Exception
+     */
+    public function combineExamLessonAction(): void
+    {
+        if (!key_exists('parent_lesson_id', $this->data) || !key_exists('child_lesson_id', $this->data)) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
+        Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
+
+        (new LessonService())->combineExamLesson(
+            (int) $this->data['parent_lesson_id'],
+            (int) $this->data['child_lesson_id']
+        );
+        $this->response = [
+            "msg"      => "Dersler sınav programında başarıyla birleştirildi.",
+            "status"   => "success",
+            "redirect" => "self"
+        ];
+        $this->sendResponse();
+    }
+
+    /**
+     * Sınav birleştirme bağlantısını kaldırır.
+     * @throws Exception
+     */
+    public function deleteExamParentLessonAction(): void
+    {
+        if (!key_exists("id", $this->data)) {
+            throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
+        }
+        Gate::authorizeRole("department_head", false, "Sınav birleştirmesi kaldırma yetkiniz yok");
+        (new LessonService())->deleteExamParentLesson((int) $this->data['id']);
+        $this->response = [
+            "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",
+            "status"   => "success",
+            "redirect" => "self"
+        ];
+        $this->sendResponse();
+    }
+
+    /**
+     * Sınav birleştirme için aranabilir ders listesi (TomSelect AJAX).
+     * Aynı akademik yıl ve dönemdeki dersleri döner.
+     * @throws Exception
+     */
+    public function getExamCombinableLessonsAction(): void
+    {
+        Gate::authorizeRole("department_head", false, "Sınav birleştirme listesini almak için yetkiniz yok");
+
+        $lessonId = (int) ($this->data['lesson_id'] ?? 0);
+        $search = trim($this->data['search'] ?? '');
+
+        if (!$lessonId) {
+            throw new Exception("Ders ID belirtilmemiş");
+        }
+
+        $currentLesson = (new Lesson())->where(['id' => $lessonId])
+            ->with(['examChildLessons', 'examParentLesson'])
+            ->first()
+            ?: throw new Exception("Ders bulunamadı");
+
+        // Aynı akademik yıl ve dönemdeki dersleri al
+        $filters = [
+            'semester'      => $currentLesson->semester,
+            'academic_year' => $currentLesson->academic_year,
+            '!id'           => $currentLesson->id,
+        ];
+
+        $query = (new Lesson())->get()->where($filters)
+            ->with(['program', 'lecturer', 'examParentLesson']);
+
+        $lessons = $query->all();
+
+        // Zaten bağlı olanları ve kendisini filtrele
+        $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
+        
+        $result = [];
+        foreach ($lessons as $lesson) {
+            // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
+            if ($lesson->exam_parent_lesson_id && $lesson->exam_parent_lesson_id !== $currentLesson->id) {
+                continue;
+            }
+            // Zaten bu derse bağlı olanları atla
+            if (in_array($lesson->id, $existingChildIds)) {
+                continue;
+            }
+
+            $label = $lesson->getFullName(addCode: true, addProgram: true, addSize: true);
+
+            // TomSelect arama filtresi
+            if ($search !== '' && stripos($label, $search) === false) {
+                continue;
+            }
+
+            $result[] = [
+                'id'    => $lesson->id,
+                'text'  => $label,
+                'size'  => $lesson->size,
+                'program' => $lesson->program->name ?? '',
+            ];
+        }
+
+        $this->response = [
+            'status'  => 'success',
+            'lessons' => $result,
+        ];
+        $this->sendResponse();
+    }
+
     /*
      * Classrooms Ajax Actions
      */

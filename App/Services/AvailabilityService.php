@@ -179,7 +179,7 @@ class AvailabilityService extends BaseService
         if ($schedule->semester_no !== null) {
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program', 'parentLesson'=>['with'=>['program']], 'childLessons'=>['with'=>['program']]])->all();
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program', 'parentLesson'=>['with'=>['program']], 'childLessons'=>['with'=>['program']], 'examParentLesson'=>['with'=>['program']], 'examChildLessons'=>['with'=>['program']]])->all();
         $this->logger->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id, $this->logContext());
 
         /**
@@ -202,6 +202,21 @@ class AvailabilityService extends BaseService
         }
         // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
         if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+            // exam_parent_lesson_id olan dersleri listeden çıkar (parent üzerinden gösterilir)
+            $available_lessons = array_filter($available_lessons, function (Lesson $l) {
+                return is_null($l->exam_parent_lesson_id);
+            });
+
+            // Parent'ın mevcuduna exam child'ların mevcutlarını ekle
+            foreach ($available_lessons as $lesson) {
+                if (!empty($lesson->examChildLessons)) {
+                    foreach ($lesson->examChildLessons as $examChild) {
+                        $lesson->size += $examChild->size;
+                    }
+                }
+            }
+
+            $available_lessons = array_values($available_lessons);
             $available_lessons = $this->groupExamLessons($available_lessons, $schedule->type);
         }
 

@@ -6,6 +6,7 @@
  * @var string $page_title
  * @var string $scheduleHTML
  * @var array $combineLessonList
+ * @var array $examCombineLessonList
  */
 
 use App\Models\Lesson;
@@ -85,44 +86,78 @@ use App\Core\Gate;
                                 <dt class="col-sm-2">Mevcudu</dt>
                                 <dd class="col-sm-4"><?= $lesson->size ?></dd>
                                 <?php
-                                if ($lesson->parentLesson):
-                                    ?>
+                                // ── Bağlı Olduğu Ders (parent_lesson_id + exam_parent_lesson_id) ──
+                                $parentLinks = [];
+                                if ($lesson->parentLesson) {
+                                    $parentLinks[] = ['lesson' => $lesson->parentLesson, 'type' => 'lesson', 'action' => '/ajax/deleteParentLesson'];
+                                }
+                                if ($lesson->examParentLesson && ($lesson->examParentLesson->id !== ($lesson->parentLesson->id ?? null))) {
+                                    $parentLinks[] = ['lesson' => $lesson->examParentLesson, 'type' => 'exam', 'action' => '/ajax/deleteExamParentLesson'];
+                                }
+                                if (!empty($parentLinks)):
+                                ?>
                                     <dt class="col-sm-2">Bağlı Olduğu Ders</dt>
-                                    <dd class="col-sm-10 p-0">
-                                        <a class="link-dark link-underline-opacity-0"
-                                            href="/admin/lesson/<?= $lesson->parentLesson->id ?>">
-                                            <?= $lesson->parentLesson->getFullName(addCode: true, addProgram: true) ?>
-                                        </a>
-                                        <form action="/ajax/deleteParentLesson" method="post"
-                                            class="d-inline ajaxDeleteParentLesson">
-                                            <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                            <button type="submit"
-                                                class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
-                                                X
-                                            </button>
-                                        </form>
+                                    <dd class="col-sm-4 p-0">
+                                        <ul class="list-group list-group-flush">
+                                            <?php foreach ($parentLinks as $pl): ?>
+                                                <li class="list-group-item d-flex align-items-center gap-2 flex-wrap">
+                                                    <a href="/admin/lesson/<?= $pl['lesson']->id ?>"
+                                                        class="link-dark link-underline-opacity-0">
+                                                        <?= $pl['lesson']->getFullName(addCode: true, addProgram: true) ?>
+                                                    </a>
+                                                    <form action="<?= $pl['action'] ?>" method="post"
+                                                        class="d-inline ajaxDeleteParentLesson" title="Bağlantıyı kaldır">
+                                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                                        <button type="submit"
+                                                            class="badge <?= $pl['type'] === 'exam' ? 'bg-info' : 'bg-primary' ?> border-0"
+                                                            style="cursor:pointer;">
+                                                            <?= $pl['type'] === 'exam' ? 'Sınav' : 'Ders' ?>
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
                                     </dd>
                                 <?php endif; ?>
                                 <?php
-                                if (isset($lesson->childLessons) && count($lesson->childLessons) > 0):
-                                    ?>
+                                // ── Bağlı Dersler (childLessons + examChildLessons) ──
+                                $childLinks = [];
+                                foreach ($lesson->childLessons ?? [] as $child) {
+                                    $childLinks[$child->id] = ['lesson' => $child, 'types' => ['lesson'], 'actions' => ['lesson' => '/ajax/deleteParentLesson']];
+                                }
+                                foreach ($lesson->examChildLessons ?? [] as $examChild) {
+                                    if (isset($childLinks[$examChild->id])) {
+                                        // Hem ders hem sınav bağlantısı var
+                                        $childLinks[$examChild->id]['types'][] = 'exam';
+                                        $childLinks[$examChild->id]['actions']['exam'] = '/ajax/deleteExamParentLesson';
+                                    } else {
+                                        $childLinks[$examChild->id] = ['lesson' => $examChild, 'types' => ['exam'], 'actions' => ['exam' => '/ajax/deleteExamParentLesson']];
+                                    }
+                                }
+                                if (!empty($childLinks)):
+                                ?>
                                     <dt class="col-sm-2">Bağlı Dersler</dt>
-                                    <dd class="col-sm-10 p-0">
+                                    <dd class="col-sm-4 p-0">
                                         <ul class="list-group list-group-flush">
-                                            <?php foreach ($lesson->childLessons as $childLesson): ?>
-                                                <li class="list-group-item">
-                                                    <a href="/admin/lesson/<?= $childLesson->id ?>"
+                                            <?php foreach ($childLinks as $cl): ?>
+                                                <li class="list-group-item d-flex align-items-center gap-2 flex-wrap">
+                                                    <a href="/admin/lesson/<?= $cl['lesson']->id ?>"
                                                         class="link-dark link-underline-opacity-0">
-                                                        <?= $childLesson->getFullName(addCode: true, addProgram: true) ?>
+                                                        <?= $cl['lesson']->getFullName(addCode: true, addProgram: true) ?>
                                                     </a>
-                                                    <form action="/ajax/deleteParentLesson" method="post"
-                                                        class="d-inline ajaxDeleteParentLesson">
-                                                        <input type="hidden" name="id" value="<?= $childLesson->id ?>">
-                                                        <button type="submit"
-                                                            class="btn btn-outline-danger btn-sm px-1 p-0 rounded-circle">
-                                                            X
-                                                        </button>
-                                                    </form>
+                                                    <?php foreach ($cl['types'] as $t): ?>
+                                                        <form action="<?= $cl['actions'][$t] ?>" method="post"
+                                                            class="d-inline ajaxDeleteParentLesson" title="<?= $t === 'exam' ? 'Sınav bağlantısını kaldır' : 'Ders bağlantısını kaldır' ?>">
+                                                            <input type="hidden" name="id" value="<?= $cl['lesson']->id ?>">
+                                                            <button type="submit"
+                                                                class="badge <?= $t === 'exam' ? 'bg-info' : 'bg-primary' ?> border-0"
+                                                                style="cursor:pointer;">
+                                                                <?= $t === 'exam' ? 'Sınav' : 'Ders' ?>
+                                                                <i class="bi bi-x-circle"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endforeach; ?>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
@@ -134,6 +169,9 @@ use App\Core\Gate;
                             <?php if (Gate::allowsRole("department_head")): ?>
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                     data-bs-target="#CombineLessonModal">Ders Birleştir
+                                </button>
+                                <button type="button" class="btn btn-info" data-bs-toggle="modal"
+                                    data-bs-target="#CombineExamLessonModal">Sınav Birleştir
                                 </button>
                             <?php endif; ?>
                             <?php if (Gate::check("update", $lesson)): ?>
@@ -365,6 +403,54 @@ use App\Core\Gate;
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
                 <button type="button" class="btn btn-primary" id="confirmCombineBtn" disabled>Birleştir</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sınav Birleştirme Modalı -->
+<div class="modal" tabindex="-1" id="CombineExamLessonModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/ajax/combineExamLesson" name="CombineExamLesson" id="CombineExamLesson" method="post"
+                title="Sınav birleştiriliyor">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sınav Birleştir</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">
+                        Bu derse sınav programında başka bir ders bağlayabilirsiniz.
+                        Bağlanan ders, sınav programında bu dersle aynı zaman dilimine otomatik olarak eklenir.
+                        Ders programı etkilenmez.
+                    </p>
+                    <input type="hidden" name="parent_lesson_id" value="<?= $lesson->id ?>">
+                    <label for="exam_child_lesson_select" class="form-label">Bağlanacak Ders</label>
+                    <select class="tom-select" name="child_lesson_id" id="exam_child_lesson_select"
+                        placeholder="Ders ara...">
+                        <option value="0">Ders Seçiniz</option>
+                        <?php
+                        $programName = "";
+                        /** @var Lesson $examCombineLesson */
+                        foreach ($examCombineLessonList as $examCombineLesson):
+                            // Zaten sınav birleştirilmiş dersleri atla
+                            if ($examCombineLesson->exam_parent_lesson_id) continue;
+                            // Kendisini atla
+                            if ($examCombineLesson->id === $lesson->id) continue;
+                            if ($programName != ($examCombineLesson->program->name ?? '')) {
+                                $programName = $examCombineLesson->program->name ?? '';
+                                echo '<option disabled>' . $programName . '</option>';
+                            }
+                            ?>
+                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-info">Birleştir</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
