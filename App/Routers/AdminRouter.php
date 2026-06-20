@@ -417,6 +417,33 @@ class AdminRouter extends Router
                 ],
                 preference_mode: true
             ),
+            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'classroom',
+                    'owner_id' => $classroom->id,
+                    'type' => 'midterm-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true
+            ),
+            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'classroom',
+                    'owner_id' => $classroom->id,
+                    'type' => 'final-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true
+            ),
+            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
+                [
+                    'owner_type' => 'classroom',
+                    'owner_id' => $classroom->id,
+                    'type' => 'makeup-exam',
+                    'semester_no' => getSemesterNumbers()
+                ],
+                preference_mode: true
+            ),
         ]);
         $this->callView("admin/classrooms/classroom");
     }
