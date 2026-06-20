@@ -17,12 +17,14 @@ use function App\Helpers\getSettingValue;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6">
+                    <h3 class="mb-0"><?= $page_title ?></h3>
+                </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Takvim İşlemleri</li>
-                        <li class="breadcrumb-item active">Program Dışa aktar</li>
+                        <li class="breadcrumb-item active">Program Dışa Aktar</li>
                     </ol>
                 </div>
             </div>
@@ -39,158 +41,178 @@ use function App\Helpers\getSettingValue;
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="card card-primary card-outline">
+                        <!-- .card-header -->
+                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                            <h3 class="card-title flex-fill"></h3>
+                            <div class="flex-fill">
+                                <div class="input-group">
+                                    <select class="form-select" id="schedule_type" name="schedule_type">
+                                        <option value="lesson">Ders Programı</option>
+                                        <option value="midterm-exam">Ara Sınav Programı</option>
+                                        <option value="final-exam">Final Programı</option>
+                                        <option value="makeup-exam">Bütünleme Programı</option>
+                                    </select>
+                                    <span class="input-group-text"> - </span>
+                                    <select class="form-select" id="academic_year" name="academic_year">
+                                        <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
+                                            <option value="<?= $year . ' - ' . $year + 1 ?>"
+                                                <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                <?= $year . ' - ' . $year + 1 ?>
+                                            </option>
+                                        <?php endfor; ?>
+                                    </select>
+                                    <span class="input-group-text"> - </span>
+                                    <select class="form-select" id="semester" name="semester">
+                                        <option value="Güz" <?= getSettingValue("semester") == 'Güz' ? 'selected' : '' ?>>
+                                            Güz
+                                        </option>
+                                        <option value="Bahar" <?= getSettingValue("semester") == 'Bahar' ? 'selected' : '' ?>>
+                                            Bahar
+                                        </option>
+                                        <option value="Yaz" <?= getSettingValue("semester") == 'Yaz' ? 'selected' : '' ?>>
+                                            Yaz
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                                    <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                                    <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- /.card-header -->
                         <div class="card-body">
-                            <!--begin::Row-->
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="department_id">Bölüm</label>
-                                        <select class="form-select tom-select" id="department_id" name="department_id">
-                                            <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                            foreach ($departments as $department): ?>
-                                                <option value="<?= $department->id ?>">
-                                                    <?= $department->name ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Bölüm seçilmezse tüm programlar dışa aktarılır
+                            <!-- Tabs navs -->
+                            <ul class="nav nav-tabs mb-3" id="exportTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
+                                        data-bs-target="#program-tab-pane" type="button" role="tab"
+                                        aria-controls="program-tab-pane" aria-selected="true">Bölüm/Program
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="lecturer-tab" data-bs-toggle="tab"
+                                        data-bs-target="#lecturer-tab-pane" type="button" role="tab"
+                                        aria-controls="lecturer-tab-pane" aria-selected="false">Hoca
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="classroom-tab" data-bs-toggle="tab"
+                                        data-bs-target="#classroom-tab-pane" type="button" role="tab"
+                                        aria-controls="classroom-tab-pane" aria-selected="false">Derslik
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tabs content -->
+                            <div class="tab-content" id="exportTabsContent">
+                                <!-- Bölüm/Program Tab -->
+                                <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel"
+                                    aria-labelledby="program-tab" tabindex="0">
+                                    <!--begin::Row-->
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <select class="form-select tom-select" id="department_id"
+                                                        name="department_id">
+                                                        <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
+                                                        foreach ($departments as $department): ?>
+                                                            <option value="<?= $department->id ?>">
+                                                                <?= $department->name ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <div class="form-text">
+                                                        Bölüm seçilmezse tüm programlar dışa aktarılır
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <div class="input-group">
+                                                        <select class="form-select" id="program_id" name="program_id">
+                                                            <option value="0">İlk olarak Bölüm seçiniz</option>
+                                                        </select>
+                                                        <div class="btn-group" role="group" aria-label="Bölüm/Program dışa aktarma">
+                                                            <button class="btn btn-primary" type="button" id="departmentAndProgramExport">
+                                                                <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary" type="button" id="departmentAndProgramCalendar">
+                                                                <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-text">
+                                                        Program seçilmezse tüm programlar dışa aktarılır
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!--end::Row-->
+                                </div>
+                                <!-- Hoca Tab -->
+                                <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel"
+                                    aria-labelledby="lecturer-tab" tabindex="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="input-group mb-3">
+                                                <select class="form-select tom-select" id="lecturer_id"
+                                                    name="lecturer_id"
+                                                    placeholder="Öğretim Üyesi / Görevlisi Seçmek için yazınız">
+                                                    <option></option>
+                                                    <?php foreach ($lecturers as $lecturer): ?>
+                                                        <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <div class="btn-group" role="group" aria-label="Hoca dışa aktarma">
+                                                    <button class="btn btn-primary" type="button" id="lecturerExport">
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" type="button" id="lecturerCalendar">
+                                                        <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="form-text">
+                                                Hoca seçilmezse tüm hoca programları dışa aktarılır
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="program_id">Program</label>
-                                        <select class="form-select" id="program_id" name="program_id">
-                                            <option value="0">İlk olarak Bölüm seçiniz</option>
-                                        </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Program seçilmezse tüm programlar dışa aktarılır
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="academic_year]">Dönem</label>
-                                        <div class="input-group ">
-                                            <select class="form-select" id="academic_year" name="academic_year">
-                                                <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                    <option value="<?= $year . ' - ' . $year + 1 ?>" <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                        <?= $year . ' - ' . $year + 1 ?>
-                                                    </option>
-                                                <?php endfor; ?>
-                                            </select>
-                                            <span class="input-group-text"> - </span>
-                                            <select class="form-select" id="semester" name="semester">
-                                                <option value="Güz" <?= getSettingValue("semester") == 'Güz' ? 'selected' : '' ?>>
-                                                    Güz
-                                                </option>
-                                                <option value="Bahar" <?= getSettingValue("semester") == 'Bahar' ? 'selected' : '' ?>>
-                                                    Bahar
-                                                </option>
-                                                <option value="Yaz" <?= getSettingValue("semester") == 'Yaz' ? 'selected' : '' ?>>
-                                                    Yaz
-                                                </option>
-                                            </select>
+                                <!-- Derslik Tab -->
+                                <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel"
+                                    aria-labelledby="classroom-tab" tabindex="0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="input-group mb-3">
+                                                <select class="form-select" id="classroom_id" name="classroom_id">
+                                                    <option value="0">Derslik Seçiniz</option>
+                                                    <?php foreach ($classrooms as $classroom): ?>
+                                                        <option value="<?= $classroom->id ?>"><?= $classroom->name ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
+                                                    <button class="btn btn-primary" type="button" id="classroomExport">
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
+                                                        <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="form-text">
+                                                Derslik seçilmezse tüm derslik programları dışa aktarılır
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!--end::Row-->
                         </div>
                         <!--end::card-body-->
-                        <div class="card-footer card-primary">
-                            <div class="row">
-                                <div class="text-end">
-                                    <div class="btn-group" role="group" aria-label="Dışa aktarma">
-                                        <button class="btn btn-primary" type="button"  id="departmentAndProgramExport">
-                                               Excel'e aktar
-                                        </button>
-                                        <button class="btn btn-outline-secondary" type="button" id="departmentAndProgramCalendar">
-                                               Takvime kaydet
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--end::Row-->
-            <!--start::Row-->
-            <div class="row">
-                <div class="col-6">
-                    <div class="card card-primary card-outline">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="lecturer_id">Hoca</label>
-                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" >
-                                            <option></option>
-                                            <?php foreach ($lecturers as $lecturer): ?>
-                                                <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Hoca seçilmezse tüm hoca programları dışa aktarılır
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!--end::card-body-->
-                        <div class="card-footer card-primary">
-                            <div class="row">
-                                <div class="text-end">
-                                    <div class="btn-group" role="group" aria-label="Hoca dışa aktarma">
-                                        <button class="btn btn-primary" type="button" id="lecturerExport" >
-                                            Excel'e aktar
-                                        </button>
-                                        <button class="btn btn-outline-secondary" type="button" id="lecturerCalendar" >
-                                            Takvime kaydet
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="card card-primary card-outline">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label class="form-label" for="classroom_id">Derslik</label>
-                                        <select class="form-select" id="classroom_id" name="classroom_id">
-                                            <option value="0">Derslik Seçiniz</option>
-                                            <?php foreach ($classrooms as $classroom): ?>
-                                                <option value="<?= $classroom->id ?>"><?= $classroom->name ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <div id="nameHelp" class="form-text">
-                                            Derslik seçilmezse tüm derslik programları dışa aktarılır
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!--end::card-body-->
-                        <div class="card-footer card-primary">
-                            <div class="row">
-                                <div class="text-end">
-                                    <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
-                                        <button class="btn btn-primary" type="button" id="classroomExport">
-                                            Excel'e aktar
-                                        </button>
-                                        <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
-                                            Takvime kaydet
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

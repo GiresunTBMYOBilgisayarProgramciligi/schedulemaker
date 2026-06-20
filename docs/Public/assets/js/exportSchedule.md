@@ -3,11 +3,15 @@
 ---
 # Public\assets\js\exportSchedule.js
 
-Ders programlarını Excel (.xlsx) ve iCalendar (.ics) formatlarında dışa aktarmak için kullanılan JavaScript modülüdür.
+Ders ve sınav programlarını (Ara Sınav, Final, Bütünleme) Excel (.xlsx) ve iCalendar (.ics) formatlarında dışa aktarmak için kullanılan JavaScript modülüdür.
 
 ## Genel Bakış
 
 Bu dosya, kullanıcı etkileşimlerini (buton tıklamaları) dinler ve ilgili dışa aktarma işlemlerini başlatır. `fetch` API kullanarak sunucuya asenkron istekler gönderir ve dönen dosya verisini (blob) tarayıcı üzerinden indirtir. İşlem sırasında `Spinner` sınıfını kullanarak kullanıcıya yükleniyor durumu gösterir.
+
+Export sayfası (`/admin/exportschedule`) tüm program türlerini tek bir arayüzden dışa aktarmayı destekler:
+- **Üst bölüm (card-header)**: Program türü (`schedule_type`), akademik yıl ve dönem seçicileri
+- **Alt bölüm (card-body)**: Tab yapısıyla Bölüm/Program, Hoca ve Derslik bazlı dışa aktarma seçenekleri
 
 ## Bağımlılıklar
 
