@@ -371,7 +371,7 @@ class ImportExportManager
                     // oluşturulan filtre $scheduleFilters dizisine eklenir
                     foreach ($semesterNumbers as $semester_no) {
                         // id numarası belirtilen program Modeli oluşturulur
-                        $program = (new Program())->where($filters["owner_id"]); // Burada program_id yerine owner_id kullanılmalı
+                        $program = (new Program())->find($filters["owner_id"]);
                         // anahtarı program adı ve yarıyılı olacak şekilde filtrelere eklenir
                         $scheduleFilters[] = [
                             'file_title' => $program->name . 'Ders Programı',
