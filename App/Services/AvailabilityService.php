@@ -202,10 +202,9 @@ class AvailabilityService extends BaseService
         }
         // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
         if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-            // exam_parent_lesson_id olan dersleri listeden çıkar (parent üzerinden gösterilir)
-            $available_lessons = array_filter($available_lessons, function (Lesson $l) {
-                return is_null($l->exam_parent_lesson_id);
-            });
+            // NOT: exam_parent_lesson_id olan dersler listeden çıkarılmaz.
+            // Ders programındaki parent_lesson_id davranışı gibi, gri renk ve
+            // popover ile gösterilirler (ScheduleViewHelper + _availableLessonCard.php).
 
             // NOT: Exam child'ların mevcutları IsScheduleComplete tarafından
             // getExamLinkedLessonIds() üzerinden targetSize'a zaten dahil edilmektedir.
