@@ -567,14 +567,56 @@ class ImportExportManager
 
         $username = $this->logContext()['username'] ?? "Sistem";
         $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
-        $this->logger()->info("$username $ownerType bazlı ders programı çıktısı aldı. Filtreler: " . json_encode($filters, JSON_UNESCAPED_UNICODE), $this->logContext());
+        $type = $filters['type'] ?? 'lesson';
+        $isExam = in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+        $typeLabel = $isExam ? 'sınav programı' : 'ders programı';
+        $this->logger()->info("$username $ownerType bazlı $typeLabel çıktısı aldı. Filtreler: " . json_encode($filters, JSON_UNESCAPED_UNICODE), $this->logContext());
 
         // Kullanıcı tercihlerini al (Filtreler doğrulandıktan sonra)
         $showOptions = [
             'show_code' => !isset($filters['show_code']) || (string) $filters['show_code'] === '1',
             'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
-            'show_program' => !isset($filters['show_program']) || (string) $filters['show_program'] === '1'
+            'show_program' => !isset($filters['show_program']) || (string) $filters['show_program'] === '1',
+            'show_observer' => !isset($filters['show_observer']) || (string) $filters['show_observer'] === '1',
         ];
+
+        // Sınav türleri için debug modu — gerçek çıktı yerine log yaz ve JSON döndür
+        if ($isExam) {
+            $this->logger()->debug("=== SINAV PROGRAMI EXPORT DEBUG ===", [
+                'type' => $type,
+                'owner_type' => $ownerType,
+                'owner_id' => $filters['owner_id'] ?? 'TÜM',
+                'semester' => $filters['semester'] ?? '',
+                'academic_year' => $filters['academic_year'] ?? '',
+                'show_options' => $showOptions,
+            ]);
+
+            // Oluşturulacak filtre yapısını da logla
+            $scheduleFilters = $this->generateScheduleFilters($filters);
+            $this->logger()->debug("Oluşturulan schedule filtreleri:", [
+                'filtre_sayisi' => count($scheduleFilters),
+                'filtreler' => array_map(function ($f) {
+                    return [
+                        'title' => $f['title'] ?? '',
+                        'type' => $f['type'] ?? '',
+                        'filter' => $f['filter'] ?? [],
+                    ];
+                }, $scheduleFilters),
+            ]);
+
+            // Debug modunda JSON response döndür (Excel çıktısı yerine)
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'status' => 'debug',
+                'message' => "Sınav programı export isteği başarıyla alındı (debug modu)",
+                'type' => $type,
+                'owner_type' => $ownerType,
+                'owner_id' => $filters['owner_id'] ?? null,
+                'show_options' => $showOptions,
+                'filter_count' => count($scheduleFilters),
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
         $scheduleController = new ScheduleController();
 
         // Yazı tipi ayarları
@@ -828,6 +870,45 @@ class ImportExportManager
     #[NoReturn]
     public function exportScheduleIcs($filters = []): void
     {
+        $type = $filters['type'] ?? 'lesson';
+        $isExam = in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+
+        // Sınav türleri için debug modu
+        if ($isExam) {
+            $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
+            $username = $this->logContext()['username'] ?? "Sistem";
+            $this->logger()->debug("=== SINAV PROGRAMI ICS EXPORT DEBUG ===", [
+                'type' => $type,
+                'owner_type' => $ownerType,
+                'owner_id' => $filters['owner_id'] ?? 'TÜM',
+                'semester' => $filters['semester'] ?? '',
+                'academic_year' => $filters['academic_year'] ?? '',
+            ]);
+
+            $scheduleFilters = $this->generateScheduleFilters($filters);
+            $this->logger()->debug("ICS için oluşturulan schedule filtreleri:", [
+                'filtre_sayisi' => count($scheduleFilters),
+                'filtreler' => array_map(function ($f) {
+                    return [
+                        'title' => $f['title'] ?? '',
+                        'type' => $f['type'] ?? '',
+                        'filter' => $f['filter'] ?? [],
+                    ];
+                }, $scheduleFilters),
+            ]);
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'status' => 'debug',
+                'message' => "Sınav programı ICS export isteği başarıyla alındı (debug modu)",
+                'type' => $type,
+                'owner_type' => $ownerType,
+                'owner_id' => $filters['owner_id'] ?? null,
+                'filter_count' => count($scheduleFilters),
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
+
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now = new \DateTime('now', $timezone);
 

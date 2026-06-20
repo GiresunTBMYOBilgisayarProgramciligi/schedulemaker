@@ -13,6 +13,16 @@ Export sayfası (`/admin/exportschedule`) tüm program türlerini tek bir arayü
 - **Üst bölüm (card-header)**: Program türü (`schedule_type`), akademik yıl ve dönem seçicileri
 - **Alt bölüm (card-body)**: Tab yapısıyla Bölüm/Program, Hoca ve Derslik bazlı dışa aktarma seçenekleri
 
+### Program Türü Desteği
+
+`schedule_type` seçicisi aşağıdaki değerleri destekler (veritabanındaki `schedules.type` ile uyumlu):
+*   `lesson` — Ders Programı
+*   `midterm-exam` — Ara Sınav Programı
+*   `final-exam` — Final Programı
+*   `makeup-exam` — Bütünleme Programı
+
+Seçilen tür, export ve ICS isteklerinde `type` parametresi olarak backend'e gönderilir.
+
 ## Bağımlılıklar
 
 *   **myHTMLElements.js**: Modal ve Spinner bileşenleri için gereklidir.
@@ -51,13 +61,15 @@ Bu modül `DOMContentLoaded` eventi ile otomatik olarak başlatılır ve sayfada
 
 ### Modal Seçenekleri
 
-Excel dışa aktarma işleminde kullanıcıya seçenekler sunan bir modal açılır:
-*   **Ders Kodu**: Her zaman gösterilir.
-*   **Hoca Adı**: Program, Sınıf ve Bölüm programlarında gösterilir.
-*   **Program/Bölüm Adı**: Hoca ve Sınıf programlarında gösterilir.
+Excel dışa aktarma işleminde kullanıcıya seçenekler sunan bir modal açılır. Modal başlığı seçilen türe göre değişir ("Ders Programı Dışa Aktarma Seçenekleri" veya "Sınav Programı Dışa Aktarma Seçenekleri"):
+
+*   **Ders Kodu** (`show_code`): Her zaman gösterilir.
+*   **Hoca Adı** (`show_lecturer`): Program, Sınıf ve Bölüm programlarında gösterilir.
+*   **Program/Bölüm Adı** (`show_program`): Hoca ve Sınıf programlarında gösterilir.
+*   **Gözetmen İsimleri** (`show_observer`): Sadece sınav türlerinde gösterilir (Ara Sınav, Final, Bütünleme).
 
 ## Fonksiyonlar
 
-*   `showExportOptionsModal(ownerType, onConfirm)`: Kullanıcıya dışa aktarma seçeneklerini soran modalı açar. Seçilen seçenekleri `onConfirm` callback'ine iletir.
-*   `fetchExportSchedule(data)`: `/ajax/exportSchedule` endpoint'ine POST isteği atar ve dönen Excel dosyasını indirir.
-*   `fetchExportIcs(data)`: `/ajax/exportScheduleIcs` endpoint'ine POST isteği atar ve dönen ICS dosyasını indirir.
+*   `showExportOptionsModal(ownerType, scheduleType, onConfirm)`: Kullanıcıya dışa aktarma seçeneklerini soran modalı açar. `scheduleType` parametresine göre sınav türleri için ek seçenekler (gözetmen) sunar. Seçilen seçenekleri `onConfirm` callback'ine iletir.
+*   `fetchExportSchedule(data)`: `/ajax/exportSchedule` endpoint'ine POST isteği atar ve dönen Excel dosyasını indirir. Debug modunda JSON response alırsa Toast ile bilgi gösterir.
+*   `fetchExportIcs(data)`: `/ajax/exportScheduleIcs` endpoint'ine POST isteği atar ve dönen ICS dosyasını indirir. Debug modunda JSON response alırsa Toast ile bilgi gösterir.

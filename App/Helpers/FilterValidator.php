@@ -68,6 +68,7 @@ class FilterValidator
             'show_code' => ['type' => 'int'],//Ders kodu gösterilsin mi?
             'show_lecturer' => ['type' => 'int'],//Hoca adı gösterilsin mi?
             'show_program' => ['type' => 'int'],//Program adı gösterilsin mi?
+            'show_observer' => ['type' => 'int'],//Gözetmen isimleri gösterilsin mi? (sınav programları için)
             'start_time' => ['type' => 'string'],//Item başlangıç saati (H:i veya H:i:s)
             'end_time' => ['type' => 'string'],  //Item bitiş saati (H:i veya H:i:s)
         ];
@@ -131,17 +132,17 @@ class FilterValidator
             ],
             "exportScheduleAction" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program", "show_observer"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "generateScheduleFilters" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program", "show_observer"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "exportSchedule" => [
                 'required' => ["type", "owner_type"],
-                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program"],
+                'optional' => ["owner_id", "semester_no", "show_code", "show_lecturer", "show_program", "show_observer"],
                 'defaults' => ['semester', 'academic_year']
             ],
             "availableClassrooms" => [

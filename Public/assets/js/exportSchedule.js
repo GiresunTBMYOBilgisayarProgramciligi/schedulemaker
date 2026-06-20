@@ -13,15 +13,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const button = event.target.closest("button"); // En yakın button'u bul
         if (!button) return; // Eğer button değilse devam etme
 
+        // Seçilen program türünü al (schedule_type seçicisi varsa)
+        const scheduleTypeSelect = document.getElementById("schedule_type");
+        const scheduleType = scheduleTypeSelect?.value || "lesson";
+
         // Sadece Excel dışa aktarma butonları için (id sonunda Export olanlar)
         if (button.id.endsWith("Export")) {
             const ownerType = button.id === "singlePageExport" ? button.dataset.ownerType :
                 button.id === "lecturerExport" ? "user" :
                     button.id === "classroomExport" ? "classroom" : "program";
 
-            showExportOptionsModal(ownerType, async (options) => {
+            showExportOptionsModal(ownerType, scheduleType, async (options) => {
                 let data = new FormData();
-                data.append("type", "lesson");
+                data.append("type", scheduleType);
                 data.append("semester", document.getElementById("semester")?.value || "");
                 data.append("academic_year", document.getElementById("academic_year")?.value || "");
                 data.append("owner_type", ownerType);
@@ -59,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // ICS (Takvim) butonları için mevcut mantık devam ediyor
         if (button.id.endsWith("Calendar")) {
             let data = new FormData();
-            data.append("type", "lesson");
+            data.append("type", scheduleType);
             data.append("semester", document.getElementById("semester")?.value || "");
             data.append("academic_year", document.getElementById("academic_year")?.value || "");
 
@@ -98,8 +102,11 @@ document.addEventListener("DOMContentLoaded", function () {
     /**
      * Dışa aktarma seçeneklerini soran modalı gösterir
      */
-    function showExportOptionsModal(ownerType, onConfirm) {
+    function showExportOptionsModal(ownerType, scheduleType, onConfirm) {
         const modal = new Modal();
+        const isExam = scheduleType !== "lesson";
+        const typeLabel = isExam ? "Sınav" : "Ders";
+
         let content = `<div class="p-2">
             <p class="mb-3 border-bottom pb-2">Excel tablosunda görünmesini istediğiniz alanları seçin:</p>
             <div class="form-check mb-2">
@@ -121,9 +128,17 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>`;
         }
 
+        // Sınav türleri için gözetmen seçeneği
+        if (isExam) {
+            content += `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="show_observer" checked>
+                <label class="form-check-label" for="show_observer">Gözetmen İsimleri</label>
+            </div>`;
+        }
+
         content += `</div>`;
 
-        modal.prepareModal("Dışa Aktarma Seçenekleri", content, true, true, "md");
+        modal.prepareModal(typeLabel + " Programı Dışa Aktarma Seçenekleri", content, true, true, "md");
         modal.confirmButton.textContent = "Dışa Aktar";
         modal.showModal();
 
@@ -132,6 +147,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (document.getElementById("show_code")) options.show_code = document.getElementById("show_code").checked;
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
             if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
+            if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
 
             modal.closeModal();
             onConfirm(options);
@@ -148,6 +164,26 @@ document.addEventListener("DOMContentLoaded", function () {
             body: data,
         })
             .then((response) => {
+                const contentType = response.headers.get("Content-Type") || "";
+
+                // Debug modu: JSON response geldiğinde Toast ile göster
+                if (contentType.includes("application/json")) {
+                    return response.json().then((json) => {
+                        spinner.removeSpinner();
+                        if (json.status === "debug") {
+                            new Toast().prepareToast(
+                                "Debug Modu",
+                                json.message + " | Tür: " + json.type + " | Sahip: " + json.owner_type + " | Filtre Sayısı: " + json.filter_count,
+                                "info"
+                            );
+                            console.log("Export Debug Response:", json);
+                        } else {
+                            new Toast().prepareToast("Hata", json.message || "Beklenmeyen yanıt", "danger");
+                        }
+                        return null; // İndirme yapma
+                    });
+                }
+
                 const disposition = response.headers.get("Content-Disposition");
                 let filename = "Ders Programı.xlsx"; // Varsayılan isim
 
@@ -167,7 +203,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 return response.blob().then((blob) => ({ blob, filename }));
             })
-            .then(({ blob, filename }) => {
+            .then((result) => {
+                if (!result) return; // Debug modunda indirme yapma
+                const { blob, filename } = result;
                 spinner.removeSpinner();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -199,6 +237,26 @@ document.addEventListener("DOMContentLoaded", function () {
             body: data,
         })
             .then((response) => {
+                const contentType = response.headers.get("Content-Type") || "";
+
+                // Debug modu: JSON response geldiğinde Toast ile göster
+                if (contentType.includes("application/json")) {
+                    return response.json().then((json) => {
+                        spinner.removeSpinner();
+                        if (json.status === "debug") {
+                            new Toast().prepareToast(
+                                "Debug Modu",
+                                json.message + " | Tür: " + json.type + " | Sahip: " + json.owner_type + " | Filtre Sayısı: " + json.filter_count,
+                                "info"
+                            );
+                            console.log("ICS Export Debug Response:", json);
+                        } else {
+                            new Toast().prepareToast("Hata", json.message || "Beklenmeyen yanıt", "danger");
+                        }
+                        return null;
+                    });
+                }
+
                 const disposition = response.headers.get("Content-Disposition");
                 let filename = "Ders Programı.ics"; // Varsayılan isim
                 if (disposition && disposition.includes("filename=")) {
@@ -217,7 +275,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 return response.blob().then((blob) => ({ blob, filename }));
             })
-            .then(({ blob, filename }) => {
+            .then((result) => {
+                if (!result) return; // Debug modunda indirme yapma
+                const { blob, filename } = result;
                 spinner.removeSpinner();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
