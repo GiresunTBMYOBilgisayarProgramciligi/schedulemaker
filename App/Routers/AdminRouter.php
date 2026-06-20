@@ -309,7 +309,7 @@ class AdminRouter extends Router
 
     public function ListLessonsAction()
     {
-        Gate::authorize("view", Lesson::class, false, "Ders listesini görme yetkiniz yok");
+        Gate::authorize("view", Lesson::class, "Ders listesini görme yetkiniz yok");
         $this->assetManager->loadPageAssets('listpages');
         $lessonController = new LessonController();
         $this->view_data = array_merge($this->view_data, [
