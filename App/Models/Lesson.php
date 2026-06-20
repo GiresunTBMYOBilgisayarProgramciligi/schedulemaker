@@ -449,7 +449,7 @@ class Lesson extends Model
         $isExam = in_array($type, $examTypes);
 
         if ($isExam) {
-            $linkedIds = $this->getLinkedLessonIds();
+            $linkedIds = $this->getExamLinkedLessonIds();
 
             // Aynı koda sahip diğer grupları da bağlantılı ID'lere ekle (Kullanıcı Talebi)
             if ($this->group_no > 0) {
@@ -463,7 +463,7 @@ class Lesson extends Model
                     'id' => ['!=' => $this->id]
                 ])->all();
                 foreach ($siblings as $sibling) {
-                    $linkedIds = array_merge($linkedIds, $sibling->getLinkedLessonIds());
+                    $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds());
                 }
             }
             $linkedIds = array_unique($linkedIds);

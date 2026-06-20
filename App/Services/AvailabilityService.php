@@ -207,14 +207,9 @@ class AvailabilityService extends BaseService
                 return is_null($l->exam_parent_lesson_id);
             });
 
-            // Parent'ın mevcuduna exam child'ların mevcutlarını ekle
-            foreach ($available_lessons as $lesson) {
-                if (!empty($lesson->examChildLessons)) {
-                    foreach ($lesson->examChildLessons as $examChild) {
-                        $lesson->size += $examChild->size;
-                    }
-                }
-            }
+            // NOT: Exam child'ların mevcutları IsScheduleComplete tarafından
+            // getExamLinkedLessonIds() üzerinden targetSize'a zaten dahil edilmektedir.
+            // Burada tekrar eklenmez — aksi halde çift sayım olur.
 
             $available_lessons = array_values($available_lessons);
             $available_lessons = $this->groupExamLessons($available_lessons, $schedule->type);

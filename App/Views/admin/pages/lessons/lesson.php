@@ -89,10 +89,25 @@ use App\Core\Gate;
                                 // ── Bağlı Olduğu Ders (parent_lesson_id + exam_parent_lesson_id) ──
                                 $parentLinks = [];
                                 if ($lesson->parentLesson) {
-                                    $parentLinks[] = ['lesson' => $lesson->parentLesson, 'type' => 'lesson', 'action' => '/ajax/deleteParentLesson'];
+                                    $parentLinks[$lesson->parentLesson->id] = [
+                                        'lesson' => $lesson->parentLesson,
+                                        'types' => ['lesson'],
+                                        'actions' => ['lesson' => '/ajax/deleteParentLesson']
+                                    ];
                                 }
-                                if ($lesson->examParentLesson && ($lesson->examParentLesson->id !== ($lesson->parentLesson->id ?? null))) {
-                                    $parentLinks[] = ['lesson' => $lesson->examParentLesson, 'type' => 'exam', 'action' => '/ajax/deleteExamParentLesson'];
+                                if ($lesson->examParentLesson) {
+                                    $epId = $lesson->examParentLesson->id;
+                                    if (isset($parentLinks[$epId])) {
+                                        // Aynı ders hem ders hem sınav parent'ı — iki badge göster
+                                        $parentLinks[$epId]['types'][] = 'exam';
+                                        $parentLinks[$epId]['actions']['exam'] = '/ajax/deleteExamParentLesson';
+                                    } else {
+                                        $parentLinks[$epId] = [
+                                            'lesson' => $lesson->examParentLesson,
+                                            'types' => ['exam'],
+                                            'actions' => ['exam' => '/ajax/deleteExamParentLesson']
+                                        ];
+                                    }
                                 }
                                 if (!empty($parentLinks)):
                                 ?>
@@ -105,16 +120,18 @@ use App\Core\Gate;
                                                         class="link-dark link-underline-opacity-0">
                                                         <?= $pl['lesson']->getFullName(addCode: true, addProgram: true) ?>
                                                     </a>
-                                                    <form action="<?= $pl['action'] ?>" method="post"
-                                                        class="d-inline ajaxDeleteParentLesson" title="Bağlantıyı kaldır">
-                                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                                        <button type="submit"
-                                                            class="badge <?= $pl['type'] === 'exam' ? 'bg-info' : 'bg-primary' ?> border-0"
-                                                            style="cursor:pointer;">
-                                                            <?= $pl['type'] === 'exam' ? 'Sınav' : 'Ders' ?>
-                                                            <i class="bi bi-x-circle"></i>
-                                                        </button>
-                                                    </form>
+                                                    <?php foreach ($pl['types'] as $t): ?>
+                                                        <form action="<?= $pl['actions'][$t] ?>" method="post"
+                                                            class="d-inline ajaxDeleteParentLesson" title="<?= $t === 'exam' ? 'Sınav bağlantısını kaldır' : 'Ders bağlantısını kaldır' ?>">
+                                                            <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                                            <button type="submit"
+                                                                class="badge <?= $t === 'exam' ? 'bg-info' : 'bg-primary' ?> border-0"
+                                                                style="cursor:pointer;">
+                                                                <?= $t === 'exam' ? 'Sınav' : 'Ders' ?>
+                                                                <i class="bi bi-x-circle"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endforeach; ?>
                                                 </li>
                                             <?php endforeach; ?>
                                         </ul>
@@ -441,7 +458,7 @@ use App\Core\Gate;
                                 echo '<option disabled>' . $programName . '</option>';
                             }
                             ?>
-                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true) ?>
+                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true,addProgram: true) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
