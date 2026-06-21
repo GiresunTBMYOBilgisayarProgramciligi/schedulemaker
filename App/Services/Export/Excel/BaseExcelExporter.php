@@ -57,7 +57,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     {
         $scheduleType = in_array($filters['type'] ?? '', ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
         $maxDayIndex  = getSettingValue('maxDayIndex', $scheduleType, 4);
-        $colsPerDay   = ($filters['owner_type'] === 'classroom') ? 1 : 2;
+        $colsPerDay   = ($scheduleType === 'exam' || $filters['owner_type'] === 'classroom') ? 1 : 2;
         $totalCols    = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol      = Coordinate::stringFromColumnIndex($totalCols);
 

@@ -65,7 +65,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
             foreach ($scheduleRows as $weekIndex => $slots) {
                 $isClassroom = ($scheduleFilter['type'] === 'classroom');
-                $colsPerDay  = $isClassroom ? 1 : 2;
+                $colsPerDay  = 1;
                 $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
                 $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
