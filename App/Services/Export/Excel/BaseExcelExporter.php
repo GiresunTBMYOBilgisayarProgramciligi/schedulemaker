@@ -36,7 +36,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $this->filterBuilder = new ScheduleFilterBuilder();
 
         // Varsayılan font
-        $this->spreadsheet->getDefaultStyle()->getFont()->setName('Segoe UI')->setSize(10);
+        $this->spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(10);
     }
 
     protected function logger(): Logger

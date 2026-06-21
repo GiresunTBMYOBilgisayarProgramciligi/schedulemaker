@@ -41,7 +41,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
         $scheduleController = new ScheduleController();
         $maxDayIndex        = getSettingValue('maxDayIndex', 'exam', 4);
-        $colsPerDay         = ($filters['owner_type'] === 'classroom') ? 1 : 2;
+        $colsPerDay         = 1;
         $totalCols          = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol            = Coordinate::stringFromColumnIndex($totalCols);
 
@@ -105,15 +105,6 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                     $this->sheet->getStyle("{$col}{$row}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                         ->setVertical(Alignment::VERTICAL_CENTER);
-
-                    if (!$isClassroom) {
-                        $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
-                        $this->sheet->setCellValue("{$sCol}{$row}", "S / Gözetmen");
-                        $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()
-                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                            ->setVertical(Alignment::VERTICAL_CENTER);
-                        $this->sheet->getColumnDimension($sCol)->setWidth(15);
-                    }
                 }
 
                 $this->sheet->getColumnDimension('A')->setWidth(12);
@@ -165,9 +156,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                             }
 
                             $combinedContent   = new RichText();
-                            $combinedClassroom = new RichText();
                             $combinedContent->createText("\n");
-                            $combinedClassroom->createText("\n");
 
                             foreach ($items as $idx => $item) {
                                 $this->formatItem(
@@ -175,30 +164,15 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                                     $scheduleFilter['type'],
                                     $showOptions,
                                     $combinedContent,
-                                    $combinedClassroom,
                                     $idx > 0
                                 );
                             }
 
                             $combinedContent->createText("\n");
-                            $combinedClassroom->createText("\n");
 
                             $this->sheet->setCellValue("{$col}{$row}", $combinedContent);
                             if ($rowSpan > 1) {
                                 $this->sheet->mergeCells("{$col}{$row}:{$col}" . ($row + $rowSpan - 1));
-                            }
-
-                            if (!$isClassroom) {
-                                $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
-                                $this->sheet->setCellValue("{$sCol}{$row}", $combinedClassroom);
-                                $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()
-                                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                                    ->setVertical(Alignment::VERTICAL_CENTER)
-                                    ->setWrapText(true);
-                                    
-                                if ($rowSpan > 1) {
-                                    $this->sheet->mergeCells("{$sCol}{$row}:{$sCol}" . ($row + $rowSpan - 1));
-                                }
                             }
                             
                             // Yükseklik hesaplaması (Merge edilmiş hücrelerde Excel AutoFit çalışmaz)
@@ -261,7 +235,6 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
         string $scheduleType,
         array $options,
         RichText &$richContent,
-        RichText &$richClassroom,
         bool $addSeparator = false
     ): void {
         $slotDatas   = $item->getSlotDatas();
@@ -270,7 +243,6 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
         foreach ($slotDatas as $index => $data) {
             if ($addSeparator || $index > 0) {
                 $richContent->createText("\n" . str_repeat('═', 20) . "\n");
-                $richClassroom->createText("\n" . str_repeat('═', 5) . "\n");
                 $addSeparator = false;
             }
 
@@ -305,7 +277,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 }
             }
 
-            // ── Derslik ve Gözetmen Sütunu ─────────────────────────────────────
+            // ── Derslik ve Gözetmen Bilgisi ─────────────────────────────────────
             if ($assignments !== null) {
                 // A) Program bazlı kayit: ders veren hoca lesson->lecturer_id'den,
                 //    derslik ve gözetmenler detail['assignments']'tan gelir.
@@ -322,25 +294,45 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                     }
                 }
 
-                // Derslik sütunu
-                $classroomLines = [];
-                foreach ($assignments as $assignment) {
-                    $classroomLines[] = ($assignment['classroom_name'] ?? '');
-                }
-                $richClassroom->createText(implode("\n", array_unique($classroomLines)));
-
-                // Gözetmenler (ders adının altına)
+                // Gözetmen ve Derslik birleştirilmesi
                 if ($options['show_observer'] ?? false) {
-                    $observerNames = array_map(
-                        fn($a) => ($a['observer_name'] ?? ''),
-                        $assignments
-                    );
-                    $richContent->createText("\n" . implode("\n", array_filter($observerNames)));
+                    $assignmentLines = [];
+                    foreach ($assignments as $assignment) {
+                        $observerName = $assignment['observer_name'] ?? '';
+                        $classroomName = $assignment['classroom_name'] ?? '';
+                        
+                        // İkisi de varsa "Gözetmen - Derslik(Kalın)", sadece derslik varsa "Derslik(Kalın)", sadece gözetmen varsa "Gözetmen"
+                        if (!empty($observerName) && !empty($classroomName)) {
+                            // Sadece derslik kısmını bold yapmak için RichText kullanılacak ama şu an TextRun objesi oluşturmamız gerek.
+                            // PHPSpreadsheet RichText append mantığında createText ve createTextRun kullanılır.
+                            // Bu fonksiyon zaten tek bir element içinde olduğundan, richContent'e ekleyeceğiz.
+                            $richContent->createText("\n{$observerName} - ");
+                            $richContent->createTextRun($classroomName)->getFont()->setBold(true);
+                        } elseif (!empty($classroomName)) {
+                            $richContent->createText("\n");
+                            $richContent->createTextRun($classroomName)->getFont()->setBold(true);
+                        } elseif (!empty($observerName)) {
+                            $richContent->createText("\n{$observerName}");
+                        }
+                    }
+                } else {
+                    // Sadece derslik isimlerini virgülle ayırarak yazdırıyoruz (Gözetmen seçili değilse)
+                    $classroomLines = [];
+                    foreach ($assignments as $assignment) {
+                        if (!empty($assignment['classroom_name'])) {
+                            $classroomLines[] = $assignment['classroom_name'];
+                        }
+                    }
+                    if (!empty($classroomLines)) {
+                        $richContent->createText("\n");
+                        $richContent->createTextRun(implode(', ', array_unique($classroomLines)))->getFont()->setBold(true);
+                    }
                 }
             } else {
                 // B) Gözetmen/Derslik bazlı kayit: data içinde classifier bilgisi var
                 if ($scheduleType !== 'classroom' && $data->classroom) {
-                    $richClassroom->createText($data->classroom->name);
+                    $richContent->createText("\n");
+                    $richContent->createTextRun($data->classroom->name)->getFont()->setBold(true);
                 }
             }
         }
