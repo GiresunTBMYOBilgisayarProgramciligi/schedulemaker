@@ -87,7 +87,7 @@ Bu kayıtlarda `getSlotDatas()` `lecturer` ve `classroom` alanlarını dolu dön
 | Çoklu hafta | Hayır | Final için Evet (2 hafta) |
 | S sütunu etiketi | "S" (Sınıf) | "S / Gözetmen" |
 | Gözetmen desteği | Hayır | Evet (show_observer) |
-| Hücre birleştirme | Hayır | Evet (Peş peşe aynı sınav olan slotlar dikeyde birleşir) |
+| Hücre birleştirme | Evet (Peş peşe aynı ders olan slotlar dikeyde birleşir) | Evet (Peş peşe aynı sınav olan slotlar dikeyde birleşir) |
 
 ## ICS Export Özellikleri
 
