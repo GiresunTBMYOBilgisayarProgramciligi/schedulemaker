@@ -335,7 +335,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                         fn($a) => ($a['observer_name'] ?? ''),
                         $assignments
                     );
-                    $richContent->createText("\n" . implode(', ', array_filter($observerNames)));
+                    $richContent->createText("\n" . implode("\n", array_filter($observerNames)));
                 }
             } else {
                 // B) Gözetmen/Derslik bazlı kayit: data içinde classifier bilgisi var

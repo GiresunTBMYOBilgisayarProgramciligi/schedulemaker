@@ -103,7 +103,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                         if ($showOptions['show_observer'] ?? false) {
                             $observerNames = array_filter(array_column($assignments, 'observer_name'));
                             if (!empty($observerNames)) {
-                                $descriptionParts[] = "Gözetmenler: " . implode(', ', $observerNames);
+                                $descriptionParts[] = "Gözetmenler:\n" . implode('\n', $observerNames);
                             }
                         }
                     } else {
