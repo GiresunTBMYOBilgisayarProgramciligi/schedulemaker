@@ -124,7 +124,10 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 $row++;
 
                 // Slot satırları
-                foreach ($slots as $slot) {
+                $coveredCells = [];
+                $totalRows = count($slots);
+                
+                foreach ($slots as $rowIndex => $slot) {
                     $timeLabel = $slot['slotStartTime']->format('H:i') . " - " . $slot['slotEndTime']->format('H:i');
                     $this->sheet->setCellValue("A{$row}", $timeLabel);
                     $this->sheet->getStyle("A{$row}")->getAlignment()
@@ -136,8 +139,30 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                         $col    = Coordinate::stringFromColumnIndex($colIdx);
                         $dayKey = 'day' . $i;
 
+                        if (isset($coveredCells[$weekIndex][$rowIndex][$i])) {
+                            continue;
+                        }
+
                         if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
                             $items = is_array($slot['days'][$dayKey]) ? $slot['days'][$dayKey] : [$slot['days'][$dayKey]];
+                            
+                            // Rowspan hesapla
+                            $rowSpan = 1;
+                            $firstItemId = $items[0]->id;
+                            for ($j = $rowIndex + 1; $j < $totalRows; $j++) {
+                                $nextSlotItem = $slots[$j]['days'][$dayKey] ?? null;
+                                if ($nextSlotItem) {
+                                    $nextItems = is_array($nextSlotItem) ? $nextSlotItem : [$nextSlotItem];
+                                    if ($nextItems[0]->id === $firstItemId) {
+                                        $rowSpan++;
+                                        $coveredCells[$weekIndex][$j][$i] = true;
+                                    } else {
+                                        break;
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
 
                             $combinedContent   = new RichText();
                             $combinedClassroom = new RichText();
@@ -159,6 +184,9 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                             $combinedClassroom->createText("\n");
 
                             $this->sheet->setCellValue("{$col}{$row}", $combinedContent);
+                            if ($rowSpan > 1) {
+                                $this->sheet->mergeCells("{$col}{$row}:{$col}" . ($row + $rowSpan - 1));
+                            }
 
                             if (!$isClassroom) {
                                 $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
@@ -167,13 +195,37 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                                     ->setVertical(Alignment::VERTICAL_CENTER)
                                     ->setWrapText(true);
+                                    
+                                if ($rowSpan > 1) {
+                                    $this->sheet->mergeCells("{$sCol}{$row}:{$sCol}" . ($row + $rowSpan - 1));
+                                }
+                            }
+                            
+                            // Yükseklik hesaplaması (Merge edilmiş hücrelerde Excel AutoFit çalışmaz)
+                            $lines = substr_count($combinedContent->getPlainText(), "\n") + 1;
+                            $requiredHeight = $lines * 14; // Satır başı ortalama 14pt (2 satır boşluk vs ekleneceği için yeterli)
+                            $heightPerRow = ceil($requiredHeight / $rowSpan);
+                            
+                            // 15pt normal bir satırın yüksekliğidir. İhtiyaç varsa artırırız.
+                            if ($heightPerRow > 15) {
+                                for ($r = 0; $r < $rowSpan; $r++) {
+                                    $currentHeight = $this->sheet->getRowDimension($row + $r)->getRowHeight();
+                                    if ($currentHeight === -1 || $currentHeight < $heightPerRow) {
+                                        $this->sheet->getRowDimension($row + $r)->setRowHeight($heightPerRow);
+                                    }
+                                }
                             }
                         }
 
-                        $this->sheet->getStyle("{$col}{$row}")->getAlignment()
-                            ->setWrapText(true)
-                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                            ->setVertical(Alignment::VERTICAL_CENTER);
+                        // Eğer rowspan varsa, bu hücreler covered olsa da border ve hizalama için tüm span'i kapsaması lazım.
+                        // PhpSpreadsheet merge edilmiş hücrelere stil vermek için ana hücrenin stilini uygular, bu yüzden
+                        // burada sadece ana hücrenin stilini (ve wrapText) veriyoruz.
+                        if (!isset($coveredCells[$weekIndex][$rowIndex][$i])) {
+                            $this->sheet->getStyle("{$col}{$row}")->getAlignment()
+                                ->setWrapText(true)
+                                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                                ->setVertical(Alignment::VERTICAL_CENTER);
+                        }
                     }
 
                     $row++;
