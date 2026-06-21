@@ -9,12 +9,14 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Services\UserService;
-use App\Core\ImportExportManager;
 use App\Core\Router;
 use App\Services\ScheduleService;
 use App\Services\ExamService;
 use App\Services\ConflictService;
 use App\Services\AvailabilityService;
+use App\Services\Export\ExporterFactory;
+use App\Services\Import\UserImporter;
+use App\Services\Import\LessonImporter;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Department;
@@ -25,6 +27,7 @@ use App\Models\ScheduleItem;
 use App\Models\Setting;
 use App\Models\User;
 use Exception;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Core\Gate;
@@ -1044,27 +1047,38 @@ class AjaxRouter extends Router
     }
 
     /**
-     * todo
+     * Excel / ICS program dışa aktarma — ExporterFactory ve ScheduleExporterInterface üzerinden çalışır.
      * @throws Exception
      */
     public function exportScheduleAction(): void
     {
         $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
 
-        $importExportManager = new ImportExportManager();
-        $importExportManager->exportSchedule($filters);
+        $showOptions = [
+            'show_code'     => !isset($filters['show_code'])     || (string) $filters['show_code']     === '1',
+            'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
+            'show_program'  => !isset($filters['show_program'])  || (string) $filters['show_program']  === '1',
+            'show_observer' => !isset($filters['show_observer']) || (string) $filters['show_observer'] === '1',
+        ];
+
+        $exporter = ExporterFactory::create($filters, 'excel');
+        $exporter->export($filters, $showOptions);
     }
 
     /**
-     * todo
-     * Takvim (ICS) dışa aktarma
+     * Takvim (ICS) dışa aktarma — ExporterFactory üzerinden çalışır.
      * @throws Exception
      */
     public function exportScheduleIcsAction(): void
     {
         $filters = (new FilterValidator())->validate($this->data, "exportScheduleIcsAction");
-        $importExportManager = new ImportExportManager();
-        $importExportManager->exportScheduleIcs($filters);
+
+        $showOptions = [
+            'show_observer' => !isset($filters['show_observer']) || (string) ($filters['show_observer'] ?? '1') === '1',
+        ];
+
+        $exporter = ExporterFactory::create($filters, 'ics');
+        $exporter->export($filters, $showOptions);
     }
 
     /*
@@ -1110,22 +1124,38 @@ class AjaxRouter extends Router
      */
     public function importUsersAction(): void
     {
-        $importExportManager = new ImportExportManager($this->files);
-        $result = $importExportManager->importUsersFromExcel();
+        $uploadedFile = $this->files['file'] ?? null;
+        if (!$uploadedFile) throw new Exception("Dosya yüklenmedi");
+
+        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+        $importer    = new UserImporter($spreadsheet);
+        $result      = $importer->import();
+
         $this->response['status'] = "success";
-        $this->response['msg'] = sprintf("%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
+        $this->response['msg']    = sprintf(
+            "%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var",
+            $result['added'], $result['updated'], $result['errorCount']
+        );
         $this->response['errors'] = $result['errors'];
         $this->sendResponse();
     }
 
     public function importLessonsAction(): void
     {
-        $importExportManager = new ImportExportManager($this->files, $this->data);
-        $result = $importExportManager->importLessonsFromExcel();
-        $this->response['status'] = "success";
-        $this->response['msg'] = sprintf("%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var", $result['added'], $result['updated'], $result['errorCount']);
-        $this->response['errors'] = $result['errors'];
-        $this->response['addedLessons'] = $result['addedLessons'];
+        $uploadedFile = $this->files['file'] ?? null;
+        if (!$uploadedFile) throw new Exception("Dosya yüklenmedi");
+
+        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+        $importer    = new LessonImporter($spreadsheet, $this->data);
+        $result      = $importer->import();
+
+        $this->response['status']         = "success";
+        $this->response['msg']            = sprintf(
+            "%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var",
+            $result['added'], $result['updated'], $result['errorCount']
+        );
+        $this->response['errors']         = $result['errors'];
+        $this->response['addedLessons']   = $result['addedLessons'];
         $this->response['updatedLessons'] = $result['updatedLessons'];
         $this->sendResponse();
     }

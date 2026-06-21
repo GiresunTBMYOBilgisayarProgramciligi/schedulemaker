@@ -1,17 +1,42 @@
-[🏠 Ana Sayfa](../../../README.md) / [App](../../README.md) / [Core](../README.md) / [ImportExportManager](./README.md) / **exportSchedule**
+[🏠 Ana Sayfa](../../../../README.md) / [App](../../../README.md) / [Core](../../README.md) / **ImportExportManager**
 
 ---
-# ImportExportManager::exportSchedule(array $filters)
+# App\Core\ImportExportManager
 
-Ders programlarını estetik bir Excel tablosu formatında üretir.
+> [!WARNING]
+> Bu sınıf **kullanım dışı (deprecated)** olarak işaretlenmiştir ve artık aktif olarak kullanılmamaktadır.
+> Tüm işlevsellik `App/Services` altındaki özel servis sınıflarına taşınmıştır.
+> Bu dosya gelecekte silinecektir.
 
-## Mantık (Algoritma)
-1.  **Filtreleme**: `generateScheduleFilters()` ile hedef programa/hocaya/dersliğe ait tüm filtreleri (yarıyıl bazlı) hazırlar.
-2.  **Başlık Oluşturma**: `createFileTitle()` ile üniversite adı, akademik yıl ve dönem bilgilerini Excel'in en üst satırlarına yazar ve hücreleri birleştirir.
-3.  **Ders Programı Matrisi**: `ScheduleController` üzerinden her bir filtre için gün/saat bazlı bir veri matrisi alır.
-4.  **Hücre Yazımı**: Matristeki her bir hücreyi kontrol eder:
-    - **Boş Hücre**: Boş bırakılır.
-    - **Tek Ders**: Ders adı ve hoca bilgisini hücreye yazar.
-    - **Gruplu Dersler**: Birden fazla dersi alt alta (`\n`) gelecek şekilde aynı hücreye sığdırır.
-5.  **Şekillendirme**: Hücreleri ortalar, metinleri kaydırır (`WrapText`), derslik türüne göre renklendirme (opsiyonel) ve kenarlıklar ekler.
-6.  **İndirme**: Sütun genişliklerini içeriğe göre otomatik ayarlar ve dosyayı tarayıcıya `Xlsx` formatında gönderir.
+## Yeni Servis Yapısı
+
+### İçe Aktarma (Import)
+
+| Eski Metod | Yeni Sınıf |
+|---|---|
+| `importUsersFromExcel()` | [`App\Services\Import\UserImporter`](../../../Services/Import/UserImporter.php) |
+| `importLessonsFromExcel()` | [`App\Services\Import\LessonImporter`](../../../Services/Import/LessonImporter.php) |
+
+### Dışa Aktarma (Export)
+
+| Eski Metod | Yeni Sınıf |
+|---|---|
+| `exportSchedule()` | `App\Services\Export\Excel\LessonScheduleExcelExporter` (ders) |
+| `exportSchedule()` | `App\Services\Export\Excel\ExamScheduleExcelExporter` (sınav) |
+| `exportScheduleIcs()` | `App\Services\Export\Ics\LessonScheduleIcsExporter` (ders) |
+| `exportScheduleIcs()` | `App\Services\Export\Ics\ExamScheduleIcsExporter` (sınav) |
+| `generateScheduleFilters()` | [`App\Services\Export\ScheduleFilterBuilder`](../../../Services/Export/ScheduleFilterBuilder.php) |
+
+### Doğru Kullanım
+
+```php
+// Eski (kullanım dışı):
+$mgr = new ImportExportManager();
+$mgr->exportSchedule($filters);
+
+// Yeni:
+$exporter = ExporterFactory::create($filters, 'excel'); // veya 'ics'
+$exporter->export($filters, $showOptions);
+```
+
+`ExporterFactory`, `$filters['type']` değerine göre (`lesson`, `midterm-exam`, `final-exam`, `makeup-exam`) otomatik olarak doğru sınıfı seçer.
