@@ -255,13 +255,29 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
             // ── Derslik ve Gözetmen Sütunu ─────────────────────────────────────
             if ($assignments !== null) {
-                // A) Program bazlı kayit: detail['assignments'] üzera satır satır Gözetmen + Derslik
+                // A) Program bazlı kayit: ders veren hoca lesson->lecturer_id'den,
+                //    derslik ve gözetmenler detail['assignments']'tan gelir.
+
+                // Hoca Adı: program bazlı sınav kaydında data.lecturer_id = null,
+                //            bu yüzden dersin kendi hoca bilgisini kullanıyoruz.
+                if ($options['show_lecturer'] && $scheduleType !== 'user' && !empty($data->lesson->lecturer_id)) {
+                    $lessonLecturer = (new \App\Models\User())
+                        ->get()
+                        ->where(['id' => $data->lesson->lecturer_id])
+                        ->first();
+                    if ($lessonLecturer) {
+                        $richContent->createText("\n(" . $lessonLecturer->getFullName() . ")");
+                    }
+                }
+
+                // Derslik sütunu
                 $classroomLines = [];
                 foreach ($assignments as $assignment) {
                     $classroomLines[] = ($assignment['classroom_name'] ?? '');
                 }
                 $richClassroom->createText(implode("\n", array_unique($classroomLines)));
 
+                // Gözetmenler (ders adının altına)
                 if ($options['show_observer'] ?? false) {
                     $observerNames = array_map(
                         fn($a) => ($a['observer_name'] ?? ''),
@@ -270,7 +286,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                     $richContent->createText("\n" . implode(', ', array_filter($observerNames)));
                 }
             } else {
-                // B) Gözetmen/Derslik bazlı kayit: data içinde classroom bilgisi var
+                // B) Gözetmen/Derslik bazlı kayit: data içinde classifier bilgisi var
                 if ($scheduleType !== 'classroom' && $data->classroom) {
                     $richClassroom->createText($data->classroom->name);
                 }

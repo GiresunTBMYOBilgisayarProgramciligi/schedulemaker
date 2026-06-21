@@ -87,6 +87,18 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                             array_column($assignments, 'classroom_name')
                         )));
 
+                        // Hoca: program bazlı sınav kaydında data.lecturer_id = null,
+                        //       dersin kendi lecturer_id'si kullanılır.
+                        if (!empty($data->lesson->lecturer_id)) {
+                            $lessonLecturer = (new \App\Models\User())
+                                ->get()
+                                ->where(['id' => $data->lesson->lecturer_id])
+                                ->first();
+                            if ($lessonLecturer && $scheduleFilter['type'] !== 'user') {
+                                $descriptionParts[] = "Hoca: " . $lessonLecturer->getFullName();
+                            }
+                        }
+
                         // Gözetmen bilgisi
                         if ($showOptions['show_observer'] ?? false) {
                             $observerNames = array_filter(array_column($assignments, 'observer_name'));
