@@ -328,6 +328,11 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                     $richContent->createText("\n");
                     $richContent->createTextRun($data->classroom->name)->getFont()->setBold(true);
                 }
+                
+                // Derslik programında gözetmen gösterilmesi istenmişse (gözetmen data->lecturer içindedir)
+                if ($scheduleType === 'classroom' && ($options['show_observer'] ?? false) && $data->lecturer) {
+                    $richContent->createText("\n" . $data->lecturer->getFullName());
+                }
             }
         }
     }

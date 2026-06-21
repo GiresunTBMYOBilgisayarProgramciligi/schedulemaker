@@ -97,7 +97,10 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                     } else {
                         // B) Gözetmen/Derslik bazlı kayıt: data içinde classroom var
                         $locationText = $classroom ? $classroom->name : '';
+                        
                         if ($isAssignmentRecord && $lecturer) {
+                            $descriptionParts[] = "Gözetmen: " . $lecturer->getFullName();
+                        } elseif ($scheduleFilter['type'] === 'classroom' && ($showOptions['show_observer'] ?? false) && $lecturer) {
                             $descriptionParts[] = "Gözetmen: " . $lecturer->getFullName();
                         }
                     }
