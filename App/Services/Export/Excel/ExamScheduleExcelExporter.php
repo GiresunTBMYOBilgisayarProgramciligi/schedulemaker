@@ -253,9 +253,15 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             }
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
-            // Hoca Adı (sadece program/ders bazlı görünümde gösterilir)
-            if ($options['show_lecturer'] && $scheduleType !== 'user' && $data->lecturer) {
-                $richContent->createText("\n(" . $data->lecturer->getFullName() . ")");
+            // Hoca Adı (Daima dersin asıl hocası)
+            if ($options['show_lecturer'] && !empty($data->lesson->lecturer_id)) {
+                $lessonLecturer = (new \App\Models\User())
+                    ->get()
+                    ->where(['id' => $data->lesson->lecturer_id])
+                    ->first();
+                if ($lessonLecturer) {
+                    $richContent->createText("\n(" . $lessonLecturer->getFullName() . ")");
+                }
             }
 
             // Program / Bölüm Adı
@@ -279,20 +285,8 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
             // ── Derslik ve Gözetmen Bilgisi ─────────────────────────────────────
             if ($assignments !== null) {
-                // A) Program bazlı kayit: ders veren hoca lesson->lecturer_id'den,
+                // A) Program bazlı kayit: ders veren hoca yukarıda işlendi,
                 //    derslik ve gözetmenler detail['assignments']'tan gelir.
-
-                // Hoca Adı: program bazlı sınav kaydında data.lecturer_id = null,
-                //            bu yüzden dersin kendi hoca bilgisini kullanıyoruz.
-                if ($options['show_lecturer'] && $scheduleType !== 'user' && !empty($data->lesson->lecturer_id)) {
-                    $lessonLecturer = (new \App\Models\User())
-                        ->get()
-                        ->where(['id' => $data->lesson->lecturer_id])
-                        ->first();
-                    if ($lessonLecturer) {
-                        $richContent->createText("\n(" . $lessonLecturer->getFullName() . ")");
-                    }
-                }
 
                 // Gözetmen ve Derslik birleştirilmesi
                 if ($options['show_observer'] ?? false) {

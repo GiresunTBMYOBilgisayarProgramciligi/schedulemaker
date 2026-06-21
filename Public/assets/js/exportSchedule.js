@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <label class="form-check-label" for="show_code">Ders Kodu</label>
             </div>`;
 
-        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department") {
+        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department" || (isExam && ownerType === "user")) {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_lecturer" checked>
                 <label class="form-check-label" for="show_lecturer">Hoca Adı</label>
@@ -128,8 +128,8 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>`;
         }
 
-        // Sınav türleri için gözetmen seçeneği
-        if (isExam) {
+        // Sınav türleri için gözetmen seçeneği (Hoca hariç)
+        if (isExam && ownerType !== "user") {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_observer" checked>
                 <label class="form-check-label" for="show_observer">Gözetmen İsimleri</label>

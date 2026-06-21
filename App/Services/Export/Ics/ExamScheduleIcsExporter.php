@@ -81,23 +81,11 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
                     $descriptionParts = [];
 
-                    // A) Program bazlı kayıt: derslik ve gözetmenler assignments'tan gelir
+                        // Derslik ve gözetmenler assignments'tan gelir
                     if ($assignments !== null) {
                         $locationText = implode(', ', array_unique(array_filter(
                             array_column($assignments, 'classroom_name')
                         )));
-
-                        // Hoca: program bazlı sınav kaydında data.lecturer_id = null,
-                        //       dersin kendi lecturer_id'si kullanılır.
-                        if (!empty($data->lesson->lecturer_id)) {
-                            $lessonLecturer = (new \App\Models\User())
-                                ->get()
-                                ->where(['id' => $data->lesson->lecturer_id])
-                                ->first();
-                            if ($lessonLecturer && $scheduleFilter['type'] !== 'user') {
-                                $descriptionParts[] = "Hoca: " . $lessonLecturer->getFullName();
-                            }
-                        }
 
                         // Gözetmen bilgisi
                         if ($showOptions['show_observer'] ?? false) {
@@ -114,8 +102,15 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                         }
                     }
 
-                    if ($scheduleFilter['type'] !== 'user' && $lecturer && !$isAssignmentRecord) {
-                        $descriptionParts[] = "Hoca: " . $lecturer->getFullName();
+                    // Hoca Adı (Daima dersin asıl hocası)
+                    if (!empty($data->lesson->lecturer_id)) {
+                        $lessonLecturer = (new \App\Models\User())
+                            ->get()
+                            ->where(['id' => $data->lesson->lecturer_id])
+                            ->first();
+                        if ($lessonLecturer) {
+                            $descriptionParts[] = "Hoca: " . $lessonLecturer->getFullName();
+                        }
                     }
                     if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
                         $descriptionParts[] = "Program: " . $lesson->program->name;
