@@ -31,20 +31,15 @@ class ScheduleController extends Controller
      * @return array
      * @throws Exception
      */
-    private function generateEmptyWeek(string $type = 'html', ?int $maxDayIndex = null): array
+    private function generateEmptyWeek(?int $maxDayIndex = null): array
     {
 
         if ($maxDayIndex === null)
             throw new Exception("maxDayIndex belirtilmelidir");
         $emptyWeek = [];
-        /*
-         * todo buradaki eptyweek excel dosyası için day1 ve classroom1 gibi değerler aldığı için index olarak day1 şeklinde tanımlanıyor. ama proje genelinde dayindex int olarak tanımlı. Bu nedenle int dönüştürme yapılıyor
-         * Bu sistem kullanışlı değil. daha iyi bir sistem geliştirilmeli. Excell aktarımı düzenlenmeli
-         */
+        
         foreach (range(0, $maxDayIndex) as $index) {
             $emptyWeek["day{$index}"] = null;
-            if ($type == 'excel')
-                $emptyWeek["classroom{$index}"] = null;
         }
         return $emptyWeek;
     }
@@ -59,7 +54,7 @@ class ScheduleController extends Controller
      * @throws Exception
      * @return array
      */
-    public function prepareScheduleRows(Schedule $schedule, $type = "html", $maxDayIndex = null): array
+    public function prepareScheduleRows(Schedule $schedule, $maxDayIndex = null): array
     {
         /*
          * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
@@ -67,16 +62,10 @@ class ScheduleController extends Controller
          */
         if ($maxDayIndex === null) {
             $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-            $type = in_array($schedule->type, $examTypes) ? 'exam' : 'lesson';
-            $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+            $scheduleTypeStr = in_array($schedule->type, $examTypes) ? 'exam' : 'lesson';
+            $maxDayIndex = getSettingValue('maxDayIndex', $scheduleTypeStr, 4);
         }
 
-        /**
-         * derslik tablosunda sınıf bilgisi gözükmemesi için type excel yerine html yapılıyor. excell türü sınıf sütünu ekliyor}
-         */
-        if ($schedule->owner_type == 'classroom') {
-            $type = "html";
-        }
         /**
          * Boş tablo oluşturmak için tablo satır verileri
          */
@@ -98,7 +87,7 @@ class ScheduleController extends Controller
                     $scheduleRows[$w][] = [
                         'slotStartTime' => $slotStartTime,
                         'slotEndTime' => $slotEndTime,
-                        'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                        'days' => $this->generateEmptyWeek($maxDayIndex)
                     ];
 
                     $start = (clone $slotEndTime)->modify("+$break minutes");
@@ -115,7 +104,7 @@ class ScheduleController extends Controller
                     $scheduleRows[$w][] = [
                         'slotStartTime' => $slotStartTime,
                         'slotEndTime' => $slotEndTime,
-                        'days' => $this->generateEmptyWeek($type, $maxDayIndex)
+                        'days' => $this->generateEmptyWeek($maxDayIndex)
                     ];
                     $start = (clone $slotEndTime)->modify("+$break minutes"); // tenefüs arası
                 }
@@ -190,7 +179,7 @@ class ScheduleController extends Controller
 
         $schedule = (new Schedule())->firstOrCreate($filters);
         $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
-        $scheduleRows = $this->prepareScheduleRows($schedule, "html");
+        $scheduleRows = $this->prepareScheduleRows($schedule);
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,

@@ -61,7 +61,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             // Final programı 2 haftalık olabilir
             $weekCount   = ($filters['type'] === 'final-exam') ? 2 : 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 4);
-            $scheduleRows = $scheduleController->prepareScheduleRows($schedule, 'excel', $maxDayIndex);
+            $scheduleRows = $scheduleController->prepareScheduleRows($schedule, $maxDayIndex);
 
             foreach ($scheduleRows as $weekIndex => $slots) {
                 $isClassroom = ($scheduleFilter['type'] === 'classroom');
