@@ -16,7 +16,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now      = new \DateTime('now', $timezone);
 
-        ['semesterStart' => $semesterStart, 'semesterEnd' => $semesterEnd] = $this->getSemesterDates($timezone);
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $filters['type'] ?? 'lesson');
 
         $lines   = $this->buildCalendarHeader($filters);
 
@@ -43,7 +43,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
                     $lecturer  = $data->lecturer;
                     $classroom = $data->classroom;
 
-                    [$firstDate, $useRecurrence] = $this->resolveFirstDate($dayIndex, $timezone, $now, $semesterStart);
+                    [$firstDate, $useRecurrence] = $this->resolveFirstDate($dayIndex, $timezone, $now, $startDate);
 
                     $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
                     $dtEnd   = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
@@ -66,7 +66,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
                     $lines = array_merge($lines, $this->buildVevent(
                         $dtStart, $dtEnd, $summaryText, $locationText,
                         implode('\n', $descriptionParts),
-                        $now, $useRecurrence, $dayIndex, $semesterEnd, $timezone
+                        $now, $useRecurrence, $dayIndex, $endDate, $timezone
                     ));
                 }
             }
@@ -90,15 +90,15 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
         ];
     }
 
-    private function resolveFirstDate(int $dayIndex, \DateTimeZone $tz, \DateTime $now, ?\DateTime $semesterStart): array
+    private function resolveFirstDate(int $dayIndex, \DateTimeZone $tz, \DateTime $now, ?\DateTime $startDate): array
     {
-        $useRecurrence = $semesterStart instanceof \DateTime;
+        $useRecurrence = $startDate instanceof \DateTime;
 
         if ($useRecurrence) {
             $targetDow = $dayIndex + 1;
-            $startDow  = (int) $semesterStart->format('N');
+            $startDow  = (int) $startDate->format('N');
             $delta     = ($targetDow - $startDow + 7) % 7;
-            $firstDate = (clone $semesterStart)->modify("+{$delta} days");
+            $firstDate = (clone $startDate)->modify("+{$delta} days");
         } else {
             $anchor    = new \DateTime('next monday', $tz);
             if ((int) $now->format('N') === 1) $anchor = new \DateTime('today', $tz);
@@ -117,7 +117,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
         \DateTime $now,
         bool $useRecurrence,
         int $dayIndex,
-        ?\DateTime $semesterEnd,
+        ?\DateTime $endDate,
         \DateTimeZone $tz
     ): array {
         $uid      = uniqid('sm-', true) . '@schedulemaker.local';
@@ -131,10 +131,10 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
             'DTEND;TZID=Europe/Istanbul:' . $dtEnd->format('Ymd\THis'),
         ];
 
-        if ($useRecurrence && $semesterEnd instanceof \DateTime) {
+        if ($useRecurrence && $endDate instanceof \DateTime) {
             $weekdayCodes = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
             $byday        = $weekdayCodes[$dayIndex] ?? 'MO';
-            $untilUtc     = (clone $semesterEnd)->setTime(23, 59, 59)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
+            $untilUtc     = (clone $endDate)->setTime(23, 59, 59)->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z');
             $event[]      = 'RRULE:FREQ=WEEKLY;UNTIL=' . $untilUtc . ';BYDAY=' . $byday;
         }
 

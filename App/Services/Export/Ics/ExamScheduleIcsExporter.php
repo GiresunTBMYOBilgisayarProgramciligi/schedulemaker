@@ -22,8 +22,8 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now      = new \DateTime('now', $timezone);
 
-        // Sınav programı için dönem tarihlerini sınav dönem ayarlarından al
-        ['semesterStart' => $semesterStart, 'semesterEnd' => $semesterEnd] = $this->getSemesterDates($timezone);
+        // Sınav programı için tarihleri sınavın kendi ayarlarından al (BaseIcsExporter üzerinden)
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $type);
 
         $typeLabels = [
             'midterm-exam' => 'Ara Sınav',
@@ -71,7 +71,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                     $lecturer  = $data->lecturer;
                     $classroom = $data->classroom;
 
-                    $firstDate = $this->resolveSingleDate($dayIndex, $weekIndex, $timezone, $now, $semesterStart);
+                    $firstDate = $this->resolveSingleDate($dayIndex, $weekIndex, $timezone, $now, $startDate);
 
                     $dtStart = new \DateTime($firstDate->format('Y-m-d') . ' ' . $startText, $timezone);
                     $dtEnd   = new \DateTime($firstDate->format('Y-m-d') . ' ' . $endText, $timezone);
@@ -149,13 +149,13 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
      * Sınavlar tek seferlik etkinlik — haftalık tekrar olmaz.
      * week_index ve day_index'e göre dönemin başından itibaren doğru tarihi hesaplar.
      */
-    private function resolveSingleDate(int $dayIndex, int $weekIndex, \DateTimeZone $tz, \DateTime $now, ?\DateTime $semesterStart): \DateTime
+    private function resolveSingleDate(int $dayIndex, int $weekIndex, \DateTimeZone $tz, \DateTime $now, ?\DateTime $startDate): \DateTime
     {
-        if ($semesterStart instanceof \DateTime) {
+        if ($startDate instanceof \DateTime) {
             $targetDow = $dayIndex + 1; // 1=Pzt ... 7=Pz
-            $startDow  = (int) $semesterStart->format('N');
+            $startDow  = (int) $startDate->format('N');
             $delta     = ($targetDow - $startDow + 7) % 7;
-            return (clone $semesterStart)->modify("+{$delta} days")->modify("+{$weekIndex} weeks");
+            return (clone $startDate)->modify("+{$delta} days")->modify("+{$weekIndex} weeks");
         }
 
         // Dönem başlangıcı ayarlanmamışsa: bu haftadan başla

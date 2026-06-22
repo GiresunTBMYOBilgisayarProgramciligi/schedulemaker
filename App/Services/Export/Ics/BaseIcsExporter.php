@@ -67,25 +67,43 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     }
 
     /**
-     * Akademik dönem başlangıç/bitiş tarihlerini ayarlardan alır.
-     * @return array{semesterStart: \DateTime|null, semesterEnd: \DateTime|null}
+     * İlgili program türüne (ders veya sınav) göre başlangıç ve bitiş tarihlerini ayarlardan alır.
+     * @return array{startDate: \DateTime|null, endDate: \DateTime|null}
      */
-    protected function getSemesterDates(\DateTimeZone $timezone): array
+    protected function getScheduleDates(\DateTimeZone $timezone, string $type = 'lesson'): array
     {
-        $startDateStr = \App\Helpers\getSettingValue('lesson_start_date', 'lesson');
-        $endDateStr   = \App\Helpers\getSettingValue('lesson_end_date', 'lesson');
-        $semesterStart = null;
-        $semesterEnd   = null;
+        if (in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+            $settingKey = match ($type) {
+                'final-exam'  => 'final_start_date',
+                'makeup-exam' => 'makeup_start_date',
+                default       => 'midterm_start_date',
+            };
+            $startDateStr = \App\Helpers\getSettingValue($settingKey, 'exam');
+            $endDateStr   = null;
+        } else {
+            $startDateStr = \App\Helpers\getSettingValue('lesson_start_date', 'lesson');
+            $endDateStr   = \App\Helpers\getSettingValue('lesson_end_date', 'lesson');
+        }
 
-        if (!empty($startDateStr) && !empty($endDateStr)) {
+        $startDate = null;
+        $endDate   = null;
+
+        if (!empty($startDateStr)) {
             try {
-                $semesterStart = new \DateTime($startDateStr, $timezone);
-                $semesterEnd   = new \DateTime($endDateStr, $timezone);
+                $startDate = new \DateTime($startDateStr, $timezone);
+            } catch (\Throwable) {
+                // Tarihler ayarlanmamışsa null kalır
+            }
+        }
+        
+        if (!empty($endDateStr)) {
+            try {
+                $endDate = new \DateTime($endDateStr, $timezone);
             } catch (\Throwable) {
                 // Tarihler ayarlanmamışsa null kalır
             }
         }
 
-        return ['semesterStart' => $semesterStart, 'semesterEnd' => $semesterEnd];
+        return ['startDate' => $startDate, 'endDate' => $endDate];
     }
 }

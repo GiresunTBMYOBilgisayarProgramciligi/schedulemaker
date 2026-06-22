@@ -13,9 +13,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const button = event.target.closest("button"); // En yakın button'u bul
         if (!button) return; // Eğer button değilse devam etme
 
-        // Seçilen program türünü al (schedule_type seçicisi varsa)
+        // Seçilen program türünü al (kartın data-type'ı öncelikli, yoksa schedule_type seçicisi)
+        const scheduleCard = button.closest(".schedule-card");
+        const cardScheduleType = scheduleCard ? scheduleCard.dataset.type : null;
+        
         const scheduleTypeSelect = document.getElementById("schedule_type");
-        const scheduleType = scheduleTypeSelect?.value || "lesson";
+        const scheduleType = cardScheduleType || scheduleTypeSelect?.value || "lesson";
 
         // Sadece Excel dışa aktarma butonları için (id sonunda Export olanlar)
         if (button.id.endsWith("Export")) {
