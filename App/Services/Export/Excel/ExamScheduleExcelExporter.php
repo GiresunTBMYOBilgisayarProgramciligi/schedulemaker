@@ -45,6 +45,20 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
         $totalCols          = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol            = Coordinate::stringFromColumnIndex($totalCols);
 
+        $startDate = null;
+        $settingKey = match ($type) {
+            'midterm-exam' => 'midterm_start_date',
+            'final-exam' => 'final_start_date',
+            'makeup-exam' => 'makeup_start_date',
+            default => null
+        };
+        if ($settingKey) {
+            $startDateString = getSettingValue($settingKey, 'exam');
+            if ($startDateString) {
+                $startDate = new \DateTime($startDateString);
+            }
+        }
+
         $row             = $this->writeFileTitle($filters);
         $scheduleFilters = $this->filterBuilder->build($filters);
 
@@ -101,11 +115,21 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 for ($i = 0; $i <= $maxDayIndex; $i++) {
                     $colIdx = $i * $colsPerDay + 2;
                     $col    = Coordinate::stringFromColumnIndex($colIdx);
-                    $this->sheet->setCellValue("{$col}{$row}", $days[$i]);
+                    
+                    $headerTitle = $days[$i];
+                    if ($startDate) {
+                        $currentDate = (clone $startDate)->modify("+" . ($weekIndex * 7 + $i) . " days");
+                        $headerTitle .= "\n" . $currentDate->format('d.m.Y');
+                    }
+                    
+                    $this->sheet->setCellValue("{$col}{$row}", $headerTitle);
                     $this->sheet->getStyle("{$col}{$row}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                        ->setVertical(Alignment::VERTICAL_CENTER);
+                        ->setVertical(Alignment::VERTICAL_CENTER)
+                        ->setWrapText(true);
                 }
+                
+                $this->sheet->getRowDimension($row)->setRowHeight(35);
 
                 $this->sheet->getColumnDimension('A')->setWidth(12);
                 $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
