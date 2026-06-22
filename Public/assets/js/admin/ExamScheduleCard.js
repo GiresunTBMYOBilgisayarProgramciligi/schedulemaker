@@ -14,6 +14,9 @@ class ExamScheduleCard extends ScheduleCard {
     async bindCardEvents() {
         await super.bindCardEvents();
         this.initWeekNavigation();
+        if (this.weekCount > 1) {
+            this.switchWeek(this.currentWeekIndex);
+        }
     }
 
     /**
