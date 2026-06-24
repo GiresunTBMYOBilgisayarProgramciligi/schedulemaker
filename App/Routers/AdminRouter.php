@@ -38,19 +38,12 @@ class AdminRouter extends Router
     public function __construct()
     {
         parent::__construct();
-        $this->beforeAction();
-    }
-
-    /**
-     * Aksiyonlardan önce çalıştırılan kontrol mekanizması
-     * @throws Exception
-     */
-    private function beforeAction(): void
-    {
         AuthMiddleware::handle();
         $this->currentUser = AuthMiddleware::user();
         $this->view_data['currentUser'] = $this->currentUser;
     }
+
+
 
     /**
      *

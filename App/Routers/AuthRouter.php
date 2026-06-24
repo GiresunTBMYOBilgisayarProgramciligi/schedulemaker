@@ -5,7 +5,6 @@ namespace App\Routers;
 use App\Controllers\UserController;
 use App\Services\UserService;
 use App\Middlewares\GuestMiddleware;
-use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
 

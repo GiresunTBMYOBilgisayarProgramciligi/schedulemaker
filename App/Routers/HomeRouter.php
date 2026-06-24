@@ -3,6 +3,7 @@
 namespace App\Routers;
 
 use App\Controllers\UserController;
+use App\Middlewares\AuthMiddleware;
 use App\Core\AssetManager;
 use App\Core\Router;
 use App\Models\Classroom;
@@ -17,19 +18,11 @@ class HomeRouter extends Router
     public function __construct()
     {
         parent::__construct();
-        $this->beforeAction();
-    }
-
-    /**
-     * Aksiyonlardan önce çalıştırılan kontrol mekanizması
-     * @throws Exception
-     */
-    private function beforeAction(): void
-    {
-        $userController = new UserController();
-        $this->currentUser = $userController->getCurrentUser();
+        $this->currentUser = AuthMiddleware::user();
         $this->view_data['currentUser'] = $this->currentUser;
     }
+
+
 
     /**
      * @throws \Exception

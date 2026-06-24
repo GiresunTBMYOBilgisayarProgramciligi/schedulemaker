@@ -2,13 +2,14 @@
 
 namespace App\Routers;
 
+use App\Middlewares\AuthMiddleware;
+
 use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
 use App\Services\LessonService;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
-use App\Services\UserService;
 use App\Core\Router;
 use App\Services\ScheduleService;
 use App\Services\ExamService;
@@ -28,13 +29,9 @@ use App\Models\Setting;
 use App\Models\User;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Core\Gate;
 
-/**
- * todo Router görevi sedece gelen isteiği ilgili Controller a yönlendirmek. gerekl işlemleri ve dönülecek view i controller belirler.
- */
 class AjaxRouter extends Router
 {
     /**
@@ -58,8 +55,12 @@ class AjaxRouter extends Router
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
         }
+        
+        // Sadece yetkili kullanıcılar işlem yapabilir
+        AuthMiddleware::handle();
+
         // Oturumdaki kullanıcıyı bir kez çekip tüm action metodlarında kullanıma hazırla
-        $this->currentUser = \App\Middlewares\AuthMiddleware::user();
+        $this->currentUser = AuthMiddleware::user();
     }
 
     /**
