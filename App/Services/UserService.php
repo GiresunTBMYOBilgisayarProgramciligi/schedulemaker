@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Core\Log;
 use App\Models\User;
 use App\Services\ScheduleService;
+use App\DTOs\UserCreateDTO;
 use Exception;
 use PDOException;
 
@@ -25,14 +26,15 @@ class UserService extends BaseService
      * Yeni kullanıcı oluşturur.
      * Şifreyi otomatik olarak hash'ler (girilmemişse varsayılan "123456").
      *
-     * @param array $userData Kullanıcı verileri
+     * @param UserCreateDTO $dto Doğrulanmış ve paketlenmiş kullanıcı verileri
      * @return int Oluşturulan kullanıcının ID'si
      * @throws Exception Duplicate e-posta veya kayıt hatası
      */
-    public function saveNew(array $userData): int
+    public function saveNew(UserCreateDTO $dto): int
     {
-        $this->logger->info('Yeni kullanıcı ekleniyor', ['mail' => $userData['mail'] ?? null]);
+        $this->logger->info('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
 
+        $userData = $dto->toArray();
         $userData['password'] = password_hash($userData['password'] ?? '123456', PASSWORD_DEFAULT);
 
         try {
