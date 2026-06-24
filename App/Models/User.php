@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Enums\UserRole;
 use Exception;
 
 /**
@@ -199,15 +200,8 @@ class User extends Model
 
     public function getRoleName(): string
     {
-        $role_names = [
-            "user" => "Kullanıcı",
-            "lecturer" => "Akademisyen",
-            "admin" => "Yönetici",
-            "department_head" => "Bölüm Başkanı",
-            "manager" => "Müdür",
-            "submanager" => "Müdür Yardımcısı"
-        ];
-        return $role_names[$this->role] ?? "";
+        $roleEnum = UserRole::tryFrom($this->role);
+        return $roleEnum ? $roleEnum->getLabel() : "";
     }
 
     public function getGravatarURL($size = 50): string
