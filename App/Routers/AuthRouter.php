@@ -4,6 +4,8 @@ namespace App\Routers;
 
 use App\Controllers\UserController;
 use App\Services\UserService;
+use App\Middlewares\GuestMiddleware;
+use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
 
@@ -16,6 +18,7 @@ class AuthRouter extends Router
 
     public function LoginAction()
     {
+        GuestMiddleware::handle();
         $this->view_data["page_title"] = "Giriş Yap";
         $this->assetManager->loadPageAssets('loginpage');
         $this->callView("auth/login/index");
@@ -23,6 +26,7 @@ class AuthRouter extends Router
 
     public function RegisterAction()
     {
+        GuestMiddleware::handle();
         $this->callView("auth/register");
     }
 

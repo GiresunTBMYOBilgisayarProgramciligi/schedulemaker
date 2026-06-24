@@ -59,7 +59,7 @@ class AjaxRouter extends Router
             $this->Redirect("/admin");
         }
         // Oturumdaki kullanıcıyı bir kez çekip tüm action metodlarında kullanıma hazırla
-        $this->currentUser = (new \App\Controllers\UserController())->getCurrentUser() ?: null;
+        $this->currentUser = \App\Middlewares\AuthMiddleware::user();
     }
 
     /**
@@ -125,19 +125,7 @@ class AjaxRouter extends Router
      */
     public function addNewUserAction(): void
     {
-        $userData = $this->data;
-        if (is_null($userData['department_id']) or $userData['department_id'] == '0') {
-            unset($userData['department_id']);
-        }
-        if (is_null($userData['program_id']) or $userData['program_id'] == '0') {
-            unset($userData['program_id']);
-        }
-        Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
-        (new UserService())->saveNew($userData);
-        $this->response = array(
-            "msg" => "Kullanıcı başarıyla eklendi.",
-            "status" => "success",
-        );
+        $this->response = (new \App\Controllers\UserController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -148,21 +136,7 @@ class AjaxRouter extends Router
      */
     public function updateUserAction(): void
     {
-        $userData = $this->data;
-        if (isset($userData['department_id']) and $userData['department_id'] == '0') {
-            $userData['department_id'] = null;
-        }
-        if (isset($userData['program_id']) and $userData['program_id'] == '0') {
-            $userData['program_id'] = null;
-        }
-        $new_user = new User();
-        $new_user->fill($userData);
-        Gate::authorize("update", $new_user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
-        (new UserService())->updateUser($new_user);
-        $this->response = array(
-            "msg" => "Kullanıcı başarıyla Güncellendi.",
-            "status" => "success",
-        );
+        $this->response = (new \App\Controllers\UserController())->update($this->data);
         $this->sendResponse();
     }
 
@@ -171,14 +145,7 @@ class AjaxRouter extends Router
      */
     public function deleteUserAction(): void
     {
-        $user = (new User())->find($this->data['id']);
-        Gate::authorize("delete", $user, "Kullanıcı Silme yetkiniz yok");
-        $user->delete();
-
-        $this->response = array(
-            "msg" => "Kullanıcı başarıyla Silindi.",
-            "status" => "success",
-        );
+        $this->response = (new \App\Controllers\UserController())->destroy($this->data);
         $this->sendResponse();
     }
 

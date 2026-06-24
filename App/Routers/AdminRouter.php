@@ -12,7 +12,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
-use App\Core\AssetManager;
+use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 
 use App\Models\Classroom;
@@ -47,16 +47,9 @@ class AdminRouter extends Router
      */
     private function beforeAction(): void
     {
-        $userController = new UserController();
-        $this->currentUser = $userController->getCurrentUser();
+        AuthMiddleware::handle();
+        $this->currentUser = AuthMiddleware::user();
         $this->view_data['currentUser'] = $this->currentUser;
-        if (!$this->currentUser) {
-            // Giriş yapılmamışsa gidilmek istenen URL'yi kaydet (AJAX değilse)
-            if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-                $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
-            }
-            $this->Redirect('/auth/login', false);
-        }
     }
 
     /**
