@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Core\Log;
 use App\Models\User;
+use App\Services\ScheduleService;
 use Exception;
 use PDOException;
 
@@ -78,6 +79,35 @@ class UserService extends BaseService
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Kullanıcıyı sistemden siler.
+     * Silme işleminden önce, kullanıcının ilişkili ders programlarını temizler.
+     * Bu orkestrasyon sayesinde Model, Servis katmanından bağımsız hale getirilmiştir.
+     * 
+     * @param User $user Silinecek kullanıcı nesnesi
+     * @throws Exception
+     */
+    public function deleteUser(User $user): void
+    {
+        $this->logger->info('Kullanıcı siliniyor', ['id' => $user->id]);
+
+        try {
+            // Önce kullanıcıya ait ders programı kayıtlarını (çakışmaları önlemek için) temizle
+            (new ScheduleService())->wipeResourceSchedules('user', $user->id);
+            
+            // Sonra kullanıcıyı veritabanından sil
+            $user->delete();
+            
+            $this->logger->info('Kullanıcı başarıyla silindi', ['id' => $user->id]);
+        } catch (Exception $e) {
+            $this->logger->error('Kullanıcı silinirken hata oluştu', [
+                'id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+            throw new Exception("Kullanıcı silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
 

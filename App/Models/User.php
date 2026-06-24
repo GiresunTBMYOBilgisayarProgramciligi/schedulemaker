@@ -2,11 +2,7 @@
 
 namespace App\Models;
 
-use App\Controllers\DepartmentController;
-use App\Controllers\LessonController;
-use App\Controllers\ProgramController;
 use App\Core\Model;
-use App\Services\ScheduleService;
 use Exception;
 
 /**
@@ -34,14 +30,6 @@ class User extends Model
     protected array $excludeFromDb = ['department', 'program', 'schedules', 'lessons'];
     protected string $table_name = "users";
 
-    /**
-     * @throws Exception
-     */
-    protected function beforeDelete(): void
-    {
-        // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
-        (new ScheduleService())->wipeResourceSchedules('user', $this->id);
-    }
 
     public function getLabel(): string
     {
