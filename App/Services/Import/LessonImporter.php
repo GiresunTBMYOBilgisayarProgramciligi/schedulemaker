@@ -15,6 +15,7 @@ use App\Enums\ClassroomType;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
+use App\Repositories\ProgramRepository;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use function App\Helpers\formatLessonName;
 
@@ -119,7 +120,7 @@ class LessonImporter
 
                 $programCacheKey = $department_name . '_' . $program_name;
                 if (!isset($this->cache['programs'][$programCacheKey])) {
-                    $this->cache['programs'][$programCacheKey] = $programController->getProgramByName($program_name);
+                    $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
                 }
                 $program = $this->cache['programs'][$programCacheKey];
 

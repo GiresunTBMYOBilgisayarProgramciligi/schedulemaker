@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
-use App\Services\ScheduleService;
+
 use Exception;
 use PDO;
 
@@ -21,21 +21,6 @@ class Program extends Model
     public array $schedules = [];
     protected array $excludeFromDb = ['department', 'users', 'lecturers', 'lessons', 'schedules'];
     protected string $table_name = "programs";
-
-    /**
-     * @throws Exception
-     */
-    protected function beforeDelete(): void
-    {
-        // 1. Polimorfik kardeş kayıtları (sibling items) ve bu programın kendi takvimini temizle
-        (new ScheduleService())->wipeResourceSchedules('program', $this->id);
-
-        // 2. Bağlı tüm dersleri PHP üzerinden sil (Böylece derslerin beforeDelete hookları tetiklenir ve hoca/derslik takvimleri temizlenir)
-        $lessons = (new Lesson())->get()->where(['program_id' => $this->id])->all();
-        foreach ($lessons as $lesson) {
-            $lesson->delete();
-        }
-    }
 
     public function getLabel(): string
     {

@@ -575,20 +575,7 @@ class AjaxRouter extends Router
      */
     public function addProgramAction(): void
     {
-        Gate::authorize("create", Program::class, "Yeni Program oluşturma yetkiniz yok");
-        $programController = new ProgramController();
-        $programData = $this->data;
-        $new_program = new Program();
-        $new_program->fill($programData);
-        $program = $programController->saveNew($new_program);
-        if (!$program) {
-            throw new Exception("Program kaydedilemedi");
-        } else {
-            $this->response = array(
-                "msg" => "Program başarıyla eklendi.",
-                "status" => "success",
-            );
-        }
+        $this->response = (new ProgramController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -597,18 +584,7 @@ class AjaxRouter extends Router
      */
     public function updateProgramAction(): void
     {
-        $programController = new ProgramController();
-        $programData = $this->data;
-        $program = (new Program())->find($programData["id"]);
-        Gate::authorize("update", $program, "Program güncelleme yetkiniz yok");
-
-        $programId = $programController->updateProgram($programData);
-
-        $this->response = array(
-            "msg" => "Program Başarıyla Güncellendi.",
-            "updatedID" => $programId,
-            "status" => "success",
-        );
+        $this->response = (new ProgramController())->update($this->data);
         $this->sendResponse();
     }
 
@@ -617,14 +593,7 @@ class AjaxRouter extends Router
      */
     public function deleteProgramAction(): void
     {
-        $program = (new Program())->find($this->data['id']) ?: throw new Exception("Program bulunamadı");
-        Gate::authorize("delete", $program, "Program silme yetkiniz yok");
-        $program->delete();
-
-        $this->response = array(
-            "msg" => "Program Başarıyla Silindi.",
-            "status" => "success",
-        );
+        $this->response = (new ProgramController())->destroy($this->data);
         $this->sendResponse();
     }
 

@@ -10,7 +10,9 @@ use Exception;
 use PDO;
 use PDOException;
 use App\Core\Gate;
-
+use App\DTOs\DepartmentDTO;
+use App\Validators\DepartmentValidator;
+use App\Services\DepartmentService;
 class DepartmentController extends Controller
 {
     protected string $table_name = "departments";
@@ -25,7 +27,7 @@ class DepartmentController extends Controller
         try {
             Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
 
-            $validator = new \App\Validators\DepartmentValidator();
+            $validator = new DepartmentValidator();
             $validationResult = $validator->validate($requestData);
 
             if (!$validationResult->isValid) {
@@ -36,8 +38,8 @@ class DepartmentController extends Controller
                 ];
             }
 
-            $dto = \App\DTOs\DepartmentDTO::fromArray($requestData);
-            (new \App\Services\DepartmentService())->saveNew($dto);
+            $dto = DepartmentDTO::fromArray($requestData);
+            (new DepartmentService())->saveNew($dto);
 
             return [
                 "status" => "success",
@@ -65,7 +67,7 @@ class DepartmentController extends Controller
 
             Gate::authorize("update", $department, "Bölüm güncelleme yetkiniz yok");
 
-            $validator = new \App\Validators\DepartmentValidator();
+            $validator = new DepartmentValidator();
             $validationResult = $validator->validate($requestData);
 
             if (!$validationResult->isValid) {
@@ -76,12 +78,12 @@ class DepartmentController extends Controller
                 ];
             }
 
-            $dto = \App\DTOs\DepartmentDTO::fromArray($requestData);
+            $dto = DepartmentDTO::fromArray($requestData);
             
             // DTO'dan Model'e aktar
             $department->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
 
-            (new \App\Services\DepartmentService())->updateDepartment($department);
+            (new DepartmentService())->updateDepartment($department);
 
             return [
                 "status" => "success",
@@ -113,7 +115,7 @@ class DepartmentController extends Controller
 
             Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
 
-            (new \App\Services\DepartmentService())->deleteDepartment($department);
+            (new DepartmentService())->deleteDepartment($department);
 
             return [
                 "status" => "success",

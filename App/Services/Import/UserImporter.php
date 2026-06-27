@@ -13,6 +13,7 @@ use App\Services\UserService;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
+use App\Repositories\ProgramRepository;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 /**
@@ -104,7 +105,7 @@ class UserImporter
 
                 $programCacheKey = $department_name . '_' . $program_name;
                 if (!isset($this->cache['programs'][$programCacheKey])) {
-                    $this->cache['programs'][$programCacheKey] = $programController->getProgramByName($program_name);
+                    $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
                 }
                 $program = $this->cache['programs'][$programCacheKey];
 
