@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Program;
+use App\Repositories\ProgramRepository;
 use App\Models\Schedule;
 use Exception;
 use PDO;
@@ -22,7 +23,7 @@ class ProgramController extends Controller
      */
     public function getProgramsList(array $filters = []): array
     {
-        return $this->getListByFilters($filters);
+        return (new ProgramRepository())->findBy($filters);
     }
 
     /**
@@ -32,8 +33,7 @@ class ProgramController extends Controller
      */
     public function getProgramByName(string $name): Program|bool
     {
-        return $this->getListByFilters(["name" => $name])[0] ?? false;
-
+        return (new ProgramRepository())->findOneBy(["name" => $name]) ?? false;
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Lesson;
+use App\Repositories\LessonRepository;
 use Exception;
 
 class LessonController extends Controller
@@ -49,7 +50,7 @@ class LessonController extends Controller
         $filters = [];
         if (!is_null($lecturer_id))
             $filters["lecturer_id"] = $lecturer_id;
-        return $this->getListByFilters($filters);
+        return (new LessonRepository())->findBy($filters);
     }
 
     /**

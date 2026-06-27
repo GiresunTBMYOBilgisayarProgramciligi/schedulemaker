@@ -12,6 +12,7 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+use App\Repositories\UserRepository;
 use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 
@@ -730,9 +731,9 @@ class AdminRouter extends Router
             "classrooms" => (new ClassroomController())->getClassroomsList()
         ]);
         if ($this->currentUser->role == "department_head") {
-            $this->view_data['lecturers'] = $userController->getListByFilters(['department_id' => $this->currentUser->department_id]);
+            $this->view_data['lecturers'] = (new UserRepository())->findBy(['department_id' => $this->currentUser->department_id]);
         } else
-            $this->view_data['lecturers'] = $userController->getListByFilters();
+            $this->view_data['lecturers'] = (new UserRepository())->findBy([]);
         $this->callView("admin/schedules/exportschedule");
     }
 

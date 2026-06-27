@@ -2,7 +2,7 @@
 
 namespace App\Routers;
 
-use App\Controllers\UserController;
+use App\Repositories\UserRepository;
 use App\Middlewares\AuthMiddleware;
 use App\Core\AssetManager;
 use App\Core\Router;
@@ -29,12 +29,12 @@ class HomeRouter extends Router
      */
     public function IndexAction()
     {
-        $userController = new UserController();
+        $userRepository = new UserRepository();
         $this->assetManager->loadPageAssets("homeIndex");
         $this->view_data = array_merge($this->view_data, [
             "departments" => (new Department())->get()->where(['active'=>true])->all(),
             "classrooms" => (new Classroom())->get()->all(),
-            "lecturers" => $userController->getListByFilters(['!role'=>'admin']),
+            "lecturers" => $userRepository->findBy(['!role'=>'admin']),
             "page_title" => "Anasayfa"]);
         $this->callView("home/index");
         //$this->Redirect('/admin/');

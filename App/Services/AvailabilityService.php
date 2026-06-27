@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Core\Log;
-use App\Controllers\UserController;
+use App\Repositories\UserRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -282,7 +282,7 @@ class AvailabilityService extends BaseService
         $observerFilters = [
             'role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]
         ];
-        $observers = (new UserController())->getListByFilters($observerFilters);
+        $observers = (new UserRepository())->findBy($observerFilters);
         $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];
 
         $availableObservers = [];

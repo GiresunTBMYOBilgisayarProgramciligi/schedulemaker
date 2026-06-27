@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Department;
+use App\Repositories\DepartmentRepository;
 use App\Models\Schedule;
 use Exception;
 use PDO;
@@ -23,7 +24,7 @@ class DepartmentController extends Controller
     public function getDepartmentByName(string $name): Department|bool
     {
         $this->logger()->info('Get department by name', $this->logContext(['name' => $name]));
-        $dep = $this->getListByFilters(["name" => $name])[0] ?? false;
+        $dep = (new DepartmentRepository())->findOneBy(["name" => $name]) ?? false;
         if ($dep) {
             $this->logger()->info('Department found by name', $this->logContext(['name' => $name, 'department_id' => $dep->id]));
         } else {

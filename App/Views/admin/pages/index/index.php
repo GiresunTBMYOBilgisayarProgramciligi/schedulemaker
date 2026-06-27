@@ -12,6 +12,10 @@
  */
 use App\Core\Gate;
 use App\Repositories\UserRepository;
+use App\Repositories\ClassroomRepository;
+use App\Repositories\DepartmentRepository;
+use App\Repositories\LessonRepository;
+use App\Repositories\ProgramRepository;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -60,7 +64,7 @@ use App\Repositories\UserRepository;
                     <!-- small box -->
                     <div class="small-box text-bg-success">
                         <div class="inner">
-                            <h3><?= $classroomController->getCount() ?></h3>
+                            <h3><?= (new ClassroomRepository())->count() ?></h3>
 
                             <p>Derslik</p>
                         </div>
@@ -74,7 +78,7 @@ use App\Repositories\UserRepository;
                     <!-- small box -->
                     <div class="small-box text-bg-warning">
                         <div class="inner">
-                            <h3><?= $lessonController->getCount() ?></h3>
+                            <h3><?= (new LessonRepository())->count() ?></h3>
 
                             <p>Ders</p>
                         </div>
@@ -88,7 +92,7 @@ use App\Repositories\UserRepository;
                     <!-- small box -->
                     <div class="small-box text-bg-danger">
                         <div class="inner">
-                            <h3><?= $departmentController->getCount() ?></h3>
+                            <h3><?= (new DepartmentRepository())->count() ?></h3>
 
                             <p>Bölüm</p>
                         </div>
@@ -101,7 +105,7 @@ use App\Repositories\UserRepository;
                     <!-- small box -->
                     <div class="small-box text-bg-info">
                         <div class="inner">
-                            <h3><?= $programController->getCount() ?></h3>
+                            <h3><?= (new ProgramRepository())->count() ?></h3>
 
                             <p>Program</p>
                         </div>
