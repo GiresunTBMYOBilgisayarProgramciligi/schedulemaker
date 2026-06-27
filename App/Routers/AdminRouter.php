@@ -14,6 +14,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\UserController;
 use App\Repositories\UserRepository;
 use App\Middlewares\AuthMiddleware;
+use App\Attributes\AuthRequired;
 use App\Core\Router;
 
 use App\Models\Classroom;
@@ -31,6 +32,7 @@ use function App\Helpers\getSettingValue;
  * AdminRouter Sınıfı
  * /admin altında gelen istekleri yönetir.
  */
+#[AuthRequired]
 class AdminRouter extends Router
 {
 
@@ -39,7 +41,6 @@ class AdminRouter extends Router
     public function __construct()
     {
         parent::__construct();
-        AuthMiddleware::handle();
         $this->currentUser = AuthMiddleware::user();
         $this->view_data['currentUser'] = $this->currentUser;
     }

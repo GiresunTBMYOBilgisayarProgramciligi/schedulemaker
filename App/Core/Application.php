@@ -45,7 +45,33 @@ class Application
         }
         /** @var object $this->router */
         $this->router = new $class;
-        if (method_exists($this->router, $this->action)) {
+
+        // Reflection API ile Router ve Metot incelemesi (Attribute Kontrolü)
+        $reflectionClass = new \ReflectionClass($this->router);
+        $reflectionMethod = method_exists($this->router, $this->action) 
+            ? $reflectionClass->getMethod($this->action) 
+            : null;
+
+        // Sınıf seviyesinde AuthRequired var mı?
+        $authRequired = !empty($reflectionClass->getAttributes(\App\Attributes\AuthRequired::class));
+        
+        if ($reflectionMethod) {
+            // Metot seviyesinde AuthRequired varsa zorunlu tut
+            if (!empty($reflectionMethod->getAttributes(\App\Attributes\AuthRequired::class))) {
+                $authRequired = true;
+            }
+            // Metot seviyesinde PublicAction varsa sınıfın korumasını iptal et (ziyaretçiye aç)
+            if (!empty($reflectionMethod->getAttributes(\App\Attributes\PublicAction::class))) {
+                $authRequired = false;
+            }
+        }
+
+        // Eğer yetki gerektiriyorsa AuthMiddleware'i tetikle
+        if ($authRequired) {
+            \App\Middlewares\AuthMiddleware::handle();
+        }
+
+        if ($reflectionMethod) {
             call_user_func_array([$this->router, $this->action], $this->parameters);
         } else {
             // Action yoksa Router'ın defaultAction metodunu devreye sok

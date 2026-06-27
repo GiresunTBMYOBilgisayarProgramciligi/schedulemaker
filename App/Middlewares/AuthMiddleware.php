@@ -21,11 +21,14 @@ class AuthMiddleware
     public static function handle(): void
     {
         if (!self::check()) {
-            // Giriş yapılmamışsa gidilmek istenen URL'yi kaydet (AJAX değilse)
             if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
                 $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'] ?? '/admin';
+                header("Location: /auth/login");
+            } else {
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(['error' => 'Oturum süresi doldu veya yetkisiz erişim. Lütfen tekrar giriş yapın.']);
             }
-            header("Location: /auth/login");
             exit;
         }
     }

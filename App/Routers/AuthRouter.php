@@ -4,6 +4,7 @@ namespace App\Routers;
 
 use App\Controllers\UserController;
 use App\Services\UserService;
+use App\Attributes\AuthRequired;
 use App\Middlewares\GuestMiddleware;
 use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
@@ -33,6 +34,7 @@ class AuthRouter extends Router
     /**
      * @return void
      */
+    #[AuthRequired]
     public function LogoutAction()
     {
         $user = AuthMiddleware::user();

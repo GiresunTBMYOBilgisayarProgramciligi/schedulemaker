@@ -32,7 +32,10 @@ use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use function App\Helpers\getSettingValue;
 use App\Core\Gate;
+use App\Attributes\AuthRequired;
+use App\Attributes\PublicAction;
 
+#[AuthRequired]
 class AjaxRouter extends Router
 {
     /**
@@ -56,10 +59,7 @@ class AjaxRouter extends Router
             $_SESSION["errors"][] = "İstek Ajax isteği değil";
             $this->Redirect("/admin");
         }
-        
-        // Sadece yetkili kullanıcılar işlem yapabilir
-        AuthMiddleware::handle();
-
+        // İstemci tarafında oturum bilgisini kullanabilmek için
         // Oturumdaki kullanıcıyı bir kez çekip tüm action metodlarında kullanıma hazırla
         $this->currentUser = AuthMiddleware::user();
     }
@@ -680,6 +680,7 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
+    #[PublicAction]
     public function getProgramsListAction($department_id): void
     {
         $programController = new ProgramController();
@@ -697,6 +698,7 @@ class AjaxRouter extends Router
      * Gelen verilere göre Program HTML çıktısını oluşturur
      * @throws Exception
      */
+    #[PublicAction]
     public function getScheduleHTMLAction(): void
     {
         $scheduleController = new ScheduleController();
@@ -1020,6 +1022,7 @@ class AjaxRouter extends Router
      * Excel / ICS program dışa aktarma — ExporterFactory ve ScheduleExporterInterface üzerinden çalışır.
      * @throws Exception
      */
+    #[PublicAction]
     public function exportScheduleAction(): void
     {
         $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
@@ -1039,6 +1042,7 @@ class AjaxRouter extends Router
      * Takvim (ICS) dışa aktarma — ExporterFactory üzerinden çalışır.
      * @throws Exception
      */
+    #[PublicAction]
     public function exportScheduleIcsAction(): void
     {
         $filters = (new FilterValidator())->validate($this->data, "exportScheduleIcsAction");
