@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Core\Database;
 use Exception;
 use function App\Helpers\getSettingValue;
 //todo  Services içerisinde Schedule klasörü içine taşınacak
@@ -34,9 +35,11 @@ class LessonService extends BaseService
         $this->logger->info('Yeni ders ekleniyor', ['name' => $lesson->name, 'code' => $lesson->code ?? null]);
 
         try {
-            $lesson->create();
-            $this->logger->info('Ders eklendi', ['id' => $lesson->id, 'name' => $lesson->name]);
-            return $lesson->id;
+            return Database::transaction(function () use ($lesson) {
+                $lesson->create();
+                $this->logger->info('Ders eklendi', ['id' => $lesson->id, 'name' => $lesson->name]);
+                return $lesson->id;
+            });
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 throw new Exception("Bu kodda ders zaten kayıtlı. Lütfen farklı bir kod giriniz.");
@@ -57,14 +60,46 @@ class LessonService extends BaseService
         $this->logger->info('Ders güncelleniyor', ['id' => $lesson->id]);
 
         try {
-            $lesson->update();
-            $this->logger->info('Ders güncellendi', ['id' => $lesson->id]);
-            return $lesson->id;
+            return Database::transaction(function () use ($lesson) {
+                $lesson->update();
+                $this->logger->info('Ders güncellendi', ['id' => $lesson->id]);
+                return $lesson->id;
+            });
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Dersi sistemden siler.
+     * Silme işleminden önce, derse ait tüm program (schedule) kayıtlarını temizler.
+     *
+     * @param Lesson $lesson Silinecek ders nesnesi
+     * @throws Exception
+     */
+    public function deleteLesson(Lesson $lesson): void
+    {
+        $this->logger->info('Ders siliniyor', ['id' => $lesson->id]);
+
+        try {
+            Database::transaction(function () use ($lesson) {
+                // 1. Derse ait tüm schedule (program) kayıtlarını temizle
+                (new ScheduleService())->wipeResourceSchedules('lesson', $lesson->id);
+
+                // 2. Dersi sil
+                $lesson->delete();
+            });
+
+            $this->logger->info('Ders başarıyla silindi', ['id' => $lesson->id]);
+        } catch (Exception $e) {
+            $this->logger->error('Ders silinirken hata oluştu', [
+                'id' => $lesson->id,
+                'error' => $e->getMessage()
+            ]);
+            throw new Exception("Ders silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
 

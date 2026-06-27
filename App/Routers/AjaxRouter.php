@@ -9,6 +9,7 @@ use App\Controllers\ClassroomController;
 use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
 use App\Services\LessonService;
+use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
@@ -160,29 +161,7 @@ class AjaxRouter extends Router
      */
     public function addLessonAction(): void
     {
-        $lessonData = $this->data;
-        if (empty($lessonData['lecturer_id'])) {
-            throw new Exception("Hoca Seçmelisiniz");
-        }
-        if (empty($lessonData['department_id'])) {
-            throw new Exception("Bölüm Seçmelisiniz");
-        }
-        if (empty($lessonData['program_id'])) {
-            throw new Exception("Program Seçmelisiniz");
-        }
-        $new_lesson = new Lesson();
-        $new_lesson->fill($lessonData);
-        Gate::authorize("create", $new_lesson, "Yeni Ders oluşturma yetkiniz yok");
-
-        $lesson = (new LessonService())->saveNew($new_lesson);
-        if (!$lesson) {
-            throw new Exception("Ders eklenemedi");
-        } else {
-            $this->response = array(
-                "msg" => "Ders başarıyla eklendi.",
-                "status" => "success",
-            );
-        }
+        $this->response = (new LessonController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -191,47 +170,7 @@ class AjaxRouter extends Router
      */
     public function updateLessonAction(): void
     {
-        $lessonData = $this->data;
-
-        // Hoca yetkisindeki kullanıcı yalnızca kendi dersinin mevcut/sınıf türünü güncelleyebilir.
-        // Güvenlik için lecturer_id POST'tan değil DB'den alınır (disabled alan POST'a gelmez).
-        $lessonFromDb = (new Lesson())->find((int)($lessonData['id'] ?? 0));
-        $isLecturerOwnLesson = Gate::allowsRole("lecturer", true)
-            && $lessonFromDb
-            && $this->currentUser
-            && $lessonFromDb->lecturer_id == $this->currentUser->id;
-
-        if ($isLecturerOwnLesson) {
-            // DB'den gelen nesneyi doğrudan kullan — sadece izin verilen alanları güncelle.
-            // new Lesson() + fill() yapılırsa diğer alanlar (code vb.) null kalır ve UNIQUE hatası oluşur.
-            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
-            $lessonFromDb->size           = $this->data['size'];
-            $lessonFromDb->classroom_type = $this->data['classroom_type'] ?? $lessonFromDb->classroom_type;
-            (new LessonService())->updateLesson($lessonFromDb);
-        } else {
-            // Admin/yetkili güncelleme: bölüm ve program zorunlu
-            if (!isset($lessonData['department_id']) || $lessonData['department_id'] == '0') {
-                $lessonData['department_id'] = null;
-            }
-            if (!isset($lessonData['program_id']) || $lessonData['program_id'] == '0') {
-                $lessonData['program_id'] = null;
-            }
-            if (empty($lessonData['department_id'])) {
-                throw new Exception("Bölüm Seçmelisiniz");
-            }
-            if (empty($lessonData['program_id'])) {
-                throw new Exception("Program Seçmelisiniz");
-            }
-            $lesson = new Lesson();
-            $lesson->fill($lessonData);
-            Gate::authorize("update", $lesson, "Ders güncelleme yetkiniz yok");
-            (new LessonService())->updateLesson($lesson);
-        }
-
-        $this->response = array(
-            "msg"    => "Ders başarıyla Güncellendi.",
-            "status" => "success",
-        );
+        $this->response = (new LessonController())->update($this->data);
         $this->sendResponse();
     }
 
@@ -240,14 +179,7 @@ class AjaxRouter extends Router
      */
     public function deleteLessonAction(): void
     {
-        $lesson = (new Lesson())->find($this->data['id']) ?: throw new Exception("Ders bulunamadı");
-        Gate::authorize("delete", $lesson, "Bu dersi silme yetkiniz yok");
-        $lesson->delete();
-
-        $this->response = array(
-            "msg" => "Ders Başarıyla Silindi.",
-            "status" => "success",
-        );
+        $this->response = (new LessonController())->destroy($this->data);
         $this->sendResponse();
     }
 

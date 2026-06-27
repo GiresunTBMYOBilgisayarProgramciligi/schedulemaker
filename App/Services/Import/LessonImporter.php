@@ -163,7 +163,7 @@ class LessonImporter
                 } else {
                     $lesson = new Lesson();
                     $lesson->fill($lessonData);
-                    $lessonsController->saveNew($lesson);
+                    $lessonService->saveNew($lesson);
                     $addedLessons[$lesson->id] = $lesson->getFullName(true);
                 }
             }

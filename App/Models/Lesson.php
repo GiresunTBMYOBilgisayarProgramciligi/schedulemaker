@@ -5,11 +5,9 @@ namespace App\Models;
 use App\Controllers\LessonController;
 use App\Core\Model;
 use App\Enums\ClassroomType;
-use App\Services\ScheduleService;
-use Exception;
+use App\Enums\LessonType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
-use function App\Helpers\formatLessonName;
 
 class Lesson extends Model
 {
@@ -21,7 +19,7 @@ class Lesson extends Model
     public ?int $hours = null;
     /**
      * @var int|null
-     * @see LessonController->getTypeList()
+     * @see LessonType
      */
     public ?int $type = null;
     public ?int $semester_no = null;
@@ -65,32 +63,14 @@ class Lesson extends Model
     protected string $table_name = "lessons";
     protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
 
-    /**
-     * @throws Exception
-     */
-    protected function beforeDelete(): void
-    {
-        // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
-        (new ScheduleService())->wipeResourceSchedules('lesson', $this->id);
-    }
+
 
     public function getLabel(): string
     {
         return "ders";
     }
 
-    /**
-     * @param array $data
-     * @return void
-     * @throws Exception
-     */
-    public function fill(array $data = []): void
-    {
-        if (isset($data['name'])) {
-            $data['name'] = formatLessonName($data['name']);
-        }
-        parent::fill($data);
-    }
+
 
     public function getLogDetail(): string
     {
@@ -394,6 +374,7 @@ class Lesson extends Model
     }
 
     /**
+     * todo bu metod kullanılıyor mu kontrol et ve kullanılıyorsa kaldır
      * Bağlı derslerin (veli ve tüm çocuklar) ID listesini döner.
      * @return array
      */
@@ -434,7 +415,7 @@ class Lesson extends Model
 
     public function getTypeName(): string
     {
-        return (new LessonController())->getTypeList()[$this->type] ?? "";
+        return LessonType::tryFrom((int)$this->type)?->label() ?? "";
     }
 
     /**
