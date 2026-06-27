@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Controllers\ProgramController;
-use App\Controllers\UserController;
 use App\Core\Model;
 use Exception;
 use PDO;
@@ -24,49 +22,6 @@ class Department extends Model
     protected array $excludeFromDb = ['chairperson', 'programs', 'users', 'lessons'];
     protected string $table_name = "departments";
 
-    /**
-     * Bir bölüm pasif yapıldığnda alt programları da pasif yapılacak. Bu işlerm için Model update metotu ovverride ediliyor.
-     * @throws Exception
-     */
-    public function update(array $additionalExclusions = [], bool $acceptNull = true): bool
-    {
-        // Mevcut aktiflik durumunu kontrol et (Veritabanındaki eski hali)
-        $oldDepartment = (new self())->get()->where(['id' => $this->id])->first();
-        $this->logger()->debug("this->active", [$this->active]);
-        $this->logger()->debug("oldDepartment->active", [$oldDepartment?->active]);
-        $wasActive = $oldDepartment?->active ?? false;
-
-        $result = parent::update($additionalExclusions, $acceptNull);
-
-        // Eğer güncelleme başarılıysa ve bölüm aktiften pasife çekildiyse
-        if ($result && $wasActive && $this->active === null) {
-            $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
-            foreach ($programs as $program) {
-                $program->active = null;
-                $program->update();
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * @throws Exception
-     */
-    protected function beforeDelete(): void
-    {
-        // 1. Önce bağlı programları sil (Bu işlem programların beforeDelete hooklarını tetikler)
-        $programs = (new Program())->get()->where(['department_id' => $this->id])->all();
-        foreach ($programs as $program) {
-            $program->delete();
-        }
-
-        // 2. Program bağımsız dersleri sil (Eğer herhangi bir programa bağlı olmayan dersler varsa)
-        $lessons = (new Lesson())->get()->where(['department_id' => $this->id, 'program_id' => null])->all();
-        foreach ($lessons as $lesson) {
-            $lesson->delete();
-        }
-    }
 
     public function getLabel(): string
     {
@@ -202,12 +157,5 @@ class Department extends Model
         return $results;
     }
 
-    public function getActiveLabel(): string
-    {
-        if ($this->active) {
-            return "<span class='badge bg-success'>Aktif</span>";
-        } else {
-            return "<span class='badge bg-danger'>Pasif</span>";
-        }
-    }
+
 }

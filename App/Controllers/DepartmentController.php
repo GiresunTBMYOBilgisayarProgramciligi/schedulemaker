@@ -9,6 +9,7 @@ use App\Models\Schedule;
 use Exception;
 use PDO;
 use PDOException;
+use App\Core\Gate;
 
 class DepartmentController extends Controller
 {
@@ -17,71 +18,113 @@ class DepartmentController extends Controller
 
 
     /**
-     * @param string $name
-     * @return Department|bool
-     * @throws Exception
+     * Yeni bölüm oluşturur (POST /ajax/department/add rotası için)
      */
-    public function getDepartmentByName(string $name): Department|bool
-    {
-        $this->logger()->info('Get department by name', $this->logContext(['name' => $name]));
-        $dep = (new DepartmentRepository())->findOneBy(["name" => $name]) ?? false;
-        if ($dep) {
-            $this->logger()->info('Department found by name', $this->logContext(['name' => $name, 'department_id' => $dep->id]));
-        } else {
-            $this->logger()->warning('Department not found by name', $this->logContext(['name' => $name]));
-        }
-        return $dep;
-    }
-
-    /**
-     * Parametre olarak verilen modeli veri tabanına kaydeder
-     * @param array $department_data
-     * @return int Veri tabanına eklenen Department id numarası
-     * @throws Exception
-     */
-    public function saveNew(array $department_data): int
+    public function store(array $requestData): array
     {
         try {
-            $new_department = new Department();
-            $new_department->fill($department_data);
-            $new_department->create();
-            $this->logger()->info('Department created', $this->logContext(['department_id' => $new_department->id]));
-            return $new_department->id;
-        } catch (PDOException $e) {
-            if ($e->getCode() == '23000') {
-                $this->logger()->warning('Department create failed: duplicate name', $this->logContext(['name' => $department_data['name'] ?? null]));
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-            } else {
-                $this->logger()->error('Department create failed: ' . $e->getMessage(), $this->logContext(['exception_code' => $e->getCode()]));
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
+
+            $validator = new \App\Validators\DepartmentValidator();
+            $validationResult = $validator->validate($requestData);
+
+            if (!$validationResult->isValid) {
+                return [
+                    "status" => "error",
+                    "msg" => "Veri doğrulama hatası.",
+                    "errors" => $validationResult->errors
+                ];
             }
+
+            $dto = \App\DTOs\DepartmentDTO::fromArray($requestData);
+            (new \App\Services\DepartmentService())->saveNew($dto);
+
+            return [
+                "status" => "success",
+                "msg" => "Bölüm başarıyla oluşturuldu."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
     }
 
     /**
-     * @param array $department_data
-     * @return int
-     * @throws Exception
+     * Mevcut bölümü günceller (POST /ajax/department/update rotası için)
      */
-    public function updateDepartment(array $department_data): int
+    public function update(array $requestData): array
     {
-        $this->logger()->info('Update department requested', $this->logContext(['department_id' => $department_data['id'] ?? null, 'payload' => ['name' => $department_data['name'] ?? null, 'chairperson_id' => $department_data['chairperson_id'] ?? null]]));
         try {
-            $department = new Department();
-            $department->fill($department_data);
-            $department->update();
-            $this->logger()->info('Department updated', $this->logContext(['department_id' => $department->id]));
-            return $department->id;
-        } catch (PDOException $e) {
-            if ($e->getCode() == '23000') {
-                $this->logger()->warning('Department update failed: duplicate name', $this->logContext(['department_id' => $department_data['id'] ?? null, 'name' => $department_data['name'] ?? null]));
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-            } else {
-                $this->logger()->error('Department update failed: ' . $e->getMessage(), $this->logContext(['department_id' => $department_data['id'] ?? null, 'exception_code' => $e->getCode()]));
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            $department = clone (new Department())->find($requestData['id']);
+            if (!$department) {
+                throw new Exception("Güncellenecek bölüm bulunamadı.");
             }
+
+            Gate::authorize("update", $department, "Bölüm güncelleme yetkiniz yok");
+
+            $validator = new \App\Validators\DepartmentValidator();
+            $validationResult = $validator->validate($requestData);
+
+            if (!$validationResult->isValid) {
+                return [
+                    "status" => "error",
+                    "msg" => "Veri doğrulama hatası.",
+                    "errors" => $validationResult->errors
+                ];
+            }
+
+            $dto = \App\DTOs\DepartmentDTO::fromArray($requestData);
+            
+            // DTO'dan Model'e aktar
+            $department->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
+
+            (new \App\Services\DepartmentService())->updateDepartment($department);
+
+            return [
+                "status" => "success",
+                "msg" => "Bölüm başarıyla güncellendi."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Bölümü siler (POST /ajax/department/delete rotası için)
+     */
+    public function destroy(array $requestData): array
+    {
+        try {
+            if (empty($requestData['id'])) {
+                throw new Exception("Silinecek bölüm ID'si belirtilmedi.");
+            }
+
+            $department = clone (new Department())->find($requestData['id']);
+            if (!$department) {
+                throw new Exception("Silinecek bölüm bulunamadı.");
+            }
+
+            Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
+
+            (new \App\Services\DepartmentService())->deleteDepartment($department);
+
+            return [
+                "status" => "success",
+                "msg" => "Bölüm başarıyla silindi."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
     }
 }

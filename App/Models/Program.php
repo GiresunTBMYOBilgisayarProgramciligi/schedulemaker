@@ -200,12 +200,5 @@ class Program extends Model
         return $results;
     }
 
-    public function getActiveLabel(): string
-    {
-        if ($this->active) {
-            return "<span class='badge bg-success'>Aktif</span>";
-        } else {
-            return "<span class='badge bg-danger'>Pasif</span>";
-        }
-    }
+
 }

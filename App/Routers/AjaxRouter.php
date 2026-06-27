@@ -545,14 +545,7 @@ class AjaxRouter extends Router
      */
     public function addDepartmentAction(): void
     {
-        Gate::authorize("create", Department::class, "Yeni Bölüm oluşturma yetkiniz yok");
-
-        $departmentController = new DepartmentController();
-        $departmentController->saveNew($this->data);
-        $this->response = array(
-            "msg" => "Bölüm başarıyla eklendi.",
-            "status" => "success",
-        );
+        $this->response = (new DepartmentController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -561,15 +554,7 @@ class AjaxRouter extends Router
      */
     public function updateDepartmentAction(): void
     {
-        $department = (new Department())->find($this->data['id']);
-        Gate::authorize("update", $department, "Bölüm Güncelleme yetkiniz yok");
-
-        $departmentController = new DepartmentController();
-        $departmentController->updateDepartment($this->data);
-
-        $this->response["msg"] = "Bölüm başarıyla Güncellendi.";
-        $this->response["status"] = "success";
-
+        $this->response = (new DepartmentController())->update($this->data);
         $this->sendResponse();
     }
 
@@ -578,14 +563,7 @@ class AjaxRouter extends Router
      */
     public function deleteDepartmentAction(): void
     {
-        $department = (new Department())->find($this->data['id']);
-        Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
-        $department->delete();
-
-        $this->response = array(
-            "msg" => "Bölüm Başarıyla Silindi.",
-            "status" => "success",
-        );
+        $this->response = (new DepartmentController())->destroy($this->data);
         $this->sendResponse();
     }
 

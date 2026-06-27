@@ -12,6 +12,7 @@ use App\Enums\UserRole;
 use App\Services\UserService;
 use Exception;
 use Monolog\Logger;
+use App\Repositories\DepartmentRepository;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 /**
@@ -97,7 +98,7 @@ class UserImporter
 
                 // Caching
                 if (!isset($this->cache['departments'][$department_name])) {
-                    $this->cache['departments'][$department_name] = $departmentController->getDepartmentByName($department_name);
+                    $this->cache['departments'][$department_name] = (new DepartmentRepository())->findByName($department_name) ?: false;
                 }
                 $department = $this->cache['departments'][$department_name];
 
