@@ -193,7 +193,7 @@ class AdminRouter extends Router
     {
         $userController = new UserController();
         if (is_null($id)) {
-            $user = $userController->getCurrentUser();
+            $user = $this->currentUser;
         } else {
             $user = (new User())->find($id) ?: throw new Exception("Kullanıcı bulunamadı");
         }

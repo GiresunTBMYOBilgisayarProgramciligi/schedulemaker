@@ -3,6 +3,7 @@
 namespace App\Services\Export\Ics;
 
 use App\Models\Schedule;
+use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
 
 /**
@@ -107,7 +108,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
                     // Hoca Adı (Daima dersin asıl hocası)
                     if (!empty($data->lesson->lecturer_id)) {
-                        $lessonLecturer = (new \App\Models\User())
+                        $lessonLecturer = (new User())
                             ->get()
                             ->where(['id' => $data->lesson->lecturer_id])
                             ->first();

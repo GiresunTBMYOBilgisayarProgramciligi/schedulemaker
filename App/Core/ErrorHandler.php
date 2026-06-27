@@ -5,6 +5,8 @@ namespace App\Core;
 
 use Exception;
 use Throwable;
+use App\Controllers\UserController;
+use App\Middlewares\AuthMiddleware;
 
 /**
  * Claude ile oluşturularak üzerinde düzenlemeler yapıldı
@@ -118,10 +120,9 @@ class ErrorHandler
             try {
                 if (session_status() === PHP_SESSION_ACTIVE) {
                     // Basit kullanıcı tespiti: UserController üzerinden oturum kullanıcısını al
-                    $userController = new \App\Controllers\UserController();
-                    $user = $userController->getCurrentUser();
+                    $user = \App\Middlewares\AuthMiddleware::user();
                     if ($user) {
-                        $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
+                        $username = $user->getFullName();
                         $userId = $user->id;
                     }
                 }
@@ -202,11 +203,11 @@ class ErrorHandler
         // Tema için gerekli verileri hazırla
         try {
             // UserController'ı başlat ve userController değişkenini view'a gönder (theme.php için gerekli)
-            $userController = new \App\Controllers\UserController();
+            $userController = new UserController();
             $view_data['userController'] = $userController;
 
             // currentUser'ı da ekleyelim, garanti olsun (theme.php bazen direkt kullanabilir)
-            $view_data['currentUser'] = $userController->getCurrentUser();
+            $view_data['currentUser'] = AuthMiddleware::user();
 
             // AssetManager'ı da ekleyelim (router tarafından normalde ekleniyordu)
             $view_data['assetManager'] = new AssetManager();

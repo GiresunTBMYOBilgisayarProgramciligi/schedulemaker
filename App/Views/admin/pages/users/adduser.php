@@ -78,8 +78,8 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="role">Rol</label>
                                             <select class="form-select" id="role" name="role">
-                                                <?php foreach ($userController->getRoleList() as $role => $value): ?>
-                                                    <option value="<?= $role ?>"><?= $value ?></option>
+                                                <?php foreach (\App\Enums\UserRole::getAssignableRoles() as $roleEnum): ?>
+                                                    <option value="<?= $roleEnum->value ?>"><?= $roleEnum->getLabel() ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -88,10 +88,9 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
                                             <select class="form-select" id="title" name="title">
-                                                <?php $titleList = $userController->getTitleList();
-                                                array_unshift($titleList, "");
-                                                foreach ($titleList as $title): ?>
-                                                    <option value="<?= $title ?>"><?= $title ?></option>
+                                                <option value=""></option>
+                                                <?php foreach (\App\Enums\UserTitle::cases() as $titleEnum): ?>
+                                                    <option value="<?= $titleEnum->value ?>"><?= $titleEnum->value ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

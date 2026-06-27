@@ -7,7 +7,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
 use function App\Helpers\getSettingValue;
-
+//todo  Services içerisinde Schedule klasörü içine taşınacak
 /**
  * Ders yönetimi iş mantığı servisi.
  *
@@ -251,7 +251,7 @@ class LessonService extends BaseService
             // Child'ın mevcut sınav schedule'larını temizle
             $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
             $scheduleService = new ScheduleService();
-            $examSchedules = (new \App\Models\Schedule())->get()->where([
+            $examSchedules = (new Schedule())->get()->where([
                 'owner_type' => 'lesson',
                 'owner_id' => $childLesson->id,
                 'type' => ['in' => $examTypes]
@@ -310,7 +310,7 @@ class LessonService extends BaseService
         // Sadece sınav schedule'larını temizle
         $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
         $scheduleService = new ScheduleService();
-        $examSchedules = (new \App\Models\Schedule())->get()->where([
+        $examSchedules = (new Schedule())->get()->where([
             'owner_type' => 'lesson',
             'owner_id' => $lesson->id,
             'type' => ['in' => $examTypes]
@@ -439,8 +439,8 @@ class LessonService extends BaseService
             return;
         }
 
-        $duration = (int) \App\Helpers\getSettingValue('duration', 'lesson', 50);
-        $break    = (int) \App\Helpers\getSettingValue('break', 'lesson', 10);
+        $duration = (int) getSettingValue('duration', 'lesson', 50);
+        $break    = (int) getSettingValue('break', 'lesson', 10);
 
         foreach ($parentSchedule->items as $item) {
             $skippedSlots = $slotsToSkip[$item->id] ?? [];

@@ -11,6 +11,7 @@
  * @var array $programs
  */
 use App\Core\Gate;
+use App\Repositories\UserRepository;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -45,7 +46,7 @@ use App\Core\Gate;
                     <!-- small box -->
                     <div class="small-box text-bg-primary">
                         <div class="inner">
-                            <h3><?= $userController->getAcademicCount() ?></h3>
+                            <h3><?= (new UserRepository())->getAcademicCount() ?></h3>
 
                             <p>Öğretim Elemanı</p>
                         </div>

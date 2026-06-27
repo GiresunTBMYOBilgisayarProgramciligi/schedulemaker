@@ -4,10 +4,11 @@ namespace App\Services\Import;
 
 use App\Controllers\DepartmentController;
 use App\Controllers\ProgramController;
-use App\Controllers\UserController;
 use App\Core\Database;
 use App\Core\Log;
 use App\Models\User;
+use App\Repositories\UserRepository;
+use App\Enums\UserRole;
 use App\Services\UserService;
 use Exception;
 use Monolog\Logger;
@@ -18,7 +19,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
  */
 class UserImporter
 {
-    private Spreadsheet $sheet;
+    private \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet;
     private array $cache = [
         'departments' => [],
         'programs'    => [],
@@ -46,7 +47,7 @@ class UserImporter
      */
     public function import(): array
     {
-        $userController        = new UserController();
+        $userRepository        = new UserRepository();
         $userService           = new UserService();
         $departmentController  = new DepartmentController();
         $programController     = new ProgramController();
@@ -120,13 +121,13 @@ class UserImporter
                     'title'         => $title,
                     'name'          => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
                     'last_name'     => mb_strtoupper($last_name, "UTF-8"),
-                    'role'          => array_search($role, $userController->getRoleList()),
+                    'role'          => UserRole::fromLabel($role)?->value,
                     'department_id' => $department->id ?? null,
                     'program_id'    => $program->id ?? null,
                 ];
 
                 if (!isset($this->cache['users_by_mail'][$mail])) {
-                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                    $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }
                 $user = $this->cache['users_by_mail'][$mail];
 
@@ -136,9 +137,9 @@ class UserImporter
                     $userService->updateUser($user);
                     $updatedCount++;
                 } else {
-                    $userService->saveNew($userData);
+                    $userService->saveNew(\App\DTOs\UserDTO::fromArray($userData));
                     $addedCount++;
-                    $this->cache['users_by_mail'][$mail] = $userController->getUserByEmail($mail);
+                    $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }
             }
 

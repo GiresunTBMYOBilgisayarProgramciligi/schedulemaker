@@ -6,9 +6,9 @@ use App\Enums\UserRole;
 use App\Enums\UserTitle;
 
 /**
- * Kullanıcı oluşturma isteğinden gelen doğrulanmış (validated) veriyi taşıyan nesne.
+ * Kullanıcı oluşturma veya güncelleme isteğinden gelen doğrulanmış (validated) veriyi taşıyan nesne.
  */
-readonly class UserCreateDTO
+readonly class UserDTO
 {
     public function __construct(
         public string $name,

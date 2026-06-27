@@ -3,6 +3,7 @@
 namespace App\Routers;
 
 use App\Middlewares\AuthMiddleware;
+use App\Controllers\UserController;
 
 use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
@@ -126,7 +127,7 @@ class AjaxRouter extends Router
      */
     public function addNewUserAction(): void
     {
-        $this->response = (new \App\Controllers\UserController())->store($this->data);
+        $this->response = (new UserController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -137,7 +138,7 @@ class AjaxRouter extends Router
      */
     public function updateUserAction(): void
     {
-        $this->response = (new \App\Controllers\UserController())->update($this->data);
+        $this->response = (new UserController())->update($this->data);
         $this->sendResponse();
     }
 
@@ -146,7 +147,7 @@ class AjaxRouter extends Router
      */
     public function deleteUserAction(): void
     {
-        $this->response = (new \App\Controllers\UserController())->destroy($this->data);
+        $this->response = (new UserController())->destroy($this->data);
         $this->sendResponse();
     }
 
@@ -249,7 +250,8 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    /**
+    /**todo bu ne işe yarıyor kullanılıyor mu?
+     * 
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.
      * @throws Exception

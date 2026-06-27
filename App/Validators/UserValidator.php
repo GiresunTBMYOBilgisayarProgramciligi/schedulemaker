@@ -6,9 +6,9 @@ use App\Enums\UserRole;
 use App\Enums\UserTitle;
 
 /**
- * Yeni kullanıcı oluşturma (veya güncelleme) isteklerini doğrulayan sınıf.
+ * Kullanıcı oluşturma ve güncelleme isteklerini doğrulayan sınıf.
  */
-class UserCreateValidator extends BaseValidator
+class UserValidator extends BaseValidator
 {
     /**
      * @param array $data Doğrulanacak veri (POST verisi)

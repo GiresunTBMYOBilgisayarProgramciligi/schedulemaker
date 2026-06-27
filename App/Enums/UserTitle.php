@@ -31,4 +31,44 @@ enum UserTitle: string
 
         return $titles;
     }
+
+    /**
+     * Ünvan Ad Soyad şeklinde verilen ismi ünvan, ad, soyad şeklinde ayırarak bir dizi döndürür
+     * @param string $fullName
+     * @return array
+     */
+    public static function parseAcademicName(string $fullName): array
+    {
+        // Ünvanları uzunluklarına göre sırala (en uzundan en kısaya)
+        $titles = self::getSortedByLength();
+
+        $title = '';
+        $nameLastName = '';
+
+        // Ünvanları kontrol et
+        foreach ($titles as $possibleTitle) {
+            if (strpos($fullName, $possibleTitle) === 0) {
+                $title = $possibleTitle;
+                // Ünvanı kaldır ve trim yap
+                $nameLastName = trim(substr($fullName, strlen($possibleTitle)));
+                break;
+            }
+        }
+
+        // Eğer ünvan bulunamadıysa tüm stringi isim soyisim olarak al
+        if (empty($title)) {
+            $nameLastName = trim($fullName);
+        }
+
+        // Ad ve soyadı ayır - son kelime soyadı olacak
+        $nameParts = explode(' ', $nameLastName);
+        $lastName = array_pop($nameParts); // Son kelimeyi al (soyad)
+        $name = implode(' ', $nameParts); // Kalan kısmı ad olarak birleştir
+
+        return [
+            'title' => $title,
+            'name' => $name,
+            'last_name' => $lastName
+        ];
+    }
 }

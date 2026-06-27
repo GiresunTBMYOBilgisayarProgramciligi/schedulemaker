@@ -2,7 +2,7 @@
 
 namespace App\Core;
 
-use App\Controllers\UserController;
+use App\Middlewares\AuthMiddleware;
 use Monolog\Handler\FilterHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
@@ -72,9 +72,9 @@ class Log
         $username = null;
         $userId = null;
         try {
-            $user = (new UserController())->getCurrentUser();
+            $user = AuthMiddleware::user();
             if ($user) {
-                $username = trim(($user->title ? $user->title . ' ' : '') . $user->name . ' ' . $user->last_name);
+                $username = $user->getFullName();
                 $userId = $user->id;
             }
         } catch (\Throwable $t) {

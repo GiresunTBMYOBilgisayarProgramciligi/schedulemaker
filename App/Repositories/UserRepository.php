@@ -37,7 +37,7 @@ class UserRepository extends BaseRepository
     }
 
     /**
-     * İsim ve soyisme göre kullanıcı bulur.
+     * İsim ve soyisme göre kullanıcı bulur (Örn: filtreler dizisi ile)
      * 
      * @param array $filters (örn: ['title' => 'Prof. Dr.', 'name' => 'Ali', 'last_name' => 'Yılmaz'])
      * @return User|null
@@ -46,5 +46,18 @@ class UserRepository extends BaseRepository
     public function findByFullNameFilters(array $filters): ?User
     {
         return $this->findOneBy($filters);
+    }
+
+    /**
+     * Akademik isim (Örn: "Prof. Dr. Ali Yılmaz") verilerek kullanıcıyı bulur.
+     * 
+     * @param string $fullName
+     * @return User|null
+     * @throws Exception
+     */
+    public function findByFullName(string $fullName): ?User
+    {
+        $filters = \App\Enums\UserTitle::parseAcademicName($fullName);
+        return $this->findByFullNameFilters($filters);
     }
 }

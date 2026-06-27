@@ -2,7 +2,7 @@
 
 namespace App\Core;
 
-use App\Controllers\UserController;
+use App\Middlewares\AuthMiddleware;
 use Exception;
 use App\Core\Log;
 
@@ -45,7 +45,7 @@ class Gate
      */
     public static function check(string $action, $model): bool
     {
-        $user = (new UserController())->getCurrentUser();
+        $user = AuthMiddleware::user();
         if (!$user) {
             return false;
         }
@@ -103,7 +103,7 @@ class Gate
      */
     public static function allowsRole(string $role, bool $reverse = false): bool
     {
-        $user = (new UserController())->getCurrentUser();
+        $user = AuthMiddleware::user();
         if (!$user) {
             return false;
         }

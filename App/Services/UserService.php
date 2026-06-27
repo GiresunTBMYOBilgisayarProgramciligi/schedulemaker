@@ -5,7 +5,8 @@ namespace App\Services;
 use App\Core\Log;
 use App\Models\User;
 use App\Services\ScheduleService;
-use App\DTOs\UserCreateDTO;
+use App\DTOs\UserDTO;
+use App\Repositories\UserRepository;
 use Exception;
 use PDOException;
 
@@ -26,11 +27,11 @@ class UserService extends BaseService
      * Yeni kullanıcı oluşturur.
      * Şifreyi otomatik olarak hash'ler (girilmemişse varsayılan "123456").
      *
-     * @param UserCreateDTO $dto Doğrulanmış ve paketlenmiş kullanıcı verileri
+     * @param UserDTO $dto Doğrulanmış ve paketlenmiş kullanıcı verileri
      * @return int Oluşturulan kullanıcının ID'si
      * @throws Exception Duplicate e-posta veya kayıt hatası
      */
-    public function saveNew(UserCreateDTO $dto): int
+    public function saveNew(UserDTO $dto): int
     {
         $this->logger->info('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
 
@@ -128,15 +129,9 @@ class UserService extends BaseService
     public function login(array $loginData): void
     {
         $loginData = (object) $loginData;
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE mail = :mail");
-        $stmt->bindParam(':mail', $loginData->mail);
-        $stmt->execute();
+        $userRepository = new UserRepository();
+        $user = $userRepository->findByEmail($loginData->mail);
 
-        if (!$stmt) {
-            throw new Exception("Hiçbir kullanıcı kayıtlı değil");
-        }
-
-        $user = $stmt->fetch(\PDO::FETCH_OBJ);
         if (!$user) {
             throw new Exception("Kullanıcı kayıtlı değil");
         }
@@ -158,11 +153,9 @@ class UserService extends BaseService
         }
 
         // Log giriş
-        $userObj = new User();
-        $userObj->fill((array) $user);
-        $this->logger->info($userObj->getFullName() . ' giriş yaptı.', Log::context($this, [
+        $this->logger->info($user->getFullName() . ' giriş yaptı.', Log::context($this, [
             'user_id' => $user->id,
-            'username' => $userObj->getFullName(),
+            'username' => $user->getFullName(),
         ]));
 
         // last_login güncelle

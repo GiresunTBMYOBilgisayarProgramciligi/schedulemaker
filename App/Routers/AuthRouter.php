@@ -5,6 +5,7 @@ namespace App\Routers;
 use App\Controllers\UserController;
 use App\Services\UserService;
 use App\Middlewares\GuestMiddleware;
+use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
 
@@ -34,7 +35,7 @@ class AuthRouter extends Router
      */
     public function LogoutAction()
     {
-        $user = (new UserController())->getCurrentUser();
+        $user = AuthMiddleware::user();
         if ($user) {
             $this->logger()->info($user->getFullName() . " çıkış yaptı.", $this->logContext());
         }

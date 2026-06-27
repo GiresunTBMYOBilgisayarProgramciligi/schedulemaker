@@ -89,9 +89,9 @@ use App\Core\Gate;
                                             <label class="form-label" for="role">Rol</label>
                                             <select class="form-select" id="role"
                                                     name="role" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
-                                                <?php foreach ($userController->getRoleList() as $role => $value): ?>
-                                                    <option value="<?= $role ?>"
-                                                        <?= $role == $user->role ? "selected" : "" ?>><?= $value ?></option>
+                                                <?php foreach (\App\Enums\UserRole::getAssignableRoles() as $roleEnum): ?>
+                                                    <option value="<?= $roleEnum->value ?>"
+                                                        <?= $roleEnum->value == $user->role ? "selected" : "" ?>><?= $roleEnum->getLabel() ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -100,11 +100,10 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
                                             <select class="form-select" id="title" name="title" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
-                                                <?php $titleList = $userController->getTitleList();
-                                                array_unshift($titleList, "");
-                                                foreach ($titleList as $title): ?>
-                                                    <option value="<?= $title ?>"
-                                                        <?= $title == $user->title ? "selected" : "" ?>><?= $title ?></option>
+                                                <option value=""></option>
+                                                <?php foreach (\App\Enums\UserTitle::cases() as $titleEnum): ?>
+                                                    <option value="<?= $titleEnum->value ?>"
+                                                        <?= $titleEnum->value == $user->title ? "selected" : "" ?>><?= $titleEnum->value ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

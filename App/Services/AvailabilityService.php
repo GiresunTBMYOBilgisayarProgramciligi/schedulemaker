@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Log;
+use App\Controllers\UserController;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -13,7 +14,7 @@ use Exception;
 use App\Helpers\TimeHelper;
 use App\Services\Helpers\TimelineManager;
 use function App\Helpers\getSettingValue;
-
+//todo  Services içerisinde Schedule klasörü içine taşınacak
 /**
  * Ders ve Sınav programlarında müsait derslik ve gözetmen sorgulama servisi.
  *
@@ -281,7 +282,7 @@ class AvailabilityService extends BaseService
         $observerFilters = [
             'role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]
         ];
-        $observers = (new \App\Controllers\UserController())->getListByFilters($observerFilters);
+        $observers = (new UserController())->getListByFilters($observerFilters);
         $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];
 
         $availableObservers = [];

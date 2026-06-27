@@ -51,7 +51,7 @@ class Controller
 
 
     /**
-     * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan dersleri dizi olarak döner. Her bir eleman Lesson nesnesidir
+     * Parametre olarak gelen alanlara göre otomatik koşul oluşturur ve koşullara uyan verileri dizi olarak döner. Her bir eleman Model nesnesidir
      * @param array|null $filters
      * @return array
      * @throws Exception

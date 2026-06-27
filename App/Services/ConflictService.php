@@ -6,8 +6,9 @@ use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Helpers\TimeHelper;
+use App\Services\Helpers\ConflictResolver;
 use Exception;
-
+//todo  Services içerisinde Schedule klasörü içine taşınacak
 /**
  * Ders ve Sınav programlarında çakışma kontrol servisi.
  *
@@ -84,7 +85,7 @@ class ConflictService extends BaseService
             throw new Exception("Hedef Program bulunamadı");
         }
 
-        $conflictResolver = new \App\Services\Helpers\ConflictResolver();
+        $conflictResolver = new ConflictResolver();
         $conflictErrors = $conflictResolver->checkConflicts($itemData, $owners, $targetSchedule, $lesson);
 
         $errors = array_merge($errors, $conflictErrors);

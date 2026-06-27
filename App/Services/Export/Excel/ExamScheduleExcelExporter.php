@@ -5,6 +5,7 @@ namespace App\Services\Export\Excel;
 use App\Controllers\ScheduleController;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
@@ -279,7 +280,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
             // Hoca Adı (Daima dersin asıl hocası)
             if ($options['show_lecturer'] && !empty($data->lesson->lecturer_id)) {
-                $lessonLecturer = (new \App\Models\User())
+                $lessonLecturer = (new User())
                     ->get()
                     ->where(['id' => $data->lesson->lecturer_id])
                     ->first();

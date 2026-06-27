@@ -6,7 +6,7 @@ use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
-use App\Controllers\UserController;
+use App\Repositories\UserRepository;
 use App\Core\Database;
 use App\Core\Log;
 use App\Models\Lesson;
@@ -51,7 +51,7 @@ class LessonImporter
      */
     public function import(): array
     {
-        $userController       = new UserController();
+        $userRepository       = new UserRepository();
         $departmentController = new DepartmentController();
         $programController    = new ProgramController();
         $lessonsController    = new LessonController();
@@ -122,7 +122,7 @@ class LessonImporter
                 $program = $this->cache['programs'][$programCacheKey];
 
                 if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
-                    $this->cache['users_by_name'][$lecturer_full_name] = $userController->getUserByFullName($lecturer_full_name);
+                    $this->cache['users_by_name'][$lecturer_full_name] = $userRepository->findByFullName($lecturer_full_name);
                 }
                 $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
 
