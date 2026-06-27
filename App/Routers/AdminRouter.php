@@ -34,7 +34,7 @@ use function App\Helpers\getSettingValue;
 class AdminRouter extends Router
 {
 
-    private User|false $currentUser = false;
+    private ?User $currentUser = null;
 
     public function __construct()
     {

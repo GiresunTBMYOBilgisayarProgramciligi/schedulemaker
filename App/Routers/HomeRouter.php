@@ -13,7 +13,7 @@ use Exception;
 
 class HomeRouter extends Router
 {
-    private User|false $currentUser = false;
+    private ?User $currentUser = null;
 
     public function __construct()
     {
