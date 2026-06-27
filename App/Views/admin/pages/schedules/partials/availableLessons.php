@@ -1,5 +1,5 @@
 <?php
-use App\Controllers\ClassroomController;
+use App\Enums\ClassroomType;
 use App\Core\View;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -17,7 +17,7 @@ use App\Models\Schedule;
 // Dersleri classroom_type'a göre grupla, dummy'leri ayır
 $groupedLessons = [];
 $dummyLessons = [];
-$classroomTypes = (new ClassroomController())->getTypeList();
+$classroomTypes = ClassroomType::toArray();
 
 foreach ($availableLessons as $lesson) {
     $isDummy = isset($lesson->is_dummy) && $lesson->is_dummy;

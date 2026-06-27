@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Controllers\ClassroomController;
 use App\Controllers\LessonController;
 use App\Core\Model;
+use App\Enums\ClassroomType;
 use App\Services\ScheduleService;
 use Exception;
 use function App\Helpers\getClassFromSemesterNo;
@@ -36,7 +36,7 @@ class Lesson extends Model
     /**
      *
      * @var int|null
-     * @see ClassroomController->getTypeList()
+     * @see ClassroomType
      */
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
@@ -429,7 +429,7 @@ class Lesson extends Model
      */
     public function getClassroomTypeName(): string
     {
-        return (new ClassroomController())->getTypeList()[$this->classroom_type] ?? "";
+        return ClassroomType::tryFrom((int)$this->classroom_type)?->label() ?? "";
     }
 
     public function getTypeName(): string

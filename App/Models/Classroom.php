@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Controllers\ClassroomController;
 use App\Core\Model;
-use App\Services\ScheduleService;
+use App\Enums\ClassroomType;
 use Exception;
 
 class Classroom extends Model
@@ -21,21 +20,17 @@ class Classroom extends Model
      * 3-> Uzaktan Eğitim Sınıfı
      * 4-> Karma (Derslik ve Lab)
      */
-    public ?string $type = null;
+    public ?int $type = null;
 
     public array $schedules = [];
     protected array $excludeFromDb = ['schedules'];
     protected string $table_name = "classrooms";
 
-    /**
-     * @throws Exception
-     */
-    protected function beforeDelete(): void
-    {
-        // Not: İlişkili programlar (schedules) ve polimorfik kardeş kayıtlar (sibling items) temizlenir.
-        (new ScheduleService())->wipeResourceSchedules('classroom', $this->id);
-    }
 
+    /**
+     * Log işlemleri için etiket
+     * @return string
+     */
     public function getLabel(): string
     {
         return "derslik";
@@ -86,6 +81,6 @@ class Classroom extends Model
      */
     public function getTypeName(): string
     {
-        return (new ClassroomController())->getTypeList()[$this->type] ?? "";
+        return ClassroomType::tryFrom((int)$this->type)?->label() ?? "";
     }
 }

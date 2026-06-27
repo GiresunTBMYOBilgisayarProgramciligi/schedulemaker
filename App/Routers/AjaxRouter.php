@@ -4,6 +4,7 @@ namespace App\Routers;
 
 use App\Middlewares\AuthMiddleware;
 use App\Controllers\UserController;
+use App\Controllers\ClassroomController;
 
 use App\Services\ClassroomService;
 use App\Controllers\DepartmentController;
@@ -517,50 +518,22 @@ class AjaxRouter extends Router
     /*
      * Classrooms Ajax Actions
      */
-    /**
-     * @throws Exception
-     */
+    
     public function addClassroomAction(): void
     {
-        Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
-        (new ClassroomService())->saveNew($this->data);
-        $this->response = array(
-            "msg" => "Derslik başarıyla eklendi.",
-            "status" => "success",
-        );
+        $this->response = (new ClassroomController())->store($this->data);
         $this->sendResponse();
     }
 
-    /**
-     * @throws Exception
-     */
     public function updateClassroomAction(): void
     {
-        $classroomData = $this->data;
-        $classroom = new Classroom();
-        $classroom->fill($classroomData);
-        Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
-        (new ClassroomService())->updateClassroom($classroom);
-        $this->response = array(
-            "msg" => "Derslik başarıyla Güncellendi.",
-            "status" => "success",
-        );
+        $this->response = (new ClassroomController())->update($this->data);
         $this->sendResponse();
     }
 
-    /**
-     * @throws Exception
-     */
     public function deleteClassroomAction(): void
     {
-        $classroom = (new Classroom())->find($this->data['id']) ?: throw new Exception("Derslik bulunamadı");
-        Gate::authorize("delete", $classroom, "Derslik silme yetkiniz yok");
-        $classroom->delete();
-
-        $this->response = array(
-            "msg" => "Derslik başarıyla silindi.",
-            "status" => "success",
-        );
+        $this->response = (new ClassroomController())->destroy($this->data);
         $this->sendResponse();
     }
 

@@ -4,8 +4,11 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Classroom;
-use App\Models\Schedule;
-use PDOException;
+use App\Services\ClassroomService;
+use App\Validators\ClassroomValidator;
+use App\DTOs\ClassroomDTO;
+use App\Core\Gate;
+use App\Enums\ClassroomType;
 use Exception;
 
 /**
@@ -16,68 +19,118 @@ class ClassroomController extends Controller
     protected string $table_name = "classrooms";
     protected string $modelName = "App\Models\Classroom";
 
-    /**
-     * Tüm dersliklerin listesini döner
-     * @return array
-     * @throws Exception
-     */
-    public function getClassroomsList(): array
-    {
-        return (new Classroom())->get()->all();
-    }
+
 
     /**
-     * Veri tabanında yeni bir derslik oluşturur
-     * @param array $classroomData
-     * @return int eklenen derslikid numarası
-     * @throws Exception
+     * Yeni derslik oluşturur (POST /ajax/classroom/add rotası için)
      */
-    public function saveNew(array $classroomData): int
+    public function store(array $requestData): array
     {
         try {
-            $new_classroom = new Classroom();
-            $new_classroom->fill($classroomData);
-            $new_classroom->create();
-            return $new_classroom->id;
+            Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
+
+            $validator = new ClassroomValidator();
+            $validationResult = $validator->validate($requestData);
+
+            if (!$validationResult->isValid) {
+                return [
+                    "status" => "error",
+                    "msg" => "Veri doğrulama hatası.",
+                    "errors" => $validationResult->errors
+                ];
+            }
+
+            $dto = ClassroomDTO::fromArray($requestData);
+            (new ClassroomService())->saveNew($dto);
+
+            return [
+                "status" => "success",
+                "msg" => "Derslik başarıyla oluşturuldu."
+            ];
+
         } catch (Exception $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
-            }
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
-
     }
 
     /**
-     * Belirtilen verilere göre veri tabanında derslik bilgilerini günceller
-     * @param Classroom $classroom
-     * @return int Güncellenen derslik idsi
-     * @throws Exception
+     * Mevcut dersliği günceller (POST /ajax/classroom/update rotası için)
      */
-    public function updateClassroom(Classroom $classroom): int
+    public function update(array $requestData): array
     {
         try {
-            $classroom->update();
-            return $classroom->id;
-        } catch (PDOException $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu isimde bir derslik zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            $classroom = clone (new Classroom())->find($requestData['id']);
+            if (!$classroom) {
+                throw new Exception("Güncellenecek derslik bulunamadı.");
             }
+
+            Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
+
+            $validator = new ClassroomValidator();
+            $validationResult = $validator->validate($requestData);
+
+            if (!$validationResult->isValid) {
+                return [
+                    "status" => "error",
+                    "msg" => "Veri doğrulama hatası.",
+                    "errors" => $validationResult->errors
+                ];
+            }
+
+            $dto = ClassroomDTO::fromArray($requestData);
+            
+            // DTO'dan Model'e aktar
+            $classroom->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
+
+            (new ClassroomService())->updateClassroom($classroom);
+
+            return [
+                "status" => "success",
+                "msg" => "Derslik başarıyla güncellendi."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
     }
 
-    public function getTypeList(): array
+    /**
+     * Dersliği siler (POST /ajax/classroom/delete rotası için)
+     */
+    public function destroy(array $requestData): array
     {
-        return [
-            1 => "Derslik",
-            2 => "Bilgisayar Laboratuvarı",
-            3 => "Uzaktan Eğitim Sınıfı",
-            4 => "Karma" // hem lab hem sınıf olabilecek dersler için
-        ];
+        try {
+            if (empty($requestData['id'])) {
+                throw new Exception("Silinecek derslik ID'si belirtilmedi.");
+            }
+
+            $classroom = clone (new Classroom())->find($requestData['id']);
+            if (!$classroom) {
+                throw new Exception("Silinecek derslik bulunamadı.");
+            }
+
+            Gate::authorize("delete", $classroom, "Derslik silme yetkiniz yok");
+
+            (new ClassroomService())->deleteClassroom($classroom);
+
+            return [
+                "status" => "success",
+                "msg" => "Derslik başarıyla silindi."
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
     }
+
+
 }

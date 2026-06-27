@@ -12,22 +12,30 @@ use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
 use App\Controllers\SettingsController;
 use App\Controllers\UserController;
+
 use App\Repositories\UserRepository;
+use App\Repositories\ClassroomRepository;
+
 use App\Middlewares\AuthMiddleware;
+
 use App\Attributes\AuthRequired;
+
 use App\Core\Router;
 
+use App\Enums\ClassroomType;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
 use App\Models\Log;
 use App\Models\Program;
-use App\Core\Gate;
 use App\Models\User;
-use Exception;
+
+use App\Core\Gate;
+
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 
+use Exception;
 /**
  * AdminRouter Sınıfı
  * /admin altında gelen istekleri yönetir.
@@ -319,7 +327,7 @@ class AdminRouter extends Router
             "page_title" => "Ders Ekle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "lessonController" => new LessonController(),
-            "classroomTypes" => (new ClassroomController())->getTypeList(),
+            "classroomTypes" => ClassroomType::toArray(),
             "program_id" => $program_id
         ]);
         if ($this->currentUser->role == "department_head") {
@@ -354,7 +362,7 @@ class AdminRouter extends Router
             "page_title" => $lesson->getFullName(true) . " Düzenle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "programController" => new ProgramController(),
-            "classroomTypes" => (new ClassroomController())->getTypeList()
+            "classroomTypes" => ClassroomType::toArray()
         ]);
         $userController = new UserController();
         if ($this->currentUser->role == "department_head") {
@@ -443,7 +451,7 @@ class AdminRouter extends Router
         $classroomController = new ClassroomController();
         $this->view_data = array_merge($this->view_data, [
             "classroomController" => $classroomController,
-            "classrooms" => $classroomController->getClassroomsList(),
+            "classrooms" => (new ClassroomRepository())->findAll(),
             "page_title" => "Derslik Listesi"
         ]);
         $this->callView("admin/classrooms/listclassrooms");
@@ -456,7 +464,7 @@ class AdminRouter extends Router
         $classroomController = new ClassroomController();
         $this->view_data = array_merge($this->view_data, [
             "page_title" => "Derslik Ekle",
-            "classroomTypes" => $classroomController->getTypeList()
+            "classroomTypes" => ClassroomType::toArray()
         ]);
         $this->callView("admin/classrooms/addclassroom");
     }
@@ -477,7 +485,7 @@ class AdminRouter extends Router
         $this->view_data = array_merge($this->view_data, [
             "classroomController" => $classroomController,
             "classroom" => $classroom,
-            "classroomTypes" => $classroomController->getTypeList(),
+            "classroomTypes" => ClassroomType::toArray(),
             "page_title" => $classroom->name . "Düzenle",
         ]);
         $this->callView("admin/classrooms/editclassroom");
@@ -676,7 +684,7 @@ class AdminRouter extends Router
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "page_title" => "Ders Programı Düzenle",
-            "classrooms" => (new ClassroomController())->getClassroomsList()
+            "classrooms" => (new ClassroomRepository())->findAll()
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ["in" => ['admin', 'user']]])->all();
@@ -701,7 +709,7 @@ class AdminRouter extends Router
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "page_title" => "Sınav Programını Düzenle",
-            "classrooms" => (new ClassroomController())->getClassroomsList()
+            "classrooms" => (new ClassroomRepository())->findAll()
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = (new User())->get()->where(['department_id' => $this->currentUser->department_id, '!role' => ['admin', 'user']])->all();
@@ -729,7 +737,7 @@ class AdminRouter extends Router
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "page_title" => "Program Dışa Aktar",
-            "classrooms" => (new ClassroomController())->getClassroomsList()
+            "classrooms" => (new ClassroomRepository())->findAll()
         ]);
         if ($this->currentUser->role == "department_head") {
             $this->view_data['lecturers'] = (new UserRepository())->findBy(['department_id' => $this->currentUser->department_id]);

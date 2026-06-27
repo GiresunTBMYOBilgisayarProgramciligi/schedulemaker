@@ -11,6 +11,7 @@ use App\Core\Database;
 use App\Core\Log;
 use App\Models\Lesson;
 use App\Services\LessonService;
+use App\Enums\ClassroomType;
 use Exception;
 use Monolog\Logger;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -148,7 +149,7 @@ class LessonImporter
                     'department_id'  => $department->id,
                     'program_id'     => $program->id,
                     'semester'       => $this->formData['semester'],
-                    'classroom_type' => array_search(trim($classroom_type), (new ClassroomController())->getTypeList()),
+                    'classroom_type' => array_search(trim($classroom_type), ClassroomType::toArray()),
                     'academic_year'  => $this->formData['academic_year'],
                 ];
 
