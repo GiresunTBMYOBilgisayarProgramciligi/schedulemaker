@@ -639,7 +639,7 @@ class Model
 
         try {
             // Silme işlemi öncesinde hook'u çalıştır (İlişkili veriler silinebilir)
-            $this->beforeDelete();
+            $this->beforeDelete();// todo bunları kaldırıyoruz.
 
             if ($this->id) {
                 $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
@@ -675,6 +675,7 @@ class Model
     }
 
     /**
+     * todo bu metodları kaldırıyoruz
      * Silme işlemi öncesinde çalıştırılacak hook.
      * Alt sınıflar bu metodu override ederek silme öncesi işlemlerini (ilişkili veri temizliği vb.) yapabilir.
      * @return void

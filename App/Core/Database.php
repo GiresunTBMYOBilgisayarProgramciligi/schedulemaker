@@ -31,4 +31,36 @@ class Database
         }
         return self::$connection;
     }
+
+    /**
+     * Verilen işlemi bir veritabanı transaction'ı içerisinde çalıştırır.
+     * Eğer işlem sırasında hata olursa rollBack yapar, başarılıysa commit eder.
+     * 
+     * @param callable $callback
+     * @return mixed
+     * @throws \Exception
+     */
+    public static function transaction(callable $callback): mixed
+    {
+        $db = self::getConnection();
+        
+        $isInitiator = !$db->inTransaction();
+        if ($isInitiator) {
+            $db->beginTransaction();
+        }
+
+        try {
+            $result = $callback();
+            
+            if ($isInitiator) {
+                $db->commit();
+            }
+            return $result;
+        } catch (\Throwable $e) {
+            if ($isInitiator) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
 }

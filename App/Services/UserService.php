@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\ScheduleService;
 use App\DTOs\UserDTO;
 use App\Repositories\UserRepository;
+use App\Core\Database;
 use Exception;
 use PDOException;
 
@@ -39,12 +40,14 @@ class UserService extends BaseService
         $userData['password'] = password_hash($userData['password'] ?? '123456', PASSWORD_DEFAULT);
 
         try {
-            $user = new User();
-            $user->fill($userData);
-            $user->create();
+            return Database::transaction(function () use ($userData) {
+                $user = new User();
+                $user->fill($userData);
+                $user->create();
 
-            $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
-            return $user->id;
+                $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
+                return $user->id;
+            });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
@@ -74,9 +77,11 @@ class UserService extends BaseService
         }
 
         try {
-            $user->update($excluded);
-            $this->logger->info('Kullanıcı güncellendi', ['id' => $user->id]);
-            return $user->id;
+            return Database::transaction(function () use ($user, $excluded) {
+                $user->update($excluded);
+                $this->logger->info('Kullanıcı güncellendi', ['id' => $user->id]);
+                return $user->id;
+            });
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
                 throw new Exception("Bu e-posta adresi zaten kayıtlı. Lütfen farklı bir e-posta adresi giriniz.", (int) $e->getCode(), $e);
@@ -98,11 +103,13 @@ class UserService extends BaseService
         $this->logger->info('Kullanıcı siliniyor', ['id' => $user->id]);
 
         try {
-            // Önce kullanıcıya ait ders programı kayıtlarını (çakışmaları önlemek için) temizle
-            (new ScheduleService())->wipeResourceSchedules('user', $user->id);
-            
-            // Sonra kullanıcıyı veritabanından sil
-            $user->delete();
+            Database::transaction(function () use ($user) {
+                // Önce kullanıcıya ait ders programı kayıtlarını (çakışmaları önlemek için) temizle
+                (new ScheduleService())->wipeResourceSchedules('user', $user->id);
+                
+                // Sonra kullanıcıyı veritabanından sil
+                $user->delete();
+            });
             
             $this->logger->info('Kullanıcı başarıyla silindi', ['id' => $user->id]);
         } catch (Exception $e) {
