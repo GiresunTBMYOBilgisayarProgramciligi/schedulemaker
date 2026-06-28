@@ -27,6 +27,7 @@ abstract class BaseService
     }
 
     /**
+     * todo buradaki Transaction işlemleri silinecek. Database içerisinde var zaten. 
      * Transaction başlatır (eğer aktif değilse)
      */
     protected function beginTransaction(): void

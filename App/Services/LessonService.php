@@ -122,12 +122,7 @@ class LessonService extends BaseService
             'child_id' => $childLessonId,
         ]);
 
-        $isInitiator = !$this->db->inTransaction();
-        if ($isInitiator) {
-            $this->db->beginTransaction();
-        }
-
-        try {
+        Database::transaction(function () use ($parentLessonId, $childLessonId, $slotsToSkip) {
             /** @var Lesson $parentLesson */
             $parentLesson = (new Lesson())
                 ->where(['id' => $parentLessonId])
@@ -184,20 +179,11 @@ class LessonService extends BaseService
             // Parent'ın mevcut schedule'ı varsa child için item kopyala (seçilen slotlar hariç)
             $this->syncChildScheduleFromParent($parentLesson, $childLesson, $slotsToSkip);
 
-            if ($isInitiator) {
-                $this->db->commit();
-            }
-
             $this->logger->info('Ders birleştirildi', [
                 'parent_id' => $parentLesson->id,
                 'child_id' => $childLesson->id,
             ]);
-        } catch (Exception $e) {
-            if ($isInitiator) {
-                $this->db->rollBack();
-            }
-            throw $e;
-        }
+        });
     }
 
     /**
@@ -242,12 +228,7 @@ class LessonService extends BaseService
             'child_id' => $childLessonId,
         ]);
 
-        $isInitiator = !$this->db->inTransaction();
-        if ($isInitiator) {
-            $this->db->beginTransaction();
-        }
-
-        try {
+        Database::transaction(function () use ($parentLessonId, $childLessonId) {
             /** @var Lesson $parentLesson */
             $parentLesson = (new Lesson())
                 ->where(['id' => $parentLessonId])
@@ -311,20 +292,11 @@ class LessonService extends BaseService
             // Parent'ın mevcut sınav programı varsa child için kopyala
             $this->syncExamChildFromParent($parentLesson, $childLesson);
 
-            if ($isInitiator) {
-                $this->db->commit();
-            }
-
             $this->logger->info('Sınav birleştirme tamamlandı', [
                 'parent_id' => $parentLesson->id,
                 'child_id' => $childLesson->id,
             ]);
-        } catch (Exception $e) {
-            if ($isInitiator) {
-                $this->db->rollBack();
-            }
-            throw $e;
-        }
+        });
     }
 
     /**
@@ -405,6 +377,7 @@ class LessonService extends BaseService
 
             foreach ($parentSchedule->items as $item) {
                 // Sadece program/ders item'larını kopyala (gözetmen/derslik atamaları hariç)
+                // todo gözetmenlik atamaları hariç olduğunda eksik atama oluyor ve kalan öğrenci sayısı miktarının tekrar atanması gerekiyor bu da sorun oluşturabiliyor.
                 $detail = $item->detail;
                 if (isset($detail['reference_type']) && $detail['reference_type'] === 'exam_assignment') {
                     continue;
