@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Helpers;
+namespace App\Services\Schedule;
 
 use function App\Helpers\getSettingValue;
 

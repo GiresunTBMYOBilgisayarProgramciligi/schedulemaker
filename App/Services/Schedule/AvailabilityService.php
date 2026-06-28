@@ -11,7 +11,6 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
 use App\Helpers\TimeHelper;
-use App\Services\Helpers\TimelineManager;
 use function App\Helpers\getSettingValue;
 
 /**

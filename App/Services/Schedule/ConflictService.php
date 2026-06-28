@@ -5,7 +5,6 @@ namespace App\Services\Schedule;
 use App\Services\BaseService;
 use App\Models\Lesson;
 use App\Models\Schedule;
-use App\Services\Helpers\ConflictResolver;
 use Exception;
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Helpers;
+namespace App\Services\Schedule;
 
 use App\Models\Lesson;
 use App\Models\Schedule;
