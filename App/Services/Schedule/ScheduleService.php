@@ -8,6 +8,7 @@ use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
 use App\Exceptions\ValidationException;
 use App\Helpers\TimeHelper;
+use App\Core\Database;
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -62,13 +63,10 @@ class ScheduleService extends BaseService
             );
         }
 
-        // 2. Transaction başlat
-        $this->beginTransaction();
-
-        $createdIds = [];
-        $affectedLessonIds = [];
-
         try {
+            return Database::transaction(function () use ($itemsData) {
+                $createdIds = [];
+                $affectedLessonIds = [];
             foreach ($itemsData as $index => $itemData) {
                 $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $itemData]));
 
@@ -145,18 +143,14 @@ class ScheduleService extends BaseService
                 $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type);
             }
 
-            // Commit
-            $this->commit();
-
             $this->logger->info("Schedule items saved successfully", $this->logContext([
                 'created_count' => count($createdIds),
                 'schedule_id' => $itemsData[0]['schedule_id'] ?? null
             ]));
 
             return SaveScheduleResult::success($createdIds, count($itemsData));
-
+            });
         } catch (Exception $e) {
-            $this->rollback();
             $this->logger->error("Failed to save schedule items: " . $e->getMessage(), $this->logContext([
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -1053,13 +1047,13 @@ class ScheduleService extends BaseService
         $createdItemIds = [];
         $processedSiblingIds = [];
 
-        $isInitiator = !$this->db->inTransaction();
-        if ($isInitiator) {
-            $this->beginTransaction();
-        }
-
         try {
-            foreach ($itemsData as $itemData) {
+            return Database::transaction(function () use ($itemsData, $expandGroup) {
+                $processedSiblingIds = [];
+                $deletedIds = [];
+                $createdItemIds = [];
+
+                foreach ($itemsData as $itemData) {
                 $id = (int) ($itemData['id'] ?? 0);
                 if (!$id) {
                     continue;
@@ -1208,22 +1202,14 @@ class ScheduleService extends BaseService
                 $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
             }
 
-            if ($isInitiator) {
-                $this->commit();
-            }
+                $this->logger->info(
+                    "Schedule item'lar silindi: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
+                    $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
+                );
 
-            $this->logger->info(
-                "Schedule item'lar silindi: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
-                $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
-            );
-
-            return DeleteScheduleResult::success($deletedIds, $createdItemIds);
-
+                return DeleteScheduleResult::success($deletedIds, $createdItemIds);
+            });
         } catch (Exception $e) {
-            if ($isInitiator) {
-                $this->rollback();
-            }
-
             $this->logger->error(
                 "Silme işlemi başarısız: " . $e->getMessage(),
                 $this->logContext(['exception' => $e])

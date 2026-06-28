@@ -3,6 +3,7 @@
 namespace App\Services\Schedule;
 
 use App\Services\BaseService;
+use App\Core\Database;
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -42,15 +43,10 @@ class ExamService extends BaseService
             $this->logContext()
         );
 
-        $isInitiator = !$this->db->inTransaction();
-        if ($isInitiator) {
-            $this->beginTransaction();
-        }
+        return Database::transaction(function () use ($itemsData) {
+            $createdIds = [];
+            $affectedLessonIds = [];
 
-        $createdIds = [];
-        $affectedLessonIds = [];
-
-        try {
             foreach ($itemsData as $itemData) {
                 $dayIndex = $itemData['day_index'];
                 $startTime = $itemData['start_time'];
@@ -213,25 +209,10 @@ class ExamService extends BaseService
                 $affectedLessonIds[] = $mainLesson->id;
             }
 
-            if ($isInitiator) {
-                $this->commit();
-            }
-
             $this->logSaveSuccess($itemsData);
-
             return $createdIds;
-        } catch (\Throwable $e) {
-            if ($isInitiator) {
-                $this->rollback();
-            }
-            $this->logger->error(
-                "ExamService::saveExamScheduleItems Error: " . $e->getMessage(),
-                $this->logContext()
-            );
-            throw $e;
-        }
+        });
     }
-
 
     // ─────────────────────────────────────────────────────────────────────────
     // Sınav Sibling
