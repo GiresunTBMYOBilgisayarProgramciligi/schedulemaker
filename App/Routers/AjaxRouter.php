@@ -870,43 +870,6 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    /**
-     * Excel / ICS program dışa aktarma — ExporterFactory ve ScheduleExporterInterface üzerinden çalışır.
-     * @throws Exception
-     */
-    #[PublicAction]
-    public function exportScheduleAction(): void
-    {
-        $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
-
-        $showOptions = [
-            'show_code'     => !isset($filters['show_code'])     || (string) $filters['show_code']     === '1',
-            'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
-            'show_program'  => !isset($filters['show_program'])  || (string) $filters['show_program']  === '1',
-            'show_observer' => !isset($filters['show_observer']) || (string) $filters['show_observer'] === '1',
-        ];
-
-        $exporter = ExporterFactory::create($filters, 'excel');
-        $exporter->export($filters, $showOptions);
-    }
-
-    /**
-     * Takvim (ICS) dışa aktarma — ExporterFactory üzerinden çalışır.
-     * @throws Exception
-     */
-    #[PublicAction]
-    public function exportScheduleIcsAction(): void
-    {
-        $filters = (new FilterValidator())->validate($this->data, "exportScheduleIcsAction");
-
-        $showOptions = [
-            'show_observer' => !isset($filters['show_observer']) || (string) ($filters['show_observer'] ?? '1') === '1',
-        ];
-
-        $exporter = ExporterFactory::create($filters, 'ics');
-        $exporter->export($filters, $showOptions);
-    }
-
     /*
      * Setting Actions
      */
@@ -916,21 +879,7 @@ class AjaxRouter extends Router
      */
     public function saveSettingsAction(): void
     {
-        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
-        $settingsController = new SettingsController();
-        foreach ($this->data['settings'] as $group => $settings) {
-            $settingData['group'] = $group;
-            foreach ($settings as $key => $data) {
-                $data['key'] = $key;
-                $settingData = array_merge($settingData, $data);
-                $setting = new Setting();
-                $setting->fill($settingData);
-                $settingsController->saveNew($setting);
-            }
-
-        }
-        $this->response['status'] = "success";
-        $this->response['msg'] = "Ayarlar kaydedildi";
+        $this->response = (new SettingsController())->store($this->data);
         $this->sendResponse();
     }
 
@@ -939,9 +888,7 @@ class AjaxRouter extends Router
      */
     public function clearLogsAction(): void
     {
-        (new SettingsController())->clearLogsAction();
-        $this->response['status'] = "success";
-        $this->response['msg'] = "Loglar başarıyla temizlendi";
+        $this->response = (new SettingsController())->clearLogs();
         $this->sendResponse();
     }
 
@@ -984,5 +931,42 @@ class AjaxRouter extends Router
         $this->response['addedLessons']   = $result['addedLessons'];
         $this->response['updatedLessons'] = $result['updatedLessons'];
         $this->sendResponse();
+    }
+
+    /**
+     * Excel / ICS program dışa aktarma — ExporterFactory ve ScheduleExporterInterface üzerinden çalışır.
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function exportScheduleAction(): void
+    {
+        $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
+
+        $showOptions = [
+            'show_code'     => !isset($filters['show_code'])     || (string) $filters['show_code']     === '1',
+            'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
+            'show_program'  => !isset($filters['show_program'])  || (string) $filters['show_program']  === '1',
+            'show_observer' => !isset($filters['show_observer']) || (string) $filters['show_observer'] === '1',
+        ];
+
+        $exporter = ExporterFactory::create($filters, 'excel');
+        $exporter->export($filters, $showOptions);
+    }
+
+    /**
+     * Takvim (ICS) dışa aktarma — ExporterFactory üzerinden çalışır.
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function exportScheduleIcsAction(): void
+    {
+        $filters = (new FilterValidator())->validate($this->data, "exportScheduleIcsAction");
+
+        $showOptions = [
+            'show_observer' => !isset($filters['show_observer']) || (string) ($filters['show_observer'] ?? '1') === '1',
+        ];
+
+        $exporter = ExporterFactory::create($filters, 'ics');
+        $exporter->export($filters, $showOptions);
     }
 }

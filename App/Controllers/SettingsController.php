@@ -5,6 +5,9 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Setting;
 use App\Core\Gate;
+use App\DTOs\SettingDTO;
+use App\Validators\SettingsValidator;
+use App\Services\SettingsService;
 use Exception;
 
 class SettingsController extends Controller
@@ -28,39 +31,48 @@ class SettingsController extends Controller
     }
 
     /**
-     * @param Setting $setting
-     * @return int
-     * @throws Exception
+     * Toplu ayarları kaydeder (POST /ajax/settings/save rotası için)
      */
-    public function saveNew(Setting $setting): int
+    public function store(array $requestData): array
     {
-        try {
-            $setting->create();
-            return $setting->id;
-        } catch (Exception $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                $existingSetting = $this->getSetting($setting->key, $setting->group);
-                $setting->id = $existingSetting->id;
-                return $this->updateSetting($setting);
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
-            }
-        }
-    }
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
 
-    public function updateSetting(Setting $setting): int
-    {
         try {
-            $setting->update();
-            return $setting->id;
-        } catch (Exception $e) {
-            if ($e->getCode() == '23000') {
-                // UNIQUE kısıtlaması ihlali durumu (duplicate entry hatası)
-                throw new Exception("Bu ayar başka bir ayarla çakışıyor. Farkı bir anahtar ve grup belirleyin", (int) $e->getCode(), $e);
-            } else {
-                throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            $validator = new SettingsValidator();
+            $validationResult = $validator->validate($requestData);
+
+            if (!$validationResult->isValid) {
+                return [
+                    "status" => "error",
+                    "msg" => "Veri doğrulama hatası.",
+                    "errors" => $validationResult->errors
+                ];
             }
+
+            $settingsData = [];
+            foreach ($requestData['settings'] as $group => $settings) {
+                foreach ($settings as $key => $data) {
+                    $settingsData[] = SettingDTO::fromArray([
+                        'group' => $group,
+                        'key' => $key,
+                        'value' => $data['value'] ?? null,
+                        'type' => $data['type'] ?? 'string'
+                    ]);
+                }
+            }
+
+            (new SettingsService())->saveMultipleSettings($settingsData);
+
+            return [
+                "status" => "success",
+                "msg" => "Ayarlar kaydedildi"
+            ];
+
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
         }
     }
 
@@ -90,13 +102,20 @@ class SettingsController extends Controller
      * @return void
      * @throws Exception
      */
-    public function clearLogsAction(): void
+    public function clearLogs(): array
     {
         Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
         try {
             $this->database->exec("TRUNCATE TABLE logs");
+            return [
+                "status" => "success",
+                "msg" => "Loglar başarıyla temizlendi"
+            ];
         } catch (Exception $e) {
-            throw new Exception("Loglar temizlenirken bir hata oluştu: " . $e->getMessage());
+            return [
+                "status" => "error",
+                "msg" => "Loglar temizlenirken bir hata oluştu: " . $e->getMessage()
+            ];
         }
     }
 }
