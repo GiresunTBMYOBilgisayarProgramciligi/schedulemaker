@@ -7,6 +7,7 @@ use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
 use App\Exceptions\ValidationException;
 use App\Helpers\TimeHelper;
+use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -1080,7 +1081,7 @@ class ScheduleService extends BaseService
                 }
 
                 $type = 'lesson';
-                if ($scheduleItem->schedule && in_array($scheduleItem->schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                if ($scheduleItem->schedule && ExamType::isExamType($scheduleItem->schedule->type)) {
                     $type = 'exam';
                 }
 

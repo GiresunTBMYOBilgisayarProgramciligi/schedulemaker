@@ -3,6 +3,7 @@
 namespace App\Services\Export\Ics;
 
 use App\Core\Log;
+use App\Enums\ExamType;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleFilterBuilder;
 use Exception;
@@ -72,12 +73,8 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
      */
     protected function getScheduleDates(\DateTimeZone $timezone, string $type = 'lesson'): array
     {
-        if (in_array($type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
-            $settingKey = match ($type) {
-                'final-exam'  => 'final_start_date',
-                'makeup-exam' => 'makeup_start_date',
-                default       => 'midterm_start_date',
-            };
+        if (ExamType::isExamType($type)) {
+            $settingKey = ExamType::tryFrom($type)->startDateSettingKey();
             $startDateStr = \App\Helpers\getSettingValue($settingKey, 'exam');
             $endDateStr   = null;
         } else {

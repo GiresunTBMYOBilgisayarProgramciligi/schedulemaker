@@ -108,7 +108,7 @@ class SingleScheduleHandler {
         const cardInstance = this.ScheduleCard;
 
         const scheduleType = cardInstance?.type || 'lesson';
-        let maxHours = ['midterm-exam', 'final-exam', 'makeup-exam'].includes(scheduleType) ? 18 : 8;
+        let maxHours = window.EXAM_TYPES.includes(scheduleType) ? 18 : 8;
 
         // Modal oluştur
         this.modal.modal.id = `singleScheduleModal-${this.ScheduleCard.id}`;

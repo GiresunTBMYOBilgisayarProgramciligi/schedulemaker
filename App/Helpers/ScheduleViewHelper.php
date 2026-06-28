@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Enums\ExamType;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 
@@ -120,7 +121,7 @@ class ScheduleViewHelper
         $draggable = 'true';
         if (!$isDummy) {
             // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
-            $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+            $isExam = ExamType::isExamType($schedule->type);
             $isChild = $isExam
                 ? !is_null($lesson->exam_parent_lesson_id)
                 : !is_null($lesson->parent_lesson_id);
@@ -139,7 +140,7 @@ class ScheduleViewHelper
             $cssClass = "dummy w-100 slot-" . $status;
         } else {
             /** @var \App\Models\Lesson $lesson */
-            $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+            $isExam = ExamType::isExamType($schedule->type);
             $cssClass = "lesson-card w-100 " . $lesson->getScheduleCSSClass($isExam);
         }
 
@@ -246,7 +247,7 @@ class ScheduleViewHelper
     ): bool
     {
         // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
-        $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+        $isExam = ExamType::isExamType($schedule->type);
         $isChild = $isExam
             ? !is_null($slotData->lesson->exam_parent_lesson_id)
             : !is_null($slotData->lesson->parent_lesson_id);

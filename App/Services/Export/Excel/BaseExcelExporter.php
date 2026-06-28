@@ -3,6 +3,7 @@
 namespace App\Services\Export\Excel;
 
 use App\Core\Log;
+use App\Enums\ExamType;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleFilterBuilder;
 use Exception;
@@ -55,7 +56,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
      */
     protected function writeFileTitle(array $filters): int
     {
-        $scheduleType = in_array($filters['type'] ?? '', ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $scheduleType = ExamType::isExamType($filters['type'] ?? '') ? 'exam' : 'lesson';
         $maxDayIndex  = getSettingValue('maxDayIndex', $scheduleType, 4);
         $colsPerDay   = ($scheduleType === 'exam' || $filters['owner_type'] === 'classroom') ? 1 : 2;
         $totalCols    = ($maxDayIndex + 1) * $colsPerDay + 1;
@@ -85,9 +86,9 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     protected function getPeriodLabel(string $type): string
     {
         return match ($type) {
-            'midterm-exam' => 'ARA SINAV PROGRAMI',
-            'final-exam'   => 'FİNAL SINAV PROGRAMI',
-            'makeup-exam'  => 'BÜTÜNLEME SINAV PROGRAMI',
+            ExamType::MIDTERM->value => 'ARA SINAV PROGRAMI',
+            ExamType::FINAL->value   => 'FİNAL SINAV PROGRAMI',
+            ExamType::MAKEUP->value  => 'BÜTÜNLEME SINAV PROGRAMI',
             default        => 'HAFTALIK DERS PROGRAMI',
         };
     }

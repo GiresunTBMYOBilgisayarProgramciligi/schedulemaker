@@ -2,6 +2,7 @@
 
 namespace App\Services\Export\Ics;
 
+use App\Enums\ExamType;
 use App\Models\Schedule;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
@@ -27,9 +28,9 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
         ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $type);
 
         $typeLabels = [
-            'midterm-exam' => 'Ara Sınav',
-            'final-exam'   => 'Final',
-            'makeup-exam'  => 'Bütünleme',
+            ExamType::MIDTERM->value => 'Ara Sınav',
+            ExamType::FINAL->value   => 'Final',
+            ExamType::MAKEUP->value  => 'Bütünleme',
         ];
         $typeLabel = $typeLabels[$type] ?? 'Sınav';
 

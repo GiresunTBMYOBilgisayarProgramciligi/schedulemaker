@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\View;
+use App\Enums\ExamType;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -61,8 +62,7 @@ class ScheduleController extends Controller
          * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
          */
         if ($maxDayIndex === null) {
-            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-            $scheduleTypeStr = in_array($schedule->type, $examTypes) ? 'exam' : 'lesson';
+            $scheduleTypeStr = ExamType::isExamType($schedule->type) ? 'exam' : 'lesson';
             $maxDayIndex = getSettingValue('maxDayIndex', $scheduleTypeStr, 4);
         }
 
@@ -70,12 +70,11 @@ class ScheduleController extends Controller
          * Boş tablo oluşturmak için tablo satır verileri
          */
         $scheduleRows = [];
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        $weekCount = ($schedule->type === 'final-exam') ? 2 : 1;
+        $weekCount = ($schedule->type === ExamType::FINAL->value) ? 2 : 1;
 
         for ($w = 0; $w < $weekCount; $w++) {
             $scheduleRows[$w] = [];
-            if (in_array($schedule->type, $examTypes)) {
+            if (ExamType::isExamType($schedule->type)) {
                 $duration = getSettingValue('duration', 'exam', 30);
                 $break = getSettingValue('break', 'exam', 0);
                 // 08:00–17:00 arası 
@@ -192,22 +191,19 @@ class ScheduleController extends Controller
         $createTableHeaders = function (int $weekIndex = 0) use ($filters): array {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = [];
-            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-            $isExam = in_array($filters['type'], $examTypes);
+            $isExam = ExamType::isExamType($filters['type']);
             $type = $isExam ? 'exam' : 'lesson';
 
             $startDate = null;
             if ($isExam) {
-                $settingKey = match ($filters['type']) {
-                    'midterm-exam' => 'midterm_start_date',
-                    'final-exam' => 'final_start_date',
-                    'makeup-exam' => 'makeup_start_date',
-                    default => null
-                };
-                if ($settingKey) {
-                    $startDateString = getSettingValue($settingKey, 'exam');
-                    if ($startDateString) {
-                        $startDate = new \DateTime($startDateString);
+                $examTypeEnum = ExamType::tryFrom($filters['type']);
+                if ($examTypeEnum) {
+                    $settingKey = $examTypeEnum->startDateSettingKey();
+                    if ($settingKey) {
+                        $startDateString = getSettingValue($settingKey, 'exam');
+                        if ($startDateString) {
+                            $startDate = new \DateTime($startDateString);
+                        }
                     }
                 }
             }
@@ -230,8 +226,7 @@ class ScheduleController extends Controller
             $allWeekHeaders[$weekIndex] = $createTableHeaders($weekIndex);
         }
 
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        $isExam = in_array($schedule->type, $examTypes);
+        $isExam = ExamType::isExamType($schedule->type);
         $partialName = $isExam ? 'examScheduleTable' : 'lessonScheduleTable';
 
         $scheduleTableHTML = View::renderPartial('admin', 'schedules', $partialName, [
@@ -254,7 +249,7 @@ class ScheduleController extends Controller
         $cardTitle = $filters['semester_no'] . " Yarıyıl Programı";
         $dataSemesterNo = 'data-semester-no="' . $filters['semester_no'] . '"';
 
-        if (in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+        if (ExamType::isExamType($filters['type'])) {
             $duration = getSettingValue('duration', 'exam', 30);
             $break = getSettingValue('break', 'exam', 0);
         } else {

@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
+use App\Enums\ExamType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
@@ -124,7 +125,7 @@ class Schedule extends Model
     }
     public function getScheduleTypeName(): string
     {
-        return in_array($this->type, ['midterm-exam', 'final-exam', 'makeup-exam']) ? "sınav" : "ders";
+        return ExamType::isExamType($this->type) ? "sınav" : "ders";
     }
 
     public function getScheduleScreenName(): string

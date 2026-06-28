@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Controllers\LessonController;
 use App\Core\Model;
 use App\Enums\ClassroomType;
+use App\Enums\ExamType;
 use App\Enums\LessonType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
@@ -426,8 +427,7 @@ class Lesson extends Model
      */
     public function IsScheduleComplete(string $type = "lesson"): bool
     {
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-        $isExam = in_array($type, $examTypes);
+        $isExam = ExamType::isExamType($type);
 
         if ($isExam) {
             $linkedIds = $this->getExamLinkedLessonIds();

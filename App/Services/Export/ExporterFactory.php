@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExamType;
 use App\Services\Export\Excel\ExamScheduleExcelExporter;
 use App\Services\Export\Excel\LessonScheduleExcelExporter;
 use App\Services\Export\Ics\ExamScheduleIcsExporter;
@@ -17,8 +18,6 @@ use Exception;
  */
 class ExporterFactory
 {
-    private const EXAM_TYPES = ['midterm-exam', 'final-exam', 'makeup-exam'];
-
     /**
      * @param array  $filters Doğrulanmış filtre dizisi (type alanı zorunlu)
      * @param string $format  'excel' veya 'ics'
@@ -28,7 +27,7 @@ class ExporterFactory
     public static function create(array $filters, string $format): ScheduleExporterInterface
     {
         $type   = $filters['type'] ?? 'lesson';
-        $isExam = in_array($type, self::EXAM_TYPES, true);
+        $isExam = ExamType::isExamType($type);
 
         return match ($format) {
             'excel' => $isExam ? new ExamScheduleExcelExporter() : new LessonScheduleExcelExporter(),

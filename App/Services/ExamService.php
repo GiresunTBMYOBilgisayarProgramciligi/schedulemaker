@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Controllers\UserController;
+use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -16,7 +17,7 @@ use Exception;
  */
 class ExamService extends BaseService
 {
-    private const EXAM_TYPES = ['midterm-exam', 'final-exam', 'makeup-exam'];
+    // EXAM_TYPES sabiti yerine ExamType enum kullanılacak
 
     // ─────────────────────────────────────────────────────────────────────────
     // Sınav Item Kayıt
@@ -252,7 +253,7 @@ class ExamService extends BaseService
         $schedule = $baseItem->schedule
             ?? (new Schedule())->find($baseItem->schedule_id);
 
-        if (!$schedule || !in_array($schedule->type, self::EXAM_TYPES)) {
+        if (!$schedule || !ExamType::isExamType($schedule->type)) {
             return [$baseItem];
         }
 
@@ -289,7 +290,7 @@ class ExamService extends BaseService
 
         foreach ($programSiblings as $item) {
             $itemSchedule = (new Schedule())->find($item->schedule_id);
-            if ($itemSchedule && in_array($itemSchedule->type, self::EXAM_TYPES)) {
+            if ($itemSchedule && ExamType::isExamType($itemSchedule->type)) {
                 $siblings[] = $item;
                 $siblingIds[] = $item->id;
             }
@@ -319,7 +320,7 @@ class ExamService extends BaseService
 
             if (isset($detail['program_item_id']) && $detail['program_item_id'] == $programItemId) {
                 $itemSchedule = (new Schedule())->find($item->schedule_id);
-                if ($itemSchedule && in_array($itemSchedule->type, self::EXAM_TYPES)) {
+                if ($itemSchedule && ExamType::isExamType($itemSchedule->type)) {
                     $siblings[] = $item;
                     $siblingIds[] = $item->id;
                 }

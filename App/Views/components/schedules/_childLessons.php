@@ -12,9 +12,11 @@
  */
 ?>
 <?php
+use App\Enums\ExamType;
+
 $targetLesson = isset($lesson) ? $lesson : $slotData->lesson;
 $scheduleType = $type ?? 'lesson';
-$isExam = in_array($scheduleType, ['exam', 'midterm-exam', 'final-exam', 'makeup-exam']);
+$isExam = ExamType::isExamType($scheduleType) || $scheduleType === 'exam';
 
 // Sınav programında examChildLessons, ders programında childLessons
 $children = $isExam

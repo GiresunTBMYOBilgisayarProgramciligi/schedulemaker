@@ -5,6 +5,7 @@
  */
 
 window.scheduleCards = [];
+window.EXAM_TYPES = ['midterm-exam', 'final-exam', 'makeup-exam'];
 
 window.initializeScheduleCards = function () {
     let scheduleCardElements = document.querySelectorAll(".schedule-card");
@@ -28,7 +29,7 @@ window.initializeScheduleCards = function () {
     scheduleCardElements.forEach((scheduleCardElement) => {
         const type = scheduleCardElement.dataset.type;
         let scheduleCard;
-        if (typeof ExamScheduleCard !== 'undefined' && ['midterm-exam', 'final-exam', 'makeup-exam', 'exam'].includes(type)) {
+        if (typeof ExamScheduleCard !== 'undefined' && [...window.EXAM_TYPES, 'exam'].includes(type)) {
             scheduleCard = new ExamScheduleCard(scheduleCardElement);
         } else if (typeof LessonScheduleCard !== 'undefined') {
             scheduleCard = new LessonScheduleCard(scheduleCardElement);

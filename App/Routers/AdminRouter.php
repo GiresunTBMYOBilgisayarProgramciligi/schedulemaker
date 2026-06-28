@@ -23,6 +23,7 @@ use App\Attributes\AuthRequired;
 use App\Core\Router;
 
 use App\Enums\ClassroomType;
+use App\Enums\ExamType;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
@@ -166,7 +167,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'user',
                     'owner_id' => $user->id,
-                    'type' => 'midterm-exam',
+                    'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -176,7 +177,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'user',
                     'owner_id' => $user->id,
-                    'type' => 'final-exam',
+                    'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -186,7 +187,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'user',
                     'owner_id' => $user->id,
-                    'type' => 'makeup-exam',
+                    'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -270,7 +271,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'lesson',
                     'owner_id' => $lesson->id,
-                    'type' => 'midterm-exam',
+                    'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -280,7 +281,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'lesson',
                     'owner_id' => $lesson->id,
-                    'type' => 'final-exam',
+                    'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -290,7 +291,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'lesson',
                     'owner_id' => $lesson->id,
-                    'type' => 'makeup-exam',
+                    'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true,
@@ -417,7 +418,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'classroom',
                     'owner_id' => $classroom->id,
-                    'type' => 'midterm-exam',
+                    'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true
@@ -426,7 +427,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'classroom',
                     'owner_id' => $classroom->id,
-                    'type' => 'final-exam',
+                    'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true
@@ -435,7 +436,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'classroom',
                     'owner_id' => $classroom->id,
-                    'type' => 'makeup-exam',
+                    'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
                 ],
                 preference_mode: true
@@ -589,7 +590,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'program',
                     'owner_id' => $program->id,
-                    'type' => 'midterm-exam'
+                    'type' => ExamType::MIDTERM->value
                 ],
                 preference_mode: true,
                 no_card: false
@@ -598,7 +599,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'program',
                     'owner_id' => $program->id,
-                    'type' => 'final-exam'
+                    'type' => ExamType::FINAL->value
                 ],
                 preference_mode: true,
                 no_card: false
@@ -607,7 +608,7 @@ class AdminRouter extends Router
                 [
                     'owner_type' => 'program',
                     'owner_id' => $program->id,
-                    'type' => 'makeup-exam'
+                    'type' => ExamType::MAKEUP->value
                 ],
                 preference_mode: true,
                 no_card: false

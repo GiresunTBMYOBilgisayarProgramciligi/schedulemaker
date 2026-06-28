@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Core\Log;
+use App\Enums\ExamType;
 use App\Repositories\UserRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
@@ -53,9 +54,7 @@ class AvailabilityService extends BaseService
         $lesson = (new Lesson())->find($filters['lesson_id'])
             ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
 
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
-
-        if (in_array($schedule->type, $examTypes)) {
+        if (ExamType::isExamType($schedule->type)) {
             // Sınav → UZEM (type=3) hariç tüm derslikler
             $classrooms = (new Classroom())->get()->where(["type" => ['!=' => 3]])->all();
         } else {
@@ -194,7 +193,7 @@ class AvailabilityService extends BaseService
 
                 if ($schedule->type == 'lesson') {
                     $lesson->hours -= $lesson->placed_hours; // kalan saat dersin saati olarak güncelleniyor
-                } elseif (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+                } elseif (ExamType::isExamType($schedule->type)) {
                     $lesson->size = $lesson->remaining_size; // kalan mevcut dersin mevcudu olarak güncelleniyor
                 }
 
@@ -202,7 +201,7 @@ class AvailabilityService extends BaseService
             }
         }
         // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
-        if (in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam'])) {
+        if (ExamType::isExamType($schedule->type)) {
             // NOT: exam_parent_lesson_id olan dersler listeden çıkarılmaz.
             // Ders programındaki parent_lesson_id davranışı gibi, gri renk ve
             // popover ile gösterilirler (ScheduleViewHelper + _availableLessonCard.php).
@@ -398,7 +397,7 @@ class AvailabilityService extends BaseService
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
 
         $slots = $this->timelineManager->getTimeSlots($filters['type']);
-        $type = in_array($filters['type'], ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson';
+        $type = ExamType::isExamType($filters['type']) ? 'exam' : 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
 
         $classroomOccupancy = [];

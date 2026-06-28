@@ -15,7 +15,7 @@ class ScheduleCard {
         this.owner_type = null;
         this.owner_id = null;
         this.type = null;
-        this.examTypes = ['midterm-exam', 'final-exam', 'makeup-exam']
+        this.examTypes = window.EXAM_TYPES || ['midterm-exam', 'final-exam', 'makeup-exam'];
         this.draggedLesson = {
             'start_element': null,
             'end_element': null,

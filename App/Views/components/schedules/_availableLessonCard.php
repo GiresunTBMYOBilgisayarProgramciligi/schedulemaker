@@ -1,5 +1,6 @@
 <?php
 use App\Core\View;
+use App\Enums\ExamType;
 use App\Helpers\ScheduleViewHelper;
 
 /**
@@ -24,7 +25,7 @@ $infoText = ScheduleViewHelper::getAvailableLessonInfoText($lesson, $schedule, $
 // Popover: Birleştirilmiş (child) dersler için
 $popoverAttr = '';
 if (!$isDummy) {
-    $isExam = in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']);
+    $isExam = ExamType::isExamType($schedule->type);
     if ($isExam && !is_null($lesson->exam_parent_lesson_id)) {
         $parent = $lesson->examParentLesson ?? null;
         if ($parent) {
@@ -64,7 +65,7 @@ if (!$isDummy) {
         <?php if (!$isDummy): ?>
             <?= View::renderComponent('schedules/_childLessons', [
                 'lesson' => $lesson,
-                'type' => in_array($schedule->type, ['midterm-exam', 'final-exam', 'makeup-exam']) ? 'exam' : 'lesson'
+                'type' => ExamType::isExamType($schedule->type) ? 'exam' : 'lesson'
             ]) ?>
         <?php endif; ?>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Services\Export\Excel;
 
 use App\Controllers\ScheduleController;
+use App\Enums\ExamType;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
@@ -48,9 +49,9 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
         $startDate = null;
         $settingKey = match ($type) {
-            'midterm-exam' => 'midterm_start_date',
-            'final-exam' => 'final_start_date',
-            'makeup-exam' => 'makeup_start_date',
+            ExamType::MIDTERM->value => 'midterm_start_date',
+            ExamType::FINAL->value => 'final_start_date',
+            ExamType::MAKEUP->value => 'makeup_start_date',
             default => null
         };
         if ($settingKey) {
@@ -74,7 +75,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             }
 
             // Final programı 2 haftalık olabilir
-            $weekCount   = ($filters['type'] === 'final-exam') ? 2 : 1;
+            $weekCount   = ($filters['type'] === ExamType::FINAL->value) ? 2 : 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 4);
             $scheduleRows = $scheduleController->prepareScheduleRows($schedule, $maxDayIndex);
 

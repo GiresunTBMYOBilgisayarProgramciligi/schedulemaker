@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExamType;
 use App\Helpers\FilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
@@ -71,9 +72,9 @@ class ScheduleFilterBuilder
     private function getTypeLabel(string $type): string
     {
         return match ($type) {
-            'midterm-exam' => 'Ara Sınav Programı',
-            'final-exam'   => 'Final Programı',
-            'makeup-exam'  => 'Bütünleme Programı',
+            ExamType::MIDTERM->value => 'Ara Sınav Programı',
+            ExamType::FINAL->value   => 'Final Programı',
+            ExamType::MAKEUP->value  => 'Bütünleme Programı',
             default        => 'Ders Programı',
         };
     }

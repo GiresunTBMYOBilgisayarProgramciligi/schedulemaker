@@ -6,6 +6,7 @@
  * @var array $classrooms
  */
 
+use App\Enums\ExamType;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -68,9 +69,9 @@ use function App\Helpers\getSettingValue;
                                     </select>
                                     <span class="input-group-text"> - </span>
                                     <select class="form-select" id="schedule_type" name="schedule_type">
-                                        <option value="midterm-exam">Ara Sınav</option>
-                                        <option value="final-exam">Final</option>
-                                        <option value="makeup-exam">Bütünleme</option>
+                                        <option value="<?= ExamType::MIDTERM->value ?>">Ara Sınav</option>
+                                        <option value="<?= ExamType::FINAL->value ?>">Final</option>
+                                        <option value="<?= ExamType::MAKEUP->value ?>">Bütünleme</option>
                                     </select>
                                 </div>
                             </div>

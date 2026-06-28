@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -265,7 +266,7 @@ class LessonService extends BaseService
             }
 
             // Child'ın mevcut sınav schedule'larını temizle
-            $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+            $examTypes = ExamType::values();
             $scheduleService = new ScheduleService();
             $examSchedules = (new Schedule())->get()->where([
                 'owner_type' => 'lesson',
@@ -315,7 +316,7 @@ class LessonService extends BaseService
             ?: throw new Exception("Sınav ebeveyni silinecek ders bulunamadı");
 
         // Sadece sınav schedule'larını temizle
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $examTypes = ExamType::values();
         $scheduleService = new ScheduleService();
         $examSchedules = (new Schedule())->get()->where([
             'owner_type' => 'lesson',
@@ -351,7 +352,7 @@ class LessonService extends BaseService
      */
     private function syncExamChildFromParent(Lesson $parentLesson, Lesson $childLesson): void
     {
-        $examTypes = ['midterm-exam', 'final-exam', 'makeup-exam'];
+        $examTypes = ExamType::values();
 
         // Parent'ın sınav schedule'larını bul
         $parentExamSchedules = (new Schedule())->get()->where([
