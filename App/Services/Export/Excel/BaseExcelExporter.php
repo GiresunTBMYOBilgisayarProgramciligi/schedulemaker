@@ -5,7 +5,7 @@ namespace App\Services\Export\Excel;
 use App\Core\Log;
 use App\Enums\ExamType;
 use App\Services\Export\ScheduleExporterInterface;
-use App\Services\Export\ScheduleFilterBuilder;
+use App\Services\Export\ScheduleExportFilterBuilder;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
@@ -28,13 +28,13 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
 {
     protected Spreadsheet $spreadsheet;
     protected Worksheet $sheet;
-    protected ScheduleFilterBuilder $filterBuilder;
+    protected ScheduleExportFilterBuilder $filterBuilder;
 
     public function __construct()
     {
         $this->spreadsheet   = new Spreadsheet();
         $this->sheet         = $this->spreadsheet->getActiveSheet();
-        $this->filterBuilder = new ScheduleFilterBuilder();
+        $this->filterBuilder = new ScheduleExportFilterBuilder();
 
         // Varsayılan font
         $this->spreadsheet->getDefaultStyle()->getFont()->setName('Times New Roman')->setSize(10);

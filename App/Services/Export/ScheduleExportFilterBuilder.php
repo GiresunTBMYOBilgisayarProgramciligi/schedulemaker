@@ -23,7 +23,7 @@ use function App\Helpers\getSemesterNumbers;
  *   'filter'     => array,    // Schedule::where() için kullanılacak filtre dizisi
  * ]
  */
-class ScheduleFilterBuilder
+class ScheduleExportFilterBuilder
 {
     /**
      * @param array $filters Doğrulanmış filtre dizisi (ScheduleExportFilterValidator'dan geçmiş)

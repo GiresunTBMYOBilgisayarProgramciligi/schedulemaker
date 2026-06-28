@@ -10,7 +10,7 @@ namespace App\Validators\Schedule;
  * Desteklenen operasyonlar:
  * - exportScheduleAction: AjaxRouter export tetiklemesi
  * - exportSchedule: Doğrudan export çağrısı
- * - generateScheduleFilters: ScheduleFilterBuilder filtre üretimi
+ * - generateScheduleFilters: ScheduleExportFilterBuilder filtre üretimi
  * - exportScheduleIcsAction: ICS formatı export
  */
 class ScheduleExportFilterValidator extends BaseScheduleFilterValidator

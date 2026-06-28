@@ -5,7 +5,7 @@ namespace App\Services\Export\Ics;
 use App\Core\Log;
 use App\Enums\ExamType;
 use App\Services\Export\ScheduleExporterInterface;
-use App\Services\Export\ScheduleFilterBuilder;
+use App\Services\Export\ScheduleExportFilterBuilder;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
@@ -15,11 +15,11 @@ use Monolog\Logger;
  */
 abstract class BaseIcsExporter implements ScheduleExporterInterface
 {
-    protected ScheduleFilterBuilder $filterBuilder;
+    protected ScheduleExportFilterBuilder $filterBuilder;
 
     public function __construct()
     {
-        $this->filterBuilder = new ScheduleFilterBuilder();
+        $this->filterBuilder = new ScheduleExportFilterBuilder();
     }
 
     protected function logger(): Logger
