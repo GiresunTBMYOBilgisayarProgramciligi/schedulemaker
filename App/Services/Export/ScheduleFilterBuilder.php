@@ -3,7 +3,7 @@
 namespace App\Services\Export;
 
 use App\Enums\ExamType;
-use App\Helpers\FilterValidator;
+use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
@@ -26,13 +26,13 @@ use function App\Helpers\getSemesterNumbers;
 class ScheduleFilterBuilder
 {
     /**
-     * @param array $filters Doğrulanmış filtre dizisi (FilterValidator'dan geçmiş)
+     * @param array $filters Doğrulanmış filtre dizisi (ScheduleExportFilterValidator'dan geçmiş)
      * @return array Filtre listesi
      * @throws Exception
      */
     public function build(array $filters): array
     {
-        $filters         = (new FilterValidator())->validate($filters, "generateScheduleFilters");
+        $filters         = (new ScheduleExportFilterValidator())->sanitize($filters, "generateScheduleFilters");
         $scheduleFilters = [];
         $semesterNumbers = getSemesterNumbers($filters["semester"]);
         $typeKey         = $filters["type"];

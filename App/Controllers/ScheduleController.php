@@ -15,7 +15,7 @@ use App\Services\Schedule\ScheduleService;
 use Exception;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
-use App\Helpers\FilterValidator;
+use App\Validators\Schedule\ScheduleViewFilterValidator;
 
 class ScheduleController extends Controller
 {
@@ -169,7 +169,7 @@ class ScheduleController extends Controller
     private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
-        $filters = (new FilterValidator())->validate($filters, "prepareScheduleCard");
+        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
         if (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
@@ -282,7 +282,7 @@ class ScheduleController extends Controller
      */
     public function getAvailableLessonsHTML(array $filters = [], bool $preference_mode = false): string
     {
-        $filters = (new FilterValidator())->validate($filters, "prepareScheduleCard");
+        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "prepareScheduleCard");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır
         if (in_array($filters['owner_type'] ?? '', ['user', 'classroom', 'lesson'])) {
@@ -314,7 +314,7 @@ class ScheduleController extends Controller
     public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         $this->logger()->debug("getSchedulesHTML için Filter alındı", ['filters' => $filters]);
-        $filters = (new FilterValidator())->validate($filters, "getSchedulesHTML");
+        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "getSchedulesHTML");
         $HTMLOut = "";
 
         if (key_exists("semester_no", $filters)) {

@@ -20,7 +20,9 @@ use App\Services\Schedule\AvailabilityService;
 use App\Services\Export\ExporterFactory;
 use App\Services\Import\UserImporter;
 use App\Services\Import\LessonImporter;
-use App\Helpers\FilterValidator;
+use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
+use App\Validators\Schedule\ScheduleConflictFilterValidator;
+use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -596,7 +598,7 @@ class AjaxRouter extends Router
     public function getAvailableClassroomForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
-        $filters = (new FilterValidator())->validate($this->data, "availableClassrooms");
+        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "availableClassrooms");
         $service = new AvailabilityService();
         $classrooms = $service->availableClassrooms($filters);
         $this->response['status'] = "success";
@@ -611,7 +613,7 @@ class AjaxRouter extends Router
     public function getAvailableObserversForScheduleAction(): void
     {
         Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
-        $filters = (new FilterValidator())->validate($this->data, "availableObservers");
+        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "availableObservers");
         $service = new AvailabilityService();
         $observers = $service->availableObservers($filters);
         $this->response['status'] = "success";
@@ -627,7 +629,7 @@ class AjaxRouter extends Router
     public function checkScheduleCrashAction(): void
     {
         try {
-            $filters = (new FilterValidator())->validate($this->data, "checkScheduleCrash");
+            $filters = (new ScheduleConflictFilterValidator())->sanitize($this->data, "checkScheduleCrash");
             $service = new ConflictService();
             $service->checkScheduleCrash($filters);
 
@@ -787,7 +789,7 @@ class AjaxRouter extends Router
      */
     public function checkLecturerScheduleAction(): void
     {
-        $filters = (new FilterValidator())->validate($this->data, "checkLecturerScheduleAction");
+        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkLecturerScheduleAction");
         $availability = (new AvailabilityService())->getLecturerAvailability($filters);
 
         $this->response = [
@@ -805,7 +807,7 @@ class AjaxRouter extends Router
      */
     public function checkClassroomScheduleAction(): void
     {
-        $filters = (new FilterValidator())->validate($this->data, "checkClassroomScheduleAction");
+        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkClassroomScheduleAction");
         $availability = (new AvailabilityService())->getClassroomAvailability($filters);
 
         $this->response["status"] = "success";
@@ -820,7 +822,7 @@ class AjaxRouter extends Router
      */
     public function checkProgramScheduleAction(): void
     {
-        $filters = (new FilterValidator())->validate($this->data, "checkProgramScheduleAction");
+        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkProgramScheduleAction");
         $availability = (new AvailabilityService())->getProgramAvailability($filters);
 
         $this->response = [
@@ -935,7 +937,7 @@ class AjaxRouter extends Router
     #[PublicAction]
     public function exportScheduleAction(): void
     {
-        $filters = (new FilterValidator())->validate($this->data, "exportScheduleAction");
+        $filters = (new ScheduleExportFilterValidator())->sanitize($this->data, "exportScheduleAction");
 
         $showOptions = [
             'show_code'     => !isset($filters['show_code'])     || (string) $filters['show_code']     === '1',
@@ -955,7 +957,7 @@ class AjaxRouter extends Router
     #[PublicAction]
     public function exportScheduleIcsAction(): void
     {
-        $filters = (new FilterValidator())->validate($this->data, "exportScheduleIcsAction");
+        $filters = (new ScheduleExportFilterValidator())->sanitize($this->data, "exportScheduleIcsAction");
 
         $showOptions = [
             'show_observer' => !isset($filters['show_observer']) || (string) ($filters['show_observer'] ?? '1') === '1',
