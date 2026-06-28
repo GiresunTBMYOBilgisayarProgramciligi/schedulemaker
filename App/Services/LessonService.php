@@ -9,7 +9,7 @@ use App\Models\ScheduleItem;
 use App\Core\Database;
 use Exception;
 use function App\Helpers\getSettingValue;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
+
 /**
  * Ders yönetimi iş mantığı servisi.
  *
