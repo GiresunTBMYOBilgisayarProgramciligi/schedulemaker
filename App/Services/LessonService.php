@@ -145,6 +145,11 @@ class LessonService extends BaseService
                 ->first()
                 ?: throw new Exception("Birleştirilecek ders bulunamadı");
 
+            // Kendine bağlama kontrolü
+            if ($parentLessonId === $childLessonId) {
+                throw new Exception("Bir ders kendisiyle birleştirilemez.");
+            }
+
             // Child zaten başka bir derse bağlıysa hata
             if ($childLesson->parentLesson) {
                 throw new Exception(
