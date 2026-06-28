@@ -632,14 +632,7 @@ class Model
             throw new Exception("Birincil yönetici hesabı silinemez.");
         }
 
-        $isInitiator = !self::$database->inTransaction();
-        if ($isInitiator) {
-            self::$database->beginTransaction();
-        }
-
-        try {
-
-
+        return Database::transaction(function () {
             if ($this->id) {
                 $sql = "DELETE FROM {$this->table_name} WHERE id = :id";
                 $statement = self::$database->prepare($sql);
@@ -661,16 +654,8 @@ class Model
 
             $this->logger()->debug($this->getLabel() . " silindi: " . $this->getLogDetail(), $this->logContext(['statement' => $statement]));
 
-            if ($isInitiator) {
-                self::$database->commit();
-            }
             return true;
-        } catch (\Throwable $e) {
-            if ($isInitiator) {
-                self::$database->rollBack();
-            }
-            throw $e;
-        }
+        });
     }
 
 

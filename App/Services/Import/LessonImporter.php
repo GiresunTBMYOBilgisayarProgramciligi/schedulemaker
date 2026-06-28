@@ -81,10 +81,7 @@ class LessonImporter
             throw new Exception("Yıl veya dönem belirtilmemiş");
         }
 
-        $db = Database::getConnection();
-        $db->beginTransaction();
-
-        try {
+        Database::transaction(function () use ($rows, $expectedHeaders, &$errorCount, &$errors, &$addedLessons, &$updatedLessons, $userRepository, $lessonService) {
             foreach ($rows as $rowIndex => $row) {
                 // Boş satır kontrolü
                 $isEmpty = true;
@@ -168,11 +165,7 @@ class LessonImporter
                 }
             }
 
-            $db->commit();
-        } catch (Exception $e) {
-            $db->rollBack();
-            throw $e;
-        }
+        });
 
         return [
             "status"         => "success",

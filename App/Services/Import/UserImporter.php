@@ -51,8 +51,7 @@ class UserImporter
     {
         $userRepository        = new UserRepository();
         $userService           = new UserService();
-        $departmentController  = new DepartmentController();
-        $programController     = new ProgramController();
+
 
         $addedCount   = 0;
         $updatedCount = 0;
@@ -71,10 +70,7 @@ class UserImporter
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
 
-        $db = Database::getConnection();
-        $db->beginTransaction();
-
-        try {
+        Database::transaction(function () use ($rows, &$errorCount, &$errors, &$addedCount, &$updatedCount, $userRepository, $userService) {
             foreach ($rows as $index => $row) {
                 // Boş satır kontrolü
                 $isEmpty = true;
@@ -145,17 +141,12 @@ class UserImporter
                 }
             }
 
-            $db->commit();
-
             $username = $this->logContext()['username'] ?? "Sistem";
             $this->logger()->info(
                 "{$username} Excel'den kullanıcıları içe aktardı. Eklendi: {$addedCount}, Güncellendi: {$updatedCount}, Hatalı: {$errorCount}",
                 $this->logContext()
             );
-        } catch (Exception $e) {
-            $db->rollBack();
-            throw $e;
-        }
+        });
 
         return [
             "status"     => "success",

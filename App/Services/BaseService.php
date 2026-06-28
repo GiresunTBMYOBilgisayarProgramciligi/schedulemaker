@@ -27,40 +27,6 @@ abstract class BaseService
     }
 
     /**
-     * todo buradaki Transaction işlemleri silinecek. Database içerisinde var zaten. 
-     * Transaction başlatır (eğer aktif değilse)
-     */
-    protected function beginTransaction(): void
-    {
-        if (!$this->db->inTransaction()) {
-            $this->db->beginTransaction();
-            $this->logger->debug('Transaction başlatıldı', Log::context($this));
-        }
-    }
-
-    /**
-     * Transaction'ı commit eder
-     */
-    protected function commit(): void
-    {
-        if ($this->db->inTransaction()) {
-            $this->db->commit();
-            $this->logger->debug('Transaction commit edildi', Log::context($this));
-        }
-    }
-
-    /**
-     * Transaction'ı rollback eder
-     */
-    protected function rollback(): void
-    {
-        if ($this->db->inTransaction()) {
-            $this->db->rollBack();
-            $this->logger->warning('Transaction rollback edildi', Log::context($this));
-        }
-    }
-
-    /**
      * Log context helper - service bilgisiyle birlikte
      * @param array $extra Ekstra context bilgileri
      * @return array
