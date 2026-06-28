@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Classroom;
 use App\DTOs\ClassroomDTO;
-use App\Services\ScheduleService;
+use App\Services\Schedule\ScheduleService;
 use App\Core\Database;
 use Exception;
 use PDOException;

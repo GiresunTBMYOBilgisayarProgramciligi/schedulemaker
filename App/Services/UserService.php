@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Core\Log;
 use App\Models\User;
-use App\Services\ScheduleService;
+use App\Services\Schedule\ScheduleService;
 use App\DTOs\UserDTO;
 use App\Repositories\UserRepository;
 use App\Core\Database;

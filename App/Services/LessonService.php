@@ -6,6 +6,8 @@ use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Services\Schedule\ScheduleService;
+use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
 use Exception;
 use function App\Helpers\getSettingValue;

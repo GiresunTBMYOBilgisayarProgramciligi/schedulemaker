@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
+use App\Services\BaseService;
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
+use App\Services\BaseService;
 use App\DTOs\DeleteScheduleResult;
 use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
@@ -13,13 +14,10 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Repositories\ScheduleItemRepository;
 use App\Repositories\ScheduleRepository;
-use App\Services\ExamService;
-use App\Services\TimelineService;
 use App\Validators\ScheduleItemValidator;
 use Exception;
 
 use function App\Helpers\getSettingValue;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
 /**
  * Schedule Service
  * 

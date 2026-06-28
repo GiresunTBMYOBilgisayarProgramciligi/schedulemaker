@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
-use App\Controllers\UserController;
+use App\Services\BaseService;
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
+
 /**
  * Sınav programına özgü işlemleri yönetir.
  *

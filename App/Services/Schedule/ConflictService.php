@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
+use App\Services\BaseService;
 use App\Models\Lesson;
 use App\Models\Schedule;
-use App\Models\ScheduleItem;
-use App\Helpers\TimeHelper;
 use App\Services\Helpers\ConflictResolver;
 use Exception;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
+
 /**
  * Ders ve Sınav programlarında çakışma kontrol servisi.
  *

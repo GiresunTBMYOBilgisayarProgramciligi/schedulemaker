@@ -1,21 +1,19 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
-use App\Core\Log;
+use App\Services\BaseService;
 use App\Enums\ExamType;
 use App\Repositories\UserRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
-use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
-use DateTime;
 use Exception;
 use App\Helpers\TimeHelper;
 use App\Services\Helpers\TimelineManager;
 use function App\Helpers\getSettingValue;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
+
 /**
  * Ders ve Sınav programlarında müsait derslik ve gözetmen sorgulama servisi.
  *

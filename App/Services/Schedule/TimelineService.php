@@ -1,11 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Schedule;
 
-use App\Helpers\TimeHelper;
+
 use App\Models\Lesson;
-use App\Models\ScheduleItem;
-//todo  Services içerisinde Schedule klasörü içine taşınacak
 
 /**
  * TimelineService
