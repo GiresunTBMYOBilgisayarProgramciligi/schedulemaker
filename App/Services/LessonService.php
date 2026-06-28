@@ -20,6 +20,13 @@ use function App\Helpers\getSettingValue;
  */
 class LessonService extends BaseService
 {
+    private ScheduleService $scheduleService;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->scheduleService = new ScheduleService();
+    }
     // ──────────────────────────────────────────
     // CRUD
     // ──────────────────────────────────────────
@@ -88,7 +95,7 @@ class LessonService extends BaseService
         try {
             Database::transaction(function () use ($lesson) {
                 // 1. Derse ait tüm schedule (program) kayıtlarını temizle
-                (new ScheduleService())->wipeResourceSchedules('lesson', $lesson->id);
+                $this->scheduleService->wipeResourceSchedules('lesson', $lesson->id);
 
                 // 2. Dersi sil
                 $lesson->delete();
@@ -162,7 +169,7 @@ class LessonService extends BaseService
             }
 
             // Child'ın mevcut schedule'larını sil (bağlamadan ÖNCE — parent korunur)
-            (new ScheduleService())->wipeResourceSchedules('lesson', $childLesson->id);
+            $this->scheduleService->wipeResourceSchedules('lesson', $childLesson->id);
 
             // Bağlantıyı kur (ders + sınav birleştirme)
             $childLesson->parent_lesson_id = $parentLesson->id;
@@ -171,7 +178,7 @@ class LessonService extends BaseService
 
             // Child'ın alt child'larını da parent'a bağla
             foreach ($childLesson->childLessons as $grandChild) {
-                (new ScheduleService())->wipeResourceSchedules('lesson', $grandChild->id);
+                $this->scheduleService->wipeResourceSchedules('lesson', $grandChild->id);
                 $grandChild->parent_lesson_id = $parentLesson->id;
                 $grandChild->exam_parent_lesson_id = $parentLesson->id;
                 $grandChild->update();
@@ -201,7 +208,7 @@ class LessonService extends BaseService
         $lesson = (new Lesson())->find($lessonId)
             ?: throw new Exception("Ebeveyni silinecek ders bulunamadı");
 
-        (new ScheduleService())->wipeResourceSchedules('lesson', $lessonId);
+        $this->scheduleService->wipeResourceSchedules('lesson', $lessonId);
 
         $lesson->parent_lesson_id = null;
         $lesson->update();
@@ -267,7 +274,7 @@ class LessonService extends BaseService
 
             // Child'ın mevcut sınav schedule'larını temizle
             $examTypes = ExamType::values();
-            $scheduleService = new ScheduleService();
+            $scheduleService = $this->scheduleService;
             $examSchedules = (new Schedule())->get()->where([
                 'owner_type' => 'lesson',
                 'owner_id' => $childLesson->id,
@@ -317,7 +324,7 @@ class LessonService extends BaseService
 
         // Sadece sınav schedule'larını temizle
         $examTypes = ExamType::values();
-        $scheduleService = new ScheduleService();
+        $scheduleService = $this->scheduleService;
         $examSchedules = (new Schedule())->get()->where([
             'owner_type' => 'lesson',
             'owner_id' => $lesson->id,
