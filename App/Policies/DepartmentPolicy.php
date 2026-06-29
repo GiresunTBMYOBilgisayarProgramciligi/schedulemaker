@@ -53,9 +53,6 @@ class DepartmentPolicy extends BasePolicy
         if ($user->role === 'manager' || $user->role === 'submanager') {
             return true;
         }
-
-        // Sadece kendi bölümünün başkanı güncelleyebilir mi? 
-        // canUserDoAction mantığını koruyoruz:
         return $user->id === $department->chairperson_id || $user->department_id === $department->id;
     }
 

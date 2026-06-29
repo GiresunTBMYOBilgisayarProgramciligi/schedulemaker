@@ -47,8 +47,6 @@ class SchedulePolicy extends BasePolicy
 
             case 'classroom':
                 // Sınıf programları için genellikle üst yönetim yetkilidir, 
-                // ancak canUserDoAction her zaman true döner. 
-                // Bu politikayı canUserDoAction ile uyumlu tutuyoruz.
                 return true;
         }
 

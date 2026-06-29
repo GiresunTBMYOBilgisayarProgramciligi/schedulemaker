@@ -20,7 +20,6 @@ class ClassroomPolicy extends BasePolicy
      */
     public function view(User $user, Classroom $classroom): bool
     {
-        // canUserDoAction her zaman true döndüğü için mevcut mantığı koruyoruz
         return true;
     }
 

@@ -178,7 +178,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * * todo yetki kontrolü neden yok
      * todo servise taşınmalı
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
@@ -292,7 +291,6 @@ class ScheduleController extends Controller
 
     /**
      * Sadece kullanılabilir dersler listesinin HTML çıktısını hazırlar
-     * * todo yetki kontrolü neden yok
      * @param array $requestData
      * @param bool $preference_mode
      * @return string
@@ -311,6 +309,9 @@ class ScheduleController extends Controller
 
         $scheduleService = new ScheduleService();
         $schedule = $scheduleService->getOrCreateSchedule($dto);
+        
+        Gate::authorize('update', $schedule);
+
         $availableLessons = (new AvailabilityService())->availableLessons($schedule, $preference_mode);
 
         return View::renderPartial('admin', 'schedules', 'availableLessons', [
@@ -323,7 +324,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * todo yetki kontrolü neden yok
      * Dönem numarasına göre birleştirilmiş yada her bir dönem için Schedule Card oluşturur
      * @param array $requestData
      * @param bool $only_table
@@ -333,6 +333,11 @@ class ScheduleController extends Controller
     public function getSchedulesHTML(array $requestData = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
+        
+        $scheduleService = new ScheduleService();
+        $schedule = $scheduleService->getOrCreateSchedule($dto);
+        Gate::authorize('update', $schedule);
+
         $HTMLOut = "";
 
         if ($dto->semester_no !== null) {
@@ -375,7 +380,6 @@ class ScheduleController extends Controller
      * 
      * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
      * @return array Response dizisi
-     * todo yetki kontrolü neden yok
      */
     public function saveScheduleItems(array $requestData): array
     {
@@ -391,6 +395,13 @@ class ScheduleController extends Controller
         $dtos = [];
         foreach ($items as $itemData) {
             $dtos[] = ScheduleItemData::fromArray($itemData);
+        }
+
+        if (count($dtos) > 0) {
+            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            if ($schedule) {
+                Gate::authorize('update', $schedule);
+            }
         }
 
         try {
@@ -420,7 +431,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * * todo yetki kontrolü neden yok
      * @throws \Exception
      */
     public function deleteScheduleItems(array $requestData): array
@@ -438,6 +448,13 @@ class ScheduleController extends Controller
             $dtos[] = ScheduleItemData::fromArray($itemData);
         }
 
+        if (count($dtos) > 0) {
+            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            if ($schedule) {
+                Gate::authorize('update', $schedule);
+            }
+        }
+
         try {
             $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
             $service = new LessonScheduleService();
@@ -453,7 +470,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * todo yetki kontrolü neden yok
      * Sınav programı öğelerini kaydeder
      */
     public function saveExamScheduleItems(array $requestData): array
@@ -469,6 +485,13 @@ class ScheduleController extends Controller
         $dtos = [];
         foreach ($items as $itemData) {
             $dtos[] = ScheduleItemData::fromArray($itemData);
+        }
+
+        if (count($dtos) > 0) {
+            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            if ($schedule) {
+                Gate::authorize('update', $schedule);
+            }
         }
 
         try {
@@ -568,7 +591,6 @@ class ScheduleController extends Controller
     }
 
     /**
-     * todo yetki kontrolü neden yok
      * ID değerine göre program bilgisini döndürür
      * @param array $requestData
      * @return array
@@ -578,6 +600,7 @@ class ScheduleController extends Controller
         if (key_exists('id', $requestData)) {
             $schedule = (new ScheduleRepository())->find($requestData['id']);
             if ($schedule) {
+                Gate::authorize('update', $schedule);
                 return [
                     "status" => "success",
                     "schedule" => $schedule->getArray()
