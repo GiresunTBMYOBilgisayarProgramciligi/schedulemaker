@@ -28,6 +28,7 @@ use App\Validators\Schedule\ScheduleConflictFilterValidator;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Repositories\ScheduleRepository;
 use App\Models\ScheduleItem;
+use App\Helpers\ScheduleViewHelper;
 use App\Core\Gate;
 
 class ScheduleController extends Controller
@@ -37,256 +38,6 @@ class ScheduleController extends Controller
     public function __construct()
     {
         parent::__construct();
-    }
-    /**
-     * todo service işi
-     * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
-     * @param $type string  html | excel
-     * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
-     * @return array
-     * @throws Exception
-     */
-    private function generateEmptyWeek(?int $maxDayIndex = null): array
-    {
-
-        if ($maxDayIndex === null)
-            throw new Exception("maxDayIndex belirtilmelidir");
-        $emptyWeek = [];
-        
-        foreach (range(0, $maxDayIndex) as $index) {
-            $emptyWeek["day{$index}"] = null;
-        }
-        return $emptyWeek;
-    }
-
-    /********************************
-     * Görünüm ve Veri Hazırlama
-     ********************************/
-
-    /**
-     * todo bu işlemlerin uzun uzun burada yapılması doğru değil service'e taşınmalı
-     * Ders programı tablosunun verilerini oluşturur
-     * Sadece tek bir tablo için veri oluşturur. Farklı dönem numaraları birleştirilecekse bu işlem sonradan yapılmalı.
-     * @throws Exception
-     * @return array
-     */
-    public function prepareScheduleRows(Schedule $schedule, $maxDayIndex = null): array
-    {
-        /*
-         * Gün sayısı parametre ile belirlenebilir. Parametre verilmezse ayarlardan okunur.
-         * Ders (lesson) için maxDayIndex, Sınav (exam) için maxDayIndex kullanılır.
-         */
-        if ($maxDayIndex === null) {
-            $scheduleTypeStr = ExamType::isExamType($schedule->type) ? 'exam' : 'lesson';
-            $maxDayIndex = getSettingValue('maxDayIndex', $scheduleTypeStr, 4);
-        }
-
-        /**
-         * Boş tablo oluşturmak için tablo satır verileri
-         */
-        $scheduleRows = [];
-        $weekCount = ($schedule->type === ExamType::FINAL->value) ? 2 : 1;
-
-        for ($w = 0; $w < $weekCount; $w++) {
-            $scheduleRows[$w] = [];
-            if (ExamType::isExamType($schedule->type)) {
-                $duration = getSettingValue('duration', 'exam', 30);
-                $break = getSettingValue('break', 'exam', 0);
-                // 08:00–17:00 arası 
-                $start = new \DateTime('08:00');
-                $end = new \DateTime('17:00');
-                while ($start < $end) {
-                    $slotStartTime = clone $start;
-                    $slotEndTime = (clone $start)->modify("+$duration minutes");
-                    $scheduleRows[$w][] = [
-                        'slotStartTime' => $slotStartTime,
-                        'slotEndTime' => $slotEndTime,
-                        'days' => $this->generateEmptyWeek($maxDayIndex)
-                    ];
-
-                    $start = (clone $slotEndTime)->modify("+$break minutes");
-                }
-            } else {
-                $duration = getSettingValue('duration', 'lesson', 50);
-                $break = getSettingValue('break', 'lesson', 10);
-                // 08:00–17:00 arası
-                $start = new \DateTime('08:00');
-                $end = new \DateTime('17:00');
-                while ($start < $end) {
-                    $slotStartTime = clone $start;
-                    $slotEndTime = (clone $start)->modify("+$duration minutes");
-                    $scheduleRows[$w][] = [
-                        'slotStartTime' => $slotStartTime,
-                        'slotEndTime' => $slotEndTime,
-                        'days' => $this->generateEmptyWeek($maxDayIndex)
-                    ];
-                    $start = (clone $slotEndTime)->modify("+$break minutes"); // tenefüs arası
-                }
-            }
-        }
-
-        /*
-         * Veri tabanından alınan bilgileri tablo satırları yerine yerleştiriliyor
-         */
-        foreach ($schedule->items as $scheduleItem) {
-            // $this->logger()->debug("Schedule Item alındı", ['scheduleItem' => $scheduleItem]);
-            $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
-            $itemEnd = \DateTime::createFromFormat('H:i:s', $scheduleItem->end_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->end_time);
-
-            if (!$itemStart || !$itemEnd)
-                continue;
-
-            foreach ($scheduleRows[$scheduleItem->week_index] as &$row) {
-                $slotStart = $row['slotStartTime'];
-
-                if ($slotStart->format('H:i') >= $itemStart->format('H:i') && $slotStart->format('H:i') < $itemEnd->format('H:i')) {
-                    $dayKey = 'day' . $scheduleItem->day_index;
-
-                    if (array_key_exists($dayKey, $row['days'])) {
-                        if ($row['days'][$dayKey] === null) {
-                            $row['days'][$dayKey] = $scheduleItem;
-                        } else {
-                            // Çakışma durumu: preferred/unavailable olan item'ı yoksay, gerçek item'ı koru
-                            $existing = $row['days'][$dayKey];
-
-                            if (is_array($existing)) {
-                                // Zaten array ise atla (savunma amaçlı)
-                                continue;
-                            }
-
-                            if (in_array($scheduleItem->status, ['preferred', 'unavailable'])) {
-                                // Yeni gelen preferred/unavailable ise, mevcut item'ı koru
-                                continue;
-                            } elseif (in_array($existing->status, ['preferred', 'unavailable'])) {
-                                // Mevcut olan preferred/unavailable ise, yeni gerçek item'ı koy
-                                $row['days'][$dayKey] = $scheduleItem;
-                            } else {
-                                // İkisi de gerçek item — array'e dönüştür (mevcut davranış, group vs.)
-                                if (!is_array($row['days'][$dayKey])) {
-                                    $row['days'][$dayKey] = [$row['days'][$dayKey]];
-                                }
-                                $row['days'][$dayKey][] = $scheduleItem;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        //$this->logger()->debug('Schedule Rows oluşturuldu', ['scheduleRows' => $scheduleRows]);
-        return $scheduleRows;
-    }
-
-    /**
-     * todo servise taşınmalı
-     * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
-     * @throws Exception
-     */
-    private function prepareScheduleCard(ScheduleFilterDTO $dto, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
-    {
-        // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
-        if (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
-            $data = $dto->toArray();
-            $data['semester_no'] = null;
-            $dto = ScheduleFilterDTO::fromArray($data);
-        }
-
-        $scheduleService = new ScheduleService();
-        $schedule = $scheduleService->getOrCreateSchedule($dto);
-        $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
-        $scheduleRows = $this->prepareScheduleRows($schedule);
-
-        $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
-            'availableLessons' => $availableLessons,
-            'schedule' => $schedule,
-            'only_table' => $only_table,
-            'preference_mode' => $preference_mode,
-            'owner_type' => $filters['owner_type'] ?? null
-        ]);
-
-        $createTableHeaders = function (int $weekIndex = 0) use ($dto): array {
-            $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-            $headers = [];
-            $isExam = ExamType::isExamType($dto->type);
-            $type = $isExam ? 'exam' : 'lesson';
-
-            $startDate = null;
-            if ($isExam) {
-                $examTypeEnum = ExamType::tryFrom($dto->type);
-                if ($examTypeEnum) {
-                    $settingKey = $examTypeEnum->startDateSettingKey();
-                    if ($settingKey) {
-                        $startDateString = getSettingValue($settingKey, 'exam');
-                        if ($startDateString) {
-                            $startDate = new \DateTime($startDateString);
-                        }
-                    }
-                }
-            }
-
-            $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-            for ($i = 0; $i <= $maxDayIndex; $i++) {
-                $headerTitle = $days[$i];
-                if ($startDate) {
-                    $currentDate = (clone $startDate)->modify("+" . ($weekIndex * 7 + $i) . " days");
-                    $headerTitle .= '<br><small>' . $currentDate->format('d.m.Y') . '</small>';
-                }
-                $headers[] = '<th>' . $headerTitle . '</th>';
-            }
-            return $headers;
-        };
-
-        // Her hafta için ayrı header'lar oluştur
-        $allWeekHeaders = [];
-        foreach ($scheduleRows as $weekIndex => $rows) {
-            $allWeekHeaders[$weekIndex] = $createTableHeaders($weekIndex);
-        }
-
-        $isExam = ExamType::isExamType($schedule->type);
-        $partialName = $isExam ? 'examScheduleTable' : 'lessonScheduleTable';
-
-        $scheduleTableHTML = View::renderPartial('admin', 'schedules', $partialName, [
-            'weekRows' => $scheduleRows,
-            'weekHeaders' => $allWeekHeaders,
-            'schedule' => $schedule,
-            'only_table' => $only_table,
-            'preference_mode' => $preference_mode
-        ]);
-
-        $ownerName = match ($dto->owner_type) {
-            'user' => (new User())->find($dto->owner_id)->getFullName(),
-            'program' => (new Program())->find($dto->owner_id)->name,
-            'classroom' => (new Classroom())->find($dto->owner_id)->name,
-            'lesson' => (new Lesson())->find($dto->owner_id)->getFullName(true),
-            default => ""
-        };
-
-        //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
-        $cardTitle = $dto->semester_no . " Yarıyıl Programı";
-        $dataSemesterNo = 'data-semester-no="' . $dto->semester_no . '"';
-
-        if (ExamType::isExamType($dto->type)) {
-            $duration = getSettingValue('duration', 'exam', 30);
-            $break = getSettingValue('break', 'exam', 0);
-        } else {
-            $duration = getSettingValue('duration', 'lesson', 50);
-            $break = getSettingValue('break', 'lesson', 10);
-        }
-
-        return View::renderPartial('admin', 'schedules', 'scheduleCard', [
-            'schedule' => $schedule,
-            'availableLessonsHTML' => $availableLessonsHTML,
-            'scheduleTableHTML' => $scheduleTableHTML,
-            'ownerName' => $ownerName,
-            'cardTitle' => $cardTitle,
-            'dataSemesterNo' => $dataSemesterNo,
-            'duration' => $duration,
-            'break' => $break,
-            'only_table' => $only_table,
-            'preference_mode' => $preference_mode,
-            'weekCount' => count($scheduleRows),
-            'no_card' => $no_card
-        ]);
     }
 
     /**
@@ -342,21 +93,21 @@ class ScheduleController extends Controller
 
         if ($dto->semester_no !== null) {
             // birleştirilmiş dönem veya tek dönem
-            $HTMLOut .= $this->prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
+            $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
         } elseif (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
-            $HTMLOut .= $this->prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
+            $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
         } else {
             $currentSemesters = getSemesterNumbers($dto->semester);
             foreach ($currentSemesters as $semester_no) {
                 $data = $dto->toArray();
                 $data['semester_no'] = $semester_no;
                 $specificDto = ScheduleFilterDTO::fromArray($data);
-                $HTMLOut .= $this->prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
+                $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
             }
         }
 
-        return $HTMLOut; //todo html string çıktısı controller görevi mi?
+        return $HTMLOut;
     }
 
     /********************************
