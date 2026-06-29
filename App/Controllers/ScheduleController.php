@@ -350,12 +350,34 @@ class ScheduleController extends Controller
     /**
      * @throws \Exception
      */
-    public function saveScheduleItems(array $itemsData): array
+    
+    /**
+     * Ders programı öğelerini kaydeder (Ajax endpoint wrapper)
+     * 
+     * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
+     * @return array Response dizisi
+     */
+    public function saveScheduleItems(array $requestData): array
     {
-        $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
-        $service = new \App\Services\Schedule\LessonScheduleService();
-        $result = $service->saveScheduleItems($itemsData);
-        return $this->formatServiceResultToLegacy($result);
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+        }
+
+        try {
+            $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
+            $service = new \App\Services\Schedule\LessonScheduleService();
+            $result = $service->saveScheduleItems($items);
+            return $this->formatServiceResultToLegacy($result);
+        } catch (\Throwable $e) {
+            return [
+                "status" => "error",
+                "msg" => "Kayıt işlemi başarısız: " . $e->getMessage()
+            ];
+        }
     }
 
     /**
@@ -373,23 +395,76 @@ class ScheduleController extends Controller
     /**
      * @throws \Exception
      */
-    public function deleteScheduleItems(array $itemsData): array
+    public function deleteScheduleItems(array $requestData): array
     {
-        $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
-        $service = new \App\Services\Schedule\LessonScheduleService();
-        $result = $service->deleteScheduleItems($itemsData);
-        return $result->toArray();
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+        }
+
+        try {
+            $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
+            $service = new \App\Services\Schedule\LessonScheduleService();
+            $result = $service->deleteScheduleItems($items);
+            return $result->toArray();
+        } catch (\Throwable $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            return [
+                "status" => "error",
+                "msg" => "Silme işlemi sırasında bir hata oluştu: " . $e->getMessage(),
+            ];
+        }
     }
 
     /**
      * Sınav programı öğelerini kaydeder
-     * 
-     * @throws \Exception
      */
-    public function saveExamScheduleItems(array $itemsData): array
+    public function saveExamScheduleItems(array $requestData): array
     {
-        $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
-        $service = new \App\Services\Schedule\ExamScheduleService();
-        return $service->saveExamScheduleItems($itemsData);
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı",
+            ];
+        }
+
+        try {
+            $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
+            $service = new \App\Services\Schedule\ExamScheduleService();
+            $createdIds = $service->saveExamScheduleItems($items);
+            
+            $createdItems = [];
+            if (!empty($createdIds)) {
+                foreach ($createdIds as $groupedIds) {
+                    foreach ($groupedIds as $ownerType => $ids) {
+                        foreach ($ids as $id) {
+                            $item = (new \App\Models\ScheduleItem())->find($id);
+                            if ($item) {
+                                $createdItems[] = $item->getArray();
+                            }
+                        }
+                    }
+                }
+            }
+
+            return [
+                "status" => "success",
+                "msg" => "Sınav programı başarıyla kaydedildi.",
+                "createdIds" => $createdIds,
+                "createdItems" => $createdItems,
+            ];
+        } catch (\Throwable $e) {
+            $this->logger()->error($e->getMessage(), ['exception' => $e]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            return [
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
+            ];
+        }
     }
 }

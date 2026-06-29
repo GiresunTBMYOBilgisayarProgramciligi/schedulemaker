@@ -685,105 +685,17 @@ class AjaxRouter extends Router
      */
     public function saveScheduleItemAction(): void
     {
-        //$this->logger()->debug("Save ScheduleItemAction Data: ", ['data' => $this->data]);
-
-        $scheduleController = new ScheduleController();
-        $items = json_decode($this->data['items'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->response = array(
-                "status" => "error",
-                "msg" => "Geçersiz veri formatı"
-            );
-            $this->sendResponse();
-            return;
-        }
-
-        try {
-            $createdIds = $scheduleController->saveScheduleItems($items);
-            if (!empty($createdIds)) {
-                // Canlı Güncelleme (Live Update) için oluşturulan öğelerin tam listesini topla
-                $createdItems = [];
-                foreach ($createdIds as $groupedIds) {
-                    foreach ($groupedIds as $ownerType => $ids) {
-                        foreach ($ids as $id) {
-                            $item = (new ScheduleItem())->find($id);
-                            if ($item) {
-                                $createdItems[] = $item->getArray();
-                            }
-                        }
-                    }
-                }
-
-                $this->response = array(
-                    "status" => "success",
-                    "msg" => "Program başarıyla kaydedildi.",
-                    "createdIds" => $createdIds,
-                    "createdItems" => $createdItems
-                );
-            }
-        } catch (\Throwable $e) {
-            $this->logger()->error($e->getMessage(), ['exception' => $e]);
-            $msg = $e->getMessage();
-            $msgArray = explode("\n", $msg);
-            $this->response = array(
-                "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg
-            );
-        }
+        $this->response = (new ScheduleController())->saveScheduleItems($this->data);
         $this->sendResponse();
     }
-
     /**
      * Sınav programı kaydetme isteği
      */
     public function saveExamScheduleItemAction(): void
     {
-        $items = json_decode($this->data['items'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->response = [
-                "status" => "error",
-                "msg" => "Geçersiz veri formatı",
-            ];
-            $this->sendResponse();
-            return;
-        }
-
-        try {
-            $controller = new ScheduleController();
-            $createdIds = $controller->saveExamScheduleItems($items);
-            if (!empty($createdIds)) {
-                $createdItems = [];
-                foreach ($createdIds as $groupedIds) {
-                    foreach ($groupedIds as $ownerType => $ids) {
-                        foreach ($ids as $id) {
-                            $item = (new ScheduleItem())->find($id);
-                            if ($item) {
-                                $createdItems[] = $item->getArray();
-                            }
-                        }
-                    }
-                }
-
-                $this->response = [
-                    "status" => "success",
-                    "msg" => "Sınav programı başarıyla kaydedildi.",
-                    "createdIds" => $createdIds,
-                    "createdItems" => $createdItems,
-                ];
-            }
-        } catch (\Throwable $e) {
-            $this->logger()->error($e->getMessage(), ['exception' => $e]);
-            $msg = $e->getMessage();
-            $msgArray = explode("\n", $msg);
-            $this->response = [
-                "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
-            ];
-        }
+        $this->response = (new ScheduleController())->saveExamScheduleItems($this->data);
         $this->sendResponse();
     }
-
-
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void
@@ -842,37 +754,9 @@ class AjaxRouter extends Router
      */
     public function deleteScheduleItemsAction(): void
     {
-        $this->logger()->debug("Delete ScheduleItemsAction Data: ", ['data' => $this->data]);
-
-        $items = json_decode($this->data['items'], true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->response = [
-                "status" => "error",
-                "msg" => "Geçersiz veri formatı"
-            ];
-            $this->sendResponse();
-            return;
-        }
-
-        try {
-            $controller = new ScheduleController();
-            $result = $controller->deleteScheduleItems($items);
-            $this->response = $result;
-        } catch (Exception $e) {
-            $this->logger()->error($e->getMessage(), ['exception' => $e]);
-            $this->response = [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
+        $this->response = (new ScheduleController())->deleteScheduleItems($this->data);
         $this->sendResponse();
     }
-
-    /*
-     * Setting Actions
-     */
-
     /**
      * @throws Exception
      */
