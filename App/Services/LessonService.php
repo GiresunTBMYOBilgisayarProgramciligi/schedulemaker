@@ -349,4 +349,97 @@ class LessonService extends BaseService
 
         $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
     }
+
+    /**
+     * Ders birleştirme önizleme — DB değişikliği yapmaz.
+     * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.
+     * @param \App\DTOs\CombineLessonDTO $dto
+     * @return array
+     * @throws Exception
+     */
+    public function previewCombineLesson(\App\DTOs\CombineLessonDTO $dto): array
+    {
+        if (!$dto->parentId || !$dto->childId) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
+
+        $parentLesson = (new Lesson())->find($dto->parentId)
+            ?: throw new Exception("Üst ders bulunamadı");
+        $childLesson  = (new Lesson())->find($dto->childId)
+            ?: throw new Exception("Bağlanacak ders bulunamadı");
+
+        $hoursDiff = $parentLesson->hours - $childLesson->hours;
+
+        if ($hoursDiff <= 0) {
+            return ['needs_confirmation' => false];
+        }
+
+        // Parent'ın ders programı var mı?
+        $parentSchedule = (new \App\Models\Schedule())
+            ->get()
+            ->where(['owner_type' => 'lesson', 'owner_id' => $dto->parentId])
+            ->with(['items'])
+            ->first();
+
+        if (!$parentSchedule || empty($parentSchedule->items)) {
+            return ['needs_confirmation' => false];
+        }
+
+        // Ayarlardan ders süresi ve mola bilgisini al
+        $duration = (int) \App\Helpers\getSettingValue('duration', 'lesson', 50); // dakika
+        $break    = (int) \App\Helpers\getSettingValue('break', 'lesson', 10);    // dakika
+
+        $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+        $slots = [];
+        foreach ($parentSchedule->items as $item) {
+            if (in_array($item->status, ['unavailable', 'preferred'])) {
+                continue;
+            }
+            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start) continue;
+
+            // İtem kaç saat içeriyor?
+            $slotStart = clone $start;
+            $slotIndex = 0;
+
+            // Saatleri tek tek üret: süre+mola adımlarıyla
+            while (true) {
+                $slotEnd = clone $slotStart;
+                $slotEnd->modify("+{$duration} minutes");
+
+                $slots[] = [
+                    'id'         => "{$item->id}_{$slotIndex}",
+                    'item_id'    => $item->id,
+                    'slot_index' => $slotIndex,
+                    'day_name'   => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
+                    'day_index'  => $item->day_index,
+                    'start_time' => $slotStart->format('H:i'),
+                    'end_time'   => $slotEnd->format('H:i'),
+                ];
+
+                // Bir sonraki slot başlangıcı: mola ekle
+                $slotStart = clone $slotEnd;
+                $slotStart->modify("+{$break} minutes");
+                $slotIndex++;
+
+                // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd) break;
+            }
+        }
+
+        // Gün ve saate göre sırala
+        usort($slots, fn($a, $b) => $a['day_index'] <=> $b['day_index'] ?: $a['start_time'] <=> $b['start_time']);
+
+        return [
+            'needs_confirmation' => true,
+            'hours_diff'         => $hoursDiff,
+            'parent_hours'       => $parentLesson->hours,
+            'child_hours'        => $childLesson->hours,
+            'items'              => $slots,
+        ];
+    }
 }

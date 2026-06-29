@@ -190,174 +190,34 @@ class AjaxRouter extends Router
      */
     public function previewCombineLessonAction(): void
     {
-        $parentId = (int) ($this->data['parent_lesson_id'] ?? 0);
-        $childId  = (int) ($this->data['child_lesson_id'] ?? 0);
-
-        if (!$parentId || !$childId) {
-            throw new Exception("Birleştirmek için dersler belirtilmemiş");
-        }
-        Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-
-        $parentLesson = (new Lesson())->find($parentId)
-            ?: throw new Exception("Üst ders bulunamadı");
-        $childLesson  = (new Lesson())->find($childId)
-            ?: throw new Exception("Bağlanacak ders bulunamadı");
-
-        $hoursDiff = $parentLesson->hours - $childLesson->hours;
-
-        if ($hoursDiff <= 0) {
-            $this->response = ['needs_confirmation' => false];
-            $this->sendResponse();
-            return;
-        }
-
-        // Parent'ın ders programı var mı?
-        $parentSchedule = (new Schedule())
-            ->get()
-            ->where(['owner_type' => 'lesson', 'owner_id' => $parentId])
-            ->with(['items'])
-            ->first();
-
-        if (!$parentSchedule || empty($parentSchedule->items)) {
-            $this->response = ['needs_confirmation' => false];
-            $this->sendResponse();
-            return;
-        }
-
-        // Ayarlardan ders süresi ve mola bilgisini al
-        $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
-        $break    = (int) getSettingValue('break', 'lesson', 10);    // dakika
-
-        $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-
-        $slots = [];
-        foreach ($parentSchedule->items as $item) {
-            if (in_array($item->status, ['unavailable', 'preferred'])) {
-                continue;
-            }
-            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
-                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
-            if (!$start) continue;
-
-            // İtem kaç saat içeriyor?
-            $slotStart = clone $start;
-            $slotIndex = 0;
-
-            // Saatleri tek tek üret: süre+mola adımlarıyla
-            while (true) {
-                $slotEnd = clone $slotStart;
-                $slotEnd->modify("+{$duration} minutes");
-
-                $slots[] = [
-                    'id'         => "{$item->id}_{$slotIndex}",
-                    'item_id'    => $item->id,
-                    'slot_index' => $slotIndex,
-                    'day_name'   => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
-                    'day_index'  => $item->day_index,
-                    'start_time' => $slotStart->format('H:i'),
-                    'end_time'   => $slotEnd->format('H:i'),
-                ];
-
-                // Bir sonraki slot başlangıcı: mola ekle
-                $slotStart = clone $slotEnd;
-                $slotStart->modify("+{$break} minutes");
-                $slotIndex++;
-
-                // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
-                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
-                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
-                if (!$itemEnd || $slotStart >= $itemEnd) break;
-            }
-        }
-
-        // Gün ve saate göre sırala
-        usort($slots, fn($a, $b) => $a['day_index'] <=> $b['day_index'] ?: $a['start_time'] <=> $b['start_time']);
-
-        $this->response = [
-            'needs_confirmation' => true,
-            'hours_diff'         => $hoursDiff,
-            'parent_hours'       => $parentLesson->hours,
-            'child_hours'        => $childLesson->hours,
-            'items'              => $slots,
-        ];
+        $this->response = (new LessonController())->previewCombine($this->data);
         $this->sendResponse();
     }
-
     /**
      * @throws Exception
      */
     public function combineLessonAction(): void
     {
-        if (key_exists('parent_lesson_id', $this->data) and key_exists('child_lesson_id', $this->data)) {
-            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-
-            // items_to_remove: ["itemId_slotIndex", ...] formatını parse et
-            // Örn: ["606_2", "606_3"] → {606: [2, 3]}
-            $rawRemove = (array) ($this->data['items_to_remove'] ?? []);
-            $slotsToSkip = []; // [item_id => [slot_index, ...]]
-            foreach ($rawRemove as $entry) {
-                [$itemId, $slotIdx] = explode('_', (string) $entry, 2);
-                $slotsToSkip[(int)$itemId][] = (int)$slotIdx;
-            }
-
-            (new LessonService())->combineLesson(
-                (int) $this->data['parent_lesson_id'],
-                (int) $this->data['child_lesson_id'],
-                $slotsToSkip
-            );
-            $this->response = array(
-                "msg"      => "Dersler Başarıyla birleştirildi.",
-                "status"   => "success",
-                "redirect" => "self"
-            );
-        } else {
-            throw new Exception("Birleştirmek için dersler belirtilmemiş");
-        }
+        $this->response = (new LessonController())->combine($this->data);
         $this->sendResponse();
     }
-
     /**
      * @throws Exception
      */
     public function deleteParentLessonAction(): void
     {
-        if (key_exists("id", $this->data)) {
-            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
-            (new LessonService())->deleteParentLesson((int) $this->data['id']);
-            $this->response = array(
-                "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
-                "status" => "success",
-                "redirect" => "self"
-            );
-        } else {
-            throw new Exception("Bağlantısı silinecek dersin id numarası gelirtilmemiş");
-        }
+        $this->response = (new LessonController())->deleteParentLesson($this->data);
         $this->sendResponse();
     }
-
     /**
      * Sınav birleştirme — farklı hocaların derslerini sınav için birleştirir.
      * @throws Exception
      */
     public function combineExamLessonAction(): void
     {
-        if (!key_exists('parent_lesson_id', $this->data) || !key_exists('child_lesson_id', $this->data)) {
-            throw new Exception("Birleştirmek için dersler belirtilmemiş");
-        }
-        Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
-
-        (new LessonService())->combineExamLesson(
-            (int) $this->data['parent_lesson_id'],
-            (int) $this->data['child_lesson_id']
-        );
-        $this->response = [
-            "msg"      => "Dersler sınav programında başarıyla birleştirildi.",
-            "status"   => "success",
-            "redirect" => "self"
-        ];
+        $this->response = (new LessonController())->combineExamLesson($this->data);
         $this->sendResponse();
     }
-
     /**
      * Sınav birleştirme bağlantısını kaldırır.
      * @throws Exception

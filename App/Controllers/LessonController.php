@@ -185,4 +185,111 @@ class LessonController extends Controller
         }
     }
 
+
+    /**
+     * Ders birleştirme önizleme — DB değişikliği yapmaz.
+     */
+    public function previewCombine(array $requestData): array
+    {
+        try {
+            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+            $dto = \App\DTOs\CombineLessonDTO::fromArray($requestData);
+            return (new LessonService())->previewCombineLesson($dto);
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function combine(array $requestData): array
+    {
+        try {
+            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+            $dto = \App\DTOs\CombineLessonDTO::fromArray($requestData);
+            
+            if (!$dto->parentId || !$dto->childId) {
+                throw new Exception("Birleştirmek için dersler belirtilmemiş");
+            }
+
+            (new LessonService())->combineLesson(
+                $dto->parentId,
+                $dto->childId,
+                $dto->getParsedItemsToRemove()
+            );
+
+            return [
+                "msg"      => "Dersler Başarıyla birleştirildi.",
+                "status"   => "success",
+                "redirect" => "self"
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function deleteParentLesson(array $requestData): array
+    {
+        try {
+            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
+            
+            if (empty($requestData['id'])) {
+                throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
+            }
+
+            (new LessonService())->deleteParentLesson((int) $requestData['id']);
+            
+            return [
+                "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
+                "status" => "success",
+                "redirect" => "self"
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Sınav birleştirme — farklı hocaların derslerini sınav için birleştirir.
+     * @throws Exception
+     */
+    public function combineExamLesson(array $requestData): array
+    {
+        try {
+            Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
+            
+            if (empty($requestData['parent_lesson_id']) || empty($requestData['child_lesson_id'])) {
+                throw new Exception("Birleştirmek için dersler belirtilmemiş");
+            }
+
+            (new LessonService())->combineExamLesson(
+                (int) $requestData['parent_lesson_id'],
+                (int) $requestData['child_lesson_id']
+            );
+
+            return [
+                "msg"      => "Sınavlar Başarıyla birleştirildi.",
+                "status"   => "success",
+                "redirect" => "self"
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
 }
