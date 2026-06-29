@@ -4,6 +4,7 @@ namespace App\Services\Export\Excel;
 
 use App\Core\Log;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleExportFilterBuilder;
 use Exception;
@@ -58,7 +59,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     {
         $scheduleType = ExamType::isExamType($filters['type'] ?? '') ? 'exam' : 'lesson';
         $maxDayIndex  = getSettingValue('maxDayIndex', $scheduleType, 4);
-        $colsPerDay   = ($scheduleType === 'exam' || $filters['owner_type'] === 'classroom') ? 1 : 2;
+        $colsPerDay   = ($scheduleType === 'exam' || $filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
         $totalCols    = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol      = Coordinate::stringFromColumnIndex($totalCols);
 

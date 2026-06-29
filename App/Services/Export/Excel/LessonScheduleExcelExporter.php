@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
@@ -37,7 +38,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
         $type        = 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $colsPerDay  = ($filters['owner_type'] === 'classroom') ? 1 : 2;
+        $colsPerDay  = ($filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
@@ -56,7 +57,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
             $weekCount   = 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
-            $scheduleRows = $scheduleController->prepareScheduleRows($schedule, $maxDayIndex);
+            $scheduleRows = \App\Helpers\ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
 
             foreach ($scheduleRows as $weekIndex => $slots) {
                 $isClassroom = ($scheduleFilter['type'] === 'classroom');

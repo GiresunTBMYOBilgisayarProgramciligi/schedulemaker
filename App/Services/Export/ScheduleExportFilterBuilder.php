@@ -8,6 +8,7 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
+use App\Enums\OwnerType;
 use Exception;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
@@ -39,7 +40,7 @@ class ScheduleExportFilterBuilder
         $typeLabel       = $this->getTypeLabel($typeKey);
 
         switch ($filters["owner_type"]) {
-            case "program":
+            case OwnerType::PROGRAM->value:
                 $scheduleFilters = $this->buildForProgram($filters, $semesterNumbers, $typeKey, $typeLabel);
                 break;
 
@@ -47,15 +48,15 @@ class ScheduleExportFilterBuilder
                 $scheduleFilters = $this->buildForDepartment($filters, $typeKey);
                 break;
 
-            case "user":
+            case OwnerType::USER->value:
                 $scheduleFilters = $this->buildForUser($filters, $typeKey, $typeLabel);
                 break;
 
-            case "classroom":
+            case OwnerType::CLASSROOM->value:
                 $scheduleFilters = $this->buildForClassroom($filters, $typeKey, $typeLabel);
                 break;
 
-            case "lesson":
+            case OwnerType::LESSON->value:
                 $scheduleFilters = $this->buildForLesson($filters, $typeKey, $typeLabel);
                 break;
 
@@ -125,7 +126,7 @@ class ScheduleExportFilterBuilder
         }
 
         foreach ($programs as $program) {
-            $programFilters = array_merge($filters, ['owner_type' => 'program', 'owner_id' => $program->id]);
+            $programFilters = array_merge($filters, ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $program->id]);
             $result = array_merge($result, $this->build($programFilters));
         }
 

@@ -8,6 +8,7 @@ use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
@@ -93,10 +94,10 @@ class Schedule extends Model
     public function getOwnerTypeScreenName(): string
     {
         $names = [
-            "user" => "Hoca",
-            "lesson" => "Ders",
-            "program" => "Program",
-            "classroom" => "Derslik",
+            OwnerType::USER->value => "Hoca",
+            OwnerType::LESSON->value => "Ders",
+            OwnerType::PROGRAM->value => "Program",
+            OwnerType::CLASSROOM->value => "Derslik",
         ];
         return $names[$this->owner_type];
     }
@@ -132,10 +133,10 @@ class Schedule extends Model
     {
         $typeLabel = $this->getScheduleTypeName() === "sınav" ? "Sınav" : "Ders";
         return match ($this->owner_type) {
-            "user" => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
-            "lesson" => (new Lesson())->find($this->owner_id)?->getFullName(true) . " $typeLabel Programı",
-            "program" => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . ". Sınıf $typeLabel Programı",
-            "classroom" => (new Classroom())->find($this->owner_id)?->name . " $typeLabel Programı",
+            OwnerType::USER->value => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
+            OwnerType::LESSON->value => (new Lesson())->find($this->owner_id)?->getFullName(true) . " $typeLabel Programı",
+            OwnerType::PROGRAM->value => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . ". Sınıf $typeLabel Programı",
+            OwnerType::CLASSROOM->value => (new Classroom())->find($this->owner_id)?->name . " $typeLabel Programı",
             default => "$typeLabel Programı",
         };
     }

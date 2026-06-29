@@ -11,6 +11,7 @@ use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
 use function App\Helpers\getSettingValue;
+use App\Enums\OwnerType;
 use Exception;
 
 /**
@@ -284,7 +285,7 @@ class LessonService extends BaseService
             $examTypes = ExamType::values();
             $scheduleService = $this->scheduleService;
             $examSchedules = (new Schedule())->get()->where([
-                'owner_type' => 'lesson',
+                'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => $childLesson->id,
                 'type' => ['in' => $examTypes]
             ])->all();
@@ -334,7 +335,7 @@ class LessonService extends BaseService
         $examTypes = ExamType::values();
         $scheduleService = $this->scheduleService;
         $examSchedules = (new Schedule())->get()->where([
-            'owner_type' => 'lesson',
+            'owner_type' => OwnerType::LESSON->value,
             'owner_id' => $lesson->id,
             'type' => ['in' => $examTypes]
         ])->all();
@@ -379,7 +380,7 @@ class LessonService extends BaseService
         // Parent'ın ders programı var mı?
         $parentSchedule = (new Schedule())
             ->get()
-            ->where(['owner_type' => 'lesson', 'owner_id' => $dto->parentId])
+            ->where(['owner_type' => OwnerType::LESSON->value, 'owner_id' => $dto->parentId])
             ->with(['items'])
             ->first();
 

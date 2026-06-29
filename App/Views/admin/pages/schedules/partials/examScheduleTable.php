@@ -1,6 +1,7 @@
 <?php
 use App\Models\Schedule;
 use App\Helpers\ScheduleViewHelper;
+use App\Enums\ScheduleItemStatus;
 
 /**
  * @var array $weekRows
@@ -58,14 +59,14 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                     }
                                 }
 
-                                $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
+                                $dropZone = ($scheduleItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                 <td class="<?= $dropZone ?>" rowspan="<?= $rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
                                     data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>"
                                     data-schedule-item-id="<?= $scheduleItem->id ?>">
 
-                                    <?php if ($scheduleItem->status === 'group'): ?>
+                                    <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
                                         <div class="lesson-group-container h-100">
                                         <?php endif; ?>
 
@@ -94,7 +95,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                             ]) ?>
                                         <?php endif; ?>
 
-                                        <?php if ($scheduleItem->status === 'group'): ?>
+                                        <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>

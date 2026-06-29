@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Enums\OwnerType;
 
 use Exception;
 use PDO;
@@ -40,7 +41,7 @@ class Program extends Model
 
         $query = (new Schedule())->get()
             ->where([
-                'owner_type' => 'program',
+                'owner_type' => OwnerType::PROGRAM->value,
                 'owner_id' => ['in' => $ids]
             ]);
 

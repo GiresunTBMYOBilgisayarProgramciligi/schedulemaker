@@ -4,12 +4,15 @@ namespace App\Services\Schedule;
 
 use App\Services\BaseService;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
+use App\Enums\ScheduleItemStatus;
 use App\Repositories\UserRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
+
 use Exception;
 use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
@@ -71,7 +74,7 @@ class AvailabilityService extends BaseService
         foreach ($classrooms as $classroom) {
             $classroomSchedule = clone $this->scheduleRepo->findOrCreate([
                 'type' => $schedule->type,
-                'owner_type' => 'classroom',
+                'owner_type' => OwnerType::CLASSROOM->value,
                 'owner_id' => $classroom->id,
                 'semester_no' => null,
                 'semester' => $schedule->semester,
@@ -130,7 +133,7 @@ class AvailabilityService extends BaseService
                     'id' => 'dummy-preferred',
                     'name' => '',
                     'code' => 'PREF',
-                    'status' => 'preferred',
+                    'status' => ScheduleItemStatus::PREFERRED->value,
                     'hours' => 1,
                     'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
                     'is_dummy' => true
@@ -139,7 +142,7 @@ class AvailabilityService extends BaseService
                     'id' => 'dummy-unavailable',
                     'name' => '',
                     'code' => 'UNAV',
-                    'status' => 'unavailable',
+                    'status' => ScheduleItemStatus::UNAVAILABLE->value,
                     'hours' => 1,
                     'lecturer_id' => $schedule->owner_id,
                     'is_dummy' => true
@@ -155,23 +158,23 @@ class AvailabilityService extends BaseService
             '!type' => 4 // staj dersleri dahil değil
         ];
 
-        if ($schedule->owner_type == "program") {
+        if ($schedule->owner_type == OwnerType::PROGRAM->value) {
             $lessonFilters = array_merge($lessonFilters, [
                 'program_id' => $schedule->owner_id,
             ]);
-        } elseif ($schedule->owner_type == "classroom") {
+        } elseif ($schedule->owner_type == OwnerType::CLASSROOM->value) {
             $classroom = (new Classroom())->find($schedule->owner_id);
             $lessonFilters = array_merge($lessonFilters, [
                 'classroom_type' => $classroom->type,
             ]);
-        } elseif ($schedule->owner_type == "user") {
+        } elseif ($schedule->owner_type == OwnerType::USER->value) {
             $lessonFilters = array_merge($lessonFilters, [
                 'lecturer_id' => $schedule->owner_id,
             ]);
             if($schedule->type == 'lesson') {
                 unset($lessonFilters["!type"]); // staj derslerini dahil et
             }
-        } elseif ($schedule->owner_type == "lesson") {
+        } elseif ($schedule->owner_type == OwnerType::LESSON->value) {
             $lessonFilters = array_merge($lessonFilters, [
                 'id' => $schedule->owner_id,
             ]);
@@ -291,7 +294,7 @@ class AvailabilityService extends BaseService
         foreach ($observers as $observer) {
             $userSchedule = clone $this->scheduleRepo->findOrCreate([
                 'type' => $filters['type'],
-                'owner_type' => 'user',
+                'owner_type' => OwnerType::USER->value,
                 'owner_id' => $observer->id,
                 'semester_no' => null,
                 'semester' => $filters['semester'],
@@ -315,7 +318,7 @@ class AvailabilityService extends BaseService
                             $existingItem->end_time
                         )
                     ) {
-                        if ($existingItem->status == "preferred") {
+                        if ($existingItem->status == ScheduleItemStatus::PREFERRED->value) {
                             $observer->title = "**" . $observer->title;
                             continue;
                         }
@@ -352,7 +355,7 @@ class AvailabilityService extends BaseService
         $preferredCells = [];
 
         $schedules = (new Schedule())->get()->where([
-            'owner_type' => 'user',
+            'owner_type' => OwnerType::USER->value,
             'owner_id' => $lecturer->id,
             'type' => $filters['type'],
             'semester' => $filters['semester'],
@@ -368,7 +371,7 @@ class AvailabilityService extends BaseService
             foreach ($items as $item) {
                 foreach ($slots as $rowIndex => $slot) {
                     if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
-                        if ($item->status === 'preferred') {
+                        if ($item->status === ScheduleItemStatus::PREFERRED->value) {
                             $preferredCells[$rowIndex + 1][$item->day_index + 1] = true;
                         } else {
                             $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
@@ -410,7 +413,7 @@ class AvailabilityService extends BaseService
         }
 
         $schedules = (new Schedule())->get()->where([
-            'owner_type' => 'classroom',
+            'owner_type' => OwnerType::CLASSROOM->value,
             'owner_id' => ['in' => $classroomIds],
             'type' => $filters['type'],
             'semester' => $filters['semester'],
@@ -480,7 +483,7 @@ class AvailabilityService extends BaseService
         $unavailableCells = [];
 
         $schedules = (new Schedule())->get()->where([
-            'owner_type' => 'program',
+            'owner_type' => OwnerType::PROGRAM->value,
             'owner_id' => $program->id,
             'type' => $filters['type'],
             'semester' => $filters['semester'],
@@ -492,7 +495,7 @@ class AvailabilityService extends BaseService
             foreach ($lesson->childLessons as $childLesson) {
                 if ($childLesson->program_id) {
                     $childSchedules = (new Schedule())->get()->where([
-                        'owner_type' => 'program',
+                        'owner_type' => OwnerType::PROGRAM->value,
                         'owner_id' => $childLesson->program_id,
                         'type' => $filters['type'],
                         'semester' => $filters['semester'],
@@ -515,7 +518,7 @@ class AvailabilityService extends BaseService
                 foreach ($slots as $rowIndex => $slot) {
                     if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
-                        if ($lesson->group_no > 0 && $item->status === 'group' && !empty($item->data)) {
+                        if ($lesson->group_no > 0 && $item->status === ScheduleItemStatus::GROUP->value && !empty($item->data)) {
                             $sameGroupExists = false;
                             foreach ($item->data as $slotData) {
                                 // $slotData içerisinde ders bilgisi alınmalı. 

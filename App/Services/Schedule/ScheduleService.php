@@ -9,6 +9,8 @@ use App\DTOs\ScheduleFilterDTO;
 use App\Helpers\TimeHelper;
 use App\Core\Database;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
+use App\Enums\ScheduleItemStatus;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -127,7 +129,7 @@ class ScheduleService extends BaseService
         // Bu child lesson'a ait lesson schedule'ları bul
         // (Sadece owner_type='lesson' schedule'ları - program schedule'lara dokunma)
         $childSchedules = $this->scheduleRepo->findBy([
-            'owner_type' => 'lesson',
+            'owner_type' => OwnerType::LESSON->value,
             'owner_id' => $childLesson->id,
             'type' => $scheduleType
         ]);
@@ -1017,7 +1019,7 @@ class ScheduleService extends BaseService
             'schedule_id' => $scheduleId,
             'day_index' => $dayIndex,
             'week_index' => $weekIndex,
-            'status' => 'group'
+            'status' => ScheduleItemStatus::GROUP->value
         ])->all();
 
         // Sadece zaman çakışanları filtrele

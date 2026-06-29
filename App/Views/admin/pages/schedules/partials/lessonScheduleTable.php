@@ -3,6 +3,7 @@ use App\Models\Schedule;
 use App\Helpers\ScheduleViewHelper;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
+use App\Enums\ScheduleItemStatus;
 
 /**
  * @var array $weekRows
@@ -47,12 +48,12 @@ use function App\Helpers\getSettingValue;
                             </td>
                             <?php foreach ($scheduleRow['days'] as $dayIndex => $scheduleItem): ?>
                                 <?php if ($scheduleItem):
-                                    $dropZone = ($scheduleItem->status === 'unavailable' || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
+                                    $dropZone = ($scheduleItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
                                         data-schedule-item-id="<?= $scheduleItem->id ?>"
                                         data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
-                                        <?php if ($scheduleItem->status === 'group'): ?>
+                                        <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
                                             <div class="lesson-group-container">
                                             <?php endif; ?>
 
@@ -82,7 +83,7 @@ use function App\Helpers\getSettingValue;
                                                 ]) ?>
                                             <?php endif; ?>
 
-                                            <?php if ($scheduleItem->status === 'group'): ?>
+                                            <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>

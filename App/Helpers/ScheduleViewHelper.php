@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -74,7 +75,7 @@ class ScheduleViewHelper
         }
 
         // Program bilgisi (program dışındaki schedule türlerinde)
-        if ($schedule->owner_type !== 'program') {
+        if ($schedule->owner_type !== OwnerType::PROGRAM->value) {
             $attrs['data-program-id'] = $slotData->lesson->program_id;
             $attrs['data-program-name'] = $slotData->lesson->program?->name;
 
@@ -202,14 +203,14 @@ class ScheduleViewHelper
         /** @var Lesson $lesson */
         if ($schedule->type === 'lesson') {
             // Ders programında grup bilgisi eklenir
-            if (in_array($schedule->owner_type, ['user', 'classroom'])) {
+            if (in_array($schedule->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value])) {
                 return $lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true);
             }
             return $lesson->getFullName(addGroup: true);
         }
 
         // Sınav programında sadece ders adı
-        if (in_array($schedule->owner_type, ['user', 'classroom'])) {
+        if (in_array($schedule->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value])) {
             return $lesson->getFullName(addProgram: true, addClassNumber: true);
         }
         return $lesson->getFullName();
@@ -394,7 +395,7 @@ class ScheduleViewHelper
      */
     public static function prepareScheduleCard(ScheduleFilterDTO $dto, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        if (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
+        if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             $data = $dto->toArray();
             $data['semester_no'] = null;
             $dto = ScheduleFilterDTO::fromArray($data);
@@ -462,10 +463,10 @@ class ScheduleViewHelper
         ]);
 
         $ownerName = match ($dto->owner_type) {
-            'user' => (new User())->find($dto->owner_id)->getFullName(),
-            'program' => (new Program())->find($dto->owner_id)->name,
-            'classroom' => (new Classroom())->find($dto->owner_id)->name,
-            'lesson' => (new Lesson())->find($dto->owner_id)->getFullName(true),
+            OwnerType::USER->value => (new User())->find($dto->owner_id)->getFullName(),
+            OwnerType::PROGRAM->value => (new Program())->find($dto->owner_id)->name,
+            OwnerType::CLASSROOM->value => (new Classroom())->find($dto->owner_id)->name,
+            OwnerType::LESSON->value => (new Lesson())->find($dto->owner_id)->getFullName(true),
             default => ""
         };
 

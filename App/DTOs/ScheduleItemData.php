@@ -2,6 +2,8 @@
 
 namespace App\DTOs;
 
+use App\Enums\ScheduleItemStatus;
+
 /**
  * Schedule Item verisi için Data Transfer Object
  * 
@@ -90,6 +92,6 @@ readonly class ScheduleItemData
      */
     public function isGroup(): bool
     {
-        return $this->status === 'group';
+        return $this->status === ScheduleItemStatus::GROUP->value;
     }
 }

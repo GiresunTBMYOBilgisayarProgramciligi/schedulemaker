@@ -1,5 +1,6 @@
 <?php
 use App\Core\View;
+use App\Enums\OwnerType;
 use App\Helpers\ScheduleViewHelper;
 
 /**
@@ -87,7 +88,7 @@ if ($type === 'lesson') {
                 </span>
             </div>
         <?php endif; ?>
-        <?php if (!($schedule->owner_type == 'user' && $type == "exam")): ?>
+        <?php if (!($schedule->owner_type == OwnerType::USER->value && $type == "exam")): ?>
             <?= View::renderComponent('schedules/_childLessons', [
                 'slotData' => $slotData,
                 'type' => $type

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Model;
 use App\Enums\ClassroomType;
+use App\Enums\OwnerType;
 use Exception;
 
 class Classroom extends Model
@@ -54,7 +55,7 @@ class Classroom extends Model
 
         $query = (new Schedule())->get()
             ->where([
-                'owner_type' => 'classroom',
+                'owner_type' => OwnerType::CLASSROOM->value,
                 'owner_id' => ['in' => $ids]
             ]);
 

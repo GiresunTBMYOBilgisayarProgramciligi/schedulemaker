@@ -24,6 +24,7 @@ use App\Core\Router;
 
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
@@ -75,10 +76,10 @@ class AdminRouter extends Router
         //müdür altındaki kullanıcılar için eğer program tanımlı ise programın ders programı yoksa kullanıcının ders programı
         if (!is_null($this->currentUser->program_id)) {
             $this->assetManager->addCss("/assets/css/schedule.css");
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'program', 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $this->currentUser->program_id, 'type' => 'lesson'], true);
         } else {
             $this->assetManager->addCss("/assets/css/schedule.css");
-            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => 'user', 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
+            $this->view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => OwnerType::USER->value, 'owner_id' => $this->currentUser->id, 'type' => 'lesson'], true);
         }
         $this->callView("admin/index/index");
     }
@@ -155,7 +156,7 @@ class AdminRouter extends Router
             "departments" => (new Department())->get()->where(['active' => true])->all(),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'user',
+                    'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
@@ -165,7 +166,7 @@ class AdminRouter extends Router
             ),
             "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'user',
+                    'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
@@ -175,7 +176,7 @@ class AdminRouter extends Router
             ),
             "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'user',
+                    'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
@@ -185,7 +186,7 @@ class AdminRouter extends Router
             ),
             "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'user',
+                    'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
@@ -259,7 +260,7 @@ class AdminRouter extends Router
             "page_title" => $lesson->name . " Sayfası",
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'lesson',
+                    'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
@@ -269,7 +270,7 @@ class AdminRouter extends Router
             ),
             "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'lesson',
+                    'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
@@ -279,7 +280,7 @@ class AdminRouter extends Router
             ),
             "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'lesson',
+                    'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
@@ -289,7 +290,7 @@ class AdminRouter extends Router
             ),
             "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'lesson',
+                    'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
@@ -407,7 +408,7 @@ class AdminRouter extends Router
             "page_title" => $classroom->name . " Sayfası",
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'classroom',
+                    'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
@@ -416,7 +417,7 @@ class AdminRouter extends Router
             ),
             "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'classroom',
+                    'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
@@ -425,7 +426,7 @@ class AdminRouter extends Router
             ),
             "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'classroom',
+                    'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
@@ -434,7 +435,7 @@ class AdminRouter extends Router
             ),
             "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'classroom',
+                    'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
@@ -579,7 +580,7 @@ class AdminRouter extends Router
             "page_title" => $program->name . " Sayfası",
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'program',
+                    'owner_type' => OwnerType::PROGRAM->value,
                     'owner_id' => $program->id,
                     'type' => 'lesson',
                 ],
@@ -588,7 +589,7 @@ class AdminRouter extends Router
             ),
             "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'program',
+                    'owner_type' => OwnerType::PROGRAM->value,
                     'owner_id' => $program->id,
                     'type' => ExamType::MIDTERM->value
                 ],
@@ -597,7 +598,7 @@ class AdminRouter extends Router
             ),
             "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'program',
+                    'owner_type' => OwnerType::PROGRAM->value,
                     'owner_id' => $program->id,
                     'type' => ExamType::FINAL->value
                 ],
@@ -606,7 +607,7 @@ class AdminRouter extends Router
             ),
             "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
-                    'owner_type' => 'program',
+                    'owner_type' => OwnerType::PROGRAM->value,
                     'owner_id' => $program->id,
                     'type' => ExamType::MAKEUP->value
                 ],

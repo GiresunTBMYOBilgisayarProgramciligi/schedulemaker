@@ -5,10 +5,12 @@
  * @var \App\Controllers\ProgramController $programController
  * @var \App\Models\Program $program
  * @var array $departments \App\Models\Department->getDepartments())
- * @var $page_title
+ * @var string $page_title
  */
 
 use App\Core\Gate;
+use App\Enums\UserRole;
+use App\Enums\UserTitle;
 
 ?>
 <!--begin::App Main-->
@@ -89,7 +91,7 @@ use App\Core\Gate;
                                             <label class="form-label" for="role">Rol</label>
                                             <select class="form-select" id="role"
                                                     name="role" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
-                                                <?php foreach (\App\Enums\UserRole::getAssignableRoles() as $roleEnum): ?>
+                                                <?php foreach (UserRole::getAssignableRoles() as $roleEnum): ?>
                                                     <option value="<?= $roleEnum->value ?>"
                                                         <?= $roleEnum->value == $user->role ? "selected" : "" ?>><?= $roleEnum->getLabel() ?></option>
                                                 <?php endforeach; ?>
@@ -101,7 +103,7 @@ use App\Core\Gate;
                                             <label class="form-label" for="title">Ünvan</label>
                                             <select class="form-select" id="title" name="title" <?= Gate::allowsRole("submanager") ? "" : "disabled" ?>>
                                                 <option value=""></option>
-                                                <?php foreach (\App\Enums\UserTitle::cases() as $titleEnum): ?>
+                                                <?php foreach (UserTitle::cases() as $titleEnum): ?>
                                                     <option value="<?= $titleEnum->value ?>"
                                                         <?= $titleEnum->value == $user->title ? "selected" : "" ?>><?= $titleEnum->value ?></option>
                                                 <?php endforeach; ?>

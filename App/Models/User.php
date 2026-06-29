@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Core\Model;
 use App\Enums\UserRole;
+use App\Enums\OwnerType;
 use Exception;
 
 /**
@@ -90,7 +91,7 @@ class User extends Model
 
         $query = (new Schedule())->get()
             ->where([
-                'owner_type' => 'user',
+                'owner_type' => OwnerType::USER->value,
                 'owner_id' => ['in' => $ids]
             ]);
 

@@ -7,6 +7,8 @@ use App\Core\Model;
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\LessonType;
+use App\Enums\OwnerType;
+use App\Enums\ScheduleItemStatus;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 
@@ -92,7 +94,7 @@ class Lesson extends Model
 
         $query = (new Schedule())->get()
             ->where([
-                'owner_type' => 'lesson',
+                'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => ['in' => $ids]
             ]);
 
@@ -453,7 +455,7 @@ class Lesson extends Model
             $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
             // Tüm bağlı derslerin programlarını çek
             $schedules = (new Schedule())->get()->where([
-                'owner_type' => 'lesson',
+                'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => ['in' => $linkedIds],
                 'type' => $type,
                 'semester' => $this->semester,
@@ -462,7 +464,7 @@ class Lesson extends Model
         } else {
             $targetSize = isset($this->hours) ? $this->hours : 0;
             $schedules = (new Schedule())->get()->where([
-                'owner_type' => 'lesson',
+                'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => $this->id,
                 'type' => $type,
                 'semester' => $this->semester,
@@ -516,7 +518,7 @@ class Lesson extends Model
             foreach ($uniqueClassroomSlots as $slot) {
                 // Her derslik için o zamandaki resmi program kaydını (owner_type=classroom) bul
                 $classroomSchedule = (new Schedule())->get()->where([
-                    'owner_type' => 'classroom',
+                    'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $slot['classroom_id'],
                     'type' => $type,
                     'semester' => $this->semester,
@@ -559,7 +561,7 @@ class Lesson extends Model
             $totalSlotDuration = $lessonDuration + $breakDuration;
 
             foreach ($items as $item) {
-                if ($item->status === 'unavailable' || $item->status === 'preferred') {
+                if ($item->status === ScheduleItemStatus::UNAVAILABLE->value || $item->status === ScheduleItemStatus::PREFERRED->value) {
                     continue;
                 }
                 $start = \DateTime::createFromFormat('H:i:s', $item->start_time) ?: \DateTime::createFromFormat('H:i', $item->start_time);

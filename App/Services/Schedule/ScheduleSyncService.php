@@ -7,6 +7,8 @@ use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Enums\OwnerType;
+use App\Enums\ScheduleItemStatus;
 use Exception;
 use function App\Helpers\getSettingValue;
 use App\Repositories\ScheduleRepository;
@@ -42,7 +44,7 @@ class ScheduleSyncService extends BaseService
 
         // Parent'ın sınav schedule'larını bul
         $parentExamSchedules = (new Schedule())->get()->where([
-            'owner_type' => 'lesson',
+            'owner_type' => OwnerType::LESSON->value,
             'owner_id' => $parentLesson->id,
             'type' => ['in' => $examTypes]
         ])->with(['items'])->all();
@@ -125,7 +127,7 @@ class ScheduleSyncService extends BaseService
         /** @var Schedule $parentSchedule */
         $parentSchedule = (new Schedule())
             ->get()
-            ->where(['owner_type' => 'lesson', 'owner_id' => $parentLesson->id])
+            ->where(['owner_type' => OwnerType::LESSON->value, 'owner_id' => $parentLesson->id])
             ->with(['items'])
             ->first();
 
@@ -228,7 +230,7 @@ class ScheduleSyncService extends BaseService
     {
         $itemData = [['lesson_id' => null, 'lecturer_id' => null, 'classroom_id' => null]];
 
-        if ($item->status === 'group') {
+        if ($item->status === ScheduleItemStatus::GROUP->value) {
             foreach ($item->getSlotDatas() as $slotData) {
                 if ($slotData->lesson_id == $parentLesson->id) {
                     $itemData[0] = [

@@ -10,6 +10,7 @@ use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\DTOs\SaveScheduleResult;
+use App\Enums\ScheduleItemStatus;
 use Exception;
 use function App\Helpers\getSettingValue;
 
@@ -52,7 +53,7 @@ class LessonScheduleService extends ScheduleService
                     }
 
                     $isDummy = $dto->isDummy();
-                    $isGroup = ($dto->status === 'group');
+                    $isGroup = ($dto->status === ScheduleItemStatus::GROUP->value);
                     $lesson = null;
 
                     // Dummy olmayan itemlar için lesson bilgisini al (child lessons ile birlikte)

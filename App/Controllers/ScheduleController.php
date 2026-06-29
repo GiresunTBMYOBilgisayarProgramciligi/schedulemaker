@@ -30,6 +30,7 @@ use App\Repositories\ScheduleRepository;
 use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
 use App\Core\Gate;
+use App\Enums\OwnerType;
 
 class ScheduleController extends Controller
 {
@@ -52,7 +53,7 @@ class ScheduleController extends Controller
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "availableLessons");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır
-        if (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
+        if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             $data = $dto->toArray();
             $data['semester_no'] = null;
             $dto = ScheduleFilterDTO::fromArray($data);
@@ -94,7 +95,7 @@ class ScheduleController extends Controller
         if ($dto->semester_no !== null) {
             // birleştirilmiş dönem veya tek dönem
             $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
-        } elseif (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
+        } elseif (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
             $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
         } else {
