@@ -7,6 +7,10 @@ namespace App\Core;
 
 use Exception;
 
+use App\Middlewares\AuthMiddleware;
+use App\Attributes\AuthRequired;
+use App\Attributes\PublicAction;
+
 /**
  * Uygulamanın temel çalıştırma mantığını içeren sınıf.
  *
@@ -53,22 +57,22 @@ class Application
             : null;
 
         // Sınıf seviyesinde AuthRequired var mı?
-        $authRequired = !empty($reflectionClass->getAttributes(\App\Attributes\AuthRequired::class));
+        $authRequired = !empty($reflectionClass->getAttributes(AuthRequired::class));
         
         if ($reflectionMethod) {
             // Metot seviyesinde AuthRequired varsa zorunlu tut
-            if (!empty($reflectionMethod->getAttributes(\App\Attributes\AuthRequired::class))) {
+            if (!empty($reflectionMethod->getAttributes(AuthRequired::class))) {
                 $authRequired = true;
             }
             // Metot seviyesinde PublicAction varsa sınıfın korumasını iptal et (ziyaretçiye aç)
-            if (!empty($reflectionMethod->getAttributes(\App\Attributes\PublicAction::class))) {
+            if (!empty($reflectionMethod->getAttributes(PublicAction::class))) {
                 $authRequired = false;
             }
         }
 
         // Eğer yetki gerektiriyorsa AuthMiddleware'i tetikle
         if ($authRequired) {
-            \App\Middlewares\AuthMiddleware::handle();
+            AuthMiddleware::handle();
         }
 
         if ($reflectionMethod) {

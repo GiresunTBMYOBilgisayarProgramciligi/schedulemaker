@@ -9,6 +9,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
 use function App\Helpers\getSettingValue;
+use App\Repositories\ScheduleRepository;
 
 /**
  * Ders ve Sınav birleştirme işlemlerinde program (schedule) senkronizasyonunu yönetir.
@@ -16,11 +17,13 @@ use function App\Helpers\getSettingValue;
 class ScheduleSyncService extends BaseService
 {
     private ScheduleService $scheduleService;
+    private ScheduleRepository $scheduleRepo;
 
     public function __construct()
     {
         parent::__construct();
         $this->scheduleService = new ScheduleService();
+        $this->scheduleRepo = new ScheduleRepository();
     }
 
     /**
@@ -80,7 +83,7 @@ class ScheduleSyncService extends BaseService
                         'semester_no' => $owner['type'] === 'program' ? $owner['semester_no'] : null,
                     ];
 
-                    $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                    $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
 
                     $newItem = new ScheduleItem();
                     $newItem->schedule_id = $childSchedule->id;
@@ -198,7 +201,7 @@ class ScheduleSyncService extends BaseService
                 'semester_no'  => $owner['type'] === 'program' ? $owner['semester_no'] : null,
             ];
 
-            $childSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+            $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
 
             $newItem = new ScheduleItem();
             $newItem->schedule_id = $childSchedule->id;

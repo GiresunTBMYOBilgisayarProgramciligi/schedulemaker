@@ -459,12 +459,7 @@ class AjaxRouter extends Router
      */
     public function getAvailableClassroomForScheduleAction(): void
     {
-        Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
-        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "availableClassrooms");
-        $service = new AvailabilityService();
-        $classrooms = $service->availableClassrooms($filters);
-        $this->response['status'] = "success";
-        $this->response['classrooms'] = $classrooms;
+        $this->response = (new ScheduleController())->getAvailableClassrooms($this->data);
         $this->sendResponse();
     }
 
@@ -474,12 +469,7 @@ class AjaxRouter extends Router
      */
     public function getAvailableObserversForScheduleAction(): void
     {
-        Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
-        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "availableObservers");
-        $service = new AvailabilityService();
-        $observers = $service->availableObservers($filters);
-        $this->response['status'] = "success";
-        $this->response['observers'] = $observers;
+        $this->response = (new ScheduleController())->getAvailableObservers($this->data);
         $this->sendResponse();
     }
 
@@ -490,21 +480,7 @@ class AjaxRouter extends Router
      */
     public function checkScheduleCrashAction(): void
     {
-        try {
-            $filters = (new ScheduleConflictFilterValidator())->sanitize($this->data, "checkScheduleCrash");
-            $service = new ConflictService();
-            $service->checkScheduleCrash($filters);
-
-            $this->response['status'] = "success";
-        } catch (\Throwable $e) {
-            $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $this->data]);
-            $msg = $e->getMessage();
-            $msgArray = explode("\n", $msg);
-            $this->response = [
-                "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : $msg,
-            ];
-        }
+        $this->response = (new ScheduleController())->checkScheduleCrash($this->data);
         $this->sendResponse();
     }
 
@@ -515,25 +491,7 @@ class AjaxRouter extends Router
      */
     public function getScheduleAction(): void
     {
-        if (key_exists('id', $this->data)) {
-            $schedule = (new Schedule())->find($this->data['id']);
-            if ($schedule) {
-                $this->response = array(
-                    "status" => "success",
-                    "schedule" => $schedule->getArray()
-                );
-            } else {
-                $this->response = array(
-                    "status" => "error",
-                    "msg" => "Program bulunamadı"
-                );
-            }
-        } else {
-            $this->response = array(
-                "status" => "error",
-                "msg" => "ID belirtilmedi"
-            );
-        }
+        $this->response = (new ScheduleController())->getSchedule($this->data);
         $this->sendResponse();
     }
     /**
@@ -563,15 +521,7 @@ class AjaxRouter extends Router
      */
     public function checkLecturerScheduleAction(): void
     {
-        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkLecturerScheduleAction");
-        $availability = (new AvailabilityService())->getLecturerAvailability($filters);
-
-        $this->response = [
-            "status" => "success",
-            "msg" => "",
-            "unavailableCells" => $availability['unavailableCells'],
-            "preferredCells" => $availability['preferredCells']
-        ];
+        $this->response = (new ScheduleController())->checkLecturerSchedule($this->data);
         $this->sendResponse();
     }
 
@@ -581,13 +531,7 @@ class AjaxRouter extends Router
      */
     public function checkClassroomScheduleAction(): void
     {
-        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkClassroomScheduleAction");
-        $availability = (new AvailabilityService())->getClassroomAvailability($filters);
-
-        $this->response["status"] = "success";
-        $this->response["msg"] = "";
-        $this->response["unavailableCells"] = $availability['unavailableCells'];
-
+        $this->response = (new ScheduleController())->checkClassroomSchedule($this->data);
         $this->sendResponse();
     }
 
@@ -596,14 +540,7 @@ class AjaxRouter extends Router
      */
     public function checkProgramScheduleAction(): void
     {
-        $filters = (new ScheduleAvailabilityFilterValidator())->sanitize($this->data, "checkProgramScheduleAction");
-        $availability = (new AvailabilityService())->getProgramAvailability($filters);
-
-        $this->response = [
-            "status" => "success",
-            "msg" => "",
-            "unavailableCells" => $availability['unavailableCells']
-        ];
+        $this->response = (new ScheduleController())->checkProgramSchedule($this->data);
         $this->sendResponse();
     }
 
@@ -683,17 +620,7 @@ class AjaxRouter extends Router
     #[PublicAction]
     public function exportScheduleAction(): void
     {
-        $filters = (new ScheduleExportFilterValidator())->sanitize($this->data, "exportScheduleAction");
-
-        $showOptions = [
-            'show_code'     => !isset($filters['show_code'])     || (string) $filters['show_code']     === '1',
-            'show_lecturer' => !isset($filters['show_lecturer']) || (string) $filters['show_lecturer'] === '1',
-            'show_program'  => !isset($filters['show_program'])  || (string) $filters['show_program']  === '1',
-            'show_observer' => !isset($filters['show_observer']) || (string) $filters['show_observer'] === '1',
-        ];
-
-        $exporter = ExporterFactory::create($filters, 'excel');
-        $exporter->export($filters, $showOptions);
+        (new ScheduleController())->exportSchedule($this->data);
     }
 
     /**
@@ -703,13 +630,6 @@ class AjaxRouter extends Router
     #[PublicAction]
     public function exportScheduleIcsAction(): void
     {
-        $filters = (new ScheduleExportFilterValidator())->sanitize($this->data, "exportScheduleIcsAction");
-
-        $showOptions = [
-            'show_observer' => !isset($filters['show_observer']) || (string) ($filters['show_observer'] ?? '1') === '1',
-        ];
-
-        $exporter = ExporterFactory::create($filters, 'ics');
-        $exporter->export($filters, $showOptions);
+        (new ScheduleController())->exportScheduleIcs($this->data);
     }
 }

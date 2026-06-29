@@ -10,6 +10,8 @@ use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
 
+use function App\Helpers\getSettingValue;
+
 /**
  * ICS takvim export sınıfları için ortak altyapı.
  */
@@ -75,11 +77,11 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     {
         if (ExamType::isExamType($type)) {
             $settingKey = ExamType::tryFrom($type)->startDateSettingKey();
-            $startDateStr = \App\Helpers\getSettingValue($settingKey, 'exam');
+            $startDateStr = getSettingValue($settingKey, 'exam');
             $endDateStr   = null;
         } else {
-            $startDateStr = \App\Helpers\getSettingValue('lesson_start_date', 'lesson');
-            $endDateStr   = \App\Helpers\getSettingValue('lesson_end_date', 'lesson');
+            $startDateStr = getSettingValue('lesson_start_date', 'lesson');
+            $endDateStr   = getSettingValue('lesson_end_date', 'lesson');
         }
 
         $startDate = null;

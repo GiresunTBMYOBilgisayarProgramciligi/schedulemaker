@@ -2,6 +2,8 @@
 
 namespace App\Validators\Schedule;
 
+use App\DTOs\ScheduleFilterDTO;
+
 /**
  * Schedule dışa aktarım (export) işlemleri için filtre doğrulayıcı
  * 
@@ -39,5 +41,14 @@ class ScheduleExportFilterValidator extends BaseScheduleFilterValidator
                 'defaults' => ['semester', 'academic_year', 'type'],
             ],
         ];
+    }
+
+    /**
+     * Filtreleri sanitize edip ScheduleFilterDTO olarak döner
+     */
+    public function getDTO(array $data, string $operation): ScheduleFilterDTO
+    {
+        $sanitized = $this->sanitize($data, $operation);
+        return ScheduleFilterDTO::fromArray($sanitized);
     }
 }

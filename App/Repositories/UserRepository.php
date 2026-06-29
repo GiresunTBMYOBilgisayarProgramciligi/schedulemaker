@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Enums\UserRole;
+use App\Enums\UserTitle;
 use Exception;
 
 class UserRepository extends BaseRepository
@@ -57,7 +58,7 @@ class UserRepository extends BaseRepository
      */
     public function findByFullName(string $fullName): ?User
     {
-        $filters = \App\Enums\UserTitle::parseAcademicName($fullName);
+        $filters = UserTitle::parseAcademicName($fullName);
         return $this->findByFullNameFilters($filters);
     }
 }

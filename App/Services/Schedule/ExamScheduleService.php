@@ -8,6 +8,7 @@ use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\DTOs\ScheduleItemData;
 use Exception;
 
 /**
@@ -32,28 +33,28 @@ class ExamScheduleService extends ScheduleService
      * - Gözetmen ve derslik kayıtlarında tam veri + primaryProgramItemId referansı eklenir
      * - Birden fazla atama (assignments) desteklenir
      *
-     * @param array $itemsData JSON decode edilmiş item dizisi
+     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen item DTO verileri
      * @return array Oluşturulan ID'ler (owner_type bazlı gruplu)
      * @throws Exception
      */
-    public function saveExamScheduleItems(array $itemsData): array
+    public function saveExamScheduleItems(array $dtos): array
     {
         $this->logger->debug(
-            "ExamService::saveExamScheduleItems START. Item Count: " . count($itemsData),
+            "ExamService::saveExamScheduleItems START. Item Count: " . count($dtos),
             $this->logContext()
         );
 
-        return Database::transaction(function () use ($itemsData) {
+        return Database::transaction(function () use ($dtos) {
             $createdIds = [];
             $affectedLessonIds = [];
 
-            foreach ($itemsData as $itemData) {
-                $dayIndex = $itemData['day_index'];
-                $startTime = $itemData['start_time'];
-                $endTime = $itemData['end_time'];
-                $weekIndex = $itemData['week_index'] ?? 0;
+            foreach ($dtos as $dto) {
+                $dayIndex = $dto->dayIndex;
+                $startTime = $dto->startTime;
+                $endTime = $dto->endTime;
+                $weekIndex = $dto->weekIndex;
 
-                $lessonId = $itemData['data'][0]['lesson_id'] ?? $itemData['data']['lesson_id'] ?? null;
+                $lessonId = $dto->data[0]['lesson_id'] ?? $dto->data['lesson_id'] ?? null;
                 $lesson = (new Lesson())
                     ->where(['id' => $lessonId])
                     ->with(['childLessons', 'parentLesson', 'examChildLessons', 'examParentLesson'])
@@ -63,7 +64,7 @@ class ExamScheduleService extends ScheduleService
                     throw new Exception("Ders bulunamadı");
                 }
 
-                $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
+                $targetSchedule = (new Schedule())->find($dto->scheduleId);
                 if (!$targetSchedule) {
                     throw new Exception("Hedef program bulunamadı");
                 }
@@ -116,7 +117,7 @@ class ExamScheduleService extends ScheduleService
                 // ── 2. Çakışma Kontrolü ───────────────────────────────────────────
                 $conflictService = new ConflictService();
                 $errors = [];
-                $conflictService->checkScheduleCrash(['items' => json_encode([$itemData])]);
+                $conflictService->checkScheduleCrash(['items' => json_encode([$dto->toArray()])]);
 
                 // ── 3. Program ve Ders Kayıtları (süzülmüş veri) ─────────────────
                 $itemGroupedIds = [];
@@ -131,7 +132,7 @@ class ExamScheduleService extends ScheduleService
                         'type' => $targetSchedule->type,
                         'semester_no' => ($owner['type'] === 'program') ? $owner['semester_no'] : null,
                     ];
-                    $relSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                    $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
 
                     // Sınav program/ders kaydında yalnızca lesson_id
                     $filteredData = [
@@ -150,7 +151,7 @@ class ExamScheduleService extends ScheduleService
                     $newItem->end_time = $endTime;
                     $newItem->status = 'single';
                     $newItem->data = $filteredData;
-                    $newItem->detail = $itemData['detail'];
+                    $newItem->detail = $dto->detail;
                     $newItem->create();
 
                     $itemGroupedIds[$owner['type']][] = $newItem->id;
@@ -161,7 +162,7 @@ class ExamScheduleService extends ScheduleService
                 }
 
                 // ── 4. Gözetmen ve Derslik Kayıtları (tam veri + referans) ───────
-                $assignments = $itemData['detail']['assignments'] ?? [];
+                $assignments = $dto->detail['assignments'] ?? [];
                 foreach ($assignments as $assignment) {
                     $assignmentOwners = [
                         ['type' => 'user', 'id' => $assignment['observer_id'], 'classroom_id' => $assignment['classroom_id']],
@@ -177,7 +178,7 @@ class ExamScheduleService extends ScheduleService
                             'type' => $targetSchedule->type,
                             'semester_no' => null,
                         ];
-                        $relSchedule = (new Schedule())->firstOrCreate($scheduleFilters);
+                        $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
 
                         $fullData = [
                             [
@@ -209,7 +210,7 @@ class ExamScheduleService extends ScheduleService
                 $affectedLessonIds[] = $mainLesson->id;
             }
 
-            $this->logSaveSuccess($itemsData);
+            $this->logSaveSuccess(array_map(fn($d) => $d->toArray(), $dtos));
             return $createdIds;
         });
     }

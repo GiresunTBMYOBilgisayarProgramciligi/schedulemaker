@@ -11,6 +11,7 @@ use App\Validators\LessonValidator;
 use App\Services\LessonService;
 use App\Middlewares\AuthMiddleware;
 use App\Enums\LessonType;
+use App\DTOs\CombineLessonDTO;
 use Exception;
 
 class LessonController extends Controller
@@ -193,7 +194,7 @@ class LessonController extends Controller
     {
         try {
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $dto = \App\DTOs\CombineLessonDTO::fromArray($requestData);
+            $dto = CombineLessonDTO::fromArray($requestData);
             return (new LessonService())->previewCombineLesson($dto);
         } catch (Exception $e) {
             return [
@@ -210,7 +211,7 @@ class LessonController extends Controller
     {
         try {
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $dto = \App\DTOs\CombineLessonDTO::fromArray($requestData);
+            $dto = CombineLessonDTO::fromArray($requestData);
             
             if (!$dto->parentId || !$dto->childId) {
                 throw new Exception("Birleştirmek için dersler belirtilmemiş");

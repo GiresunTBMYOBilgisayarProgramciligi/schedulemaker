@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Enums\ExamType;
+use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 
@@ -139,7 +140,7 @@ class ScheduleViewHelper
             $status = $lesson->status ?? '';
             $cssClass = "dummy w-100 slot-" . $status;
         } else {
-            /** @var \App\Models\Lesson $lesson */
+            /** @var Lesson $lesson */
             $isExam = ExamType::isExamType($schedule->type);
             $cssClass = "lesson-card w-100 " . $lesson->getScheduleCSSClass($isExam);
         }
@@ -189,7 +190,7 @@ class ScheduleViewHelper
             return $lesson->name ?? '';
         }
 
-        /** @var \App\Models\Lesson $lesson */
+        /** @var Lesson $lesson */
         if ($schedule->type === 'lesson') {
             // Ders programında grup bilgisi eklenir
             if (in_array($schedule->owner_type, ['user', 'classroom'])) {
@@ -254,10 +255,10 @@ class ScheduleViewHelper
         if ($isChild) {
             return false;
         }
-        if ($schedule->academic_year != \App\Helpers\getSettingValue('academic_year')) {
+        if ($schedule->academic_year != getSettingValue('academic_year')) {
             return false;
         }
-        if ($schedule->semester != \App\Helpers\getSettingValue('semester')) {
+        if ($schedule->semester != getSettingValue('semester')) {
             return false;
         }
         if ($onlyTable || $preferenceMode) {

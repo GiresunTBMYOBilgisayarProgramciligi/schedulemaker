@@ -2,6 +2,8 @@
 
 namespace App\Validators\Schedule;
 
+use App\DTOs\ConflictFilterDTO;
+
 /**
  * Schedule çakışma kontrol işlemleri için filtre doğrulayıcı
  * 
@@ -22,5 +24,16 @@ class ScheduleConflictFilterValidator extends BaseScheduleFilterValidator
                 'defaults' => [],
             ],
         ];
+    }
+
+    /**
+     * Filtreleri sanitize edip ConflictFilterDTO olarak döner
+     */
+    public function getDTO(array $data, string $operation): ConflictFilterDTO
+    {
+        $sanitized = $this->sanitize($data, $operation);
+        // checkScheduleCrash'e gelen data içerisinde raw JS verileri var,
+        // DTO'ya uygun hale getirmek gerekebilir. Şimdilik fromArray
+        return ConflictFilterDTO::fromArray($sanitized);
     }
 }

@@ -18,6 +18,7 @@ readonly class ScheduleItemData
      * @param string $status Item durumu (single, group, preferred, unavailable)
      * @param array|null $data Ders verileri (lesson_id, lecturer_id, classroom_id vb.)
      * @param array|null $detail Detay verisi
+     * @param int|null $id ScheduleItem ID (özellikle silme işlemi için)
      */
     public function __construct(
         public int $scheduleId,
@@ -27,7 +28,8 @@ readonly class ScheduleItemData
         public string $endTime,
         public string $status,
         public ?array $data = null,
-        public ?array $detail = null
+        public ?array $detail = null,
+        public ?int $id = null
     ) {
     }
 
@@ -39,14 +41,15 @@ readonly class ScheduleItemData
     public static function fromArray(array $data): self
     {
         return new self(
-            scheduleId: $data['schedule_id'],
-            dayIndex: $data['day_index'],
+            scheduleId: $data['schedule_id'] ?? 0,
+            dayIndex: $data['day_index'] ?? 0,
             weekIndex: $data['week_index'] ?? 0,
-            startTime: $data['start_time'],
-            endTime: $data['end_time'],
-            status: $data['status'],
+            startTime: $data['start_time'] ?? '',
+            endTime: $data['end_time'] ?? '',
+            status: $data['status'] ?? 'single',
             data: $data['data'] ?? null,
-            detail: $data['detail'] ?? null
+            detail: $data['detail'] ?? null,
+            id: isset($data['id']) ? (int) $data['id'] : null
         );
     }
 
@@ -56,7 +59,7 @@ readonly class ScheduleItemData
      */
     public function toArray(): array
     {
-        return [
+        $arr = [
             'schedule_id' => $this->scheduleId,
             'day_index' => $this->dayIndex,
             'week_index' => $this->weekIndex,
@@ -66,6 +69,10 @@ readonly class ScheduleItemData
             'data' => $this->data,
             'detail' => $this->detail
         ];
+        if ($this->id !== null) {
+            $arr['id'] = $this->id;
+        }
+        return $arr;
     }
 
     /**

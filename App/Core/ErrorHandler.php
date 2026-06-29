@@ -7,6 +7,9 @@ use Exception;
 use Throwable;
 use App\Controllers\UserController;
 use App\Middlewares\AuthMiddleware;
+use App\Exceptions\ValidationException;
+use App\Exceptions\LessonHourExceededException;
+use App\Exceptions\ScheduleConflictException;
 
 /**
  * Claude ile oluşturularak üzerinde düzenlemeler yapıldı
@@ -63,13 +66,13 @@ class ErrorHandler
         $this->logException($exception);
 
         // İstisna türüne göre farklı HTTP yanıtları ver
-        if ($exception instanceof \App\Exceptions\ValidationException) {
+        if ($exception instanceof ValidationException) {
             // Validation hatası - 400 Bad Request
             $this->renderErrorView('error', $exception, 400);
-        } elseif ($exception instanceof \App\Exceptions\LessonHourExceededException) {
+        } elseif ($exception instanceof LessonHourExceededException) {
             // Ders saati aşımı - 422 Unprocessable Entity  
             $this->renderErrorView('error', $exception, 422);
-        } elseif ($exception instanceof \App\Exceptions\ScheduleConflictException) {
+        } elseif ($exception instanceof ScheduleConflictException) {
             // Schedule çakışması - 409 Conflict
             $this->renderErrorView('error', $exception, 409);
         } else {
@@ -120,7 +123,7 @@ class ErrorHandler
             try {
                 if (session_status() === PHP_SESSION_ACTIVE) {
                     // Basit kullanıcı tespiti: UserController üzerinden oturum kullanıcısını al
-                    $user = \App\Middlewares\AuthMiddleware::user();
+                    $user = AuthMiddleware::user();
                     if ($user) {
                         $username = $user->getFullName();
                         $userId = $user->id;
@@ -277,7 +280,7 @@ class ErrorHandler
         }
 
         /*// ValidationException için hata detaylarını ekle
-        if ($exception instanceof \App\Core\Exceptions\ValidationException) {
+        if ($exception instanceof ValidationException) {
             $response['errors'] = $exception->getErrors();
         }*/
 

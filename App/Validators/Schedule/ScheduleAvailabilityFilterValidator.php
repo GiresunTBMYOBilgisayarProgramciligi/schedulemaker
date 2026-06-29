@@ -2,6 +2,8 @@
 
 namespace App\Validators\Schedule;
 
+use App\DTOs\AvailabilityFilterDTO;
+
 /**
  * Schedule müsaitlik kontrol işlemleri için filtre doğrulayıcı
  * 
@@ -46,5 +48,16 @@ class ScheduleAvailabilityFilterValidator extends BaseScheduleFilterValidator
                 'defaults' => ['semester', 'academic_year', 'week_index'],
             ],
         ];
+    }
+
+    /**
+     * Filtreleri sanitize edip AvailabilityFilterDTO olarak döner
+     */
+    public function getDTO(array $data, string $operation): AvailabilityFilterDTO
+    {
+        // availableClassrooms vb işlemlerde array formatı doğrudan DTO'ya map edilemeyebilir.
+        // Ama şimdilik fromArray kullanıp sonrasında özelleştirebiliriz.
+        $sanitized = $this->sanitize($data, $operation);
+        return AvailabilityFilterDTO::fromArray($sanitized);
     }
 }

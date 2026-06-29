@@ -9,9 +9,12 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Models\User;
 use Exception;
 use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
+
+use App\Repositories\ScheduleRepository;
 
 /**
  * Ders ve Sınav programlarında müsait derslik ve gözetmen sorgulama servisi.
@@ -22,11 +25,13 @@ use function App\Helpers\getSettingValue;
 class AvailabilityService extends BaseService
 {
     private TimelineManager $timelineManager;
+    private ScheduleRepository $scheduleRepo;
 
     public function __construct()
     {
         parent::__construct();
         $this->timelineManager = new TimelineManager();
+        $this->scheduleRepo = new ScheduleRepository();
     }
 
     /**
@@ -64,7 +69,7 @@ class AvailabilityService extends BaseService
         $availableClassrooms = [];
 
         foreach ($classrooms as $classroom) {
-            $classroomSchedule = (new Schedule())->firstOrCreate([
+            $classroomSchedule = clone $this->scheduleRepo->findOrCreate([
                 'type' => $schedule->type,
                 'owner_type' => 'classroom',
                 'owner_id' => $classroom->id,
@@ -270,7 +275,7 @@ class AvailabilityService extends BaseService
      *
      * @param array $filters Validated filtreler:
      *   type, semester, academic_year, day_index, week_index, items (JSON)
-     * @return \App\Models\User[] Müsait gözetmenler
+     * @return User[] Müsait gözetmenler
      * @throws Exception
      */
     public function availableObservers(array $filters = []): array
@@ -284,7 +289,7 @@ class AvailabilityService extends BaseService
         $availableObservers = [];
 
         foreach ($observers as $observer) {
-            $userSchedule = (new Schedule())->firstOrCreate([
+            $userSchedule = clone $this->scheduleRepo->findOrCreate([
                 'type' => $filters['type'],
                 'owner_type' => 'user',
                 'owner_id' => $observer->id,

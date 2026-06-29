@@ -16,6 +16,19 @@ use Exception;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
+use App\DTOs\ScheduleFilterDTO;
+use App\DTOs\ScheduleItemData;
+use App\DTOs\SaveScheduleResult;
+use App\Services\Schedule\LessonScheduleService;
+use App\Services\Schedule\ExamScheduleService;
+use App\Services\Schedule\ConflictService;
+use App\Services\Export\ExporterFactory;
+use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
+use App\Validators\Schedule\ScheduleConflictFilterValidator;
+use App\Validators\Schedule\ScheduleExportFilterValidator;
+use App\Repositories\ScheduleRepository;
+use App\Models\ScheduleItem;
+use App\Core\Gate;
 
 class ScheduleController extends Controller
 {
@@ -26,6 +39,7 @@ class ScheduleController extends Controller
         parent::__construct();
     }
     /**
+     * todo service işi
      * Tablo oluşturulurken kullanılacak boş hafta listesi. her saat için bir tane kullanılır.
      * @param $type string  html | excel
      * @param int|null $maxDayIndex haftanın hangi gününe kadar program oluşturulacağını belirler
@@ -50,6 +64,7 @@ class ScheduleController extends Controller
      ********************************/
 
     /**
+     * todo bu işlemlerin uzun uzun burada yapılması doğru değil service'e taşınmalı
      * Ders programı tablosunun verilerini oluşturur
      * Sadece tek bir tablo için veri oluşturur. Farklı dönem numaraları birleştirilecekse bu işlem sonradan yapılmalı.
      * @throws Exception
@@ -163,20 +178,22 @@ class ScheduleController extends Controller
     }
 
     /**
+     * * todo yetki kontrolü neden yok
+     * todo servise taşınmalı
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
-    private function prepareScheduleCard($filters, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
+    private function prepareScheduleCard(ScheduleFilterDTO $dto, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        //$this->logger()->debug("Prepare Schedule Card için Filter alındı", ['filters' => $filters]);
-        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "prepareScheduleCard");
-
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır (Genel Program)
-        if (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
-            $filters['semester_no'] = null;
+        if (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
+            $data = $dto->toArray();
+            $data['semester_no'] = null;
+            $dto = ScheduleFilterDTO::fromArray($data);
         }
 
-        $schedule = (new Schedule())->firstOrCreate($filters);
+        $scheduleService = new ScheduleService();
+        $schedule = $scheduleService->getOrCreateSchedule($dto);
         $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
         $scheduleRows = $this->prepareScheduleRows($schedule);
 
@@ -188,15 +205,15 @@ class ScheduleController extends Controller
             'owner_type' => $filters['owner_type'] ?? null
         ]);
 
-        $createTableHeaders = function (int $weekIndex = 0) use ($filters): array {
+        $createTableHeaders = function (int $weekIndex = 0) use ($dto): array {
             $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
             $headers = [];
-            $isExam = ExamType::isExamType($filters['type']);
+            $isExam = ExamType::isExamType($dto->type);
             $type = $isExam ? 'exam' : 'lesson';
 
             $startDate = null;
             if ($isExam) {
-                $examTypeEnum = ExamType::tryFrom($filters['type']);
+                $examTypeEnum = ExamType::tryFrom($dto->type);
                 if ($examTypeEnum) {
                     $settingKey = $examTypeEnum->startDateSettingKey();
                     if ($settingKey) {
@@ -237,19 +254,19 @@ class ScheduleController extends Controller
             'preference_mode' => $preference_mode
         ]);
 
-        $ownerName = match ($filters['owner_type']) {
-            'user' => (new User())->find($filters['owner_id'])->getFullName(),
-            'program' => (new Program())->find($filters['owner_id'])->name,
-            'classroom' => (new Classroom())->find($filters['owner_id'])->name,
-            'lesson' => (new Lesson())->find($filters['owner_id'])->getFullName(true),
+        $ownerName = match ($dto->owner_type) {
+            'user' => (new User())->find($dto->owner_id)->getFullName(),
+            'program' => (new Program())->find($dto->owner_id)->name,
+            'classroom' => (new Classroom())->find($dto->owner_id)->name,
+            'lesson' => (new Lesson())->find($dto->owner_id)->getFullName(true),
             default => ""
         };
 
         //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
-        $cardTitle = $filters['semester_no'] . " Yarıyıl Programı";
-        $dataSemesterNo = 'data-semester-no="' . $filters['semester_no'] . '"';
+        $cardTitle = $dto->semester_no . " Yarıyıl Programı";
+        $dataSemesterNo = 'data-semester-no="' . $dto->semester_no . '"';
 
-        if (ExamType::isExamType($filters['type'])) {
+        if (ExamType::isExamType($dto->type)) {
             $duration = getSettingValue('duration', 'exam', 30);
             $break = getSettingValue('break', 'exam', 0);
         } else {
@@ -275,24 +292,25 @@ class ScheduleController extends Controller
 
     /**
      * Sadece kullanılabilir dersler listesinin HTML çıktısını hazırlar
-     * @param array $filters
+     * * todo yetki kontrolü neden yok
+     * @param array $requestData
      * @param bool $preference_mode
      * @return string
      * @throws Exception
      */
-    public function getAvailableLessonsHTML(array $filters = [], bool $preference_mode = false): string
+    public function getAvailableLessonsHTML(array $requestData = [], bool $preference_mode = false): string
     {
-        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "prepareScheduleCard");
+        $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "availableLessons");
 
         // Hoca, Derslik ve Ders programları dönemden bağımsızdır
-        if (in_array($filters['owner_type'] ?? '', ['user', 'classroom', 'lesson'])) {
-            $filters['semester_no'] = null;
+        if (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
+            $data = $dto->toArray();
+            $data['semester_no'] = null;
+            $dto = ScheduleFilterDTO::fromArray($data);
         }
 
-        $availableLessons = [];
-        $schedule = null;
-
-        $schedule = (new Schedule())->firstOrCreate($filters);
+        $scheduleService = new ScheduleService();
+        $schedule = $scheduleService->getOrCreateSchedule($dto);
         $availableLessons = (new AvailabilityService())->availableLessons($schedule, $preference_mode);
 
         return View::renderPartial('admin', 'schedules', 'availableLessons', [
@@ -300,39 +318,40 @@ class ScheduleController extends Controller
             'schedule' => $schedule,
             'only_table' => false,
             'preference_mode' => $preference_mode,
-            'owner_type' => $filters['owner_type'] ?? null
+            'owner_type' => $dto->owner_type
         ]);
     }
 
     /**
+     * todo yetki kontrolü neden yok
      * Dönem numarasına göre birleştirilmiş yada her bir dönem için Schedule Card oluşturur
-     * @param array $filters
+     * @param array $requestData
      * @param bool $only_table
      * @return string
      * @throws Exception
      */
-    public function getSchedulesHTML(array $filters = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
+    public function getSchedulesHTML(array $requestData = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        $this->logger()->debug("getSchedulesHTML için Filter alındı", ['filters' => $filters]);
-        $filters = (new ScheduleViewFilterValidator())->sanitize($filters, "getSchedulesHTML");
+        $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
         $HTMLOut = "";
 
-        if (key_exists("semester_no", $filters)) {
-            // birleştirilmiş dönem
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
-        } elseif (in_array($filters['owner_type'], ['user', 'classroom', 'lesson'])) {
+        if ($dto->semester_no !== null) {
+            // birleştirilmiş dönem veya tek dönem
+            $HTMLOut .= $this->prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
+        } elseif (in_array($dto->owner_type, ['user', 'classroom', 'lesson'])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
-            $filters['semester_no'] = null;
-            $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
+            $HTMLOut .= $this->prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
         } else {
-            $currentSemesters = getSemesterNumbers($filters["semester"]);
+            $currentSemesters = getSemesterNumbers($dto->semester);
             foreach ($currentSemesters as $semester_no) {
-                $filters['semester_no'] = $semester_no;
-                $HTMLOut .= $this->prepareScheduleCard($filters, $only_table, $preference_mode, $no_card);
+                $data = $dto->toArray();
+                $data['semester_no'] = $semester_no;
+                $specificDto = ScheduleFilterDTO::fromArray($data);
+                $HTMLOut .= $this->prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
             }
         }
 
-        return $HTMLOut;
+        return $HTMLOut; //todo html string çıktısı controller görevi mi?
     }
 
     /********************************
@@ -356,9 +375,11 @@ class ScheduleController extends Controller
      * 
      * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
      * @return array Response dizisi
+     * todo yetki kontrolü neden yok
      */
     public function saveScheduleItems(array $requestData): array
     {
+        
         $items = json_decode($requestData['items'] ?? '[]', true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return [
@@ -367,10 +388,15 @@ class ScheduleController extends Controller
             ];
         }
 
+        $dtos = [];
+        foreach ($items as $itemData) {
+            $dtos[] = ScheduleItemData::fromArray($itemData);
+        }
+
         try {
             $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
-            $service = new \App\Services\Schedule\LessonScheduleService();
-            $result = $service->saveScheduleItems($items);
+            $service = new LessonScheduleService();
+            $result = $service->saveScheduleItems($dtos);
             return $this->formatServiceResultToLegacy($result);
         } catch (\Throwable $e) {
             return [
@@ -381,9 +407,10 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo bu incelenip kaldırılmalı
      * Service result'ını eski formata çevirir (backward compatibility)
      */
-    private function formatServiceResultToLegacy(\App\DTOs\SaveScheduleResult $result): array
+    private function formatServiceResultToLegacy(SaveScheduleResult $result): array
     {
         return [
             [
@@ -393,6 +420,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * * todo yetki kontrolü neden yok
      * @throws \Exception
      */
     public function deleteScheduleItems(array $requestData): array
@@ -405,10 +433,15 @@ class ScheduleController extends Controller
             ];
         }
 
+        $dtos = [];
+        foreach ($items as $itemData) {
+            $dtos[] = ScheduleItemData::fromArray($itemData);
+        }
+
         try {
             $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
-            $service = new \App\Services\Schedule\LessonScheduleService();
-            $result = $service->deleteScheduleItems($items);
+            $service = new LessonScheduleService();
+            $result = $service->deleteScheduleItems($dtos);
             return $result->toArray();
         } catch (\Throwable $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
@@ -420,6 +453,7 @@ class ScheduleController extends Controller
     }
 
     /**
+     * todo yetki kontrolü neden yok
      * Sınav programı öğelerini kaydeder
      */
     public function saveExamScheduleItems(array $requestData): array
@@ -432,17 +466,22 @@ class ScheduleController extends Controller
             ];
         }
 
+        $dtos = [];
+        foreach ($items as $itemData) {
+            $dtos[] = ScheduleItemData::fromArray($itemData);
+        }
+
         try {
             $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
-            $service = new \App\Services\Schedule\ExamScheduleService();
-            $createdIds = $service->saveExamScheduleItems($items);
+            $service = new ExamScheduleService();
+            $createdIds = $service->saveExamScheduleItems($dtos);
             
             $createdItems = [];
             if (!empty($createdIds)) {
                 foreach ($createdIds as $groupedIds) {
                     foreach ($groupedIds as $ownerType => $ids) {
                         foreach ($ids as $id) {
-                            $item = (new \App\Models\ScheduleItem())->find($id);
+                            $item = (new ScheduleItem())->find($id);
                             if ($item) {
                                 $createdItems[] = $item->getArray();
                             }
@@ -466,5 +505,183 @@ class ScheduleController extends Controller
                 "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
             ];
         }
+    }
+
+    /**
+     * Müsait derslikleri getirir
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function getAvailableClassrooms(array $requestData): array
+    {
+        Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
+        $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableClassrooms");
+        $service = new AvailabilityService();
+        $classrooms = $service->availableClassrooms($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        return [
+            'status' => 'success',
+            'classrooms' => $classrooms
+        ];
+    }
+
+    /**
+     * Müsait gözetmenleri getirir
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function getAvailableObservers(array $requestData): array
+    {
+        Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
+        $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableObservers");
+        $service = new AvailabilityService();
+        $observers = $service->availableObservers($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        return [
+            'status' => 'success',
+            'observers' => $observers
+        ];
+    }
+
+    /**
+     * Çakışma kontrolü yapar
+     * @param array $requestData
+     * @return array
+     */
+    public function checkScheduleCrash(array $requestData): array
+    {
+        try {
+            $dto = (new ScheduleConflictFilterValidator())->getDTO($requestData, "checkScheduleCrash");
+            $service = new ConflictService();
+            $service->checkScheduleCrash($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+
+            return ['status' => 'success'];
+        } catch (\Throwable $e) {
+            $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $requestData]);
+            $msg = $e->getMessage();
+            $msgArray = explode("\n", $msg);
+            return [
+                "status" => "error",
+                "msg" => count($msgArray) > 1 ? $msgArray : $msg,
+            ];
+        }
+    }
+
+    /**
+     * todo yetki kontrolü neden yok
+     * ID değerine göre program bilgisini döndürür
+     * @param array $requestData
+     * @return array
+     */
+    public function getSchedule(array $requestData): array
+    {
+        if (key_exists('id', $requestData)) {
+            $schedule = (new ScheduleRepository())->find($requestData['id']);
+            if ($schedule) {
+                return [
+                    "status" => "success",
+                    "schedule" => $schedule->getArray()
+                ];
+            } else {
+                return [
+                    "status" => "error",
+                    "msg" => "Program bulunamadı"
+                ];
+            }
+        } else {
+            return [
+                "status" => "error",
+                "msg" => "ID belirtilmedi"
+            ];
+        }
+    }
+
+    /**
+     * Hoca çakışma durumunu kontrol eder
+     * @param array $requestData
+     * @return array
+     */
+    public function checkLecturerSchedule(array $requestData): array
+    {
+        $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkLecturerScheduleAction");
+        $availability = (new AvailabilityService())->getLecturerAvailability($dto->toArray());
+
+        return [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $availability['unavailableCells'],
+            "preferredCells" => $availability['preferredCells']
+        ];
+    }
+
+    /**
+     * Derslik çakışma durumunu kontrol eder
+     * @param array $requestData
+     * @return array
+     */
+    public function checkClassroomSchedule(array $requestData): array
+    {
+        $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkClassroomScheduleAction");
+        $availability = (new AvailabilityService())->getClassroomAvailability($dto->toArray());
+
+        return [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $availability['unavailableCells']
+        ];
+    }
+
+    /**
+     * Program çakışma durumunu kontrol eder
+     * @param array $requestData
+     * @return array
+     */
+    public function checkProgramSchedule(array $requestData): array
+    {
+        $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkProgramScheduleAction");
+        $availability = (new AvailabilityService())->getProgramAvailability($dto->toArray());
+
+        return [
+            "status" => "success",
+            "msg" => "",
+            "unavailableCells" => $availability['unavailableCells']
+        ];
+    }
+
+    /**
+     * Excel program dışa aktarma
+     * @param array $requestData
+     * @throws Exception
+     */
+    public function exportSchedule(array $requestData): void
+    {
+        $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
+
+        $showOptions = [
+            'show_code'     => $dto->show_code ?? true,
+            'show_lecturer' => $dto->show_lecturer ?? true,
+            'show_program'  => $dto->show_program ?? true,
+            'show_observer' => $dto->show_observer ?? true,
+        ];
+
+        $exporter = ExporterFactory::create($dto->toArray(), 'excel');
+        $exporter->export($dto->toArray(), $showOptions);
+    }
+
+    /**
+     * ICS program dışa aktarma
+     * @param array $requestData
+     * @throws Exception
+     */
+    public function exportScheduleIcs(array $requestData): void
+    {
+        $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleIcsAction");
+
+        $showOptions = [
+            'show_observer' => $dto->show_observer ?? true,
+        ];
+
+        $exporter = ExporterFactory::create($dto->toArray(), 'ics');
+        $exporter->export($dto->toArray(), $showOptions);
     }
 }

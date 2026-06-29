@@ -9,8 +9,9 @@ use App\Models\ScheduleItem;
 use App\Services\Schedule\ScheduleService;
 use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
-use Exception;
+use App\DTOs\CombineLessonDTO;
 use function App\Helpers\getSettingValue;
+use Exception;
 
 /**
  * Ders yönetimi iş mantığı servisi.
@@ -353,11 +354,12 @@ class LessonService extends BaseService
     /**
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.
-     * @param \App\DTOs\CombineLessonDTO $dto
+     *
+     * @param CombineLessonDTO $dto
      * @return array
      * @throws Exception
      */
-    public function previewCombineLesson(\App\DTOs\CombineLessonDTO $dto): array
+    public function previewCombineLesson(CombineLessonDTO $dto): array
     {
         if (!$dto->parentId || !$dto->childId) {
             throw new Exception("Birleştirmek için dersler belirtilmemiş");
@@ -375,7 +377,7 @@ class LessonService extends BaseService
         }
 
         // Parent'ın ders programı var mı?
-        $parentSchedule = (new \App\Models\Schedule())
+        $parentSchedule = (new Schedule())
             ->get()
             ->where(['owner_type' => 'lesson', 'owner_id' => $dto->parentId])
             ->with(['items'])
@@ -386,8 +388,8 @@ class LessonService extends BaseService
         }
 
         // Ayarlardan ders süresi ve mola bilgisini al
-        $duration = (int) \App\Helpers\getSettingValue('duration', 'lesson', 50); // dakika
-        $break    = (int) \App\Helpers\getSettingValue('break', 'lesson', 10);    // dakika
+        $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
+        $break    = (int) getSettingValue('break', 'lesson', 10);    // dakika
 
         $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 

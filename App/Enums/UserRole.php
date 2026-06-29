@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Core\Gate;
+
 /**
  * Kullanıcı rollerini temsil eden Backed Enum.
  */
@@ -38,17 +40,17 @@ enum UserRole: string
     {
         $roles = [self::User, self::Lecturer];
         
-        if (\App\Core\Gate::allowsRole("admin")) {
+        if (Gate::allowsRole("admin")) {
             $roles = array_merge(
                 $roles,
                 [self::DepartmentHead, self::SubManager, self::Manager, self::Admin]
             );
-        } elseif (\App\Core\Gate::allowsRole("manager")) {
+        } elseif (Gate::allowsRole("manager")) {
             $roles = array_merge(
                 $roles,
                 [self::DepartmentHead, self::SubManager, self::Manager]
             );
-        } elseif (\App\Core\Gate::allowsRole("submanager")) {
+        } elseif (Gate::allowsRole("submanager")) {
             $roles = array_merge(
                 $roles,
                 [self::DepartmentHead]

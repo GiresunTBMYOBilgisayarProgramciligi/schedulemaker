@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Repositories\UserRepository;
 use App\Enums\UserRole;
 use App\Services\UserService;
+use App\DTOs\UserDTO;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
@@ -135,7 +136,7 @@ class UserImporter
                     $userService->updateUser($user);
                     $updatedCount++;
                 } else {
-                    $userService->saveNew(\App\DTOs\UserDTO::fromArray($userData));
+                    $userService->saveNew(UserDTO::fromArray($userData));
                     $addedCount++;
                     $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }

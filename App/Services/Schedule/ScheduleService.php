@@ -4,9 +4,8 @@ namespace App\Services\Schedule;
 
 use App\Services\BaseService;
 use App\DTOs\DeleteScheduleResult;
-use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemData;
-use App\Exceptions\ValidationException;
+use App\DTOs\ScheduleFilterDTO;
 use App\Helpers\TimeHelper;
 use App\Core\Database;
 use App\Enums\ExamType;
@@ -459,6 +458,13 @@ class ScheduleService extends BaseService
         return $schedule;
     }
 
+    /**
+     * DTO'ya göre Schedule bulur veya oluşturur.
+     */
+    public function getOrCreateSchedule(ScheduleFilterDTO $dto): Schedule
+    {
+        return $this->scheduleRepo->findOrCreate($dto->toArray());
+    }
 
     // ==================== DELETE OPERATIONS ====================
 
@@ -685,13 +691,13 @@ class ScheduleService extends BaseService
     /**
      * Schedule item'larını siler ve sibling'leri de temizler.
      *
-     * @param array $itemsData
+     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen silinecek item'ların DTO verileri
      * @param bool $expandGroup
      * @return DeleteScheduleResult
      * @throws Exception
      */
     public function deleteScheduleItems(
-        array $itemsData,
+        array $dtos,
         bool $expandGroup = true
     ): DeleteScheduleResult {
         $deletedIds = [];
@@ -699,13 +705,13 @@ class ScheduleService extends BaseService
         $processedSiblingIds = [];
 
         try {
-            return Database::transaction(function () use ($itemsData, $expandGroup) {
+            return Database::transaction(function () use ($dtos, $expandGroup) {
                 $processedSiblingIds = [];
                 $deletedIds = [];
                 $createdItemIds = [];
 
-                foreach ($itemsData as $itemData) {
-                $id = (int) ($itemData['id'] ?? 0);
+                foreach ($dtos as $dto) {
+                $id = (int) ($dto->id ?? 0);
                 if (!$id) {
                     continue;
                 }
@@ -751,15 +757,15 @@ class ScheduleService extends BaseService
                 $rawIntervals = [];
                 $targetLessonIds = [];
 
-                foreach ($itemsData as $reqItem) {
-                    if (in_array((int) $reqItem['id'], $siblingIds)) {
+                foreach ($dtos as $reqDto) {
+                    if (in_array((int) $reqDto->id, $siblingIds)) {
                         $rawIntervals[] = [
-                            'start' => substr($reqItem['start_time'] ?? $scheduleItem->start_time, 0, 5),
-                            'end' => substr($reqItem['end_time'] ?? $scheduleItem->end_time, 0, 5)
+                            'start' => substr($reqDto->startTime ?? $scheduleItem->start_time, 0, 5),
+                            'end' => substr($reqDto->endTime ?? $scheduleItem->end_time, 0, 5)
                         ];
 
-                        if (!empty($reqItem['data'])) {
-                            foreach ($reqItem['data'] as $d) {
+                        if (!empty($reqDto->data)) {
+                            foreach ($reqDto->data as $d) {
                                 if (isset($d['lesson_id'])) {
                                     $lId = (int) $d['lesson_id'];
                                     if (!in_array($lId, $targetLessonIds)) {

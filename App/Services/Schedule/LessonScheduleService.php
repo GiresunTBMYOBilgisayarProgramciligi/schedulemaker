@@ -18,33 +18,31 @@ class LessonScheduleService extends ScheduleService
     /**
      * Ders programına yeni öğe(ler) ekler
      *
-     * @param array $itemsData Ekran üzerinden gelen item verileri
+     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen item DTO verileri
      * @return SaveScheduleResult
      * @throws Exception
      */
-    public function saveScheduleItems(array $itemsData): SaveScheduleResult
+    public function saveScheduleItems(array $dtos): SaveScheduleResult
     {
-        $this->logger->debug("LessonScheduleService::saveScheduleItems START", $this->logContext(['count' => count($itemsData)]));
+        $this->logger->debug("LessonScheduleService::saveScheduleItems START", $this->logContext(['count' => count($dtos)]));
 
         // 1. Validation - batch olarak tüm item'ları kontrol et
+        $itemsData = array_map(fn($dto) => $dto->toArray(), $dtos);
         $validationResult = $this->validator->validateBatch($itemsData);
         if (!$validationResult->isValid) {
             throw new ValidationException(
                 'Schedule item validation failed',
                 $validationResult->errors,
-                ['item_count' => count($itemsData), 'itemsData' => $itemsData]
+                ['item_count' => count($dtos), 'itemsData' => $itemsData]
             );
         }
 
         try {
-            return Database::transaction(function () use ($itemsData) {
+            return Database::transaction(function () use ($dtos) {
                 $createdIds = [];
                 $affectedLessonIds = [];
-                foreach ($itemsData as $index => $itemData) {
-                    $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $itemData]));
-
-                    // DTO'ya dönüştür
-                    $dto = ScheduleItemData::fromArray($itemData);
+                foreach ($dtos as $index => $dto) {
+                    $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
 
                     // İlgili bilgileri al
                     /** @var Schedule $schedule */
@@ -118,10 +116,10 @@ class LessonScheduleService extends ScheduleService
 
                 $this->logger->info("Schedule items saved successfully", $this->logContext([
                     'created_count' => count($createdIds),
-                    'schedule_id' => $itemsData[0]['schedule_id'] ?? null
+                    'schedule_id' => $dtos[0]->scheduleId ?? null
                 ]));
 
-                return SaveScheduleResult::success($createdIds, count($itemsData));
+                return SaveScheduleResult::success($createdIds, count($dtos));
             });
         } catch (Exception $e) {
             $this->logger->error("Failed to save schedule items: " . $e->getMessage(), $this->logContext([
