@@ -1,7 +1,22 @@
 # Test Uygulama Planı
 
 Bu doküman, "Ders Programı Düzenleme Sistemi" için test altyapısının kurulması ve sürdürülebilir bir test stratejisinin uygulanması için yol haritasını içerir.
+##Kalan işler dokümanından aktarılanlar :
+Tüm servisler için test yazılmalı:
 
+| Servis | Test Tipi | Notlar |
+|--------|-----------|--------|
+| `ScheduleService` | Unit + Integration | `saveScheduleItems`, `deleteScheduleItems`, `wipeResourceSchedules` |
+| `ExamService` | Unit + Integration | `saveExamScheduleItems`, `availableObservers` |
+| `ConflictService` | Unit | `checkScheduleCrash` |
+| `AvailabilityService` | Unit | `availableClassrooms` |
+| `LessonService` | Unit | `combineLesson` (karmaşık — schedule sync) |
+| `UserService` | Unit | `login`, `saveNew` (password hash) |
+| `ClassroomService` | Unit | `saveNew`, `updateClassroom` |
+
+**Araç önerisi:** PHPUnit — `tests/Unit/Services/` ve `tests/Integration/` dizinleri oluşturulmalı.
+
+---
 ## 1. Test Stratejisi
 
 Proje için üç katmanlı bir test yaklaşımı benimsenecektir:
