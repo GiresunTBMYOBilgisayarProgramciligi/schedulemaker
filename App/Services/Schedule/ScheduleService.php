@@ -29,7 +29,7 @@ class ScheduleService extends BaseService
 {
     protected ScheduleRepository $scheduleRepo;
     protected ScheduleItemRepository $itemRepo;
-    private ScheduleItemValidator $validator;
+    protected ScheduleItemValidator $validator;
     protected TimelineService $timelineService;
 
     public function __construct()
@@ -345,13 +345,13 @@ class ScheduleService extends BaseService
 
     /**
      * Sınav için owner listesini belirler.
-     * ExamService'e delege edilir.
+     * ExamScheduleService'e delege edilir.
      *
-     * @deprecated ExamService::determineExamOwners kullanın
+     * @deprecated ExamScheduleService::determineExamOwners kullanın
      */
     private function determineExamOwners(Lesson $lesson, array $examAssignments): array
     {
-        return (new ExamService())->determineExamOwners($lesson, $examAssignments);
+        return (new ExamScheduleService())->determineExamOwners($lesson, $examAssignments);
     }
 
     /**
@@ -740,8 +740,8 @@ class ScheduleService extends BaseService
 
                 $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
                 if ($type === 'exam') {
-                    // Sınav item'ları için ExamService'deki sibling bulma mantığı kullanılır
-                    $examSiblings = (new ExamService())->findExamSiblingItems($scheduleItem);
+                    // Sınav item'ları için ExamScheduleService'deki sibling bulma mantığı kullanılır
+                    $examSiblings = (new ExamScheduleService())->findExamSiblingItems($scheduleItem);
                     if (count($examSiblings) > 1) {
                         $siblings = $examSiblings;
                     }
