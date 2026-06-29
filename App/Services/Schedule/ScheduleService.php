@@ -27,10 +27,10 @@ use function App\Helpers\getSettingValue;
  */
 class ScheduleService extends BaseService
 {
-    private ScheduleRepository $scheduleRepo;
-    private ScheduleItemRepository $itemRepo;
+    protected ScheduleRepository $scheduleRepo;
+    protected ScheduleItemRepository $itemRepo;
     private ScheduleItemValidator $validator;
-    private TimelineService $timelineService;
+    protected TimelineService $timelineService;
 
     public function __construct()
     {
@@ -41,123 +41,6 @@ class ScheduleService extends BaseService
         $this->timelineService = new TimelineService();
     }
 
-    /**
-     * Schedule item'larını kaydeder (single, group ve dummy destekler)
-     *
-     * @param array $itemsData Ham item verileri (array of arrays)
-     * @return SaveScheduleResult
-     * @throws ValidationException
-     * @throws Exception
-     */
-    public function saveScheduleItems(array $itemsData): SaveScheduleResult
-    {
-        $this->logger->debug("ScheduleService::saveScheduleItems START", $this->logContext(['count' => count($itemsData)]));
-
-        // 1. Validation - batch olarak tüm item'ları kontrol et
-        $validationResult = $this->validator->validateBatch($itemsData);
-        if (!$validationResult->isValid) {
-            throw new ValidationException(
-                'Schedule item validation failed',
-                $validationResult->errors,
-                ['item_count' => count($itemsData), 'itemsData' => $itemsData]
-            );
-        }
-
-        try {
-            return Database::transaction(function () use ($itemsData) {
-                $createdIds = [];
-                $affectedLessonIds = [];
-            foreach ($itemsData as $index => $itemData) {
-                $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $itemData]));
-
-                // DTO'ya dönüştür
-                $dto = ScheduleItemData::fromArray($itemData);
-
-                // İlgili bilgileri al
-                /** @var Schedule $schedule */
-                $schedule = $this->scheduleRepo->find($dto->scheduleId);
-                if (!$schedule) {
-                    throw new Exception("Schedule not found: {$dto->scheduleId}");
-                }
-
-                $isDummy = $dto->isDummy();
-                $isGroup = ($dto->status === 'group');
-                $lesson = null;
-
-                // Dummy olmayan itemlar için lesson bilgisini al (child lessons ile birlikte)
-                if (!$isDummy) {
-                    $lessonId = null;
-
-                    // data bir array of arrays, ilk elemanı kontrol et
-                    if (!empty($dto->data) && isset($dto->data[0]['lesson_id'])) {
-                        $lessonId = $dto->data[0]['lesson_id'];
-                    }
-
-                    if ($lessonId) {
-                        $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
-                        if (!$lesson) {
-                            throw new Exception("Lesson not found: {$lessonId}");
-                        }
-                    }
-                }
-
-                if ($isGroup) {
-                    // GROUP ITEM: mergeGroupItems kullanarak multi-schedule'a kaydet
-                    $itemIds = $this->saveGroupItemToSchedules($dto, $lesson, $schedule);
-                } else {
-                    // SINGLE/DUMMY ITEM: Basit çakışma kontrolü (v1.0)
-                    $conflicts = $this->itemRepo->findConflicting(
-                        $dto->scheduleId,
-                        $dto->dayIndex,
-                        $dto->weekIndex,
-                        $dto->startTime,
-                        $dto->endTime
-                    );
-
-                    if (!empty($conflicts)) {
-                        $this->logger->warning("Conflict detected for item #$index", $this->logContext([
-                            'conflicts' => count($conflicts),
-                            'schedule_id' => $dto->scheduleId
-                        ]));
-                    }
-
-                    // MULTI-SCHEDULE KAYDETME: Tüm ilgili schedule'lara kaydet
-                    $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule);
-                }
-
-                $createdIds = array_merge($createdIds, $itemIds);
-
-                $this->logger->debug("Item #{$index} saved to " . count($itemIds) . " schedules", $this->logContext([
-                    'item_ids' => $itemIds,
-                    'is_group' => $isGroup
-                ]));
-
-                // Etkilenen ders ID'lerini kaydet
-                if (!$isDummy && $lesson) {
-                    $affectedLessonIds[] = $lesson->id;
-                }
-            }
-
-            // Ders saati kontrolü
-            if (!empty($affectedLessonIds)) {
-                $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type);
-            }
-
-            $this->logger->info("Schedule items saved successfully", $this->logContext([
-                'created_count' => count($createdIds),
-                'schedule_id' => $itemsData[0]['schedule_id'] ?? null
-            ]));
-
-            return SaveScheduleResult::success($createdIds, count($itemsData));
-            });
-        } catch (Exception $e) {
-            $this->logger->error("Failed to save schedule items: " . $e->getMessage(), $this->logContext([
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]));
-            throw $e;
-        }
-    }
 
     /**
      * Ders saati limitlerini kontrol eder
@@ -169,7 +52,7 @@ class ScheduleService extends BaseService
      * @param string $scheduleType
      * @throws Exception
      */
-    private function checkLessonHourLimits(array $lessonIds, string $scheduleType): void
+    protected function checkLessonHourLimits(array $lessonIds, string $scheduleType): void
     {
         foreach ($lessonIds as $lessonId) {
             $lesson = (new Lesson())->find($lessonId);
@@ -357,7 +240,7 @@ class ScheduleService extends BaseService
      * @return array Owner listesi, her biri ['type' => 'user|program|lesson|classroom', 'id' => int] formatında
      * @throws Exception Dummy olmayan item için lesson yoksa
      */
-    private function determineOwners(ScheduleItemData $dto, ?Lesson $lesson): array
+    protected function determineOwners(ScheduleItemData $dto, ?Lesson $lesson): array
     {
         $owners = [];
 
@@ -538,7 +421,7 @@ class ScheduleService extends BaseService
      * @param string $type Schedule tipi ('lesson', 'midterm-exam', 'final-exam', 'makeup-exam')
      * @return Schedule Bulunan veya yeni oluşturulan schedule
      */
-    private function findOrCreateSchedule(
+    protected function findOrCreateSchedule(
         array $owner,
         string $academicYear,
         string $semester,
@@ -576,238 +459,6 @@ class ScheduleService extends BaseService
         return $schedule;
     }
 
-    /**
-     * Schedule item'ı tüm ilgili owner'ların schedule'larına kaydeder
-     * 
-     * **İşlem Akışı:**
-     * 1. Owner'ları belirle (determineOwners)
-     * 2. Her owner için:
-     *    a. Schedule bul veya oluştur (findOrCreateSchedule)
-     *    b. Schedule item oluştur ve kaydet
-     * 3. Oluşturulan tüm item ID'lerini döndür
-     * 
-     * **Örnek:**
-     * Input: Pazartesi 09:00-10:50, Algorithm dersi, Ahmet Hoca, A101
-     * Output: [45, 46, 47, 48] → 4 ayrı schedule item ID'si
-     * - ID 45: Program schedule item (Bilgisayar Programcılığı)
-     * - ID 46: Lesson schedule item (Algorithm)
-     * - ID 47: User schedule item (Ahmet Hoca)
-     * - ID 48: Classroom schedule item (A101)
-     * 
-     * **Child Lesson Metadata:**
-     * Child lesson'lar için oluşturulan item'larda detail['child_lesson_id'] bilgisi eklenir.
-     * Bu sayede hangi child'a ait olduğu bilinir.
-     * 
-     * @param ScheduleItemData $dto Schedule item verisi
-     * @param Lesson|null $lesson İlgili ders (dummy items için null)
-     * @param Schedule $sourceSchedule Kaynak schedule (akademik yıl/dönem bilgisi için)
-     * @return array Oluşturulan schedule item ID'leri
-     */
-    private function saveToMultipleSchedules(
-        ScheduleItemData $dto,
-        ?Lesson $lesson,
-        Schedule $sourceSchedule
-    ): array {
-        $owners = array_map(function ($o) use ($lesson) {
-            // Eğer owner bir child lesson ile ilişkili değilse, mevcut dersi bağlam olarak ekle
-            if (!isset($o['is_child']) || !$o['is_child']) {
-                $o['lesson_context'] = $lesson;
-            } else {
-                // Child lesson için lesson_context zaten determineChildLessonOwners veya benzeri bir yerde eklenmeli
-                // Veya burada child lesson nesnesi çekilip eklenebilir.
-                // optimize etmek için determineChildLessonOwners metodunu güncelliyoruz.
-            }
-            return $o;
-        }, $this->determineOwners($dto, $lesson));
-        $createdIds = [];
-
-        // DEBUG: Owner listesini logla
-        $this->logger->debug('saveToMultipleSchedules: Owner list determined', [
-            'username' => $this->currentUser->username ?? 'System',
-            'user_id' => $this->currentUser->id ?? null,
-            'class' => self::class,
-            'method' => __FUNCTION__,
-            'owner_count' => count($owners),
-            'owners' => array_map(function ($o) {
-                return [
-                    'type' => $o['type'],
-                    'id' => $o['id'],
-                    'is_child' => $o['is_child'] ?? false,
-                    'child_lesson_id' => $o['child_lesson_id'] ?? null
-                ];
-            }, $owners),
-            'lesson_id' => $lesson ? $lesson->id : null,
-            'lesson_name' => $lesson ? $lesson->name : null
-        ]);
-
-        // Ana ders için saat kontrolü (Hata fırlatılacaksa burada fırlatılır)
-        if ($lesson && !$dto->isDummy()) {
-            $lesson->IsScheduleComplete($sourceSchedule->type);
-
-            // Eklenecek slot sayısını hesapla
-            $lessonType = ($sourceSchedule->type === 'lesson') ? 'lesson' : 'exam';
-            $slotSize = (int) getSettingValue('duration', $lessonType, $lessonType === 'exam' ? 30 : 50) + 
-                        (int) getSettingValue('break', $lessonType, $lessonType === 'exam' ? 0 : 10);
-
-            $addedSlots = TimeHelper::calculateItemSlots($dto->startTime, $dto->endTime, $slotSize);
-
-            // Eğer ana dersin saati aşılıyorsa hata fırlat
-            if ($lesson->remaining_size < $addedSlots) {
-                $errorMsg = ($sourceSchedule->type === 'lesson')
-                    ? "{$lesson->getFullName()} dersinin toplam saati aşılıyor. (Kalan: {$lesson->remaining_size} saat, Eklenmek istenen: {$addedSlots} saat)"
-                    : "{$lesson->getFullName()} dersinin sınav mevcudu aşılıyor. (Kalan: {$lesson->remaining_size}, Eklenmek istenen: {$addedSlots})";
-
-                throw new Exception($errorMsg);
-            }
-        }
-
-        // Child lesson'lar için döngü ÖNCESİNDE remaining_size hesapla ve önbelleğe al.
-        // Önemli: Döngü içinde IsScheduleComplete çağrıldığında, bir önceki owner'a yapılan
-        // kayıt (commit olmasa da) aynı lesson'ın diğer schedule'larında "dolu" görünmesine
-        // neden olur. Bu önbellek sayesinde tüm child owner'lar aynı başlangıç noktasından başlar.
-        $childLessonRemaining = []; // [ lessonId => remaining_slots ]
-        foreach ($owners as $owner) {
-            if (!isset($owner['is_child']) || !$owner['is_child']) {
-                continue;
-            }
-            $childLessonId = $owner['child_lesson_id'];
-            if (isset($childLessonRemaining[$childLessonId])) {
-                continue; // Aynı child lesson zaten hesaplandı
-            }
-            $childLesson = (new Lesson())->find($childLessonId);
-            if ($childLesson) {
-                $childLesson->IsScheduleComplete($sourceSchedule->type);
-                $childLessonRemaining[$childLessonId] = [
-                    'lesson' => $childLesson,
-                    'remaining' => (int) ($childLesson->remaining_size ?? 0),
-                ];
-            }
-        }
-
-        // Her owner için bu loop içinde kaç slot eklendi takibi
-        $childLessonHoursAdded = [];
-
-        foreach ($owners as $owner) {
-            // Owner için schedule bul/oluştur
-            /** @var Schedule $targetSchedule */
-            $targetSchedule = $this->findOrCreateSchedule(
-                $owner,
-                $sourceSchedule->academic_year,
-                $sourceSchedule->semester,
-                $sourceSchedule->type
-            );
-
-            // Item oluştur (kopya)
-            $item = new ScheduleItem();
-            $item->schedule_id = $targetSchedule->id;
-            $item->day_index = $dto->dayIndex;
-            $item->week_index = $dto->weekIndex;
-            $item->start_time = $dto->startTime;
-            $item->end_time = $dto->endTime;
-            $item->status = $dto->status;
-
-            // Child lesson kontrolü
-            if (isset($owner['is_child']) && $owner['is_child']) {
-                $childLessonId = $owner['child_lesson_id'];
-
-                // Önbellekten remaining_size al (döngü başında DB sorgusu yapıldı)
-                if (!isset($childLessonRemaining[$childLessonId])) {
-                    continue; // Child lesson bulunamadı, atla
-                }
-                $childLesson = $childLessonRemaining[$childLessonId]['lesson'];
-                $baseRemaining = $childLessonRemaining[$childLessonId]['remaining'];
-
-                // Bu owner için daha önce bu child'dan eklendi mi? (schedule bazında takip)
-                $trackingKey = "{$childLessonId}_{$owner['type']}";
-                $alreadyAddedSlots = $childLessonHoursAdded[$trackingKey] ?? 0;
-                $currentRemaining = $baseRemaining - $alreadyAddedSlots;
-
-                if ($currentRemaining <= 0) {
-                    $this->logger->debug("Child lesson already full, skipping schedule #{$targetSchedule->id}", [
-                        'lesson_id' => $childLessonId,
-                        'lesson_name' => $childLesson->getFullName()
-                    ]);
-                    continue;
-                }
-
-                // Eklenecek slot sayısı
-                $lessonType = ($sourceSchedule->type === 'lesson') ? 'lesson' : 'exam';
-                $slotSize = (int) getSettingValue('duration', $lessonType, $lessonType === 'exam' ? 30 : 50) + 
-                            (int) getSettingValue('break', $lessonType, $lessonType === 'exam' ? 0 : 10);
-
-                $parentSlots = TimeHelper::calculateItemSlots($dto->startTime, $dto->endTime, $slotSize);
-
-                // Eğer child'a sığmıyorsa kısalt
-                $slotsToAdd = min($parentSlots, (int) $currentRemaining);
-                if ($slotsToAdd < $parentSlots) {
-                    $item->end_time = TimeHelper::calculateEndTimeBySlots($dto->startTime, $slotsToAdd, $slotSize, $lessonType);
-                    $this->logger->warning("Bağlı ders kapasitesi dolu, süre kısaltılıyor", [
-                        'lesson_id' => $childLessonId,
-                        'original_slots' => $parentSlots,
-                        'added_slots' => $slotsToAdd
-                    ]);
-                }
-
-                // Tracking güncelle (owner type bazlı: lesson ve program owner'ları birbirini etkilemesin)
-                $childLessonHoursAdded[$trackingKey] = ($childLessonHoursAdded[$trackingKey] ?? 0) + $slotsToAdd;
-
-                // Data güncelle (child lesson id ile)
-                $item->data = array_map(function ($d) use ($childLessonId) {
-                    $childData = $d;
-                    $childData['lesson_id'] = $childLessonId;
-                    return $childData;
-                }, $dto->data);
-
-                if (!is_array($item->detail)) {
-                    $item->detail = [];
-                }
-                $item->detail['child_lesson_id'] = $childLessonId;
-            } else {
-                // Normal owner
-                $item->data = $dto->data;
-                $item->detail = $dto->detail;
-            }
-
-            // Preferred/unavailable item için çakışma kontrolü
-            // Eğer kaydedilecek item dummy (preferred/unavailable) ise ve hedef schedule'da
-            // o zaman diliminde gerçek bir ders (single/group) varsa, preferred item kaydedilmez.
-            if ($dto->isDummy()) {
-                $conflicts = $this->itemRepo->findConflicting(
-                    $targetSchedule->id,
-                    $dto->dayIndex,
-                    $dto->weekIndex,
-                    $item->start_time,
-                    $item->end_time
-                );
-
-                if (!empty($conflicts)) {
-                    $hasRealConflict = false;
-                    foreach ($conflicts as $conflict) {
-                        if (!in_array($conflict->status, ['preferred', 'unavailable'])) {
-                            $hasRealConflict = true;
-                            break;
-                        }
-                    }
-                    if ($hasRealConflict) {
-                        $this->logger->warning("Preferred/unavailable item skipped due to existing lesson conflict", $this->logContext([
-                            'schedule_id' => $targetSchedule->id,
-                            'day_index' => $dto->dayIndex,
-                            'start_time' => $item->start_time,
-                            'end_time' => $item->end_time,
-                            'status' => $dto->status
-                        ]));
-                        continue; // Bu owner için kaydetme
-                    }
-                }
-            }
-
-            // Kaydet
-            $item->create();
-            $createdIds[] = $item->id;
-        }
-
-        return $createdIds;
-    }
 
     // ==================== DELETE OPERATIONS ====================
 
@@ -823,7 +474,7 @@ class ScheduleService extends BaseService
      * @param array $lessonIds İlgili ders ID'leri
      * @return array Owner listesi [['type' => 'user', 'id' => 146], ...]
      */
-    private function determineOwnersFromItem(ScheduleItem $item, array $lessonIds): array
+    protected function determineOwnersFromItem(ScheduleItem $item, array $lessonIds): array
     {
         $owners = [];
 
@@ -1341,123 +992,6 @@ class ScheduleService extends BaseService
         return ['deleted' => true, 'created' => $createdItems];
     }
 
-    /**
-     * Group statuslu item'ı tüm ilgili schedule'lara kaydeder.
-     *
-     * Single item kaydetmeden farkı: Her schedule'a doğrudan INSERT yapmak yerine
-     * o schedule'daki mevcut group item'larla mergeGroupItems aracılığıyla birleştirir.
-     *
-     * @param ScheduleItemData $dto
-     * @param Lesson|null $lesson
-     * @param Schedule $sourceSchedule
-     * @return array Oluşturulan item ID'leri
-     * @throws Exception
-     */
-    private function saveGroupItemToSchedules(
-        ScheduleItemData $dto,
-        ?Lesson $lesson,
-        Schedule $sourceSchedule
-    ): array {
-        $owners = array_map(function ($o) use ($lesson) {
-            if (!isset($o['is_child']) || !$o['is_child']) {
-                $o['lesson_context'] = $lesson;
-            }
-            return $o;
-        }, $this->determineOwners($dto, $lesson));
-        $createdIds = [];
-
-        // Child lesson önbelleği (remaining_size döngü başında bir kez hesaplanır)
-        $childLessonRemaining = [];
-        foreach ($owners as $owner) {
-            if (!isset($owner['is_child']) || !$owner['is_child']) {
-                continue;
-            }
-            $clId = $owner['child_lesson_id'];
-            if (!isset($childLessonRemaining[$clId])) {
-                $childLesson = (new Lesson())->find($clId);
-                if ($childLesson) {
-                    $childLesson->IsScheduleComplete($sourceSchedule->type);
-                    $childLessonRemaining[$clId] = [
-                        'lesson' => $childLesson,
-                        'remaining' => (int) ($childLesson->remaining_size ?? 0),
-                    ];
-                }
-            }
-        }
-
-        $childSlotsAdded = []; // Her owner type için eklenen slot takibi
-
-        foreach ($owners as $owner) {
-            /** @var Schedule $targetSchedule */
-            $targetSchedule = $this->findOrCreateSchedule(
-                $owner,
-                $sourceSchedule->academic_year,
-                $sourceSchedule->semester,
-                $sourceSchedule->type
-            );
-
-            // Child lesson için data ve zaman aralığını belirle
-            $data = $dto->data;
-            $startTime = $dto->startTime;
-            $endTime = $dto->endTime;
-
-            if (isset($owner['is_child']) && $owner['is_child']) {
-                $childLessonId = $owner['child_lesson_id'];
-
-                if (!isset($childLessonRemaining[$childLessonId])) {
-                    continue; // Child lesson bulunamadı
-                }
-
-                $baseRemaining = $childLessonRemaining[$childLessonId]['remaining'];
-                $trackingKey = "{$childLessonId}_{$owner['type']}";
-                $alreadyAdded = $childSlotsAdded[$trackingKey] ?? 0;
-                $currentRemaining = $baseRemaining - $alreadyAdded;
-
-                if ($currentRemaining <= 0) {
-                    $this->logger->debug("Group: child lesson already full, skipping", [
-                        'lesson_id' => $childLessonId,
-                        'schedule_id' => $targetSchedule->id
-                    ]);
-                    continue;
-                }
-
-                // Gerekirse süreyi kısalt
-                $lessonType = 'lesson';
-                $slotSize = (int) getSettingValue('duration', $lessonType, 50) + 
-                            (int) getSettingValue('break', $lessonType, 10);
-
-                $parentSlots = TimeHelper::calculateItemSlots($dto->startTime, $dto->endTime, $slotSize);
-                $slotsToAdd = min($parentSlots, (int) $currentRemaining);
-                if ($slotsToAdd < $parentSlots) {
-                    $endTime = TimeHelper::calculateEndTimeBySlots($dto->startTime, $slotsToAdd, $slotSize, $lessonType);
-                }
-
-                $childSlotsAdded[$trackingKey] = $alreadyAdded + $slotsToAdd;
-
-                // Data'yı child lesson ID'si ile değiştir
-                $data = array_map(function ($d) use ($childLessonId) {
-                    $childData = $d;
-                    $childData['lesson_id'] = $childLessonId;
-                    return $childData;
-                }, $dto->data);
-            }
-
-            // mergeGroupItems: Bu schedule'daki mevcut group item'larla birleştir
-            $newIds = $this->mergeGroupItems(
-                $targetSchedule->id,
-                $dto->dayIndex,
-                $dto->weekIndex,
-                $startTime,
-                $endTime,
-                $data,
-                $dto->detail
-            );
-
-            $createdIds = array_merge($createdIds, $newIds);
-        }
-
-        return $createdIds;
-    }
 
     /**
      * Group item'ları merge et (flatten timeline ile)

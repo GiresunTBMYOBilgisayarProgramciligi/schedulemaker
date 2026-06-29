@@ -346,30 +346,23 @@ class ScheduleController extends Controller
      * @return array
      * @throws Exception
      */
+
+    /**
+     * @throws \Exception
+     */
     public function saveScheduleItems(array $itemsData): array
     {
-        $this->logger()->debug("Using ScheduleService::saveScheduleItems", $this->logContext());
-        $service = new ScheduleService();
+        $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
+        $service = new \App\Services\Schedule\LessonScheduleService();
         $result = $service->saveScheduleItems($itemsData);
         return $this->formatServiceResultToLegacy($result);
     }
 
     /**
      * Service result'ını eski formata çevirir (backward compatibility)
-     * 
-     * Eski format: [{owner_type: [id1, id2, ...]}, ...]
-     * Yeni format: [id1, id2, ...]
-     * 
-     * AjaxRouter.php:642-644 nested foreach bekliyor
-     * 
-     * @param \App\DTOs\SaveScheduleResult $result
-     * @return array
      */
     private function formatServiceResultToLegacy(\App\DTOs\SaveScheduleResult $result): array
     {
-        // Eski sistem nested array bekliyor: [{'id': [1,2,3]}]
-        // v1.0 sadece tek schedule'a kayıt yapıyor, gerçek formatı döndüremiyoruz
-        // Geçici çözüm: id'leri 'id' anahtarı altında topla
         return [
             [
                 'id' => $result->createdIds
@@ -377,5 +370,26 @@ class ScheduleController extends Controller
         ];
     }
 
+    /**
+     * @throws \Exception
+     */
+    public function deleteScheduleItems(array $itemsData): array
+    {
+        $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
+        $service = new \App\Services\Schedule\LessonScheduleService();
+        $result = $service->deleteScheduleItems($itemsData);
+        return $result->toArray();
+    }
 
+    /**
+     * Sınav programı öğelerini kaydeder
+     * 
+     * @throws \Exception
+     */
+    public function saveExamScheduleItems(array $itemsData): array
+    {
+        $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
+        $service = new \App\Services\Schedule\ExamScheduleService();
+        return $service->saveExamScheduleItems($itemsData);
+    }
 }

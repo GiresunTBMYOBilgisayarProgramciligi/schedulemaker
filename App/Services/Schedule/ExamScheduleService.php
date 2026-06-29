@@ -16,7 +16,7 @@ use Exception;
  * Yalnızca midterm-exam, final-exam veya makeup-exam tipi
  * schedule'larla çalışan metodları barındırır.
  */
-class ExamService extends BaseService
+class ExamScheduleService extends ScheduleService
 {
     // EXAM_TYPES sabiti yerine ExamType enum kullanılacak
 

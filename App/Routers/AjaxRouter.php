@@ -11,10 +11,12 @@ use App\Services\LessonService;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
+
+
 use App\Controllers\SettingsController;
 use App\Core\Router;
 use App\Services\Schedule\ScheduleService;
-use App\Services\Schedule\ExamService;
+use App\Services\Schedule\ExamScheduleService;
 use App\Services\Schedule\ConflictService;
 use App\Services\Schedule\AvailabilityService;
 use App\Services\Export\ExporterFactory;
@@ -747,8 +749,8 @@ class AjaxRouter extends Router
         }
 
         try {
-            $service = new ExamService();
-            $createdIds = $service->saveExamScheduleItems($items);
+            $controller = new ScheduleController();
+            $createdIds = $controller->saveExamScheduleItems($items);
             if (!empty($createdIds)) {
                 $createdItems = [];
                 foreach ($createdIds as $groupedIds) {
@@ -854,9 +856,9 @@ class AjaxRouter extends Router
         }
 
         try {
-            $service = new ScheduleService();
-            $result = $service->deleteScheduleItems($items);
-            $this->response = $result->toArray();
+            $controller = new ScheduleController();
+            $result = $controller->deleteScheduleItems($items);
+            $this->response = $result;
         } catch (Exception $e) {
             $this->logger()->error($e->getMessage(), ['exception' => $e]);
             $this->response = [
