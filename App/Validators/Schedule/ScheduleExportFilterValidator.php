@@ -2,7 +2,7 @@
 
 namespace App\Validators\Schedule;
 
-use App\DTOs\ScheduleFilterDTO;
+use App\DTOs\ScheduleExportFilterDTO;
 
 /**
  * Schedule dışa aktarım (export) işlemleri için filtre doğrulayıcı
@@ -44,11 +44,11 @@ class ScheduleExportFilterValidator extends BaseScheduleFilterValidator
     }
 
     /**
-     * Filtreleri sanitize edip ScheduleFilterDTO olarak döner
+     * Filtreleri sanitize edip ScheduleExportFilterDTO olarak döner
      */
-    public function getDTO(array $data, string $operation): ScheduleFilterDTO
+    public function getDTO(array $data, string $operation): ScheduleExportFilterDTO
     {
         $sanitized = $this->sanitize($data, $operation);
-        return ScheduleFilterDTO::fromArray($sanitized);
+        return ScheduleExportFilterDTO::fromArray($sanitized);
     }
 }

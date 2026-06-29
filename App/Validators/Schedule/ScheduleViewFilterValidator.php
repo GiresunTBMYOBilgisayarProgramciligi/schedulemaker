@@ -23,7 +23,7 @@ class ScheduleViewFilterValidator extends BaseScheduleFilterValidator
         return [
             'getSchedulesHTML' => [
                 'required' => ['type', 'owner_type', 'owner_id'],
-                'optional' => ['semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer'],
+                'optional' => ['semester_no'],
                 'defaults' => ['semester', 'academic_year'],
             ],
             'prepareScheduleCard' => [
