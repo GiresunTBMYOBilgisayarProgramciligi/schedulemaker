@@ -376,7 +376,6 @@ class Model
         $statement = self::$database->prepare($query['sql']);
         $statement->execute($query['parameters']);
         $results = $statement->fetchAll(PDO::FETCH_ASSOC);
-        // İlişkili verileri yükle //todo
         if (!empty($this->relations) && !empty($results)) {
             $results = $this->loadRelations($results);
         }
@@ -476,28 +475,6 @@ class Model
                 }
             }
         }
-    }
-
-    /**
-     * todo bu hiç buraya ait durmuyor.
-     * Ekleme ve düzenleme sayfalarında oluşturulacak program listesini oluşturur.
-     * Bölümü tanımlanmamış bir ders ise sadece program seçiniz verisi olur.
-     * Eğer bölümü olan bir ders ise sadece o programa ait liste gözükür
-     * @return object[]
-     * @throws Exception
-     */
-    public function getDepartmentProgramsList(): array
-    {
-        if (property_exists($this, 'department_id')) {
-            if (is_null($this->department_id)) {
-                $list = [(object) ["id" => 0, "name" => "Program Seçiniz"]];
-            } else {
-                $list = (new ProgramController())->getProgramsList(['department_id' => $this->department_id]);
-                array_unshift($list, (object) ["id" => 0, "name" => "Program Seçiniz"]);
-            }
-        } else
-            $list = [];
-        return $list;
     }
 
     /**

@@ -377,22 +377,6 @@ class Lesson extends Model
     }
 
     /**
-     * todo bu metod kullanılıyor mu kontrol et ve kullanılıyorsa kaldır
-     * Bağlı derslerin (veli ve tüm çocuklar) ID listesini döner.
-     * @return array
-     */
-    public function getLinkedLessonIds(): array
-    {
-        $rootId = $this->parent_lesson_id ?: $this->id;
-        $ids = [$rootId];
-        $children = (new Lesson())->get()->where(['parent_lesson_id' => $rootId])->all();
-        foreach ($children as $child) {
-            $ids[] = $child->id;
-        }
-        return array_unique($ids);
-    }
-
-    /**
      * Sınav birleştirme ile bağlı derslerin (exam parent ve tüm exam child'lar) ID listesini döner.
      * @return array
      */

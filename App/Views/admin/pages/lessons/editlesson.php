@@ -158,7 +158,7 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <?php foreach ($lesson->getDepartmentProgramsList() as $program): ?>
+                                                <?php foreach ($department_programs as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $lesson->program_id ? 'selected' : '' ?>>
                                                         <?= $program->name ?>

@@ -190,7 +190,7 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id">
-                                                <?php foreach ($user->getDepartmentProgramsList() as $program): ?>
+                                                <?php foreach ($department_programs as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $user->program_id ? 'selected' : '' ?>>
                                                         <?= $program->name ?>

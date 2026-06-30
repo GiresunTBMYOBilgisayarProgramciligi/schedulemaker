@@ -15,6 +15,7 @@ use App\Controllers\UserController;
 
 use App\Repositories\UserRepository;
 use App\Repositories\ClassroomRepository;
+use App\Repositories\DepartmentRepository;
 
 use App\Middlewares\AuthMiddleware;
 
@@ -154,6 +155,7 @@ class AdminRouter extends Router
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
             "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
                     'owner_type' => OwnerType::USER->value,
@@ -215,6 +217,7 @@ class AdminRouter extends Router
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "programController" => new ProgramController(),
             "userController" => new UserController(),
         ]);
@@ -363,6 +366,7 @@ class AdminRouter extends Router
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName(true) . " Düzenle",
             "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
             "classroomTypes" => ClassroomType::toArray()
         ]);

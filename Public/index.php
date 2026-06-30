@@ -6,10 +6,17 @@ use App\Core\Application;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . "/../App");
 $dotenv->load();
-define("DEBUG_MODE", $_ENV['DEBUG']); // Geliştirme ortamında true, canlı ortamda false
+define("DEBUG_MODE", filter_var($_ENV['DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN)); // Geliştirme ortamında true, canlı ortamda false
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL); //todo error reporting ayarını geliştirme ortamında ve yayın ortamında nasıl düzenleyeceğim? E_all yerine E_Error mu yapmalıyım bunlar neyi ifade ediyor
+if (DEBUG_MODE) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    error_reporting(0);
+}
 date_default_timezone_set('Europe/Istanbul');
 setlocale(LC_ALL, 'tr_TR.UTF-8');
 

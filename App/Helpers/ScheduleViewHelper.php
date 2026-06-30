@@ -56,9 +56,7 @@ class ScheduleViewHelper
             'data-group-no' => $slotData->lesson->group_no,
             'data-lesson-id' => $slotData->lesson->id,
             'data-lesson-code' => $slotData->lesson->code,
-            'data-lesson-name' => $type === 'exam'
-                ? $slotData->lesson->name
-                : $slotData->lesson->getFullName(addCode: true),// todo bu incelenmeli farklılık gerkli mi 
+            'data-lesson-name' => $slotData->lesson->getFullName(addCode: true),
             'data-size' => $slotData->lesson->size,
             'data-lecturer-id' => $slotData->lecturer?->id,
             'data-lecturer-name' => $slotData->lecturer?->getFullName(),

@@ -1,10 +1,9 @@
 <?php
-//todo App/Helpers içerisine taşınabilir.
+
 namespace App\Helpers;
 
 use App\Models\Lesson;
 use App\Controllers\SettingsController;
-use App\Controllers\UserController;
 use Exception;
 
 /**

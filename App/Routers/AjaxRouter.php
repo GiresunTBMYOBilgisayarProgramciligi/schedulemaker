@@ -182,7 +182,7 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
-    /**todo bu ne işe yarıyor kullanılıyor mu?
+    /**
      * 
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      * Saat farkı varsa parent'ın schedule item'larını bireysel saat dilimleri olarak döner.

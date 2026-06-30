@@ -42,7 +42,7 @@ class Modal {
      *
      * @param size sm,lg,xl modal size
      */
-    initializeModal() {//todo arkaplan rengi için de sını f seçimi ekle Tosastta olduğu gibi
+    initializeModal() {
         this.modal = document.createElement("div");
         this.modal.classList.add("modal", "fade");
         this.modal.id = "ajaxModal";
@@ -101,7 +101,7 @@ class Modal {
         this.modal.appendChild(this.dialog);
     }
 
-    prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true, size = "sm") {
+    prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true, size = "sm", type = "") {
         this.title.innerHTML = title?.trim();
         this.body.innerHTML = content.trim()
 
@@ -109,6 +109,12 @@ class Modal {
         Object.values(this.sizes).forEach(sizeClass => this.dialog.classList.remove(sizeClass));
         if (this.sizes[size]) {
             this.dialog.classList.add(this.sizes[size]);
+        }
+        
+        // Arka plan rengi belirleme
+        this.content.classList.remove("text-bg-success", "text-bg-danger", "text-bg-info", "text-bg-warning", "text-bg-primary", "text-bg-secondary");
+        if (type) {
+            this.content.classList.add(`text-bg-${type}`);
         }
 
         if (!showConfirmButton) {
@@ -125,7 +131,7 @@ class Modal {
         }
         //Kapatıldığında modal sayfadan silinecek
         this.cancelButton.addEventListener("click", () => {
-            this.body.classList.remove("text-bg-danger", "text-bg-success")
+            this.content.classList.remove("text-bg-success", "text-bg-danger", "text-bg-info", "text-bg-warning", "text-bg-primary", "text-bg-secondary");
             this.modal.remove()
         })
     }
