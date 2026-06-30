@@ -2,7 +2,6 @@
 
 namespace App\Routers;
 
-use App\Controllers\UserController;
 use App\Services\UserService;
 use App\Attributes\AuthRequired;
 use App\Middlewares\GuestMiddleware;
@@ -10,6 +9,17 @@ use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
 
+/**
+ * AuthRouter Sınıfı
+ * Kullanıcı giriş, kayıt ve çıkış işlemlerini yönetir.
+ * 
+ * Not: Projenin genelinde (örneğin AdminRouter ve AjaxRouter) "Single Responsibility Principle" 
+ * (Tek Sorumluluk Prensibi) gereği business logic (iş kuralları) Controller'lara taşınmış olsa da, 
+ * bu router içerisindeki işlemlerin az olması ve sadece kimlik doğrulama ile ilgili kısa görevler 
+ * içermesi sebebiyle buradaki kodlar (şimdilik) refactor edilmeden bırakılmıştır. 
+ * İlerleyen aşamalarda bir AuthController oluşturularak LogoutAction ve ajaxloginAction içindeki 
+ * business logic oraya taşınabilir.
+ */
 class AuthRouter extends Router
 {
     public function __construct()

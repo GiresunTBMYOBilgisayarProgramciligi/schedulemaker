@@ -11,6 +11,16 @@ use App\Models\Department;
 use App\Models\User;
 use Exception;
 
+/**
+ * HomeRouter Sınıfı
+ * Sistemin genel (public) anasayfasını yönetir.
+ * 
+ * Not: Projenin genelinde uygulanan "Single Responsibility Principle" (Tek Sorumluluk Prensibi) 
+ * gereği business logic'lerin (iş kurallarının) Controller sınıflarına taşınması mimarisine rağmen, 
+ * bu sınıf sadece tek bir eylem (IndexAction) barındırdığından ve karmaşık bir iş kuralı içermediğinden 
+ * şimdilik olduğu gibi bırakılmıştır. Gelecekte anasayfa işlemleri karmaşıklaşırsa HomePageController 
+ * gibi bir yapıya taşınabilir.
+ */
 class HomeRouter extends Router
 {
     private ?User $currentUser = null;
@@ -37,6 +47,5 @@ class HomeRouter extends Router
             "lecturers" => $userRepository->findBy(['!role'=>'admin']),
             "page_title" => "Anasayfa"]);
         $this->callView("home/index");
-        //$this->Redirect('/admin/');
     }
 }
