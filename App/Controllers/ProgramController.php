@@ -30,6 +30,25 @@ class ProgramController extends Controller
     }
 
     /**
+     * AjaxRouter için program listesi döner
+     */
+    public function getProgramsListResponse(int $department_id): array
+    {
+        try {
+            $programs = $this->getProgramsList(['department_id' => $department_id, 'active' => true]);
+            return [
+                'status' => "success",
+                'programs' => $programs
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Yeni program oluşturur (POST /ajax/program/add rotası için)
      */
     public function store(array $requestData): array

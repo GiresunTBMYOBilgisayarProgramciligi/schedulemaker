@@ -111,6 +111,72 @@ class ScheduleController extends Controller
         return $HTMLOut;
     }
 
+    /**
+     * Gelen verilere göre Program HTML çıktısını oluşturur (Ajax endpoint wrapper)
+     * @param array $requestData
+     * @return array Response dizisi
+     */
+    public function getSchedulesHTMLResponse(array $requestData): array
+    {
+        try {
+            $only_table = false;
+            if (isset($requestData['only_table'])) {
+                $only_table = $requestData['only_table'] === "true";
+                unset($requestData['only_table']);
+            }
+            $preference_mode = false;
+            if (isset($requestData['preference_mode'])) {
+                $preference_mode = $requestData['preference_mode'] === "true";
+                unset($requestData['preference_mode']);
+            }
+            $no_card = false;
+            if (isset($requestData['no_card'])) {
+                $no_card = $requestData['no_card'] === "true";
+                unset($requestData['no_card']);
+            }
+            
+            $schedulesHTML = $this->getSchedulesHTML($requestData, $only_table, $preference_mode, $no_card);
+            
+            return [
+                'status' => "success",
+                'HTML' => $schedulesHTML
+            ];
+        } catch (\Throwable $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Sadece kullanılabilir dersler listesinin HTML çıktısını döndürür (Ajax endpoint wrapper)
+     * @param array $requestData
+     * @return array Response dizisi
+     */
+    public function getAvailableLessonsHTMLResponse(array $requestData): array
+    {
+        try {
+            $preference_mode = false;
+            if (isset($requestData['preference_mode'])) {
+                $preference_mode = $requestData['preference_mode'] === "true";
+                unset($requestData['preference_mode']);
+            }
+            
+            $html = $this->getAvailableLessonsHTML($requestData, $preference_mode);
+            
+            return [
+                'status' => "success",
+                'HTML' => $html
+            ];
+        } catch (\Throwable $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
     /********************************
      * KAYIT VE GÜNCELLEME İŞLEMLERİ
      ********************************/
@@ -129,6 +195,12 @@ class ScheduleController extends Controller
     
     /**
      * Ders programı öğelerini kaydeder (Ajax endpoint wrapper)
+     * 
+     * gelen item verilerine göre ilk olarak çakışan item kontrol edilir checkScheduleCrashAction ile yapılan yeterli olmaz preferred item kontrolü ve düzenlemesi burada yapılmalı
+     * çakışan item'in prefered olup olmadığı kontrol edilir. 
+     * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
+     * çakışan kısım prefered değil ise çakışma hatası verilir.
+     * çakışan kısım yoksa item kaydedilir.
      * 
      * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
      * @return array Response dizisi

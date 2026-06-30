@@ -12,6 +12,8 @@ use App\Services\LessonService;
 use App\Middlewares\AuthMiddleware;
 use App\Enums\LessonType;
 use App\DTOs\CombineLessonDTO;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Services\Import\LessonImporter;
 use Exception;
 
 class LessonController extends Controller
@@ -285,6 +287,144 @@ class LessonController extends Controller
                 "msg"      => "Sınavlar Başarıyla birleştirildi.",
                 "status"   => "success",
                 "redirect" => "self"
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Sınav birleştirme bağlantısını kaldırır.
+     */
+    public function deleteExamParentLesson(array $requestData): array
+    {
+        try {
+            if (!key_exists("id", $requestData)) {
+                throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
+            }
+            Gate::authorizeRole("department_head", false, "Sınav birleştirmesi kaldırma yetkiniz yok");
+            (new LessonService())->deleteExamParentLesson((int) $requestData['id']);
+            
+            return [
+                "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",
+                "status"   => "success",
+                "redirect" => "self"
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Sınav birleştirme için aranabilir ders listesi (TomSelect AJAX).
+     * Aynı akademik yıl ve dönemdeki dersleri döner.
+     */
+    public function getExamCombinableLessons(array $requestData): array
+    {
+        try {
+            Gate::authorizeRole("department_head", false, "Sınav birleştirme listesini almak için yetkiniz yok");
+
+            $lessonId = (int) ($requestData['lesson_id'] ?? 0);
+            $search = trim($requestData['search'] ?? '');
+
+            if (!$lessonId) {
+                throw new Exception("Ders ID belirtilmemiş");
+            }
+
+            $currentLesson = clone (new Lesson())->where(['id' => $lessonId])
+                ->with(['examChildLessons', 'examParentLesson'])
+                ->first();
+                
+            if (!$currentLesson) {
+                throw new Exception("Ders bulunamadı");
+            }
+
+            // Aynı akademik yıl ve dönemdeki dersleri al
+            $filters = [
+                'semester'      => $currentLesson->semester,
+                'academic_year' => $currentLesson->academic_year,
+                '!id'           => $currentLesson->id,
+            ];
+
+            $query = (new Lesson())->get()->where($filters)
+                ->with(['program', 'lecturer', 'examParentLesson']);
+
+            $lessons = $query->all();
+
+            // Zaten bağlı olanları ve kendisini filtrele
+            $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
+            
+            $result = [];
+            foreach ($lessons as $lesson) {
+                // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
+                if ($lesson->exam_parent_lesson_id && $lesson->exam_parent_lesson_id !== $currentLesson->id) {
+                    continue;
+                }
+                // Zaten bu derse bağlı olanları atla
+                if (in_array($lesson->id, $existingChildIds)) {
+                    continue;
+                }
+
+                $label = $lesson->getFullName(addCode: true, addProgram: true, addSize: true);
+
+                // TomSelect arama filtresi
+                if ($search !== '' && stripos($label, $search) === false) {
+                    continue;
+                }
+
+                $result[] = [
+                    'id'    => $lesson->id,
+                    'text'  => $label,
+                    'size'  => $lesson->size,
+                    'program' => $lesson->program->name ?? '',
+                ];
+            }
+
+            return [
+                'status'  => 'success',
+                'lessons' => $result,
+            ];
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Excel dosyasından dersleri içe aktarır
+     * @param array $files Yüklenen dosyalar
+     * @param array $requestData Ek veriler
+     * @return array
+     */
+    public function importLessons(array $files, array $requestData): array
+    {
+        try {
+            $uploadedFile = $files['file'] ?? null;
+            if (!$uploadedFile) {
+                throw new Exception("Dosya yüklenmedi");
+            }
+
+            $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+            $importer    = new LessonImporter($spreadsheet, $requestData);
+            $result      = $importer->import();
+
+            return [
+                'status'         => "success",
+                'msg'            => sprintf(
+                    "%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var",
+                    $result['added'], $result['updated'], $result['errorCount']
+                ),
+                'errors'         => $result['errors'],
+                'addedLessons'   => $result['addedLessons'],
+                'updatedLessons' => $result['updatedLessons']
             ];
         } catch (Exception $e) {
             return [

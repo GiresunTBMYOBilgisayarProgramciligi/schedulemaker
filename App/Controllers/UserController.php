@@ -8,6 +8,8 @@ use App\Core\Gate;
 use App\Services\UserService;
 use App\Validators\UserValidator;
 use App\DTOs\UserDTO;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Services\Import\UserImporter;
 use Exception;
 
 class UserController extends Controller
@@ -135,6 +137,39 @@ class UserController extends Controller
                 "msg" => "Kullanıcı başarıyla silindi."
             ];
 
+        } catch (Exception $e) {
+            return [
+                "status" => "error",
+                "msg" => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Excel dosyasından kullanıcıları içe aktarır
+     * @param array $files Yüklenen dosyalar
+     * @return array
+     */
+    public function importUsers(array $files): array
+    {
+        try {
+            $uploadedFile = $files['file'] ?? null;
+            if (!$uploadedFile) {
+                throw new Exception("Dosya yüklenmedi");
+            }
+
+            $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+            $importer    = new UserImporter($spreadsheet);
+            $result      = $importer->import();
+
+            return [
+                'status' => "success",
+                'msg'    => sprintf(
+                    "%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var",
+                    $result['added'], $result['updated'], $result['errorCount']
+                ),
+                'errors' => $result['errors']
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
