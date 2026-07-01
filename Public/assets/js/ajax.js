@@ -8,6 +8,25 @@ document.addEventListener("DOMContentLoaded", function () {
     // Formlara olay dinleyicileri ekleme
     document.querySelectorAll(".ajaxForm").forEach((form) => {
         form.addEventListener("submit", handleAjaxForm);
+        
+        // Kullanıcı hatalı alana tekrar veri girdiğinde hata mesajlarını ve is-invalid sınıfını temizle
+        form.addEventListener("input", (e) => {
+            if (e.target.classList.contains("is-invalid")) {
+                e.target.classList.remove("is-invalid");
+                const errorId = e.target.getAttribute("aria-describedby");
+                if (errorId) {
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement && errorElement.classList.contains("invalid-feedback")) {
+                        errorElement.remove();
+                    }
+                } else if (e.target.id) {
+                    const errorElement = document.getElementById(`${e.target.id}-error`);
+                    if (errorElement && errorElement.classList.contains("invalid-feedback")) {
+                        errorElement.remove();
+                    }
+                }
+            }
+        });
     });
 
     document.querySelectorAll(".ajaxFormDelete").forEach((form) => {
