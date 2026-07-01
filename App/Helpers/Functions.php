@@ -102,7 +102,7 @@ function find_key_starting_with(array $array, string $prefix): ?string
  */
 function getAppVersion(): string
 {
-    $composerFile = __DIR__ . '/../composer.json';
+    $composerFile = $_ENV['APP_PATH'] . '/../composer.json';
     if (!file_exists($composerFile)) {
         return '0.0.0';
     }
