@@ -43,10 +43,10 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         'startTime'     => ['type' => 'string'],
         'items'         => ['type' => 'string'],
         'week_index'    => ['type' => 'int'],
-        'show_code'     => ['type' => 'int'],
-        'show_lecturer' => ['type' => 'int'],
-        'show_program'  => ['type' => 'int'],
-        'show_observer' => ['type' => 'int'],
+        'show_code'     => ['type' => 'bool|int'],
+        'show_lecturer' => ['type' => 'bool|int'],
+        'show_program'  => ['type' => 'bool|int'],
+        'show_observer' => ['type' => 'bool|int'],
         'start_time'    => ['type' => 'string'],
         'end_time'      => ['type' => 'string'],
     ];
@@ -290,6 +290,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                 'array'    => is_array($value),
                 'int[]'    => is_array($value) && $this->isArrayOfType($value, 'int'),
                 'string[]' => is_array($value) && $this->isArrayOfType($value, 'string'),
+                'bool'     => is_bool($value) || in_array($value, ['true', 'false', '1', '0', 1, 0], true),
                 default    => false,
             };
 
