@@ -60,11 +60,16 @@ class AuthRouter extends Router
 
         // Çerezleri sil (remember me varsa)
         if (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-            setcookie($_ENV["COOKIE_KEY"], "", time() - 3600, "/", "", true, true);
+            setcookie($_ENV["COOKIE_KEY"], "", [
+                'expires' => time() - 3600,
+                'path' => '/',
+                'httponly' => true,
+                'samesite' => 'Strict',
+            ]);
         }
 
         // Ana sayfaya veya giriş sayfasına yönlendir
-        $this->Redirect("/");
+        $this->Redirect("/", false);
     }
 
     public function ajaxloginAction()
