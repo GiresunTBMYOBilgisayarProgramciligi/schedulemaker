@@ -105,7 +105,8 @@ class LessonController extends Controller
     public function update(array $requestData): array
     {
         try {
-            $lessonFromDb = (new Lesson())->find((int)($requestData['id'] ?? 0));
+            /** @var Lesson $lessonFromDb */
+            $lessonFromDb = clone (new LessonRepository())->find((int)($requestData['id'] ?? 0));
             if (!$lessonFromDb) {
                 throw new Exception("Güncellenecek ders bulunamadı.");
             }
@@ -126,22 +127,7 @@ class LessonController extends Controller
                 ];
             }
 
-            if ($isLecturerOwnLesson) {
-                Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
-                
-                $lessonFromDb->size = (int)($requestData['size'] ?? 0);
-                if (isset($requestData['classroom_type']) && $requestData['classroom_type'] !== '') {
-                    $lessonFromDb->classroom_type = (int)$requestData['classroom_type'];
-                }
-                
-                (new LessonService())->updateLesson($lessonFromDb);
-            } else {
-                Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
-
-                $dto = LessonDTO::fromArray($requestData);
-                $lessonFromDb->fill($dto->toArray());
-                (new LessonService())->updateLesson($lessonFromDb);
-            }
+            (new LessonService())->updateLessonData($lessonFromDb->id, $requestData, $isLecturerOwnLesson);
 
             return [
                 "status" => "success",
@@ -166,7 +152,7 @@ class LessonController extends Controller
                 throw new Exception("Silinecek ders ID'si belirtilmedi.");
             }
 
-            $lesson = clone (new Lesson())->find($requestData['id']);
+            $lesson = clone (new LessonRepository())->find($requestData['id']);
             if (!$lesson) {
                 throw new Exception("Silinecek ders bulunamadı.");
             }
@@ -333,62 +319,11 @@ class LessonController extends Controller
             $lessonId = (int) ($requestData['lesson_id'] ?? 0);
             $search = trim($requestData['search'] ?? '');
 
-            if (!$lessonId) {
-                throw new Exception("Ders ID belirtilmemiş");
-            }
-
-            $currentLesson = clone (new Lesson())->where(['id' => $lessonId])
-                ->with(['examChildLessons', 'examParentLesson'])
-                ->first();
-                
-            if (!$currentLesson) {
-                throw new Exception("Ders bulunamadı");
-            }
-
-            // Aynı akademik yıl ve dönemdeki dersleri al
-            $filters = [
-                'semester'      => $currentLesson->semester,
-                'academic_year' => $currentLesson->academic_year,
-                '!id'           => $currentLesson->id,
-            ];
-
-            $query = (new Lesson())->get()->where($filters)
-                ->with(['program', 'lecturer', 'examParentLesson']);
-
-            $lessons = $query->all();
-
-            // Zaten bağlı olanları ve kendisini filtrele
-            $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
-            
-            $result = [];
-            foreach ($lessons as $lesson) {
-                // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
-                if ($lesson->exam_parent_lesson_id && $lesson->exam_parent_lesson_id !== $currentLesson->id) {
-                    continue;
-                }
-                // Zaten bu derse bağlı olanları atla
-                if (in_array($lesson->id, $existingChildIds)) {
-                    continue;
-                }
-
-                $label = $lesson->getFullName(addCode: true, addProgram: true, addSize: true);
-
-                // TomSelect arama filtresi
-                if ($search !== '' && stripos($label, $search) === false) {
-                    continue;
-                }
-
-                $result[] = [
-                    'id'    => $lesson->id,
-                    'text'  => $label,
-                    'size'  => $lesson->size,
-                    'program' => $lesson->program->name ?? '',
-                ];
-            }
+            $lessons = (new LessonService())->getExamCombinableLessonsForSelect($lessonId, $search);
 
             return [
                 'status'  => 'success',
-                'lessons' => $result,
+                'lessons' => $lessons,
             ];
         } catch (Exception $e) {
             return [

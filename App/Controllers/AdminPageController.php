@@ -14,6 +14,8 @@ use App\Models\User;
 use App\Repositories\ClassroomRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\LessonRepository;
+use App\Repositories\ProgramRepository;
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
@@ -34,7 +36,7 @@ class AdminPageController extends Controller
             "lessonController" => new LessonController(),
             "programController" => new ProgramController(),
             'userController' => new UserController(),
-            "programs" => (new Program())->get()->where(['active' => true])->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])->all(),
+            "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
             "page_title" => "Anasayfa"
         ];
         
@@ -57,9 +59,9 @@ class AdminPageController extends Controller
             "page_title" => "Kullanıcı Listesi",
         ];
         if ($currentUser->role == "department_head") {
-            $view_data['users'] = (new User())->get()->where(['department_id' => $currentUser->department_id])->with(['department', 'program'])->all();
+            $view_data['users'] = (new UserRepository())->getUsersForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['users'] = (new User())->get()->with(['department', 'program'])->all();
+            $view_data['users'] = (new UserRepository())->getAllUsersWithDetails();
         }
         return $view_data;
     }
@@ -88,7 +90,7 @@ class AdminPageController extends Controller
         return [
             "page_title" => "Kullanıcı Ekle",
             "userController" => new UserController(),
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_id" => $department_id,
             "program_id" => $program_id
         ];
@@ -102,7 +104,7 @@ class AdminPageController extends Controller
         if (is_null($id)) {
             $user = $currentUser;
         } else {
-            $user = (new User())->get()->where(['id' => $id])->with(['department', 'program', 'lessons' => ['with' => ['department', 'program']], 'schedules' => ['with' => ['items']]])->first();
+            $user = (new UserRepository())->findUserWithProfileDetails($id);
             if (!$user)
                 throw new Exception("Kullanıcı bulunamadı");
         }
@@ -115,7 +117,7 @@ class AdminPageController extends Controller
             "user" => $user,
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
@@ -175,7 +177,7 @@ class AdminPageController extends Controller
         return [
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "programController" => new ProgramController(),
             "userController" => new UserController(),
@@ -197,7 +199,7 @@ class AdminPageController extends Controller
     public function getLessonPageData(AssetManager $assetManager, $id = null): array
     {
         if (!is_null($id)) {
-            $lesson = (new Lesson())->where(['id' => $id])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']], 'examParentLesson' => ['with' => ['program']], 'examChildLessons' => ['with' => ['program']]])->first() ?: throw new Exception("Ders bulunamadı");
+            $lesson = (new LessonRepository())->findLessonWithDetails($id) ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
@@ -252,8 +254,8 @@ class AdminPageController extends Controller
                 true,
                 true
             ),
-            'combineLessonList' => (new Lesson())->get()->where(['lecturer_id' => $lesson->lecturer_id, '!id' => $lesson->id, 'semester' => getSettingValue('semester'), 'academic_year' => getSettingValue('academic_year')])->with(['program', 'lecturer' => ['with' => ['lessons']], 'department', 'parentLesson' => ['with' => ['program']], 'childLessons' => ['with' => ['program']]])->all(),
-            'examCombineLessonList' => (new Lesson())->get()->where(['!id' => $lesson->id, 'semester' => getSettingValue('semester'), 'academic_year' => getSettingValue('academic_year')])->with(['program'])->all(),
+            'combineLessonList' => (new LessonRepository())->getCombineLessonList($lesson->lecturer_id, $lesson->id, getSettingValue('semester'), getSettingValue('academic_year')),
+            'examCombineLessonList' => (new LessonRepository())->getExamCombineLessonList($lesson->id, getSettingValue('semester'), getSettingValue('academic_year')),
         ];
     }
 
@@ -266,9 +268,9 @@ class AdminPageController extends Controller
             "page_title" => "Ders Listesi"
         ];
         if ($currentUser->role == "department_head") {
-            $view_data['lessons'] = (new Lesson())->get()->where(['department_id' => $currentUser->department_id])->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
+            $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['lessons'] = (new Lesson())->get()->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])->all();
+            $view_data['lessons'] = (new LessonRepository())->getAllLessonsWithDetails();
         }
         return $view_data;
     }
@@ -279,7 +281,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         $view_data = [
             "page_title" => "Ders Ekle",
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "lessonController" => new LessonController(),
             "classroomTypes" => ClassroomType::toArray(),
             "program_id" => $program_id
@@ -314,19 +316,19 @@ class AdminPageController extends Controller
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName(true) . " Düzenle",
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
             "classroomTypes" => ClassroomType::toArray()
         ];
         
         if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => $currentUser->department_id, 'role' => 'lecturer'])->all();
-            $view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
+            $view_data['lecturers'] = (new UserRepository())->getLecturersForDepartmentHead($currentUser->department_id);
+            $view_data['lecturers'][] = clone (new UserRepository())->find($lesson->lecturer_id);
         } elseif ($currentUser->role == "lecturer") {
-            $view_data['lecturers'][] = (new User())->find($lesson->lecturer_id);
+            $view_data['lecturers'][] = clone (new UserRepository())->find($lesson->lecturer_id);
         } else {
-            $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
+            $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
         }
         return $view_data;
     }
@@ -347,7 +349,7 @@ class AdminPageController extends Controller
     {
         Gate::authorizeRole("submanager", false, "Derslik sayfasını görme yetkiniz yok");
         if (!is_null($id)) {
-            $classroom = (new Classroom())->where(['id' => $id])->with(['schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Derslik bulunamadı");
+            $classroom = (new ClassroomRepository())->findClassroomWithSchedules($id) ?: throw new Exception("Derslik bulunamadı");
         } else {
             throw new Exception("Derslik id Numarası belirtilmemiş");
         }
@@ -441,7 +443,7 @@ class AdminPageController extends Controller
     public function getDepartmentPageData(AssetManager $assetManager, $id = null): array
     {
         if (!is_null($id)) {
-            $department = (new Department())->get()->where(["id" => $id])->with(["programs" => ['with' => ['department']], "chairperson", "lessons" => ['with' => ['lecturer', 'program', 'parentLesson' => ['with' => ['program']]]], "users" => ['with' => ['program']]])->first() ?: throw new Exception("Bölüm bulunamadı");
+            $department = (new DepartmentRepository())->findDepartmentWithDetails($id) ?: throw new Exception("Bölüm bulunamadı");
         } else {
             throw new Exception("İd belirtilmemiş");
         }
@@ -459,7 +461,7 @@ class AdminPageController extends Controller
         Gate::authorize("view", Department::class, "Bölümler listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "departments" => (new Department())->get()->with(["chairperson"])->all(),
+            "departments" => (new DepartmentRepository())->getAllDepartmentsWithChairperson(),
             "page_title" => "Bölüm Listesi"
         ];
     }
@@ -470,7 +472,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Bölüm Ekle",
-            "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all()
+            "lecturers" => (new UserRepository())->getAllLecturers()
         ];
     }
 
@@ -490,7 +492,7 @@ class AdminPageController extends Controller
             "departmentController" => new DepartmentController(),
             "department" => $department,
             "page_title" => $department->name ?? "" . " Düzenle",
-            "lecturers" => (new User())->get()->where(["!role" => ['in' => ["user", "admin"]]])->all(),
+            "lecturers" => (new UserRepository())->getAllLecturers(),
         ];
     }
 
@@ -500,7 +502,7 @@ class AdminPageController extends Controller
     public function getProgramPageData(AssetManager $assetManager, $id = null): array
     {
         if (!is_null($id)) {
-            $program = (new Program())->get()->where(["id" => $id])->with(['department' => ['with' => ['chairperson']], 'lecturers', 'lessons' => ['with' => ['lecturer', 'parentLesson' => ['with' => ['program']]]], 'schedules' => ['with' => ['items']]])->first() ?: throw new Exception("Program bulunamadı");
+            $program = (new ProgramRepository())->findProgramWithDetails($id) ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }
@@ -558,7 +560,7 @@ class AdminPageController extends Controller
         Gate::authorize("view", Program::class, "Programlar listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "programs" => (new Program())->get()->with(['department'])->all(),
+            "programs" => (new ProgramRepository())->getAllProgramsWithDepartment(),
             "page_title" => "Program Listesi",
         ];
     }
@@ -569,7 +571,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Program Ekle",
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_id" => $department_id
         ];
     }
@@ -589,7 +591,7 @@ class AdminPageController extends Controller
         return [
             "programController" => new ProgramController(),
             "program" => $program,
-            "departments" => (new Department())->get()->where(['active' => true])->all(),
+            "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "page_title" => $program->name ?? "" . " Düzenle",
         ];
     }
@@ -602,9 +604,11 @@ class AdminPageController extends Controller
         Gate::authorizeRole("department_head", false, "Ders programı düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('editschedule');
         if (Gate::allowsRole("submanager")) {
-            $departments = (new Department())->get()->where(['active' => true])->all();
+            $departments = (new DepartmentRepository())->getActiveDepartments();
         } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            $departments = (new Department())->get()->where(['active' => true, 'id' => $currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
+            $dep = (new DepartmentRepository())->find($currentUser->department_id);
+            if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
+            $departments = [$dep];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -615,9 +619,9 @@ class AdminPageController extends Controller
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
         if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => $currentUser->department_id, '!role' => ["in" => ['admin', 'user']]])->all();
+            $view_data['lecturers'] = (new UserRepository())->getLecturersForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
+            $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
         }
         return $view_data;
     }
@@ -630,9 +634,11 @@ class AdminPageController extends Controller
         Gate::authorizeRole("department_head", false, "Sınav programı düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('editexamschedule');
         if (Gate::allowsRole("submanager")) {
-            $departments = (new Department())->get()->where(['active' => true])->all();
+            $departments = (new DepartmentRepository())->getActiveDepartments();
         } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            $departments = (new Department())->get()->where(['active' => true, 'id' => $currentUser->department_id])->all() ?: throw new Exception("Bölüm başkanının bölüm bilgisi yok");
+            $dep = (new DepartmentRepository())->find($currentUser->department_id);
+            if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
+            $departments = [$dep];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }
@@ -658,9 +664,11 @@ class AdminPageController extends Controller
         Gate::authorizeRole("department_head", false, "Ders programı Dışa aktarma yetkiniz yok");
         $assetManager->loadPageAssets('exportschedule');
         if (Gate::allowsRole("submanager")) {
-            $departments = (new Department())->get()->where(['active' => true])->all();
+            $departments = (new DepartmentRepository())->getActiveDepartments();
         } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            $departments = [(new Department())->find($currentUser->department_id)] ?: throw new Exception("Bölüm bulunamadı");
+            $dep = (new DepartmentRepository())->find($currentUser->department_id);
+            if (!$dep) throw new Exception("Bölüm bulunamadı");
+            $departments = [$dep];
         } else {
             throw new Exception("Bu işlem için yetkiniz yok");
         }

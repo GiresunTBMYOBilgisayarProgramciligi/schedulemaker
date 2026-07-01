@@ -57,6 +57,28 @@ class UserService extends BaseService
     }
 
     /**
+     * Kullanıcı verilerini günceller (Controller'dan gelen DTO ile).
+     * Model bulma ve doldurma işlemlerini kapsüller.
+     *
+     * @param int $id Güncellenecek kullanıcının ID'si
+     * @param UserDTO $dto Yeni kullanıcı verileri
+     * @return int Kullanıcının ID'si
+     * @throws Exception
+     */
+    public function updateUserData(int $id, UserDTO $dto): int
+    {
+        $user = (new UserRepository())->find($id);
+        if (!$user) {
+            throw new Exception("Kullanıcı bulunamadı.");
+        }
+
+        // Mevcut modele DTO verilerini dolduruyoruz
+        $user->fill(array_merge(['id' => $id], $dto->toArray()));
+
+        return $this->updateUser($user);
+    }
+
+    /**
      * Mevcut kullanıcıyı günceller.
      * Şifre alanı boş gönderilirse güncelleme dışı bırakılır.
      *

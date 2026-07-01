@@ -61,4 +61,83 @@ class UserRepository extends BaseRepository
         $filters = UserTitle::parseAcademicName($fullName);
         return $this->findByFullNameFilters($filters);
     }
+
+    /**
+     * Kullanıcının profil sayfası için gereken tüm ilişkisel detaylarını getirir.
+     * (Bölüm, program, dersler ve ders programı öğeleri ile birlikte)
+     *
+     * @param int $id Kullanıcı ID'si
+     * @return User|null
+     * @throws Exception
+     */
+    public function findUserWithProfileDetails(int $id): ?User
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->where(['id' => $id])->with([
+            'department', 
+            'program', 
+            'lessons' => ['with' => ['department', 'program']], 
+            'schedules' => ['with' => ['items']]
+        ])->first();
+    }
+
+    /**
+     * Bölüm başkanının görebileceği, kendi bölümüne ait kullanıcı listesini getirir.
+     * 
+     * @param int $deptId Bölüm ID'si
+     * @return User[]
+     * @throws Exception
+     */
+    public function getUsersForDepartmentHead(int $deptId): array
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->where(['department_id' => $deptId])->with(['department', 'program'])->all();
+    }
+
+    /**
+     * Admin için tüm kullanıcıların detaylı listesini (bölüm ve program bilgisiyle) getirir.
+     *
+     * @return User[]
+     * @throws Exception
+     */
+    public function getAllUsersWithDetails(): array
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->with(['department', 'program'])->all();
+    }
+
+    /**
+     * Bölüm başkanının görebileceği, sadece kendi bölümündeki akademisyenleri (role != admin/user) getirir.
+     *
+     * @param int $deptId Bölüm ID'si
+     * @return User[]
+     * @throws Exception
+     */
+    public function getLecturersForDepartmentHead(int $deptId): array
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->where([
+            'department_id' => $deptId, 
+            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+        ])->all();
+    }
+
+    /**
+     * Sistemdeki tüm akademisyenleri (role != admin/user) getirir.
+     *
+     * @return User[]
+     * @throws Exception
+     */
+    public function getAllLecturers(): array
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->where([
+            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+        ])->all();
+    }
 }

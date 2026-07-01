@@ -11,6 +11,9 @@ use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
 use function App\Helpers\getSettingValue;
+use App\Repositories\LessonRepository;
+use App\Core\Gate;
+use App\DTOs\LessonDTO;
 use App\Enums\OwnerType;
 use Exception;
 
@@ -58,6 +61,41 @@ class LessonService extends BaseService
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Controller'dan gelen verilerle dersi günceller (Business logic).
+     * Hoca sadece kontenjan ve derslik tipi güncelleyebilir.
+     *
+     * @param int $id Ders ID'si
+     * @param array $requestData Güncellenecek veri
+     * @param bool $isLecturerOwnLesson İşlemi yapanın kendi dersi olup olmadığı
+     * @return int Güncellenen dersin ID'si
+     * @throws Exception
+     */
+    public function updateLessonData(int $id, array $requestData, bool $isLecturerOwnLesson): int
+    {
+        /** @var Lesson $lessonFromDb */
+        $lessonFromDb = (new LessonRepository())->find($id);
+        if (!$lessonFromDb) {
+            throw new Exception("Güncellenecek ders bulunamadı.");
+        }
+
+        if ($isLecturerOwnLesson) {
+            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+            
+            $lessonFromDb->size = (int)($requestData['size'] ?? 0);
+            if (isset($requestData['classroom_type']) && $requestData['classroom_type'] !== '') {
+                $lessonFromDb->classroom_type = (int)$requestData['classroom_type'];
+            }
+        } else {
+            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+
+            $dto = LessonDTO::fromArray($requestData);
+            $lessonFromDb->fill($dto->toArray());
+        }
+
+        return $this->updateLesson($lessonFromDb);
     }
 
     /**
@@ -228,6 +266,66 @@ class LessonService extends BaseService
     // ──────────────────────────────────────────
     // Sınav Birleştirme (exam_parent_lesson_id)
     // ──────────────────────────────────────────
+
+    /**
+     * Sınav birleştirme için aranabilir ders listesini (TomSelect AJAX formatında) döner.
+     * Aynı akademik yıl ve dönemdeki dersleri getirir ve zaten bağlı olanları/kendisini eler.
+     *
+     * @param int $lessonId Dışlanacak ve baz alınacak dersin ID'si
+     * @param string $search Arama terimi (TomSelect filtrelemesi için)
+     * @return array Seçilebilir ders listesi
+     * @throws Exception
+     */
+    public function getExamCombinableLessonsForSelect(int $lessonId, string $search = ''): array
+    {
+        if (!$lessonId) {
+            throw new Exception("Ders ID belirtilmemiş");
+        }
+
+        $currentLesson = clone (new LessonRepository())->findLessonWithDetails($lessonId);
+            
+        if (!$currentLesson) {
+            throw new Exception("Ders bulunamadı");
+        }
+
+        // Aynı akademik yıl ve dönemdeki dersleri al
+        $lessons = (new LessonRepository())->getExamCombineLessonList(
+            $currentLesson->id, 
+            $currentLesson->semester, 
+            $currentLesson->academic_year
+        );
+
+        // Zaten bağlı olanları ve kendisini filtrele
+        $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
+        
+        $result = [];
+        foreach ($lessons as $lesson) {
+            // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
+            if ($lesson->exam_parent_lesson_id && $lesson->exam_parent_lesson_id !== $currentLesson->id) {
+                continue;
+            }
+            // Zaten bu derse bağlı olanları atla
+            if (in_array($lesson->id, $existingChildIds)) {
+                continue;
+            }
+
+            $label = $lesson->getFullName(addCode: true, addProgram: true, addSize: true);
+
+            // TomSelect arama filtresi
+            if ($search !== '' && stripos($label, $search) === false) {
+                continue;
+            }
+
+            $result[] = [
+                'id'    => $lesson->id,
+                'text'  => $label,
+                'size'  => $lesson->size,
+                'program' => $lesson->program->name ?? '',
+            ];
+        }
+
+        return $result;
+    }
 
     /**
      * Sınav için dersleri birleştirir (exam_parent_lesson_id).

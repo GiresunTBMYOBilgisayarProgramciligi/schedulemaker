@@ -10,6 +10,7 @@ use App\Validators\UserValidator;
 use App\DTOs\UserDTO;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\UserImporter;
+use App\Repositories\UserRepository;
 use Exception;
 
 class UserController extends Controller
@@ -71,7 +72,7 @@ class UserController extends Controller
                 throw new Exception("Güncellenecek kullanıcı ID'si belirtilmedi.");
             }
             
-            $user = (new User())->find($requestData['id']);
+            $user = (new UserRepository())->find($requestData['id']);
             if (!$user) {
                 throw new Exception("Kullanıcı bulunamadı.");
             }
@@ -90,14 +91,11 @@ class UserController extends Controller
                 ];
             }
 
-            // 2. DTO oluştur ve Model'e aktar
+            // 2. DTO oluştur
             $dto = UserDTO::fromArray($requestData);
             
-            // Mevcut modele DTO verilerini dolduruyoruz
-            $user->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
-
-            // 3. Service'e gönder
-            (new UserService())->updateUser($user);
+            // 3. Service'e gönder (Fill işlemi servise devredildi)
+            (new UserService())->updateUserData($requestData['id'], $dto);
 
             return [
                 "status" => "success",
@@ -122,7 +120,7 @@ class UserController extends Controller
                 throw new Exception("Silinecek kullanıcı ID'si belirtilmedi.");
             }
 
-            $user = (new User())->find($requestData['id']);
+            $user = (new UserRepository())->find($requestData['id']);
             if (!$user) {
                 throw new Exception("Kullanıcı bulunamadı.");
             }

@@ -39,4 +39,51 @@ class DepartmentRepository extends BaseRepository
         }
         return $list;
     }
+
+    /**
+     * Sadece aktif (active=1) bölümleri getirir.
+     *
+     * @return Department[]
+     * @throws Exception
+     */
+    public function getActiveDepartments(): array
+    {
+        /** @var Department $model */
+        $model = new $this->modelClass;
+        return $model->get()->where(['active' => true])->all();
+    }
+
+    /**
+     * Tüm bölümleri bölüm başkanı bilgisiyle birlikte getirir.
+     *
+     * @return Department[]
+     * @throws Exception
+     */
+    public function getAllDepartmentsWithChairperson(): array
+    {
+        /** @var Department $model */
+        $model = new $this->modelClass;
+        return $model->get()->with(["chairperson"])->all();
+    }
+
+    /**
+     * Bölüm detay sayfası için bölümü ilişkileriyle getirir.
+     *
+     * @param int $id Bölüm ID
+     * @return Department|null
+     * @throws Exception
+     */
+    public function findDepartmentWithDetails(int $id): ?Department
+    {
+        /** @var Department $model */
+        $model = new $this->modelClass;
+        return $model->get()->where(["id" => $id])
+            ->with([
+                "programs" => ['with' => ['department']], 
+                "chairperson", 
+                "lessons" => ['with' => ['lecturer', 'program', 'parentLesson' => ['with' => ['program']]]], 
+                "users" => ['with' => ['program']]
+            ])
+            ->first();
+    }
 }
