@@ -70,6 +70,55 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function initWeekNavigation(container) {
+        const cards = container.querySelectorAll('.schedule-card');
+        cards.forEach(card => {
+            const weekCount = parseInt(card.dataset.weekCount) || card.querySelectorAll('table.schedule-table').length;
+            if (weekCount <= 1) return;
+
+            const prevBtn = card.querySelector('.prev-week');
+            const nextBtn = card.querySelector('.next-week');
+            const label = card.querySelector('.current-week-label');
+            let currentWeekIndex = 0;
+
+            if (!prevBtn || !nextBtn) return;
+
+            const switchWeek = (weekIndex) => {
+                const tables = card.querySelectorAll('table.schedule-table');
+                tables.forEach(t => {
+                    t.classList.add('d-none');
+                    t.classList.remove('active');
+                });
+
+                const targetTable = card.querySelector(`table.schedule-table[data-week-index="${weekIndex}"]`);
+                if (targetTable) {
+                    targetTable.classList.remove('d-none');
+                    targetTable.classList.add('active');
+                    currentWeekIndex = weekIndex;
+                }
+
+                if (label) label.textContent = `${weekIndex + 1}. Hafta`;
+                if (prevBtn) prevBtn.disabled = (weekIndex === 0);
+                if (nextBtn) nextBtn.disabled = (weekIndex === weekCount - 1);
+            };
+
+            prevBtn.addEventListener('click', () => {
+                if (currentWeekIndex > 0) {
+                    switchWeek(currentWeekIndex - 1);
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (currentWeekIndex < weekCount - 1) {
+                    switchWeek(currentWeekIndex + 1);
+                }
+            });
+
+            // İlk haftayı aktif et
+            switchWeek(0);
+        });
+    }
+
     function getSchedulesHTML(scheduleData = new FormData()) {
         const container = document.getElementById('schedule_container');
         container.innerHTML = "";
@@ -84,6 +133,10 @@ document.addEventListener("DOMContentLoaded", function () {
             .then((data) => {
                 if (data['status'] !== 'error') {
                     container.innerHTML = data['HTML'];
+                    
+                    // Hafta navigasyonunu aktif et (Sınav programları için)
+                    initWeekNavigation(container);
+                    
                     //Cardiçerisindeki tüm tooltiplerin aktif edilmesi için
                     var tooltipTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="tooltip"]'))
                     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
