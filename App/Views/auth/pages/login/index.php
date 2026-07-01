@@ -3,12 +3,11 @@
     <div class="login-box">
         <div class="card card-outline card-primary">
             <div class="card-header">
-                <a href="/admin" class="link-dark text-center link-offset-2 link-opacity-100 link-opacity-50-hover">
+                <a href="/" class="link-dark text-center link-offset-2 link-opacity-100 link-opacity-50-hover">
                     <h1 class="mb-0"><b>TMYO</b>Takvim</h1>
                 </a>
             </div>
             <div class="card-body login-card-body">
-                <p class="login-box-msg">Başlamak için giriş yapın</p>
                 <form action="/auth/ajaxlogin" method="post" class="ajaxForm" title="Giriş Yap" data-toast="true"
                     data-redirect-delay="1000">
                     <div class="input-group mb-1">
