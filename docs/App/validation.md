@@ -109,6 +109,18 @@ Gate::authorize("delete", $lesson, "Bu dersi silme yetkiniz yok");
 Gate::authorize("update", $schedule, "Program güncelleme yetkiniz yok");
 ```
 
+### Misafir (Guest) Yetkilendirmesi
+Gate, oturum açmamış kullanıcıları (guest) destekler. Bir Policy metodunda `$user` parametresi nullable (örn. `?User $user`) olarak tanımlanmışsa, Gate oturum açmamış bir istek gelse bile Policy'yi çalıştırır.
+
+```php
+// SchedulePolicy.php
+public function view(?User $user, Schedule $schedule): bool
+{
+    // Oturum açılmamışsa bile ($user === null) çalışır
+    return true; 
+}
+```
+
 ### Policy Sınıfları
 | Policy | Eylemler |
 |--------|----------|

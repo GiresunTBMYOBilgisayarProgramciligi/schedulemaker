@@ -60,4 +60,12 @@ class SchedulePolicy extends BasePolicy
     {
         return $this->update($user, $schedule);
     }
+
+    /**
+     * Program görüntüleme yetkisi
+     */
+    public function view(?User $user, Schedule $schedule): bool
+    {
+        return true;//home sayfasında tüm programlar gösterildiği için herkes görebilir. İlerde yetki kontrolü gerekebilir.
+    }
 }

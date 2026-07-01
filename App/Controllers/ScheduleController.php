@@ -88,7 +88,7 @@ class ScheduleController extends Controller
         
         $scheduleService = new ScheduleService();
         $schedule = $scheduleService->getOrCreateSchedule($dto);
-        Gate::authorize('update', $schedule);
+        Gate::authorize('view', $schedule, "Programı görüntüleme yetkiniz yok");
 
         $HTMLOut = "";
 
@@ -424,7 +424,7 @@ class ScheduleController extends Controller
         if (key_exists('id', $requestData)) {
             $schedule = (new ScheduleRepository())->find($requestData['id']);
             if ($schedule) {
-                Gate::authorize('update', $schedule);
+                Gate::authorize('view', $schedule, "Programı görüntüleme yetkiniz yok");
                 return [
                     "status" => "success",
                     "schedule" => $schedule->getArray()

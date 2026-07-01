@@ -46,9 +46,6 @@ class Gate
     public static function check(string $action, $model): bool
     {
         $user = AuthMiddleware::user();
-        if (!$user) {
-            return false;
-        }
 
         $modelClass = is_object($model) ? get_class($model) : $model;
         $policyClass = self::$policies[$modelClass] ?? null;
@@ -63,6 +60,26 @@ class Gate
 
         $policy = new $policyClass();
 
+        if (!method_exists($policy, $action)) {
+            return false;
+        }
+
+        // Reflection ile metodun misafir kullanıcı (null) kabul edip etmediğini kontrol ediyoruz
+        $reflectionMethod = new \ReflectionMethod($policy, $action);
+        $parameters = $reflectionMethod->getParameters();
+
+        if (empty($parameters)) {
+            if (!$user) {
+                return false;
+            }
+        } else {
+            $userParam = $parameters[0];
+            // Eğer kullanıcı oturum açmamışsa ve metod null kabul etmiyorsa yetki verilmez
+            if (!$user && !$userParam->allowsNull()) {
+                return false;
+            }
+        }
+
         // 'before' kontrolü
         if (method_exists($policy, 'before')) {
             $before = $policy->before($user, $action);
@@ -71,12 +88,8 @@ class Gate
             }
         }
 
-        // Aksiyona özel metot kontrolü (örn. view, update, delete)
-        if (method_exists($policy, $action)) {
-            return $policy->$action($user, $model);
-        }
-
-        return false;
+        // Aksiyona özel metot çağrısı
+        return $policy->$action($user, $model);
     }
 
     /**

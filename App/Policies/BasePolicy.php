@@ -17,9 +17,9 @@ abstract class BasePolicy
      * @param string $action
      * @return bool|null
      */
-    public function before(User $user, string $action): ?bool
+    public function before(?User $user, string $action): ?bool
     {
-        if ($user->role === 'admin') {
+        if ($user && $user->role === 'admin') {
             return true;
         }
         return null;
