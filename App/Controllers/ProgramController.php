@@ -56,18 +56,7 @@ class ProgramController extends Controller
         try {
             Gate::authorize("create", Program::class, "Yeni program oluşturma yetkiniz yok");
 
-            $validator = new ProgramValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = ProgramDTO::fromArray($requestData);
+            $dto = (new ProgramValidator())->getDTO($requestData);
             (new ProgramService())->saveNew($dto);
 
             return [
@@ -96,18 +85,7 @@ class ProgramController extends Controller
 
             Gate::authorize("update", $program, "Program güncelleme yetkiniz yok");
 
-            $validator = new ProgramValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = ProgramDTO::fromArray($requestData);
+            $dto = (new ProgramValidator())->getDTO($requestData);
             
             // DTO'dan Model'e aktar
             $program->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));

@@ -53,7 +53,7 @@ class ScheduleAvailabilityFilterValidator extends BaseScheduleFilterValidator
     /**
      * Filtreleri sanitize edip AvailabilityFilterDTO olarak döner
      */
-    public function getDTO(array $data, string $operation): AvailabilityFilterDTO
+    public function getDTO(array $data, string $operation = 'availableClassrooms'): AvailabilityFilterDTO
     {
         // availableClassrooms vb işlemlerde array formatı doğrudan DTO'ya map edilemeyebilir.
         // Ama şimdilik fromArray kullanıp sonrasında özelleştirebiliriz.

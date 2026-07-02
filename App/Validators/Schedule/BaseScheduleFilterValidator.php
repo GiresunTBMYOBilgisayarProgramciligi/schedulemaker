@@ -3,7 +3,8 @@
 namespace App\Validators\Schedule;
 
 use App\Validators\BaseValidator;
-use App\Validators\ValidationResult;
+use App\Exceptions\ValidationException;
+use App\DTOs\ScheduleFilterDTO;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -61,18 +62,20 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
     /**
      * BaseValidator'ın zorunlu validate metodu.
      * Alt sınıflar genellikle validateFor() metodunu kullanır.
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         // Operasyon kuralları arasından ilk kuralı kullan (veya alt sınıf override etsin)
         $rules = $this->getOperationRules();
         $firstOperation = array_key_first($rules);
 
         if ($firstOperation === null) {
-            return ValidationResult::failedWithError('Tanımlı operasyon kuralı bulunamadı.');
+            throw new ValidationException('Tanımlı operasyon kuralı bulunamadı.');
         }
 
-        return $this->validateFor($data, $firstOperation);
+        $this->validateFor($data, $firstOperation);
     }
 
     /**
@@ -80,14 +83,15 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
      * 
      * @param array $data Ham filtre verisi
      * @param string $operation Operasyon adı
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validateFor(array $data, string $operation): ValidationResult
+    public function validateFor(array $data, string $operation): void
     {
         $rules = $this->getOperationRules();
 
         if (!isset($rules[$operation])) {
-            return ValidationResult::failedWithError("'$operation' için tanımlanmış bir doğrulama kuralı yok.");
+            throw new ValidationException("'$operation' için tanımlanmış bir doğrulama kuralı yok.");
         }
 
         $rule = $rules[$operation];
@@ -147,10 +151,8 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası', $errors);
         }
-
-        return ValidationResult::success();
     }
 
     /**
@@ -165,18 +167,19 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
      * @param array $data Ham filtre verisi
      * @param string $operation Operasyon adı
      * @return array Temizlenmiş filtre dizisi
-     * @throws \InvalidArgumentException Doğrulama hatası
+     * @throws ValidationException Doğrulama hatası
      */
     public function sanitize(array $data, string $operation): array
     {
         $rules = $this->getOperationRules();
 
         if (!isset($rules[$operation])) {
-            throw new \InvalidArgumentException("'$operation' için tanımlanmış bir doğrulama kuralı yok.");
+            throw new ValidationException("'$operation' için tanımlanmış bir doğrulama kuralı yok.");
         }
 
         $rule = $rules[$operation];
         $validatedFilters = [];
+        $errors = [];
 
         $requiredKeys = $rule['required'] ?? [];
         $optionalKeys = $rule['optional'] ?? [];
@@ -185,16 +188,22 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         // 1. Zorunlu filtreleri işle
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $data)) {
-                throw new \InvalidArgumentException("'$operation' işlemi için zorunlu filtre eksik: $key");
+                $errors[] = "'$operation' işlemi için zorunlu filtre eksik: $key";
+                continue;
             }
 
             $value = $data[$key];
             if ($value === null || $value === '' || $value === "null") {
-                throw new \InvalidArgumentException("'$operation' işlemi için zorunlu filtre ($key) boş olamaz.");
+                $errors[] = "'$operation' işlemi için zorunlu filtre ($key) boş olamaz.";
+                continue;
             }
 
-            $this->assertFieldType($key, $value, $operation);
-            $validatedFilters[$key] = $value;
+            try {
+                $this->assertFieldType($key, $value, $operation);
+                $validatedFilters[$key] = $value;
+            } catch (\InvalidArgumentException $e) {
+                $errors[] = $e->getMessage();
+            }
         }
 
         // 2. Opsiyonel filtreleri işle
@@ -208,8 +217,12 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                 continue;
             }
 
-            $this->assertFieldType($key, $value, $operation);
-            $validatedFilters[$key] = $value;
+            try {
+                $this->assertFieldType($key, $value, $operation);
+                $validatedFilters[$key] = $value;
+            } catch (\InvalidArgumentException $e) {
+                $errors[] = $e->getMessage();
+            }
         }
 
         // 3. Varsayılan filtreleri işle
@@ -217,8 +230,12 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
             if (array_key_exists($key, $data)) {
                 $value = $data[$key];
                 if (!($value === null || $value === '' || $value === "null")) {
-                    $this->assertFieldType($key, $value, $operation);
-                    $validatedFilters[$key] = $value;
+                    try {
+                        $this->assertFieldType($key, $value, $operation);
+                        $validatedFilters[$key] = $value;
+                    } catch (\InvalidArgumentException $e) {
+                        $errors[] = $e->getMessage();
+                    }
                     continue;
                 }
             }
@@ -227,7 +244,24 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
             $validatedFilters[$key] = $this->getDefaultValue($key);
         }
 
+        if (!empty($errors)) {
+            throw new ValidationException('Veri doğrulama hatası', $errors);
+        }
+
         return $validatedFilters;
+    }
+
+    /**
+     * Gelen veriyi sanitize edip ScheduleFilterDTO döndürür.
+     * @param array $data
+     * @param string $operation
+     * @return mixed
+     * @throws ValidationException
+     */
+    public function getDTO(array $data, string $operation = 'view'): mixed
+    {
+        $sanitizedData = $this->sanitize($data, $operation);
+        return ScheduleFilterDTO::fromArray($sanitizedData);
     }
 
     /**

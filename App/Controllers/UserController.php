@@ -30,20 +30,8 @@ class UserController extends Controller
         try {
             Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
 
-            // 1. Validator'ı çalıştır
-            $validator = new UserValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            // 2. DTO oluştur
-            $dto = UserDTO::fromArray($requestData);
+            // 1. Doğrulama ve DTO oluşturma
+            $dto = (new UserValidator())->getDTO($requestData);
 
             // 3. Service'e gönder
             (new UserService())->saveNew($dto);
@@ -79,20 +67,8 @@ class UserController extends Controller
 
             Gate::authorize("update", $user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
 
-            // 1. Validator'ı çalıştır
-            $validator = new UserValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            // 2. DTO oluştur
-            $dto = UserDTO::fromArray($requestData);
+            // 1. Doğrulama ve DTO oluşturma
+            $dto = (new UserValidator())->getDTO($requestData);
             
             // 3. Service'e gönder (Fill işlemi servise devredildi)
             (new UserService())->updateUserData($requestData['id'], $dto);

@@ -29,18 +29,7 @@ class ClassroomController extends Controller
         try {
             Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
 
-            $validator = new ClassroomValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = ClassroomDTO::fromArray($requestData);
+            $dto = (new ClassroomValidator())->getDTO($requestData);
             (new ClassroomService())->saveNew($dto);
 
             return [
@@ -69,18 +58,7 @@ class ClassroomController extends Controller
 
             Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
 
-            $validator = new ClassroomValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = ClassroomDTO::fromArray($requestData);
+            $dto = (new ClassroomValidator())->getDTO($requestData);
             
             // DTO'dan Model'e aktar
             $classroom->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));

@@ -2,6 +2,9 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\LessonDTO;
+
 class LessonValidator extends BaseValidator
 {
     /**
@@ -18,9 +21,10 @@ class LessonValidator extends BaseValidator
      * Ders verilerini doğrular
      *
      * @param array $data Doğrulanacak veriler
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
@@ -58,9 +62,19 @@ class LessonValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
+    }
 
-        return ValidationResult::success();
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return LessonDTO
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): LessonDTO
+    {
+        $this->validate($data);
+        return LessonDTO::fromArray($data);
     }
 }

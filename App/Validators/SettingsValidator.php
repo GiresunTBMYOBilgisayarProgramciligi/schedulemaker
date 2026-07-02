@@ -2,21 +2,25 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\SettingDTO;
+
 class SettingsValidator extends BaseValidator
 {
     /**
      * Toplu ayar verilerini doğrular
      *
      * @param array $data Doğrulanacak veriler (Tüm settings dizisi)
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
         if (!isset($data['settings']) || !is_array($data['settings'])) {
             $errors[] = 'Ayarlar verisi geçerli bir formatta değil.';
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
 
         foreach ($data['settings'] as $group => $settings) {
@@ -42,9 +46,31 @@ class SettingsValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
+    }
 
-        return ValidationResult::success();
+    /**
+     * Veriyi doğrular ve DTO nesneleri dizisi döndürür.
+     * @param array $data
+     * @return SettingDTO[]
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): array
+    {
+        $this->validate($data);
+        
+        $settingsData = [];
+        foreach ($data['settings'] as $group => $settings) {
+            foreach ($settings as $key => $item) {
+                $settingsData[] = SettingDTO::fromArray([
+                    'group' => $group,
+                    'key' => $key,
+                    'value' => $item['value'] ?? null,
+                    'type' => $item['type'] ?? 'string'
+                ]);
+            }
+        }
+        return $settingsData;
     }
 }

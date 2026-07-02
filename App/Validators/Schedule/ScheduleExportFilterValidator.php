@@ -46,7 +46,7 @@ class ScheduleExportFilterValidator extends BaseScheduleFilterValidator
     /**
      * Filtreleri sanitize edip ScheduleExportFilterDTO olarak döner
      */
-    public function getDTO(array $data, string $operation): ScheduleExportFilterDTO
+    public function getDTO(array $data, string $operation = 'exportScheduleAction'): ScheduleExportFilterDTO
     {
         $sanitized = $this->sanitize($data, $operation);
         return ScheduleExportFilterDTO::fromArray($sanitized);

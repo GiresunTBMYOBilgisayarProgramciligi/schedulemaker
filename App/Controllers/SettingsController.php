@@ -38,28 +38,7 @@ class SettingsController extends Controller
         Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
 
         try {
-            $validator = new SettingsValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $settingsData = [];
-            foreach ($requestData['settings'] as $group => $settings) {
-                foreach ($settings as $key => $data) {
-                    $settingsData[] = SettingDTO::fromArray([
-                        'group' => $group,
-                        'key' => $key,
-                        'value' => $data['value'] ?? null,
-                        'type' => $data['type'] ?? 'string'
-                    ]);
-                }
-            }
+            $settingsData = (new SettingsValidator())->getDTO($requestData);
 
             (new SettingsService())->saveMultipleSettings($settingsData);
 

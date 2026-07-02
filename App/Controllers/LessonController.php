@@ -70,18 +70,7 @@ class LessonController extends Controller
             $lesson = new Lesson();
             Gate::authorize("create", $lesson, "Yeni Ders oluşturma yetkiniz yok");
 
-            $validator = new LessonValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = LessonDTO::fromArray($requestData);
+            $dto = (new LessonValidator())->getDTO($requestData);
             
             $lesson->fill($dto->toArray());
             (new LessonService())->saveNew($lesson);
@@ -116,16 +105,7 @@ class LessonController extends Controller
                 && $currentUser
                 && $lessonFromDb->lecturer_id == $currentUser->id;
 
-            $validator = new LessonValidator($isLecturerOwnLesson);
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
+            (new LessonValidator($isLecturerOwnLesson))->getDTO($requestData);
 
             (new LessonService())->updateLessonData($lessonFromDb->id, $requestData, $isLecturerOwnLesson);
 

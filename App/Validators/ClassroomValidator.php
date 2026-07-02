@@ -4,15 +4,19 @@ namespace App\Validators;
 
 use App\Enums\ClassroomType;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\ClassroomDTO;
+
 class ClassroomValidator extends BaseValidator
 {
     /**
      * Derslik verilerini doğrular
      *
      * @param array $data Doğrulanacak veriler
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
@@ -41,9 +45,19 @@ class ClassroomValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
+    }
 
-        return ValidationResult::success();
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return ClassroomDTO
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): ClassroomDTO
+    {
+        $this->validate($data);
+        return ClassroomDTO::fromArray($data);
     }
 }

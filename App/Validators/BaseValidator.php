@@ -11,11 +11,20 @@ namespace App\Validators;
 abstract class BaseValidator
 {
     /**
-     * Veriyi doğrular ve sonuç döner
+     * Veriyi doğrular, hata varsa ValidationException fırlatır.
      * @param array $data Doğrulanacak veri
-     * @return ValidationResult
+     * @return void
+     * @throws \App\Exceptions\ValidationException
      */
-    abstract public function validate(array $data): ValidationResult;
+    abstract public function validate(array $data): void;
+
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return mixed
+     * @throws \App\Exceptions\ValidationException
+     */
+    abstract public function getDTO(array $data): mixed;
 
     /**
      * Zaman formatını kontrol eder (HH:MM)

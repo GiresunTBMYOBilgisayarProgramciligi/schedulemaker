@@ -2,6 +2,9 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\ScheduleItemData;
+
 /**
  * Schedule Item validator
  * 
@@ -12,9 +15,10 @@ class ScheduleItemValidator extends BaseValidator
     /**
      * Schedule item verisini doğrular
      * @param array $data
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
@@ -86,31 +90,57 @@ class ScheduleItemValidator extends BaseValidator
             }
         }
 
-        return empty($errors)
-            ? ValidationResult::success()
-            : ValidationResult::failed($errors);
+        if (!empty($errors)) {
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
+        }
+    }
+
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return ScheduleItemData
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): ScheduleItemData
+    {
+        $this->validate($data);
+        return ScheduleItemData::fromArray($data);
     }
 
     /**
      * Batch validasyon - birden fazla item'ı doğrular
      * @param array $itemsData
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validateBatch(array $itemsData): ValidationResult
+    public function validateBatch(array $itemsData): void
     {
         $allErrors = [];
 
         foreach ($itemsData as $index => $itemData) {
-            $result = $this->validate($itemData);
-            if (!$result->isValid) {
-                foreach ($result->errors as $error) {
+            try {
+                $this->validate($itemData);
+            } catch (ValidationException $e) {
+                foreach ($e->getValidationErrors() as $error) {
                     $allErrors[] = "Item #{$index}: {$error}";
                 }
             }
         }
 
-        return empty($allErrors)
-            ? ValidationResult::success()
-            : ValidationResult::failed($allErrors);
+        if (!empty($allErrors)) {
+            throw new ValidationException('Toplu veri doğrulama hatası.', $allErrors);
+        }
+    }
+    
+    /**
+     * Toplu veri doğrulaması yapar ve DTO array'i döner
+     * @param array $itemsData
+     * @return ScheduleItemData[]
+     * @throws ValidationException
+     */
+    public function getBatchDTO(array $itemsData): array
+    {
+        $this->validateBatch($itemsData);
+        return array_map(fn($itemData) => ScheduleItemData::fromArray($itemData), $itemsData);
     }
 }

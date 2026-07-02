@@ -2,15 +2,19 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\DepartmentDTO;
+
 class DepartmentValidator extends BaseValidator
 {
     /**
      * Bölüm verilerini doğrular
      *
      * @param array $data Doğrulanacak veriler
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
@@ -27,9 +31,19 @@ class DepartmentValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
+    }
 
-        return ValidationResult::success();
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return DepartmentDTO
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): DepartmentDTO
+    {
+        $this->validate($data);
+        return DepartmentDTO::fromArray($data);
     }
 }

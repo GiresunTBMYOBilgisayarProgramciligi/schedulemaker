@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Silme işlemi için onay fonksiyonu
     function handleAjaxDelete(event) {
-        let lessonRow = event.target.closest('tr');
+        let lessonRow = event.target.closest('tr'); //todo kullanıcı ders, derslik silme işleminde de bu metod kullanılıyorsa lessonRow değişkeninin ismi değişmeli
         event.preventDefault();
         const form = event.target;
         const confirmMessage = form.getAttribute('data-confirm-message') || gettext.deleteMessage;
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
         });
     }
-
+    // todo bu metod kullanılıyor mu js/admin içerisinde combineLesson.js var hangisi kullanılıyor?
     function handleAjaxCombineLesson(event) {
         event.preventDefault();
         const form = event.target;

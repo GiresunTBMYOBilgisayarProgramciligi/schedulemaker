@@ -2,15 +2,19 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+use App\DTOs\ProgramDTO;
+
 class ProgramValidator extends BaseValidator
 {
     /**
      * Program verilerini doğrular
      *
      * @param array $data Doğrulanacak veriler
-     * @return ValidationResult
+     * @return void
+     * @throws ValidationException
      */
-    public function validate(array $data): ValidationResult
+    public function validate(array $data): void
     {
         $errors = [];
 
@@ -29,9 +33,19 @@ class ProgramValidator extends BaseValidator
         }
 
         if (!empty($errors)) {
-            return ValidationResult::failed($errors);
+            throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
+    }
 
-        return ValidationResult::success();
+    /**
+     * Veriyi doğrular ve DTO nesnesi döndürür.
+     * @param array $data
+     * @return ProgramDTO
+     * @throws ValidationException
+     */
+    public function getDTO(array $data): ProgramDTO
+    {
+        $this->validate($data);
+        return ProgramDTO::fromArray($data);
     }
 }

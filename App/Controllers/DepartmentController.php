@@ -27,18 +27,7 @@ class DepartmentController extends Controller
         try {
             Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
 
-            $validator = new DepartmentValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = DepartmentDTO::fromArray($requestData);
+            $dto = (new DepartmentValidator())->getDTO($requestData);
             (new DepartmentService())->saveNew($dto);
 
             return [
@@ -67,18 +56,7 @@ class DepartmentController extends Controller
 
             Gate::authorize("update", $department, "Bölüm güncelleme yetkiniz yok");
 
-            $validator = new DepartmentValidator();
-            $validationResult = $validator->validate($requestData);
-
-            if (!$validationResult->isValid) {
-                return [
-                    "status" => "error",
-                    "msg" => "Veri doğrulama hatası.",
-                    "errors" => $validationResult->errors
-                ];
-            }
-
-            $dto = DepartmentDTO::fromArray($requestData);
+            $dto = (new DepartmentValidator())->getDTO($requestData);
             
             // DTO'dan Model'e aktar
             $department->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));

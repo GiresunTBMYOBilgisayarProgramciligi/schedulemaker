@@ -279,10 +279,10 @@ class ErrorHandler
             $response['redirect'] = "/auth/login";
         }
 
-        /*// ValidationException için hata detaylarını ekle
+        // ValidationException için hata detaylarını ekle
         if ($exception instanceof ValidationException) {
-            $response['errors'] = $exception->getErrors();
-        }*/
+            $response['errors'] = $exception->getValidationErrors();
+        }
 
         // Geliştirme ortamında daha fazla detay göster
         if ($_ENV['DEBUG'] === 'true') {

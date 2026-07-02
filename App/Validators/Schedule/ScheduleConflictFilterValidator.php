@@ -29,7 +29,7 @@ class ScheduleConflictFilterValidator extends BaseScheduleFilterValidator
     /**
      * Filtreleri sanitize edip ConflictFilterDTO olarak döner
      */
-    public function getDTO(array $data, string $operation): ConflictFilterDTO
+    public function getDTO(array $data, string $operation = 'checkScheduleCrash'): ConflictFilterDTO
     {
         $sanitized = $this->sanitize($data, $operation);
         // checkScheduleCrash'e gelen data içerisinde raw JS verileri var,

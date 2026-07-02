@@ -43,13 +43,4 @@ class ScheduleViewFilterValidator extends BaseScheduleFilterValidator
             ],
         ];
     }
-
-    /**
-     * Filtreleri sanitize edip ScheduleFilterDTO olarak döner
-     */
-    public function getDTO(array $data, string $operation): ScheduleFilterDTO
-    {
-        $sanitized = $this->sanitize($data, $operation);
-        return ScheduleFilterDTO::fromArray($sanitized);
-    }
 }

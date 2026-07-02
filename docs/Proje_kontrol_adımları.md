@@ -1,4 +1,4 @@
-## Ana Sayfa
+# Ana Sayfa
 - Ana sayfa açılıyor.
 - Ders programı, yıl ve dönem seçimleri düzgün listelenmiş
 - Bölüm ve program seçimleri çalışıyor
@@ -23,13 +23,34 @@
 - Takvime aktarma işlemleri çalışıyor
 - Yönetim paneli butonu çalışıyor
 
-## Giriş sayfası
+# Giriş sayfası
 - başlık ana sayfaya yönlendiriyor
 - Giriş başarısız oluyor.
-- - Form kontrollerü yapılıyor.
-- - Form hata mesajları sonraki denemede temizleniyor. 
+  - Form kontrollerü yapılıyor.
+  - Form hata mesajları sonraki denemede temizleniyor. 
 - Giriş yapılıyor.
+- Giriş sonrası yönetici paneline yönlendiriliyor.
 
 
-## Yönetici Sayfası
-- 
+# Yönetici Sayfası
+
+## Admin yetkisi için
+- Tm menüler aktif gözüküyor.
+  - Başlangıç, Kullanıcı İşlemleri -> Liste, Ekle, İçe Aktar|, Ders işlemleri -> Liste, Ekle, İçe Aktar|, Derslik İşlemleri -> Liste, Ekle|, Akademik Birimler -> Bölüm İşlemleri -> Liste, Ekle|, Program İşlemleri -> Liste, Ekle|, Takvim İşlemleri -> Ders Programını Düzenle, Sınav Programını Düzenle, Dışa Aktar|, Ayarlar-> Genel, Kayıtlar
+- Ana sayfada sayısal veriler düzgün çalışıyor
+- Tüm programların temel bilgilerinin bulunduğu kartlar çalışıyor.
+- Bölüm başkanı linkleri çalışıyor
+- Bölüm detay butonu ve detay butonu doru sayfaya gidiyor
+- Profil butonu çalışıyor
+- Çıkış yap butonu çalışıyor
+
+### Kullanıcı işlemleri
+- Tüm kullanıcılar listeleniyor
+- işlemler dropdown çalışıyor. (Gör, Düzenle, Sil)
+  - Gör butonu çalışıyor
+  - Düzenle butonu çalışıyor
+  - Sil butonu çalışıyor
+- Arama çalışıyor.
+- 1 id li kullanıcı silinmiyor. 
+
+### Ders İşlemleri
