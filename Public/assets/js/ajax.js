@@ -5,12 +5,24 @@ document.addEventListener("DOMContentLoaded", function () {
     //code id li bir input varsa
     const codeInput = document.querySelector("input#code");
     const importFileInput = document.querySelector("input#importFile")
-    // Formlara olay dinleyicileri ekleme
-    document.querySelectorAll(".ajaxForm").forEach((form) => {
-        form.addEventListener("submit", handleAjaxForm);
-        
-        // Kullanıcı hatalı alana tekrar veri girdiğinde hata mesajlarını ve is-invalid sınıfını temizle
-        form.addEventListener("input", (e) => {
+    // Formlara olay dinleyicileri ekleme (Event Delegation)
+    document.addEventListener("submit", function(event) {
+        if (event.target && event.target.classList) {
+            if (event.target.classList.contains("ajaxForm")) {
+                handleAjaxForm(event);
+            } else if (event.target.classList.contains("ajaxFormDelete")) {
+                handleAjaxDelete(event);
+            } else if (event.target.classList.contains("ajaxFormCombineLesson")) {
+                handleAjaxCombineLesson(event);
+            } else if (event.target.classList.contains("ajaxDeleteParentLesson")) {
+                handleAjaxDeleteParentLesson(event);
+            }
+        }
+    });
+
+    // Kullanıcı hatalı alana tekrar veri girdiğinde hata mesajlarını ve is-invalid sınıfını temizle
+    document.addEventListener("input", function(e) {
+        if (e.target && e.target.closest && e.target.closest(".ajaxForm")) {
             if (e.target.classList.contains("is-invalid")) {
                 e.target.classList.remove("is-invalid");
                 const errorId = e.target.getAttribute("aria-describedby");
@@ -26,20 +38,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             }
-        });
+        }
     });
-
-    document.querySelectorAll(".ajaxFormDelete").forEach((form) => {
-        form.addEventListener("submit", handleAjaxDelete);
-    });
-
-    document.querySelectorAll(".ajaxFormCombineLesson").forEach((form) => {
-        form.addEventListener("submit", handleAjaxCombineLesson);
-    })
-
-    document.querySelectorAll(".ajaxDeleteParentLesson").forEach((form) => {
-        form.addEventListener("submit", handleAjaxDeleteParentLesson);
-    })
 
     function handleAjaxForm(event) {
         event.preventDefault();
