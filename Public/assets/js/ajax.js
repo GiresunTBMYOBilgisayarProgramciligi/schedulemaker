@@ -12,8 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 handleAjaxForm(event);
             } else if (event.target.classList.contains("ajaxFormDelete")) {
                 handleAjaxDelete(event);
-            } else if (event.target.classList.contains("ajaxFormCombineLesson")) {
-                handleAjaxCombineLesson(event);
             } else if (event.target.classList.contains("ajaxDeleteParentLesson")) {
                 handleAjaxDeleteParentLesson(event);
             }
@@ -87,45 +85,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             })
         });
-    }
-    // todo bu metod kullanılıyor mu js/admin içerisinde combineLesson.js var hangisi kullanılıyor?
-    function handleAjaxCombineLesson(event) {
-        event.preventDefault();
-        const form = event.target;
-        let data = new FormData(form);
-        /**
-         * Sayfası açık olan derse parent olarak eklenecek ders
-         * @type {FormDataEntryValue}
-         */
-        let parentLessonId = data.get('parent_lesson_id');
-        /**
-         * Sayfası açık olan dersin parnt olarak ekleneceği ders
-         * @type {FormDataEntryValue}
-         */
-        let childLessonId = data.get('child_lesson_id');
-        /**
-         * Sayfası açık olan ders
-         * @type {FormDataEntryValue}
-         */
-        let lessonId = data.get('lesson_id');
-        if (parentLessonId == 0 && childLessonId == 0) {
-            new Toast().prepareToast('Hata', "Lütfen bir seçim yapın", "danger");
-            return false;
-        } else if (parentLessonId != 0 && childLessonId != 0) {
-            new Toast().prepareToast('Hata', "Lütfen sadece bir seçim yapın", "danger");
-            return false;
-        } else if (parentLessonId != 0) {
-            data.append('child_lesson_id', lessonId);
-            let conbineModal = new Modal("CombineLessonModal");
-            conbineModal.hideModal();
-            fetchForm(form, data)
-
-        } else if (childLessonId != 0) {
-            data.append("parent_lesson_id", lessonId)
-            let conbineModal = new Modal("CombineLessonModal");
-            conbineModal.hideModal();
-            fetchForm(form, data)
-        }
     }
 
     function handleAjaxDeleteParentLesson(event) {
