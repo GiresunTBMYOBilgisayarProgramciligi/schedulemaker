@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const codeInput = document.querySelector("input#code");
     const importFileInput = document.querySelector("input#importFile")
     // Formlara olay dinleyicileri ekleme (Event Delegation)
-    document.addEventListener("submit", function(event) {
+    document.addEventListener("submit", function (event) {
         if (event.target && event.target.classList) {
             if (event.target.classList.contains("ajaxForm")) {
                 handleAjaxForm(event);
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Kullanıcı hatalı alana tekrar veri girdiğinde hata mesajlarını ve is-invalid sınıfını temizle
-    document.addEventListener("input", function(e) {
+    document.addEventListener("input", function (e) {
         if (e.target && e.target.closest && e.target.closest(".ajaxForm")) {
             if (e.target.classList.contains("is-invalid")) {
                 e.target.classList.remove("is-invalid");
@@ -76,12 +76,14 @@ document.addEventListener("DOMContentLoaded", function () {
         confirmDeleteModal.showModal()
         confirmDeleteModal.confirmButton.addEventListener("click", () => {
             confirmDeleteModal.closeModal();
-            fetchForm(form, new FormData(form)).then(() => {
-                if (lessonRow) {
-                    dataTable.row(lessonRow).remove().draw();
-                    //lessonRow.remove();
-                } else {
-                    window.history.back()
+            fetchForm(form, new FormData(form)).then((data) => {
+                if (data && data.status === "success") {
+                    if (lessonRow) {
+                        dataTable.row(lessonRow).remove().draw();
+                        //lessonRow.remove();
+                    } else {
+                        window.history.back()
+                    }
                 }
             })
         });
@@ -209,6 +211,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (modal) {
                     modal.cancelButton.addEventListener("click", handleRedirect);
                 }
+
+                return data;
             })
             .catch((error) => {
                 if (loadingToast) loadingToast.closeToast();
@@ -220,6 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     new Toast().prepareToast("Hata", error, "danger");
                 }
                 console.error(error);
+                throw error;
             }).finally(() => {
                 if (form && form.classList.contains("js-reset-on-success")) {
                     //işlemler tamamlandıktan sonra form resetleniyor. 
