@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Repositories\DepartmentRepository;
 use App\Models\Schedule;
 use Exception;
+use App\Exceptions\ValidationException;
 use PDO;
 use PDOException;
 use App\Core\Gate;
@@ -35,6 +36,12 @@ class DepartmentController extends Controller
                 "msg" => "Bölüm başarıyla oluşturuldu."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -68,6 +75,12 @@ class DepartmentController extends Controller
                 "msg" => "Bölüm başarıyla güncellendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -100,6 +113,12 @@ class DepartmentController extends Controller
                 "msg" => "Bölüm başarıyla silindi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",

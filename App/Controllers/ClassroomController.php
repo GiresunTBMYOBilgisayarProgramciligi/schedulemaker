@@ -10,6 +10,7 @@ use App\DTOs\ClassroomDTO;
 use App\Core\Gate;
 use App\Enums\ClassroomType;
 use Exception;
+use App\Exceptions\ValidationException;
 
 /**
  * Controller sınıfından türetilmiştir. Derslikler ile ilgili işlemleri yönetir.
@@ -37,6 +38,12 @@ class ClassroomController extends Controller
                 "msg" => "Derslik başarıyla oluşturuldu."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -70,6 +77,12 @@ class ClassroomController extends Controller
                 "msg" => "Derslik başarıyla güncellendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -102,6 +115,12 @@ class ClassroomController extends Controller
                 "msg" => "Derslik başarıyla silindi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",

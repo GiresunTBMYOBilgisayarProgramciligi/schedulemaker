@@ -22,26 +22,26 @@ class ClassroomValidator extends BaseValidator
 
         // Ad doğrulaması
         if (empty($data['name'])) {
-            $errors[] = 'Derslik adı zorunludur.';
-        } elseif (mb_strlen($data['name']) > 100) {
-            $errors[] = 'Derslik adı en fazla 100 karakter olabilir.';
+            $errors['name'] = 'Derslik adı zorunludur.';
+        } elseif (mb_strlen($data['name']) > 50) {
+            $errors['name'] = 'Derslik adı en fazla 50 karakter olabilir.';
         }
 
         // Kapasite doğrulaması
         if (isset($data['class_size']) && !is_numeric($data['class_size'])) {
-            $errors[] = 'Derslik kapasitesi sayısal bir değer olmalıdır.';
+            $errors['class_size'] = 'Derslik kapasitesi sayısal bir değer olmalıdır.';
         }
 
         // Sınav kapasitesi doğrulaması
         if (isset($data['exam_size']) && !is_numeric($data['exam_size'])) {
-            $errors[] = 'Sınav kapasitesi sayısal bir değer olmalıdır.';
+            $errors['exam_size'] = 'Sınav kapasitesi sayısal bir değer olmalıdır.';
         }
 
         // Tür doğrulaması
         if (empty($data['type'])) {
-            $errors[] = 'Derslik türü zorunludur.';
+            $errors['type'] = 'Derslik türü zorunludur.';
         } elseif (!ClassroomType::tryFrom((int)$data['type'])) {
-            $errors[] = 'Geçersiz derslik türü seçildi.';
+            $errors['type'] = 'Geçersiz derslik türü seçildi.';
         }
 
         if (!empty($errors)) {

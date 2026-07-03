@@ -15,6 +15,7 @@ use App\DTOs\CombineLessonDTO;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\LessonImporter;
 use Exception;
+use App\Exceptions\ValidationException;
 
 class LessonController extends Controller
 {
@@ -80,6 +81,12 @@ class LessonController extends Controller
                 "msg" => "Ders başarıyla oluşturuldu."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -114,6 +121,12 @@ class LessonController extends Controller
                 "msg" => "Ders başarıyla güncellendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -146,6 +159,12 @@ class LessonController extends Controller
                 "msg" => "Ders başarıyla silindi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -164,6 +183,12 @@ class LessonController extends Controller
             Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
             $dto = CombineLessonDTO::fromArray($requestData);
             return (new LessonService())->previewCombineLesson($dto);
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -196,6 +221,12 @@ class LessonController extends Controller
                 "status"   => "success",
                 "redirect" => "self"
             ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -222,6 +253,12 @@ class LessonController extends Controller
                 "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
                 "status" => "success",
                 "redirect" => "self"
+            ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
             ];
         } catch (Exception $e) {
             return [
@@ -254,6 +291,12 @@ class LessonController extends Controller
                 "status"   => "success",
                 "redirect" => "self"
             ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -278,6 +321,12 @@ class LessonController extends Controller
                 "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",
                 "status"   => "success",
                 "redirect" => "self"
+            ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
             ];
         } catch (Exception $e) {
             return [
@@ -304,6 +353,12 @@ class LessonController extends Controller
             return [
                 'status'  => 'success',
                 'lessons' => $lessons,
+            ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
             ];
         } catch (Exception $e) {
             return [
@@ -340,6 +395,12 @@ class LessonController extends Controller
                 'errors'         => $result['errors'],
                 'addedLessons'   => $result['addedLessons'],
                 'updatedLessons' => $result['updatedLessons']
+            ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
             ];
         } catch (Exception $e) {
             return [

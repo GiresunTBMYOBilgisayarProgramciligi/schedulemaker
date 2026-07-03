@@ -7,6 +7,7 @@ use App\Models\Program;
 use App\Repositories\ProgramRepository;
 use App\Models\Schedule;
 use Exception;
+use App\Exceptions\ValidationException;
 use PDO;
 use PDOException;
 use App\Core\Gate;
@@ -40,6 +41,12 @@ class ProgramController extends Controller
                 'status' => "success",
                 'programs' => $programs
             ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -64,6 +71,12 @@ class ProgramController extends Controller
                 "msg" => "Program başarıyla oluşturuldu."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -97,6 +110,12 @@ class ProgramController extends Controller
                 "msg" => "Program başarıyla güncellendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -129,6 +148,12 @@ class ProgramController extends Controller
                 "msg" => "Program başarıyla silindi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",

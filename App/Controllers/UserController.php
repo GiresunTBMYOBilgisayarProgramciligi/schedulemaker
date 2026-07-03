@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\UserImporter;
 use App\Repositories\UserRepository;
 use Exception;
+use App\Exceptions\ValidationException;
 
 class UserController extends Controller
 {
@@ -41,6 +42,12 @@ class UserController extends Controller
                 "msg" => "Kullanıcı başarıyla eklendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -78,6 +85,12 @@ class UserController extends Controller
                 "msg" => "Kullanıcı başarıyla güncellendi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -111,6 +124,12 @@ class UserController extends Controller
                 "msg" => "Kullanıcı başarıyla silindi."
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",
@@ -143,6 +162,12 @@ class UserController extends Controller
                     $result['added'], $result['updated'], $result['errorCount']
                 ),
                 'errors' => $result['errors']
+            ];
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
             ];
         } catch (Exception $e) {
             return [

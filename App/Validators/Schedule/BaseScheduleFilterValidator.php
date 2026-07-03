@@ -104,19 +104,19 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         // 1. Zorunlu filtreleri kontrol et
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $data)) {
-                $errors[] = "'$operation' işlemi için zorunlu filtre eksik: $key";
+                $errors[$key] = "'$operation' işlemi için zorunlu filtre eksik: $key";
                 continue;
             }
 
             $value = $data[$key];
             if ($value === null || $value === '' || $value === "null") {
-                $errors[] = "'$operation' işlemi için zorunlu filtre ($key) boş olamaz.";
+                $errors[$key] = "'$operation' işlemi için zorunlu filtre ($key) boş olamaz.";
                 continue;
             }
 
             $typeError = $this->validateFieldType($key, $value, $operation);
             if ($typeError !== null) {
-                $errors[] = $typeError;
+                $errors[$key] = $typeError;
             }
         }
 
@@ -133,7 +133,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
 
             $typeError = $this->validateFieldType($key, $value, $operation);
             if ($typeError !== null) {
-                $errors[] = $typeError;
+                $errors[$key] = $typeError;
             }
         }
 
@@ -144,7 +144,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                 if (!($value === null || $value === '' || $value === "null")) {
                     $typeError = $this->validateFieldType($key, $value, $operation);
                     if ($typeError !== null) {
-                        $errors[] = $typeError;
+                        $errors[$key] = $typeError;
                     }
                 }
             }
@@ -188,13 +188,13 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         // 1. Zorunlu filtreleri işle
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $data)) {
-                $errors[] = "'$operation' işlemi için zorunlu filtre eksik: $key";
+                $errors[$key] = "'$operation' işlemi için zorunlu filtre eksik: $key";
                 continue;
             }
 
             $value = $data[$key];
             if ($value === null || $value === '' || $value === "null") {
-                $errors[] = "'$operation' işlemi için zorunlu filtre ($key) boş olamaz.";
+                $errors[$key] = "'$operation' işlemi için zorunlu filtre ($key) boş olamaz.";
                 continue;
             }
 
@@ -202,7 +202,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                 $this->assertFieldType($key, $value, $operation);
                 $validatedFilters[$key] = $value;
             } catch (\InvalidArgumentException $e) {
-                $errors[] = $e->getMessage();
+                $errors[$key] = $e->getMessage();
             }
         }
 
@@ -221,7 +221,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                 $this->assertFieldType($key, $value, $operation);
                 $validatedFilters[$key] = $value;
             } catch (\InvalidArgumentException $e) {
-                $errors[] = $e->getMessage();
+                $errors[$key] = $e->getMessage();
             }
         }
 
@@ -234,7 +234,7 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
                         $this->assertFieldType($key, $value, $operation);
                         $validatedFilters[$key] = $value;
                     } catch (\InvalidArgumentException $e) {
-                        $errors[] = $e->getMessage();
+                        $errors[$key] = $e->getMessage();
                     }
                     continue;
                 }

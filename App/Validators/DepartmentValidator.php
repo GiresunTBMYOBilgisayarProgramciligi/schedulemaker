@@ -19,15 +19,15 @@ class DepartmentValidator extends BaseValidator
         $errors = [];
 
         // Ad doğrulaması
-        if (empty($data['name'])) {
-            $errors[] = 'Bölüm adı zorunludur.';
-        } elseif (mb_strlen($data['name']) > 255) {
-            $errors[] = 'Bölüm adı en fazla 255 karakter olabilir.';
+        if ($this->isEmpty($data['name'] ?? null)) {
+            $errors['name'] = 'Bölüm adı zorunludur.';
+        } elseif (!$this->hasValidLength($data['name'], 2, 100)) {
+            $errors['name'] = 'Bölüm adı 2 ile 100 karakter arasında olmalıdır.';
         }
 
         // Başkan doğrulaması (Opsiyonel)
         if (!empty($data['chairperson_id']) && !is_numeric($data['chairperson_id'])) {
-            $errors[] = 'Bölüm başkanı ID değeri sayısal olmalıdır.';
+            $errors['chairperson_id'] = 'Bölüm başkanı ID değeri sayısal olmalıdır.';
         }
 
         if (!empty($errors)) {

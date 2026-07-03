@@ -20,16 +20,16 @@ class ProgramValidator extends BaseValidator
 
         // Ad doğrulaması
         if (empty($data['name'])) {
-            $errors[] = 'Program adı zorunludur.';
+            $errors['name'] = 'Program adı zorunludur.';
         } elseif (mb_strlen($data['name']) > 255) {
-            $errors[] = 'Program adı en fazla 255 karakter olabilir.';
+            $errors['name'] = 'Program adı en fazla 255 karakter olabilir.';
         }
 
-        // Bölüm ID doğrulaması
+        // Bölüm doğrulaması
         if (empty($data['department_id'])) {
-            $errors[] = 'Bölüm seçimi zorunludur.';
+            $errors['department_id'] = 'Bölüm seçimi zorunludur.';
         } elseif (!is_numeric($data['department_id'])) {
-            $errors[] = 'Bölüm değeri geçerli bir sayı olmalıdır.';
+            $errors['department_id'] = 'Bölüm değeri geçerli bir sayı olmalıdır.';
         }
 
         if (!empty($errors)) {

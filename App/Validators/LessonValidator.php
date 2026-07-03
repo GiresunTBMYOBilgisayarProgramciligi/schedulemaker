@@ -31,34 +31,34 @@ class LessonValidator extends BaseValidator
         if (!$this->isLecturerSelfUpdate) {
             // Admin kontrolleri
             if (empty($data['lecturer_id']) || $data['lecturer_id'] == '0') {
-                $errors[] = 'Hoca seçmelisiniz.';
+                $errors['lecturer_id'] = 'Hoca seçmelisiniz.';
             }
             if (empty($data['department_id']) || $data['department_id'] == '0') {
-                $errors[] = 'Bölüm seçmelisiniz.';
+                $errors['department_id'] = 'Bölüm seçmelisiniz.';
             }
             if (empty($data['program_id']) || $data['program_id'] == '0') {
-                $errors[] = 'Program seçmelisiniz.';
+                $errors['program_id'] = 'Program seçmelisiniz.';
             }
             if (empty($data['name'])) {
-                $errors[] = 'Ders adı zorunludur.';
+                $errors['name'] = 'Ders adı zorunludur.';
             }
             if (empty($data['code'])) {
-                $errors[] = 'Ders kodu zorunludur.';
+                $errors['code'] = 'Ders kodu zorunludur.';
             }
             if (!isset($data['hours']) || $data['hours'] === '') {
-                $errors[] = 'Ders saati zorunludur.';
+                $errors['hours'] = 'Ders saati zorunludur.';
             }
         }
 
         // Genel kontroller (Hoca da değiştirebilir)
         if (!isset($data['size']) || $data['size'] === '') {
-            $errors[] = 'Ders mevcudu zorunludur.';
+            $errors['size'] = 'Ders mevcudu zorunludur.';
         } elseif (!is_numeric($data['size']) || $data['size'] < 0) {
-            $errors[] = 'Ders mevcudu geçerli bir sayı olmalıdır.';
+            $errors['size'] = 'Ders mevcudu geçerli bir sayı olmalıdır.';
         }
 
         if (isset($data['classroom_type']) && $data['classroom_type'] !== '' && !is_numeric($data['classroom_type'])) {
-            $errors[] = 'Sınıf türü geçerli bir sayı olmalıdır.';
+            $errors['classroom_type'] = 'Sınıf türü geçerli bir sayı olmalıdır.';
         }
 
         if (!empty($errors)) {

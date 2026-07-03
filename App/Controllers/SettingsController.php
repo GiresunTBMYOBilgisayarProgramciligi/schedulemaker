@@ -9,6 +9,7 @@ use App\DTOs\SettingDTO;
 use App\Validators\SettingsValidator;
 use App\Services\SettingsService;
 use Exception;
+use App\Exceptions\ValidationException;
 
 class SettingsController extends Controller
 {
@@ -47,6 +48,12 @@ class SettingsController extends Controller
                 "msg" => "Ayarlar kaydedildi"
             ];
 
+        } catch (ValidationException $e) {
+            return [
+                "status" => "error",
+                "msg" => "Veri doğrulama hatası",
+                "errors" => $e->getValidationErrors()
+            ];
         } catch (Exception $e) {
             return [
                 "status" => "error",

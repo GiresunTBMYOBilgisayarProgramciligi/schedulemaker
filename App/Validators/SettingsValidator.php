@@ -19,28 +19,32 @@ class SettingsValidator extends BaseValidator
         $errors = [];
 
         if (!isset($data['settings']) || !is_array($data['settings'])) {
-            $errors[] = 'Ayarlar verisi geçerli bir formatta değil.';
+            $errors['settings'] = 'Ayarlar verisi geçerli bir formatta değil.';
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }
 
         foreach ($data['settings'] as $group => $settings) {
             if (empty($group)) {
-                $errors[] = 'Ayar grubu (group) boş olamaz.';
+                $errors['settings'] = 'Ayar grubu (group) boş olamaz.';
             }
 
             foreach ($settings as $key => $settingData) {
+                // Hata mesajını ayar HTML "name" formatına göre ayarlayalım
+                // HTML input name formatı: name="settings[group][key][value]" (veya benzeri, örn: name="settings[genel][title]")
+                $errorKey = "settings[{$group}][{$key}]";
+
                 if (empty($key)) {
-                    $errors[] = "Ayar anahtarı (key) boş olamaz. (Grup: $group)";
+                    $errors[$errorKey] = "Ayar anahtarı (key) boş olamaz.";
                 }
 
                 if (!isset($settingData['type']) || empty($settingData['type'])) {
-                    $errors[] = "'$key' anahtarı için geçerli bir tip (type) belirtilmemiş. (Grup: $group)";
+                    $errors[$errorKey] = "'$key' anahtarı için geçerli bir tip (type) belirtilmemiş.";
                 }
 
                 // Check allowed types
                 $allowedTypes = ['string', 'integer', 'boolean', 'json', 'array'];
                 if (isset($settingData['type']) && !in_array($settingData['type'], $allowedTypes)) {
-                    $errors[] = "'$key' anahtarı için geçersiz tip: '{$settingData['type']}'. (Grup: $group)";
+                    $errors[$errorKey] = "'$key' anahtarı için geçersiz tip: '{$settingData['type']}'.";
                 }
             }
         }

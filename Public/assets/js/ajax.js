@@ -134,13 +134,41 @@ document.addEventListener("DOMContentLoaded", function () {
                     ? `<ul>${data.msg.map((item) => `<li>${item}</li>`).join("")}</ul>`
                     : data.msg;
 
-                if (data.errors && data.errors.length > 0) {
-                    message += `<hr><div class="error-list text-start" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">
-                        <h6 class="fw-bold">Hata Detayları:</h6>
-                        <ul class="small mb-0">
-                            ${data.errors.map(err => `<li>${err}</li>`).join('')}
-                        </ul>
-                    </div>`;
+                if (data.errors) {
+                    if (Array.isArray(data.errors) && data.errors.length > 0) {
+                        // Eski liste stili hatalar (dizi ise)
+                        message += `<hr><div class="error-list text-start" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px;">
+                            <h6 class="fw-bold">Hata Detayları:</h6>
+                            <ul class="small mb-0">
+                                ${data.errors.map(err => `<li>${err}</li>`).join('')}
+                            </ul>
+                        </div>`;
+                    } else if (typeof data.errors === 'object' && Object.keys(data.errors).length > 0) {
+                        // Yeni nesne/key-value stili inline hatalar
+                        let hasUnmappedErrors = false;
+                        for (const [field, err] of Object.entries(data.errors)) {
+                            const input = form.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                input.classList.add('is-invalid');
+                                let feedback = input.parentNode.querySelector('.invalid-feedback');
+                                if (!feedback) {
+                                    feedback = document.createElement('div');
+                                    feedback.className = 'invalid-feedback';
+                                    const errorId = `${input.id}-error`;
+                                    feedback.id = errorId;
+                                    input.setAttribute('aria-describedby', errorId);
+                                    input.parentNode.appendChild(feedback);
+                                }
+                                feedback.textContent = err;
+                            } else {
+                                hasUnmappedErrors = true;
+                                message += `<br>- ${err}`;
+                            }
+                        }
+                        if (hasUnmappedErrors) {
+                            message += "<br>Lütfen hatalı alanları kontrol ediniz.";
+                        }
+                    }
                 }
 
                 const handleRedirect = () => {
@@ -171,6 +199,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     modal.cancelButton.addEventListener("click", handleRedirect);
                 }
 
+                if (data.status === "success" && form && form.classList.contains("js-reset-on-success")) {
+                    // işlemler tamamlandıktan sonra form resetleniyor. 
+                    form.reset();
+                }
+
                 return data;
             })
             .catch((error) => {
@@ -185,10 +218,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.error(error);
                 throw error;
             }).finally(() => {
-                if (form && form.classList.contains("js-reset-on-success")) {
-                    //işlemler tamamlandıktan sonra form resetleniyor. 
-                    form.reset();
-                }
+                // finally
             });
     }
 });
