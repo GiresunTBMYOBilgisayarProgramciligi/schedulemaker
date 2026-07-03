@@ -191,7 +191,8 @@ class User extends Model
     }
 
     /**
-     * Kullanıdı Adı ve Soyadını birleştirerek döner
+     * Kullanıdı Ünvanı, Adı ve Soyadını birleştirerek döner
+     * todo Lesson fullname gibi parametreler eklenebilir.
      * @return string
      */
     public function getFullName(): string

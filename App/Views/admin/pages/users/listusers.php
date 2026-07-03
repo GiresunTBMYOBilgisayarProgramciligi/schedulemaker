@@ -43,7 +43,9 @@ use App\Core\Gate;
                         <thead>
                             <tr>
                                 <!--<th scope="col">İd</th>-->
-                                <th scope="col">Ünvanı Adı Soyadı</th>
+                                <th scope="col">Ünvanı</th>
+                                <th scope="col">Adı</th>
+                                <th scope="col">Soyadı</th>
                                 <th scope="col">e-Posta</th>
                                 <th scope="col" class="filterable">Bölüm</th>
                                 <th scope="col" class="filterable">Program</th>
@@ -57,7 +59,9 @@ use App\Core\Gate;
                             <?php foreach ($users as $user): ?>
                                 <tr>
                                     <!--<td><?php /*= $user->id */ ?></td>-->
-                                    <td><?= $user->getFullName() ?></td>
+                                    <td><?= $user->title ?></td>
+                                    <td><?= $user->name ?></td>
+                                    <td><?= $user->last_name ?></td>
                                     <td><?= $user->mail ?></td>
                                     <td><?= $user->department->name ?? '' ?></td>
                                     <td><?= $user->program->name ?? '' ?></td>
