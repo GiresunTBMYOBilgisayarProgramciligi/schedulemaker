@@ -2,16 +2,12 @@
 
 namespace App\Services\Import;
 
-use App\Controllers\DepartmentController;
-use App\Controllers\ProgramController;
 use App\Core\Database;
 use App\Core\Log;
-use App\Models\User;
 use App\Repositories\UserRepository;
 use App\Enums\UserRole;
 use App\Enums\UserTitle;
 use App\Services\UserService;
-use App\DTOs\UserDTO;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
