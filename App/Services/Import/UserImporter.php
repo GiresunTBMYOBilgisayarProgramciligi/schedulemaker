@@ -9,6 +9,7 @@ use App\Core\Log;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use App\Enums\UserRole;
+use App\Enums\UserTitle;
 use App\Services\UserService;
 use App\DTOs\UserDTO;
 use Exception;
@@ -88,42 +89,68 @@ class UserImporter
                     $row
                 );
 
-                if (empty($mail) || empty($title) || empty($name) || empty($last_name) || empty($role)) {
-                    $errors[] = "Satır " . ($index + 2) . ": Eksik veri!";
-                    $errorCount++;
-                    continue;
+                // Caching Department
+                $department = null;
+                if (!empty($department_name)) {
+                    if (!isset($this->cache['departments'][$department_name])) {
+                        $this->cache['departments'][$department_name] = (new DepartmentRepository())->findByName($department_name) ?: false;
+                    }
+                    $department = $this->cache['departments'][$department_name];
                 }
 
-                // Caching
-                if (!isset($this->cache['departments'][$department_name])) {
-                    $this->cache['departments'][$department_name] = (new DepartmentRepository())->findByName($department_name) ?: false;
+                // Caching Program
+                $program = null;
+                if (!empty($program_name)) {
+                    $programCacheKey = $program_name;
+                    if (!isset($this->cache['programs'][$programCacheKey])) {
+                        $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
+                    }
+                    $program = $this->cache['programs'][$programCacheKey];
                 }
-                $department = $this->cache['departments'][$department_name];
 
-                $programCacheKey = $department_name . '_' . $program_name;
-                if (!isset($this->cache['programs'][$programCacheKey])) {
-                    $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
+                $rowErrors = [];
+                if (!empty($department_name) && $department === false) {
+                    $rowErrors[] = "Bölüm bulunamadı! ({$department_name})";
                 }
-                $program = $this->cache['programs'][$programCacheKey];
+                if (!empty($program_name) && $program === false) {
+                    $rowErrors[] = "Program bulunamadı! ({$program_name})";
+                }
 
-                if (!$department || !$program) {
-                    $rowErrors = [];
-                    if (!$department) $rowErrors[] = "Bölüm bulunamadı! ({$department_name})";
-                    if (!$program)    $rowErrors[] = "Program bulunamadı! ({$program_name})";
+                // Compatibility Check
+                if ($department && $program && $program->department_id !== $department->id) {
+                    $rowErrors[] = "Uyumsuzluk: {$department->name} bölümünün {$program->name} programı yok!";
+                } elseif (empty($department_name) && !empty($program_name)) {
+                    $rowErrors[] = "Uyumsuzluk: Program belirtildiğinde bölüm de belirtilmelidir!";
+                }
+
+                $roleEnum = UserRole::fromLabel($role);
+                $titleEnum = UserTitle::tryFrom($title);
+
+                $userData = [
+                    'mail'          => $mail,
+                    'title'         => $titleEnum?->value ?? $title,
+                    'name'          => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
+                    'last_name'     => mb_strtoupper($last_name, "UTF-8"),
+                    'role'          => $roleEnum?->value ?? $role,
+                    'department_id' => $department ? $department->id : null,
+                    'program_id'    => $program ? $program->id : null,
+                ];
+
+                $userDTO = null;
+                try {
+                    $userValidator = new \App\Validators\UserValidator();
+                    $userDTO = $userValidator->getDTO($userData);
+                } catch (\App\Exceptions\ValidationException $e) {
+                    foreach ($e->getValidationErrors() as $field => $msg) {
+                        $rowErrors[] = $msg;
+                    }
+                }
+
+                if (!empty($rowErrors)) {
                     $errors[] = "Satır " . ($index + 2) . ": " . implode(" | ", $rowErrors);
                     $errorCount++;
                     continue;
                 }
-
-                $userData = [
-                    'mail'          => $mail,
-                    'title'         => $title,
-                    'name'          => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
-                    'last_name'     => mb_strtoupper($last_name, "UTF-8"),
-                    'role'          => UserRole::fromLabel($role)?->value,
-                    'department_id' => $department->id ?? null,
-                    'program_id'    => $program->id ?? null,
-                ];
 
                 if (!isset($this->cache['users_by_mail'][$mail])) {
                     $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
@@ -136,7 +163,7 @@ class UserImporter
                     $userService->updateUser($user);
                     $updatedCount++;
                 } else {
-                    $userService->saveNew(UserDTO::fromArray($userData));
+                    $userService->saveNew($userDTO);
                     $addedCount++;
                     $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }

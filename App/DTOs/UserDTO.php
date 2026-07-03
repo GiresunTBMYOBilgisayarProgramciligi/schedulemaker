@@ -36,7 +36,7 @@ readonly class UserDTO
             mail: $validatedData['mail'],
             role: UserRole::from($validatedData['role']),
             password: !empty($validatedData['password']) ? $validatedData['password'] : null,
-            title: !empty($validatedData['title']) ? UserTitle::from($validatedData['title']) : null,
+            title: !empty($validatedData['title']) ? UserTitle::tryFrom($validatedData['title']) : null,
             departmentId: !empty($validatedData['department_id']) ? (int) $validatedData['department_id'] : null,
             programId: !empty($validatedData['program_id']) ? (int) $validatedData['program_id'] : null
         );
