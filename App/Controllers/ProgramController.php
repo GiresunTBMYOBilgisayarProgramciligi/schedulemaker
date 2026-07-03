@@ -34,34 +34,18 @@ class ProgramController extends Controller
      * AjaxRouter için program listesi döner
      */
     public function getProgramsListResponse(int $department_id): array
-    {
-        try {
-            $programs = $this->getProgramsList(['department_id' => $department_id, 'active' => true]);
+    {            $programs = $this->getProgramsList(['department_id' => $department_id, 'active' => true]);
             return [
                 'status' => "success",
                 'programs' => $programs
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Yeni program oluşturur (POST /ajax/program/add rotası için)
      */
     public function store(array $requestData): array
-    {
-        try {
-            Gate::authorize("create", Program::class, "Yeni program oluşturma yetkiniz yok");
+    {            Gate::authorize("create", Program::class, "Yeni program oluşturma yetkiniz yok");
 
             $dto = (new ProgramValidator())->getDTO($requestData);
             (new ProgramService())->saveNew($dto);
@@ -70,28 +54,13 @@ class ProgramController extends Controller
                 "status" => "success",
                 "msg" => "Program başarıyla oluşturuldu."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Mevcut programı günceller (POST /ajax/program/update rotası için)
      */
     public function update(array $requestData): array
-    {
-        try {
-            $program = clone (new Program())->find($requestData['id']);
+    {            $program = clone (new Program())->find($requestData['id']);
             if (!$program) {
                 throw new Exception("Güncellenecek program bulunamadı.");
             }
@@ -109,28 +78,13 @@ class ProgramController extends Controller
                 "status" => "success",
                 "msg" => "Program başarıyla güncellendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Programı siler (POST /ajax/program/delete rotası için)
      */
     public function destroy(array $requestData): array
-    {
-        try {
-            if (empty($requestData['id'])) {
+    {            if (empty($requestData['id'])) {
                 throw new Exception("Silinecek program ID'si belirtilmedi.");
             }
 
@@ -147,18 +101,5 @@ class ProgramController extends Controller
                 "status" => "success",
                 "msg" => "Program başarıyla silindi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 }

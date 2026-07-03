@@ -26,9 +26,7 @@ class ClassroomController extends Controller
      * Yeni derslik oluşturur (POST /ajax/classroom/add rotası için)
      */
     public function store(array $requestData): array
-    {
-        try {
-            Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
+    {            Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
 
             $dto = (new ClassroomValidator())->getDTO($requestData);
             (new ClassroomService())->saveNew($dto);
@@ -37,28 +35,13 @@ class ClassroomController extends Controller
                 "status" => "success",
                 "msg" => "Derslik başarıyla oluşturuldu."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Mevcut dersliği günceller (POST /ajax/classroom/update rotası için)
      */
     public function update(array $requestData): array
-    {
-        try {
-            $classroom = clone (new Classroom())->find($requestData['id']);
+    {            $classroom = clone (new Classroom())->find($requestData['id']);
             if (!$classroom) {
                 throw new Exception("Güncellenecek derslik bulunamadı.");
             }
@@ -76,28 +59,13 @@ class ClassroomController extends Controller
                 "status" => "success",
                 "msg" => "Derslik başarıyla güncellendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Dersliği siler (POST /ajax/classroom/delete rotası için)
      */
     public function destroy(array $requestData): array
-    {
-        try {
-            if (empty($requestData['id'])) {
+    {            if (empty($requestData['id'])) {
                 throw new Exception("Silinecek derslik ID'si belirtilmedi.");
             }
 
@@ -114,19 +82,6 @@ class ClassroomController extends Controller
                 "status" => "success",
                 "msg" => "Derslik başarıyla silindi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
 

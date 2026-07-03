@@ -118,35 +118,28 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTMLResponse(array $requestData): array
     {
-        try {
-            $only_table = false;
-            if (isset($requestData['only_table'])) {
-                $only_table = $requestData['only_table'] === "true";
-                unset($requestData['only_table']);
-            }
-            $preference_mode = false;
-            if (isset($requestData['preference_mode'])) {
-                $preference_mode = $requestData['preference_mode'] === "true";
-                unset($requestData['preference_mode']);
-            }
-            $no_card = false;
-            if (isset($requestData['no_card'])) {
-                $no_card = $requestData['no_card'] === "true";
-                unset($requestData['no_card']);
-            }
-            
-            $schedulesHTML = $this->getSchedulesHTML($requestData, $only_table, $preference_mode, $no_card);
-            
-            return [
-                'status' => "success",
-                'HTML' => $schedulesHTML
-            ];
-        } catch (\Throwable $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
+        $only_table = false;
+        if (isset($requestData['only_table'])) {
+            $only_table = $requestData['only_table'] === "true";
+            unset($requestData['only_table']);
         }
+        $preference_mode = false;
+        if (isset($requestData['preference_mode'])) {
+            $preference_mode = $requestData['preference_mode'] === "true";
+            unset($requestData['preference_mode']);
+        }
+        $no_card = false;
+        if (isset($requestData['no_card'])) {
+            $no_card = $requestData['no_card'] === "true";
+            unset($requestData['no_card']);
+        }
+        
+        $schedulesHTML = $this->getSchedulesHTML($requestData, $only_table, $preference_mode, $no_card);
+        
+        return [
+            'status' => "success",
+            'HTML' => $schedulesHTML
+        ];
     }
 
     /**
@@ -156,25 +149,18 @@ class ScheduleController extends Controller
      */
     public function getAvailableLessonsHTMLResponse(array $requestData): array
     {
-        try {
-            $preference_mode = false;
-            if (isset($requestData['preference_mode'])) {
-                $preference_mode = $requestData['preference_mode'] === "true";
-                unset($requestData['preference_mode']);
-            }
-            
-            $html = $this->getAvailableLessonsHTML($requestData, $preference_mode);
-            
-            return [
-                'status' => "success",
-                'HTML' => $html
-            ];
-        } catch (\Throwable $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
+        $preference_mode = false;
+        if (isset($requestData['preference_mode'])) {
+            $preference_mode = $requestData['preference_mode'] === "true";
+            unset($requestData['preference_mode']);
         }
+        
+        $html = $this->getAvailableLessonsHTML($requestData, $preference_mode);
+        
+        return [
+            'status' => "success",
+            'HTML' => $html
+        ];
     }
 
     /********************************
@@ -228,17 +214,10 @@ class ScheduleController extends Controller
             }
         }
 
-        try {
-            $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
-            $service = new LessonScheduleService();
-            $result = $service->saveScheduleItems($dtos);
-            return $this->formatServiceResultToLegacy($result);
-        } catch (\Throwable $e) {
-            return [
-                "status" => "error",
-                "msg" => "Kayıt işlemi başarısız: " . $e->getMessage()
-            ];
-        }
+        $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
+        $service = new LessonScheduleService();
+        $result = $service->saveScheduleItems($dtos);
+        return $this->formatServiceResultToLegacy($result);
     }
 
     /**
@@ -279,18 +258,10 @@ class ScheduleController extends Controller
             }
         }
 
-        try {
-            $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
-            $service = new LessonScheduleService();
-            $result = $service->deleteScheduleItems($dtos);
-            return $result->toArray();
-        } catch (\Throwable $e) {
-            $this->logger()->error($e->getMessage(), ['exception' => $e]);
-            return [
-                "status" => "error",
-                "msg" => "Silme işlemi sırasında bir hata oluştu: " . $e->getMessage(),
-            ];
-        }
+        $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
+        $service = new LessonScheduleService();
+        $result = $service->deleteScheduleItems($dtos);
+        return $result->toArray();
     }
 
     /**
@@ -318,40 +289,30 @@ class ScheduleController extends Controller
             }
         }
 
-        try {
-            $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
-            $service = new ExamScheduleService();
-            $createdIds = $service->saveExamScheduleItems($dtos);
-            
-            $createdItems = [];
-            if (!empty($createdIds)) {
-                foreach ($createdIds as $groupedIds) {
-                    foreach ($groupedIds as $ownerType => $ids) {
-                        foreach ($ids as $id) {
-                            $item = (new ScheduleItem())->find($id);
-                            if ($item) {
-                                $createdItems[] = $item->getArray();
-                            }
+        $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
+        $service = new ExamScheduleService();
+        $createdIds = $service->saveExamScheduleItems($dtos);
+        
+        $createdItems = [];
+        if (!empty($createdIds)) {
+            foreach ($createdIds as $groupedIds) {
+                foreach ($groupedIds as $ownerType => $ids) {
+                    foreach ($ids as $id) {
+                        $item = (new ScheduleItem())->find($id);
+                        if ($item) {
+                            $createdItems[] = $item->getArray();
                         }
                     }
                 }
             }
-
-            return [
-                "status" => "success",
-                "msg" => "Sınav programı başarıyla kaydedildi.",
-                "createdIds" => $createdIds,
-                "createdItems" => $createdItems,
-            ];
-        } catch (\Throwable $e) {
-            $this->logger()->error($e->getMessage(), ['exception' => $e]);
-            $msg = $e->getMessage();
-            $msgArray = explode("\n", $msg);
-            return [
-                "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : "Sistem Hatası: " . $msg,
-            ];
         }
+
+        return [
+            "status" => "success",
+            "msg" => "Sınav programı başarıyla kaydedildi.",
+            "createdIds" => $createdIds,
+            "createdItems" => $createdItems,
+        ];
     }
 
     /**
@@ -397,21 +358,11 @@ class ScheduleController extends Controller
      */
     public function checkScheduleCrash(array $requestData): array
     {
-        try {
-            $dto = (new ScheduleConflictFilterValidator())->getDTO($requestData, "checkScheduleCrash");
-            $service = new ConflictService();
-            $service->checkScheduleCrash($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        $dto = (new ScheduleConflictFilterValidator())->getDTO($requestData, "checkScheduleCrash");
+        $service = new ConflictService();
+        $service->checkScheduleCrash($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
 
-            return ['status' => 'success'];
-        } catch (\Throwable $e) {
-            $this->logger()->error('checkScheduleCrash failed', ['exception' => (string) $e, 'payload' => $requestData]);
-            $msg = $e->getMessage();
-            $msgArray = explode("\n", $msg);
-            return [
-                "status" => "error",
-                "msg" => count($msgArray) > 1 ? $msgArray : $msg,
-            ];
-        }
+        return ['status' => 'success'];
     }
 
     /**

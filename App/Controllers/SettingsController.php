@@ -36,10 +36,7 @@ class SettingsController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
-
-        try {
-            $settingsData = (new SettingsValidator())->getDTO($requestData);
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");            $settingsData = (new SettingsValidator())->getDTO($requestData);
 
             (new SettingsService())->saveMultipleSettings($settingsData);
 
@@ -47,19 +44,6 @@ class SettingsController extends Controller
                 "status" => "success",
                 "msg" => "Ayarlar kaydedildi"
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
@@ -90,18 +74,10 @@ class SettingsController extends Controller
      */
     public function clearLogs(): array
     {
-        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
-        try {
-            $this->database->exec("TRUNCATE TABLE logs");
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");            $this->database->exec("TRUNCATE TABLE logs");
             return [
                 "status" => "success",
                 "msg" => "Loglar başarıyla temizlendi"
             ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => "Loglar temizlenirken bir hata oluştu: " . $e->getMessage()
-            ];
-        }
     }
 }

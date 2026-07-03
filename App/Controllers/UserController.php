@@ -27,9 +27,7 @@ class UserController extends Controller
      * @return array JSON formatında dönülecek yanıt dizisi
      */
     public function store(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
+    {            Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
 
             // 1. Doğrulama ve DTO oluşturma
             $dto = (new UserValidator())->getDTO($requestData);
@@ -41,28 +39,13 @@ class UserController extends Controller
                 "status" => "success",
                 "msg" => "Kullanıcı başarıyla eklendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Kullanıcı bilgilerini günceller (POST /ajax/user/update veya benzeri rotalar üzerinden)
      */
     public function update(array $requestData): array
-    {
-        try {
-            // İzin kontrolü için mevcut kullanıcıyı bul
+    {            // İzin kontrolü için mevcut kullanıcıyı bul
             if (empty($requestData['id'])) {
                 throw new Exception("Güncellenecek kullanıcı ID'si belirtilmedi.");
             }
@@ -84,28 +67,13 @@ class UserController extends Controller
                 "status" => "success",
                 "msg" => "Kullanıcı başarıyla güncellendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Kullanıcıyı siler (POST /ajax/user/delete veya benzeri rotalar üzerinden)
      */
     public function destroy(array $requestData): array
-    {
-        try {
-            if (empty($requestData['id'])) {
+    {            if (empty($requestData['id'])) {
                 throw new Exception("Silinecek kullanıcı ID'si belirtilmedi.");
             }
 
@@ -123,19 +91,6 @@ class UserController extends Controller
                 "status" => "success",
                 "msg" => "Kullanıcı başarıyla silindi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
@@ -144,9 +99,7 @@ class UserController extends Controller
      * @return array
      */
     public function importUsers(array $files): array
-    {
-        try {
-            $uploadedFile = $files['file'] ?? null;
+    {            $uploadedFile = $files['file'] ?? null;
             if (!$uploadedFile) {
                 throw new Exception("Dosya yüklenmedi");
             }
@@ -163,17 +116,5 @@ class UserController extends Controller
                 ),
                 'errors' => $result['errors']
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 }

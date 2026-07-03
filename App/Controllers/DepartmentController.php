@@ -24,9 +24,7 @@ class DepartmentController extends Controller
      * Yeni bölüm oluşturur (POST /ajax/department/add rotası için)
      */
     public function store(array $requestData): array
-    {
-        try {
-            Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
+    {            Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
 
             $dto = (new DepartmentValidator())->getDTO($requestData);
             (new DepartmentService())->saveNew($dto);
@@ -35,28 +33,13 @@ class DepartmentController extends Controller
                 "status" => "success",
                 "msg" => "Bölüm başarıyla oluşturuldu."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Mevcut bölümü günceller (POST /ajax/department/update rotası için)
      */
     public function update(array $requestData): array
-    {
-        try {
-            $department = clone (new Department())->find($requestData['id']);
+    {            $department = clone (new Department())->find($requestData['id']);
             if (!$department) {
                 throw new Exception("Güncellenecek bölüm bulunamadı.");
             }
@@ -74,28 +57,13 @@ class DepartmentController extends Controller
                 "status" => "success",
                 "msg" => "Bölüm başarıyla güncellendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Bölümü siler (POST /ajax/department/delete rotası için)
      */
     public function destroy(array $requestData): array
-    {
-        try {
-            if (empty($requestData['id'])) {
+    {            if (empty($requestData['id'])) {
                 throw new Exception("Silinecek bölüm ID'si belirtilmedi.");
             }
 
@@ -112,18 +80,5 @@ class DepartmentController extends Controller
                 "status" => "success",
                 "msg" => "Bölüm başarıyla silindi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 }

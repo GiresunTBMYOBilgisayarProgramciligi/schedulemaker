@@ -66,9 +66,7 @@ class LessonController extends Controller
      * Yeni ders oluşturur (POST /ajax/lesson/add rotası için)
      */
     public function store(array $requestData): array
-    {
-        try {
-            $lesson = new Lesson();
+    {            $lesson = new Lesson();
             Gate::authorize("create", $lesson, "Yeni Ders oluşturma yetkiniz yok");
 
             $dto = (new LessonValidator())->getDTO($requestData);
@@ -80,28 +78,13 @@ class LessonController extends Controller
                 "status" => "success",
                 "msg" => "Ders başarıyla oluşturuldu."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Mevcut dersi günceller (POST /ajax/lesson/update rotası için)
      */
     public function update(array $requestData): array
-    {
-        try {
-            /** @var Lesson $lessonFromDb */
+    {            /** @var Lesson $lessonFromDb */
             $lessonFromDb = clone (new LessonRepository())->find((int)($requestData['id'] ?? 0));
             if (!$lessonFromDb) {
                 throw new Exception("Güncellenecek ders bulunamadı.");
@@ -120,28 +103,13 @@ class LessonController extends Controller
                 "status" => "success",
                 "msg" => "Ders başarıyla güncellendi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Dersi siler (POST /ajax/lesson/delete rotası için)
      */
     public function destroy(array $requestData): array
-    {
-        try {
-            if (empty($requestData['id'])) {
+    {            if (empty($requestData['id'])) {
                 throw new Exception("Silinecek ders ID'si belirtilmedi.");
             }
 
@@ -158,19 +126,6 @@ class LessonController extends Controller
                 "status" => "success",
                 "msg" => "Ders başarıyla silindi."
             ];
-
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
 
@@ -178,32 +133,16 @@ class LessonController extends Controller
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      */
     public function previewCombine(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+    {            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
             $dto = CombineLessonDTO::fromArray($requestData);
             return (new LessonService())->previewCombineLesson($dto);
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * @throws Exception
      */
     public function combine(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+    {            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
             $dto = CombineLessonDTO::fromArray($requestData);
             
             if (!$dto->parentId || !$dto->childId) {
@@ -221,27 +160,13 @@ class LessonController extends Controller
                 "status"   => "success",
                 "redirect" => "self"
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * @throws Exception
      */
     public function deleteParentLesson(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
+    {            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
             
             if (empty($requestData['id'])) {
                 throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
@@ -254,18 +179,6 @@ class LessonController extends Controller
                 "status" => "success",
                 "redirect" => "self"
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
@@ -273,9 +186,7 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function combineExamLesson(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
+    {            Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
             
             if (empty($requestData['parent_lesson_id']) || empty($requestData['child_lesson_id'])) {
                 throw new Exception("Birleştirmek için dersler belirtilmemiş");
@@ -291,27 +202,13 @@ class LessonController extends Controller
                 "status"   => "success",
                 "redirect" => "self"
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
      * Sınav birleştirme bağlantısını kaldırır.
      */
     public function deleteExamParentLesson(array $requestData): array
-    {
-        try {
-            if (!key_exists("id", $requestData)) {
+    {            if (!key_exists("id", $requestData)) {
                 throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
             }
             Gate::authorizeRole("department_head", false, "Sınav birleştirmesi kaldırma yetkiniz yok");
@@ -322,18 +219,6 @@ class LessonController extends Controller
                 "status"   => "success",
                 "redirect" => "self"
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
@@ -341,9 +226,7 @@ class LessonController extends Controller
      * Aynı akademik yıl ve dönemdeki dersleri döner.
      */
     public function getExamCombinableLessons(array $requestData): array
-    {
-        try {
-            Gate::authorizeRole("department_head", false, "Sınav birleştirme listesini almak için yetkiniz yok");
+    {            Gate::authorizeRole("department_head", false, "Sınav birleştirme listesini almak için yetkiniz yok");
 
             $lessonId = (int) ($requestData['lesson_id'] ?? 0);
             $search = trim($requestData['search'] ?? '');
@@ -354,18 +237,6 @@ class LessonController extends Controller
                 'status'  => 'success',
                 'lessons' => $lessons,
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 
     /**
@@ -375,9 +246,7 @@ class LessonController extends Controller
      * @return array
      */
     public function importLessons(array $files, array $requestData): array
-    {
-        try {
-            $uploadedFile = $files['file'] ?? null;
+    {            $uploadedFile = $files['file'] ?? null;
             if (!$uploadedFile) {
                 throw new Exception("Dosya yüklenmedi");
             }
@@ -396,17 +265,5 @@ class LessonController extends Controller
                 'addedLessons'   => $result['addedLessons'],
                 'updatedLessons' => $result['updatedLessons']
             ];
-        } catch (ValidationException $e) {
-            return [
-                "status" => "error",
-                "msg" => "Veri doğrulama hatası",
-                "errors" => $e->getValidationErrors()
-            ];
-        } catch (Exception $e) {
-            return [
-                "status" => "error",
-                "msg" => $e->getMessage()
-            ];
-        }
     }
 }
