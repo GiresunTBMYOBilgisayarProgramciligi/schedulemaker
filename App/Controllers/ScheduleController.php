@@ -26,6 +26,7 @@ use App\Services\Export\ExporterFactory;
 use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
 use App\Validators\Schedule\ScheduleConflictFilterValidator;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
+use App\Validators\ScheduleItemValidator;
 use App\Repositories\ScheduleRepository;
 use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
@@ -202,15 +203,12 @@ class ScheduleController extends Controller
             ];
         }
 
-        $dtos = [];
-        foreach ($items as $itemData) {
-            $dtos[] = ScheduleItemData::fromArray($itemData);
-        }
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
         if (count($dtos) > 0) {
-            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', $schedule);
+                Gate::authorize('update', clone $schedule);
             }
         }
 
@@ -237,15 +235,12 @@ class ScheduleController extends Controller
             ];
         }
 
-        $dtos = [];
-        foreach ($items as $itemData) {
-            $dtos[] = ScheduleItemData::fromArray($itemData);
-        }
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
         if (count($dtos) > 0) {
-            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', $schedule);
+                Gate::authorize('update', clone $schedule);
             }
         }
 
@@ -268,15 +263,12 @@ class ScheduleController extends Controller
             ];
         }
 
-        $dtos = [];
-        foreach ($items as $itemData) {
-            $dtos[] = ScheduleItemData::fromArray($itemData);
-        }
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
         if (count($dtos) > 0) {
-            $schedule = clone (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', $schedule);
+                Gate::authorize('update', clone $schedule);
             }
         }
 

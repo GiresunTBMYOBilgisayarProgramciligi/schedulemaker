@@ -465,6 +465,9 @@ class SingleScheduleHandler {
 
         return {
             id: ds.scheduleItemId,
+            schedule_id: this.ScheduleCard.id,
+            day_index: parseInt(cell.dataset.dayIndex),
+            week_index: parseInt(this.ScheduleCard.table?.dataset?.weekIndex || 0),
             start_time: cell.dataset.startTime,
             end_time: cell.dataset.endTime,
             status: ds.status,
