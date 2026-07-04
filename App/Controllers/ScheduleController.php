@@ -217,19 +217,10 @@ class ScheduleController extends Controller
         $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
         $service = new LessonScheduleService();
         $result = $service->saveScheduleItems($dtos);
-        return $this->formatServiceResultToLegacy($result);
-    }
-
-    /**
-     * todo bu incelenip kaldırılmalı
-     * Service result'ını eski formata çevirir (backward compatibility)
-     */
-    private function formatServiceResultToLegacy(SaveScheduleResult $result): array
-    {
+        
         return [
-            [
-                'id' => $result->createdIds
-            ]
+            "status" => "success",
+            "createdIds" => $result->createdIds,
         ];
     }
 

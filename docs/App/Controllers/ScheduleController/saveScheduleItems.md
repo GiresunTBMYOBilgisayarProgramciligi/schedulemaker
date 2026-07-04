@@ -25,4 +25,4 @@ Ders programı öğelerini (ScheduleItems) toplu olarak veya tekil olarak kaydet
 5.  **Bitiş**: `commit` / `rollBack` işlemleri yapılır. Fırlatılan bir hata durumunda tüm işlemler geri alınır.
 
 ## Dönüş Değeri
-*   `array`: Oluşturulan yeni öğelerin ID listesi (`createdIds`).
+*   `array`: Başarı durumu (`status` => `success`) ve oluşturulan öğelerin ID listesi (`createdIds`). Örn: `["status" => "success", "createdIds" => [1, 2, 3]]`.
