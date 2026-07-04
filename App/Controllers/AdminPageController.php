@@ -126,7 +126,7 @@ class AdminPageController extends Controller
                     'type' => 'lesson',
                     'semester_no' => getSemesterNumbers()
                 ],
-                true,
+                false,
                 true
             ),
             "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
@@ -136,7 +136,7 @@ class AdminPageController extends Controller
                     'type' => ExamType::MIDTERM->value,
                     'semester_no' => getSemesterNumbers()
                 ],
-                true,
+                false,
                 true
             ),
             "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
@@ -146,7 +146,7 @@ class AdminPageController extends Controller
                     'type' => ExamType::FINAL->value,
                     'semester_no' => getSemesterNumbers()
                 ],
-                true,
+                false,
                 true
             ),
             "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
@@ -156,7 +156,7 @@ class AdminPageController extends Controller
                     'type' => ExamType::MAKEUP->value,
                     'semester_no' => getSemesterNumbers()
                 ],
-                true,
+                false,
                 true
             ),
         ];

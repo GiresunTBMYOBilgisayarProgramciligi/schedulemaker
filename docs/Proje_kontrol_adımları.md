@@ -45,12 +45,43 @@
 - Çıkış yap butonu çalışıyor
 
 ### Kullanıcı işlemleri
+#### Kullanıcı listesi
 - Tüm kullanıcılar listeleniyor
 - işlemler dropdown çalışıyor. (Gör, Düzenle, Sil)
   - Gör butonu çalışıyor
   - Düzenle butonu çalışıyor
   - Sil butonu çalışıyor
 - Arama çalışıyor.
+
+- sayfalama çalışıyor.
+- filtre ve sıralama çalışıyor
+- Excel ve PDF çıktısı çalışıyor
+#### Kullanıcı ekleme
+- form doldurulmadan gönderilmiyor
+- Hatalı girişlerde hata mesajları gösteriliyor.
+- Hata mesajları sonraki denemede temizleniyor
+- Başarılı kayıt oluyor.
+
+#### Kullanıcı düzenleme
+- Parola boş ise işleme alınmıyor. 
+- düzenleme işlemi soruncus çalışıyor.
+#### Kullanıcı silme
 - 1 id li kullanıcı silinmiyor. 
+- silme işlemi sorunsuz çalışıyor
+#### Kullanıcı içe aktarma
+- Şablon indir butonu çalışıyor
+- Hatalı görev ve ünvan verilerinde satır bazlı hata mesajları gösteriliyor.
+- Bölüm ve program bilgisi olmadan kayıt yapılabiliyor.
+- İçe aktarmada girilen bölüm ve programın birbiriyle uyumu kontrol ediliyor.
+
+#### Profil sayfası
+- bilgi güncelleme formu çalışıyor. 
+- Parola alanı boş bırakıldığında işleme alınmayacağı notu gösteriliyor.
+- hocaya ait sayısal bilgiler gösteriliyor.
+- Varsa gravatar görseli yükleniyor.
+- Tercih edilen gün ve saatler düzeltiliyor.
+- Tercih edilen gün ve saatler düzeltildikten sonra eklenen notlar popover ile gösteriliyor.
+
+
 
 ### Ders İşlemleri
