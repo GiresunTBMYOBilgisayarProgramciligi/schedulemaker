@@ -92,6 +92,12 @@ class ScheduleCard {
             });
         }
 
+        // Re-initialize Bootstrap Popovers (Her iki modda da çalışmalı)
+        const popoverTriggerList = [].slice.call(this.card.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+        });
+
         /**
          * Preference Mode (Hoca Tercihleri) durumunda olay yönetimini SingleScheduleHandler'a devret.
          */
@@ -124,12 +130,6 @@ class ScheduleCard {
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
 
         this.initStickyHeaders();
-
-        // Re-initialize Bootstrap Popovers
-        const popoverTriggerList = [].slice.call(this.card.querySelectorAll('[data-bs-toggle="popover"]'));
-        popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
-        });
 
         // initBulkSelection and initContextMenu are now in initialize() to ensure single binding via delegation.
     }
