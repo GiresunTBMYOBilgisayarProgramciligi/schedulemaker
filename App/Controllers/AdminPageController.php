@@ -606,6 +606,9 @@ class AdminPageController extends Controller
         if (Gate::allowsRole("submanager")) {
             $departments = (new DepartmentRepository())->getActiveDepartments();
         } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
+            /**
+             * @var Department|null
+             */
             $dep = (new DepartmentRepository())->find($currentUser->department_id);
             if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
             $departments = [$dep];
@@ -636,6 +639,9 @@ class AdminPageController extends Controller
         if (Gate::allowsRole("submanager")) {
             $departments = (new DepartmentRepository())->getActiveDepartments();
         } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
+            /**
+             * @var Department|null
+             */
             $dep = (new DepartmentRepository())->find($currentUser->department_id);
             if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
             $departments = [$dep];
