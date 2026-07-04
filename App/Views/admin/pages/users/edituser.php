@@ -79,9 +79,10 @@ use App\Enums\UserTitle;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label" for="password">Şifre</label>
+                                            <label class="form-label" for="password">Parola</label>
                                             <input type="password" class="form-control" id="password" name="password"
-                                                   placeholder="Şifre">
+                                                   placeholder="Parola">
+                                            <div class="form-text text-muted">Boş bırakıldığı taktirde işleme alınmayacaktır.</div>
                                         </div>
                                     </div>
                                 </div>
