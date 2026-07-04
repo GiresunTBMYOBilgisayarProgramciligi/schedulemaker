@@ -29,14 +29,7 @@ class LessonScheduleService extends ScheduleService
 
         // 1. Validation - batch olarak tüm item'ları kontrol et
         $itemsData = array_map(fn($dto) => $dto->toArray(), $dtos);
-        $validationResult = $this->validator->validateBatch($itemsData);
-        if (!$validationResult->isValid) {
-            throw new ValidationException(
-                'Schedule item validation failed',
-                $validationResult->errors,
-                ['item_count' => count($dtos), 'itemsData' => $itemsData]
-            );
-        }
+        $this->validator->validateBatch($itemsData);
 
         try {
             return Database::transaction(function () use ($dtos) {

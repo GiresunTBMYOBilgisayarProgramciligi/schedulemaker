@@ -6,7 +6,7 @@ namespace App\Validators;
  * Tüm validator sınıfları için temel sınıf
  * 
  * Her validator, veri doğrulama işlemlerini gerçekleştirir
- * ve ValidationResult döner
+ * ve başarısızlık durumunda ValidationException fırlatır
  */
 abstract class BaseValidator
 {
