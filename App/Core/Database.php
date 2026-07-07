@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use PDO;
+use PDO\Mysql;
 use PDOException;
 
 class Database
@@ -19,7 +20,7 @@ class Database
             try {
                 $dsn = "mysql:host=" . $_ENV['DB_HOST'] . ";dbname=" . $_ENV['DB_NAME'] . ";charset=utf8mb4";
                 self::$connection = new PDO($dsn, $_ENV['DB_USER'], $_ENV['DB_PASS'], [
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
+                    Mysql::ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                 ]);
