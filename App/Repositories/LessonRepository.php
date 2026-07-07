@@ -68,12 +68,12 @@ class LessonRepository extends BaseRepository
      *
      * @param int $lecturerId Dersin hocasının ID'si
      * @param int $excludeLessonId Aramadan dışlanacak mevcut dersin ID'si
-     * @param int $semester Yarıyıl (Güz/Bahar vb.)
+     * @param string $semester Yarıyıl (Güz/Bahar vb.)
      * @param string $academicYear Akademik yıl (Örn: 2023-2024)
      * @return Lesson[]
      * @throws \Exception
      */
-    public function getCombineLessonList(int $lecturerId, int $excludeLessonId, int $semester, string $academicYear): array
+    public function getCombineLessonList(int $lecturerId, int $excludeLessonId, string $semester, string $academicYear): array
     {
         /** @var Lesson $model */
         $model = new $this->modelClass;
@@ -95,12 +95,12 @@ class LessonRepository extends BaseRepository
      * Sınav birleştirme için aynı dönem ve akademik yıldaki diğer tüm dersleri getirir.
      *
      * @param int $excludeLessonId Aramadan dışlanacak mevcut dersin ID'si
-     * @param int $semester Yarıyıl
+     * @param string $semester Yarıyıl
      * @param string $academicYear Akademik yıl
      * @return Lesson[]
      * @throws \Exception
      */
-    public function getExamCombineLessonList(int $excludeLessonId, int $semester, string $academicYear): array
+    public function getExamCombineLessonList(int $excludeLessonId, string $semester, string $academicYear): array
     {
         /** @var Lesson $model */
         $model = new $this->modelClass;
