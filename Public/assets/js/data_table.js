@@ -19,6 +19,28 @@ let dataTable = new DataTable('.dataTable', {
                     className: 'btn btn-danger btn-sm',
                     exportOptions: {
                         columns: ':not(.no-export)'
+                    },
+                    customize: function (doc) {
+                        let colCount = doc.content[1].table.body[0].length;
+                        
+                        if (colCount > 12) {
+                            doc.pageSize = 'A4';
+                            doc.pageOrientation = 'landscape';
+                            doc.defaultStyle.fontSize = 7;
+                            doc.styles.tableHeader.fontSize = 8;
+                        } else if (colCount > 7) {
+                            doc.pageSize = 'A4';
+                            doc.pageOrientation = 'landscape';
+                            doc.defaultStyle.fontSize = 9;
+                            doc.styles.tableHeader.fontSize = 10;
+                        } else {
+                            doc.pageSize = 'A4';
+                            doc.pageOrientation = 'portrait';
+                            doc.defaultStyle.fontSize = 11;
+                            doc.styles.tableHeader.fontSize = 12;
+                        }
+                        doc.pageMargins = [20, 20, 20, 20];
+                        doc.content[1].table.widths = Array(colCount).fill('auto');
                     }
                 }
             ]
