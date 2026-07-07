@@ -31,4 +31,19 @@ enum ClassroomType: int
         }
         return $list;
     }
+
+    /**
+     * Label üzerinden Enum örneğini döndürür.
+     * @param string $label
+     * @return self|null
+     */
+    public static function fromLabel(string $label): ?self
+    {
+        foreach (self::cases() as $case) {
+            if (mb_strtolower($case->label(), 'UTF-8') === mb_strtolower(trim($label), 'UTF-8')) {
+                return $case;
+            }
+        }
+        return null;
+    }
 }

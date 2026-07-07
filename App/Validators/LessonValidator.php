@@ -31,13 +31,13 @@ class LessonValidator extends BaseValidator
         if (!$this->isLecturerSelfUpdate) {
             // Admin kontrolleri
             if (empty($data['lecturer_id']) || $data['lecturer_id'] == '0') {
-                $errors['lecturer_id'] = 'Hoca seçmelisiniz.';
+                $errors['lecturer_id'] = 'Hoca bilgisi eksik yada hatalı.';
             }
             if (empty($data['department_id']) || $data['department_id'] == '0') {
-                $errors['department_id'] = 'Bölüm seçmelisiniz.';
+                $errors['department_id'] = 'Bölüm bilgisi eksik yada hatalı.';
             }
             if (empty($data['program_id']) || $data['program_id'] == '0') {
-                $errors['program_id'] = 'Program seçmelisiniz.';
+                $errors['program_id'] = 'Program bilgisi eksik yada hatalı.';
             }
             if (empty($data['name'])) {
                 $errors['name'] = 'Ders adı zorunludur.';
@@ -47,6 +47,19 @@ class LessonValidator extends BaseValidator
             }
             if (!isset($data['hours']) || $data['hours'] === '') {
                 $errors['hours'] = 'Ders saati zorunludur.';
+            } elseif (!is_numeric($data['hours'])) {
+                $errors['hours'] = 'Ders saati geçerli bir sayı olmalıdır.';
+            }
+            if (isset($data['group_no']) && $data['group_no'] !== '' && !is_numeric($data['group_no'])) {
+                $errors['group_no'] = 'Grup numarası geçerli bir sayı olmalıdır.';
+            }
+            if (isset($data['semester_no']) && $data['semester_no'] !== '' && !is_numeric($data['semester_no'])) {
+                $errors['semester_no'] = 'Yarıyıl geçerli bir sayı olmalıdır.';
+            }
+            if (!isset($data['type']) || $data['type'] === '') {
+                $errors['type'] = 'Ders türü zorunludur.';
+            } elseif (\App\Enums\LessonType::tryFrom((int)$data['type']) === null) {
+                $errors['type'] = 'Geçersiz ders türü.';
             }
         }
 

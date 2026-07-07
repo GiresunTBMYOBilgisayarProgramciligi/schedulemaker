@@ -29,11 +29,7 @@ class LessonController extends Controller
      */
     public function getTypeList(): array
     {
-        $list = [];
-        foreach (LessonType::cases() as $case) {
-            $list[$case->value] = $case->label();
-        }
-        return $list;
+        return LessonType::toArray();
     }
 
     /**
@@ -66,13 +62,13 @@ class LessonController extends Controller
      * Yeni ders oluşturur (POST /ajax/lesson/add rotası için)
      */
     public function store(array $requestData): array
-    {            $lesson = new Lesson();
+    {            
+            $lesson = new Lesson();
             Gate::authorize("create", $lesson, "Yeni Ders oluşturma yetkiniz yok");
 
             $dto = (new LessonValidator())->getDTO($requestData);
             
-            $lesson->fill($dto->toArray());
-            (new LessonService())->saveNew($lesson);
+            (new LessonService())->saveNew($dto);
 
             return [
                 "status" => "success",

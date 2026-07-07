@@ -43,6 +43,12 @@ class ErrorHandler
      */
     public function handleError($level, $message, $file, $line)
     {
+        // Deprecation uyarılarını istisna fırlatmadan sadece logla
+        if ($level === E_DEPRECATED || $level === E_USER_DEPRECATED) {
+            error_log("Deprecation Warning: $message in $file on line $line");
+            return true;
+        }
+
         // Eğer hata seviyesi şu anki hata raporlama seviyesine dahilse
         if (error_reporting() & $level) {
             // Hatayı istisna olarak yeniden fırlat (yakalanabilir hale getir)

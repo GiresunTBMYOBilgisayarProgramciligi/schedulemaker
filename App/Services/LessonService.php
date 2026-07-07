@@ -41,16 +41,18 @@ class LessonService extends BaseService
     /**
      * Yeni ders kaydeder.
      *
-     * @param Lesson $lesson Doldurulmuş Lesson nesnesi
+     * @param LessonDTO $dto Ders verileri
      * @return int Oluşturulan dersin ID'si
      * @throws Exception Duplicate lesson_code veya kayıt hatası
      */
-    public function saveNew(Lesson $lesson): int
+    public function saveNew(LessonDTO $dto): int
     {
-        $this->logger->info('Yeni ders ekleniyor', ['name' => $lesson->name, 'code' => $lesson->code ?? null]);
+        $this->logger->info('Yeni ders ekleniyor', ['name' => $dto->name, 'code' => $dto->code ?? null]);
 
         try {
-            return Database::transaction(function () use ($lesson) {
+            return Database::transaction(function () use ($dto) {
+                $lesson = new Lesson();
+                $lesson->fill($dto->toArray());
                 $lesson->create();
                 $this->logger->info('Ders eklendi', ['id' => $lesson->id, 'name' => $lesson->name]);
                 return $lesson->id;

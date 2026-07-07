@@ -12,6 +12,8 @@ use App\Core\Log;
 use App\Models\Lesson;
 use App\Services\LessonService;
 use App\Enums\ClassroomType;
+use App\Enums\LessonType;
+use App\Validators\LessonValidator;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
@@ -109,59 +111,99 @@ class LessonImporter
                     }
                 }
 
-                // Caching
-                if (!isset($this->cache['departments'][$department_name])) {
-                    $this->cache['departments'][$department_name] = (new DepartmentRepository())->findByName($department_name) ?: false;
+                // Caching Department
+                $department = null;
+                if (!empty($department_name)) {
+                    if (!isset($this->cache['departments'][$department_name])) {
+                        $this->cache['departments'][$department_name] = (new DepartmentRepository())->findByName($department_name) ?: false;
+                    }
+                    $department = $this->cache['departments'][$department_name];
                 }
-                $department = $this->cache['departments'][$department_name];
 
-                $programCacheKey = $department_name . '_' . $program_name;
-                if (!isset($this->cache['programs'][$programCacheKey])) {
-                    $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
+                // Caching Program
+                $program = null;
+                if (!empty($program_name)) {
+                    $programCacheKey = $program_name;
+                    if (!isset($this->cache['programs'][$programCacheKey])) {
+                        $this->cache['programs'][$programCacheKey] = (new ProgramRepository())->findByName($program_name) ?: false;
+                    }
+                    $program = $this->cache['programs'][$programCacheKey];
                 }
-                $program = $this->cache['programs'][$programCacheKey];
 
-                if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
-                    $this->cache['users_by_name'][$lecturer_full_name] = $userRepository->findByFullName($lecturer_full_name);
+                if (!empty($department_name) && $department === false) {
+                    $rowErrors[] = "Bölüm bulunamadı! ({$department_name})";
                 }
-                $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
+                if (!empty($program_name) && $program === false) {
+                    $rowErrors[] = "Program bulunamadı! ({$program_name})";
+                }
 
-                if (!$lecturer) { $rowErrors[] = "Hoca hatalı! ({$lecturer_full_name})"; $hasError = true; }
-                if (!$program)  { $rowErrors[] = "Program hatalı! ({$program_name})"; $hasError = true; }
-                if (!$department) { $rowErrors[] = "Bölüm hatalı! ({$department_name})"; $hasError = true; }
+                // Caching Lecturer
+                $lecturer = null;
+                if (!empty($lecturer_full_name)) {
+                    if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
+                        $this->cache['users_by_name'][$lecturer_full_name] = clone $userRepository->findByFullName($lecturer_full_name) ?: false;
+                    }
+                    $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
+                }
 
-                if ($hasError) {
+                if (!empty($lecturer_full_name) && $lecturer === false) {
+                    $rowErrors[] = "Hoca bulunamadı! ({$lecturer_full_name})";
+                } elseif (empty($lecturer_full_name)) {
+                    $rowErrors[] = "Hoca belirtilmelidir!";
+                }
+
+                // Uyumluluk Kontrolü (Bölüm - Program)
+                if ($department && $program && $program->department_id !== $department->id) {
+                    $rowErrors[] = "Uyumsuzluk: {$department->name} bölümünün {$program->name} programı yok!";
+                    $hasError = true;
+                } elseif (empty($department_name) && !empty($program_name)) {
+                    $rowErrors[] = "Uyumsuzluk: Program belirtildiğinde bölüm de belirtilmelidir!";
+                    $hasError = true;
+                }
+                // Veriyi hazırlama - validation öncesi (raw string/mapped)
+                $lessonTypeEnum = LessonType::fromLabel(trim($type));
+                $clsTypeEnum = ClassroomType::fromLabel(trim($classroom_type));
+
+                $lessonData = [
+                    'code'           => strtoupper($code),
+                    'group_no'       => $group_no,
+                    'name'           => $name,
+                    'size'           => $size,
+                    'hours'          => $hours,
+                    'type'           => $lessonTypeEnum?->value ?? $type, // Geçersizse ham veriyi bırak, validator yakalasın
+                    'semester_no'    => $semester_no,
+                    'lecturer_id'    => $lecturer ? $lecturer->id : null,
+                    'department_id'  => $department ? $department->id : null,
+                    'program_id'     => $program ? $program->id : null,
+                    'semester'       => $this->formData['semester'],
+                    'classroom_type' => $clsTypeEnum?->value ?? $classroom_type,
+                    'academic_year'  => $this->formData['academic_year'],
+                ];
+
+                $lessonDTO = null;
+                try {
+                    $lessonValidator = new LessonValidator();
+                    $lessonDTO = $lessonValidator->getDTO($lessonData);
+                } catch (\App\Exceptions\ValidationException $e) {
+                    foreach ($e->getValidationErrors() as $field => $msg) {
+                        $rowErrors[] = $msg;
+                    }
+                }
+
+                if (!empty($rowErrors)) {
                     $errors[] = "Satır " . ($rowIndex + 2) . ": " . implode(" | ", $rowErrors);
                     $errorCount++;
                     continue;
                 }
 
-                $lessonData = [
-                    'code'           => strtoupper($code),
-                    'group_no'       => $group_no,
-                    'name'           => formatLessonName($name),
-                    'size'           => $size,
-                    'hours'          => $hours,
-                    'type'           => array_search(trim($type), (new LessonController())->getTypeList()),
-                    'semester_no'    => $semester_no,
-                    'lecturer_id'    => $lecturer->id,
-                    'department_id'  => $department->id,
-                    'program_id'     => $program->id,
-                    'semester'       => $this->formData['semester'],
-                    'classroom_type' => array_search(trim($classroom_type), ClassroomType::toArray()),
-                    'academic_year'  => $this->formData['academic_year'],
-                ];
-
                 $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
                 if ($lesson) {
-                    $lesson->fill($lessonData);
+                    $lesson->fill($lessonDTO->toArray());
                     $lessonService->updateLesson($lesson);
                     $updatedLessons[$lesson->id] = $lesson->getFullName(true);
                 } else {
-                    $lesson = new Lesson();
-                    $lesson->fill($lessonData);
-                    $lessonService->saveNew($lesson);
-                    $addedLessons[$lesson->id] = $lesson->getFullName(true);
+                    $lessonId = $lessonService->saveNew($lessonDTO);
+                    $addedLessons[$lessonId] = $lessonDTO->name;
                 }
             }
 
