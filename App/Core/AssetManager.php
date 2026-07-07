@@ -270,6 +270,12 @@ class AssetManager
                     'path' => '/assets/js/admin/ScheduleCard.js'
                 ],
                 [
+                    'path' => '/assets/js/admin/LessonScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ExamScheduleCard.js'
+                ],
+                [
                     'path' => '/assets/js/admin/initializeScheduleCards.js'
                 ],
                 [
@@ -289,6 +295,12 @@ class AssetManager
             'js' => [
                 [
                     'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/LessonScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ExamScheduleCard.js'
                 ],
                 [
                     'path' => '/assets/js/admin/initializeScheduleCards.js'
@@ -313,6 +325,12 @@ class AssetManager
             'js' => [
                 [
                     'path' => '/assets/js/admin/ScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/LessonScheduleCard.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ExamScheduleCard.js'
                 ],
                 [
                     'path' => '/assets/js/admin/initializeScheduleCards.js'
