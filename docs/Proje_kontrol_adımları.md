@@ -81,6 +81,8 @@
 - Varsa gravatar görseli yükleniyor.
 - Tercih edilen gün ve saatler düzeltiliyor.
 - Tercih edilen gün ve saatler düzeltildikten sonra eklenen notlar popover ile gösteriliyor.
+- Tercih edilen alan düzenlemeleri silinebiliyor.
+- Tercih edilen alanlar taşınabiliyor. parçalı ve tek parça olarak seçilebiliyor.
 
 
 

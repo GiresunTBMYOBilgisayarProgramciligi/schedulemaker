@@ -51,7 +51,7 @@ class Log
             $logger->pushHandler(new FilterHandler($infoHandler, Level::Info, Level::Info));
 
             // Error log: captures Error and above
-            $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error, false));
+            $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error, true));
         }
 
         self::$logger = $logger;
