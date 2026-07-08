@@ -435,33 +435,80 @@ use App\Core\Gate;
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">
-                        Bu derse sınav programında başka bir ders bağlayabilirsiniz.
-                        Bağlanan ders, sınav programında bu dersle aynı zaman dilimine otomatik olarak eklenir.
-                        Ders programı etkilenmez.
-                    </p>
-                    <input type="hidden" name="parent_lesson_id" value="<?= $lesson->id ?>">
-                    <label for="exam_child_lesson_select" class="form-label">Bağlanacak Ders</label>
-                    <select class="tom-select" name="child_lesson_id" id="exam_child_lesson_select"
-                        placeholder="Ders ara...">
-                        <option value="0">Ders Seçiniz</option>
-                        <?php
-                        $programName = "";
-                        /** @var Lesson $examCombineLesson */
-                        foreach ($examCombineLessonList as $examCombineLesson):
-                            // Zaten sınav birleştirilmiş dersleri atla
-                            if ($examCombineLesson->exam_parent_lesson_id) continue;
-                            // Kendisini atla
-                            if ($examCombineLesson->id === $lesson->id) continue;
-                            if ($programName != ($examCombineLesson->program->name ?? '')) {
-                                $programName = $examCombineLesson->program->name ?? '';
-                                echo '<option disabled>' . $programName . '</option>';
-                            }
-                            ?>
-                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true,addProgram: true) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="accordion" id="accordionCombineExamLesson">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingExamOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapseExamOne" aria-expanded="false" aria-controls="collapseExamOne">
+                                    Bu Dersi Başka Derse Bağla
+                                </button>
+                            </h2>
+                            <div id="collapseExamOne" class="accordion-collapse collapse" aria-labelledby="headingExamOne"
+                                data-bs-parent="#accordionCombineExamLesson">
+                                <div class="accordion-body">
+                                    <p>
+                                        Bu dersi başka bir derse bağladığınızda bu dersin sınav programını düzenleyemezsiniz. Bu ders sınav programında bağlandığı ders ile aynı saate otomatik olarak eklenir.
+                                    </p>
+                                    <label for="exam_parent_lesson_select" class="form-label">Birleştirilecek Ders</label>
+                                    <select class="tom-select" name="parent_lesson_id" id="exam_parent_lesson_select"
+                                        placeholder="Ders ara...">
+                                        <option value="0">Ders Seçiniz</option>
+                                        <?php
+                                        $programName = "";
+                                        /** @var Lesson $examCombineLesson */
+                                        foreach ($examCombineLessonList as $examCombineLesson):
+                                            // Zaten sınav birleştirilmiş dersleri atla
+                                            if ($examCombineLesson->exam_parent_lesson_id) continue;
+                                            // Kendisini atla
+                                            if ($examCombineLesson->id === $lesson->id) continue;
+                                            if ($programName != ($examCombineLesson->program->name ?? '')) {
+                                                $programName = $examCombineLesson->program->name ?? '';
+                                                echo '<option disabled>' . $programName . '</option>';
+                                            }
+                                            ?>
+                                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true,addProgram: true) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingExamTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#collapseExamTwo" aria-expanded="false" aria-controls="collapseExamTwo">
+                                    Bu Derse Başka Ders Bağla
+                                </button>
+                            </h2>
+                            <div id="collapseExamTwo" class="accordion-collapse collapse" aria-labelledby="headingExamTwo"
+                                data-bs-parent="#accordionCombineExamLesson">
+                                <div class="accordion-body">
+                                    <p>
+                                        Bu derse bağlanan derslerin sınav programı düzenlenemez. Bağlı dersler sınav programında bu ders ile aynı saate otomatik olarak eklenir.
+                                    </p>
+                                    <input type="hidden" name="lesson_id" value="<?= $lesson->id ?>">
+                                    <label for="exam_child_lesson_select2" class="form-label">Birleştirilecek Ders</label>
+                                    <select class="tom-select" name="child_lesson_id" id="exam_child_lesson_select2"
+                                        placeholder="Ders ara...">
+                                        <option value="0">Ders Seçiniz</option>
+                                        <?php
+                                        $programName = "";
+                                        foreach ($examCombineLessonList as $examCombineLesson):
+                                            if ($examCombineLesson->exam_parent_lesson_id) continue;
+                                            if ($examCombineLesson->id === $lesson->id) continue;
+                                            if ($programName != ($examCombineLesson->program->name ?? '')) {
+                                                $programName = $examCombineLesson->program->name ?? '';
+                                                echo '<option disabled>' . $programName . '</option>';
+                                            }
+                                            ?>
+                                            <option value="<?= $examCombineLesson->id ?>"><?= $examCombineLesson->getFullName(addCode: true, addSize: true,addProgram: true) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
