@@ -83,7 +83,23 @@
 - Tercih edilen gün ve saatler düzeltildikten sonra eklenen notlar popover ile gösteriliyor.
 - Tercih edilen alan düzenlemeleri silinebiliyor.
 - Tercih edilen alanlar taşınabiliyor. parçalı ve tek parça olarak seçilebiliyor.
-
-
+- Final sınavında haftalar arasında geçiş yapılabiliryor.
+- Kullanıcı sil butonu çalışıyor.
 
 ### Ders İşlemleri
+#### Ders Listesi
+- Arama çalışıyor
+- Sayfalama çalışıyor
+- Filtre ve sıralama çalışıyor
+- Gör butonu çalışıyor.
+- Düzenle butonu çalışıyor.
+- Silme işlemi çalışıyor.
+- excel çıktısı çalışıyor
+- 
+#### Ders Ekleme
+ - Form validatorler çalışıyor.
+ - Validasyon hataları forma işleniyor.
+ - Ders ekleniyor
+
+#### Ders İçe Aktarma
+ - 

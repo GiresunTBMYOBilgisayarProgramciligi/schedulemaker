@@ -71,7 +71,7 @@ class LessonValidator extends BaseValidator
         }
 
         if (isset($data['classroom_type']) && $data['classroom_type'] !== '' && !is_numeric($data['classroom_type'])) {
-            $errors['classroom_type'] = 'Sınıf türü geçerli bir sayı olmalıdır.';
+            $errors['classroom_type'] = 'Derslik türü geçerli bir değer olmalıdır.';
         }
 
         if (!empty($errors)) {
