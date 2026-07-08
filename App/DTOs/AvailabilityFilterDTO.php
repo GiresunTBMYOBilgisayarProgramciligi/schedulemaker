@@ -17,6 +17,8 @@ readonly class AvailabilityFilterDTO
         public ?int $week_index = 0,
         // Gözetmen ve Derslik aramasında kullanılır
         public ?int $lesson_id = null,
+        public ?int $schedule_id = null,
+        public mixed $items = null,
         public ?int $exam_duration = null, // Sınav süresi
         public ?string $classroom_type = null // İstenen derslik tipi
     ) {
@@ -33,6 +35,8 @@ readonly class AvailabilityFilterDTO
             academic_year: $data['academic_year'] ?? null,
             week_index: isset($data['week_index']) ? (int)$data['week_index'] : 0,
             lesson_id: isset($data['lesson_id']) ? (int)$data['lesson_id'] : null,
+            schedule_id: isset($data['schedule_id']) ? (int)$data['schedule_id'] : null,
+            items: $data['items'] ?? null,
             exam_duration: isset($data['exam_duration']) ? (int)$data['exam_duration'] : null,
             classroom_type: $data['classroom_type'] ?? null
         );
@@ -49,6 +53,8 @@ readonly class AvailabilityFilterDTO
             'academic_year' => $this->academic_year,
             'week_index' => $this->week_index,
             'lesson_id' => $this->lesson_id,
+            'schedule_id' => $this->schedule_id,
+            'items' => $this->items,
             'exam_duration' => $this->exam_duration,
             'classroom_type' => $this->classroom_type,
         ], fn($value) => $value !== null);
