@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "admin-lte": "^4.1.0",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "datatables.net": "^2.3.2",
@@ -10,6 +11,7 @@
     "icheck-bootstrap": "^3.0.1",
     "jquery": "^3.7.1",
     "jszip": "^3.10.1",
+    "overlayscrollbars": "^2.16.0",
     "pdfmake": "^0.3.3",
     "tom-select": "^2.4.3"
   }

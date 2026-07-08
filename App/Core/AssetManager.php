@@ -39,20 +39,13 @@ class AssetManager
             ]
         ],
         [ //Third Party Plugin(OverlayScrollbars)
-            'path' => 'https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/styles/overlayscrollbars.min.css',
-            'attributes' => [
-                'integrity' => 'sha256-tZHrRjVqNSRyWg2wbppGnT833E/Ys0DHWGwT04GiqQg=',
-                'crossorigin' => 'anonymous'
-            ]
+            'path' => '/assets/node_modules/overlayscrollbars/styles/overlayscrollbars.min.css',
         ],
         [//Third Party Plugin(Bootstrap Icons)
             'path' => '/assets/node_modules/bootstrap-icons/font/bootstrap-icons.min.css'
         ],
         [//Required Plugin(AdminLTE)
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/css/adminlte.min.css',
-            'attributes' => [
-                'crossorigin' => 'anonymous'
-            ]
+            'path' => '/assets/node_modules/admin-lte/dist/css/adminlte.min.css'
         ],
         [
             'path' => '/assets/css/adminlte3to4.css'
@@ -61,11 +54,7 @@ class AssetManager
 
     private array $globalJs = [
         [//Third Party Plugin(OverlayScrollbars)
-            'path' => 'https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js',
-            'attributes' => [
-                'integrity' => 'sha256-dghWARbRe2eLlIJ56wNB+b760ywulqK3DzZYEpsg2fQ=',
-                'crossorigin' => 'anonymous'
-            ]
+            'path' => '/assets/node_modules/overlayscrollbars/browser/overlayscrollbars.browser.es6.min.js'
         ],
         [//Required Plugin(popperjs for Bootstrap 5)
             'path' => '/assets/node_modules/@popperjs/core/dist/umd/popper.min.js'
@@ -74,10 +63,7 @@ class AssetManager
             'path' => '/assets/node_modules/bootstrap/dist/js/bootstrap.min.js'
         ],
         [
-            'path' => 'https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/js/adminlte.min.js',
-            'attributes' => [
-                'crossorigin' => 'anonymous'
-            ]
+            'path' => '/assets/node_modules/admin-lte/dist/js/adminlte.min.js'
         ],
         [
             'path' => '/assets/js/gettext.php'
