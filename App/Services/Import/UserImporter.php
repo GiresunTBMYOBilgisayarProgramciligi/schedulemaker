@@ -51,8 +51,8 @@ class UserImporter
         $userService           = new UserService();
 
 
-        $addedCount   = 0;
-        $updatedCount = 0;
+        $addedUsers   = [];
+        $updatedUsers = [];
         $errorCount   = 0;
         $errors       = [];
 
@@ -68,7 +68,7 @@ class UserImporter
             throw new Exception("Excel başlıkları beklenen formatta değil!");
         }
 
-        Database::transaction(function () use ($rows, &$errorCount, &$errors, &$addedCount, &$updatedCount, $userRepository, $userService) {
+        Database::transaction(function () use ($rows, &$errorCount, &$errors, &$addedUsers, &$updatedUsers, $userRepository, $userService) {
             foreach ($rows as $index => $row) {
                 // Boş satır kontrolü
                 $isEmpty = true;
@@ -157,27 +157,29 @@ class UserImporter
                     $user->fill($userData);
                     $user->password = null;
                     $userService->updateUser($user);
-                    $updatedCount++;
+                    $updatedUsers[$user->id] = $user->getFullName();
                 } else {
-                    $userService->saveNew($userDTO);
-                    $addedCount++;
+                    $userId = $userService->saveNew($userDTO);
+                    $addedUsers[$userId] = $userData['name'] . ' ' . $userData['last_name'];
                     $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }
             }
 
             $username = $this->logContext()['username'] ?? "Sistem";
             $this->logger()->info(
-                "{$username} Excel'den kullanıcıları içe aktardı. Eklendi: {$addedCount}, Güncellendi: {$updatedCount}, Hatalı: {$errorCount}",
+                "{$username} Excel'den kullanıcıları içe aktardı. Eklendi: " . count($addedUsers) . ", Güncellendi: " . count($updatedUsers) . ", Hatalı: {$errorCount}",
                 $this->logContext()
             );
         });
 
         return [
-            "status"     => "success",
-            "added"      => $addedCount,
-            "updated"    => $updatedCount,
-            "errorCount" => $errorCount,
-            "errors"     => $errors,
+            "status"       => "success",
+            "added"        => count($addedUsers),
+            "updated"      => count($updatedUsers),
+            "errorCount"   => $errorCount,
+            "errors"       => $errors,
+            "addedUsers"   => $addedUsers,
+            "updatedUsers" => $updatedUsers,
         ];
     }
 }

@@ -109,12 +109,14 @@ class UserController extends Controller
             $result      = $importer->import();
 
             return [
-                'status' => "success",
-                'msg'    => sprintf(
+                'status'       => "success",
+                'msg'          => sprintf(
                     "%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var",
                     $result['added'], $result['updated'], $result['errorCount']
                 ),
-                'errors' => $result['errors']
+                'errors'       => $result['errors'],
+                'addedUsers'   => $result['addedUsers'],
+                'updatedUsers' => $result['updatedUsers']
             ];
     }
 }

@@ -38,7 +38,7 @@ use function App\Helpers\getSettingValue;
             <div class="row">
                 <div class="col-12">
                     <div class="card ">
-                        <form id="importUserForm" action="/ajax/importLessons" method="post" class="ajaxForm js-reset-on-success" enctype="multipart/form-data"
+                        <form id="importLessonForm" action="/ajax/importLessons" method="post" class="js-import-form js-reset-on-success" enctype="multipart/form-data"
                                title="Ders içe aktar">
                             <div class="card-body pb-0">
                                 <div class="row">

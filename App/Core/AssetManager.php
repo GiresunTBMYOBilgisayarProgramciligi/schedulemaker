@@ -166,6 +166,14 @@ class AssetManager
                 ]
             ]
         ],
+        'importpages' => [
+            'js' => [
+                [
+                    'path' => '/assets/js/admin/import.js'
+                ]
+            ],
+            'css' => []
+        ],
         'editschedule' => [
             'js' => [
                 [

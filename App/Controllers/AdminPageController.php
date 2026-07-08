@@ -187,7 +187,7 @@ class AdminPageController extends Controller
     public function getImportUsersPageData(AssetManager $assetManager): array
     {
         Gate::authorizeRole("submanager", false, "Kullanıcı İçe aktarma yetkiniz yok");
-        $assetManager->loadPageAssets('formpages');
+        $assetManager->loadPageAssets('importpages');
         return [
             "page_title" => " Kullanıcı İçe aktar",
         ];
@@ -336,7 +336,7 @@ class AdminPageController extends Controller
     public function getImportLessonsPageData(AssetManager $assetManager): array
     {
         Gate::authorizeRole("submanager", false, "Ders İçe aktarma yetkiniz yok");
-        $assetManager->loadPageAssets('formpages');
+        $assetManager->loadPageAssets('importpages');
         return [
             "page_title" => " Ders İçe aktar",
         ];
