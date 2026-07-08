@@ -141,7 +141,8 @@ class LessonImporter
                 $lecturer = null;
                 if (!empty($lecturer_full_name)) {
                     if (!isset($this->cache['users_by_name'][$lecturer_full_name])) {
-                        $this->cache['users_by_name'][$lecturer_full_name] = clone $userRepository->findByFullName($lecturer_full_name) ?: false;
+                        $foundLecturer = $userRepository->findByFullName($lecturer_full_name);
+                        $this->cache['users_by_name'][$lecturer_full_name] = $foundLecturer ? clone $foundLecturer : false;
                     }
                     $lecturer = $this->cache['users_by_name'][$lecturer_full_name];
                 }
