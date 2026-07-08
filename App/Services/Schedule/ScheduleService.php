@@ -1048,9 +1048,24 @@ class ScheduleService extends BaseService
         }
 
         // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
-        // Tüm başlangıç ve bitiş noktalarını topla
-        $startStr = substr($startTime, 0, 5);
-        $endStr = substr($endTime, 0, 5);
+        // Yeni item'ın orijinal aralığı (kapsama kontrolü için)
+        $newStartStr = substr($startTime, 0, 5);
+        $newEndStr = substr($endTime, 0, 5);
+
+        // Yeni item ve mevcut çakışan itemların birleşik zaman aralığı (getCriticalPoints için)
+        $startStr = $newStartStr;
+        $endStr = $newEndStr;
+
+        foreach ($involvedItems as $item) {
+            $itemStart = $item->getShortStartTime();
+            $itemEnd = $item->getShortEndTime();
+            if ($itemStart < $startStr) {
+                $startStr = $itemStart;
+            }
+            if ($itemEnd > $endStr) {
+                $endStr = $itemEnd;
+            }
+        }
         
         $internalPoints = [];
         foreach ($involvedItems as $item) {
@@ -1074,15 +1089,7 @@ class ScheduleService extends BaseService
             $mergedData = [];
             $mergedDetail = [];
 
-            // Yeni veri bu aralığı kapsıyor mu?
-            if ($startStr <= $pStart && $endStr >= $pEnd) {
-                $mergedData = array_merge($mergedData, $newData);
-                if ($newDetail) {
-                    $mergedDetail = array_merge($mergedDetail, $newDetail);
-                }
-            }
-
-            // Mevcut itemler bu aralığı kapsıyor mu?
+            // Mevcut itemler bu aralığı kapsıyor mu? (Önce mevcut verileri ekle - sıralama korunur)
             foreach ($involvedItems as $item) {
                 if ($item->getShortStartTime() <= $pStart && $item->getShortEndTime() >= $pEnd) {
                     if (is_array($item->data)) {
@@ -1091,6 +1098,14 @@ class ScheduleService extends BaseService
                     if (is_array($item->detail)) {
                         $mergedDetail = array_merge($mergedDetail, $item->detail);
                     }
+                }
+            }
+
+            // Yeni veri bu aralığı kapsıyor mu? (Orijinal aralık kullanılır)
+            if ($newStartStr <= $pStart && $newEndStr >= $pEnd) {
+                $mergedData = array_merge($mergedData, $newData);
+                if ($newDetail) {
+                    $mergedDetail = array_merge($mergedDetail, $newDetail);
                 }
             }
 
@@ -1107,6 +1122,11 @@ class ScheduleService extends BaseService
                         $uniqueData[] = $d;
                     }
                 }
+
+                // Dersleri lesson_id'ye göre sırala (tutarlı sıralama)
+                usort($uniqueData, function ($a, $b) {
+                    return ((int) ($a['lesson_id'] ?? 0)) - ((int) ($b['lesson_id'] ?? 0));
+                });
 
                 $segments[] = [
                     'start' => $pStart,
