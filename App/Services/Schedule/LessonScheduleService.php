@@ -339,5 +339,6 @@ class LessonScheduleService extends ScheduleService
             $createdIds = array_merge($createdIds, $newIds);
         }
 
+        return $createdIds;
     }
 }
