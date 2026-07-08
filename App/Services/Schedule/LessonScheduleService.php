@@ -11,6 +11,8 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\DTOs\SaveScheduleResult;
 use App\Enums\ScheduleItemStatus;
+use App\Enums\OwnerType;
+use App\Services\Schedule\ConflictService;
 use Exception;
 use function App\Helpers\getSettingValue;
 
@@ -30,6 +32,10 @@ class LessonScheduleService extends ScheduleService
         // 1. Validation - batch olarak tüm item'ları kontrol et
         $itemsData = array_map(fn($dto) => $dto->toArray(), $dtos);
         $this->validator->validateBatch($itemsData);
+
+        // 2. Çakışma Kontrolü (ConflictService üzerinden)
+        $conflictService = new ConflictService();
+        $conflictService->checkScheduleCrash(['items' => json_encode($itemsData)]);
 
         try {
             return Database::transaction(function () use ($dtos) {
@@ -70,22 +76,7 @@ class LessonScheduleService extends ScheduleService
                         // GROUP ITEM: mergeGroupItems kullanarak multi-schedule'a kaydet
                         $itemIds = $this->saveGroupItemToSchedules($dto, $lesson, $schedule);
                     } else {
-                        // SINGLE/DUMMY ITEM: Basit çakışma kontrolü (v1.0)
-                        $conflicts = $this->itemRepo->findConflicting(
-                            $dto->scheduleId,
-                            $dto->dayIndex,
-                            $dto->weekIndex,
-                            $dto->startTime,
-                            $dto->endTime
-                        );
-
-                        if (!empty($conflicts)) {
-                            $this->logger->warning("Conflict detected for item #$index", $this->logContext([
-                                'conflicts' => count($conflicts),
-                                'schedule_id' => $dto->scheduleId
-                            ]));
-                        }
-
+                        // SINGLE/DUMMY ITEM
                         // MULTI-SCHEDULE KAYDETME: Tüm ilgili schedule'lara kaydet
                         $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule);
                     }
@@ -244,29 +235,6 @@ class LessonScheduleService extends ScheduleService
                 $item->detail = $dto->detail;
             }
 
-            if ($dto->isDummy()) {
-                $conflicts = $this->itemRepo->findConflicting(
-                    $targetSchedule->id,
-                    $dto->dayIndex,
-                    $dto->weekIndex,
-                    $item->start_time,
-                    $item->end_time
-                );
-
-                if (!empty($conflicts)) {
-                    $hasRealConflict = false;
-                    foreach ($conflicts as $conflict) {
-                        if (!in_array($conflict->status, ['preferred', 'unavailable'])) {
-                            $hasRealConflict = true;
-                            break;
-                        }
-                    }
-                    if ($hasRealConflict) {
-                        continue;
-                    }
-                }
-            }
-
             $item->create();
             $createdIds[] = $item->id;
         }
@@ -371,6 +339,5 @@ class LessonScheduleService extends ScheduleService
             $createdIds = array_merge($createdIds, $newIds);
         }
 
-        return $createdIds;
     }
 }

@@ -30,7 +30,7 @@ class ConflictResolver
         array $itemData,
         array $owners,
         Schedule $targetSchedule,
-        Lesson $lesson
+        ?Lesson $lesson
     ): array {
         $errors = [];
         $dayIndex = $itemData['day_index'];
@@ -103,7 +103,7 @@ class ConflictResolver
     public function resolveConflict(
         array $newItemData,
         ScheduleItem $existingItem,
-        Lesson $newLesson,
+        ?Lesson $newLesson,
         Schedule $currentSchedule
     ): ?string {
         // Kendi kendisiyle çakışıyorsa (update durumu) yoksay
@@ -112,6 +112,20 @@ class ConflictResolver
         }
 
         $crashInfo = "{$currentSchedule->getScheduleScreenName()} ({$existingItem->start_time} - {$existingItem->end_time})";
+
+        $isNewDummy = in_array($newItemData['status'] ?? 'single', ['preferred', 'unavailable']);
+
+        if ($isNewDummy) {
+            // Eğer yeni eklenen şey bir dummy item ise, üzerine yazılmasını engellemek için
+            // mevcut olanla çakışma durumunda direkt hata döndürüyoruz.
+            if ($existingItem->status === 'preferred') {
+                return "{$crashInfo}: Bu saatte zaten tercih durumu var. Lütfen önce mevcut durumu silin.";
+            } elseif ($existingItem->status === 'unavailable') {
+                return "{$crashInfo}: Bu saatte zaten müsait değil durumu var.";
+            } else {
+                return "{$crashInfo}: Bu saatte zaten ders mevcut.";
+            }
+        }
 
         // Status kontrolü
         switch ($existingItem->status) {
@@ -154,12 +168,12 @@ class ConflictResolver
     private function checkGroupConflict(
         array $newItemData,
         ScheduleItem $existingItem,
-        Lesson $newLesson,
+        ?Lesson $newLesson,
         string $crashInfo
     ): ?string {
         // Yeni ders aynı zamanda grup dersi olmalı
-        if ($newLesson->group_no < 1) {
-            return "{$crashInfo}: Grup dersi üzerine normal ders eklenemez.";
+        if (!$newLesson || $newLesson->group_no < 1) {
+            return "{$crashInfo}: Grup dersi üzerine normal ders (veya durum) eklenemez.";
         }
 
         // Mevcut gruptaki dersleri kontrol et

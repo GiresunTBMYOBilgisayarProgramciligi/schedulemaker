@@ -53,34 +53,48 @@ class ConflictService extends BaseService
      */
     private function checkItemConflict(array $itemData, array &$errors = []): void
     {
-        // Data parse + validation
-        $data = $itemData['data'];
-        if (is_string($data)) {
-            $data = json_decode($data, true);
-        }
-
-        if (!is_array($data) || !isset($data[0]) || !is_array($data[0])) {
-            throw new Exception("Geçersiz data formatı - array of objects bekleniyor");
-        }
-
-        $lessonId = $data[0]['lesson_id'] ?? null;
-        $lecturerId = $data[0]['lecturer_id'] ?? null;
-        $classroomId = $data[0]['classroom_id'] ?? null;
-
-        if (!$lessonId) {
-            throw new Exception("lesson_id bulunamadı");
-        }
-
-        $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
-        if (!$lesson) {
-            throw new Exception("Ders bulunamadı");
-        }
-
-        $owners = $this->determineOwners($itemData, $lesson, $lecturerId, $classroomId);
+        $status = $itemData['status'] ?? 'single';
+        $isDummy = in_array($status, ['preferred', 'unavailable']);
 
         $targetSchedule = (new Schedule())->find($itemData['schedule_id']);
         if (!$targetSchedule) {
             throw new Exception("Hedef Program bulunamadı");
+        }
+
+        if (!$isDummy) {
+            // Data parse + validation
+            $data = $itemData['data'] ?? [];
+            if (is_string($data)) {
+                $data = json_decode($data, true);
+            }
+
+            if (!is_array($data) || !isset($data[0]) || !is_array($data[0])) {
+                throw new Exception("Geçersiz data formatı - array of objects bekleniyor");
+            }
+
+            $lessonId = $data[0]['lesson_id'] ?? null;
+            $lecturerId = $data[0]['lecturer_id'] ?? null;
+            $classroomId = $data[0]['classroom_id'] ?? null;
+
+            if (!$lessonId) {
+                throw new Exception("lesson_id bulunamadı");
+            }
+
+            $lesson = (new Lesson())->where(['id' => $lessonId])->with(['childLessons'])->first();
+            if (!$lesson) {
+                throw new Exception("Ders bulunamadı");
+            }
+
+            $owners = $this->determineOwners($itemData, $lesson, $lecturerId, $classroomId);
+        } else {
+            $lesson = null;
+            $owners = [
+                [
+                    'type' => $targetSchedule->owner_type,
+                    'id' => $targetSchedule->owner_id,
+                    'lesson_context' => null
+                ]
+            ];
         }
 
         $conflictResolver = new ConflictResolver();
