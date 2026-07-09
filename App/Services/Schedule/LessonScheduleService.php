@@ -116,6 +116,30 @@ class LessonScheduleService extends ScheduleService
     }
 
     /**
+     * Sürükle bırak ile taşıma işleminde kullanılır. Önce siler, sonra kaydeder.
+     * Transaction içinde yapıldığı için hata durumunda silme işlemi de geri alınır.
+     *
+     * @param ScheduleItemData[] $dtos Eklenecek veriler
+     * @param ScheduleItemData[] $deletedDtos Silinecek veriler
+     * @return SaveScheduleResult
+     * @throws Exception
+     */
+    public function moveScheduleItems(array $dtos, array $deletedDtos): SaveScheduleResult
+    {
+        $this->logger->debug("LessonScheduleService::moveScheduleItems START");
+
+        return Database::transaction(function () use ($dtos, $deletedDtos) {
+            // Önce silinecek öğeleri sil
+            if (!empty($deletedDtos)) {
+                $this->deleteScheduleItems($deletedDtos);
+            }
+            
+            // Sonra yeni öğeleri kaydet (çakışma kontrolü burada yapılıyor ve silinmiş öğeleri görmeyecek)
+            return $this->saveScheduleItems($dtos);
+        });
+    }
+
+    /**
      * Tekil item'ı ilgili tüm schedule'lara kaydeder
      */
     protected function saveToMultipleSchedules(

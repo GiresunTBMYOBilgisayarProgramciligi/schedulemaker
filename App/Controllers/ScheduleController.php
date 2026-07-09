@@ -223,6 +223,42 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Ders programı öğelerini taşıma isteğini (tek işlemde sil ve ekle) işler
+     */
+    public function moveScheduleItems(array $requestData): array
+    {
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        $deletedItems = json_decode($requestData['deleted_items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı"
+            ];
+        }
+
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
+        $deletedDtos = (new ScheduleItemValidator())->getBatchDTO($deletedItems);
+
+        // Update yetki kontrolü
+        if (count($dtos) > 0) {
+            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            if ($schedule) Gate::authorize('update', clone $schedule);
+        } elseif (count($deletedDtos) > 0) {
+            $schedule = (new ScheduleRepository())->find($deletedDtos[0]->scheduleId);
+            if ($schedule) Gate::authorize('update', clone $schedule);
+        }
+
+        $this->logger()->debug("Using LessonScheduleService::moveScheduleItems", $this->logContext());
+        $service = new LessonScheduleService();
+        $result = $service->moveScheduleItems($dtos, $deletedDtos);
+        
+        return [
+            "status" => "success",
+            "createdIds" => $result->createdIds,
+        ];
+    }
+
+    /**
      * @throws \Exception
      */
     public function deleteScheduleItems(array $requestData): array
@@ -297,6 +333,58 @@ class ScheduleController extends Controller
             "createdItems" => $createdItems,
         ];
     }
+
+    /**
+     * Sınav programı öğelerini taşıma isteği (tek işlemde sil ve ekle)
+     */
+    public function moveExamScheduleItems(array $requestData): array
+    {
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        $deletedItems = json_decode($requestData['deleted_items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı",
+            ];
+        }
+
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
+        $deletedDtos = (new ScheduleItemValidator())->getBatchDTO($deletedItems);
+
+        if (count($dtos) > 0) {
+            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
+            if ($schedule) Gate::authorize('update', clone $schedule);
+        } elseif (count($deletedDtos) > 0) {
+            $schedule = (new ScheduleRepository())->find($deletedDtos[0]->scheduleId);
+            if ($schedule) Gate::authorize('update', clone $schedule);
+        }
+
+        $this->logger()->debug("Using ExamScheduleService::moveExamScheduleItems", $this->logContext());
+        $service = new ExamScheduleService();
+        $createdIds = $service->moveExamScheduleItems($dtos, $deletedDtos);
+        
+        $createdItems = [];
+        if (!empty($createdIds)) {
+            foreach ($createdIds as $groupedIds) {
+                foreach ($groupedIds as $ownerType => $ids) {
+                    foreach ($ids as $id) {
+                        $item = (new ScheduleItem())->find($id);
+                        if ($item) {
+                            $createdItems[] = $item->getArray();
+                        }
+                    }
+                }
+            }
+        }
+
+        return [
+            "status" => "success",
+            "createdIds" => $createdIds,
+            "items" => $createdItems
+        ];
+    }
+
+
 
     /**
      * Müsait derslikleri getirir

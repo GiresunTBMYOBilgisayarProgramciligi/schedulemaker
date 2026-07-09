@@ -401,6 +401,24 @@ class AjaxRouter extends Router
         $this->response = (new ScheduleController())->saveExamScheduleItems($this->data);
         $this->sendResponse();
     }
+    
+    /**
+     * Ders programı taşıma isteği (silme + kaydetme)
+     */
+    public function moveScheduleItemsAction(): void
+    {
+        $this->response = (new ScheduleController())->moveScheduleItems($this->data);
+        $this->sendResponse();
+    }
+    
+    /**
+     * Sınav programı taşıma isteği (silme + kaydetme)
+     */
+    public function moveExamScheduleItemsAction(): void
+    {
+        $this->response = (new ScheduleController())->moveExamScheduleItems($this->data);
+        $this->sendResponse();
+    }
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      * @return void

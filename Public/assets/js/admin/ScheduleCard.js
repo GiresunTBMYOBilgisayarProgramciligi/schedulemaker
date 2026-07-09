@@ -1017,6 +1017,33 @@ class ScheduleCard {
             });
     }
 
+    async moveScheduleItems(scheduleItems, deletedItems) {
+        let data = new FormData();
+        data.append('items', JSON.stringify(scheduleItems));
+        data.append('deleted_items', JSON.stringify(deletedItems));
+
+        return fetch("/ajax/moveScheduleItems", {
+            method: "POST",
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: data
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error("moveScheduleItems API hatası:", data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return data.createdIds || true;
+                }
+            })
+            .catch((error) => {
+                console.error("moveScheduleItems sistem hatası:");
+                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                return false;
+            });
+    }
+
     async deleteScheduleItems(param = null) {
         let scheduleItems = [];
         if (Array.isArray(param)) {
@@ -1282,13 +1309,12 @@ class ScheduleCard {
         try {
             await this.checkCrash(totalHours, classroom);
             const newItems = this.generateScheduleItems(detailedItems, classroom);
-            if (await this.checkCrashBackEnd(newItems)) {
-                if (await this.deleteScheduleItems(itemsToDelete)) {
-                    let saveResult = await this.saveScheduleItems(newItems);
-                    if (saveResult) {
-                        await this.refreshScheduleCard();
-                    }
-                }
+            
+            // Sadece taşıma işlemlerinde doğrudan yeni moveScheduleItems fonksiyonunu kullanıyoruz.
+            // Bu backend'de tek bir transaction ile önce eski item'ları silecek, sonra yenilerini kaydedecek.
+            let moveResult = await this.moveScheduleItems(newItems, itemsToDelete);
+            if (moveResult) {
+                await this.refreshScheduleCard();
             }
         } catch (errorMessage) {
             new Toast().prepareToast("Hata", errorMessage, "danger");

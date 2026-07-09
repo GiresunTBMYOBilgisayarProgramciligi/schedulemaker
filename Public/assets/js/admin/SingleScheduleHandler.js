@@ -320,35 +320,14 @@ class SingleScheduleHandler {
         console.log("Planned new items:", newItems);
 
         try {
-            // 3. Önce silme işlemini yap
-            const deleteFormData = new FormData();
-            deleteFormData.append('items', JSON.stringify(itemsToDelete));
-
-            const deleteResponse = await fetch('/ajax/deleteScheduleItems', {
-                method: 'POST',
-                body: deleteFormData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            const deleteResult = await deleteResponse.json();
-            if (deleteResult.status !== 'success') {
-                new Toast().prepareToast("Hata", "Eski öğeler silinemedi: " + deleteResult.msg, "danger");
-                return;
-            }
-
-            // UI'dan eskileri sil ve parçalananları (split) göster
-            // YENİ YAPI: Eskisi gibi manuel DOM manipülasyonu yerine refreshScheduleCard kullanacağız. 
-            // Fakat burada silme + kaydetme ardışık yapıldığı için refresh'i saveItem sonrasına bırakıyoruz.
-
-            // 4. Silme başarılıysa yeni öğeleri (taşınan kısmı) kaydet
-            const saveResult = await this.saveItem(newItems, dropZone.closest('.schedule-card'), true);
-            if (saveResult && saveResult.status === 'success') {
+            // 3. Silme ve kaydetme işlemini tek seferde yap (backend'de transaction ile)
+            const moveResult = await this.moveItem(newItems, itemsToDelete, dropZone.closest('.schedule-card'), true);
+            if (moveResult && moveResult.status === 'success') {
                 this.clearSelection();
                 new Toast().prepareToast("Başarılı", "Öğeler başarıyla taşındı.", "success");
             } else {
-                // Kayıt başarısızsa bilgi ver (Silindi ama kaydedilemedi durumu)
-                console.error("Save failed after delete:", saveResult);
-                new Toast().prepareToast("Hata", "Öğeler silindi ancak yeni konuma kaydedilemedi. Sayfayı yenileyerek durumu kontrol edin.", "warning");
+                console.error("Move failed:", moveResult);
+                new Toast().prepareToast("Hata", "Öğeler taşınamadı. Sayfayı yenileyerek durumu kontrol edin.", "warning");
                 await this.refreshScheduleCard();
             }
 
@@ -474,6 +453,47 @@ class SingleScheduleHandler {
             data: null,
             detail: detail
         };
+    }
+
+    async moveItem(items, deletedItems, targetCardElement = null, autoRefresh = true) {
+        try {
+            const formData = new FormData();
+            formData.append('items', JSON.stringify(items));
+            formData.append('deleted_items', JSON.stringify(deletedItems));
+
+            // URL type'a göre değişebilir, eğer ExamSchedule ise farklı olabilir.
+            // this.ScheduleCard.type üzerinden kontrol edelim:
+            const isExam = this.ScheduleCard.type === 'exam';
+            const url = isExam ? '/ajax/moveExamScheduleItems' : '/ajax/moveScheduleItems';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                if (autoRefresh) {
+                    if (targetCardElement) {
+                        await this.refreshScheduleCard(targetCardElement);
+                    } else {
+                        for (const card of window.scheduleCards) {
+                            await card.refreshScheduleCard();
+                        }
+                    }
+                }
+                return result;
+            } else {
+                new Toast().prepareToast("Hata", result.msg || "Kayıt sırasında hata oluştu", "danger");
+                return false;
+            }
+        } catch (error) {
+            console.error("Move Error:", error);
+            new Toast().prepareToast("Hata", "Sistem hatası oluştu.", "danger");
+            return false;
+        }
     }
 
     async saveItem(items, targetCardElement = null, autoRefresh = true) {

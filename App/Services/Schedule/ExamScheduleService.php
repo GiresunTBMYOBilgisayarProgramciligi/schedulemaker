@@ -215,6 +215,21 @@ class ExamScheduleService extends ScheduleService
         });
     }
 
+    /**
+     * Sınav programında taşıma işlemi (silme ve ekleme tek transaction'da)
+     */
+    public function moveExamScheduleItems(array $dtos, array $deletedDtos): array
+    {
+        $this->logger->debug("ExamService::moveExamScheduleItems START");
+
+        return Database::transaction(function () use ($dtos, $deletedDtos) {
+            if (!empty($deletedDtos)) {
+                $this->deleteScheduleItems($deletedDtos);
+            }
+
+            return $this->saveExamScheduleItems($dtos);
+        });
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // Sınav Sibling
     // ─────────────────────────────────────────────────────────────────────────

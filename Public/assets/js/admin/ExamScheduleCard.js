@@ -495,6 +495,33 @@ class ExamScheduleCard extends ScheduleCard {
             });
     }
 
+    async moveScheduleItems(scheduleItems, deletedItems) {
+        let data = new FormData();
+        data.append('items', JSON.stringify(scheduleItems));
+        data.append('deleted_items', JSON.stringify(deletedItems));
+
+        return fetch("/ajax/moveExamScheduleItems", {
+            method: "POST",
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: data
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error("moveExamScheduleItems API hatası:", data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return data.createdIds || true;
+                }
+            })
+            .catch((error) => {
+                console.error("moveExamScheduleItems sistem hatası:", error);
+                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                return false;
+            });
+    }
+
     /**
      * Çoklu tablo (haftalık yapı) desteği için generateScheduleItems metodunu override eder.
      */
@@ -726,17 +753,11 @@ class ExamScheduleCard extends ScheduleCard {
             // 2. Yeni öğeleri oluştur
             const newItems = this.generateScheduleItems(detailedItems, classroom);
 
-            // 3. Çakışma Kontrolü (Backend)
-            if (await this.checkCrashBackEnd(newItems)) {
-                // 4. Eski öğeleri sil
-                if (await this.deleteScheduleItems(itemsToDelete)) {
-                    // 5. Yeni öğeleri kaydet
-                    let saveResult = await this.saveScheduleItems(newItems);
-                    if (saveResult) {
-                        // 6. UI Güncelleme
-                        await this.refreshScheduleCard();
-                    }
-                }
+            // 3. Yeni öğeleri kaydet (Taşıma işlemi için özel uç noktayı kullan)
+            let moveResult = await this.moveScheduleItems(newItems, itemsToDelete);
+            if (moveResult) {
+                // 4. UI Güncelleme
+                await this.refreshScheduleCard();
             }
         } catch (errorMessage) {
             new Toast().prepareToast("Hata", errorMessage, "danger");
