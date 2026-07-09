@@ -205,11 +205,9 @@ class AdminPageController extends Controller
         }
         Gate::authorize("view", $lesson, "Bu dersi görme yetkiniz yok");
         $assetManager->loadPageAssets('singlepages');
-        $assetManager->addJs('/assets/js/formEvents.js');
+        $assetManager->loadPageAssets('formpages');
         $assetManager->addJs('/assets/js/admin/combineLesson.js');
         $assetManager->addJs('/assets/js/admin/combineExamLesson.js');
-        $assetManager->addJs('/assets/node_modules/tom-select/dist/js/tom-select.base.min.js');
-        $assetManager->addCss('/assets/node_modules/tom-select/dist/css/tom-select.bootstrap5.min.css');
         
         return [
             "lesson" => $lesson,

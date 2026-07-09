@@ -73,6 +73,7 @@
 - Hatalı görev ve ünvan verilerinde satır bazlı hata mesajları gösteriliyor.
 - Bölüm ve program bilgisi olmadan kayıt yapılabiliyor.
 - İçe aktarmada girilen bölüm ve programın birbiriyle uyumu kontrol ediliyor.
+- Ders ekleme başarılı olursa eklenen dersler listeleniyor.
 
 #### Profil sayfası
 - bilgi güncelleme formu çalışıyor. 
@@ -97,9 +98,45 @@
 - excel çıktısı çalışıyor
 - 
 #### Ders Ekleme
- - Form validatorler çalışıyor.
- - Validasyon hataları forma işleniyor.
- - Ders ekleniyor
+- Form validatorler çalışıyor.
+- Validasyon hataları forma işleniyor.
+- Ders ekleniyor
 
 #### Ders İçe Aktarma
- - 
+- Şablon indir butonu çalışıyor
+- Hatalı veri girişlerinde satır bazlı hata mesajları gösteriliyor.
+- Bölüm ve program bilgisi olmadan kayıt yapılabiliyor.
+- İçe aktarmada girilen bölüm ve programın birbiriyle uyumu kontrol ediliyor.
+- Ders ekleme başarılı olursa eklenen dersler listeleniyor.
+
+#### Ders Düzenleme
+- Form validatorler çalışıyor.
+- Validasyon hataları forma işleniyor.
+- Form alanlarının türkerli değiştirilse de arkaplandaki validator işlemleri çalışıyor
+- Ders düzenleme işlemi sorunsuz çalışıyor.
+
+#### Ders Sayfası
+- Ders bilgileri ve hoca bilgileri gösteriliyor.
+- 
+
+
+## Ders Programı Düzenleme
+- Bölüm ve program listesi ile program seçimi yapılıyor.
+- yıl ve dönem seçimi çalışıyor
+- tekil ders kaydı yapılıyor
+- öğle arası atlanarak ders ekleniyor
+- uygun olmayan saatler atlanıyor
+- uygun olmayan saatlere ekeme yapılamıyor
+- tekli dersin tüm saatleri silinebiliyor
+- tekli dersin 3 saatinden 2. silinebiliyor
+- tekli dersin 3 saatinden 2. taşınabiliyor.
+- taşıma işlemleri çalışıyor
+- diğer dönemlere bırakma işlemi yapılamıyor
+- var olan bir dersin üstine der eklenmeye çalışıldığında hata veriyor.
+- Gruplu dersler aynı saate eklenebiliyor. 
+- Aynı grup dersler aynı gün ve saate eklenemiyor.
+- gruplu dersler'den bir tanesinin orta saatleri taşınabiliyor.
+- gruplu derslerin bir tenesinin tüm saatleri taşınabiliyor
+- Gruplu derslerin ikisi birden taşınabiliyor 
+
+- Farklı derslerin programları seçilerek tek seferde silme işlemi yapılabiliyor.
