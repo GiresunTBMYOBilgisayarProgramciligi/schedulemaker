@@ -523,6 +523,54 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     /**
+     * Sınav programı öğelerini silme API çağrısı.
+     * Ders programı ile aynı endpoint kullanılır: /ajax/deleteScheduleItems
+     */
+    async deleteScheduleItems(param = null) {
+        let scheduleItems = [];
+        if (Array.isArray(param)) {
+            scheduleItems = param;
+        } else if (param === null && this.selectedLessonElements.size > 0) {
+            this.selectedLessonElements.forEach(el => {
+                const itemData = this.getLessonItemData(el);
+                if (itemData) scheduleItems.push(itemData);
+            });
+        } else {
+            const itemData = this.getLessonItemData(this.draggedLesson.HTMLElement);
+            if (itemData) {
+                if (param && (typeof param === 'string' || typeof param === 'number')) itemData.classroom_id = param;
+                scheduleItems.push(itemData);
+            }
+        }
+
+        if (scheduleItems.length === 0) return false;
+
+        let data = new FormData();
+        data.append("items", JSON.stringify(scheduleItems));
+
+        return fetch("/ajax/deleteScheduleItems", {
+            method: "POST",
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: data,
+        })
+            .then(response => response.json())
+            .then((data) => {
+                if (data.status === "error") {
+                    console.error("deleteScheduleItems API hatası:", data.msg);
+                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    return false;
+                } else {
+                    return true;
+                }
+            })
+            .catch((error) => {
+                console.error("deleteScheduleItems sistem hatası:");
+                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                return false;
+            });
+    }
+
+    /**
      * Çoklu tablo (haftalık yapı) desteği için generateScheduleItems metodunu override eder.
      */
     generateScheduleItems(input, classroom) {
