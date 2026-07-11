@@ -4,7 +4,7 @@ namespace App\Services\Schedule;
 
 use App\Services\BaseService;
 use App\DTOs\DeleteScheduleResult;
-use App\DTOs\ScheduleItemData;
+use App\DTOs\ScheduleItemDTO;
 use App\DTOs\ScheduleFilterDTO;
 use App\Helpers\TimeHelper;
 use App\Core\Database;
@@ -236,12 +236,12 @@ class ScheduleService extends BaseService
      * Örnek: [{'observer_id': 146, 'classroom_id': 3}, {'observer_id': 152, 'classroom_id': 5}]
      * Her gözlemci ve derslik için ayrı schedule item oluşturulur.
      * 
-     * @param ScheduleItemData $dto Schedule item verisi
+     * @param ScheduleItemDTO $dto Schedule item verisi
      * @param Lesson|null $lesson İlgili ders entity'si (dummy items için null olabilir)
      * @return array Owner listesi, her biri ['type' => 'user|program|lesson|classroom', 'id' => int] formatında
      * @throws Exception Dummy olmayan item için lesson yoksa
      */
-    protected function determineOwners(ScheduleItemData $dto, ?Lesson $lesson): array
+    protected function determineOwners(ScheduleItemDTO $dto, ?Lesson $lesson): array
     {
         $owners = [];
 
@@ -301,11 +301,11 @@ class ScheduleService extends BaseService
      * classroom_type = 3 olan dersler UZEM (Uzaktan Eğitim) dersidir.
      * Bu dersler fiziksel derslik kullanmadığı için classroom schedule oluşturulmaz.
      * 
-     * @param ScheduleItemData $dto Schedule item verisi, içinde lecturer_id ve classroom_id var
+     * @param ScheduleItemDTO $dto Schedule item verisi, içinde lecturer_id ve classroom_id var
      * @param Lesson $lesson Ders entity'si, program_id ve classroom_type bilgilerini içerir
      * @return array Owner listesi [['type' => 'user|program|lesson|classroom', 'id' => int], ...]
      */
-    private function determineLessonOwners(ScheduleItemData $dto, Lesson $lesson): array
+    private function determineLessonOwners(ScheduleItemDTO $dto, Lesson $lesson): array
     {
         // data bir array of arrays: [{lesson_id: 489, lecturer_id: 147, classroom_id: 1}]
         $lecturerId = null;
@@ -672,17 +672,17 @@ class ScheduleService extends BaseService
     public function wipeResourceSchedules(string $ownerType, int $ownerId): void
     {
         $this->logger->debug("wipeResourceSchedules START for $ownerType ID: $ownerId");
-
-        $schedules = (new Schedule())->get()->where([
+        // Model yerine Repository kullanımı tercih edildi
+        $schedules = $this->scheduleRepo->findBy([
             'owner_type' => $ownerType,
             'owner_id' => $ownerId
-        ])->all();
+        ]);
 
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all();
             foreach ($items as $item) {
                 // deleteScheduleItems sibling'leri de bulup siler
-                $this->deleteScheduleItems([$item->getArray()], false);
+                $this->deleteScheduleItems([ScheduleItemDTO::fromArray($item->getArray())], false);
             }
             $schedule->delete();
         }
@@ -693,7 +693,7 @@ class ScheduleService extends BaseService
     /**
      * Schedule item'larını siler ve sibling'leri de temizler.
      *
-     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen silinecek item'ların DTO verileri
+     * @param ScheduleItemDTO[] $dtos Ekran üzerinden gelen silinecek item'ların DTO verileri
      * @param bool $expandGroup
      * @return DeleteScheduleResult
      * @throws Exception

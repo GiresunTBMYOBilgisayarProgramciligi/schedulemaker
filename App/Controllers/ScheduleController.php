@@ -17,7 +17,6 @@ use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
 use App\DTOs\ScheduleFilterDTO;
-use App\DTOs\ScheduleItemData;
 use App\DTOs\SaveScheduleResult;
 use App\Services\Schedule\LessonScheduleService;
 use App\Services\Schedule\ExamScheduleService;

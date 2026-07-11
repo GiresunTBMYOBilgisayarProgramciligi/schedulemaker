@@ -3,7 +3,7 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
-use App\DTOs\ScheduleItemData;
+use App\DTOs\ScheduleItemDTO;
 use App\Exceptions\ValidationException;
 use App\Helpers\TimeHelper;
 use App\Models\Lesson;
@@ -21,7 +21,7 @@ class LessonScheduleService extends ScheduleService
     /**
      * Ders programına yeni öğe(ler) ekler
      *
-     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen item DTO verileri
+     * @param ScheduleItemDTO[] $dtos Ekran üzerinden gelen item DTO verileri
      * @return SaveScheduleResult
      * @throws Exception
      */
@@ -119,8 +119,8 @@ class LessonScheduleService extends ScheduleService
      * Sürükle bırak ile taşıma işleminde kullanılır. Önce siler, sonra kaydeder.
      * Transaction içinde yapıldığı için hata durumunda silme işlemi de geri alınır.
      *
-     * @param ScheduleItemData[] $dtos Eklenecek veriler
-     * @param ScheduleItemData[] $deletedDtos Silinecek veriler
+     * @param ScheduleItemDTO[] $dtos Eklenecek veriler
+     * @param ScheduleItemDTO[] $deletedDtos Silinecek veriler
      * @return SaveScheduleResult
      * @throws Exception
      */
@@ -143,7 +143,7 @@ class LessonScheduleService extends ScheduleService
      * Tekil item'ı ilgili tüm schedule'lara kaydeder
      */
     protected function saveToMultipleSchedules(
-        ScheduleItemData $dto,
+        ScheduleItemDTO $dto,
         ?Lesson $lesson,
         Schedule $sourceSchedule
     ): array {
@@ -270,7 +270,7 @@ class LessonScheduleService extends ScheduleService
      * Group item'ları ilgili tüm schedule'lara kaydeder
      */
     protected function saveGroupItemToSchedules(
-        ScheduleItemData $dto,
+        ScheduleItemDTO $dto,
         ?Lesson $lesson,
         Schedule $sourceSchedule
     ): array {

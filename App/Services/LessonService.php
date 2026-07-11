@@ -10,6 +10,7 @@ use App\Services\Schedule\ScheduleService;
 use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
+use App\DTOs\ScheduleItemDTO;
 use function App\Helpers\getSettingValue;
 use App\Repositories\LessonRepository;
 use App\Core\Gate;
@@ -392,7 +393,7 @@ class LessonService extends BaseService
             foreach ($examSchedules as $examSchedule) {
                 $items = (new ScheduleItem())->get()->where(['schedule_id' => $examSchedule->id])->all();
                 foreach ($items as $item) {
-                    $scheduleService->deleteScheduleItems([$item->getArray()], false);
+                    $scheduleService->deleteScheduleItems([ScheduleItemDTO::fromArray($item->getArray())], false);
                 }
             }
 
@@ -442,7 +443,7 @@ class LessonService extends BaseService
         foreach ($examSchedules as $examSchedule) {
             $items = (new ScheduleItem())->get()->where(['schedule_id' => $examSchedule->id])->all();
             foreach ($items as $item) {
-                $scheduleService->deleteScheduleItems([$item->getArray()], false);
+                $scheduleService->deleteScheduleItems([ScheduleItemDTO::fromArray($item->getArray())], false);
             }
         }
 

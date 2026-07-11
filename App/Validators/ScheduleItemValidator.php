@@ -3,7 +3,7 @@
 namespace App\Validators;
 
 use App\Exceptions\ValidationException;
-use App\DTOs\ScheduleItemData;
+use App\DTOs\ScheduleItemDTO;
 
 /**
  * Schedule Item validator
@@ -99,13 +99,13 @@ class ScheduleItemValidator extends BaseValidator
     /**
      * Veriyi doğrular ve DTO nesnesi döndürür.
      * @param array $data
-     * @return ScheduleItemData
+     * @return ScheduleItemDTO
      * @throws ValidationException
      */
-    public function getDTO(array $data): ScheduleItemData
+    public function getDTO(array $data): ScheduleItemDTO
     {
         $this->validate($data);
-        return ScheduleItemData::fromArray($data);
+        return ScheduleItemDTO::fromArray($data);
     }
 
     /**
@@ -136,12 +136,12 @@ class ScheduleItemValidator extends BaseValidator
     /**
      * Toplu veri doğrulaması yapar ve DTO array'i döner
      * @param array $itemsData
-     * @return ScheduleItemData[]
+     * @return ScheduleItemDTO[]
      * @throws ValidationException
      */
     public function getBatchDTO(array $itemsData): array
     {
         $this->validateBatch($itemsData);
-        return array_map(fn($itemData) => ScheduleItemData::fromArray($itemData), $itemsData);
+        return array_map(fn($itemData) => ScheduleItemDTO::fromArray($itemData), $itemsData);
     }
 }

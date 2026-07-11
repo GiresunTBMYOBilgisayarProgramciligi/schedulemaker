@@ -8,7 +8,7 @@ use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
-use App\DTOs\ScheduleItemData;
+use App\DTOs\ScheduleItemDTO;
 use Exception;
 
 /**
@@ -33,7 +33,7 @@ class ExamScheduleService extends ScheduleService
      * - Gözetmen ve derslik kayıtlarında tam veri + primaryProgramItemId referansı eklenir
      * - Birden fazla atama (assignments) desteklenir
      *
-     * @param ScheduleItemData[] $dtos Ekran üzerinden gelen item DTO verileri
+     * @param ScheduleItemDTO[] $dtos Ekran üzerinden gelen item DTO verileri
      * @return array Oluşturulan ID'ler (owner_type bazlı gruplu)
      * @throws Exception
      */
