@@ -12,6 +12,7 @@ use App\Services\LessonService;
 use App\Middlewares\AuthMiddleware;
 use App\Enums\LessonType;
 use App\DTOs\CombineLessonDTO;
+use App\Validators\CombineLessonValidator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\LessonImporter;
 use Exception;
@@ -130,7 +131,7 @@ class LessonController extends Controller
      */
     public function previewCombine(array $requestData): array
     {            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $dto = CombineLessonDTO::fromArray($requestData);
+            $dto = (new CombineLessonValidator())->getDTO($requestData);
             return (new LessonService())->previewCombineLesson($dto);
     }
 
@@ -138,8 +139,8 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function combine(array $requestData): array
-    {            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $dto = CombineLessonDTO::fromArray($requestData);
+    {       Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+            $dto = (new CombineLessonValidator())->getDTO($requestData);
             
             if (!$dto->parentId || !$dto->childId) {
                 throw new Exception("Birleştirmek için dersler belirtilmemiş");
@@ -162,7 +163,7 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function deleteParentLesson(array $requestData): array
-    {            Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
+    {       Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
             
             if (empty($requestData['id'])) {
                 throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
