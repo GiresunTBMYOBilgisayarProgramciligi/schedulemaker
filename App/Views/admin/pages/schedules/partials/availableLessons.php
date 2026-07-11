@@ -35,7 +35,7 @@ ksort($groupedLessons);
 $accordionId = 'availableLessonsAccordion-' . $schedule->id;
 ?>
 <div class="available-schedule-items drop-zone small" data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin"
-    data-bs-placement="left" data-bs-trigger="none">
+    data-bs-placement="left" data-bs-trigger="none" data-overlayscrollbars-initialize data-overlayscrollbars-overflow-x="hidden">
 
     <?php // Dummy kartlar (grouped dışında) ?>
     <?php if (!empty($dummyLessons)): ?>
