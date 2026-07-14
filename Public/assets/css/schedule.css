@@ -74,6 +74,28 @@
         padding: 15px !important;
     }
 
+    /* Tercih Edilen Saatler */
+    .slot-preferred {
+        background-color: #f0fff4;
+        border: 1px dashed #9ae6b4;
+        position: relative;
+    }
+
+    .slot-preferred::after {
+        content: "Tercih Edilen";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 2px 8px;
+        border-radius: 12px;
+        color: #38a169;
+        white-space: nowrap;
+    }
+
     .slot-unavailable {
         background-color: #fff5f5;
         border: 1px dashed #feb2b2;
@@ -129,27 +151,7 @@
         content: "Program Çakışması";
     }
 
-    /* Tercih Edilen Saatler */
-    .slot-preferred {
-        background-color: #f0fff4;
-        border: 1px dashed #9ae6b4;
-        position: relative;
-    }
 
-    .slot-preferred::after {
-        content: "Tercih Edilen";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 0.7rem;
-        font-weight: 600;
-        background: rgba(255, 255, 255, 0.8);
-        padding: 2px 8px;
-        border-radius: 12px;
-        color: #38a169;
-        white-space: nowrap;
-    }
 
     /* Temel Tablo Stilleri */
     .schedule-table-container {

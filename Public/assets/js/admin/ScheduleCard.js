@@ -79,6 +79,13 @@ class ScheduleCard {
         // Event delegation methods should be initialized only once
         this.initBulkSelection();
         
+        // Store initial classes for empty slots
+        this.card.querySelectorAll('.empty-slot').forEach(slot => {
+            if (!slot.hasAttribute('data-initial-classes')) {
+                slot.setAttribute('data-initial-classes', Array.from(slot.classList).join(' '));
+            }
+        });
+        
     }
 
     async bindCardEvents() {
@@ -576,14 +583,23 @@ class ScheduleCard {
     }
 
     clearCells() {
+        const classesToRemove = [
+            "slot-unavailable", "slot-preferred", "unavailable-for-lecturer",
+            "unavailable-for-classroom", "unavailable-for-program"
+        ];
+        
         for (let i = 0; i < this.table.rows.length; i++) {
             for (let j = 0; j < this.table.rows[i].cells.length; j++) {
                 const emptySlot = this.table.rows[i].cells[j].querySelector('.empty-slot');
                 if (emptySlot) {
-                    emptySlot.classList.remove(
-                        "slot-unavailable", "slot-preferred", "unavailable-for-lecturer",
-                        "unavailable-for-classroom", "unavailable-for-program"
-                    );
+                    const initialClasses = emptySlot.getAttribute('data-initial-classes') || '';
+                    classesToRemove.forEach(cls => {
+                        // Regex ile tam kelime eşleşmesi kontrolü (örn. "slot-unavailable" var mı)
+                        const regex = new RegExp(`\\b${cls}\\b`);
+                        if (!regex.test(initialClasses)) {
+                            emptySlot.classList.remove(cls);
+                        }
+                    });
                     if (this.owner_type !== "user") emptySlot.innerHTML = '';// kalan not bilgisini silmek için
                 }
             }
