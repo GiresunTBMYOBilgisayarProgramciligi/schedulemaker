@@ -117,10 +117,10 @@
 
 #### Ders Sayfası
 - Ders bilgileri ve hoca bilgileri gösteriliyor.
-- 
+- Ders birleştirme işlemi yapıldığında sınav birleştirme işlemi de otomatikyapılıyor. 
 
 
-## Ders Programı Düzenleme
+### Ders Programı Düzenleme
 - Bölüm ve program listesi ile program seçimi yapılıyor.
 - yıl ve dönem seçimi çalışıyor
 - tekil ders kaydı yapılıyor
@@ -137,6 +137,18 @@
 - Aynı grup dersler aynı gün ve saate eklenemiyor.
 - gruplu dersler'den bir tanesinin orta saatleri taşınabiliyor.
 - gruplu derslerin bir tenesinin tüm saatleri taşınabiliyor
-- Gruplu derslerin ikisi birden taşınabiliyor 
+- Gruplu derslerin ikisi birden taşınabiliyor (Şuan taşınamıyor.)
+- bağlı dersin alt programındaki çakışmalar da kontrol ediliyor.
+- programa yerleştirilmiş bir dersi başka bir derse bağladığımızda o dersin programı bağlı desin programı ile aynı olur. 
 
 - Farklı derslerin programları seçilerek tek seferde silme işlemi yapılabiliyor.
+
+
+### Ara sınav programı düzenleme
+
+
+### Final sınav programı düzenleme
+
+### Bütünleme sınav programı düzenleme
+
+### Ayarlar
