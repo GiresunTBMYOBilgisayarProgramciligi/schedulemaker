@@ -214,30 +214,39 @@ class ExamScheduleCard extends ScheduleCard {
             const tomSelectInstances = new Map();
 
             const updateOptionsVisibility = () => {
-                const selectedClassrooms = Array.from(rowsContainer.querySelectorAll(".classroom-select")).map(s => s.value).filter(v => v);
-                const selectedObservers = Array.from(rowsContainer.querySelectorAll(".observer-select")).map(s => s.value).filter(v => v);
+                const classroomSelects = Array.from(rowsContainer.querySelectorAll(".classroom-select"));
+                const observerSelects = Array.from(rowsContainer.querySelectorAll(".observer-select"));
+                
+                const selectedClassrooms = classroomSelects.map(s => s.value).filter(v => v);
+                const selectedObservers = observerSelects.map(s => s.value).filter(v => v);
 
-                tomSelectInstances.forEach((ts, select) => {
-                    if (select.classList.contains('classroom-select')) {
-                        const currentValue = ts.getValue();
-                        Object.keys(ts.options).forEach(optValue => {
-                            if (optValue && optValue !== currentValue && selectedClassrooms.includes(optValue)) {
-                                ts.getOption(optValue)?.classList.add('d-none');
-                            } else if (optValue) {
-                                ts.getOption(optValue)?.classList.remove('d-none');
-                            }
-                        });
-                    } else if (select.classList.contains('observer-select')) {
-                        const currentValue = ts.getValue();
-                        Object.keys(ts.options).forEach(optValue => {
-                            if (optValue && optValue !== currentValue && selectedObservers.includes(optValue)) {
-                                ts.getOption(optValue)?.classList.add('d-none');
-                            } else if (optValue) {
-                                ts.getOption(optValue)?.classList.remove('d-none');
-                            }
-                        });
-                    }
-                });
+                const updateSelectOptions = (selects, selectedValues) => {
+                    selects.forEach(select => {
+                        const ts = tomSelectInstances.get(select);
+                        const currentValue = select.value;
+
+                        if (ts) {
+                            Object.keys(ts.options).forEach(optValue => {
+                                if (optValue && optValue !== currentValue && selectedValues.includes(optValue)) {
+                                    ts.getOption(optValue)?.classList.add('d-none');
+                                } else if (optValue) {
+                                    ts.getOption(optValue)?.classList.remove('d-none');
+                                }
+                            });
+                        } else {
+                            Array.from(select.options).forEach(option => {
+                                if (option.value && option.value !== currentValue && selectedValues.includes(option.value)) {
+                                    option.classList.add('d-none');
+                                } else if (option.value) {
+                                    option.classList.remove('d-none');
+                                }
+                            });
+                        }
+                    });
+                };
+
+                updateSelectOptions(classroomSelects, selectedClassrooms);
+                updateSelectOptions(observerSelects, selectedObservers);
             };
 
             const initTomSelect = (selectElement, placeholder) => {
@@ -298,7 +307,7 @@ class ExamScheduleCard extends ScheduleCard {
                 if (!isFirst) {
                     rowElement.querySelector(".remove-row-btn").addEventListener("click", () => {
                         // TomSelect instance'larını temizle
-                        //const cTS = tomSelectInstances.get(classroomSelect);
+                        const cTS = tomSelectInstances.get(classroomSelect);
                         const oTS = tomSelectInstances.get(observerSelect);
                         if (cTS) { cTS.destroy(); tomSelectInstances.delete(classroomSelect); }
                         if (oTS) { oTS.destroy(); tomSelectInstances.delete(observerSelect); }
