@@ -54,7 +54,11 @@ if ($type === 'lesson') {
 
     <span class="lesson-name">
         <?php if ($type === 'exam'): ?>
-            <?= $slotData->lesson->getFullName(addProgram: true) ?>
+            <?php if ($schedule->owner_type !== 'program'): ?>
+                <?= $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) ?>
+            <?php else: ?>
+                <?= $slotData->lesson->getFullName() ?>
+            <?php endif; ?>
         <?php else: ?>
             <?php if ($schedule->owner_type !== 'program'): ?>
                 <?= $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true) ?>
