@@ -57,6 +57,16 @@ class UserController extends Controller
 
             Gate::authorize("update", $user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
 
+            $currentUser = \App\Middlewares\AuthMiddleware::user();
+            $canEditSpecialFields = \App\Core\Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id);
+
+            if (!$canEditSpecialFields) {
+                $requestData['role'] = $user->role;
+                $requestData['title'] = $user->title;
+                $requestData['department_id'] = $user->department_id;
+                $requestData['program_id'] = $user->program_id;
+            }
+
             // 1. Doğrulama ve DTO oluşturma
             $dto = (new UserValidator())->getDTO($requestData);
             

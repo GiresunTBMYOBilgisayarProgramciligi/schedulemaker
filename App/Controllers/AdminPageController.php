@@ -113,8 +113,10 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('profilepage');
         $assetManager->loadPageAssets('formpages');
         
+
         return [
             "user" => $user,
+            "canEditSpecialFields" => Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id),
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),

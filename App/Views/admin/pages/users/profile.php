@@ -5,6 +5,7 @@
  * @var array $departments
  * @var string $page_title
  * @var string $scheduleHTML
+ * @var bool $canEditSpecialFields
  */
 
 use App\Core\Gate;
@@ -151,7 +152,7 @@ use App\Core\Gate;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="role">Rol</label>
-                                            <select class="form-select" id="role" name="role">
+                                            <select class="form-select" id="role" name="role" <?= !$canEditSpecialFields ? 'disabled' : '' ?>>
                                                 <?php foreach (App\Enums\UserRole::getAssignableRoles() as $roleEnum): ?>
                                                     <option value="<?= $roleEnum->value ?>"
                                                         <?= $roleEnum->value == $user->role ? "selected" : "" ?>><?= $roleEnum->getLabel() ?></option>
@@ -162,7 +163,7 @@ use App\Core\Gate;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="title">Ünvan</label>
-                                            <select class="form-select" id="title" name="title">
+                                            <select class="form-select" id="title" name="title" <?= !$canEditSpecialFields ? 'disabled' : '' ?>>
                                                 <option value=""></option>
                                                 <?php foreach (App\Enums\UserTitle::cases() as $titleEnum): ?>
                                                     <option value="<?= $titleEnum->value ?>"
@@ -176,7 +177,7 @@ use App\Core\Gate;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id">
+                                            <select class="form-select tom-select" id="department_id" name="department_id" <?= !$canEditSpecialFields ? 'disabled' : '' ?>>
                                                 <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
                                                 foreach ($departments as $department): ?>
                                                     <option value="<?= $department->id ?>"
@@ -190,7 +191,7 @@ use App\Core\Gate;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id">
+                                            <select class="form-select" id="program_id" name="program_id" <?= !$canEditSpecialFields ? 'disabled' : '' ?>>
                                                 <?php foreach ($department_programs as $program): ?>
                                                     <option value="<?= $program->id ?>"
                                                         <?= $program->id == $user->program_id ? 'selected' : '' ?>>
