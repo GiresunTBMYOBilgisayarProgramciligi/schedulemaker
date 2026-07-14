@@ -1,5 +1,6 @@
 <?php
 use App\Enums\ClassroomType;
+use App\Enums\ExamType;
 use App\Core\View;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -36,6 +37,21 @@ $accordionId = 'availableLessonsAccordion-' . $schedule->id;
 ?>
 <div class="available-schedule-items drop-zone small" data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin"
     data-bs-placement="left" data-bs-trigger="none" data-overlayscrollbars-initialize data-overlayscrollbars-overflow-x="hidden">
+
+    <?php if (empty($availableLessons)): ?>
+        <?php $isExam = ExamType::isExamType($schedule->type ?? ''); ?>
+        <div class="alert alert-warning m-2 p-2" role="alert">
+            <h6 class="alert-heading mb-1"><i class="fas fa-exclamation-triangle"></i> Uygun Ders Bulunamadı!</h6>
+            <p class="mb-0" style="font-size: 0.85rem;">
+                Eğer bir hata olduğunu düşünüyorsanız lütfen 
+                <?php if ($isExam): ?>
+                    ilgili derslerin <strong>mevcudunu</strong> kontrol edin. Sınav programı oluşturulabilmesi için ders mevcudunun girilmiş olması gerekir.
+                <?php else: ?>
+                    ilgili derslerin <strong>saatini</strong> kontrol edin. Ders programı oluşturulabilmesi için ders saatinin girilmiş olması gerekir.
+                <?php endif; ?>
+            </p>
+        </div>
+    <?php endif; ?>
 
     <?php // Dummy kartlar (grouped dışında) ?>
     <?php if (!empty($dummyLessons)): ?>

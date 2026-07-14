@@ -171,6 +171,7 @@ class AvailabilityService extends BaseService
             $lessonFilters = array_merge($lessonFilters, [
                 'lecturer_id' => $schedule->owner_id,
             ]);
+            //todo schedule type için enum kullanılmalı
             if($schedule->type == 'lesson') {
                 unset($lessonFilters["!type"]); // staj derslerini dahil et
             }
