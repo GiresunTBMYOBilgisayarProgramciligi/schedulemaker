@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.6] - 2026-07-14
+
+### Added
+- Yetkilendirme işlemleri için Middleware (`AuthMiddleware`, `GuestMiddleware`) katmanı eklendi.
+- Route ve Action koruması için `#[AuthRequired]` ve `#[PublicAction]` attribute'ları eklendi.
+- Veri transferi ve doğrulaması için DTO ve Validator katmanları eklendi.
+- İş mantığını Controller'dan ayırmak için Service katmanı eklendi.
+- Veritabanı işlemleri için Repository katmanı eklendi.
+- `UserRole`, `UserTitle` ve `ClassroomType` için Enum yapıları oluşturuldu.
+
+### Changed
+- Proje kod mimarisi Clean Architecture/MVC standartlarına (Router -> Middleware -> Controller -> Validator -> DTO -> Service -> Repository -> Model) uygun olarak yeniden yapılandırıldı.
+- `User`, `Department` ve `Classroom` modülleri yeni mimariye uygun olarak tamamen refactor edildi.
+- Route yapılarındaki spagetti kodlar temizlenerek sadece yönlendirme yapacak şekilde sadeleştirildi.
+- Dinamik yetki kontrolleri (Gate) yeni sisteme entegre edildi.
+- Model sınıflarındaki `beforeDelete` gibi bağımlılıklar kaldırılarak Service katmanına taşındı.
+
 ## [0.2.5] - 2026-06-25
 
 ### Added
