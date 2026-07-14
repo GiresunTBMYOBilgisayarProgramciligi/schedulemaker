@@ -259,6 +259,21 @@ class LessonScheduleService extends ScheduleService
                 $item->detail = $dto->detail;
             }
 
+            // Preferred slot parçalama: Yeni item ile örtüşen preferred item'ları
+            // parçala/sil ve silinen bölge bilgisini item'ın detail alanına kaydet.
+            $displacedInfo = $this->handlePreferredOverlap(
+                $targetSchedule->id,
+                $dto->dayIndex,
+                $dto->weekIndex,
+                $item->start_time,
+                $item->end_time
+            );
+            if (!empty($displacedInfo)) {
+                $currentDetail = is_array($item->detail) ? $item->detail : [];
+                $currentDetail['displaced_preferred'] = $displacedInfo;
+                $item->detail = $currentDetail;
+            }
+
             $item->create();
             $createdIds[] = $item->id;
         }
@@ -350,6 +365,21 @@ class LessonScheduleService extends ScheduleService
                 }, $dto->data);
             }
 
+            // Preferred slot parçalama (group item): mergeGroupItems öncesinde
+            // hedef schedule'daki örtüşen preferred item'ları parçala ve bilgiyi detail'a ekle.
+            $groupDetail = $dto->detail ?? [];
+            $displacedInfo = $this->handlePreferredOverlap(
+                $targetSchedule->id,
+                $dto->dayIndex,
+                $dto->weekIndex,
+                $startTime,
+                $endTime
+            );
+            if (!empty($displacedInfo)) {
+                $groupDetail = is_array($groupDetail) ? $groupDetail : [];
+                $groupDetail['displaced_preferred'] = $displacedInfo;
+            }
+
             $newIds = $this->mergeGroupItems(
                 $targetSchedule->id,
                 $dto->dayIndex,
@@ -357,7 +387,7 @@ class LessonScheduleService extends ScheduleService
                 $startTime,
                 $endTime,
                 $data,
-                $dto->detail
+                $groupDetail
             );
 
             $createdIds = array_merge($createdIds, $newIds);
@@ -365,4 +395,122 @@ class LessonScheduleService extends ScheduleService
 
         return $createdIds;
     }
+
+    /**
+     * Yeni bir item kaydedilmeden önce aynı schedule/gün/hafta üzerindeki
+     * çakışan `preferred` item'ları tespit eder, parçalar/siler ve
+     * yerinden edilen (displaced) aralıkların bilgisini döndürür.
+     *
+     * **İşleyiş:**
+     * 1. Hedef schedule'da, ilgili gün ve haftada `preferred` statüsündeki
+     *    item'ları sorgular.
+     * 2. Her biri için yeni item ile örtüşen aralığı (`TimeHelper::getOverlapInterval`)
+     *    hesaplar.
+     * 3. Örtüşen preferred item'ı `processItemDeletion` aracılığıyla siler/kısaltır.
+     *    (Kalan kısımlar otomatik olarak yeni record'lar şeklinde oluşturulur.)
+     * 4. Yerinden edilen aralıkları ['start', 'end'] dizisi olarak toplar ve döndürür.
+     *
+     * Döndürülen dizi, kaydedilecek item'ın `detail['displaced_preferred']` alanına
+     * yazılmalıdır; böylece item silindiğinde preferred slot geri oluşturulabilir.
+     *
+     * @param int    $scheduleId Hedef schedule ID'si
+     * @param int    $dayIndex   Gün indisi
+     * @param int    $weekIndex  Hafta indisi
+     * @param string $startTime  Yeni item'ın başlangıç saati (HH:MM veya HH:MM:SS)
+     * @param string $endTime    Yeni item'ın bitiş saati    (HH:MM veya HH:MM:SS)
+     * @return array Yerinden edilen preferred aralıkların listesi:
+     *               [['start' => 'HH:MM', 'end' => 'HH:MM'], ...]
+     *               Çakışan preferred yoksa boş dizi döner.
+     */
+    private function handlePreferredOverlap(
+        int $scheduleId,
+        int $dayIndex,
+        int $weekIndex,
+        string $startTime,
+        string $endTime
+    ): array {
+        // Aynı gün ve haftadaki tüm preferred item'ları getir
+        $preferredItems = (new ScheduleItem())
+            ->get()
+            ->where([
+                'schedule_id' => $scheduleId,
+                'day_index'   => $dayIndex,
+                'week_index'  => $weekIndex,
+                'status'      => ScheduleItemStatus::PREFERRED->value,
+            ])
+            ->all();
+
+        if (empty($preferredItems)) {
+            return [];
+        }
+
+        $displacedIntervals = [];
+
+        foreach ($preferredItems as $preferred) {
+            $overlap = TimeHelper::getOverlapInterval(
+                $preferred->start_time,
+                $preferred->end_time,
+                $startTime,
+                $endTime
+            );
+
+            if ($overlap === null) {
+                // Bu preferred item ile gerçek bir örtüşme yok
+                continue;
+            }
+
+            // Yerinden edilen aralığı kaydet
+            $displacedIntervals[] = [
+                'start' => $overlap['start'],
+                'end'   => $overlap['end'],
+            ];
+
+            $this->logger->debug('Preferred slot parçalanıyor', $this->logContext([
+                'preferred_item_id' => $preferred->id,
+                'preferred_range'   => $preferred->getShortStartTime() . '-' . $preferred->getShortEndTime(),
+                'overlap_range'     => $overlap['start'] . '-' . $overlap['end'],
+            ]));
+
+            // Preferred item'ı sil ve kalan kısımlarını (overlap dışındaki bölgeler)
+            // doğrudan yeni record'lar olarak oluştur.
+            // NOT: processItemDeletion burada kullanılmaz çünkü preferred item'lar
+            // slot/break kavramı taşımaz; duration=0 ile getCriticalPoints sonsuz döngüye
+            // girebilir. Manuel parçalama daha güvenlidir.
+            $preferred->delete();
+
+            $prefStart = $preferred->getShortStartTime();
+            $prefEnd   = $preferred->getShortEndTime();
+
+            // Sol parça: preferred başlangıcı → overlap başlangıcı (varsa)
+            if ($prefStart < $overlap['start']) {
+                $leftItem = new ScheduleItem();
+                $leftItem->schedule_id = $preferred->schedule_id;
+                $leftItem->day_index   = $preferred->day_index;
+                $leftItem->week_index  = $preferred->week_index;
+                $leftItem->start_time  = $prefStart;
+                $leftItem->end_time    = $overlap['start'];
+                $leftItem->status      = ScheduleItemStatus::PREFERRED->value;
+                $leftItem->data        = null;
+                $leftItem->detail      = null;
+                $leftItem->create();
+            }
+
+            // Sağ parça: overlap bitişi → preferred bitişi (varsa)
+            if ($overlap['end'] < $prefEnd) {
+                $rightItem = new ScheduleItem();
+                $rightItem->schedule_id = $preferred->schedule_id;
+                $rightItem->day_index   = $preferred->day_index;
+                $rightItem->week_index  = $preferred->week_index;
+                $rightItem->start_time  = $overlap['end'];
+                $rightItem->end_time    = $prefEnd;
+                $rightItem->status      = ScheduleItemStatus::PREFERRED->value;
+                $rightItem->data        = null;
+                $rightItem->detail      = null;
+                $rightItem->create();
+            }
+        }
+
+        return $displacedIntervals;
+    }
 }
+

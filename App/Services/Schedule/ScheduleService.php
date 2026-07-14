@@ -899,7 +899,7 @@ class ScheduleService extends BaseService
      * @param bool $deleteOriginal Original item'ı sil mi?
      * @return array ['deleted' => bool, 'created' => ScheduleItem[]]
      */
-    private function processItemDeletion(
+    protected function processItemDeletion(
         ScheduleItem $item,
         array $deleteIntervals,
         array $targetLessonIds = [],
@@ -985,20 +985,115 @@ class ScheduleService extends BaseService
 
                 // Status belirleme
                 $newItem->status = $this->timelineService->determineStatus(
-                    $seg['data'], 
-                    $item->status, 
+                    $seg['data'],
+                    $item->status,
                     $item->detail['preferred'] ?? false
                 );
 
                 $newItem->data = $seg['data'];
-                $newItem->detail = $item->detail;
+                // Yeni parça kaydedilirken displaced_preferred bilgisini taşıma —
+                // bu bilgi yalnızca ana (tam) item'da anlamlıdır.
+                $segDetail = is_array($item->detail) ? $item->detail : [];
+                unset($segDetail['displaced_preferred']);
+                $newItem->detail = !empty($segDetail) ? $segDetail : null;
                 $newItem->create();
                 $createdItems[] = $newItem;
             }
         }
 
+        // 6. Displaced preferred restore
+        // Item silindiğinde, daha önce bu item tarafından yerinden edilmiş `preferred`
+        // slot'ları geri oluştur. Bilgi item'ın `detail['displaced_preferred']` alanında
+        // [['start' => 'HH:MM', 'end' => 'HH:MM'], ...] formatında saklanmaktadır.
+        $createdItems = array_merge(
+            $createdItems,
+            $this->restoreDisplacedPreferred($item, $deleteIntervals)
+        );
+
         return ['deleted' => true, 'created' => $createdItems];
     }
+
+    /**
+     * Item silindiğinde, o item tarafından daha önce yerinden edilmiş (displaced)
+     * `preferred` slot'larını schedule'a geri yükler.
+     *
+     * **Çalışma Mantığı:**
+     * - `$item->detail['displaced_preferred']` alanında saklanan her aralık için:
+     *   1. Silme aralığıyla (`$deleteIntervals`) kesişimi hesaplar.
+     *   2. Kesişim varsa (item gerçekten o bölgede siliniyor), kesişen preferred
+     *      aralığını yeni bir `preferred` ScheduleItem olarak oluşturur.
+     * - Eğer item kısmen silindiyse (partial delete), yalnızca silinen bölgeye
+     *   karşılık gelen preferred kısım geri yüklenir.
+     *
+     * **Neden deleteIntervals ile kesiştirilir?**
+     * Partial delete senaryosunda item'ın tamamı silinmeyebilir; bu durumda
+     * yalnızca gerçekten silinen zaman dilimine denk gelen preferred parçaları
+     * geri yüklenmelidir.
+     *
+     * @param ScheduleItem $item           Silinen/parçalanan item
+     * @param array        $deleteIntervals Silme aralıkları [['start'=>'HH:MM','end'=>'HH:MM'],...]
+     * @return ScheduleItem[] Geri oluşturulan preferred item'ların listesi
+     */
+    private function restoreDisplacedPreferred(ScheduleItem $item, array $deleteIntervals): array
+    {
+        $displacedList = $item->detail['displaced_preferred'] ?? [];
+
+        if (empty($displacedList) || !is_array($displacedList)) {
+            return [];
+        }
+
+        $restored = [];
+
+        foreach ($displacedList as $dp) {
+            $dpStart = $dp['start'] ?? null;
+            $dpEnd   = $dp['end']   ?? null;
+
+            if (!$dpStart || !$dpEnd) {
+                continue;
+            }
+
+            // Silinen bölgeler ile bu displaced aralığın kesişimini bul.
+            // Yalnızca gerçekten silinen kısma karşılık gelen preferred geri yüklenir.
+            foreach ($deleteIntervals as $del) {
+                $restoreInterval = TimeHelper::getOverlapInterval(
+                    $dpStart,
+                    $dpEnd,
+                    $del['start'],
+                    $del['end']
+                );
+
+                if ($restoreInterval === null) {
+                    continue; // Bu silme aralığıyla kesişim yok
+                }
+
+                // Preferred item'ı geri oluştur
+                $preferredItem = new ScheduleItem();
+                $preferredItem->schedule_id = $item->schedule_id;
+                $preferredItem->day_index   = $item->day_index;
+                $preferredItem->week_index  = $item->week_index;
+                $preferredItem->start_time  = $restoreInterval['start'];
+                $preferredItem->end_time    = $restoreInterval['end'];
+                $preferredItem->status      = ScheduleItemStatus::PREFERRED->value;
+                $preferredItem->data        = null;
+                $preferredItem->detail      = null;
+                $preferredItem->create();
+
+                $this->logger->debug('Displaced preferred slot geri yüklendi', $this->logContext([
+                    'schedule_id'    => $item->schedule_id,
+                    'day_index'      => $item->day_index,
+                    'week_index'     => $item->week_index,
+                    'restored_start' => $restoreInterval['start'],
+                    'restored_end'   => $restoreInterval['end'],
+                ]));
+
+                $restored[] = $preferredItem;
+            }
+        }
+
+        return $restored;
+    }
+
+
 
 
     /**
@@ -1167,11 +1262,5 @@ class ScheduleService extends BaseService
 
         return $createdGroupIds;
     }
-
-
-    // Silinen yardımcı metotlar (TimeHelper'a taşındı):
-    // - calculateScheduledHours
-    // - getItemDurationMinutes 
-    // - calculateEndTime
 }
 
