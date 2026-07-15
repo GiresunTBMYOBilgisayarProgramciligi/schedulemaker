@@ -204,6 +204,12 @@ class ConflictResolver
             if ($sd->lesson->group_no == $newLesson->group_no) {
                 return "{$crashInfo}: Aynı grup numarasına sahip dersler çakışamaz.";
             }
+
+            // Derslik aynı olmamalı (farklı gruplar aynı dersliği aynı anda kullanamaz)
+            $newClassroomId = $newItemData['data'][0]['classroom_id'] ?? null;
+            if ($sd->classroom && $newClassroomId && $sd->classroom->id == $newClassroomId) {
+                return "{$crashInfo}: Bu derslik bu saatte zaten başka bir grup tarafından kullanılıyor: " . $sd->classroom->name;
+            }
         }
 
         // Buraya geldiyse uygun (Farklı ders, farklı grup, ikisi de grup)
