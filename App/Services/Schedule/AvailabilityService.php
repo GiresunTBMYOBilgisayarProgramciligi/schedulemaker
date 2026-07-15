@@ -185,7 +185,19 @@ class AvailabilityService extends BaseService
         if ($schedule->semester_no !== null) {
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with(['lecturer', 'program', 'parentLesson'=>['with'=>['program']], 'childLessons'=>['with'=>['program']], 'examParentLesson'=>['with'=>['program']], 'examChildLessons'=>['with'=>['program']]])->all();
+        $relationOptions = [
+            'with' => ['program'],
+            'semester' => $schedule->semester,
+            'academic_year' => $schedule->academic_year
+        ];
+        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with([
+            'lecturer', 
+            'program', 
+            'parentLesson' => $relationOptions, 
+            'childLessons' => $relationOptions, 
+            'examParentLesson' => $relationOptions, 
+            'examChildLessons' => $relationOptions
+        ])->all();
         $this->logger->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id, $this->logContext());
 
         /**

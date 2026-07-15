@@ -13,6 +13,8 @@ use App\Middlewares\AuthMiddleware;
 use App\Enums\LessonType;
 use App\DTOs\CombineLessonDTO;
 use App\Validators\CombineLessonValidator;
+use App\Validators\CombineExamLessonValidator;
+use App\Validators\DeleteCombineLessonValidator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\LessonImporter;
 use Exception;
@@ -146,11 +148,7 @@ class LessonController extends Controller
                 throw new Exception("Birleştirmek için dersler belirtilmemiş");
             }
 
-            (new LessonService())->combineLesson(
-                $dto->parentId,
-                $dto->childId,
-                $dto->getParsedItemsToRemove()
-            );
+            (new LessonService())->combineLesson($dto);
 
             return [
                 "msg"      => "Dersler Başarıyla birleştirildi.",
@@ -165,11 +163,14 @@ class LessonController extends Controller
     public function deleteParentLesson(array $requestData): array
     {       Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
             
-            if (empty($requestData['id'])) {
+            $requestData['type'] = 'lesson';
+            $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
+            
+            if (empty($dto->id)) {
                 throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
             }
 
-            (new LessonService())->deleteParentLesson((int) $requestData['id']);
+            (new LessonService())->deleteParentLesson($dto);
             
             return [
                 "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
@@ -185,14 +186,13 @@ class LessonController extends Controller
     public function combineExamLesson(array $requestData): array
     {            Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
             
-            if (empty($requestData['parent_lesson_id']) || empty($requestData['child_lesson_id'])) {
+            $dto = (new CombineExamLessonValidator())->getDTO($requestData);
+            
+            if (empty($dto->parentId) || empty($dto->childId)) {
                 throw new Exception("Birleştirmek için dersler belirtilmemiş");
             }
 
-            (new LessonService())->combineExamLesson(
-                (int) $requestData['parent_lesson_id'],
-                (int) $requestData['child_lesson_id']
-            );
+            (new LessonService())->combineExamLesson($dto);
 
             return [
                 "msg"      => "Sınavlar Başarıyla birleştirildi.",
@@ -205,11 +205,14 @@ class LessonController extends Controller
      * Sınav birleştirme bağlantısını kaldırır.
      */
     public function deleteExamParentLesson(array $requestData): array
-    {            if (!key_exists("id", $requestData)) {
+    {            $requestData['type'] = 'exam';
+            $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
+
+            if (empty($dto->id)) {
                 throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
             }
             Gate::authorizeRole("department_head", false, "Sınav birleştirmesi kaldırma yetkiniz yok");
-            (new LessonService())->deleteExamParentLesson((int) $requestData['id']);
+            (new LessonService())->deleteExamParentLesson($dto);
             
             return [
                 "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",

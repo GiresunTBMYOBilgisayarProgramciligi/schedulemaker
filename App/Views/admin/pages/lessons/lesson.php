@@ -458,7 +458,7 @@ use App\Core\Gate;
                                         /** @var Lesson $examCombineLesson */
                                         foreach ($examCombineLessonList as $examCombineLesson):
                                             // Zaten sınav birleştirilmiş dersleri atla
-                                            if ($examCombineLesson->exam_parent_lesson_id) continue;
+                                            if (!empty($examCombineLesson->examParentLesson)) continue;
                                             // Kendisini atla
                                             if ($examCombineLesson->id === $lesson->id) continue;
                                             if ($programName != ($examCombineLesson->program->name ?? '')) {
@@ -494,7 +494,7 @@ use App\Core\Gate;
                                         <?php
                                         $programName = "";
                                         foreach ($examCombineLessonList as $examCombineLesson):
-                                            if ($examCombineLesson->exam_parent_lesson_id) continue;
+                                            if (!empty($examCombineLesson->examParentLesson)) continue;
                                             if ($examCombineLesson->id === $lesson->id) continue;
                                             if ($programName != ($examCombineLesson->program->name ?? '')) {
                                                 $programName = $examCombineLesson->program->name ?? '';

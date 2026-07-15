@@ -531,9 +531,9 @@ class ScheduleService extends BaseService
             }
 
             // Parent lesson varsa onu ve kardeşlerini de ekle
-            if ($lesson->parent_lesson_id) {
+            if (!empty($lesson->parentLesson)) {
                 $parent = (new Lesson())
-                    ->where(['id' => $lesson->parent_lesson_id])
+                    ->where(['id' => $lesson->parentLesson->id])
                     ->with(['childLessons'])
                     ->first();
 
@@ -780,13 +780,14 @@ class ScheduleService extends BaseService
                                                 ->first();
 
                                             if ($lObj) {
-                                                if ($lObj->parent_lesson_id) {
-                                                    if (!in_array((int) $lObj->parent_lesson_id, $targetLessonIds)) {
-                                                        $targetLessonIds[] = (int) $lObj->parent_lesson_id;
+                                                if (!empty($lObj->parentLesson)) {
+                                                    $parentLessonId = (int) $lObj->parentLesson->id;
+                                                    if (!in_array($parentLessonId, $targetLessonIds)) {
+                                                        $targetLessonIds[] = $parentLessonId;
                                                     }
 
                                                     $parentObj = (new Lesson())
-                                                        ->where(['id' => $lObj->parent_lesson_id])
+                                                        ->where(['id' => $parentLessonId])
                                                         ->with(['childLessons'])
                                                         ->first();
 

@@ -59,7 +59,7 @@ use App\Enums\ScheduleItemStatus;
 
                                             <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
                                                 <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
-                                                    $isChild = !is_null($slotData->lesson->parent_lesson_id);
+                                                    $isChild = !empty($slotData->lesson->parentLesson);
                                                     $draggable = ScheduleViewHelper::isDraggable(
                                                         $slotData,
                                                         $schedule,

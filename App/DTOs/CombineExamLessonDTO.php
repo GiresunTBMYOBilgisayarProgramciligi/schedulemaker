@@ -4,11 +4,10 @@ namespace App\DTOs;
 
 use function App\Helpers\getSettingValue;
 
-class CombineLessonDTO
+class CombineExamLessonDTO
 {
     public int $parentId;
     public int $childId;
-    public array $itemsToRemove;
     public string $semester;
     public string $academicYear;
 
@@ -17,23 +16,8 @@ class CombineLessonDTO
         $dto = new self();
         $dto->parentId = (int) ($data['parent_lesson_id'] ?? 0);
         $dto->childId = (int) ($data['child_lesson_id'] ?? 0);
-        $dto->itemsToRemove = (array) ($data['items_to_remove'] ?? []);
         $dto->semester = $data['semester'] ?? getSettingValue('semester');
         $dto->academicYear = $data['academic_year'] ?? getSettingValue('academic_year');
         return $dto;
-    }
-
-    /**
-     * items_to_remove dizisini parse ederek array'e dönüştürür
-     * Örn: ["606_2", "606_3"] → [606 => [2, 3]]
-     */
-    public function getParsedItemsToRemove(): array
-    {
-        $slotsToSkip = [];
-        foreach ($this->itemsToRemove as $entry) {
-            [$itemId, $slotIdx] = explode('_', (string) $entry, 2);
-            $slotsToSkip[(int)$itemId][] = (int)$slotIdx;
-        }
-        return $slotsToSkip;
     }
 }

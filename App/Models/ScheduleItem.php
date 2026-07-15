@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use function App\Helpers\getSettingValue;
 
 class ScheduleItem extends Model
 {
@@ -105,11 +106,36 @@ class ScheduleItem extends Model
         if ($this->data == null) {
             return $slotDatas;
         }
+        
+        $semester = getSettingValue('semester');
+        $academicYear = getSettingValue('academic_year');
+        if ($this->schedule_id) {
+            if (!$this->schedule) {
+                $this->schedule = (new Schedule())->get()->where(['id' => $this->schedule_id])->first();
+            }
+            if ($this->schedule) {
+                $semester = $this->schedule->semester;
+                $academicYear = $this->schedule->academic_year;
+            }
+        }
+        
+        $relationOptions = [
+            'with' => ['program'],
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ];
+
         foreach ($this->data as $dayData) {
             if ($dayData == null)
                 continue;
 
-            $lesson = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with(['childLessons' => ['with' => ['program']], 'program', 'parentLesson' => ['with' => ['program']], 'examParentLesson' => ['with' => ['program']], 'examChildLessons' => ['with' => ['program']]])->first();
+            $lesson = (new Lesson())->get()->where(['id' => $dayData['lesson_id']])->with([
+                'childLessons' => $relationOptions, 
+                'program', 
+                'parentLesson' => $relationOptions, 
+                'examParentLesson' => $relationOptions, 
+                'examChildLessons' => $relationOptions
+            ])->first();
             if ($lesson === null) {
                 throw new \Exception("ScheduleItem ID: {$this->id} için ders (ID: {$dayData['lesson_id']}) bulunamadı.");
             }

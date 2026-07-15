@@ -26,14 +26,14 @@ $infoText = ScheduleViewHelper::getAvailableLessonInfoText($lesson, $schedule, $
 $popoverAttr = '';
 if (!$isDummy) {
     $isExam = ExamType::isExamType($schedule->type);
-    if ($isExam && !is_null($lesson->exam_parent_lesson_id)) {
+    if ($isExam && !empty($lesson->examParentLesson)) {
         $parent = $lesson->examParentLesson ?? null;
         if ($parent) {
             $popoverTitle = 'Sınav Birleştirmesi';
             $popoverContent = 'Bu dersin sınavı, ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlıdır.';
             $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
         }
-    } elseif (!$isExam && !is_null($lesson->parent_lesson_id)) {
+    } elseif (!$isExam && !empty($lesson->parentLesson)) {
         $parent = $lesson->parentLesson ?? null;
         if ($parent) {
             $popoverTitle = 'Birleştirilmiş Ders';

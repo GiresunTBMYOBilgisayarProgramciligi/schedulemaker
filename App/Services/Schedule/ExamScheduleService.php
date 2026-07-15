@@ -76,7 +76,7 @@ class ExamScheduleService extends ScheduleService
                 // Sınav programında sadece exam_parent_lesson_id dikkate alınır
                 // (parent_lesson_id ders programı içindir, sınav programını etkilemez)
                 $mainLesson = $lesson;
-                if ($lesson->exam_parent_lesson_id && $lesson->examParentLesson) {
+                if (!empty($lesson->examParentLesson)) {
                     $mainLesson = $lesson->examParentLesson;
                 }
 

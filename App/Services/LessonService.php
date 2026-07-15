@@ -10,6 +10,9 @@ use App\Services\Schedule\ScheduleService;
 use App\Services\Schedule\ScheduleSyncService;
 use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
+use App\DTOs\CombineExamLessonDTO;
+use App\DTOs\DeleteCombineLessonDTO;
+use App\Models\LessonCombination;
 use App\DTOs\ScheduleItemDTO;
 use function App\Helpers\getSettingValue;
 use App\Repositories\LessonRepository;
@@ -168,14 +171,18 @@ class LessonService extends BaseService
      * @param array $slotsToSkip Kopyalanmayacak slotlar [item_id => [slot_index, ...]]
      * @throws Exception
      */
-    public function combineLesson(int $parentLessonId, int $childLessonId, array $slotsToSkip = []): void
+    public function combineLesson(CombineLessonDTO $dto): void
     {
+        $parentLessonId = $dto->parentId;
+        $childLessonId = $dto->childId;
+        $slotsToSkip = $dto->getParsedItemsToRemove();
+
         $this->logger->info('Ders birleştirme başlatıldı', [
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
         ]);
 
-        Database::transaction(function () use ($parentLessonId, $childLessonId, $slotsToSkip) {
+        Database::transaction(function () use ($parentLessonId, $childLessonId, $slotsToSkip, $dto) {
             /** @var Lesson $parentLesson */
             $parentLesson = (new Lesson())
                 ->where(['id' => $parentLessonId])
@@ -222,16 +229,31 @@ class LessonService extends BaseService
             $this->scheduleService->wipeResourceSchedules('lesson', $childLesson->id);
 
             // Bağlantıyı kur (ders + sınav birleştirme)
-            $childLesson->parent_lesson_id = $parentLesson->id;
-            $childLesson->exam_parent_lesson_id = $parentLesson->id;
-            $childLesson->update();
+            $lc1 = new LessonCombination();
+            $lc1->parent_lesson_id = $parentLesson->id;
+            $lc1->child_lesson_id = $childLesson->id;
+            $lc1->type = 'lesson';
+            $lc1->semester = $dto->semester;
+            $lc1->academic_year = $dto->academicYear;
+            $lc1->create();
+
+            $lc2 = new LessonCombination();
+            $lc2->parent_lesson_id = $parentLesson->id;
+            $lc2->child_lesson_id = $childLesson->id;
+            $lc2->type = 'exam';
+            $lc2->semester = $dto->semester;
+            $lc2->academic_year = $dto->academicYear;
+            $lc2->create();
 
             // Child'ın alt child'larını da parent'a bağla
             foreach ($childLesson->childLessons as $grandChild) {
                 $this->scheduleService->wipeResourceSchedules('lesson', $grandChild->id);
-                $grandChild->parent_lesson_id = $parentLesson->id;
-                $grandChild->exam_parent_lesson_id = $parentLesson->id;
-                $grandChild->update();
+                $db = new LessonCombination();
+                $db->get()->where([
+                    'child_lesson_id' => $grandChild->id,
+                    'semester' => $dto->semester,
+                    'academic_year' => $dto->academicYear
+                ])->update(['parent_lesson_id' => $parentLesson->id]);
             }
 
             // Parent'ın mevcut schedule'ı varsa child için item kopyala (seçilen slotlar hariç)
@@ -250,8 +272,9 @@ class LessonService extends BaseService
      * @param int $lessonId Child dersin ID'si
      * @throws Exception
      */
-    public function deleteParentLesson(int $lessonId): void
+    public function deleteParentLesson(DeleteCombineLessonDTO $dto): void
     {
+        $lessonId = $dto->id;
         $this->logger->info('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
 
         /** @var Lesson $lesson */
@@ -260,8 +283,13 @@ class LessonService extends BaseService
 
         $this->scheduleService->wipeResourceSchedules('lesson', $lessonId);
 
-        $lesson->parent_lesson_id = null;
-        $lesson->update();
+        $db = new LessonCombination();
+        $db->get()->where([
+            'child_lesson_id' => $lessonId,
+            'type' => 'lesson',
+            'semester' => $dto->semester,
+            'academic_year' => $dto->academicYear
+        ])->delete();
 
         $this->logger->info('Ders bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
     }
@@ -339,14 +367,17 @@ class LessonService extends BaseService
      * @param int $childLessonId Alt ders ID'si
      * @throws Exception
      */
-    public function combineExamLesson(int $parentLessonId, int $childLessonId): void
+    public function combineExamLesson(CombineExamLessonDTO $dto): void
     {
+        $parentLessonId = $dto->parentId;
+        $childLessonId = $dto->childId;
+
         $this->logger->info('Sınav birleştirme başlatıldı', [
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
         ]);
 
-        Database::transaction(function () use ($parentLessonId, $childLessonId) {
+        Database::transaction(function () use ($parentLessonId, $childLessonId, $dto) {
             /** @var Lesson $parentLesson */
             $parentLesson = (new Lesson())
                 ->where(['id' => $parentLessonId])
@@ -398,13 +429,23 @@ class LessonService extends BaseService
             }
 
             // Sınav birleştirme bağlantısını kur
-            $childLesson->exam_parent_lesson_id = $parentLesson->id;
-            $childLesson->update();
+            $lc = new LessonCombination();
+            $lc->parent_lesson_id = $parentLesson->id;
+            $lc->child_lesson_id = $childLesson->id;
+            $lc->type = 'exam';
+            $lc->semester = $dto->semester;
+            $lc->academic_year = $dto->academicYear;
+            $lc->create();
 
             // Child'ın exam alt child'larını da parent'a bağla
             foreach ($childLesson->examChildLessons as $grandChild) {
-                $grandChild->exam_parent_lesson_id = $parentLesson->id;
-                $grandChild->update();
+                $db = new LessonCombination();
+                $db->get()->where([
+                    'child_lesson_id' => $grandChild->id,
+                    'type' => 'exam',
+                    'semester' => $dto->semester,
+                    'academic_year' => $dto->academicYear
+                ])->update(['parent_lesson_id' => $parentLesson->id]);
             }
 
             // Parent'ın mevcut sınav programı varsa child için kopyala
@@ -424,8 +465,9 @@ class LessonService extends BaseService
      * @param int $lessonId Child dersin ID'si
      * @throws Exception
      */
-    public function deleteExamParentLesson(int $lessonId): void
+    public function deleteExamParentLesson(DeleteCombineLessonDTO $dto): void
     {
+        $lessonId = $dto->id;
         $this->logger->info('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
 
         /** @var Lesson $lesson */
@@ -447,8 +489,13 @@ class LessonService extends BaseService
             }
         }
 
-        $lesson->exam_parent_lesson_id = null;
-        $lesson->update();
+        $db = new LessonCombination();
+        $db->get()->where([
+            'child_lesson_id' => $lessonId,
+            'type' => 'exam',
+            'semester' => $dto->semester,
+            'academic_year' => $dto->academicYear
+        ])->delete();
 
         $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
     }

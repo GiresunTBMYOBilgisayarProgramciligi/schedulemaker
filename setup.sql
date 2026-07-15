@@ -142,6 +142,19 @@ create table if not exists lessons
 
 ) ENGINE = INNODB;
 
+create table if not exists lesson_combinations
+(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_lesson_id INT NOT NULL,
+    child_lesson_id INT NOT NULL,
+    type ENUM('lesson', 'exam') NOT NULL,
+    semester ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
+    academic_year VARCHAR(12) NOT NULL,
+    FOREIGN KEY (parent_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    FOREIGN KEY (child_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    UNIQUE KEY (child_lesson_id, type, semester, academic_year)
+) ENGINE = INNODB;
+
 create table if not exists settings
 (
     id           int AUTO_INCREMENT,

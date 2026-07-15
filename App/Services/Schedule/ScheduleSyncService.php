@@ -205,15 +205,47 @@ class ScheduleSyncService extends BaseService
 
             $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
 
-            $newItem = new ScheduleItem();
-            $newItem->schedule_id = $childSchedule->id;
-            $newItem->day_index   = $item->day_index;
-            $newItem->start_time  = $item->start_time;
-            $newItem->end_time    = $item->end_time;
-            $newItem->status      = $item->status;
-            $newItem->data        = $itemData;
-            $newItem->detail      = $item->detail;
-            $newItem->create();
+            $existingItem = (new ScheduleItem())->get()->where([
+                'schedule_id' => $childSchedule->id,
+                'day_index'   => $item->day_index,
+                'week_index'  => $item->week_index,
+                'start_time'  => $item->start_time,
+                'end_time'    => $item->end_time
+            ])->first();
+
+            if ($existingItem) {
+                $existingData = is_array($existingItem->data) ? $existingItem->data : [];
+                $existingData = array_merge($existingData, $itemData);
+                
+                $uniqueData = [];
+                $seen = [];
+                foreach ($existingData as $d) {
+                    $lid = $d['lesson_id'] ?? null;
+                    if ($lid && !in_array($lid, $seen)) {
+                        $seen[] = $lid;
+                        $uniqueData[] = $d;
+                    } elseif (!$lid) {
+                        $uniqueData[] = $d;
+                    }
+                }
+                
+                $existingItem->data = $uniqueData;
+                if (count($uniqueData) > 1 && $existingItem->status !== 'group') {
+                    $existingItem->status = 'group';
+                }
+                $existingItem->update();
+            } else {
+                $newItem = new ScheduleItem();
+                $newItem->schedule_id = $childSchedule->id;
+                $newItem->day_index   = $item->day_index;
+                $newItem->week_index  = $item->week_index;
+                $newItem->start_time  = $item->start_time;
+                $newItem->end_time    = $item->end_time;
+                $newItem->status      = $item->status;
+                $newItem->data        = $itemData;
+                $newItem->detail      = $item->detail;
+                $newItem->create();
+            }
         }
     }
 

@@ -225,30 +225,37 @@ class Lesson extends Model
      */
     public function getParentLessonRelation(array $results, array $options = []): array
     {
-        $parentIds = array_unique(array_column($results, 'parent_lesson_id'));
-        // remove nulls
-        $parentIds = array_filter($parentIds);
-        if (empty($parentIds))
+        $childIds = array_column($results, 'id');
+        if (empty($childIds)) return $results;
+
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
+
+        $combinations = (new LessonCombination())->get()->where([
+            'child_lesson_id' => ['in' => $childIds],
+            'type' => 'lesson',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
+        $parentIds = array_unique(array_column($combinations, 'parent_lesson_id'));
+        if (empty($parentIds)) {
+            foreach ($results as &$row) $row['parentLesson'] = null;
             return $results;
+        }
 
         $query = (new Lesson())->get()->where(['id' => ['in' => $parentIds]]);
-
-        if (isset($options['with'])) {
-            $query->with($options['with']);
-        }
-
-        $lessons = $query->all();
+        if (isset($options['with'])) $query->with($options['with']);
+        
         $lessonsKeyed = [];
-        foreach ($lessons as $lesson) {
-            $lessonsKeyed[$lesson->id] = $lesson;
-        }
+        foreach ($query->all() as $lesson) $lessonsKeyed[$lesson->id] = $lesson;
+
+        $combinationKeyedByChild = [];
+        foreach ($combinations as $comb) $combinationKeyedByChild[$comb->child_lesson_id] = $comb->parent_lesson_id;
 
         foreach ($results as &$row) {
-            if (isset($row['parent_lesson_id']) && isset($lessonsKeyed[$row['parent_lesson_id']])) {
-                $row['parentLesson'] = $lessonsKeyed[$row['parent_lesson_id']];
-            } else {
-                $row['parentLesson'] = null;
-            }
+            $parentId = $combinationKeyedByChild[$row['id']] ?? null;
+            $row['parentLesson'] = $parentId && isset($lessonsKeyed[$parentId]) ? $lessonsKeyed[$parentId] : null;
         }
         return $results;
     }
@@ -261,24 +268,47 @@ class Lesson extends Model
      */
     public function getChildLessonsRelation(array $results, array $options = []): array
     {
-        $ids = array_column($results, 'id');
-        if (empty($ids))
+        $parentIds = array_column($results, 'id');
+        if (empty($parentIds)) return $results;
+
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
+
+        $combinations = (new LessonCombination())->get()->where([
+            'parent_lesson_id' => ['in' => $parentIds],
+            'type' => 'lesson',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
+        $childIds = array_unique(array_column($combinations, 'child_lesson_id'));
+        $this->logger()->debug('getChildLessonsRelation combinations', $this->logContext([
+            'parentIds' => $parentIds,
+            'semester' => $semester,
+            'academicYear' => $academicYear,
+            'childIds' => $childIds
+        ]));
+        
+        if (empty($childIds)) {
+            foreach ($results as &$row) $row['childLessons'] = [];
             return $results;
-
-        $query = (new Lesson())->get()->where(['parent_lesson_id' => ['in' => $ids]]);
-
-        if (isset($options['with'])) {
-            $query->with($options['with']);
         }
 
-        $lessons = $query->all();
-        $lessonsGrouped = [];
-        foreach ($lessons as $lesson) {
-            $lessonsGrouped[$lesson->parent_lesson_id][] = $lesson;
+        $query = (new Lesson())->get()->where(['id' => ['in' => $childIds]]);
+        if (isset($options['with'])) $query->with($options['with']);
+        
+        $lessonsKeyed = [];
+        foreach ($query->all() as $lesson) $lessonsKeyed[$lesson->id] = $lesson;
+
+        $childrenKeyedByParent = [];
+        foreach ($combinations as $comb) {
+            if (isset($lessonsKeyed[$comb->child_lesson_id])) {
+                $childrenKeyedByParent[$comb->parent_lesson_id][] = $lessonsKeyed[$comb->child_lesson_id];
+            }
         }
 
         foreach ($results as &$row) {
-            $row['childLessons'] = $lessonsGrouped[$row['id']] ?? [];
+            $row['childLessons'] = $childrenKeyedByParent[$row['id']] ?? [];
         }
         return $results;
     }
@@ -293,28 +323,37 @@ class Lesson extends Model
      */
     public function getExamParentLessonRelation(array $results, array $options = []): array
     {
-        $parentIds = array_unique(array_filter(array_column($results, 'exam_parent_lesson_id')));
-        if (empty($parentIds))
+        $childIds = array_column($results, 'id');
+        if (empty($childIds)) return $results;
+
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
+
+        $combinations = (new LessonCombination())->get()->where([
+            'child_lesson_id' => ['in' => $childIds],
+            'type' => 'exam',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
+        $parentIds = array_unique(array_column($combinations, 'parent_lesson_id'));
+        if (empty($parentIds)) {
+            foreach ($results as &$row) $row['examParentLesson'] = null;
             return $results;
+        }
 
         $query = (new Lesson())->get()->where(['id' => ['in' => $parentIds]]);
-
-        if (isset($options['with'])) {
-            $query->with($options['with']);
-        }
-
-        $lessons = $query->all();
+        if (isset($options['with'])) $query->with($options['with']);
+        
         $lessonsKeyed = [];
-        foreach ($lessons as $lesson) {
-            $lessonsKeyed[$lesson->id] = $lesson;
-        }
+        foreach ($query->all() as $lesson) $lessonsKeyed[$lesson->id] = $lesson;
+
+        $combinationKeyedByChild = [];
+        foreach ($combinations as $comb) $combinationKeyedByChild[$comb->child_lesson_id] = $comb->parent_lesson_id;
 
         foreach ($results as &$row) {
-            if (isset($row['exam_parent_lesson_id']) && isset($lessonsKeyed[$row['exam_parent_lesson_id']])) {
-                $row['examParentLesson'] = $lessonsKeyed[$row['exam_parent_lesson_id']];
-            } else {
-                $row['examParentLesson'] = null;
-            }
+            $parentId = $combinationKeyedByChild[$row['id']] ?? null;
+            $row['examParentLesson'] = $parentId && isset($lessonsKeyed[$parentId]) ? $lessonsKeyed[$parentId] : null;
         }
         return $results;
     }
@@ -329,24 +368,40 @@ class Lesson extends Model
      */
     public function getExamChildLessonsRelation(array $results, array $options = []): array
     {
-        $ids = array_column($results, 'id');
-        if (empty($ids))
+        $parentIds = array_column($results, 'id');
+        if (empty($parentIds)) return $results;
+
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
+
+        $combinations = (new LessonCombination())->get()->where([
+            'parent_lesson_id' => ['in' => $parentIds],
+            'type' => 'exam',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
+        $childIds = array_unique(array_column($combinations, 'child_lesson_id'));
+        if (empty($childIds)) {
+            foreach ($results as &$row) $row['examChildLessons'] = [];
             return $results;
-
-        $query = (new Lesson())->get()->where(['exam_parent_lesson_id' => ['in' => $ids]]);
-
-        if (isset($options['with'])) {
-            $query->with($options['with']);
         }
 
-        $lessons = $query->all();
-        $lessonsGrouped = [];
-        foreach ($lessons as $lesson) {
-            $lessonsGrouped[$lesson->exam_parent_lesson_id][] = $lesson;
+        $query = (new Lesson())->get()->where(['id' => ['in' => $childIds]]);
+        if (isset($options['with'])) $query->with($options['with']);
+        
+        $lessonsKeyed = [];
+        foreach ($query->all() as $lesson) $lessonsKeyed[$lesson->id] = $lesson;
+
+        $childrenKeyedByParent = [];
+        foreach ($combinations as $comb) {
+            if (isset($lessonsKeyed[$comb->child_lesson_id])) {
+                $childrenKeyedByParent[$comb->parent_lesson_id][] = $lessonsKeyed[$comb->child_lesson_id];
+            }
         }
 
         foreach ($results as &$row) {
-            $row['examChildLessons'] = $lessonsGrouped[$row['id']] ?? [];
+            $row['examChildLessons'] = $childrenKeyedByParent[$row['id']] ?? [];
         }
         return $results;
     }
@@ -382,11 +437,29 @@ class Lesson extends Model
      */
     public function getExamLinkedLessonIds(): array
     {
-        $rootId = $this->exam_parent_lesson_id ?: $this->id;
+        $semester = getSettingValue('semester');
+        $academicYear = getSettingValue('academic_year');
+
+        $db = new LessonCombination();
+        $comb = $db->get()->where([
+            'child_lesson_id' => $this->id,
+            'type' => 'exam',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->first();
+
+        $rootId = $comb ? $comb->parent_lesson_id : $this->id;
         $ids = [$rootId];
-        $children = (new Lesson())->get()->where(['exam_parent_lesson_id' => $rootId])->all();
+
+        $children = $db->get()->where([
+            'parent_lesson_id' => $rootId,
+            'type' => 'exam',
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
         foreach ($children as $child) {
-            $ids[] = $child->id;
+            $ids[] = $child->child_lesson_id;
         }
         return array_unique($ids);
     }
@@ -578,10 +651,9 @@ class Lesson extends Model
 
     public function getScheduleCSSClass(bool $isExam = false): string
     {
-        // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
         $isChild = $isExam
-            ? !is_null($this->exam_parent_lesson_id)
-            : !is_null($this->parent_lesson_id);
+            ? !empty($this->examParentLesson)
+            : !empty($this->parentLesson);
 
         // 1. Ders Türü Belirleme
         $typeClass = "lesson-type-normal"; // Varsayılan

@@ -187,8 +187,8 @@ class ConflictResolver
             // Not: Eğer birleştirilmiş ders ise, parent dersleri de kontrol etmeliyiz
             $newLessonId = (int) $newLesson->id;
             $existingLessonId = (int) $sd->lesson->id;
-            $newParentId = $newLesson->parent_lesson_id ? (int) $newLesson->parent_lesson_id : $newLessonId;
-            $existingParentId = $sd->lesson->parent_lesson_id ? (int) $sd->lesson->parent_lesson_id : $existingLessonId;
+            $newParentId = !empty($newLesson->parentLesson) ? (int) $newLesson->parentLesson->id : $newLessonId;
+            $existingParentId = !empty($sd->lesson->parentLesson) ? (int) $sd->lesson->parentLesson->id : $existingLessonId;
 
             if ($newLessonId == $existingLessonId || $newParentId == $existingParentId) {
                 return "{$crashInfo}: Aynı ders (veya birleşmiş hali) aynı saatte tekrar eklenemez (Grup olsa bile).";

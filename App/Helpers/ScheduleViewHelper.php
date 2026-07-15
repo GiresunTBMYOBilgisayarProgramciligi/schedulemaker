@@ -132,8 +132,8 @@ class ScheduleViewHelper
             // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
             $isExam = ExamType::isExamType($schedule->type);
             $isChild = $isExam
-                ? !is_null($lesson->exam_parent_lesson_id)
-                : !is_null($lesson->parent_lesson_id);
+                ? !empty($lesson->examParentLesson)
+                : !empty($lesson->parentLesson);
 
             if ($isChild
                 || $schedule->academic_year != getSettingValue('academic_year')
@@ -258,8 +258,8 @@ class ScheduleViewHelper
         // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
         $isExam = ExamType::isExamType($schedule->type);
         $isChild = $isExam
-            ? !is_null($slotData->lesson->exam_parent_lesson_id)
-            : !is_null($slotData->lesson->parent_lesson_id);
+            ? !empty($slotData->lesson->examParentLesson)
+            : !empty($slotData->lesson->parentLesson);
         if ($isChild) {
             return false;
         }

@@ -30,7 +30,7 @@ $attrString = ScheduleViewHelper::renderAttributes(
 );
 $popoverAttr = "";
 if ($type === 'lesson') {
-    $isChild = !is_null($slotData->lesson->parent_lesson_id);
+    $isChild = !empty($slotData->lesson->parentLesson);
     if ($isChild && isset($slotData->lesson->parentLesson)) {
         $parent = $slotData->lesson->parentLesson;
         $popoverTitle = "Birleştirilmiş Ders";
@@ -38,7 +38,7 @@ if ($type === 'lesson') {
         $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
     }
 } elseif ($type === 'exam') {
-    $isChild = !is_null($slotData->lesson->exam_parent_lesson_id);
+    $isChild = !empty($slotData->lesson->examParentLesson);
     if ($isChild && isset($slotData->lesson->examParentLesson)) {
         $parent = $slotData->lesson->examParentLesson;
         $popoverTitle = "Sınav Birleştirmesi";

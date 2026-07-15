@@ -3,9 +3,9 @@
 namespace App\Validators;
 
 use App\Exceptions\ValidationException;
-use App\DTOs\CombineLessonDTO;
+use App\DTOs\CombineExamLessonDTO;
 
-class CombineLessonValidator extends BaseValidator
+class CombineExamLessonValidator extends BaseValidator
 {
     /**
      * @param array $data Doğrulanacak veriler
@@ -24,10 +24,6 @@ class CombineLessonValidator extends BaseValidator
             $errors['child_lesson_id'] = 'Bağlanacak ders belirtilmemiş veya geçersiz.';
         }
 
-        if (isset($data['items_to_remove']) && !is_array($data['items_to_remove'])) {
-            $errors['items_to_remove'] = 'Kaldırılacak öğeler listesi geçerli formatta değil.';
-        }
-
         if (isset($data['semester']) && !in_array($data['semester'], ['Güz', 'Bahar', 'Yaz'])) {
             $errors['semester'] = 'Geçersiz dönem seçimi.';
         }
@@ -44,12 +40,12 @@ class CombineLessonValidator extends BaseValidator
     /**
      * Veriyi doğrular ve DTO nesnesi döndürür.
      * @param array $data
-     * @return CombineLessonDTO
+     * @return CombineExamLessonDTO
      * @throws ValidationException
      */
-    public function getDTO(array $data): CombineLessonDTO
+    public function getDTO(array $data): CombineExamLessonDTO
     {
         $this->validate($data);
-        return CombineLessonDTO::fromArray($data);
+        return CombineExamLessonDTO::fromArray($data);
     }
 }
