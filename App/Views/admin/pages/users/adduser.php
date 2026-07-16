@@ -100,7 +100,7 @@ use App\Enums\UserTitle;
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-12">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="unit_id">Üst Birim</label>
                                             <select class="form-select tom-select" id="unit_id" name="unit_id">
@@ -111,9 +111,7 @@ use App\Enums\UserTitle;
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id"
@@ -126,12 +124,46 @@ use App\Enums\UserTitle;
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id"
                                                 data-selected="<?= $program_id ?? '' ?>">
                                                 <option value="0">İlk olarak Bölüm Seçiniz</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <h5 class="mb-3">Özel Yetkilendirmeler</h5>
+                                <div class="form-text text-muted mb-3">Bu bölümden kullanıcının sorumlu olduğu ekstra birimleri seçebilirsiniz (Örn: Birim Sekreteri, Arş. Gör. için).</div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Yetkili Üst Birimler</label>
+                                            <select class="form-select tom-select" name="permissions[units][]" multiple>
+                                                <?php foreach ($units as $u): ?>
+                                                    <option value="<?= $u->id ?>"><?= htmlspecialchars($u->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Yetkili Bölümler</label>
+                                            <select class="form-select tom-select" name="permissions[departments][]" multiple>
+                                                <?php foreach ($departments as $d): if ($d->id == 0) continue; ?>
+                                                    <option value="<?= $d->id ?>"><?= htmlspecialchars($d->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Yetkili Programlar</label>
+                                            <select class="form-select tom-select" name="permissions[programs][]" multiple>
+                                                <?php foreach ($programs ?? [] as $p): ?>
+                                                    <option value="<?= $p->id ?>"><?= htmlspecialchars($p->name) ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>

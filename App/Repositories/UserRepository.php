@@ -93,7 +93,7 @@ class UserRepository extends BaseRepository
     {
         /** @var User $model */
         $model = new $this->modelClass;
-        return $model->get()->where(['department_id' => $deptId])->with(['department', 'program'])->all();
+        return $model->get()->where(['department_id' => $deptId])->with(['department', 'program', 'unit'])->all();
     }
 
     /**
@@ -106,7 +106,7 @@ class UserRepository extends BaseRepository
     {
         /** @var User $model */
         $model = new $this->modelClass;
-        return $model->get()->with(['department', 'program'])->all();
+        return $model->get()->with(['department', 'program', 'unit'])->all();
     }
 
     /**

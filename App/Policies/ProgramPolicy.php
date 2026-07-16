@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Program;
 use App\Models\Department;
+use App\Core\Gate;
 
 class ProgramPolicy extends BasePolicy
 {
@@ -35,6 +36,11 @@ class ProgramPolicy extends BasePolicy
             return true;
         }
 
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessProgram($program->id)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -62,6 +68,11 @@ class ProgramPolicy extends BasePolicy
 
         // Sisteme kayıtlı olduğu program ise (Akademisyen veya Öğrenci) - Sahiplik Kontrolü
         if ($user->program_id === $program->id) {
+            return true;
+        }
+
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessProgram($program->id)) {
             return true;
         }
 

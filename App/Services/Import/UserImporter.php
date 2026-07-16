@@ -12,6 +12,8 @@ use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
+use App\Validators\UserValidator;
+use App\Exceptions\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 /**
@@ -134,9 +136,9 @@ class UserImporter
 
                 $userDTO = null;
                 try {
-                    $userValidator = new \App\Validators\UserValidator();
+                    $userValidator = new UserValidator();
                     $userDTO = $userValidator->getDTO($userData);
-                } catch (\App\Exceptions\ValidationException $e) {
+                } catch (ValidationException $e) {
                     foreach ($e->getValidationErrors() as $field => $msg) {
                         $rowErrors[] = $msg;
                     }

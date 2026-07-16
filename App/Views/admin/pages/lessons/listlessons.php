@@ -51,6 +51,7 @@
                             <th scope="col" class="filterable">Program</th>
                             <th scope="col" class="filterable">Dönem</th>
                             <th scope="col" class="filterable">Yıl</th>
+                            <th scope="col" class="filterable">Bina</th>
                             <th scope="col">Derslik türü</th>
 
                             <th scope="col" class="text-center">İşlemler</th>
@@ -74,6 +75,7 @@
                                 <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->semester ?></td>
                                 <td><?= $lesson->academic_year ?></td>
+                                <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
 
                                 <td class="text-center">

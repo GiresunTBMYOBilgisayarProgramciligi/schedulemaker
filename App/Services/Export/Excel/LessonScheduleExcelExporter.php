@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
+use App\Helpers\ScheduleViewHelper;
 
 /**
  * Ders programını Excel formatında dışa aktarır.
@@ -57,7 +58,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
             $weekCount   = 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
-            $scheduleRows = \App\Helpers\ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
+            $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
 
             foreach ($scheduleRows as $weekIndex => $slots) {
                 $isClassroom = ($scheduleFilter['type'] === 'classroom');

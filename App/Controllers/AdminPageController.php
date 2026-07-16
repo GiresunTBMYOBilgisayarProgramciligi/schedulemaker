@@ -98,7 +98,8 @@ class AdminPageController extends Controller
             "units" => (new UnitRepository())->getAllUnits(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_id" => $department_id,
-            "program_id" => $program_id
+            "program_id" => $program_id,
+            "programs" => (new ProgramRepository())->getActiveProgramsWithDetails()
         ];
     }
 
@@ -189,6 +190,7 @@ class AdminPageController extends Controller
             "units" => (new UnitRepository())->getAllUnits(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
+            "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
             "programController" => new ProgramController(),
             "userController" => new UserController(),
         ];

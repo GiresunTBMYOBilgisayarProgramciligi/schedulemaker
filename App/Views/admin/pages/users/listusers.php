@@ -47,11 +47,11 @@ use App\Core\Gate;
                                 <th scope="col">Adı</th>
                                 <th scope="col">Soyadı</th>
                                 <th scope="col">e-Posta</th>
+                                <th scope="col" class="filterable">Üst Birim</th>
                                 <th scope="col" class="filterable">Bölüm</th>
                                 <th scope="col" class="filterable">Program</th>
                                 <th scope="col" class="filterable">Yetki</th>
                                 <!--<ths cope="col">Kayıt Tarihi</th>-->
-                                <th scope="col">Son Giriş Tarihi</th>
                                 <th scope="col" class="text-center">İşlemler</th>
                             </tr>
                         </thead>
@@ -63,11 +63,11 @@ use App\Core\Gate;
                                     <td><?= $user->name ?></td>
                                     <td><?= $user->last_name ?></td>
                                     <td><?= $user->mail ?></td>
+                                    <td><?= $user->unit->name ?? '' ?></td>
                                     <td><?= $user->department->name ?? '' ?></td>
                                     <td><?= $user->program->name ?? '' ?></td>
                                     <td><?= $user->getRoleName() ?></td>
                                     <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
-                                    <td><?= $user->getLastLogin() ?></td>
                                     <td class="text-center">
                                         <div class="dropdown">
                                             <button type="button" class="btn btn-primary dropdown-toggle"

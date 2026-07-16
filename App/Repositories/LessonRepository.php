@@ -20,7 +20,7 @@ class LessonRepository extends BaseRepository
         /** @var Lesson $model */
         $model = new $this->modelClass;
         return $model->get()->where(['department_id' => $deptId])
-            ->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])
+            ->with(['program', 'lecturer', 'department', 'building', 'parentLesson' => ['with' => ['program']]])
             ->all();
     }
 
@@ -35,7 +35,7 @@ class LessonRepository extends BaseRepository
         /** @var Lesson $model */
         $model = new $this->modelClass;
         return $model->get()
-            ->with(['program', 'lecturer', 'department', 'parentLesson' => ['with' => ['program']]])
+            ->with(['program', 'lecturer', 'department', 'building', 'parentLesson' => ['with' => ['program']]])
             ->all();
     }
 
@@ -55,6 +55,7 @@ class LessonRepository extends BaseRepository
                 'program', 
                 'lecturer' => ['with' => ['lessons']], 
                 'department', 
+                'building',
                 'parentLesson' => ['with' => ['program']], 
                 'childLessons' => ['with' => ['program']], 
                 'examParentLesson' => ['with' => ['program']], 

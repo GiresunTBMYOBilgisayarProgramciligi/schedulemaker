@@ -14,6 +14,7 @@ use App\Services\LessonService;
 use App\Enums\ClassroomType;
 use App\Enums\LessonType;
 use App\Validators\LessonValidator;
+use App\Exceptions\ValidationException;
 use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
@@ -185,7 +186,7 @@ class LessonImporter
                 try {
                     $lessonValidator = new LessonValidator();
                     $lessonDTO = $lessonValidator->getDTO($lessonData);
-                } catch (\App\Exceptions\ValidationException $e) {
+                } catch (ValidationException $e) {
                     foreach ($e->getValidationErrors() as $field => $msg) {
                         $rowErrors[] = $msg;
                     }

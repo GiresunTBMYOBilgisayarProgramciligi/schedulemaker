@@ -19,7 +19,8 @@ readonly class UserDTO
         public ?UserTitle $title = null,
         public ?int $departmentId = null,
         public ?int $programId = null,
-        public ?int $unitId = null
+        public ?int $unitId = null,
+        public ?array $permissions = null
     ) {
     }
 
@@ -40,7 +41,8 @@ readonly class UserDTO
             title: !empty($validatedData['title']) ? UserTitle::tryFrom($validatedData['title']) : null,
             departmentId: !empty($validatedData['department_id']) ? (int) $validatedData['department_id'] : null,
             programId: !empty($validatedData['program_id']) ? (int) $validatedData['program_id'] : null,
-            unitId: !empty($validatedData['unit_id']) ? (int) $validatedData['unit_id'] : null
+            unitId: !empty($validatedData['unit_id']) ? (int) $validatedData['unit_id'] : null,
+            permissions: isset($validatedData['permissions']) && is_array($validatedData['permissions']) ? $validatedData['permissions'] : null
         );
     }
 

@@ -6,6 +6,7 @@ use App\Core\Log;
 use App\Models\User;
 use App\Services\Schedule\ScheduleService;
 use App\DTOs\UserDTO;
+use App\DTOs\SettingDTO;
 use App\Repositories\UserRepository;
 use App\Core\Database;
 use Exception;
@@ -41,12 +42,29 @@ class UserService extends BaseService
         $userData['password'] = password_hash($password, PASSWORD_DEFAULT);
 
         try {
-            return Database::transaction(function () use ($userData) {
+            return Database::transaction(function () use ($userData, $dto) {
                 $user = new User();
                 $user->fill($userData);
                 $user->create();
 
                 $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
+
+                if ($dto->permissions !== null) {
+                    $parsed = [
+                        'units' => array_map('intval', $dto->permissions['units'] ?? []),
+                        'departments' => array_map('intval', $dto->permissions['departments'] ?? []),
+                        'programs' => array_map('intval', $dto->permissions['programs'] ?? [])
+                    ];
+                    
+                    $settingDto = new SettingDTO(
+                        key: 'user_' . $user->id . '_permissions',
+                        value: json_encode($parsed),
+                        type: 'json',
+                        group: 'user_permissions'
+                    );
+                    (new SettingsService())->saveMultipleSettings([$settingDto]);
+                }
+
                 return $user->id;
             });
         } catch (PDOException $e) {
@@ -76,7 +94,25 @@ class UserService extends BaseService
         // Mevcut modele DTO verilerini dolduruyoruz
         $user->fill(array_merge(['id' => $id], $dto->toArray()));
 
-        return $this->updateUser($user);
+        $userId = $this->updateUser($user);
+
+        if ($dto->permissions !== null) {
+            $parsed = [
+                'units' => array_map('intval', $dto->permissions['units'] ?? []),
+                'departments' => array_map('intval', $dto->permissions['departments'] ?? []),
+                'programs' => array_map('intval', $dto->permissions['programs'] ?? [])
+            ];
+            
+            $settingDto = new SettingDTO(
+                key: 'user_' . $userId . '_permissions',
+                value: json_encode($parsed),
+                type: 'json',
+                group: 'user_permissions'
+            );
+            (new SettingsService())->saveMultipleSettings([$settingDto]);
+        }
+
+        return $userId;
     }
 
     /**

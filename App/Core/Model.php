@@ -531,6 +531,8 @@ class Model
                 $value = serialize($value);
             } elseif ($value instanceof \DateTime) {
                 $value = $value->format('Y-m-d H:i:s');
+            } elseif (is_bool($value)) {
+                $value = (int)$value;
             }
         });
         $fields = array_keys($data);
@@ -572,6 +574,8 @@ class Model
                 $value = serialize($value);
             } elseif ($value instanceof \DateTime) {
                 $value = $value->format('Y-m-d H:i:s');
+            } elseif (is_bool($value)) {
+                $value = (int)$value;
             }
         });
 

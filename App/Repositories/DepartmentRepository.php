@@ -63,7 +63,7 @@ class DepartmentRepository extends BaseRepository
     {
         /** @var Department $model */
         $model = new $this->modelClass;
-        return $model->get()->with(["chairperson"])->all();
+        return $model->get()->with(["chairperson", "unit"])->all();
     }
 
     /**
@@ -80,7 +80,8 @@ class DepartmentRepository extends BaseRepository
         return $model->get()->where(["id" => $id])
             ->with([
                 "programs" => ['with' => ['department']], 
-                "chairperson", 
+                "chairperson",
+                "unit",
                 "lessons" => ['with' => ['lecturer', 'program', 'parentLesson' => ['with' => ['program']]]], 
                 "users" => ['with' => ['program']]
             ])

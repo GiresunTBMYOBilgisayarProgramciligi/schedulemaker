@@ -5,6 +5,7 @@ namespace App\Core;
 use App\Middlewares\AuthMiddleware;
 use Exception;
 use App\Core\Log;
+use function App\Helpers\getSettingValue;
 
 /**
  * Yetki kontrolü için merkezi yönetim sınıfı
@@ -146,5 +147,50 @@ class Gate
         if (!self::allowsRole($role, $reverse)) {
             throw new Exception($message);
         }
+    }
+
+    /**
+     * Kullanıcının özel yetkilerini Settings'ten JSON olarak alır
+     * @param int|null $userId
+     * @return array
+     */
+    public static function getUserPermissions(?int $userId = null): array
+    {
+        if (is_null($userId)) {
+            $user = AuthMiddleware::user();
+            if (!$user) return [];
+            $userId = $user->id;
+        }
+
+        $key = 'user_' . $userId . '_permissions';
+        $perms = getSettingValue($key, 'user_permissions', []);
+        return is_array($perms) ? $perms : [];
+    }
+
+    /**
+     * Kullanıcının ilgili Üst Birim için özel yetkisi var mı?
+     */
+    public static function canAccessUnit(int $unitId): bool
+    {
+        $perms = self::getUserPermissions();
+        return in_array($unitId, $perms['units'] ?? []);
+    }
+
+    /**
+     * Kullanıcının ilgili Bölüm için özel yetkisi var mı?
+     */
+    public static function canAccessDepartment(int $deptId): bool
+    {
+        $perms = self::getUserPermissions();
+        return in_array($deptId, $perms['departments'] ?? []);
+    }
+
+    /**
+     * Kullanıcının ilgili Program için özel yetkisi var mı?
+     */
+    public static function canAccessProgram(int $programId): bool
+    {
+        $perms = self::getUserPermissions();
+        return in_array($programId, $perms['programs'] ?? []);
     }
 }

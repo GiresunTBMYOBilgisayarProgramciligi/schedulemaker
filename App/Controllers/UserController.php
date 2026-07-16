@@ -33,7 +33,7 @@ class UserController extends Controller
             $dto = (new UserValidator())->getDTO($requestData);
 
             // 3. Service'e gönder
-            (new UserService())->saveNew($dto);
+            $userId = (new UserService())->saveNew($dto);
 
             return [
                 "status" => "success",

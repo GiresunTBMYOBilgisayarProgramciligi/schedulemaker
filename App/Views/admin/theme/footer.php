@@ -1,7 +1,8 @@
+<?php use function App\Helpers\getAppVersion; ?>
 <footer class="app-footer">
     <div class="float-end d-none d-sm-inline">
         <b>Version</b>
-        <?= \App\Helpers\getAppVersion() ?>
+        <?= getAppVersion() ?>
     </div>
     <!--begin::Copyright-->
     <strong>

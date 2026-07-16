@@ -64,7 +64,7 @@ class DepartmentService extends BaseService
                 if ($wasActive && ($department->active === null || $department->active === false || $department->active === 0)) {
                     $programs = (new Program())->get()->where(['department_id' => $department->id])->all();
                     foreach ($programs as $program) {
-                        $program->active = null; // Pasife al
+                        $program->active = 0; // Pasife al
                         $program->update();
                     }
                     $this->logger->info('Bölüm pasife alındığı için alt programları da pasife çekildi', ['department_id' => $department->id, 'affected_programs' => count($programs)]);

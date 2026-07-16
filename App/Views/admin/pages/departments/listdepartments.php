@@ -40,6 +40,7 @@
                             <th>İd</th>
                             <th>Adı</th>
                             <th>Bölüm Başkanı</th>
+                            <th>Üst Birim</th>
                             <th>Aktif</th>
                             <th class="text-center">İşlemler</th>
                         </tr>
@@ -50,6 +51,7 @@
                                 <td><?= $department->id ?></td>
                                 <td><?= $department->name ?></td>
                                 <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
+                                <td><?= $department->unit?->name ?? '' ?></td>
                                 <td>
                                     <div class="form-check form-switch ">
                                         <input name="active" class="form-check-input" type="checkbox"

@@ -64,6 +64,8 @@ use App\Core\Gate;
                                         <?= $department->chairperson?->getFullName() ?? '' ?>
                                     </a>
                                 </dd>
+                                <dt class="col-sm-4">Üst Birim</dt>
+                                <dd class="col-sm-8"><?= $department->unit?->name ?? 'Belirtilmemiş' ?></dd>
                                 <dt class="col-sm-4">Program Sayısı</dt>
                                 <dd class="col-sm-8"><?= count($department->programs ?? []) ?></dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>

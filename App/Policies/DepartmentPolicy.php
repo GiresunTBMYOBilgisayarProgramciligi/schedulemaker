@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Department;
+use App\Core\Gate;
 
 class DepartmentPolicy extends BasePolicy
 {
@@ -34,6 +35,11 @@ class DepartmentPolicy extends BasePolicy
             return true;
         }
 
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessDepartment($department->id)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -53,7 +59,17 @@ class DepartmentPolicy extends BasePolicy
         if ($user->role === 'manager' || $user->role === 'submanager') {
             return true;
         }
-        return $user->id === $department->chairperson_id || $user->department_id === $department->id;
+        
+        if ($user->id === $department->chairperson_id) {
+            return true;
+        }
+
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessDepartment($department->id)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

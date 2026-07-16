@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
+use App\Helpers\ScheduleViewHelper;
 
 /**
  * Sınav programını (Ara Sınav / Final / Bütünleme) Excel formatında dışa aktarır.
@@ -77,7 +78,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             // Final programı 2 haftalık olabilir
             $weekCount   = ($filters['type'] === ExamType::FINAL->value) ? 2 : 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 4);
-            $scheduleRows = \App\Helpers\ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
+            $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
 
             foreach ($scheduleRows as $weekIndex => $slots) {
                 $isClassroom = ($scheduleFilter['type'] === 'classroom');

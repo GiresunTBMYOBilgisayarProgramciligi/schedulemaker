@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Unit;
+use App\Core\Gate;
 
 class UnitPolicy extends BasePolicy
 {
@@ -20,7 +21,16 @@ class UnitPolicy extends BasePolicy
      */
     public function view(User $user, Unit $unit): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessUnit($unit->id)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -36,7 +46,16 @@ class UnitPolicy extends BasePolicy
      */
     public function update(User $user, Unit $unit): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager';
+        if ($user->role === 'admin' || $user->role === 'manager') {
+            return true;
+        }
+
+        // Özel yetki (Settings tablosundan)
+        if (Gate::canAccessUnit($unit->id)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

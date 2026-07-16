@@ -79,6 +79,8 @@ use App\Core\Gate;
                                         <?= $lesson->program->name ?>
                                     </a>
                                 </dd>
+                                <dt class="col-sm-2">Bina</dt>
+                                <dd class="col-sm-4"><?= $lesson->building?->name ?? 'Belirtilmemiş' ?></dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
                                 <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
                                 <dt class="col-sm-2">Akademik yıl ve Dönem</dt>

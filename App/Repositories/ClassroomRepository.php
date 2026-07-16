@@ -20,7 +20,7 @@ class ClassroomRepository extends BaseRepository
         /** @var Classroom $model */
         $model = new $this->modelClass;
         return $model->where(['id' => $id])
-            ->with(['schedules' => ['with' => ['items']]])
+            ->with(['schedules' => ['with' => ['items']], 'building'])
             ->first();
     }
 }

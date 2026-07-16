@@ -51,6 +51,8 @@
                             <dl class="row">
                                 <dt class="col-sm-4">Derslik Adı</dt>
                                 <dd class="col-sm-8"><?= htmlspecialchars($classroom->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dt class="col-sm-4">Bina</dt>
+                                <dd class="col-sm-8"><?= $classroom->building?->name ?? 'Belirtilmemiş' ?></dd>
                                 <dt class="col-sm-4">Ders Mevcudu</dt>
                                 <dd class="col-sm-8"><?= $classroom->class_size ?></dd>
                                 <dt class="col-sm-4">Sınav Mevcudu</dt>

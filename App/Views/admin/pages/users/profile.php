@@ -70,6 +70,12 @@ use App\Core\Gate;
                                     </div>
                                     <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->hours ?? 0), 0) ?></span>
                                 </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-3 me-auto">
+                                        <b>Son Giriş Tarihi</b>
+                                    </div>
+                                    <span class="badge text-bg-secondary "><?= $user->getLastLogin() ?></span>
+                                </li>
                             </ul>
 
                         </div>
