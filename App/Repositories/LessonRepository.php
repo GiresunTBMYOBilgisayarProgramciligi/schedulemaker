@@ -108,7 +108,7 @@ class LessonRepository extends BaseRepository
             '!id' => $excludeLessonId, 
             'semester' => $semester, 
             'academic_year' => $academicYear
-        ])->with(['program'])->all();
+        ])->with(['program', 'examParentLesson'])->all();
     }
 }
 

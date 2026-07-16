@@ -59,7 +59,7 @@ create table if not exists schedule_items
     detail        TEXT,
     primary key (id),
     unique (schedule_id,day_index,week_index,start_time,end_time),
-    foreign key (schedule_id) references schedules (id) on delete cascade
+    CONSTRAINT fk_schedule_items_schedule_id foreign key (schedule_id) references schedules (id) on delete cascade
 ) ENGINE = INNODB;
 
 create table if not exists users
@@ -88,7 +88,7 @@ create table if not exists departments
     active tinyint(1) default 0,
     primary key (id),
     unique (name),
-    foreign key (chairperson_id) references users (id) on delete set null on update cascade
+    CONSTRAINT fk_departments_chairperson_id foreign key (chairperson_id) references users (id) on delete set null on update cascade
 ) ENGINE = INNODB;
 
 create table if not exists classrooms
@@ -111,7 +111,7 @@ create table if not exists programs
     active tinyint(1) default 0,
     primary key (id),
     unique (name),
-    foreign key (department_id) references departments (id) on delete set null
+    CONSTRAINT fk_programs_department_id foreign key (department_id) references departments (id) on delete set null
 ) ENGINE = INNODB;
 
 create table if not exists lessons
@@ -130,15 +130,11 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
-    parent_lesson_id int,
-    exam_parent_lesson_id int,
     primary key (id),
     unique (code, program_id, group_no),
-    foreign key (lecturer_id) references users (id) on delete set null,
-    foreign key (department_id) references departments (id) on delete set null,
-    foreign key (program_id) references programs (id) on delete set null,
-    foreign key (parent_lesson_id) references lessons (id) on delete set null,
-    foreign key (exam_parent_lesson_id) references lessons (id) on delete set null
+    CONSTRAINT fk_lessons_lecturer_id foreign key (lecturer_id) references users (id) on delete set null,
+    CONSTRAINT fk_lessons_department_id foreign key (department_id) references departments (id) on delete set null,
+    CONSTRAINT fk_lessons_program_id foreign key (program_id) references programs (id) on delete set null
 
 ) ENGINE = INNODB;
 
@@ -150,8 +146,8 @@ create table if not exists lesson_combinations
     type ENUM('lesson', 'exam') NOT NULL,
     semester ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
     academic_year VARCHAR(12) NOT NULL,
-    FOREIGN KEY (parent_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
-    FOREIGN KEY (child_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lc_parent_lesson_id FOREIGN KEY (parent_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lc_child_lesson_id FOREIGN KEY (child_lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
     UNIQUE KEY (child_lesson_id, type, semester, academic_year)
 ) ENGINE = INNODB;
 
@@ -170,9 +166,9 @@ create table if not exists settings
 
 -- users tablosuna department_id için dış anahtar ekleme
 ALTER TABLE users
-    ADD FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE SET NULL ON UPDATE CASCADE;
+    ADD CONSTRAINT fk_users_department_id FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE users
-    ADD FOREIGN KEY (program_id) REFERENCES programs (id) ON DELETE SET NULL ON UPDATE CASCADE;
+    ADD CONSTRAINT fk_users_program_id FOREIGN KEY (program_id) REFERENCES programs (id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 /* password is 123456 */
 insert into users (password, mail, name, last_name, title, role, approved)values ('$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC', 'admin@admin.com', 'Admin', 'Admin', 'Admin', 'admin', true);

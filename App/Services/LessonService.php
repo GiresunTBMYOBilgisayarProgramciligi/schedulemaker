@@ -332,7 +332,7 @@ class LessonService extends BaseService
         $result = [];
         foreach ($lessons as $lesson) {
             // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
-            if ($lesson->exam_parent_lesson_id && $lesson->exam_parent_lesson_id !== $currentLesson->id) {
+            if (!empty($lesson->examParentLesson) && $lesson->examParentLesson->id !== $currentLesson->id) {
                 continue;
             }
             // Zaten bu derse bağlı olanları atla

@@ -41,8 +41,6 @@ class Lesson extends Model
      */
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
-    public ?int $parent_lesson_id = null;
-    public ?int $exam_parent_lesson_id = null;
     /**
      * Ders programına eklemeye uygun olmayan saat miktarı. Bu saatler zaten programa eklenmiş
      * @var int|null
