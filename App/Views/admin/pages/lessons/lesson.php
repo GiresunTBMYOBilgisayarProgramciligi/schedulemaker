@@ -212,7 +212,7 @@ use App\Core\Gate;
                     <div class="card card-primary card-outline">
                         <div class="card-body box-profile">
                             <div class="text-center">
-                                <img class="profile-user-img img-fluid img-circle"
+                                <img class="img-fluid rounded-circle border border-3 p-1 mx-auto d-block" style="width: 100px;"
                                     src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
                             </div>
 

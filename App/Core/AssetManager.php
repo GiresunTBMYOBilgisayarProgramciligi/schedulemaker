@@ -46,9 +46,6 @@ class AssetManager
         ],
         [//Required Plugin(AdminLTE)
             'path' => '/assets/node_modules/admin-lte/dist/css/adminlte.min.css'
-        ],
-        [
-            'path' => '/assets/css/adminlte3to4.css'
         ]
     ];
 
