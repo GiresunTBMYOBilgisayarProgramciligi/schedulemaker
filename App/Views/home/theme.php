@@ -4,9 +4,9 @@
 include "theme/head.php";
 ?>
 <!--begin::Body-->
-<!--<body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary">-->
+<!--todo theme atarı profil sayfasından yapılmalı ve cookie olarak tanımlanmalı-->
 
-<body class="layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded">
+<body class="layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>" data-overlayscrollbars-initialize>
     <!--begin::App Wrapper-->
     <div class="app-wrapper">
 
