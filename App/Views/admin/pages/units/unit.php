@@ -71,7 +71,7 @@
                                             <td><?= $dept->id ?></td>
                                             <td><a href="/admin/department/<?= $dept->id ?>"><?= htmlspecialchars($dept->name ?? '') ?></a></td>
                                             <td><?= $dept->chairperson?->getFullName() ?? '-' ?></td>
-                                            <td>
+                                            <td class="text-center">
                                                 <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
                                             </td>
                                         </tr>

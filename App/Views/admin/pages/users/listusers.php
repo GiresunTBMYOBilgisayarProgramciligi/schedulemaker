@@ -69,33 +69,21 @@ use App\Core\Gate;
                                     <td><?= $user->getRoleName() ?></td>
                                     <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
                                     <td class="text-center">
-                                        <div class="dropdown">
-                                            <button type="button" class="btn btn-primary dropdown-toggle"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                İşlemler
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="/admin/profile/<?= $user->id ?>">Gör</a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item"
-                                                        href="/admin/edituser/<?= $user->id ?>">Düzenle</a>
-                                                </li>
-                                                <?php if (Gate::check("delete", $user)): ?>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li>
-                                                        <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete"
-                                                            id="deleteUser-<?= $user->id ?>" method="post">
-                                                            <input type="hidden" name="id" value="<?= $user->id ?>">
-                                                            <input type="submit" class="dropdown-item" value="Sil">
-                                                        </form>
-                                                    </li>
-                                                <?php endif; ?>
-                                            </ul>
-                                        </div>
+                                        <a href="/admin/profile/<?= $user->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <?php if (Gate::check("delete", $user)): ?>
+                                            <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete d-inline"
+                                                  id="deleteUser-<?= $user->id ?>" method="post">
+                                                <input type="hidden" name="id" value="<?= $user->id ?>">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

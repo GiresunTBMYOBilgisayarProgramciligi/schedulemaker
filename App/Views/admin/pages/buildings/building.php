@@ -64,7 +64,7 @@
                                             <td><a href="/admin/classroom/<?= $cls->id ?>"><?= htmlspecialchars($cls->name ?? '') ?></a></td>
                                             <td><?= $cls->getTypeName() ?></td>
                                             <td><?= $cls->class_size ?></td>
-                                            <td>
+                                            <td class="text-center">
                                                 <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
                                             </td>
                                         </tr>

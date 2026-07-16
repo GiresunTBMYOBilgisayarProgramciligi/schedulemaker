@@ -46,7 +46,7 @@
                                     <tr>
                                         <td><?= $building->id ?></td>
                                         <td><?= htmlspecialchars($building->name) ?></td>
-                                        <td>
+                                        <td class="text-center">
                                             <a href="/admin/building/<?= $building->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
                                                 <i class="bi bi-eye"></i>
                                             </a>

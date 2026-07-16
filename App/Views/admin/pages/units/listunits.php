@@ -59,7 +59,7 @@
                                                 <span class="badge bg-secondary">Pasif</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td>
+                                        <td class="text-center">
                                             <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>

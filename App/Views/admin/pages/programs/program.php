@@ -133,35 +133,22 @@ use App\Core\Gate;
                                             <td><?= $lecturer->mail ?></td>
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
-                                                    <div class="dropdown">
-                                                        <button type="button" class="btn btn-primary dropdown-toggle"
-                                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                                            İşlemler
-                                                        </button>
-                                                        <ul class="dropdown-menu">
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="/admin/profile/<?= $lecturer->id ?>">Gör</a>
-                                                            </li>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="/admin/edituser/<?= $lecturer->id ?>">Düzenle</a>
-                                                            </li>
-                                                            <?php if (Gate::check("delete", $lecturer)): ?>
-                                                                <li>
-                                                                    <hr class="dropdown-divider">
-                                                                </li>
-                                                                <li>
-                                                                    <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
-                                                                        class="ajaxFormDelete" id="deleteUser-<?= $lecturer->id ?>"
-                                                                        method="post">
-                                                                        <input type="hidden" name="id" value="<?= $lecturer->id ?>">
-                                                                        <input type="submit" class="dropdown-item" value="Sil">
-                                                                    </form>
-                                                                </li>
-                                                            <?php endif; ?>
-                                                        </ul>
-                                                    </div>
+                                                    <a href="/admin/profile/<?= $lecturer->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a href="/admin/edituser/<?= $lecturer->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <?php if (Gate::check("delete", $lecturer)): ?>
+                                                        <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
+                                                              class="ajaxFormDelete d-inline" id="deleteUser-<?= $lecturer->id ?>"
+                                                              method="post">
+                                                            <input type="hidden" name="id" value="<?= $lecturer->id ?>">
+                                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
                                                 </td>
                                             <?php endif; ?>
                                         </tr>
@@ -223,37 +210,24 @@ use App\Core\Gate;
                                             <td><?= $lesson->getClassroomTypeName() ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $lesson)): ?>
-                                                    <div class="dropdown">
-                                                        <button type="button" class="btn btn-primary dropdown-toggle"
-                                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                                            İşlemler
-                                                        </button>
-                                                        <ul class="dropdown-menu">
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
-                                                            </li>
-                                                            <?php if (Gate::check("update", $lesson)): ?>
-                                                            <li>
-                                                                <a class="dropdown-item"
-                                                                    href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
-                                                            </li>
-                                                            <?php endif; ?>
-                                                            <?php if (Gate::check("delete", $lesson)): ?>
-                                                                <li>
-                                                                    <hr class="dropdown-divider">
-                                                                </li>
-                                                                <li>
-                                                                    <form action="/ajax/deletelesson/<?= $lesson->id ?>"
-                                                                        class="ajaxFormDelete" id="deleteLesson-<?= $lesson->id ?>"
-                                                                        method="post">
-                                                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                                                        <input type="submit" class="dropdown-item" value="Sil">
-                                                                    </form>
-                                                                </li>
-                                                            <?php endif; ?>
-                                                        </ul>
-                                                    </div>
+                                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <?php if (Gate::check("update", $lesson)): ?>
+                                                        <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <?php if (Gate::check("delete", $lesson)): ?>
+                                                        <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                                              class="ajaxFormDelete d-inline" id="deleteLesson-<?= $lesson->id ?>"
+                                                              method="post">
+                                                            <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>

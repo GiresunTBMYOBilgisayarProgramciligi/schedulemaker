@@ -59,36 +59,22 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <div class="dropdown">
-                                        <button type="button" class="btn btn-primary dropdown-toggle"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                            İşlemler
+                                    <a href="/admin/program/<?= $program->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="/ajax/deleteprogram/<?= $program->id ?>"
+                                          class="ajaxFormDelete d-inline"
+                                          id="deleteProgram-<?= $program->id ?>"
+                                          method="post"
+                                          data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
+                                        <input type="hidden" name="id" value="<?= $program->id ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                            <i class="bi bi-trash"></i>
                                         </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/admin/program/<?=$program->id?>">Gör</a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/admin/editprogram/<?=$program->id?>">Düzenle</a>
-                                            </li>
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-                                            <li>
-                                                <form action="/ajax/deleteprogram/<?=$program->id?>"
-                                                      class="ajaxFormDelete"
-                                                      id="deleteProgram-<?=$program->id?>"
-                                                      method="post"
-                                                      data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
-                                                    <input type="hidden" name="id"
-                                                           value="<?=$program->id?>">
-                                                    <input type="submit" class="dropdown-item" value="Sil">
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>

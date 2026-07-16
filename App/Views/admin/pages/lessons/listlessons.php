@@ -79,35 +79,21 @@
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
 
                                 <td class="text-center">
-                                    <div class="dropdown">
-                                        <button type="button" class="btn btn-primary dropdown-toggle"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                            İşlemler
+                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                          class="ajaxFormDelete d-inline"
+                                          id="deleteLesson-<?= $lesson->id ?>"
+                                          method="post">
+                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                            <i class="bi bi-trash"></i>
                                         </button>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/admin/lesson/<?= $lesson->id ?>">Gör</a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="/admin/editlesson/<?= $lesson->id ?>">Düzenle</a>
-                                            </li>
-                                            <li>
-                                                <hr class="dropdown-divider">
-                                            </li>
-                                            <li>
-                                                <form action="/ajax/deletelesson/<?= $lesson->id ?>"
-                                                      class="ajaxFormDelete"
-                                                      id="deleteLesson-<?= $lesson->id ?>"
-                                                      method="post">
-                                                    <input type="hidden" name="id"
-                                                           value="<?= $lesson->id ?>">
-                                                    <input type="submit" class="dropdown-item" value="Sil">
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>
