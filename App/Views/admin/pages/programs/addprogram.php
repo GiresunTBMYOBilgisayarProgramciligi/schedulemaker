@@ -58,10 +58,12 @@
                                         </div>
                                     </div>
                                     <div class="col-md-1">
-                                        <div class="form-check form-switch pt-4 mt-3">
-                                            <input name="active" class="form-check-input" type="checkbox" id="flexSwitchCheckChecked"
-                                                   checked>
-                                            <label class="form-check-label" for="flexSwitchCheckChecked">Aktif</label>
+                                        <div class="mb-3">
+                                            <span class="form-label d-block">&nbsp;</span>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="flexSwitchCheckChecked" checked>
+                                                <label class="form-check-label" for="flexSwitchCheckChecked">Aktif</label>
+                                            </div>
                                         </div>
                                     </div>
 

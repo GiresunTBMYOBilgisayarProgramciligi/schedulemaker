@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>">
 <?php
 include "theme/head.php";
 ?>
 <!--begin::Body-->
 <!--todo theme atarı profil sayfasından yapılmalı ve cookie olarak tanımlanmalı-->
 
-<body class="layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>" data-overlayscrollbars-initialize>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary sidebar-mini sidebar-collapse" data-overlayscrollbars-initialize>
     <!--begin::App Wrapper-->
     <div class="app-wrapper">
 
