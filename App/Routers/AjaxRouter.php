@@ -11,6 +11,7 @@ use App\Services\LessonService;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
+use App\Controllers\Auth\PasswordResetController;
 
 
 use App\Controllers\SettingsController;
@@ -510,5 +511,25 @@ class AjaxRouter extends Router
     public function exportScheduleIcsAction(): void
     {
         (new ScheduleController())->exportScheduleIcs($this->data);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function forgotpasswordAction(): void
+    {
+        $this->response = (new PasswordResetController())->forgotPassword($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function resetpasswordAction(): void
+    {
+        $this->response = (new PasswordResetController())->resetPassword($this->data);
+        $this->sendResponse();
     }
 }

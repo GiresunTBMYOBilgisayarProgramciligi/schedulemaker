@@ -198,3 +198,20 @@ DELETE FROM schedules WHERE owner_type = 'user' AND owner_id = OLD.id;
 
 CREATE TRIGGER trg_class_del_sched BEFORE DELETE ON classrooms FOR EACH ROW 
 DELETE FROM schedules WHERE owner_type = 'classroom' AND owner_id = OLD.id;
+
+CREATE TABLE `password_resets` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  KEY `password_resets_email_index` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Mail Ayarları
+INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
+('mail', 'smtp_host', 'localhost', 'string'),
+('mail', 'smtp_port', '587', 'integer'),
+('mail', 'smtp_user', '', 'string'),
+('mail', 'smtp_pass', '', 'string'),
+('mail', 'smtp_secure', 'tls', 'string'),
+('mail', 'mail_from', 'noreply@localhost', 'string'),
+('mail', 'mail_from_name', 'Schedule Maker', 'string');

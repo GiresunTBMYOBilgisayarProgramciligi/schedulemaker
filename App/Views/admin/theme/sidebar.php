@@ -321,7 +321,7 @@ use App\Core\Gate;
                                 <a href="/admin/settings"
                                     class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings')) && !str_contains($_SERVER["REQUEST_URI"], 'settingslogs') ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-gear"></i>
-                                    <p>Genel</p>
+                                    <p>Ayarları Düzenle</p>
                                 </a>
                             </li>
                             <li class="nav-item">

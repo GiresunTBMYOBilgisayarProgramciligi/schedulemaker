@@ -101,20 +101,8 @@ class Router
         
         if (!empty($params) && isset($params[0])) {
             $file = $params[0];
-            // Güvenlik veya format kontrolü yapılabilir
-            // Dosyanın varlığını View sınıfı kontrol edecek, biz sadece path oluşturuyoruz
-            
-            // Eğer dosya varsa onu kullanmak isteriz ama burada dosya kontrolü yapmak yerine 
-            // View sınıfına bırakmak daha doğru olabilir veya Application'daki mantığı buraya taşıyoruz.
-            // Önce parametreli yolu deneyelim:
             
             $viewPath = "$folder/$page/$file";
-            // Bu dosyanın varlığını kontrol etmek için View'in exception atmasını yakalayabiliriz
-            // Ancak Router içinde olduğumuz için callView zaten exception fırlatıyor.
-            
-            // Burada bir try-catch yapısı kuramayız çünkü callView void dönüyor ve View->Render exception atıyor.
-            // Ama parametrenin dosya adı olup olmadığını bilmiyoruz.
-            // Kullanıcı logic'i: "example" parametresi varsa "example.php" yi açsın.
             
             // Şöyle bir strateji izleyelim:
             // 1. Parametreyi dosya adı olarak kabul edip render etmeyi dene.
@@ -124,5 +112,7 @@ class Router
             $this->callView($viewPath);
             return;
         }
+
+        throw new Exception("Aradığınız sayfa veya işlem bulunamadı. Lütfen URL'yi kontrol edin.");
     }
 }

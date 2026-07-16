@@ -56,6 +56,11 @@
                                             data-bs-target="#exam" type="button" role="tab" aria-controls="exam"
                                             aria-selected="false">Sınav Ayarları</button>
                                     </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="mail-tab" data-bs-toggle="tab"
+                                            data-bs-target="#mail" type="button" role="tab" aria-controls="mail"
+                                            aria-selected="false">Mail Ayarları</button>
+                                    </li>
                                 </ul>
                                 <div class="tab-content pt-3" id="settingsTabContent">
                                     <!-- General Settings Tab -->
@@ -355,6 +360,56 @@
                                                     value="<?= @$settings['exam']['break'] ?? 0 ?>">
                                                 <div class="form-text">Sınavlar arası molanın kaç dakika süreceğini
                                                     belirler. Varsayılan 0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Mail Settings Tab -->
+                                    <div class="tab-pane fade" id="mail" role="tabpanel" aria-labelledby="mail-tab">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][smtp_host][value]">SMTP Host</label>
+                                                <input type="hidden" name="settings[mail][smtp_host][type]" value="string">
+                                                <input type="text" class="form-control" id="settings[mail][smtp_host][value]" name="settings[mail][smtp_host][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_host'] ?? 'localhost') ?>">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][smtp_port][value]">SMTP Port</label>
+                                                <input type="hidden" name="settings[mail][smtp_port][type]" value="integer">
+                                                <input type="number" class="form-control" id="settings[mail][smtp_port][value]" name="settings[mail][smtp_port][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_port'] ?? '587') ?>">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][smtp_user][value]">Kullanıcı Adı (Email)</label>
+                                                <input type="hidden" name="settings[mail][smtp_user][type]" value="string">
+                                                <input type="text" class="form-control" id="settings[mail][smtp_user][value]" name="settings[mail][smtp_user][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_user'] ?? '') ?>">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][smtp_pass][value]">Parola</label>
+                                                <input type="hidden" name="settings[mail][smtp_pass][type]" value="string">
+                                                <input type="password" class="form-control" id="settings[mail][smtp_pass][value]" name="settings[mail][smtp_pass][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_pass'] ?? '') ?>">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][smtp_secure][value]">Güvenlik Tipi</label>
+                                                <input type="hidden" name="settings[mail][smtp_secure][type]" value="string">
+                                                <select class="form-select" id="settings[mail][smtp_secure][value]" name="settings[mail][smtp_secure][value]">
+                                                    <option value="tls" <?= (@$settings['mail']['smtp_secure'] == 'tls') ? 'selected' : '' ?>>TLS</option>
+                                                    <option value="ssl" <?= (@$settings['mail']['smtp_secure'] == 'ssl') ? 'selected' : '' ?>>SSL</option>
+                                                    <option value="" <?= (empty(@$settings['mail']['smtp_secure'])) ? 'selected' : '' ?>>Yok</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][mail_from][value]">Gönderen Email</label>
+                                                <input type="hidden" name="settings[mail][mail_from][type]" value="string">
+                                                <input type="email" class="form-control" id="settings[mail][mail_from][value]" name="settings[mail][mail_from][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_from'] ?? 'noreply@localhost') ?>">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="col-form-label" for="settings[mail][mail_from_name][value]">Gönderen Adı</label>
+                                                <input type="hidden" name="settings[mail][mail_from_name][type]" value="string">
+                                                <input type="text" class="form-control" id="settings[mail][mail_from_name][value]" name="settings[mail][mail_from_name][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_from_name'] ?? 'Schedule Maker') ?>">
                                             </div>
                                         </div>
                                     </div>

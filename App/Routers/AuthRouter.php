@@ -8,6 +8,7 @@ use App\Middlewares\GuestMiddleware;
 use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
+use App\Controllers\Auth\PasswordResetController;
 
 /**
  * AuthRouter Sınıfı
@@ -112,4 +113,26 @@ class AuthRouter extends Router
             echo json_encode($response);
         }
     }
+
+    public function forgotpasswordAction()
+    {
+        GuestMiddleware::handle();
+        $this->view_data["page_title"] = "Şifremi Unuttum";
+        $this->assetManager->loadPageAssets('loginpage');
+        $this->callView("auth/passwords/email");
+    }
+
+    public function resetpasswordAction()
+    {
+        GuestMiddleware::handle();
+        $this->view_data["page_title"] = "Şifre Sıfırlama";
+        // Token ve email kontrolü view içinde veya controller'da yapılabilir.
+        // Form'a datayı taşıyoruz.
+        $this->view_data["token"] = $_GET['token'] ?? '';
+        $this->view_data["email"] = $_GET['email'] ?? '';
+        
+        $this->assetManager->loadPageAssets('loginpage');
+        $this->callView("auth/passwords/reset");
+    }
+
 }

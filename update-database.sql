@@ -38,3 +38,21 @@ INSERT IGNORE INTO lesson_combinations (parent_lesson_id, child_lesson_id, type,
 SELECT exam_parent_lesson_id, id, 'exam', 'Bahar', '2025 - 2026'
 FROM lessons
 WHERE exam_parent_lesson_id IS NOT NULL;
+
+
+CREATE TABLE `password_resets` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  KEY `password_resets_email_index` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Mail Ayarları
+INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
+('mail', 'smtp_host', 'localhost', 'string'),
+('mail', 'smtp_port', '587', 'integer'),
+('mail', 'smtp_user', '', 'string'),
+('mail', 'smtp_pass', '', 'string'),
+('mail', 'smtp_secure', 'tls', 'string'),
+('mail', 'mail_from', 'noreply@localhost', 'string'),
+('mail', 'mail_from_name', 'Schedule Maker', 'string');

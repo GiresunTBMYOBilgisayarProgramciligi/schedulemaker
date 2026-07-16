@@ -15,7 +15,8 @@
     "ext-pdo": "*",
     "phpoffice/phpspreadsheet": "^4.0",
     "ext-fileinfo": "*",
-    "monolog/monolog": "^3.9"
+    "monolog/monolog": "^3.9",
+    "phpmailer/phpmailer": "^7.1"
   },
   "autoload": {
     "psr-4": {

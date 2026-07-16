@@ -42,6 +42,7 @@ class Application
      */
     public function __construct()
     {
+        $this->registerEvents();
         $this->ParseURL();
         $class = "App\\Routers\\" . $this->router;//namespace
         if (!class_exists($class)) {
@@ -96,7 +97,8 @@ class Application
      */
     protected function ParseURL(): void
     {
-        $request = trim($_SERVER["REQUEST_URI"], "/");
+        $uri = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+        $request = trim($uri, "/");
         if (!empty($request)) {
             $url = explode("/", $request);
             $this->router = isset($url[0]) ? ucfirst($url[0]) . "Router" : "HomeRouter";
@@ -110,4 +112,15 @@ class Application
         }
     }
 
+    /**
+     * Uygulama genelindeki olay dinleyicilerini (Event Listeners) kaydeder.
+     */
+    protected function registerEvents(): void
+    {
+        // Tüm olay (event) kayıtları config/events.php dosyasından yüklenir
+        $eventsPath = __DIR__ . '/../config/events.php';
+        if (file_exists($eventsPath)) {
+            require_once $eventsPath;
+        }
+    }
 }

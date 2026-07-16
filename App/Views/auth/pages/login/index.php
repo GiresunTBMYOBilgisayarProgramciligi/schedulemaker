@@ -45,6 +45,9 @@
                     </div>
                     <!--end::Row-->
                 </form>
+                <p class="mb-1 mt-3">
+                    <a href="/auth/forgotpassword">Şifremi unuttum</a>
+                </p>
             </div>
             <!-- /.login-card-body -->
         </div>
