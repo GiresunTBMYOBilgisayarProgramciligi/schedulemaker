@@ -56,3 +56,9 @@ INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
 ('mail', 'smtp_secure', 'tls', 'string'),
 ('mail', 'mail_from', 'noreply@localhost', 'string'),
 ('mail', 'mail_from_name', 'Schedule Maker', 'string');
+
+-- Mevcut tüm güvensiz '123456' şifrelerini iptal edip rastgele (bilinmeyen) bir şifre hash'i ile güncelleme
+-- Admin hesabı hariç tüm hesapların parolası güncellenir.
+UPDATE users 
+SET password = '$2y$12$.v6ue3TENGOvjgQyYEYJR.A0YctytywH1L3cF8MyA1jHjhYVLZFS2' 
+WHERE mail != 'sametatabasch@gmail.com';

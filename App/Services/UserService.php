@@ -26,7 +26,7 @@ class UserService extends BaseService
 
     /**
      * Yeni kullanıcı oluşturur.
-     * Şifreyi otomatik olarak hash'ler (girilmemişse varsayılan "123456").
+     * Şifreyi otomatik olarak hash'ler (girilmemişse rastgele 16 karakterli bir şifre atanır).
      *
      * @param UserDTO $dto Doğrulanmış ve paketlenmiş kullanıcı verileri
      * @return int Oluşturulan kullanıcının ID'si
@@ -37,7 +37,8 @@ class UserService extends BaseService
         $this->logger->info('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
 
         $userData = $dto->toArray();
-        $userData['password'] = password_hash($userData['password'] ?? '123456', PASSWORD_DEFAULT);
+        $password = !empty($userData['password']) ? $userData['password'] : bin2hex(random_bytes(8));
+        $userData['password'] = password_hash($password, PASSWORD_DEFAULT);
 
         try {
             return Database::transaction(function () use ($userData) {
