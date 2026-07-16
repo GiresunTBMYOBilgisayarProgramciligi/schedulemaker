@@ -45,7 +45,7 @@ abstract class Mailer
             $this->mailer->isHTML(true);
 
         } catch (Exception $e) {
-            Log::getInstance()->error("Mailer yapılandırma hatası: {$e->getMessage()}");
+            Log::logger()->error("Mailer yapılandırma hatası: {$e->getMessage()}", Log::context($this));
         }
     }
 
@@ -59,7 +59,7 @@ abstract class Mailer
         try {
             return $this->mailer->send();
         } catch (Exception $e) {
-            Log::getInstance()->error("E-posta gönderme hatası: {$this->mailer->ErrorInfo}");
+            Log::logger()->error("E-posta gönderme hatası: {$this->mailer->ErrorInfo}", Log::context($this));
             return false;
         }
     }
