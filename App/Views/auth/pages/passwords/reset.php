@@ -1,5 +1,5 @@
 <!--begin::Body-->
-<body class="login-page bg-body-secondary">
+<body class="login-page bg-body-secondary" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>" data-overlayscrollbars-initialize>
     <div class="login-box">
         <div class="card card-outline card-primary">
             <div class="card-header">
