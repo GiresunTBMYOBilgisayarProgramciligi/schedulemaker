@@ -21,6 +21,8 @@ class Gate
         'App\Models\Department' => 'App\Policies\DepartmentPolicy',
         'App\Models\Schedule' => 'App\Policies\SchedulePolicy',
         'App\Models\Classroom' => 'App\Policies\ClassroomPolicy',
+        'App\Models\Unit' => 'App\Policies\UnitPolicy',
+        'App\Models\Building' => 'App\Policies\BuildingPolicy',
     ];
 
     /**

@@ -5,8 +5,9 @@ namespace App\Routers;
 use App\Middlewares\AuthMiddleware;
 use App\Controllers\UserController;
 use App\Controllers\ClassroomController;
-
 use App\Controllers\DepartmentController;
+use App\Controllers\UnitController;
+use App\Controllers\BuildingController;
 use App\Services\LessonService;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
@@ -530,6 +531,54 @@ class AjaxRouter extends Router
     public function resetpasswordAction(): void
     {
         $this->response = (new PasswordResetController())->resetPassword($this->data);
+        $this->sendResponse();
+    }
+
+    /*
+     * Unit (Birim) Ajax Actions
+     */
+    /** @throws Exception */
+    public function addUnitAction(): void
+    {
+        $this->response = (new UnitController())->store($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function updateUnitAction(): void
+    {
+        $this->response = (new UnitController())->update($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function deleteUnitAction(): void
+    {
+        $this->response = (new UnitController())->destroy($this->data);
+        $this->sendResponse();
+    }
+
+    /*
+     * Building (Bina) Ajax Actions
+     */
+    /** @throws Exception */
+    public function addBuildingAction(): void
+    {
+        $this->response = (new BuildingController())->store($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function updateBuildingAction(): void
+    {
+        $this->response = (new BuildingController())->update($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function deleteBuildingAction(): void
+    {
+        $this->response = (new BuildingController())->destroy($this->data);
         $this->sendResponse();
     }
 }

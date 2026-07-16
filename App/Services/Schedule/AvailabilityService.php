@@ -59,13 +59,20 @@ class AvailabilityService extends BaseService
         $lesson = (new Lesson())->find($filters['lesson_id'])
             ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
 
+        $whereConditions = [];
+        if (!empty($lesson->building_id)) {
+            $whereConditions['building_id'] = $lesson->building_id;
+        }
+
         if (ExamType::isExamType($schedule->type)) {
             // Sınav → UZEM (type=3) hariç tüm derslikler
-            $classrooms = (new Classroom())->get()->where(["type" => ['!=' => 3]])->all();
+            $whereConditions['type'] = ['!=' => 3];
+            $classrooms = (new Classroom())->get()->where($whereConditions)->all();
         } else {
             // Ders → classroom_type ile eşleşen derslikler (Karma=4 ise Lab+Derslik)
             $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
-            $classrooms = (new Classroom())->get()->where(["type" => ['in' => $classroom_type]])->all();
+            $whereConditions['type'] = ['in' => $classroom_type];
+            $classrooms = (new Classroom())->get()->where($whereConditions)->all();
         }
 
         $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];

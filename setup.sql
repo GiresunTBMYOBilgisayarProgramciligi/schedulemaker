@@ -62,6 +62,26 @@ create table if not exists schedule_items
     CONSTRAINT fk_schedule_items_schedule_id foreign key (schedule_id) references schedules (id) on delete cascade
 ) ENGINE = INNODB;
 
+# Üst birim tablosu (Fakülte, Enstitü, MYO, Yüksekokul vb.)
+create table if not exists units
+(
+    id     INT AUTO_INCREMENT,
+    name   VARCHAR(150) NOT NULL,
+    type   VARCHAR(30)  NOT NULL,
+    active TINYINT(1) DEFAULT 1,
+    PRIMARY KEY (id),
+    UNIQUE (name)
+) ENGINE = INNODB;
+
+# Bina tablosu (kampüsteki binalar)
+create table if not exists buildings
+(
+    id   INT AUTO_INCREMENT,
+    name VARCHAR(150) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (name)
+) ENGINE = INNODB;
+
 create table if not exists users
 (
     id            int AUTO_INCREMENT,
@@ -73,9 +93,10 @@ create table if not exists users
     title         varchar(50),
     department_id int,
     program_id    int,
+    unit_id       int,
     register_date timestamp   default current_timestamp,
     last_login    timestamp,
-    approved      BOOLEAN     DEFAULT false, -- Onay alanı
+    approved      BOOLEAN     DEFAULT false,
     primary key (id),
     unique (mail)
 ) ENGINE = INNODB;
@@ -85,22 +106,26 @@ create table if not exists departments
     id             int AUTO_INCREMENT,
     name           varchar(100),
     chairperson_id int,
-    active tinyint(1) default 0,
+    active         tinyint(1) default 0,
+    unit_id        int,
     primary key (id),
     unique (name),
-    CONSTRAINT fk_departments_chairperson_id foreign key (chairperson_id) references users (id) on delete set null on update cascade
+    CONSTRAINT fk_departments_chairperson_id foreign key (chairperson_id) references users (id) on delete set null on update cascade,
+    CONSTRAINT fk_departments_unit_id foreign key (unit_id) references units (id) on delete set null on update cascade
 ) ENGINE = INNODB;
 
 create table if not exists classrooms
 (
-    id         int AUTO_INCREMENT,
-    name       varchar(20),
-    plan       text,       # oturma planı
-    type       varchar(50),# uzem, lab, normal
-    class_size int default 0,
-    exam_size  int default 0,
+    id          int AUTO_INCREMENT,
+    name        varchar(20),
+    plan        text,
+    type        varchar(50),
+    class_size  int default 0,
+    exam_size   int default 0,
+    building_id int,
     primary key (id),
-    unique (name)
+    unique (name),
+    CONSTRAINT fk_classrooms_building_id foreign key (building_id) references buildings (id) on delete set null on update cascade
 ) ENGINE = INNODB;
 
 create table if not exists programs
@@ -130,12 +155,13 @@ create table if not exists lessons
     semester       varchar(20),
     academic_year  varchar(12),
     classroom_type int,
+    building_id    int,
     primary key (id),
     unique (code, program_id, group_no),
     CONSTRAINT fk_lessons_lecturer_id foreign key (lecturer_id) references users (id) on delete set null,
     CONSTRAINT fk_lessons_department_id foreign key (department_id) references departments (id) on delete set null,
-    CONSTRAINT fk_lessons_program_id foreign key (program_id) references programs (id) on delete set null
-
+    CONSTRAINT fk_lessons_program_id foreign key (program_id) references programs (id) on delete set null,
+    CONSTRAINT fk_lessons_building_id foreign key (building_id) references buildings (id) on delete set null
 ) ENGINE = INNODB;
 
 create table if not exists lesson_combinations
@@ -169,6 +195,8 @@ ALTER TABLE users
     ADD CONSTRAINT fk_users_department_id FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE users
     ADD CONSTRAINT fk_users_program_id FOREIGN KEY (program_id) REFERENCES programs (id) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_unit_id FOREIGN KEY (unit_id) REFERENCES units (id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 /* password is 123456 */
 insert into users (password, mail, name, last_name, title, role, approved)values ('$2y$10$OOqHpMPJhvAR2uyoLFCPAuKTgFJDfEB1CtlrpSnxB9SQIYc/bWqYC', 'admin@admin.com', 'Admin', 'Admin', 'Admin', 'admin', true);

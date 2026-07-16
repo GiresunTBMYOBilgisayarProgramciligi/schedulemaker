@@ -18,7 +18,8 @@ readonly class UserDTO
         public ?string $password = null,
         public ?UserTitle $title = null,
         public ?int $departmentId = null,
-        public ?int $programId = null
+        public ?int $programId = null,
+        public ?int $unitId = null
     ) {
     }
 
@@ -38,7 +39,8 @@ readonly class UserDTO
             password: !empty($validatedData['password']) ? $validatedData['password'] : null,
             title: !empty($validatedData['title']) ? UserTitle::tryFrom($validatedData['title']) : null,
             departmentId: !empty($validatedData['department_id']) ? (int) $validatedData['department_id'] : null,
-            programId: !empty($validatedData['program_id']) ? (int) $validatedData['program_id'] : null
+            programId: !empty($validatedData['program_id']) ? (int) $validatedData['program_id'] : null,
+            unitId: !empty($validatedData['unit_id']) ? (int) $validatedData['unit_id'] : null
         );
     }
 
@@ -70,6 +72,10 @@ readonly class UserDTO
 
         if ($this->programId !== null) {
             $data['program_id'] = $this->programId;
+        }
+
+        if ($this->unitId !== null) {
+            $data['unit_id'] = $this->unitId;
         }
 
         return $data;

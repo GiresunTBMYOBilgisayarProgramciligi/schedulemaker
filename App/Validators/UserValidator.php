@@ -61,6 +61,11 @@ class UserValidator extends BaseValidator
             $errors['title'] = 'Geçersiz akademik ünvan seçimi.';
         }
 
+        // Üst Birim (Unit) Kontrolü
+        if (!empty($data['unit_id']) && !is_numeric($data['unit_id'])) {
+            $errors['unit_id'] = 'Üst birim ID değeri sayısal olmalıdır.';
+        }
+
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }

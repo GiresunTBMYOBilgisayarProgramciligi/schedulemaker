@@ -3,6 +3,7 @@
  * @var \App\Controllers\UserController $userController
  * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
  * @var array $departments \App\Models\Department->getDepartments())
+ * @var array $units
  * @var string $page_title
  */
 use App\Enums\UserRole;
@@ -93,6 +94,19 @@ use App\Enums\UserTitle;
                                                 <option value=""></option>
                                                 <?php foreach (UserTitle::cases() as $titleEnum): ?>
                                                     <option value="<?= $titleEnum->value ?>"><?= $titleEnum->value ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="unit_id">Üst Birim</label>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id">
+                                                <option value="">Birim Seçiniz (Opsiyonel)</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

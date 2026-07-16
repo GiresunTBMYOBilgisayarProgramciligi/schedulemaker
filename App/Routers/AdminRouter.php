@@ -273,4 +273,58 @@ class AdminRouter extends Router
     {
         $this->pageController->downloadFile($filename);
     }
+
+    /*
+     * Unit Routes (Birimler: Fakülte, MYO, Enstitü vb.)
+     */
+    public function ListUnitsAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getListUnitsPageData($this->assetManager));
+        $this->callView('admin/units/listunits');
+    }
+
+    public function AddUnitAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getAddUnitPageData($this->assetManager));
+        $this->callView('admin/units/addunit');
+    }
+
+    public function unitAction($id = null)
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getUnitPageData($this->assetManager, $id));
+        $this->callView('admin/units/unit');
+    }
+
+    public function editUnitAction($id = null)
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditUnitPageData($this->assetManager, $id));
+        $this->callView('admin/units/editunit');
+    }
+
+    /*
+     * Building Routes (Binalar)
+     */
+    public function ListBuildingsAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getListBuildingsPageData($this->assetManager));
+        $this->callView('admin/buildings/listbuildings');
+    }
+
+    public function AddBuildingAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getAddBuildingPageData($this->assetManager));
+        $this->callView('admin/buildings/addbuilding');
+    }
+
+    public function buildingAction($id = null)
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getBuildingPageData($this->assetManager, $id));
+        $this->callView('admin/buildings/building');
+    }
+
+    public function editBuildingAction($id = null)
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditBuildingPageData($this->assetManager, $id));
+        $this->callView('admin/buildings/editbuilding');
+    }
 }

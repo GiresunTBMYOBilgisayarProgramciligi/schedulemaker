@@ -11,14 +11,19 @@ use App\Models\Lesson;
 use App\Models\Log;
 use App\Models\Program;
 use App\Models\User;
+use App\Models\Unit;
+use App\Models\Building;
 use App\Repositories\ClassroomRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
+use App\Repositories\UnitRepository;
+use App\Repositories\BuildingRepository;
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
+use App\Enums\UnitType;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use Exception;
@@ -90,6 +95,7 @@ class AdminPageController extends Controller
         return [
             "page_title" => "Kullanıcı Ekle",
             "userController" => new UserController(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_id" => $department_id,
             "program_id" => $program_id
@@ -119,6 +125,7 @@ class AdminPageController extends Controller
             "canEditSpecialFields" => Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id),
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
@@ -179,6 +186,7 @@ class AdminPageController extends Controller
         return [
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
+            "units" => (new UnitRepository())->getAllUnits(),
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "programController" => new ProgramController(),
@@ -284,6 +292,7 @@ class AdminPageController extends Controller
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "lessonController" => new LessonController(),
             "classroomTypes" => ClassroomType::toArray(),
+            "buildings" => (new BuildingRepository())->getAllBuildings(),
             "program_id" => $program_id
         ];
         if ($currentUser->role == "department_head") {
@@ -319,7 +328,8 @@ class AdminPageController extends Controller
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
-            "classroomTypes" => ClassroomType::toArray()
+            "classroomTypes" => ClassroomType::toArray(),
+            "buildings" => (new BuildingRepository())->getAllBuildings()
         ];
         
         if ($currentUser->role == "department_head") {
@@ -402,7 +412,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
         return [
             "classroomController" => new ClassroomController(),
-            "classrooms" => (new ClassroomRepository())->findAll(),
+            "classrooms" => (new Classroom())->get()->with('building')->all(),
             "page_title" => "Derslik Listesi"
         ];
     }
@@ -412,8 +422,9 @@ class AdminPageController extends Controller
         Gate::authorize("create", Classroom::class, "Yeni derslik ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
-            "page_title" => "Derslik Ekle",
-            "classroomTypes" => ClassroomType::toArray()
+            "page_title"     => "Derslik Ekle",
+            "classroomTypes" => ClassroomType::toArray(),
+            "buildings"      => (new BuildingRepository())->getAllBuildings(),
         ];
     }
 
@@ -431,9 +442,10 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "classroomController" => new ClassroomController(),
-            "classroom" => $classroom,
-            "classroomTypes" => ClassroomType::toArray(),
-            "page_title" => $classroom->name . "Düzenle",
+            "classroom"           => $classroom,
+            "classroomTypes"      => ClassroomType::toArray(),
+            "buildings"           => (new BuildingRepository())->getAllBuildings(),
+            "page_title"          => $classroom->name . " Düzenle",
         ];
     }
 
@@ -472,7 +484,8 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Bölüm Ekle",
-            "lecturers" => (new UserRepository())->getAllLecturers()
+            "lecturers"  => (new UserRepository())->getAllLecturers(),
+            "units"      => (new UnitRepository())->getAllUnits(),
         ];
     }
 
@@ -490,9 +503,10 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "departmentController" => new DepartmentController(),
-            "department" => $department,
-            "page_title" => $department->name ?? "" . " Düzenle",
-            "lecturers" => (new UserRepository())->getAllLecturers(),
+            "department"           => $department,
+            "page_title"           => ($department->name ?? '') . ' Düzenle',
+            "lecturers"            => (new UserRepository())->getAllLecturers(),
+            "units"                => (new UnitRepository())->getAllUnits(),
         ];
     }
 
@@ -709,7 +723,7 @@ class AdminPageController extends Controller
         $logs = (new Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
         return [
             "page_title" => "Kayıtlar",
-            "logs" => $logs,
+            "logs"       => $logs,
         ];
     }
 
@@ -721,29 +735,24 @@ class AdminPageController extends Controller
         $filename = urldecode($filename);
         $filename = basename($filename);
         $filePath = $_ENV["DOWNLOAD_PATH"] . "/" . $filename;
-        // Dosya yolu geçerli mi?
         if (!file_exists($filePath)) {
             if ($_ENV["DEBUG"]) {
                 error_log(__LINE__ . ". satırda filePath değişkeni:" . var_export($filePath, true));
             }
-
             throw new Exception("İndirilecek dosya bulunamadı", 404);
         }
 
-        // Güvenlik önlemi: Gerçek yol kontrolü (isteğe bağlı)
         $realPath = realpath($filePath);
-        $baseDir = realpath($_ENV["DOWNLOAD_PATH"]); // indirilebilir dosyaların olduğu klasör
+        $baseDir  = realpath($_ENV["DOWNLOAD_PATH"]);
         if (!str_starts_with($realPath, $baseDir)) {
             throw new Exception("Bu dosyaya erişim izniniz yok.", 403);
         }
 
-        // Dosya bilgileri
-        $filename = basename($filePath);
+        $filename        = basename($filePath);
         $encodedFilename = rawurlencode($filename);
-        $fileSize = filesize($filePath);
-        $fileType = mime_content_type($filePath);
+        $fileSize        = filesize($filePath);
+        $fileType        = mime_content_type($filePath);
 
-        // İndirme başlıkları
         header("Content-Description: File Transfer");
         header("Content-Type: " . $fileType);
         header("Content-Disposition: attachment; filename=\"$filename\"; filename*=UTF-8''$encodedFilename");
@@ -752,8 +761,132 @@ class AdminPageController extends Controller
         header("Pragma: public");
         header("Expires: 0");
 
-        // Dosyayı gönder
         readfile($filePath);
         exit;
+    }
+
+    // =========================================================
+    // Birim (Unit) Sayfaları
+    // =========================================================
+
+    public function getListUnitsPageData(AssetManager $assetManager): array
+    {
+        Gate::authorize('view', Unit::class, 'Birim listesini görme yetkiniz yok');
+        $assetManager->loadPageAssets('listpages');
+        return [
+            'units'      => (new UnitRepository())->getAllUnits(),
+            'unitTypes'  => UnitType::toArray(),
+            'page_title' => 'Birim Listesi',
+        ];
+    }
+
+    public function getAddUnitPageData(AssetManager $assetManager): array
+    {
+        Gate::authorize('create', Unit::class, 'Yeni birim ekleme yetkiniz yok');
+        $assetManager->loadPageAssets('formpages');
+        return [
+            'page_title' => 'Birim Ekle',
+            'unitTypes'  => UnitType::toArray(),
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getUnitPageData(AssetManager $assetManager, $id = null): array
+    {
+        if (is_null($id)) {
+            throw new Exception('Birim ID belirtilmeli.');
+        }
+        $unit = (new UnitRepository())->findUnitWithDetails($id)
+            ?: throw new Exception('Birim bulunamadı.');
+
+        Gate::authorize('view', $unit, 'Bu birimi görme yetkiniz yok');
+        $assetManager->loadPageAssets('listpages');
+        $assetManager->loadPageAssets('singlepages');
+        return [
+            'unit'       => $unit,
+            'page_title' => $unit->name . ' Sayfası',
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getEditUnitPageData(AssetManager $assetManager, $id = null): array
+    {
+        if (is_null($id)) {
+            throw new Exception('Birim bulunamadı.');
+        }
+        $unit = (new Unit())->find($id) ?: throw new Exception('Birim bulunamadı.');
+        Gate::authorize('update', $unit, 'Bu birimi düzenleme yetkiniz yok');
+        $assetManager->loadPageAssets('formpages');
+        return [
+            'unit'       => $unit,
+            'unitTypes'  => UnitType::toArray(),
+            'page_title' => ($unit->name ?? '') . ' Düzenle',
+        ];
+    }
+
+    // =========================================================
+    // Bina (Building) Sayfaları
+    // =========================================================
+
+    public function getListBuildingsPageData(AssetManager $assetManager): array
+    {
+        Gate::authorize('view', Building::class, 'Bina listesini görme yetkiniz yok');
+        $assetManager->loadPageAssets('listpages');
+        return [
+            'buildings'  => (new BuildingRepository())->getAllBuildings(),
+            'page_title' => 'Bina Listesi',
+        ];
+    }
+
+    public function getAddBuildingPageData(AssetManager $assetManager): array
+    {
+        Gate::authorize('create', Building::class, 'Yeni bina ekleme yetkiniz yok');
+        $assetManager->loadPageAssets('formpages');
+        return [
+            'page_title' => 'Bina Ekle',
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getBuildingPageData(AssetManager $assetManager, $id): array
+    {
+        if (is_null($id)) {
+            throw new Exception('Bina bulunamadı.');
+        }
+
+        $building = (new Building())->with('classrooms')->find($id);
+        if (!$building) {
+            throw new Exception('Bina bulunamadı.');
+        }
+
+        Gate::authorize('view', $building, 'Bina detayını görme yetkiniz yok');
+        
+        return [
+            'page_title' => $building->name,
+            'building'   => $building,
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getEditBuildingPageData(AssetManager $assetManager, $id = null): array
+    {
+        if (is_null($id)) {
+            throw new Exception('Bina bulunamadı.');
+        }
+        $building = (new Building())->find($id) ?: throw new Exception('Bina bulunamadı.');
+        Gate::authorize('update', $building, 'Bu binayı düzenleme yetkiniz yok');
+        $assetManager->loadPageAssets('formpages');
+        return [
+            'building'   => $building,
+            'page_title' => ($building->name ?? '') . ' Düzenle',
+        ];
     }
 }

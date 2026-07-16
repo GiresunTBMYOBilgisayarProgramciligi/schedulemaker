@@ -7,6 +7,7 @@
  * @var string $page_title
  * @var array $lecturers
  * @var array $classroomTypes
+ * @var \App\Models\Building[] $buildings
  */
 
 use function App\Helpers\getSettingValue;
@@ -174,6 +175,17 @@ use function App\Helpers\getSettingValue;
                                                     <option value="Yaz" <?= getSettingValue("semester") == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                                 </select>
                                             </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="col-form-label" for="building_id">Bina Seçimi</label>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
+                                                <option value="">Bina seçiniz...</option>
+                                                <?php foreach ($buildings as $building): ?>
+                                                    <option value="<?= $building->id ?>"><?= htmlspecialchars($building->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

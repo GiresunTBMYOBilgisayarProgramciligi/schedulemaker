@@ -6,6 +6,7 @@ class DepartmentDTO
 {
     public ?string $name = null;
     public ?int $chairperson_id = null;
+    public ?int $unit_id = null;
     public ?bool $active = null;
 
     /**
@@ -16,16 +17,14 @@ class DepartmentDTO
     public static function fromArray(array $data): self
     {
         $dto = new self();
-        $dto->name = $data['name'] ?? null;
+        $dto->name           = $data['name'] ?? null;
         $dto->chairperson_id = isset($data['chairperson_id']) && $data['chairperson_id'] !== '' ? (int)$data['chairperson_id'] : null;
-        
-        // Checkbox'dan gelen veriyi boolean'a çevir (frontend "1" veya true gönderebilir, işaretlenmezse gelmez)
+        $dto->unit_id        = isset($data['unit_id']) && $data['unit_id'] !== '' ? (int)$data['unit_id'] : null;
+
         if (isset($data['active'])) {
             $dto->active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);
         } else {
-            // Eğer update işleminde checkbox işaretsizse form datada hiç gelmeyebilir, 
-            // bunu validator/controller tarafında false veya null geçerek kontrol edeceğiz.
-            $dto->active = false; 
+            $dto->active = false;
         }
 
         return $dto;
@@ -38,9 +37,10 @@ class DepartmentDTO
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
+            'name'           => $this->name,
             'chairperson_id' => $this->chairperson_id,
-            'active' => $this->active,
+            'unit_id'        => $this->unit_id,
+            'active'         => $this->active ? 1 : 0,
         ];
     }
 }

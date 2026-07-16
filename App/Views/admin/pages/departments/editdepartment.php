@@ -1,9 +1,9 @@
 <?php
 /**
- * @var \App\Models\User $lecturer
  * @var \App\Models\Department $department
  * @var string $page_title
  * @var array $lecturers
+ * @var \App\Models\Unit[] $units
  */
 ?>
 <!--begin::App Main-->
@@ -48,7 +48,20 @@
                                                    placeholder="Adı" value="<?= $department->name ?>" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-5">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="unit_id">Üst Birim (Fakülte / MYO vb.)</label>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id">
+                                                <option value=""></option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>" <?= $department->unit_id == $unit->id ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($unit->name) ?> (<?= $unit->getTypeName() ?>)
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
                                         <div class="mb-3">
                                             <label class="form-label" for="chairperson_id">Bölüm Başkanı</label>
                                             <select class="form-select tom-select" id="chairperson_id"

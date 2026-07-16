@@ -61,6 +61,9 @@ class LessonValidator extends BaseValidator
             } elseif (\App\Enums\LessonType::tryFrom((int)$data['type']) === null) {
                 $errors['type'] = 'Geçersiz ders türü.';
             }
+            if (!empty($data['building_id']) && !is_numeric($data['building_id'])) {
+                $errors['building_id'] = 'Bina ID değeri sayısal olmalıdır.';
+            }
         }
 
         // Genel kontroller (Hoca da değiştirebilir)

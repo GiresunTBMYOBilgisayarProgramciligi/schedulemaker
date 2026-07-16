@@ -3,9 +3,8 @@
  * @var \App\Models\User $user
  * @var \App\Controllers\UserController $userController
  * @var array $departments
+ * @var array $units
  * @var string $page_title
- * @var string $scheduleHTML
- * @var bool $canEditSpecialFields
  */
 
 use App\Core\Gate;
@@ -168,6 +167,21 @@ use App\Core\Gate;
                                                 <?php foreach (App\Enums\UserTitle::cases() as $titleEnum): ?>
                                                     <option value="<?= $titleEnum->value ?>"
                                                         <?= $titleEnum->value == $user->title ? "selected" : "" ?>><?= $titleEnum->value ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="unit_id">Üst Birim</label>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id" <?= !$canEditSpecialFields ? 'disabled' : '' ?>>
+                                                <option value="">Birim Seçiniz (Opsiyonel)</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>" <?= $unit->id == $user->unit_id ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($unit->name) ?>
+                                                    </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

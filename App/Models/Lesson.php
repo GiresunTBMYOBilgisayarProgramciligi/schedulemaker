@@ -41,6 +41,7 @@ class Lesson extends Model
      */
     public ?int $classroom_type = null;
     public ?string $academic_year = null;
+    public ?int $building_id = null;
     /**
      * Ders programına eklemeye uygun olmayan saat miktarı. Bu saatler zaten programa eklenmiş
      * @var int|null
@@ -56,13 +57,14 @@ class Lesson extends Model
     public ?User $lecturer = null;
     public ?Department $department = null;
     public ?Program $program = null;
+    public ?Building $building = null;
     public ?Lesson $parentLesson = null;
     public array $childLessons = [];
     public ?Lesson $examParentLesson = null;
     public array $examChildLessons = [];
     public array $schedules = [];
     protected string $table_name = "lessons";
-    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'building', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
 
 
 
@@ -93,7 +95,7 @@ class Lesson extends Model
         $query = (new Schedule())->get()
             ->where([
                 'owner_type' => OwnerType::LESSON->value,
-                'owner_id' => ['in' => $ids]
+                'owner_id'   => ['in' => $ids]
             ]);
 
         if (isset($options['with'])) {
@@ -109,6 +111,39 @@ class Lesson extends Model
 
         foreach ($results as &$row) {
             $row['schedules'] = $schedulesGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getBuildingRelation(array $results, array $options = []): array
+    {
+        $buildingIds = array_unique(array_column($results, 'building_id'));
+        $buildingIds = array_filter($buildingIds);
+        if (empty($buildingIds))
+            return $results;
+
+        $query = (new Building())->get()->where(['id' => ['in' => $buildingIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $buildings = $query->all();
+        $buildingsKeyed = [];
+        foreach ($buildings as $building) {
+            $buildingsKeyed[$building->id] = $building;
+        }
+
+        foreach ($results as &$row) {
+            $row['building'] = isset($row['building_id']) && isset($buildingsKeyed[$row['building_id']])
+                ? $buildingsKeyed[$row['building_id']]
+                : null;
         }
         return $results;
     }

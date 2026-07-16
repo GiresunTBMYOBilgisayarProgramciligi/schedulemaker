@@ -3,6 +3,7 @@
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
  * @var array $classroomTypes
+ * @var \App\Models\Building[] $buildings
  */
 ?>
 <!--begin::App Main-->
@@ -49,6 +50,19 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="">
+                                            <label class="form-label" for="building_id">Bina</label>
+                                            <select name="building_id" id="building_id" class="form-select tom-select" required>
+                                                <option value="">Bina seçiniz...</option>
+                                                <?php foreach ($buildings as $building): ?>
+                                                    <option value="<?= $building->id ?>" <?= $classroom->building_id == $building->id ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($building->name) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="">
                                             <label class="form-label" for="type"> Türü</label>
                                             <select name="type" id="type" class="form-select">
                                                 <?php foreach ($classroomTypes as $id => $type): ?>
@@ -57,7 +71,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="">
                                             <label class="form-label" for="class_size">Ders Mevcudu</label>
                                             <input type="number" class="form-control" id="class_size" name="class_size"
@@ -65,7 +79,7 @@
                                                    required>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="">
                                             <label class="form-label" for="exam_size">Sınav Mevcudu</label>
                                             <input type="number" class="form-control" id="exam_size" name="exam_size"

@@ -30,6 +30,11 @@ class DepartmentValidator extends BaseValidator
             $errors['chairperson_id'] = 'Bölüm başkanı ID değeri sayısal olmalıdır.';
         }
 
+        // Üst Birim doğrulaması (Opsiyonel, boş bırakılabilir ama doluysa sayısal olmalı)
+        if (!empty($data['unit_id']) && !is_numeric($data['unit_id'])) {
+            $errors['unit_id'] = 'Üst birim ID değeri sayısal olmalıdır.';
+        }
+
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }

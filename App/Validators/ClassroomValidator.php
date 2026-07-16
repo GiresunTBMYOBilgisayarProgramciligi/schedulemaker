@@ -44,6 +44,13 @@ class ClassroomValidator extends BaseValidator
             $errors['type'] = 'Geçersiz derslik türü seçildi.';
         }
 
+        // Bina doğrulaması
+        if (empty($data['building_id'])) {
+            $errors['building_id'] = 'Dersliğin bulunacağı bina zorunludur.';
+        } elseif (!is_numeric($data['building_id'])) {
+            $errors['building_id'] = 'Bina ID değeri sayısal olmalıdır.';
+        }
+
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }

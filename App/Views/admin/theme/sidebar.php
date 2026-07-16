@@ -132,6 +132,36 @@ use App\Core\Gate;
                     </li>
                 <?php endif; ?>
                 <!-- /Ders İşlemleri -->
+                <!-- Bina İşlemleri -->
+                <?php if (Gate::allowsRole("submanager")): ?>
+                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'menu-open' : ''; ?>">
+                        <a href="#"
+                            class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'active' : ''; ?>">
+                            <i class="nav-icon bi bi-building-fill-gear"></i>
+                            <p>
+                                Bina İşlemleri
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="/admin/listbuildings"
+                                    class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listbuildings')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-list-ul"></i>
+                                    <p>Liste</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/admin/addbuilding"
+                                    class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addbuilding')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-plus"></i>
+                                    <p>Ekle</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                <?php endif; ?>
+                <!-- /Bina İşlemleri -->
                 <!-- Derslik İşlemleri -->
                 <?php if (Gate::allowsRole("submanager")): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
@@ -206,6 +236,31 @@ use App\Core\Gate;
                         </a>
                         <ul class="nav nav-treeview">
                             <?php if (Gate::allowsRole("submanager")): ?>
+                                <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'menu-open' : ''; ?>">
+                                    <a href="#" class="nav-link">
+                                        <i class="bi bi-bank nav-icon"></i>
+                                        <p>
+                                            Üst Birim İşlemleri
+                                            <i class="nav-arrow bi bi-chevron-right"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        <li class="nav-item">
+                                            <a href="/admin/listunits"
+                                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listunits')) ? 'active' : ''; ?>">
+                                                <i class="nav-icon bi bi-list-ul"></i>
+                                                <p>Liste</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="/admin/addunit"
+                                                class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addunit')) ? 'active' : ''; ?>">
+                                                <i class="nav-icon bi bi-plus"></i>
+                                                <p>Ekle</p>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <li
                                     class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'department') or str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
                                     <a href="#" class="nav-link">

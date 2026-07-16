@@ -42,6 +42,7 @@
                             <th scope="col">İd</th>
                             <th scope="col">Adı</th>
                             <th scope="col" class="filterable">Türü</th>
+                            <th scope="col" class="filterable">Bina</th>
                             <th scope="col">Ders Mevcudu</th>
                             <th scope="col">Sınav Mevcudu</th>
                             <th scope="col" class="text-center">İşlemler</th>
@@ -53,6 +54,7 @@
                                 <td><?= $classroom->id ?></td>
                                 <td><?= $classroom->name ?></td>
                                 <td><?= $classroom->getTypeName() ?></td>
+                                <td><?= $classroom->building->name ?? '-' ?></td>
                                 <td><?= $classroom->class_size ?></td>
                                 <td><?= $classroom->exam_size ?></td>
                                 <td class="text-center">

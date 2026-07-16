@@ -12,14 +12,16 @@ class Department extends Model
     public ?int $id = null;
     public ?string $name = null;
     public ?int $chairperson_id = null;
+    public ?int $unit_id = null;
 
     public ?bool $active = null;
 
     public ?User $chairperson = null;
+    public ?Unit $unit = null;
     public array $programs = [];
     public array $users = [];
     public array $lessons = [];
-    protected array $excludeFromDb = ['chairperson', 'programs', 'users', 'lessons'];
+    protected array $excludeFromDb = ['chairperson', 'unit', 'programs', 'users', 'lessons'];
     protected string $table_name = "departments";
 
 
@@ -39,6 +41,39 @@ class Department extends Model
      * @return array
      * @throws Exception
      */
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getUnitRelation(array $results, array $options = []): array
+    {
+        $unitIds = array_unique(array_column($results, 'unit_id'));
+        $unitIds = array_filter($unitIds);
+        if (empty($unitIds))
+            return $results;
+
+        $query = (new Unit())->get()->where(['id' => ['in' => $unitIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $units = $query->all();
+        $unitsKeyed = [];
+        foreach ($units as $unit) {
+            $unitsKeyed[$unit->id] = $unit;
+        }
+
+        foreach ($results as &$row) {
+            $row['unit'] = isset($row['unit_id']) && isset($unitsKeyed[$row['unit_id']])
+                ? $unitsKeyed[$row['unit_id']]
+                : null;
+        }
+        return $results;
+    }
+
     public function getChairpersonRelation(array $results, array $options = []): array
     {
         $userIds = array_unique(array_column($results, 'chairperson_id'));

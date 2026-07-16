@@ -19,6 +19,7 @@ class LessonDTO
     public ?string $semester;
     public ?int $classroom_type;
     public ?string $academic_year;
+    public ?int $building_id;
 
     public function __construct(
         ?string $code,
@@ -33,7 +34,8 @@ class LessonDTO
         ?int $program_id,
         ?string $semester,
         ?int $classroom_type,
-        ?string $academic_year
+        ?string $academic_year,
+        ?int $building_id
     ) {
         $this->code = $code;
         $this->group_no = $group_no;
@@ -48,6 +50,7 @@ class LessonDTO
         $this->semester = $semester;
         $this->classroom_type = $classroom_type;
         $this->academic_year = $academic_year;
+        $this->building_id = $building_id;
     }
 
     public static function fromArray(array $data): self
@@ -65,7 +68,8 @@ class LessonDTO
             isset($data['program_id']) && $data['program_id'] !== '' && $data['program_id'] != '0' ? (int)$data['program_id'] : null,
             $data['semester'] ?? null,
             isset($data['classroom_type']) && $data['classroom_type'] !== '' ? (int)$data['classroom_type'] : null,
-            $data['academic_year'] ?? null
+            $data['academic_year'] ?? null,
+            isset($data['building_id']) && $data['building_id'] !== '' && $data['building_id'] != '0' ? (int)$data['building_id'] : null
         );
     }
 
@@ -84,7 +88,8 @@ class LessonDTO
             'program_id' => $this->program_id,
             'semester' => $this->semester,
             'classroom_type' => $this->classroom_type,
-            'academic_year' => $this->academic_year
+            'academic_year' => $this->academic_year,
+            'building_id' => $this->building_id
         ], fn($value) => $value !== null);
     }
 }
