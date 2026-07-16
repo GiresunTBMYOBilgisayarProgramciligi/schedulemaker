@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.7] - 2026-07-16
+
+### Added
+- Şifre sıfırlama (Forgot Password) sistemi (Service, Repository, Mailer, Controller, View, DTO) eklendi.
+- E-posta işlemleri için `Mailer` çekirdek sınıfı ve `Events` yapısı (Dispatcher, Listeners) oluşturuldu.
+- `Settings` (Ayarlar) sayfasına "Mail Ayarları" sekmesi eklendi ve veritabanı ayarları ile entegre edildi.
+- `lesson_combinations` tablosu oluşturularak ders ve sınav birleştirmeleri yeni tabloya taşındı.
+
+### Changed
+- `UserService` güncellenerek yeni kullanıcı oluşturma işleminde varsayılan "123456" şifresi yerine rastgele güçlü şifre ataması yapıldı.
+- Profil güncellemelerinde yetki kontrolü sıkılaştırıldı; Bölüm, Program ve Unvan alanları yalnızca yöneticiler tarafından değiştirilebilir hale getirildi.
+- `AjaxRouter` ve yetkilendirme (Auth) denetleyicileri (Controller) iyileştirildi; metotlar merkezi `sendResponse()` mimarisi ile uyumlu olarak `array` döndürecek şekilde refactor edildi.
+
+### Fixed
+- Ders programında eksik görünen derslerin listelenmemesi sorunu (AvailabilityService) giderildi.
+- Sınav/ders atamalarında aynı saatte aynı dersliğe birden fazla grubun atanmasına neden olan çakışma (conflict) engellendi.
+- Ders programı item'larının çoğalması (duplication) hatası çözüldü.
+- Belirli durumlarda derslik (slot) silinmesini engelleyen problemler giderildi.
+- Uygulama çekirdeğindeki (Router/Application) parametreli (Query string içeren) URL'lerin boş sayfa açmasına neden olan `ParseURL` mantık hatası düzeltildi.
+- Rota (route) bulunamadığında uygulamanın beyaz sayfa döndürmesi yerine Exception fırlatması sağlandı.
+
+### Security
+- Uygulamadaki varsayılan ve güvensiz olan tüm "123456" şifreleri (admin hariç) iptal edilerek rastgele, bilinmeyen güçlü şifrelerle değiştirildi.
+
 ## [0.2.6] - 2026-07-14
 
 ### Added
