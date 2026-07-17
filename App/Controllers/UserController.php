@@ -129,4 +129,27 @@ class UserController extends Controller
                 'updatedUsers' => $result['updatedUsers']
             ];
     }
+
+    /**
+     * @param int $unitId
+     * @return array
+     * @throws Exception
+     */
+    public function getLecturersByUnitResponse(int $unitId): array
+    {
+        $lecturers = (new UserRepository())->getLecturersByUnit($unitId);
+
+        $lecturersList = [];
+        foreach ($lecturers as $lecturer) {
+            $lecturersList[] = [
+                'id' => $lecturer->id,
+                'name' => $lecturer->getFullName()
+            ];
+        }
+
+        return [
+            'status' => 'success',
+            'lecturers' => $lecturersList
+        ];
+    }
 }

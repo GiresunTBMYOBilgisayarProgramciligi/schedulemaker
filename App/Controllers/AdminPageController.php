@@ -292,6 +292,7 @@ class AdminPageController extends Controller
         $view_data = [
             "page_title" => "Ders Ekle",
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "lessonController" => new LessonController(),
             "classroomTypes" => ClassroomType::toArray(),
             "buildings" => (new BuildingRepository())->getAllBuildings(),
@@ -317,7 +318,7 @@ class AdminPageController extends Controller
     public function getEditLessonPageData(User $currentUser, AssetManager $assetManager, $id = null): array
     {
         if (!is_null($id)) {
-            $lesson = (new Lesson())->find($id) ?: throw new Exception("Ders bulunamadı");
+            $lesson = (new LessonRepository())->findLessonWithDetails($id) ?: throw new Exception("Ders bulunamadı");
         } else {
             throw new Exception("Ders id numarası belirtilmelidir");
         }
@@ -328,6 +329,7 @@ class AdminPageController extends Controller
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName(true) . " Düzenle",
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
             "classroomTypes" => ClassroomType::toArray(),
@@ -486,7 +488,6 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Bölüm Ekle",
-            "lecturers"  => (new UserRepository())->getAllLecturers(),
             "units"      => (new UnitRepository())->getAllUnits(),
         ];
     }
@@ -507,7 +508,6 @@ class AdminPageController extends Controller
             "departmentController" => new DepartmentController(),
             "department"           => $department,
             "page_title"           => ($department->name ?? '') . ' Düzenle',
-            "lecturers"            => (new UserRepository())->getAllLecturers(),
             "units"                => (new UnitRepository())->getAllUnits(),
         ];
     }
@@ -588,6 +588,7 @@ class AdminPageController extends Controller
         return [
             "page_title" => "Program Ekle",
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "department_id" => $department_id
         ];
     }
@@ -608,6 +609,7 @@ class AdminPageController extends Controller
             "programController" => new ProgramController(),
             "program" => $program,
             "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAllUnits(),
             "page_title" => $program->name ?? "" . " Düzenle",
         ];
     }
@@ -634,6 +636,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
+            "units" => (new UnitRepository())->getAllUnits(),
             "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
@@ -667,6 +670,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
+            "units" => (new UnitRepository())->getAllUnits(),
             "page_title" => "Sınav Programını Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
@@ -697,6 +701,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
+            "units" => (new UnitRepository())->getAllUnits(),
             "page_title" => "Program Dışa Aktar",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];

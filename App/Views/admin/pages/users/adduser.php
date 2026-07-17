@@ -115,12 +115,8 @@ use App\Enums\UserTitle;
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id"
-                                                name="department_id">
-                                                <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                                foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>" <?= (isset($department_id) && $department_id == $department->id) ? 'selected' : '' ?>>
-                                                        <?= $department->name ?></option>
-                                                <?php endforeach; ?>
+                                                name="department_id" data-selected="<?= $department_id ?? '' ?>">
+                                                <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>

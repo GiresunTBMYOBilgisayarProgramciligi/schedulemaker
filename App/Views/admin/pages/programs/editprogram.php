@@ -41,22 +41,30 @@
                             <input type="hidden" name="id" value="<?= $program->id ?>">
                             <div class="card-body pb-0">
                                 <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="unit_id">Üst Birim</label>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id" required>
+                                                <option value="">Birim Seçiniz</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>" <?= ($program->department->unit_id ?? '') == $unit->id ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="department_id">Bölüm</label>
+                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= $program->department_id ?? '' ?>">
+                                                <option value="0">İlk olarak Birim Seçiniz</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="col-md-5">
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    placeholder="Adı" value="<?= $program->name ?>" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id">
-                                                <?php foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>"
-                                                        <?= $department->id == $program->department_id ? "selected" : "" ?>><?= $department->name ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-1">

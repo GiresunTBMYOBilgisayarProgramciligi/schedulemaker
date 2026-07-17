@@ -126,14 +126,162 @@ function validateCourseCode(code) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    const unitSelect = document.getElementById("unit_id");
     const departmentSelect = document.getElementById("department_id");
     const programSelect = document.getElementById("program_id");
+    const chairpersonSelect = document.getElementById("chairperson_id");
 
-    if (departmentSelect) {
+    if (unitSelect && chairpersonSelect) {
+        unitSelect.addEventListener("change", function () {
+            const unitId = this.value;
+
+            if (chairpersonSelect.tomselect) {
+                chairpersonSelect.tomselect.clear();
+                chairpersonSelect.tomselect.clearOptions();
+            } else {
+                chairpersonSelect.innerHTML = "<option></option>";
+            }
+
+            if (!unitId || unitId === "0" || unitId === "") return;
+
+            // AJAX isteği gönder
+            fetch(`/ajax/getLecturersList/${unitId}`, {
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data['lecturers'] && data['lecturers'].length > 0) {
+                    if (chairpersonSelect.tomselect) {
+                        data['lecturers'].forEach(lecturer => {
+                            chairpersonSelect.tomselect.addOption({value: lecturer.id, text: lecturer.name});
+                        });
+                        chairpersonSelect.tomselect.refreshOptions(false);
+                    } else {
+                        data['lecturers'].forEach(lecturer => {
+                            const option = document.createElement("option");
+                            option.value = lecturer.id;
+                            option.textContent = lecturer.name;
+                            chairpersonSelect.appendChild(option);
+                        });
+                    }
+                }
+
+                const selectedChairpersonId = chairpersonSelect.getAttribute('data-selected');
+                if (selectedChairpersonId && selectedChairpersonId !== "0") {
+                    if (chairpersonSelect.tomselect) {
+                        chairpersonSelect.tomselect.setValue(selectedChairpersonId, true); // true = silent
+                    } else {
+                        chairpersonSelect.value = selectedChairpersonId;
+                    }
+                    chairpersonSelect.removeAttribute('data-selected');
+                }
+                
+                chairpersonSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Hocaları alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
+
+    if (unitSelect && departmentSelect) {
+        unitSelect.addEventListener("change", function () {
+            const unitId = this.value;
+            if (programSelect) {
+                programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+            }
+
+            if (departmentSelect.tomselect) {
+                departmentSelect.tomselect.clear();
+                departmentSelect.tomselect.clearOptions();
+            } else {
+                departmentSelect.innerHTML = "<option value='0'>Bölüm Seçiniz</option>";
+            }
+
+            if (!unitId || unitId === "0" || unitId === "") return;
+
+            // AJAX isteği gönder
+            fetch(`/ajax/getDepartmentsList/${unitId}`, {
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data['departments'].length > 1 || data['departments'].length === 0) {
+                    if (departmentSelect.tomselect) {
+                        departmentSelect.tomselect.addOption({value: 0, text: "Bölüm Seçiniz"});
+                        data['departments'].forEach(dept => {
+                            departmentSelect.tomselect.addOption({value: dept.id, text: dept.name});
+                        });
+                        departmentSelect.tomselect.refreshOptions(false);
+                    } else {
+                        departmentSelect.innerHTML = "<option value='0'>Bölüm Seçiniz</option>";
+                        data['departments'].forEach(dept => {
+                            const option = document.createElement("option");
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            departmentSelect.appendChild(option);
+                        });
+                    }
+                } else if (data['departments'].length === 1) {
+                    let dept = data['departments'][0];
+                    if (departmentSelect.tomselect) {
+                        departmentSelect.tomselect.addOption({value: dept.id, text: dept.name});
+                        departmentSelect.tomselect.setValue(dept.id, true); // true = silent
+                    } else {
+                        const option = document.createElement("option");
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        option.selected = true;
+                        departmentSelect.appendChild(option);
+                    }
+                }
+
+                const selectedDeptId = departmentSelect.getAttribute('data-selected');
+                if (selectedDeptId && selectedDeptId !== "0") {
+                    if (departmentSelect.tomselect) {
+                        departmentSelect.tomselect.setValue(selectedDeptId, true); // true = silent
+                    } else {
+                        departmentSelect.value = selectedDeptId;
+                    }
+                    departmentSelect.removeAttribute('data-selected');
+                }
+                
+                // Tüm işlemler bittikten sonra tek bir change eventi fırlat
+                departmentSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Bölümleri alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
+
+    if (departmentSelect && programSelect) {
         departmentSelect.addEventListener("change", function () {
             const departmentId = this.value;
-            programSelect.querySelector('option').innerText = ""
-            spinner.showSpinner(programSelect.querySelector('option'))
+            
+            if (!departmentId || departmentId === "0" || departmentId === "") {
+                if (programSelect) {
+                     programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+                }
+                return;
+            }
+            
+            if (programSelect.querySelector('option')) {
+                programSelect.querySelector('option').innerText = "";
+                spinner.showSpinner(programSelect.querySelector('option'));
+            } else {
+                programSelect.innerHTML = "<option value='0'>Yükleniyor...</option>";
+                spinner.showSpinner(programSelect.querySelector('option'));
+            }
+            
             // AJAX isteği gönder
             fetch(`/ajax/getProgramsList/${departmentId}`, {
                 method: "POST",
@@ -221,8 +369,17 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // Eğer sayfa yüklendiğinde birim seçili gelmişse ve bölüm seçili değilse (Yönlendirme ile gelmişse)
+    if (unitSelect && unitSelect.value !== "0" && unitSelect.value !== "") {
+        if (departmentSelect && (!departmentSelect.value || departmentSelect.value === "0")) {
+            unitSelect.dispatchEvent(new Event("change"));
+        } else if (chairpersonSelect && (!chairpersonSelect.value || chairpersonSelect.value === "0" || chairpersonSelect.value === "")) {
+            unitSelect.dispatchEvent(new Event("change"));
+        }
+    }
+
     // Eğer sayfa yüklendiğinde bölüm seçili gelmişse ve program seçili değilse (Yönlendirme ile gelmişse)
-    if (departmentSelect && departmentSelect.value !== "0" && programSelect.value === "0") {
+    if (departmentSelect && departmentSelect.value !== "0" && departmentSelect.value !== "" && programSelect && (!programSelect.value || programSelect.value === "0")) {
         departmentSelect.dispatchEvent(new Event("change"));
     }
 

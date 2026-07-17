@@ -65,12 +65,8 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="chairperson_id">Bölüm Başkanı</label>
                                             <select class="form-select tom-select" id="chairperson_id"
-                                                    name="chairperson_id">
-                                                <option></option>
-                                                <?php foreach ($lecturers as $lecturer): ?>
-                                                    <option value="<?= $lecturer->id ?>"
-                                                            <?= $lecturer->id == $department->chairperson_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
-                                                <?php endforeach; ?>
+                                                    name="chairperson_id" data-selected="<?= $department->chairperson_id ?? '' ?>">
+                                                <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>

@@ -130,27 +130,16 @@ use App\Enums\UserTitle;
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id">
-                                                <?php array_unshift($departments, (object)["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                                foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>"
-                                                        <?= $department->id == $user->department_id ? 'selected' : '' ?>>
-                                                        <?= $department->name ?>
-                                                    </option>
-                                                <?php endforeach; ?>
+                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= $user->department_id ?? '' ?>">
+                                                <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id">
-                                                <?php foreach ($department_programs as $program): ?>
-                                                    <option value="<?= $program->id ?>"
-                                                        <?= $program->id == $user->program_id ? 'selected' : '' ?>>
-                                                        <?= $program->name ?>
-                                                    </option>
-                                                <?php endforeach; ?>
+                                            <select class="form-select" id="program_id" name="program_id" data-selected="<?= $user->program_id ?? '' ?>">
+                                                <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>
                                     </div>

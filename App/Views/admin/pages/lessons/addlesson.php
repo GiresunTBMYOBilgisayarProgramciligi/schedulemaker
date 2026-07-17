@@ -130,20 +130,27 @@ use function App\Helpers\getSettingValue;
                                                 placeholder="Mevcut" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="mb-3">
-                                            <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id"
-                                                name="department_id" required>
-                                                <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                                foreach ($departments as $department): ?>
-                                                    <option value="<?= $department->id ?>" <?= (isset($department_id) && $department_id == $department->id) ? 'selected' : '' ?>>
-                                                        <?= $department->name ?></option>
+                                            <label class="form-label" for="unit_id">Üst Birim</label>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id" required>
+                                                <option value="">Birim Seçiniz</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="department_id">Bölüm</label>
+                                            <select class="form-select tom-select" id="department_id"
+                                                name="department_id" required data-selected="<?= $department_id ?? '' ?>">
+                                                <option value="0">İlk olarak Birim Seçiniz</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id" required

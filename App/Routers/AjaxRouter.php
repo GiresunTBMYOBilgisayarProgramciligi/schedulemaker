@@ -143,6 +143,16 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getLecturersListAction($unit_id): void
+    {
+        $this->response = (new UserController())->getLecturersByUnitResponse((int)$unit_id);
+        $this->sendResponse();
+    }
+
     /*
      * Lessons Ajax Actions
      */
@@ -319,6 +329,16 @@ class AjaxRouter extends Router
     public function getProgramsListAction($department_id): void
     {
         $this->response = (new ProgramController())->getProgramsListResponse((int)$department_id);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getDepartmentsListAction($unit_id): void
+    {
+        $this->response = (new DepartmentController())->getDepartmentsListResponse((int)$unit_id);
         $this->sendResponse();
     }
 

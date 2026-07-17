@@ -140,4 +140,21 @@ class UserRepository extends BaseRepository
             '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
         ])->all();
     }
+
+    /**
+     * Belirli bir birimdeki akademisyenleri (role != admin/user) getirir.
+     *
+     * @param int $unitId
+     * @return User[]
+     * @throws Exception
+     */
+    public function getLecturersByUnit(int $unitId): array
+    {
+        /** @var User $model */
+        $model = new $this->modelClass;
+        return $model->get()->where([
+            'unit_id' => $unitId,
+            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+        ])->all();
+    }
 }

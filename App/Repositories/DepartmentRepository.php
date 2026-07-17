@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Department;
+use App\Controllers\ProgramController;
 use Exception;
 
 class DepartmentRepository extends BaseRepository
@@ -34,7 +35,7 @@ class DepartmentRepository extends BaseRepository
         if (is_null($department_id)) {
             $list = [(object) ["id" => 0, "name" => "Program Seçiniz"]];
         } else {
-            $list = (new \App\Controllers\ProgramController())->getProgramsList(['department_id' => $department_id]);
+            $list = (new ProgramController())->getProgramsList(['department_id' => $department_id]);
             array_unshift($list, (object) ["id" => 0, "name" => "Program Seçiniz"]);
         }
         return $list;
