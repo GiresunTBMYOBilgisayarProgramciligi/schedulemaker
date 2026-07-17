@@ -50,7 +50,7 @@
                                 <?php foreach ($units as $unit): ?>
                                     <tr>
                                         <td><?= $unit->id ?></td>
-                                        <td><a href="/admin/unit/<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></a></td>
+                                        <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
                                         <td><?= $unit->getTypeName() ?></td>
                                         <td>
                                             <?php if ($unit->active): ?>

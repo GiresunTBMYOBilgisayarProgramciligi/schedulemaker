@@ -32,7 +32,7 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="card-body">
                             <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
@@ -45,11 +45,8 @@
                                 <?php foreach ($buildings as $building): ?>
                                     <tr>
                                         <td><?= $building->id ?></td>
-                                        <td><?= htmlspecialchars($building->name) ?></td>
+                                        <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
                                         <td class="text-center">
-                                            <a href="/admin/building/<?= $building->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
                                             <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>

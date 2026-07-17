@@ -52,7 +52,7 @@
                         <div class="card-header">
                             <h3 class="card-title">Binadaki Derslikler</h3>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="card-body">
                             <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
@@ -60,7 +60,7 @@
                                     <th>Derslik Adı</th>
                                     <th>Türü</th>
                                     <th>Kapasite</th>
-                                    <th>İşlemler</th>
+                                    <th class="text-center">İşlemler</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -70,11 +70,22 @@
                                     <?php foreach ($building->classrooms as $cls): ?>
                                         <tr>
                                             <td><?= $cls->id ?></td>
-                                            <td><a href="/admin/classroom/<?= $cls->id ?>"><?= htmlspecialchars($cls->name ?? '') ?></a></td>
+                                            <td><a href="/admin/classroom/<?= $cls->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($cls->name ?? '') ?></a></td>
                                             <td><?= $cls->getTypeName() ?></td>
                                             <td><?= $cls->class_size ?></td>
                                             <td class="text-center">
-                                                <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                                <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form action="/ajax/deleteclassroom/<?= $cls->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteClassroom-<?= $cls->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id" value="<?= $cls->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

@@ -36,7 +36,17 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
-                    <table class="table table-bordered table-striped dataTable">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Derslikler</h3>
+                            <div class="card-tools">
+                                <a href="/admin/addclassroom" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Yeni Derslik Ekle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-striped dataTable">
                         <thead>
                         <tr>
                             <th scope="col">İd</th>
@@ -52,15 +62,12 @@
                         <?php foreach ($classrooms as $classroom): ?>
                             <tr>
                                 <td><?= $classroom->id ?></td>
-                                <td><?= $classroom->name ?></td>
+                                <td><a href="/admin/classroom/<?= $classroom->id ?>" class="text-dark" title="Görüntüle"><?= $classroom->name ?></a></td>
                                 <td><?= $classroom->getTypeName() ?></td>
                                 <td><?= $classroom->building->name ?? '-' ?></td>
                                 <td><?= $classroom->class_size ?></td>
                                 <td><?= $classroom->exam_size ?></td>
                                 <td class="text-center">
-                                    <a href="/admin/classroom/<?= $classroom->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                     <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -77,6 +84,8 @@
                             </tr>
                         <?php endforeach; ?></tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->

@@ -35,7 +35,17 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
-                    <table class="table table-bordered table-striped dataTable">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Programlar</h3>
+                            <div class="card-tools">
+                                <a href="/admin/addprogram" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Yeni Program Ekle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-striped dataTable">
                         <thead>
                         <tr>
                             <th scope="col">İd</th>
@@ -49,7 +59,7 @@
                         <?php foreach ($programs as $program): ?>
                             <tr>
                                 <td><?= $program->id ?></td>
-                                <td><?= $program->name ?></td>
+                                <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
                                 <td><?= $program->department?->name ?></td>
                                 <td>
                                     <div class="form-check form-switch ">
@@ -59,9 +69,6 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <a href="/admin/program/<?= $program->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                     <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -79,6 +86,8 @@
                             </tr>
                         <?php endforeach; ?></tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->

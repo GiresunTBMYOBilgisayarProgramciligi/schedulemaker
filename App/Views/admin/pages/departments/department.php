@@ -126,13 +126,10 @@ use App\Core\Gate;
                                     <?php foreach ($department->programs as $program): ?>
                                         <tr>
                                             <td><?= $program->id ?></td>
-                                            <td><?= $program->name ?></td>
+                                            <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
                                             <td><?= $program->department?->name ?? '' ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $program)): ?>
-                                                    <a href="/admin/program/<?= $program->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
                                                     <?php if (Gate::check("update", $program)): ?>
                                                         <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                             <i class="bi bi-pencil"></i>
@@ -192,14 +189,11 @@ use App\Core\Gate;
                                 <tbody>
                                     <?php foreach ($department->users as $lecturer): ?>
                                         <tr>
-                                            <td><?= $lecturer->getFullName() ?></td>
+                                            <td><a href="/admin/profile/<?= $lecturer->id ?>" class="text-dark" title="Görüntüle"><?= $lecturer->getFullName() ?></a></td>
                                             <td><?= $lecturer->mail ?></td>
                                             <td><?= $lecturer->program?->name ?? '' ?></td>
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
-                                                    <a href="/admin/profile/<?= $lecturer->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
                                                     <a href="/admin/edituser/<?= $lecturer->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
@@ -257,11 +251,13 @@ use App\Core\Gate;
                                 <tbody>
                                     <?php foreach ($department->lessons as $lesson): ?>
                                         <tr>
-                                            <td><?= $lesson->code ?></td>
+                                            <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
                                             <td
                                                 <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
                                             >
-                                                <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
+                                                    <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                </a>
                                             </td>
                                             <td><?= $lesson->getTypeName() ?></td>
                                             <td><?= $lesson->hours ?></td>
@@ -272,9 +268,6 @@ use App\Core\Gate;
                                             <td><?= $lesson->program?->name ?? '' ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $lesson)): ?>
-                                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
                                                     <?php if (Gate::check("update", $lesson)): ?>
                                                         <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                             <i class="bi bi-pencil"></i>

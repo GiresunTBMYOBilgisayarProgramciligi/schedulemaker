@@ -35,12 +35,21 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Dersler</h3>
+                            <div class="card-tools">
+                                <a href="/admin/addlesson" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Yeni Ders Ekle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
                     <table class="table table-bordered table-striped dataTable">
                         <thead>
                         <tr>
                             <th scope="col">İd</th>
                             <th scope="col">Kodu</th>
-                            <th scope="col">Grup No</th>
                             <th scope="col" class="filterable">Adı</th>
                             <th scope="col" class="filterable">Türü</th>
                             <th scope="col">Mevcudu</th>
@@ -61,11 +70,14 @@
                         <?php foreach ($lessons as $lesson): ?>
                             <tr>
                                 <td><?= $lesson->id ?></td>
-                                <td><?= $lesson->code ?></td>
-                                <td><?= $lesson->group_no ?></td>
+                                <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
                                 <td
                                     <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
-                                ><?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?></td>
+                                >
+                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
+                                        <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                    </a>
+                                </td>
                                 <td><?= $lesson->getTypeName() ?></td>
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
@@ -79,9 +91,6 @@
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
 
                                 <td class="text-center">
-                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                     <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -98,6 +107,8 @@
                             </tr>
                         <?php endforeach; ?></tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->

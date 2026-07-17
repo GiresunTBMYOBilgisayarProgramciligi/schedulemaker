@@ -34,7 +34,17 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
-                    <table class="table table-bordered table-striped dataTable">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Bölümler</h3>
+                            <div class="card-tools">
+                                <a href="/admin/adddepartment" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Yeni Bölüm Ekle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-bordered table-striped dataTable">
                         <thead>
                         <tr>
                             <th>İd</th>
@@ -49,7 +59,7 @@
                         <?php foreach ($departments as $department): ?>
                             <tr>
                                 <td><?= $department->id ?></td>
-                                <td><?= $department->name ?></td>
+                                <td><a href="/admin/department/<?= $department->id ?>" class="text-dark" title="Görüntüle"><?= $department->name ?></a></td>
                                 <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
                                 <td><?= $department->unit?->name ?? '' ?></td>
                                 <td>
@@ -60,9 +70,6 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <a href="/admin/department/<?= $department->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
                                     <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
@@ -80,6 +87,8 @@
                             </tr>
                         <?php endforeach; ?></tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->

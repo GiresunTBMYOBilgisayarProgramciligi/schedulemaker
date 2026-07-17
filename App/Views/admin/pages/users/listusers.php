@@ -39,7 +39,17 @@ use App\Core\Gate;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-12">
-                    <table id="user-list-table" class="table table-bordered table-striped dataTable">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Kullanıcılar</h3>
+                            <div class="card-tools">
+                                <a href="/admin/adduser" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Yeni Kullanıcı Ekle
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <table id="user-list-table" class="table table-bordered table-striped dataTable">
                         <thead>
                             <tr>
                                 <!--<th scope="col">İd</th>-->
@@ -60,8 +70,8 @@ use App\Core\Gate;
                                 <tr>
                                     <!--<td><?php /*= $user->id */ ?></td>-->
                                     <td><?= $user->title ?></td>
-                                    <td><?= $user->name ?></td>
-                                    <td><?= $user->last_name ?></td>
+                                    <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->name ?></a></td>
+                                    <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->last_name ?></a></td>
                                     <td><?= $user->mail ?></td>
                                     <td><?= $user->unit->name ?? '' ?></td>
                                     <td><?= $user->department->name ?? '' ?></td>
@@ -69,9 +79,6 @@ use App\Core\Gate;
                                     <td><?= $user->getRoleName() ?></td>
                                     <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
                                     <td class="text-center">
-                                        <a href="/admin/profile/<?= $user->id ?>" class="btn btn-sm btn-info" title="Görüntüle">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
                                         <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                             <i class="bi bi-pencil"></i>
                                         </a>
@@ -89,6 +96,8 @@ use App\Core\Gate;
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->

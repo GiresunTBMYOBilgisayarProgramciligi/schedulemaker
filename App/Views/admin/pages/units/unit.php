@@ -52,14 +52,14 @@
                         <div class="card-header">
                             <h3 class="card-title">Bağlı Bölümler</h3>
                         </div>
-                        <div class="card-body p-0">
-                            <table class="table table-striped mb-0">
+                        <div class="card-body">
+                            <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Bölüm Adı</th>
                                     <th>Bölüm Başkanı</th>
-                                    <th>İşlemler</th>
+                                    <th class="text-center">İşlemler</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -69,10 +69,22 @@
                                     <?php foreach ($unit->departments as $dept): ?>
                                         <tr>
                                             <td><?= $dept->id ?></td>
-                                            <td><a href="/admin/department/<?= $dept->id ?>"><?= htmlspecialchars($dept->name ?? '') ?></a></td>
+                                            <td><a href="/admin/department/<?= $dept->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($dept->name ?? '') ?></a></td>
                                             <td><?= $dept->chairperson?->getFullName() ?? '-' ?></td>
                                             <td class="text-center">
-                                                <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                                <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form action="/ajax/deletedepartment/<?= $dept->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteDepartment-<?= $dept->id ?>"
+                                                      method="post"
+                                                      data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
+                                                    <input type="hidden" name="id" value="<?= $dept->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
