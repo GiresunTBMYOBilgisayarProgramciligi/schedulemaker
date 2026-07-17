@@ -260,6 +260,12 @@ class AdminRouter extends Router
         $this->callView("admin/settings/settings");
     }
 
+    public function editpermissionAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditPermissionPageData($this->assetManager));
+        $this->callView("admin/settings/editpermission");
+    }
+
     public function LogsAction()
     {
         $this->view_data = array_merge($this->view_data, $this->pageController->getLogsPageData($this->assetManager));

@@ -221,6 +221,12 @@ use App\Core\Gate;
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a href="/admin/editpermission" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editpermission')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-shield-lock"></i>
+                                    <p>Yetkileri Düzenle</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a href="/admin/logs" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'logs')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-journal-text"></i>
                                     <p>Kayıtlar</p>

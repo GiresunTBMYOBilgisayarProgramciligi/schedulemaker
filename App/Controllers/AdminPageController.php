@@ -715,11 +715,29 @@ class AdminPageController extends Controller
 
     public function getSettingsPageData(AssetManager $assetManager): array
     {
-        Gate::authorizeRole("submanager", false, "Ayarlar sayfasına erişim yetkiniz yok");
+        Gate::authorize("create", Setting::class, "Ayarları görüntüleme yetkiniz yok.");
         $assetManager->loadPageAssets('formpages');
+
+        // Ayarları model üzerinden çekiyoruz
+        $settings = (new Setting())->get()->all();
+
+        // View'a gönderilecek veriler
         return [
+            "settings"   => $settings,
             "page_title" => "Ayarlar",
-            "settings" => (new SettingsController())->getSettings()
+        ];
+    }
+
+    public function getEditPermissionPageData(AssetManager $assetManager): array
+    {
+        Gate::authorizeRole("submanager", false, "Yetkileri düzenleme yetkiniz yok.");
+        $assetManager->loadPageAssets('formpages');
+        $assetManager->addJs('/assets/js/permissionsWizard.js'); // Sihirbaz JS dosyası
+
+        return [
+            "page_title" => "Yetkileri Düzenle",
+            "users"      => (new UserRepository())->getAllUsersWithDetails(),
+            "units"      => (new UnitRepository())->getAllUnits()
         ];
     }
 

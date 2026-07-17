@@ -146,6 +146,24 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
+    public function getUserPermissionsAction(): void
+    {
+        $this->response = (new \App\Controllers\PermissionController())->getUserPermissions((int)($this->data['user_id'] ?? 0));
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function savePermissionsAction(): void
+    {
+        $this->response = (new \App\Controllers\PermissionController())->savePermissions($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
     #[PublicAction]
     public function getLecturersListAction($unit_id): void
     {
