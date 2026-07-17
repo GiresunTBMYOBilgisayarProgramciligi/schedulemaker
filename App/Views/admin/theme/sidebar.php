@@ -73,12 +73,7 @@ use App\Core\Gate;
                                     <p>Liste</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="/admin/addlesson" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addlesson')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-journal-plus"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
+
                             <li class="nav-item">
                                 <a href="/admin/importlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importlessons')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-box-arrow-in-down"></i>
@@ -124,74 +119,23 @@ use App\Core\Gate;
                 <!-- Kurumsal Yapı -->
                 <li class="nav-header">KURUMSAL YAPI</li>
                 <?php if (Gate::allowsRole("submanager")): ?>
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'active' : ''; ?>">
+                    <li class="nav-item">
+                        <a href="/admin/listunits" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'active' : ''; ?>">
                             <i class="bi bi-bank nav-icon"></i>
-                            <p>
-                                Üst Birim İşlemleri
-                                <i class="nav-arrow bi bi-chevron-right"></i>
-                            </p>
+                            <p>Üst Birim İşlemleri</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="/admin/listunits" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listunits')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-list-ul"></i>
-                                    <p>Liste</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/admin/addunit" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addunit')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-plus"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
+                    <li class="nav-item">
+                        <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
                             <i class="bi bi-buildings nav-icon"></i>
-                            <p>
-                                Bölüm İşlemleri
-                                <i class="nav-arrow bi bi-chevron-right"></i>
-                            </p>
+                            <p>Bölüm İşlemleri</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listdepartments')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-list-ul"></i>
-                                    <p>Liste</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/admin/adddepartment" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'adddepartment')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-plus"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
+                    <li class="nav-item">
+                        <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
                             <i class="bi bi-building nav-icon"></i>
-                            <p>
-                                Program İşlemleri
-                                <i class="nav-arrow bi bi-chevron-right"></i>
-                            </p>
+                            <p>Program İşlemleri</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listprograms')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-list-ul"></i>
-                                    <p>Liste</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/admin/addprogram" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addprogram')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-building-add"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 <?php endif; ?>
                 <!-- Bölümüm -->
@@ -217,52 +161,18 @@ use App\Core\Gate;
                 <?php if (Gate::allowsRole("submanager")): ?>
                     <li class="nav-header">FİZİKSEL ALTYAPI</li>
                     <!-- Bina İşlemleri -->
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'active' : ''; ?>">
+                    <li class="nav-item">
+                        <a href="/admin/listbuildings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-building-fill-gear"></i>
-                            <p>
-                                Bina İşlemleri
-                                <i class="nav-arrow bi bi-chevron-right"></i>
-                            </p>
+                            <p>Bina İşlemleri</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="/admin/listbuildings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listbuildings')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-list-ul"></i>
-                                    <p>Liste</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/admin/addbuilding" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addbuilding')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-plus"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                     <!-- Derslik İşlemleri -->
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
+                    <li class="nav-item">
+                        <a href="/admin/listclassrooms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-door-closed-fill"></i>
-                            <p>
-                                Derslik İşlemleri
-                                <i class="nav-arrow bi bi-chevron-right"></i>
-                            </p>
+                            <p>Derslik İşlemleri</p>
                         </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="/admin/listclassrooms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listclassrooms')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-list-ul"></i>
-                                    <p>Liste</p>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/admin/addclassroom" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'addclassroom')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-plus"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
-                        </ul>
                     </li>
                 <?php endif; ?>
 
@@ -285,12 +195,7 @@ use App\Core\Gate;
                                     <p>Liste</p>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="/admin/adduser" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'adduser')) ? 'active' : ''; ?>">
-                                    <i class="nav-icon bi bi-person-plus-fill"></i>
-                                    <p>Ekle</p>
-                                </a>
-                            </li>
+
                             <li class="nav-item">
                                 <a href="/admin/importusers" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importusers')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-box-arrow-in-down"></i>
