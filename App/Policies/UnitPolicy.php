@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Unit;
 use App\Core\Gate;
+use App\Enums\PermissionType;
 
 class UnitPolicy extends BasePolicy
 {
@@ -25,8 +26,9 @@ class UnitPolicy extends BasePolicy
             return true;
         }
 
-        // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessUnit($unit->id)) {
+        // Özel yetki (Settings tablosundan JSON olarak)
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::VIEW->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
             return true;
         }
 
@@ -50,8 +52,9 @@ class UnitPolicy extends BasePolicy
             return true;
         }
 
-        // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessUnit($unit->id)) {
+        // Özel yetki (Settings tablosundan JSON olarak)
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::UPDATE->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
             return true;
         }
 
@@ -63,6 +66,15 @@ class UnitPolicy extends BasePolicy
      */
     public function delete(User $user, Unit $unit): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager';
+        if ($user->role === 'admin' || $user->role === 'manager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::DELETE->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 }

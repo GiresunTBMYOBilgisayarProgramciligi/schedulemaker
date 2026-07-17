@@ -30,12 +30,14 @@ class Gate
      * @var array Rol hiyerarşisi (Sayısal seviyeler)
      */
     private static array $roleLevels = [
-        "admin" => 10,
-        "manager" => 9,
-        "submanager" => 8,
-        "department_head" => 7,
-        "lecturer" => 6,
-        "user" => 5
+        "admin" => 100,
+        "manager" => 90,
+        "submanager" => 80,
+        "secretary" => 75,
+        "department_head" => 70,
+        "research_assistant" => 65,
+        "lecturer" => 60,
+        "user" => 50
     ];
 
     /**
@@ -125,7 +127,7 @@ class Gate
         }
 
         $requiredLevel = self::$roleLevels[$role] ?? 0;
-        $userLevel = self::$roleLevels[$user->role] ?? 5;
+        $userLevel = self::$roleLevels[$user->role] ?? 50;
 
         if ($reverse) {
             return $userLevel <= $requiredLevel;
@@ -165,32 +167,5 @@ class Gate
         $key = 'user_' . $userId . '_permissions';
         $perms = getSettingValue($key, 'user_permissions', []);
         return is_array($perms) ? $perms : [];
-    }
-
-    /**
-     * Kullanıcının ilgili Üst Birim için özel yetkisi var mı?
-     */
-    public static function canAccessUnit(int $unitId): bool
-    {
-        $perms = self::getUserPermissions();
-        return in_array($unitId, $perms['units'] ?? []);
-    }
-
-    /**
-     * Kullanıcının ilgili Bölüm için özel yetkisi var mı?
-     */
-    public static function canAccessDepartment(int $deptId): bool
-    {
-        $perms = self::getUserPermissions();
-        return in_array($deptId, $perms['departments'] ?? []);
-    }
-
-    /**
-     * Kullanıcının ilgili Program için özel yetkisi var mı?
-     */
-    public static function canAccessProgram(int $programId): bool
-    {
-        $perms = self::getUserPermissions();
-        return in_array($programId, $perms['programs'] ?? []);
     }
 }

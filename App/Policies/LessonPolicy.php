@@ -4,6 +4,8 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Lesson;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 
 class LessonPolicy extends BasePolicy
 {
@@ -34,16 +36,35 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::VIEW->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) {
+            return true;
+        }
+
         return false;
     }
 
     /**
      * Yeni ders ekleme yetkisi
      */
-    public function create(User $user): bool
+    public function create(User $user, ?array $lessonData = null): bool
     {
-        // En az Bölüm Başkanı olmalı
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        if ($user->role === 'department_head' && isset($lessonData['department_id'])) {
+             return $user->department_id == $lessonData['department_id'];
+        }
+
+        if (isset($lessonData['department_id'])) {
+            $perms = Gate::getUserPermissions($user->id);
+            if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lessonData['department_id']] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lessonData['department_id']] ?? [])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -65,6 +86,11 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) {
+            return true;
+        }
+
         return false;
     }
 
@@ -80,6 +106,11 @@ class LessonPolicy extends BasePolicy
         // Bölüm başkanı kendi bölümünün derslerini silebilir
         if ($user->role === 'department_head') {
             return $user->department_id === $lesson->department_id;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if ((in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) && in_array(PermissionType::DELETE->value, $perms['departments'][$lesson->department_id] ?? [])) {
+            return true;
         }
 
         return false;

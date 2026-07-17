@@ -1,86 +1,81 @@
-- Derslik İşlemleri
-    
-    
-    | Derslik işlemleri menüsünü görme | Müdür yardımcısı ve üstü |
-    | --- | --- |
-    | Yeni derslik ekleme | Müdür yardımcısı ve üstü |
-    | Derslik güncelleme | Müdür yardımcısı ve üstü |
-    | Derslik Sayfasına erişim | Müdür yardımcısı ve üstü |
-    | Derslik Listesi sayfasına erişim | Müdür yardımcısı ve üstü |
-    | Derslik ekleme sayfasına erişim | Müdür yardımcısı ve üstü |
-    | Derslik güncelleme sayfasına erişim | Müdür yardımcısı ve üstü |
-    | Derslik Silme işlemi | Müdür yardımcısı ve üstü |
-- Ders İşlemleri
-    
-    
-    | Ders işlemleri menüsünü görme | Bölüm başkanı ve üstü |
-    | --- | --- |
-    | Yeni Ders Ekleme | müdür yardımcısı ve üstü,  bölüm başkanı sadece kendi bölümüne ekleme yapabilir.  |
-    | Ders Güncelleme | müdür yardımcısı ve üstü,  bölüm başkanı sadece kendi bölümüne ait dersi güncelleyebilir. Kullanıcı kendi dersini güncelleyebilir |
-    | Ders Sayfasına erişim | Müdür yardımcısı ve üstü. Bölüm başkanı  kendi bölüm derslerini ve dersin hocası kendi dersini görebilir. |
-    | Ders Düzenleme sayfasına erişim | Müdür yardımcısı ve üstü. Bölüm başkanı  kendi bölüm derslerini ve dersin hocası kendi dersini düzenleyebilir. |
-    | Ders Listesi  | Bölüm başkanı ve üzeri. Bölüm başkanı sadece kendi bölümünün derslerini görebilir. |
-    | Ders ekleme sayfasına erişim | bölüm başkanı ve üstü. Bölüm başkanı sadece kendi bölümünün hocalarına ve kendi bölümüne ders ekleyebilir. |
-    | Ders düzenleme Sayfasına erişim | Müdür yardımcısı ve üstü. Bölüm başkanı kendi bölümünün derslerini dersin hocası da kendi dersini düzenleyebilir. |
-    | Ders silme işlemi  | Müdür yardımcısı ver üstü. Bölüm başkanı kendi bölümünün dersini silebilir |
-- Akademik Birimler
-    
-    
-    | Akademik Birimler menüsünü görme | Müdür yardımcısı ve üstü |
-    | --- | --- |
-    - Bölüm İşlemleri
-        
-        
-        | bölüm işlemleri menüsünü görme | Müdür yardımcısı ve üstü |
-        | --- | --- |
-        | Bölümüm Menüsünü görme | Bölüm başkanı ve altı |
-        | Yeni bölüm ekleme  | Müdür yardımcısı ve üstü |
-        | Bölüm Güncelleme | Müdür yardımcısı ve üstü,  |
-        | Bölüm Sayfasına erişim | Müdür yardımcısı ve üstü. Kullanıcı kendi bölümünü ve bölüm başkanı kendi bölümünü görebilir. |
-        | Bölümler listesi sayfasını görme | Müdür yardımcısı ve üstü |
-        | Yeni bölüm ekleme  | Müdür yardımcısı ve üstü |
-        | Bölüm güncelleme | Müdür yardımcısı ve üstü |
-        | Bölüm Silme | Müdür yardımcısı ve üstü |
-        - Program işlemleri
-            
-            
-            | Programım menüsünü görme | Bölüm başkanı ve altı |
-            | --- | --- |
-            | Yeni bölüm ekleme | Müdür yardımcısı ve üstü |
-            | Program Güncelleme | Müdür yardımcısı ve üstü |
-            | Program sayfasına erişim | Müdür yardımcısı ve üstü. Kullanıcı kendi programına, bölüm başkanı da kendi programlarını görebilir. |
-            | Programlar listesi | Müdür yardımcısı ve üstü |
-            | Yeni program ekle | Müdür yardımcısı ve üstü |
-            | Program düzenleme  | Müdür yardımcısı ve üstü |
-            | Program silme | Müdür yardımcısı ve üstü |
-- takvim işlemleri
-    
-    
-    | Takvim işlemleri menüsünü görme | Bölüm başkanı ve üstü |
-    | --- | --- |
-    | Yeni takvim kaydet | Müdür yardımcısı ve üstü. Bölüm başkanı kendi programına ait olan dersleri kaydedebilir. Kullanıcı kendi ne ait programları ekleyebilir. |
-    | Takvim güncelle | Müdür yardımcısı ve üstü. Bölüm başkanı kendi programına ait olan dersleri güncelleyebilir. Kullanıcı kendi ne ait programları düzenleyebilir. |
-    | Takvim silme | Müdür yardımcısı ve üstü. Bölüm başkanı kendi programına ait olan dersleri silebilir. Kullanıcı kendi ne ait programları silebilir. |
-    | Takbim düzenleme sayfasını görme | Bölüm başkanı ve üstü |
-    | Uygun derslik listesini alma | Bölüm başkanı ve üstü |
-- Ayarlar
-    
-    
-    | Ayarlar menüsünü görme | Müdür yardımcısı ve üstü |
-    | --- | --- |
-    | Ayar kaydetme | Müdür yardımcısı ve üstü |
-    | Ayar güncelleme | Müdür yardımcısı ve üstü |
-- Kullanıcı işlemleri
-    
-    
-    | Kullanıcı işlemleri menüsünü görme | Bölüm başkanı ve üstü |
-    | --- | --- |
-    | Yeni kullanıcı ekleme | Müdür yardımcısı ve üstü. Bölüm başkanı kendi bölümüne ve programlarına ekleme yapabilir. |
-    | Kullanıcı Düzenleme | Müdür yardımcısı ve üstü. Bölüm başkanı kendi bölümüne ve programlarına ait kullanıcıyı düzenleyebilir. |
-    | Rol ataması | müdür ve yönetici rollerini sadece yönetici atayabilir. |
-    | Kullanıcı listesi sayfasına erişim | Bölüm başkanı ve üstü. Bölüm başkaı sadece kendi bölümünün kullanıcılarını görebilir. |
-    | Kullanıcı ekle sayfasına erişim | müdür yardımcısı ve üstü.Bölüm başkanı kendi bölümüne ve programlarına ekleme yapabilir. |
-    | Profil sayfasına erişim | Müdür yardımcısı ve üstü. Bölüm başkanı kendi bölümündeki hocaların profil sayfasını görebilir ve düzenleyebilir. Kullanıcı kendi profilini düzenleyebilir.  |
-    | Kullanıcı düzenleme sayfasına erişim | Müdür yardımcısı ve üstü. Bölüm başkanı kendi bölümündeki hocaların bilgilerini düzenleyebilir. Kullanıcı kendi profilini düzenleyebilir.  |
-    | Kullanıcı silme işlemi Ajax | müdür yardımcısı ve üstü |
-    |  |  |
+# Sistem Yetki ve Rol Dokümantasyonu
+
+Bu doküman, sistemdeki kullanıcı rollerini, aralarındaki hiyerarşiyi ve JSON tabanlı özel yetkilendirme mimarisini açıklamaktadır.
+
+## 1. Rol Hiyerarşisi
+
+Sistemde bulunan roller, yetki seviyelerine göre yukarıdan aşağıya (100 -> 50) sıralanmıştır. Daha yüksek seviyeye sahip roller, alt rollerin yetki gerektiren varsayılan (genel) sayfalarına erişebilir.
+
+| Rol Key | Seviye | Açıklama |
+| :--- | :--- | :--- |
+| `admin` | 100 | Sistem Yöneticisi. Tüm sisteme tam erişimi vardır. |
+| `manager` | 90 | Müdür. Okul/Fakülte geneli işlemler (tüm bölümler, binalar, derslikler). |
+| `submanager` | 80 | Müdür Yardımcısı. Müdür ile benzer erişim haklarına sahiptir. |
+| `secretary` | 75 | Sekreter. İdari birim işleri ve tanımlı özel görevler. |
+| `department_head` | 70 | Bölüm Başkanı. Sadece kendi bölümü ve altındaki programlara erişimi vardır. |
+| `research_assistant` | 65 | Araştırma Görevlisi. Varsayılan olarak kısıtlıdır, özel yetkilerle donatılabilir. |
+| `lecturer` | 60 | Öğretim Elemanı (Hoca). Sadece kendi derslerini görebilir/düzenleyebilir. |
+| `user` | 50 | Standart Kullanıcı / Öğrenci. |
+
+## 2. Temel Yetki Dağılımı
+
+### Bina ve Derslik İşlemleri
+Binalar ve derslikler, doğrudan bir bölüme bağlı olmadıkları için genel (ortak) varlıklardır.
+*   **Görme, Ekleme, Düzenleme, Silme:** Yalnızca `admin`, `manager` ve `submanager` tarafından yapılabilir.
+
+### Birim (Fakülte/Okul) İşlemleri
+*   **Listeleme ve Görme:** Sadece üst yönetim.
+*   **Ekleme, Düzenleme, Silme:** Yalnızca `admin` ve `manager` düzeyindeki roller yapabilir. Özel olarak `update` veya `delete` yetkisi tanımlananlar da eylem gerçekleştirebilir.
+
+### Bölüm ve Program İşlemleri
+*   **Görme:** Üst yönetim ve ilgili bölümün/programın başkanı (`department_head`). Kayıtlı kullanıcılar sadece kendi bölümünü/programını görebilir.
+*   **Ekleme:** Sadece üst yönetim.
+*   **Düzenleme:** Üst yönetim ve ilgili bölüm başkanı.
+
+### Ders İşlemleri
+*   **Görme:** Üst yönetim, ilgili bölümün başkanı ve dersin hocası.
+*   **Ekleme:** Üst yönetim ve ilgili bölüm başkanı kendi bölümüne ekleyebilir.
+*   **Düzenleme:** Üst yönetim, bölüm başkanı (kendi bölümü) ve dersin hocası.
+*   **Silme:** Üst yönetim ve bölüm başkanı (kendi bölümü).
+
+### Kullanıcı İşlemleri
+*   **Görme:** Üst yönetim tümünü; bölüm başkanı kendi bölümündekileri görebilir. Kullanıcı sadece kendi profilini görebilir.
+*   **Ekleme/Düzenleme:** Üst yönetim ve bölüm başkanı (sadece kendi bölümüne).
+
+### Takvim İşlemleri
+*   Sınıf programları, hoca programları ve bölüm/program takvimleri, takvimin sahibine (owner) göre kontrol edilir. Bölüm başkanı kendi altındaki takvimlere tam müdahale edebilir. Öğretim görevlisi kendi takvimine müdahale edebilir.
+
+## 3. JSON Tabanlı Özel (Granüler) Yetkilendirme
+
+Varsayılan rol hiyerarşisinin yetmediği durumlarda (Örneğin bir Araştırma Görevlisine sadece belirli bir programın takvimini düzenleme yetkisi verilmek istendiğinde), Moodle mantığına benzer JSON tabanlı özel yetkilendirme kullanılır.
+
+Özel yetkiler, veritabanında `settings` tablosunda `user_{id}_permissions` anahtarı (key) altında JSON formatında tutulur.
+
+### Özel Yetki JSON Yapısı:
+```json
+{
+  "units": {
+    "1": ["view", "update"]
+  },
+  "departments": {
+    "3": ["view", "manage_users", "manage_schedule", "update"]
+  },
+  "programs": {
+    "5": ["view", "manage_schedule"]
+  }
+}
+```
+
+### Özel Yetki Tipleri (Actions)
+*   `view` : Belirtilen varlığı görebilme.
+*   `update` : Belirtilen varlığın temel bilgilerini güncelleyebilme.
+*   `delete` : Belirtilen varlığı silebilme.
+*   `manage_users` : Belirtilen bölüm/program altına yeni kullanıcı ekleme, mevcut kullanıcıları güncelleme ve silme.
+*   `manage_schedule` : Belirtilen bölüm/program için takvime ders yerleştirme işlemlerini yönetme.
+*   `manage_lessons` : Belirtilen bölüm/program için ders tanımlama, güncelleme ve silme.
+*   `manage_buildings` : Bina listesi ile binaya ait derslikleri düzenleme (Genelde binalara özel verilir).
+*   `manage_unit` : İlgili Birimi (Fakülte/Okul vb.) yönetme.
+*   `manage_department` : İlgili Bölümü yönetme.
+*   `manage_program` : İlgili Programı yönetme.
+
+*Kullanıcı Policy sınıfları (Örn: `DepartmentPolicy.php`), herhangi bir eyleme karar verirken önce rol tabanlı varsayılan hiyerarşiyi kontrol eder. Oradan yetki alamazsa, kişinin `Gate::getUserPermissions($user->id)` ile gelen JSON verisinde ilgili varlık ve `action` (eylem) eşleşmesi olup olmadığını kontrol eder.*

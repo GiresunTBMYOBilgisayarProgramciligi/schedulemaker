@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Program;
 use App\Models\Department;
 use App\Core\Gate;
+use App\Enums\PermissionType;
 
 class ProgramPolicy extends BasePolicy
 {
@@ -37,7 +38,8 @@ class ProgramPolicy extends BasePolicy
         }
 
         // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessProgram($program->id)) {
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::VIEW->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
             return true;
         }
 
@@ -72,7 +74,8 @@ class ProgramPolicy extends BasePolicy
         }
 
         // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessProgram($program->id)) {
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::UPDATE->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
             return true;
         }
 
@@ -84,6 +87,15 @@ class ProgramPolicy extends BasePolicy
      */
     public function delete(User $user, Program $program): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::DELETE->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 }

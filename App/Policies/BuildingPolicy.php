@@ -4,6 +4,8 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Building;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 
 class BuildingPolicy extends BasePolicy
 {
@@ -20,7 +22,16 @@ class BuildingPolicy extends BasePolicy
      */
     public function view(User $user, Building $building): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::MANAGE_BUILDINGS->value, $perms['buildings'][$building->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -36,7 +47,16 @@ class BuildingPolicy extends BasePolicy
      */
     public function update(User $user, Building $building): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::MANAGE_BUILDINGS->value, $perms['buildings'][$building->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -44,6 +64,15 @@ class BuildingPolicy extends BasePolicy
      */
     public function delete(User $user, Building $building): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::MANAGE_BUILDINGS->value, $perms['buildings'][$building->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 }

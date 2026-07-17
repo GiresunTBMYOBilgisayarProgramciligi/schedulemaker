@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Department;
 use App\Core\Gate;
+use App\Enums\PermissionType;
 
 class DepartmentPolicy extends BasePolicy
 {
@@ -36,7 +37,8 @@ class DepartmentPolicy extends BasePolicy
         }
 
         // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessDepartment($department->id)) {
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::VIEW->value, $perms['departments'][$department->id] ?? []) || in_array(PermissionType::MANAGE_DEPARTMENT->value, $perms['departments'][$department->id] ?? [])) {
             return true;
         }
 
@@ -65,7 +67,8 @@ class DepartmentPolicy extends BasePolicy
         }
 
         // Özel yetki (Settings tablosundan)
-        if (Gate::canAccessDepartment($department->id)) {
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::UPDATE->value, $perms['departments'][$department->id] ?? []) || in_array(PermissionType::MANAGE_DEPARTMENT->value, $perms['departments'][$department->id] ?? [])) {
             return true;
         }
 
@@ -77,6 +80,15 @@ class DepartmentPolicy extends BasePolicy
      */
     public function delete(User $user, Department $department): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        $perms = Gate::getUserPermissions($user->id);
+        if (in_array(PermissionType::DELETE->value, $perms['departments'][$department->id] ?? []) || in_array(PermissionType::MANAGE_DEPARTMENT->value, $perms['departments'][$department->id] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 }
