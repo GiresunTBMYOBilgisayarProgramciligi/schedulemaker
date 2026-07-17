@@ -155,41 +155,7 @@ use App\Enums\UserTitle;
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <h5 class="mb-3">Özel Yetkilendirmeler</h5>
-                                    <div class="form-text text-muted mb-3">Bu bölümden kullanıcının sorumlu olduğu ekstra birimleri seçebilirsiniz (Örn: Birim Sekreteri, Arş. Gör. için).</div>
-                                    <?php $userPerms = Gate::getUserPermissions($user->id); ?>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Yetkili Üst Birimler</label>
-                                            <select class="form-select tom-select" name="permissions[units][]" multiple>
-                                                <?php foreach ($units as $u): ?>
-                                                    <option value="<?= $u->id ?>" <?= in_array($u->id, $userPerms['units'] ?? []) ? 'selected' : '' ?>><?= htmlspecialchars($u->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Yetkili Bölümler</label>
-                                            <select class="form-select tom-select" name="permissions[departments][]" multiple>
-                                                <?php foreach ($departments as $d): if ($d->id == 0) continue; ?>
-                                                    <option value="<?= $d->id ?>" <?= in_array($d->id, $userPerms['departments'] ?? []) ? 'selected' : '' ?>><?= htmlspecialchars($d->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label class="form-label">Yetkili Programlar</label>
-                                            <select class="form-select tom-select" name="permissions[programs][]" multiple>
-                                                <?php foreach ($programs ?? [] as $p): ?>
-                                                    <option value="<?= $p->id ?>" <?= in_array($p->id, $userPerms['programs'] ?? []) ? 'selected' : '' ?>><?= htmlspecialchars($p->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Güncelle</button>
