@@ -14,7 +14,7 @@ class LessonPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
     }
 
     /**
@@ -36,12 +36,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::VIEW->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**
@@ -58,10 +54,8 @@ class LessonPolicy extends BasePolicy
         }
 
         if (isset($lessonData['department_id'])) {
-            $perms = Gate::getUserPermissions($user->id);
-            if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lessonData['department_id']] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lessonData['department_id']] ?? [])) {
-                return true;
-            }
+            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData['department_id']]) ||
+                   Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData['department_id']]);
         }
 
         return false;
@@ -86,12 +80,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**
@@ -108,12 +98,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-        if ((in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? []) || in_array(PermissionType::MANAGE_LESSONS->value, $perms['departments'][$lesson->department_id] ?? [])) && in_array(PermissionType::DELETE->value, $perms['departments'][$lesson->department_id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**

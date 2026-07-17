@@ -15,7 +15,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
     }
 
     /**
@@ -37,13 +37,7 @@ class ProgramPolicy extends BasePolicy
             return true;
         }
 
-        // Özel yetki (Settings tablosundan)
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::VIEW->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
     }
 
     /**
@@ -73,13 +67,7 @@ class ProgramPolicy extends BasePolicy
             return true;
         }
 
-        // Özel yetki (Settings tablosundan)
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::UPDATE->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
     }
 
     /**
@@ -91,11 +79,6 @@ class ProgramPolicy extends BasePolicy
             return true;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::DELETE->value, $perms['programs'][$program->id] ?? []) || in_array(PermissionType::MANAGE_PROGRAM->value, $perms['programs'][$program->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
     }
 }

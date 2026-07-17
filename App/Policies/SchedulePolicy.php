@@ -21,15 +21,11 @@ class SchedulePolicy extends BasePolicy
             return true;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-
         switch ($schedule->owner_type) {
             case 'program':
                 $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($program) {
-                    if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['programs'][$program->id] ?? [])) return true;
-                    if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$program->department_id] ?? [])) return true;
-                    if (isset($program->department->unit_id) && in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['units'][$program->department->unit_id] ?? [])) return true;
+                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $program)) return true;
                     
                     return $program->department->chairperson_id == $user->id;
                 }
@@ -42,8 +38,7 @@ class SchedulePolicy extends BasePolicy
                     if (!$scheduleUser->department_id) {
                         return true;
                     }
-                    if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$scheduleUser->department_id] ?? [])) return true;
-                    if (isset($scheduleUser->department->unit_id) && in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['units'][$scheduleUser->department->unit_id] ?? [])) return true;
+                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
 
                     return $scheduleUser->department->chairperson_id == $user->id || $scheduleUser->id == $user->id;
                 }
@@ -52,8 +47,7 @@ class SchedulePolicy extends BasePolicy
             case 'lesson':
                 $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($lesson) {
-                    if (in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['departments'][$lesson->department_id] ?? [])) return true;
-                    if (isset($lesson->department->unit_id) && in_array(PermissionType::MANAGE_SCHEDULE->value, $perms['units'][$lesson->department->unit_id] ?? [])) return true;
+                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
 
                     return $lesson->department->chairperson_id == $user->id;
                 }

@@ -13,6 +13,7 @@ use App\Models\Program;
 use App\Models\User;
 use App\Models\Unit;
 use App\Models\Building;
+use App\Models\Setting;
 use App\Repositories\ClassroomRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\UserRepository;
@@ -24,6 +25,8 @@ use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\UnitType;
+use App\Enums\PermissionType;
+use App\Controllers\SettingsController;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use Exception;
@@ -619,19 +622,24 @@ class AdminPageController extends Controller
      */
     public function getEditSchedulePageData(User $currentUser, AssetManager $assetManager, $department_id = null): array
     {
-        Gate::authorizeRole("department_head", false, "Ders programı düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('editschedule');
+        
+        $departments = [];
         if (Gate::allowsRole("submanager")) {
             $departments = (new DepartmentRepository())->getActiveDepartments();
-        } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            /**
-             * @var Department|null
-             */
-            $dep = (new DepartmentRepository())->find($currentUser->department_id);
-            if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
-            $departments = [$dep];
         } else {
-            throw new Exception("Bu işlem için yetkiniz yok");
+            $allDeps = (new DepartmentRepository())->getActiveDepartments();
+            foreach ($allDeps as $dep) {
+                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
+                    $departments[] = $dep;
+                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
+                    $departments[] = $dep;
+                }
+            }
+        }
+        
+        if (empty($departments)) {
+            throw new Exception("Ders programı düzenleme yetkiniz yok", 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),
@@ -640,10 +648,12 @@ class AdminPageController extends Controller
             "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
-        if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new UserRepository())->getLecturersForDepartmentHead($currentUser->department_id);
-        } else {
+        if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
+        } else {
+            // Sadece yetkili olduğu bölümün veya kendi bölümünün hocalarını görsün
+            $deptIds = array_column($departments, 'id');
+            $view_data['lecturers'] = (new User())->get()->where(['department_id' => ['in' => $deptIds], '!role' => ['admin', 'user']])->all();
         }
         return $view_data;
     }
@@ -653,19 +663,24 @@ class AdminPageController extends Controller
      */
     public function getEditExamSchedulePageData(User $currentUser, AssetManager $assetManager, $department_id = null): array
     {
-        Gate::authorizeRole("department_head", false, "Sınav programı düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('editexamschedule');
+        
+        $departments = [];
         if (Gate::allowsRole("submanager")) {
             $departments = (new DepartmentRepository())->getActiveDepartments();
-        } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            /**
-             * @var Department|null
-             */
-            $dep = (new DepartmentRepository())->find($currentUser->department_id);
-            if (!$dep || !$dep->active) throw new Exception("Bölüm başkanının bölüm bilgisi yok veya bölüm pasif");
-            $departments = [$dep];
         } else {
-            throw new Exception("Bu işlem için yetkiniz yok");
+            $allDeps = (new DepartmentRepository())->getActiveDepartments();
+            foreach ($allDeps as $dep) {
+                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
+                    $departments[] = $dep;
+                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
+                    $departments[] = $dep;
+                }
+            }
+        }
+
+        if (empty($departments)) {
+            throw new Exception("Sınav programı düzenleme yetkiniz yok", 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),
@@ -674,10 +689,11 @@ class AdminPageController extends Controller
             "page_title" => "Sınav Programını Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
-        if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => $currentUser->department_id, '!role' => ['admin', 'user']])->all();
-        } else {
+        if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
+        } else {
+            $deptIds = array_column($departments, 'id');
+            $view_data['lecturers'] = (new User())->get()->where(['department_id' => ['in' => $deptIds], '!role' => ['admin', 'user']])->all();
         }
         return $view_data;
     }
@@ -687,16 +703,24 @@ class AdminPageController extends Controller
      */
     public function getExportSchedulePageData(User $currentUser, AssetManager $assetManager): array
     {
-        Gate::authorizeRole("department_head", false, "Ders programı Dışa aktarma yetkiniz yok");
         $assetManager->loadPageAssets('exportschedule');
+        
+        $departments = [];
         if (Gate::allowsRole("submanager")) {
             $departments = (new DepartmentRepository())->getActiveDepartments();
-        } elseif (Gate::allowsRole("department_head") && $currentUser->role == "department_head") {
-            $dep = (new DepartmentRepository())->find($currentUser->department_id);
-            if (!$dep) throw new Exception("Bölüm bulunamadı");
-            $departments = [$dep];
         } else {
-            throw new Exception("Bu işlem için yetkiniz yok");
+            $allDeps = (new DepartmentRepository())->getActiveDepartments();
+            foreach ($allDeps as $dep) {
+                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
+                    $departments[] = $dep;
+                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
+                    $departments[] = $dep;
+                }
+            }
+        }
+
+        if (empty($departments)) {
+            throw new Exception("Ders programı Dışa aktarma yetkiniz yok", 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),
@@ -718,8 +742,8 @@ class AdminPageController extends Controller
         Gate::authorize("create", Setting::class, "Ayarları görüntüleme yetkiniz yok.");
         $assetManager->loadPageAssets('formpages');
 
-        // Ayarları model üzerinden çekiyoruz
-        $settings = (new Setting())->get()->all();
+        // Ayarları model üzerinden çekiyoruz (SettingsController getSettings metodu ile formatlanmış halde)
+        $settings = (new SettingsController())->getSettings();
 
         // View'a gönderilecek veriler
         return [

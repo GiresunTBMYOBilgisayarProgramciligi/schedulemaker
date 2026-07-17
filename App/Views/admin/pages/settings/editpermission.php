@@ -121,7 +121,7 @@ use App\Enums\PermissionType;
                                         <div class="form-group mb-3">
                                             <label>Verilecek Yetkiler</label>
                                             <div class="row">
-                                                <?php foreach (PermissionType::cases() as $perm): ?>
+                                                <?php foreach (PermissionType::getManageablePermissions() as $perm): ?>
                                                     <div class="col-md-4">
                                                         <div class="form-check">
                                                             <input class="form-check-input permission-checkbox" type="checkbox" value="<?= $perm->value ?>" id="perm_<?= $perm->value ?>">

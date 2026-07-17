@@ -24,6 +24,7 @@ class Gate
         'App\Models\Classroom' => 'App\Policies\ClassroomPolicy',
         'App\Models\Unit' => 'App\Policies\UnitPolicy',
         'App\Models\Building' => 'App\Policies\BuildingPolicy',
+        'App\Models\Setting' => 'App\Policies\SettingPolicy',
     ];
 
     /**
@@ -164,8 +165,76 @@ class Gate
             $userId = $user->id;
         }
 
-        $key = 'user_' . $userId . '_permissions';
-        $perms = getSettingValue($key, 'user_permissions', []);
-        return is_array($perms) ? $perms : [];
+        $key = 'user_' . $userId;
+        $perms = getSettingValue($key, 'permissions', []);
+        
+        // Geriye dönük uyumluluk veya yanlış kayıtlara karşı:
+        // Eğer json direkt dizi ise
+        if (!is_array($perms)) {
+            $perms = [];
+        }
+        
+        return $perms;
+    }
+
+    /**
+     * Kullanıcının kaskad hiyerarşisinde (Birim -> Bölüm -> Program) ilgili yetkiye sahip olup olmadığını kontrol eder.
+     * Eğer MANAGE_BUILDINGS gibi global bir yetki ise, JSON içerisinde herhangi bir yerde geçip geçmediğine bakar.
+     *
+     * @param int $userId
+     * @param string $permission
+     * @param mixed $model Model nesnesi (Unit, Department, Program, Lesson vb.) veya null
+     * @param array $data Opsiyonel id verileri
+     * @return bool
+     */
+    public static function hasCascadePermission(int $userId, string $permission, $model = null, array $data = []): bool
+    {
+        $perms = self::getUserPermissions($userId);
+
+        // Global yetkiler (örn. MANAGE_BUILDINGS) tüm sistemde geçerlidir
+        if (in_array($permission, [\App\Enums\PermissionType::MANAGE_BUILDINGS->value])) {
+            foreach ($perms as $scope => $items) {
+                foreach ($items as $id => $grantedPerms) {
+                    if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        $unitId = $data['unit_id'] ?? null;
+        $departmentId = $data['department_id'] ?? null;
+        $programId = $data['program_id'] ?? null;
+
+        if ($model) {
+            $programId = $programId ?? ($model->program_id ?? ($model instanceof \App\Models\Program ? $model->id : null));
+            $departmentId = $departmentId ?? ($model->department_id ?? ($model instanceof \App\Models\Department ? $model->id : null));
+            $unitId = $unitId ?? ($model->unit_id ?? ($model instanceof \App\Models\Unit ? $model->id : null));
+        }
+
+        if ($programId && !$departmentId) {
+            $prog = (new \App\Models\Program())->find($programId);
+            $departmentId = $prog->department_id ?? null;
+        }
+        if ($departmentId && !$unitId) {
+            $dept = (new \App\Models\Department())->find($departmentId);
+            $unitId = $dept->unit_id ?? null;
+        }
+
+        // 1. Program Seviyesi
+        if ($programId && in_array($permission, $perms['programs'][$programId] ?? [])) {
+            return true;
+        }
+        // 2. Bölüm Seviyesi
+        if ($departmentId && in_array($permission, $perms['departments'][$departmentId] ?? [])) {
+            return true;
+        }
+        // 3. Birim Seviyesi
+        if ($unitId && in_array($permission, $perms['units'][$unitId] ?? [])) {
+            return true;
+        }
+
+        return false;
     }
 }

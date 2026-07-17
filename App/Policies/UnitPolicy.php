@@ -14,7 +14,7 @@ class UnitPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager';
+        return $user->role === 'manager' || $user->role === 'submanager';
     }
 
     /**
@@ -22,17 +22,11 @@ class UnitPolicy extends BasePolicy
      */
     public function view(User $user, Unit $unit): bool
     {
-        if ($user->role === 'admin' || $user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || $user->role === 'submanager') {
             return true;
         }
 
-        // Özel yetki (Settings tablosundan JSON olarak)
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::VIEW->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
     }
 
     /**
@@ -40,7 +34,7 @@ class UnitPolicy extends BasePolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager';
+        return $user->role === 'manager';
     }
 
     /**
@@ -48,17 +42,11 @@ class UnitPolicy extends BasePolicy
      */
     public function update(User $user, Unit $unit): bool
     {
-        if ($user->role === 'admin' || $user->role === 'manager') {
+        if ($user->role === 'manager') {
             return true;
         }
 
-        // Özel yetki (Settings tablosundan JSON olarak)
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::UPDATE->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
     }
 
     /**
@@ -66,15 +54,10 @@ class UnitPolicy extends BasePolicy
      */
     public function delete(User $user, Unit $unit): bool
     {
-        if ($user->role === 'admin' || $user->role === 'manager') {
+        if ($user->role === 'manager') {
             return true;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
-        if (in_array(PermissionType::DELETE->value, $perms['units'][$unit->id] ?? []) || in_array(PermissionType::MANAGE_UNIT->value, $perms['units'][$unit->id] ?? [])) {
-            return true;
-        }
-
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
     }
 }
