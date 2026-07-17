@@ -28,9 +28,18 @@
                         <div class="card-header">
                             <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?></h3>
                             <div class="card-tools">
-                                <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
+                                <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                     <i class="bi bi-pencil"></i> Düzenle
                                 </a>
+                                <form action="/ajax/deletebuilding/<?= $building->id ?>"
+                                      class="ajaxFormDelete d-inline"
+                                      id="deleteBuilding-<?= $building->id ?>"
+                                      method="post">
+                                    <input type="hidden" name="id" value="<?= $building->id ?>">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                        <i class="bi bi-trash"></i> Sil
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -44,7 +53,7 @@
                             <h3 class="card-title">Binadaki Derslikler</h3>
                         </div>
                         <div class="card-body p-0">
-                            <table class="table table-striped mb-0">
+                            <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
                                     <th>#</th>

@@ -33,7 +33,7 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <table class="table table-striped">
+                            <table class="table table-bordered table-striped dataTable">
                                 <thead>
                                 <tr>
                                     <th>#</th>
@@ -53,11 +53,15 @@
                                             <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-danger js-delete-building"
-                                                    data-id="<?= $building->id ?>"
-                                                    data-name="<?= htmlspecialchars($building->name) ?>">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <form action="/ajax/deletebuilding/<?= $building->id ?>"
+                                                  class="ajaxFormDelete d-inline"
+                                                  id="deleteBuilding-<?= $building->id ?>"
+                                                  method="post">
+                                                <input type="hidden" name="id" value="<?= $building->id ?>">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
