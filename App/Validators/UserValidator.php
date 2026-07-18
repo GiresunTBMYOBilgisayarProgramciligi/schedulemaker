@@ -66,18 +66,7 @@ class UserValidator extends BaseValidator
             $errors['unit_id'] = 'Üst birim ID değeri sayısal olmalıdır.';
         }
 
-        // Özel Yetkilendirmeler Kontrolü (Permissions)
-        if (isset($data['permissions'])) {
-            if (!is_array($data['permissions'])) {
-                $errors['permissions'] = 'Yetkiler geçersiz formatta.';
-            } else {
-                foreach (['units', 'departments', 'programs'] as $key) {
-                    if (isset($data['permissions'][$key]) && !is_array($data['permissions'][$key])) {
-                        $errors['permissions'] = "Yetkiler ($key) geçersiz formatta.";
-                    }
-                }
-            }
-        }
+
 
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);

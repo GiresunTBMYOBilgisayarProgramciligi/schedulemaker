@@ -49,21 +49,7 @@ class UserService extends BaseService
 
                 $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
 
-                if ($dto->permissions !== null) {
-                    $parsed = [
-                        'units' => array_map('intval', $dto->permissions['units'] ?? []),
-                        'departments' => array_map('intval', $dto->permissions['departments'] ?? []),
-                        'programs' => array_map('intval', $dto->permissions['programs'] ?? [])
-                    ];
-                    
-                    $settingDto = new SettingDTO(
-                        key: 'user_' . $user->id . '_permissions',
-                        value: json_encode($parsed),
-                        type: 'json',
-                        group: 'user_permissions'
-                    );
-                    (new SettingsService())->saveMultipleSettings([$settingDto]);
-                }
+
 
                 return $user->id;
             });
@@ -94,23 +80,27 @@ class UserService extends BaseService
         // Mevcut modele DTO verilerini dolduruyoruz
         $user->fill(array_merge(['id' => $id], $dto->toArray()));
 
+        // Model::fill() null değerleri (isset == false olduğu için) atladığından,
+        // DTO'daki null olabilecek alanları (ve özellikle şifreyi) manuel olarak eziyoruz.
+        if ($dto->password === null) {
+            $user->password = null;
+        }
+        if ($dto->title === null) {
+            $user->title = null;
+        }
+        if ($dto->departmentId === null) {
+            $user->department_id = null;
+        }
+        if ($dto->programId === null) {
+            $user->program_id = null;
+        }
+        if ($dto->unitId === null) {
+            $user->unit_id = null;
+        }
+
         $userId = $this->updateUser($user);
 
-        if ($dto->permissions !== null) {
-            $parsed = [
-                'units' => array_map('intval', $dto->permissions['units'] ?? []),
-                'departments' => array_map('intval', $dto->permissions['departments'] ?? []),
-                'programs' => array_map('intval', $dto->permissions['programs'] ?? [])
-            ];
-            
-            $settingDto = new SettingDTO(
-                key: 'user_' . $userId . '_permissions',
-                value: json_encode($parsed),
-                type: 'json',
-                group: 'user_permissions'
-            );
-            (new SettingsService())->saveMultipleSettings([$settingDto]);
-        }
+
 
         return $userId;
     }

@@ -19,8 +19,7 @@ readonly class UserDTO
         public ?UserTitle $title = null,
         public ?int $departmentId = null,
         public ?int $programId = null,
-        public ?int $unitId = null,
-        public ?array $permissions = null
+        public ?int $unitId = null
     ) {
     }
 
@@ -41,45 +40,22 @@ readonly class UserDTO
             title: !empty($validatedData['title']) ? UserTitle::tryFrom($validatedData['title']) : null,
             departmentId: !empty($validatedData['department_id']) ? (int) $validatedData['department_id'] : null,
             programId: !empty($validatedData['program_id']) ? (int) $validatedData['program_id'] : null,
-            unitId: !empty($validatedData['unit_id']) ? (int) $validatedData['unit_id'] : null,
-            permissions: isset($validatedData['permissions']) && is_array($validatedData['permissions']) ? $validatedData['permissions'] : null
+            unitId: !empty($validatedData['unit_id']) ? (int) $validatedData['unit_id'] : null
         );
     }
 
-    /**
-     * User modelinin veritabanına kayıt işlemi için dizi formuna geri çevirir (Snake Case).
-     * 
-     * @return array
-     */
     public function toArray(): array
     {
-        $data = [
+        return [
             'name' => $this->name,
             'last_name' => $this->lastName,
             'mail' => $this->mail,
             'role' => $this->role->value,
+            'password' => $this->password,
+            'title' => $this->title !== null ? $this->title->value : null,
+            'department_id' => $this->departmentId,
+            'program_id' => $this->programId,
+            'unit_id' => $this->unitId,
         ];
-
-        if ($this->password !== null) {
-            $data['password'] = $this->password;
-        }
-
-        if ($this->title !== null) {
-            $data['title'] = $this->title->value;
-        }
-
-        if ($this->departmentId !== null) {
-            $data['department_id'] = $this->departmentId;
-        }
-
-        if ($this->programId !== null) {
-            $data['program_id'] = $this->programId;
-        }
-
-        if ($this->unitId !== null) {
-            $data['unit_id'] = $this->unitId;
-        }
-
-        return $data;
     }
 }
