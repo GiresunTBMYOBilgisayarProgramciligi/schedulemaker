@@ -38,6 +38,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Bina Adı</th>
+                                    <th>Bağlı Birim</th>
                                     <th>İşlemler</th>
                                 </tr>
                                 </thead>
@@ -46,6 +47,7 @@
                                     <tr>
                                         <td><?= $building->id ?></td>
                                         <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
+                                        <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
                                         <td class="text-center">
                                             <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>

@@ -20,11 +20,19 @@ CREATE TABLE IF NOT EXISTS units
 # 2. Bina tablosu (kampüsteki binalar)
 CREATE TABLE IF NOT EXISTS buildings
 (
-    id   INT AUTO_INCREMENT,
-    name VARCHAR(150) NOT NULL,
+    id      INT AUTO_INCREMENT,
+    name    VARCHAR(150) NOT NULL,
+    unit_id INT          NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE (name)
+    UNIQUE (name),
+    CONSTRAINT fk_buildings_unit_id foreign key (unit_id) references units (id) on delete restrict on update cascade
 ) ENGINE = INNODB;
+
+# Eğer tablo zaten varsa unit_id kolonu ekleme ve güncelleme işlemleri (v0.2.8 migration)
+ALTER TABLE buildings ADD COLUMN unit_id INT NULL AFTER name;
+UPDATE buildings SET unit_id = 1 WHERE unit_id IS NULL;
+ALTER TABLE buildings MODIFY COLUMN unit_id INT NOT NULL;
+ALTER TABLE buildings ADD CONSTRAINT fk_buildings_unit_id FOREIGN KEY (unit_id) REFERENCES units (id) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 # 3. Bölümlere birim bağlantısı
 ALTER TABLE departments

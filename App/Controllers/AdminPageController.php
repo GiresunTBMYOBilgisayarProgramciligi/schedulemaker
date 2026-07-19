@@ -21,6 +21,7 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
+use App\Policies\BuildingPolicy;
 
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
@@ -852,8 +853,9 @@ class AdminPageController extends Controller
     {
         Gate::authorize(PermissionType::LIST->value, Building::class, 'Bina listesini görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
+
         return [
-            'buildings'  => (new BuildingRepository())->getAllBuildings(),
+            'buildings'  => (new BuildingRepository())->getAuthorized('view'),
             'page_title' => 'Bina Listesi',
         ];
     }
@@ -862,8 +864,12 @@ class AdminPageController extends Controller
     {
         Gate::authorize(PermissionType::CREATE->value, Building::class, 'Yeni bina ekleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
+
+        $units = (new UnitRepository())->getAuthorized('view');
+
         return [
             'page_title' => 'Bina Ekle',
+            'units'      => $units,
         ];
     }
 
@@ -900,8 +906,12 @@ class AdminPageController extends Controller
         $building = (new Building())->find($id) ?: throw new Exception('Bina bulunamadı.');
         Gate::authorize(PermissionType::UPDATE->value, $building, 'Bu binayı düzenleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
+
+        $units = (new UnitRepository())->getAuthorized('view');
+
         return [
             'building'   => $building,
+            'units'      => $units,
             'page_title' => ($building->name ?? '') . ' Düzenle',
         ];
     }

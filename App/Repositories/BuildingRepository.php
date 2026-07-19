@@ -31,7 +31,7 @@ class BuildingRepository extends BaseRepository
     {
         /** @var Building $model */
         $model = new $this->modelClass;
-        return $model->get()->all();
+        return $model->get()->with(['unit'])->all();
     }
 
     /**
@@ -47,7 +47,25 @@ class BuildingRepository extends BaseRepository
         $model = new $this->modelClass;
         return $model->get()
             ->where(['id' => $id])
-            ->with(['classrooms'])
+            ->with(['classrooms', 'unit'])
             ->first();
+    }
+
+    /**
+     * @param string $action
+     * @param array $criteria
+     * @return array
+     * @throws Exception
+     */
+    public function getAuthorized(string $action = 'view', array $criteria = []): array
+    {
+        /** @var Building $model */
+        $model = new $this->modelClass;
+        $query = $model->get()->with(['unit']);
+        if (!empty($criteria)) {
+            $query->where($criteria);
+        }
+        $buildings = $query->all();
+        return array_values(array_filter($buildings, fn($b) => \App\Core\Gate::check($action, $b)));
     }
 }

@@ -26,6 +26,10 @@ class UnitPolicy extends BasePolicy
             return true;
         }
 
+        if ($user->unit_id === $unit->id) {
+            return true;
+        }
+
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
     }
 

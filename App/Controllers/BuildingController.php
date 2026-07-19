@@ -34,9 +34,12 @@ class BuildingController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorize(PermissionType::CREATE->value, Building::class, 'Yeni bina oluşturma yetkiniz yok');
-
         $dto = (new BuildingValidator())->getDTO($requestData);
+        $buildingMock = new Building();
+        $buildingMock->unit_id = $dto->unit_id;
+        
+        Gate::authorize(PermissionType::CREATE->value, $buildingMock, 'Yeni bina oluşturma yetkiniz yok');
+
         (new BuildingService())->saveNew($dto);
 
         return [

@@ -26,7 +26,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?></h3>
+                            <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?> (Bağlı Birim: <?= htmlspecialchars($building->unit->name ?? 'Yok') ?>)</h3>
                             <div class="card-tools">
                                 <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                     <i class="bi bi-pencil"></i> Düzenle

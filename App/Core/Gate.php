@@ -217,18 +217,6 @@ class Gate
     {
         $perms = self::getUserPermissions($userId);
 
-        // Global yetkiler (örn. MANAGE_BUILDINGS) tüm sistemde geçerlidir
-        if (in_array($permission, [PermissionType::MANAGE_BUILDINGS->value])) {
-            foreach ($perms as $scope => $items) {
-                foreach ($items as $id => $grantedPerms) {
-                    if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
         $unitId = $data['unit_id'] ?? null;
         $departmentId = $data['department_id'] ?? null;
         $programId = $data['program_id'] ?? null;

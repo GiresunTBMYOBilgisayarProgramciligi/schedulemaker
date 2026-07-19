@@ -2,6 +2,7 @@
 /**
  * @var string $page_title
  * @var \App\Models\Building $building
+ * @var \App\Models\Unit[] $units
  */
 ?>
 <!--begin::App Main-->
@@ -34,6 +35,19 @@
                                             <label class="form-label" for="name">Bina Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    value="<?= htmlspecialchars($building->name ?? '') ?>" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="unit_id">Bağlı Birim</label>
+                                            <select class="form-select" id="unit_id" name="unit_id" required>
+                                                <option value="">Seçiniz</option>
+                                                <?php foreach ($units as $unit): ?>
+                                                    <option value="<?= $unit->id ?>" <?= ($building->unit_id == $unit->id) ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($unit->name) ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>

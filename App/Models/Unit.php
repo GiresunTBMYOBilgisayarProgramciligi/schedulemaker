@@ -15,7 +15,8 @@ class Unit extends Model
 
     public ?User $manager = null;
     public array $departments = [];
-    protected array $excludeFromDb = ['manager', 'departments'];
+    public array $buildings = [];
+    protected array $excludeFromDb = ['manager', 'departments', 'buildings'];
     protected string $table_name = 'units';
 
     public function getLabel(): string
@@ -59,6 +60,37 @@ class Unit extends Model
 
         foreach ($results as &$row) {
             $row['departments'] = $departmentsGrouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws Exception
+     */
+    public function getBuildingsRelation(array $results, array $options = []): array
+    {
+        $unitIds = array_column($results, 'id');
+        if (empty($unitIds)) {
+            return $results;
+        }
+
+        $query = (new Building())->get()->where(['unit_id' => ['in' => $unitIds]]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $buildings = $query->all();
+        $buildingsGrouped = [];
+        foreach ($buildings as $b) {
+            $buildingsGrouped[$b->unit_id][] = $b;
+        }
+
+        foreach ($results as &$row) {
+            $row['buildings'] = $buildingsGrouped[$row['id']] ?? [];
         }
         return $results;
     }

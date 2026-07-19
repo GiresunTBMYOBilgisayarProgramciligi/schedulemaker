@@ -76,10 +76,12 @@ create table if not exists units
 # Bina tablosu (kampüsteki binalar)
 create table if not exists buildings
 (
-    id   INT AUTO_INCREMENT,
-    name VARCHAR(150) NOT NULL,
+    id      INT AUTO_INCREMENT,
+    name    VARCHAR(150) NOT NULL,
+    unit_id INT          NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE (name)
+    UNIQUE (name),
+    CONSTRAINT fk_buildings_unit_id foreign key (unit_id) references units (id) on delete restrict on update cascade
 ) ENGINE = INNODB;
 
 create table if not exists users

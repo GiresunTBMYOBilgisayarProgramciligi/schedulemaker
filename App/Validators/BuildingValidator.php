@@ -24,6 +24,12 @@ class BuildingValidator extends BaseValidator
             $errors['name'] = 'Bina adı 2 ile 100 karakter arasında olmalıdır.';
         }
 
+        if ($this->isEmpty($data['unit_id'] ?? null)) {
+            $errors['unit_id'] = 'Birim seçimi zorunludur.';
+        } elseif (!is_numeric($data['unit_id'])) {
+            $errors['unit_id'] = 'Geçersiz birim ID.';
+        }
+
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }

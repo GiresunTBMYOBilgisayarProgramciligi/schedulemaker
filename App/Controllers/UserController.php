@@ -29,18 +29,19 @@ class UserController extends Controller
      * @return array JSON formatında dönülecek yanıt dizisi
      */
     public function store(array $requestData): array
-    {            Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
+    {
+        Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
 
-            // 1. Doğrulama ve DTO oluşturma
-            $dto = (new UserValidator())->getDTO($requestData);
+        // 1. Doğrulama ve DTO oluşturma
+        $dto = (new UserValidator())->getDTO($requestData);
 
-            // 3. Service'e gönder
-            $userId = (new UserService())->saveNew($dto);
+        // 3. Service'e gönder
+        $userId = (new UserService())->saveNew($dto);
 
-            return [
-                "status" => "success",
-                "msg" => "Kullanıcı başarıyla eklendi."
-            ];
+        return [
+            "status" => "success",
+            "msg" => "Kullanıcı başarıyla eklendi."
+        ];
     }
 
     /**
