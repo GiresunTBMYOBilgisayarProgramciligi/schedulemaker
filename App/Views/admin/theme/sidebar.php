@@ -3,6 +3,7 @@
  * @var \App\Models\User $currentUser Oturum açmış kullanıcı
  */
 use App\Core\Gate;
+use App\Enums\PermissionType;
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -55,11 +56,11 @@ use App\Core\Gate;
                 </li>
 
                 <!-- Eğitim & Öğretim -->
-                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_LESSONS->value) || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_SCHEDULE->value)): ?>
+                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_LESSONS->value) || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value)): ?>
                 <li class="nav-header">EĞİTİM & ÖĞRETİM</li>
                 <?php endif; ?>
                 <!-- Ders İşlemleri -->
-                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_LESSONS->value)): ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_LESSONS->value)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                         <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-journals"></i>
@@ -86,7 +87,7 @@ use App\Core\Gate;
                     </li>
                 <?php endif; ?>
                 <!-- Takvim İşlemleri -->
-                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_SCHEDULE->value)): ?>
+                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'menu-open' : ''; ?>">
                         <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-calendar"></i>
@@ -122,21 +123,25 @@ use App\Core\Gate;
                 <?php if (Gate::allowsRole("submanager") || (Gate::allowsRole("department_head", true) && (!empty($currentUser->department_id) || !empty($currentUser->program_id)))): ?>
                 <li class="nav-header">KURUMSAL YAPI</li>
                 <?php endif; ?>
-                <?php if (Gate::allowsRole("submanager")): ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_UNIT->value)): ?>
                     <li class="nav-item">
                         <a href="/admin/listunits" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'active' : ''; ?>">
                             <i class="bi bi-bank nav-icon"></i>
                             <p>Üst Birim İşlemleri</p>
                         </a>
                     </li>
+                <?php endif; ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_DEPARTMENT->value)): ?>
                     <li class="nav-item">
-                        <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
+                        <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department') && !str_contains($_SERVER["REQUEST_URI"], '/department/')) ? 'active' : ''; ?>">
                             <i class="bi bi-buildings nav-icon"></i>
                             <p>Bölüm İşlemleri</p>
                         </a>
                     </li>
+                <?php endif; ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_PROGRAM->value)): ?>
                     <li class="nav-item">
-                        <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
+                        <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program') && !str_contains($_SERVER["REQUEST_URI"], '/program/')) ? 'active' : ''; ?>">
                             <i class="bi bi-building nav-icon"></i>
                             <p>Program İşlemleri</p>
                         </a>
@@ -162,7 +167,7 @@ use App\Core\Gate;
                 <?php endif; ?>
 
                 <!-- Fiziksel Altyapı -->
-                <?php if (Gate::allowsRole("submanager")): ?>
+                <?php if (Gate::allowsRole("secretary") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_BUILDINGS->value)): ?>
                     <li class="nav-header">FİZİKSEL ALTYAPI</li>
                     <!-- Bina İşlemleri -->
                     <li class="nav-item">
@@ -181,7 +186,7 @@ use App\Core\Gate;
                 <?php endif; ?>
 
                 <!-- Sistem & Yönetim -->
-                <?php if (Gate::allowsRole("submanager")): ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_USERS->value)): ?>
                     <li class="nav-header">SİSTEM & YÖNETİM</li>
                     <!-- Kullanıcı İşlemleri -->
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">

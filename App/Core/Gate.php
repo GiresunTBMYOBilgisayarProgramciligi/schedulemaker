@@ -239,14 +239,7 @@ class Gate
         // Eğer hiçbir spesifik hedef belirtilmemişse (örn. liste sayfaları için),
         // yetkinin herhangi bir yerde tanımlı olup olmadığına bak.
         if (!$programId && !$departmentId && !$unitId) {
-            foreach ($perms as $scope => $items) {
-                foreach ($items as $id => $grantedPerms) {
-                    if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return self::hasAnyPermission($userId, $permission);
         }
 
         // 1. Program Seviyesi

@@ -421,7 +421,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
         return [
             "classroomController" => new ClassroomController(),
-            "classrooms" => (new Classroom())->get()->with('building')->all(),
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view'),
             "page_title" => "Derslik Listesi"
         ];
     }
@@ -433,7 +433,7 @@ class AdminPageController extends Controller
         return [
             "page_title"     => "Derslik Ekle",
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings"      => (new BuildingRepository())->getAllBuildings(),
+            "buildings"      => (new BuildingRepository())->getAuthorized('view'),
         ];
     }
 
@@ -453,7 +453,7 @@ class AdminPageController extends Controller
             "classroomController" => new ClassroomController(),
             "classroom"           => $classroom,
             "classroomTypes"      => ClassroomType::toArray(),
-            "buildings"           => (new BuildingRepository())->getAllBuildings(),
+            "buildings"           => (new BuildingRepository())->getAuthorized('view'),
             "page_title"          => $classroom->name . " Düzenle",
         ];
     }

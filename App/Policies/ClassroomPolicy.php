@@ -9,12 +9,17 @@ use App\Enums\PermissionType;
 
 class ClassroomPolicy extends BasePolicy
 {
+
+
     /**
      * Derslik listesini görme yetkisi
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        if (Gate::allowsRole('secretary')) {
+            return true;
+        }
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
     }
 
     /**
@@ -22,20 +27,27 @@ class ClassroomPolicy extends BasePolicy
      */
     public function view(User $user, Classroom $classroom): bool
     {
-        return true;
+        $unit = $classroom->getUnit();
+        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+            return true;
+        }
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 
     /**
      * Yeni derslik ekleme yetkisi
      */
-    public function create(User $user): bool
+    public function create(User $user, ?Classroom $classroom = null): bool
     {
-        // Yeni derslik eklerken bina ID'si gönderilmişse o binada yetkisi var mı kontrol edilir
-        if ($user->role === 'manager' || $user->role === 'submanager') {
-            return true;
+        if ($classroom) {
+            $unit = $classroom->getUnit();
+            if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+                return true;
+            }
+            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
         }
-
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        
+        if (Gate::allowsRole('secretary')) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
@@ -46,10 +58,11 @@ class ClassroomPolicy extends BasePolicy
      */
     public function update(User $user, Classroom $classroom): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        $unit = $classroom->getUnit();
+        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 
     /**
@@ -57,9 +70,10 @@ class ClassroomPolicy extends BasePolicy
      */
     public function delete(User $user, Classroom $classroom): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        $unit = $classroom->getUnit();
+        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 }

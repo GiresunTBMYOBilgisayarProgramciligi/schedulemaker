@@ -119,4 +119,27 @@ class Classroom extends Model
     {
         return ClassroomType::tryFrom((int)$this->type)?->label() ?? "";
     }
+
+    /**
+     * Dersliğin bağlı olduğu binanın birimini (Unit) bulur.
+     * @return Unit|null
+     * @throws Exception
+     */
+    public function getUnit(): ?Unit
+    {
+        $unitId = null;
+        if (isset($this->building) && $this->building) {
+            $unitId = $this->building->unit_id;
+        } elseif ($this->building_id) {
+            $building = clone (new Building());
+            $building = $building->find($this->building_id);
+            $unitId = $building ? $building->unit_id : null;
+        }
+        
+        if ($unitId) {
+            return clone (new Unit())->find($unitId);
+        }
+        
+        return null;
+    }
 }

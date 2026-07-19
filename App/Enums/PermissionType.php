@@ -51,8 +51,8 @@ enum PermissionType: string
             self::MANAGE_PROGRAM, 
             self::MANAGE_SCHEDULE, 
             self::MANAGE_LESSONS, 
-            self::MANAGE_USERS, 
-            self::MANAGE_BUILDINGS => ['units', 'departments', 'programs'],
+            self::MANAGE_USERS => ['units', 'departments', 'programs'],
+            self::MANAGE_BUILDINGS => ['units'],
             default => []
         };
     }
