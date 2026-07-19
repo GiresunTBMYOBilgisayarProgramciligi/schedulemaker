@@ -122,7 +122,7 @@ use App\Enums\PermissionType;
                                             <label>Verilecek Yetkiler</label>
                                             <div class="row">
                                                 <?php foreach (PermissionType::getManageablePermissions() as $perm): ?>
-                                                    <div class="col-md-4">
+                                                    <div class="col-md-4 permission-item" data-allowed-scopes="<?= implode(',', $perm->getAllowedScopes()) ?>">
                                                         <div class="form-check">
                                                             <input class="form-check-input permission-checkbox" type="checkbox" value="<?= $perm->value ?>" id="perm_<?= $perm->value ?>">
                                                             <label class="form-check-label" for="perm_<?= $perm->value ?>">

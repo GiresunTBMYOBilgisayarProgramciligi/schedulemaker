@@ -55,6 +55,19 @@ function wizardNext(toStep) {
             targetScope = 'units';
             targetId = unitId;
         }
+
+        // Seçilen hedefe uygun olmayan yetkileri gizle ve unchecked yap
+        document.querySelectorAll('.permission-item').forEach(item => {
+            const allowedScopes = item.getAttribute('data-allowed-scopes').split(',');
+            if (allowedScopes.includes(targetScope)) {
+                item.classList.remove('d-none');
+            } else {
+                item.classList.add('d-none');
+                const checkbox = item.querySelector('.permission-checkbox');
+                if (checkbox) checkbox.checked = false;
+            }
+        });
+
     } else if (toStep === 4) {
         // Validation for step 3
         const checkboxes = document.querySelectorAll('.permission-checkbox:checked');

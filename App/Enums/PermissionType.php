@@ -40,6 +40,24 @@ enum PermissionType: string
     }
 
     /**
+     * Bu yetkinin hangi seviyelerde (scope) verilebileceğini döndürür.
+     * @return array
+     */
+    public function getAllowedScopes(): array
+    {
+        return match ($this) {
+            self::MANAGE_UNIT => ['units'],
+            self::MANAGE_DEPARTMENT => ['units', 'departments'],
+            self::MANAGE_PROGRAM, 
+            self::MANAGE_SCHEDULE, 
+            self::MANAGE_LESSONS, 
+            self::MANAGE_USERS, 
+            self::MANAGE_BUILDINGS => ['units', 'departments', 'programs'],
+            default => []
+        };
+    }
+
+    /**
      * Sadece sihirbazda listelenecek (kullanıcıya atanabilecek) özel yetkileri döndürür.
      * @return array
      */
