@@ -25,7 +25,7 @@ function wizardNext(toStep) {
         // Validation for step 1
         const userSelect = document.getElementById('wizard_user_id');
         if (!userSelect.value) {
-            Swal.fire('Hata', 'Lütfen bir kullanıcı seçin.', 'warning');
+            new Toast().prepareToast('Hata', 'Lütfen bir kullanıcı seçin.', 'warning');
             return;
         }
         wizardData.user_id = userSelect.value;
@@ -37,7 +37,7 @@ function wizardNext(toStep) {
         const progId = document.getElementById('program_id').value;
         
         if (!unitId) {
-            Swal.fire('Hata', 'Lütfen en az bir Birim seçin.', 'warning');
+            new Toast().prepareToast('Hata', 'Lütfen en az bir Birim seçin.', 'warning');
             return;
         }
         
@@ -62,7 +62,7 @@ function wizardNext(toStep) {
         
         if (wizardData.permissions.length === 0) {
             // İzinler boş olabilir (yetki kaldırma), uyarı verip devam edilebilir
-            // Swal.fire('Bilgi', 'Hiç yetki seçmediniz, bu işlem varsa mevcut yetkileri silecektir.', 'info');
+            // new Toast().prepareToast('Bilgi', 'Hiç yetki seçmediniz, bu işlem varsa mevcut yetkileri silecektir.', 'info');
         }
         
         updateSummary();
@@ -210,17 +210,16 @@ function savePermissions() {
         btn.textContent = 'Yetkileri Kaydet';
         
         if (data.status === 'success') {
-            Swal.fire('Başarılı', 'Yetkiler başarıyla güncellendi.', 'success').then(() => {
-                window.location.reload();
-            });
+            new Toast().prepareToast('Başarılı', 'Yetkiler başarıyla güncellendi.', 'success');
+            setTimeout(() => window.location.reload(), 1500);
         } else {
-            Swal.fire('Hata', data.msg || 'Bir hata oluştu.', 'error');
+            new Toast().prepareToast('Hata', data.msg || 'Bir hata oluştu.', 'danger');
         }
     })
     .catch(err => {
         console.error(err);
         btn.disabled = false;
         btn.textContent = 'Yetkileri Kaydet';
-        Swal.fire('Hata', 'Sunucu ile iletişim kurulamadı.', 'error');
+        new Toast().prepareToast('Hata', 'Sunucu ile iletişim kurulamadı.', 'danger');
     });
 }

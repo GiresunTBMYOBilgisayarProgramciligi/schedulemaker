@@ -83,18 +83,16 @@ class PermissionController extends Controller
 
         if ($setting) {
             // Update existing
-            $setting->update([
-                'value' => $encodedPermissions,
-                'type' => 'json'
-            ]);
+            $setting->value = $encodedPermissions;
+            $setting->type = 'json';
+            $setting->update();
         } else {
             // Create new
-            $settingModel->insert([
-                'group' => 'permissions',
-                'key' => "user_{$userId}",
-                'value' => $encodedPermissions,
-                'type' => 'json'
-            ]);
+            $settingModel->group = 'permissions';
+            $settingModel->key = "user_{$userId}";
+            $settingModel->value = $encodedPermissions;
+            $settingModel->type = 'json';
+            $settingModel->create();
         }
 
         return [
