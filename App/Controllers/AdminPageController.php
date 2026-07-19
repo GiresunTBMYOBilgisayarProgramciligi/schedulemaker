@@ -21,6 +21,7 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
+use App\Services\DepartmentService;
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
@@ -61,7 +62,7 @@ class AdminPageController extends Controller
 
     public function getListUsersPageData(User $currentUser, AssetManager $assetManager): array
     {
-        Gate::authorize("view", User::class, "Kullanıcı listesini görme yetkiniz yok");
+        Gate::authorize(PermissionType::LIST->value, User::class, "Kullanıcı listesini görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $view_data = [
             "page_title" => "Kullanıcı Listesi",
@@ -81,13 +82,13 @@ class AdminPageController extends Controller
     {
         if ($department_id) {
             $department = (new Department())->find($department_id) ?: throw new Exception("Bölüm Bulunamadı");
-            if (!(Gate::authorize("update", $department))) {
+            if (!(Gate::authorize(PermissionType::UPDATE->value, $department))) {
                 throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
             }
         }
         if ($program_id) {
             $program = (new Program())->find($program_id) ?: throw new Exception("Program bulunamadı");
-            if (!(Gate::authorize("update", $program))) {
+            if (!(Gate::authorize(PermissionType::UPDATE->value, $program))) {
                 throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
             }
         }
@@ -119,7 +120,7 @@ class AdminPageController extends Controller
                 throw new Exception("Kullanıcı bulunamadı");
         }
 
-        Gate::authorize("view", $user, "Bu profili görme yetkiniz yok");
+        Gate::authorize(PermissionType::VIEW->value, $user, "Bu profili görme yetkiniz yok");
         $assetManager->loadPageAssets('profilepage');
         $assetManager->loadPageAssets('formpages');
         
@@ -185,7 +186,7 @@ class AdminPageController extends Controller
         } else {
             $user = (new User())->find($id) ?: throw new Exception("Kullanıcı bulunamadı");
         }
-        Gate::authorize("update", $user, "Kullanıcı düzenleme yetkiniz yok");
+        Gate::authorize(PermissionType::UPDATE->value, $user, "Kullanıcı düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
             "user" => $user,
@@ -218,7 +219,7 @@ class AdminPageController extends Controller
         } else {
             throw new Exception("Ders İd numarası belirtilmelidir");
         }
-        Gate::authorize("view", $lesson, "Bu dersi görme yetkiniz yok");
+        Gate::authorize(PermissionType::VIEW->value, $lesson, "Bu dersi görme yetkiniz yok");
         $assetManager->loadPageAssets('singlepages');
         $assetManager->loadPageAssets('formpages');
         $assetManager->addJs('/assets/js/admin/combineLesson.js');
@@ -274,7 +275,7 @@ class AdminPageController extends Controller
 
     public function getListLessonsPageData(User $currentUser, AssetManager $assetManager): array
     {
-        Gate::authorize("view", Lesson::class, "Ders listesini görme yetkiniz yok");
+        Gate::authorize(PermissionType::LIST->value, Lesson::class, "Ders listesini görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $view_data = [
             "lessonController" => new LessonController(),
@@ -290,7 +291,7 @@ class AdminPageController extends Controller
 
     public function getAddLessonPageData(User $currentUser, AssetManager $assetManager, ?int $program_id = null): array
     {
-        Gate::authorize("create", Lesson::class, "Yeni ders ekleme yetkiniz yok");
+        Gate::authorize(PermissionType::CREATE->value, Lesson::class, "Yeni ders ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         $view_data = [
             "page_title" => "Ders Ekle",
@@ -325,7 +326,7 @@ class AdminPageController extends Controller
         } else {
             throw new Exception("Ders id numarası belirtilmelidir");
         }
-        Gate::authorize("update", $lesson, "Bu dersi düzenleme yetkiniz yok");
+        Gate::authorize(PermissionType::UPDATE->value, $lesson, "Bu dersi düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         $view_data = [
             "lessonController" => new LessonController(),
@@ -415,7 +416,7 @@ class AdminPageController extends Controller
 
     public function getListClassroomsPageData(AssetManager $assetManager): array
     {
-        Gate::authorizeRole("submanager", false, "Derslik listesini görme yetkiniz yok");
+        Gate::authorize(PermissionType::LIST->value, Classroom::class, "Derslik listesini görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
             "classroomController" => new ClassroomController(),
@@ -426,7 +427,7 @@ class AdminPageController extends Controller
 
     public function getAddClassroomPageData(AssetManager $assetManager): array
     {
-        Gate::authorize("create", Classroom::class, "Yeni derslik ekleme yetkiniz yok");
+        Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title"     => "Derslik Ekle",
@@ -442,7 +443,7 @@ class AdminPageController extends Controller
     {
         if (!is_null($id)) {
             $classroom = (new Classroom())->find($id) ?: throw new Exception("Derslik bulunamadı");
-            Gate::authorize("update", $classroom, "Bu dersliği düzenleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $classroom, "Bu dersliği düzenleme yetkiniz yok");
         } else {
             throw new Exception("Derslik Bulunamadı");
         }
@@ -466,7 +467,7 @@ class AdminPageController extends Controller
         } else {
             throw new Exception("İd belirtilmemiş");
         }
-        Gate::authorize("view", $department, "Bu bölüm sayfasını görme yetkiniz yok");
+        Gate::authorize(PermissionType::VIEW->value, $department, "Bu bölüm sayfasını görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $assetManager->loadPageAssets('singlepages');
         return [
@@ -477,7 +478,7 @@ class AdminPageController extends Controller
 
     public function getListDepartmentsPageData(AssetManager $assetManager): array
     {
-        Gate::authorize("view", Department::class, "Bölümler listesini görmek için yetkiniz yok");
+        Gate::authorize(PermissionType::LIST->value, Department::class, "Bölümler listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
             "departments" => (new DepartmentRepository())->getAllDepartmentsWithChairperson(),
@@ -487,7 +488,7 @@ class AdminPageController extends Controller
 
     public function getAddDepartmentPageData(AssetManager $assetManager): array
     {
-        Gate::authorize("create", Department::class, "Yeni Bölüm ekleme yetkiniz yok");
+        Gate::authorize(PermissionType::CREATE->value, Department::class, "Yeni Bölüm ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Bölüm Ekle",
@@ -502,7 +503,7 @@ class AdminPageController extends Controller
     {
         if (!is_null($id)) {
             $department = (new Department())->find($id) ?: throw new Exception("Bölüm bulunamadı");
-            Gate::authorize("update", $department, "Bu bölümü düzenleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $department, "Bu bölümü düzenleme yetkiniz yok");
         } else {
             throw new Exception("Bölüm bulunamadı");
         }
@@ -525,7 +526,7 @@ class AdminPageController extends Controller
         } else {
             throw new Exception("Program id değeri belirtilmelidir");
         }
-        Gate::authorize("view", $program, "Bu programı görüntülemek için yetkiniz yok");
+        Gate::authorize(PermissionType::VIEW->value, $program, "Bu programı görüntülemek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $assetManager->loadPageAssets('singlepages');
 
@@ -576,7 +577,7 @@ class AdminPageController extends Controller
      */
     public function getListProgramsPageData(AssetManager $assetManager): array
     {
-        Gate::authorize("view", Program::class, "Programlar listesini görmek için yetkiniz yok");
+        Gate::authorize(PermissionType::LIST->value, Program::class, "Programlar listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
             "programs" => (new ProgramRepository())->getAllProgramsWithDepartment(),
@@ -586,7 +587,7 @@ class AdminPageController extends Controller
 
     public function getAddProgramPageData(AssetManager $assetManager, $department_id = null): array
     {
-        Gate::authorize("create", Program::class, "Program ekleme yetkiniz yok");
+        Gate::authorize(PermissionType::CREATE->value, Program::class, "Program ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Program Ekle",
@@ -606,7 +607,7 @@ class AdminPageController extends Controller
         } else {
             throw new Exception("Program id numarası belirtilmelidir");
         }
-        Gate::authorize("update", $program, "Program düzenleme yetkiniz yok");
+        Gate::authorize(PermissionType::UPDATE->value, $program, "Program düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
             "programController" => new ProgramController(),
@@ -617,6 +618,8 @@ class AdminPageController extends Controller
         ];
     }
 
+
+
     /**
      * @throws Exception
      */
@@ -624,19 +627,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editschedule');
         
-        $departments = [];
-        if (Gate::allowsRole("submanager")) {
-            $departments = (new DepartmentRepository())->getActiveDepartments();
-        } else {
-            $allDeps = (new DepartmentRepository())->getActiveDepartments();
-            foreach ($allDeps as $dep) {
-                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
-                    $departments[] = $dep;
-                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
-                    $departments[] = $dep;
-                }
-            }
-        }
+        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
         
         if (empty($departments)) {
             throw new Exception("Ders programı düzenleme yetkiniz yok", 403);
@@ -665,19 +656,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editexamschedule');
         
-        $departments = [];
-        if (Gate::allowsRole("submanager")) {
-            $departments = (new DepartmentRepository())->getActiveDepartments();
-        } else {
-            $allDeps = (new DepartmentRepository())->getActiveDepartments();
-            foreach ($allDeps as $dep) {
-                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
-                    $departments[] = $dep;
-                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
-                    $departments[] = $dep;
-                }
-            }
-        }
+        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
 
         if (empty($departments)) {
             throw new Exception("Sınav programı düzenleme yetkiniz yok", 403);
@@ -705,19 +684,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('exportschedule');
         
-        $departments = [];
-        if (Gate::allowsRole("submanager")) {
-            $departments = (new DepartmentRepository())->getActiveDepartments();
-        } else {
-            $allDeps = (new DepartmentRepository())->getActiveDepartments();
-            foreach ($allDeps as $dep) {
-                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
-                    $departments[] = $dep;
-                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
-                    $departments[] = $dep;
-                }
-            }
-        }
+        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
 
         if (empty($departments)) {
             throw new Exception("Ders programı Dışa aktarma yetkiniz yok", 403);
@@ -739,7 +706,7 @@ class AdminPageController extends Controller
 
     public function getSettingsPageData(AssetManager $assetManager): array
     {
-        Gate::authorize("create", Setting::class, "Ayarları görüntüleme yetkiniz yok.");
+        Gate::authorize(PermissionType::CREATE->value, Setting::class, "Ayarları görüntüleme yetkiniz yok.");
         $assetManager->loadPageAssets('formpages');
 
         // Ayarları model üzerinden çekiyoruz (SettingsController getSettings metodu ile formatlanmış halde)
@@ -820,7 +787,7 @@ class AdminPageController extends Controller
 
     public function getListUnitsPageData(AssetManager $assetManager): array
     {
-        Gate::authorize('view', Unit::class, 'Birim listesini görme yetkiniz yok');
+        Gate::authorize(PermissionType::LIST->value, Unit::class, 'Birim listesini görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
         return [
             'units'      => (new UnitRepository())->getAllUnits(),
@@ -831,7 +798,7 @@ class AdminPageController extends Controller
 
     public function getAddUnitPageData(AssetManager $assetManager): array
     {
-        Gate::authorize('create', Unit::class, 'Yeni birim ekleme yetkiniz yok');
+        Gate::authorize(PermissionType::CREATE->value, Unit::class, 'Yeni birim ekleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
         return [
             'page_title' => 'Birim Ekle',
@@ -850,7 +817,7 @@ class AdminPageController extends Controller
         $unit = (new UnitRepository())->findUnitWithDetails($id)
             ?: throw new Exception('Birim bulunamadı.');
 
-        Gate::authorize('view', $unit, 'Bu birimi görme yetkiniz yok');
+        Gate::authorize(PermissionType::VIEW->value, $unit, 'Bu birimi görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
         $assetManager->loadPageAssets('singlepages');
         return [
@@ -868,7 +835,7 @@ class AdminPageController extends Controller
             throw new Exception('Birim bulunamadı.');
         }
         $unit = (new Unit())->find($id) ?: throw new Exception('Birim bulunamadı.');
-        Gate::authorize('update', $unit, 'Bu birimi düzenleme yetkiniz yok');
+        Gate::authorize(PermissionType::UPDATE->value, $unit, 'Bu birimi düzenleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
         return [
             'unit'       => $unit,
@@ -883,7 +850,7 @@ class AdminPageController extends Controller
 
     public function getListBuildingsPageData(AssetManager $assetManager): array
     {
-        Gate::authorize('view', Building::class, 'Bina listesini görme yetkiniz yok');
+        Gate::authorize(PermissionType::LIST->value, Building::class, 'Bina listesini görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
         return [
             'buildings'  => (new BuildingRepository())->getAllBuildings(),
@@ -893,7 +860,7 @@ class AdminPageController extends Controller
 
     public function getAddBuildingPageData(AssetManager $assetManager): array
     {
-        Gate::authorize('create', Building::class, 'Yeni bina ekleme yetkiniz yok');
+        Gate::authorize(PermissionType::CREATE->value, Building::class, 'Yeni bina ekleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
         return [
             'page_title' => 'Bina Ekle',
@@ -914,7 +881,7 @@ class AdminPageController extends Controller
             throw new Exception('Bina bulunamadı.');
         }
 
-        Gate::authorize('view', $building, 'Bina detayını görme yetkiniz yok');
+        Gate::authorize(PermissionType::VIEW->value, $building, 'Bina detayını görme yetkiniz yok');
         
         return [
             'page_title' => $building->name,
@@ -931,7 +898,7 @@ class AdminPageController extends Controller
             throw new Exception('Bina bulunamadı.');
         }
         $building = (new Building())->find($id) ?: throw new Exception('Bina bulunamadı.');
-        Gate::authorize('update', $building, 'Bu binayı düzenleme yetkiniz yok');
+        Gate::authorize(PermissionType::UPDATE->value, $building, 'Bu binayı düzenleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
         return [
             'building'   => $building,

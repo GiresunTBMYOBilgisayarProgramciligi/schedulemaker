@@ -7,6 +7,10 @@ use App\Models\Program;
 use App\Models\Lesson;
 use App\DTOs\DepartmentDTO;
 use App\Core\Database;
+use App\Models\User;
+use App\Core\Gate;
+use App\Repositories\DepartmentRepository;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
