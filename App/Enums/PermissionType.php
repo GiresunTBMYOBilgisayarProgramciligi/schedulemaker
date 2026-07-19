@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum PermissionType: string
 {
+    case LIST = 'list';
     case VIEW = 'view';
     case CREATE = 'create';
     case UPDATE = 'update';
@@ -23,6 +24,7 @@ enum PermissionType: string
     public function getLabel(): string
     {
         return match ($this) {
+            self::LIST => 'Listele',
             self::VIEW => 'Görüntüle',
             self::CREATE => 'Oluştur',
             self::UPDATE => 'Güncelle',

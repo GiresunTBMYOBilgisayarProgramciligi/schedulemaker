@@ -10,6 +10,14 @@ class SettingPolicy extends BasePolicy
     /**
      * Ayarları görüntüleme yetkisi
      */
+    /**
+     * Listeleme yetkisi
+     */
+    public function list(User $user): bool
+    {
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin';
+    }
+
     public function view(User $user): bool
     {
         return $user->role === 'manager' || $user->role === 'submanager';

@@ -15,6 +15,14 @@ class SchedulePolicy extends BasePolicy
     /**
      * Program düzenleme/güncelleme yetkisi
      */
+    /**
+     * Listeleme yetkisi
+     */
+    public function list(User $user): bool
+    {
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin';
+    }
+
     public function update(User $user, Schedule $schedule): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {

@@ -14,7 +14,7 @@ class LessonPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head' || Gate::hasAnyPermission($user->id, PermissionType::MANAGE_LESSONS->value);
     }
 
     /**
@@ -49,8 +49,11 @@ class LessonPolicy extends BasePolicy
             return true;
         }
 
-        if ($user->role === 'department_head' && isset($lessonData['department_id'])) {
-             return $user->department_id == $lessonData['department_id'];
+        if ($user->role === 'department_head') {
+             if (isset($lessonData['department_id'])) {
+                 return $user->department_id == $lessonData['department_id'];
+             }
+             return true;
         }
 
         if (isset($lessonData['department_id'])) {

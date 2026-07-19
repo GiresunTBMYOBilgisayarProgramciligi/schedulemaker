@@ -237,4 +237,27 @@ class Gate
 
         return false;
     }
+
+    /**
+     * Kullanıcının sistemin herhangi bir yerinde ilgili yetkiye sahip olup olmadığını kontrol eder.
+     * Bu genellikle menü öğelerini göstermek veya genel yetki kontrolleri için kullanılır.
+     *
+     * @param int $userId
+     * @param string $permission
+     * @return bool
+     */
+    public static function hasAnyPermission(int $userId, string $permission): bool
+    {
+        $perms = self::getUserPermissions($userId);
+
+        foreach ($perms as $scope => $items) {
+            foreach ($items as $id => $grantedPerms) {
+                if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

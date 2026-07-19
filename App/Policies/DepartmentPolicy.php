@@ -26,9 +26,9 @@ class DepartmentPolicy extends BasePolicy
             return true;
         }
 
-        // Bölüm başkanı sadece kendi bölümünü görebilir
-        if ($user->role === 'department_head') {
-            return $user->department_id === $department->id;
+        // Kullanıcı kendi bölümünü görebilir
+        if ($user->department_id === $department->id) {
+            return true;
         }
 
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_DEPARTMENT->value, $department);
@@ -51,10 +51,7 @@ class DepartmentPolicy extends BasePolicy
             return true;
         }
 
-        // Bölüm başkanı sadece kendi bölümünü güncelleyebilir
-        if ($user->role === 'department_head') {
-            return $user->department_id === $department->id;
-        }
+
 
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_DEPARTMENT->value, $department);
     }
