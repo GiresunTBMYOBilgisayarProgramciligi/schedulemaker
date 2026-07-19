@@ -55,9 +55,11 @@ use App\Core\Gate;
                 </li>
 
                 <!-- Eğitim & Öğretim -->
+                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_LESSONS->value) || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_SCHEDULE->value)): ?>
                 <li class="nav-header">EĞİTİM & ÖĞRETİM</li>
+                <?php endif; ?>
                 <!-- Ders İşlemleri -->
-                <?php if (Gate::allowsRole("submanager")): ?>
+                <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_LESSONS->value)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                         <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-journals"></i>
@@ -84,7 +86,7 @@ use App\Core\Gate;
                     </li>
                 <?php endif; ?>
                 <!-- Takvim İşlemleri -->
-                <?php if (Gate::allowsRole("department_head")): ?>
+                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, \App\Enums\PermissionType::MANAGE_SCHEDULE->value)): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'menu-open' : ''; ?>">
                         <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-calendar"></i>
@@ -117,7 +119,9 @@ use App\Core\Gate;
                 <?php endif; ?>
 
                 <!-- Kurumsal Yapı -->
+                <?php if (Gate::allowsRole("submanager") || (Gate::allowsRole("department_head", true) && (!empty($currentUser->department_id) || !empty($currentUser->program_id)))): ?>
                 <li class="nav-header">KURUMSAL YAPI</li>
+                <?php endif; ?>
                 <?php if (Gate::allowsRole("submanager")): ?>
                     <li class="nav-item">
                         <a href="/admin/listunits" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'active' : ''; ?>">
@@ -139,7 +143,7 @@ use App\Core\Gate;
                     </li>
                 <?php endif; ?>
                 <!-- Bölümüm -->
-                <?php if (Gate::allowsRole("department_head", true)): ?>
+                <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->department_id)): ?>
                     <li class="nav-item">
                         <a href="/admin/department/<?= $currentUser->department_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-buildings"></i>
@@ -148,7 +152,7 @@ use App\Core\Gate;
                     </li>
                 <?php endif; ?>
                 <!-- Programım -->
-                <?php if (Gate::allowsRole("department_head", true)): ?>
+                <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->program_id)): ?>
                     <li class="nav-item">
                         <a href="/admin/program/<?= $currentUser->program_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-building"></i>

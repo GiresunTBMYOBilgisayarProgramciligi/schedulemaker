@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\PermissionType;
+
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -88,14 +90,14 @@ class LessonService extends BaseService
         }
 
         if ($isLecturerOwnLesson) {
-            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
             
             $lessonFromDb->size = (int)($requestData['size'] ?? 0);
             if (isset($requestData['classroom_type']) && $requestData['classroom_type'] !== '') {
                 $lessonFromDb->classroom_type = (int)$requestData['classroom_type'];
             }
         } else {
-            Gate::authorize("update", $lessonFromDb, "Ders güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
 
             $dto = LessonDTO::fromArray($requestData);
             $lessonFromDb->fill($dto->toArray());

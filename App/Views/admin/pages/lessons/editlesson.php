@@ -144,7 +144,8 @@ use App\Core\Gate;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="unit_id">Üst Birim</label>
-                                            <select class="form-select tom-select" id="unit_id" name="unit_id" required>
+                                            <select class="form-select tom-select" id="unit_id" name="unit_id" required
+                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="">Birim Seçiniz</option>
                                                 <?php foreach ($units as $unit): ?>
                                                     <!-- Use $lesson->department->unit_id to select the correct unit -->
@@ -157,7 +158,8 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id"
-                                                name="department_id" required data-selected="<?= $lesson->department_id ?? '' ?>">
+                                                name="department_id" required data-selected="<?= $lesson->department_id ?? '' ?>"
+                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
@@ -166,7 +168,7 @@ use App\Core\Gate;
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id" required
-                                                data-selected="<?= $lesson->program_id ?? '' ?>">
+                                                data-selected="<?= $lesson->program_id ?? '' ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>
@@ -198,7 +200,7 @@ use App\Core\Gate;
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label class="col-form-label" for="building_id">Bina Seçimi</label>
-                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="">Bina seçiniz...</option>
                                                 <?php foreach ($buildings as $building): ?>
                                                     <option value="<?= $building->id ?>" <?= $lesson->building_id == $building->id ? 'selected' : '' ?>>
