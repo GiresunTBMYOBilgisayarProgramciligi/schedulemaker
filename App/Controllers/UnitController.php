@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Core\Gate;
 use App\DTOs\UnitDTO;
@@ -34,7 +36,7 @@ class UnitController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorize('create', Unit::class, 'Yeni birim oluşturma yetkiniz yok');
+        Gate::authorize(PermissionType::CREATE->value, Unit::class, 'Yeni birim oluşturma yetkiniz yok');
 
         $dto = (new UnitValidator())->getDTO($requestData);
         (new UnitService())->saveNew($dto);
@@ -55,7 +57,7 @@ class UnitController extends Controller
             throw new Exception('Güncellenecek birim bulunamadı.');
         }
 
-        Gate::authorize('update', $unit, 'Birim güncelleme yetkiniz yok');
+        Gate::authorize(PermissionType::UPDATE->value, $unit, 'Birim güncelleme yetkiniz yok');
 
         $dto = (new UnitValidator())->getDTO($requestData);
         $unit->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
@@ -81,7 +83,7 @@ class UnitController extends Controller
             throw new Exception('Silinecek birim bulunamadı.');
         }
 
-        Gate::authorize('delete', $unit, 'Birim silme yetkiniz yok');
+        Gate::authorize(PermissionType::DELETE->value, $unit, 'Birim silme yetkiniz yok');
         (new UnitService())->deleteUnit($unit);
 
         return [

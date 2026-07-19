@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Models\User;
 use App\Core\Gate;
@@ -55,7 +57,7 @@ class UserController extends Controller
                 throw new Exception("Kullanıcı bulunamadı.");
             }
 
-            Gate::authorize("update", $user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
 
             $currentUser = \App\Middlewares\AuthMiddleware::user();
             $canEditSpecialFields = \App\Core\Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id);
@@ -92,7 +94,7 @@ class UserController extends Controller
                 throw new Exception("Kullanıcı bulunamadı.");
             }
 
-            Gate::authorize("delete", $user, "Kullanıcı Silme yetkiniz yok");
+            Gate::authorize(PermissionType::DELETE->value, $user, "Kullanıcı Silme yetkiniz yok");
 
             // Servis üzerinden silme (Önce ders programları, sonra kullanıcı)
             (new UserService())->deleteUser($user);

@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Models\Lesson;
 use App\Repositories\LessonRepository;
@@ -67,7 +69,7 @@ class LessonController extends Controller
     public function store(array $requestData): array
     {            
             $lesson = new Lesson();
-            Gate::authorize("create", $lesson, "Yeni Ders oluşturma yetkiniz yok");
+            Gate::authorize(PermissionType::CREATE->value, $lesson, "Yeni Ders oluşturma yetkiniz yok");
 
             $dto = (new LessonValidator())->getDTO($requestData);
             
@@ -117,7 +119,7 @@ class LessonController extends Controller
                 throw new Exception("Silinecek ders bulunamadı.");
             }
 
-            Gate::authorize("delete", $lesson, "Ders silme yetkiniz yok");
+            Gate::authorize(PermissionType::DELETE->value, $lesson, "Ders silme yetkiniz yok");
 
             (new LessonService())->deleteLesson($lesson);
 

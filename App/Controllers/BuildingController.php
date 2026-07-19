@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Core\Gate;
 use App\DTOs\BuildingDTO;
@@ -32,7 +34,7 @@ class BuildingController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorize('create', Building::class, 'Yeni bina oluşturma yetkiniz yok');
+        Gate::authorize(PermissionType::CREATE->value, Building::class, 'Yeni bina oluşturma yetkiniz yok');
 
         $dto = (new BuildingValidator())->getDTO($requestData);
         (new BuildingService())->saveNew($dto);
@@ -53,7 +55,7 @@ class BuildingController extends Controller
             throw new Exception('Güncellenecek bina bulunamadı.');
         }
 
-        Gate::authorize('update', $building, 'Bina güncelleme yetkiniz yok');
+        Gate::authorize(PermissionType::UPDATE->value, $building, 'Bina güncelleme yetkiniz yok');
 
         $dto = (new BuildingValidator())->getDTO($requestData);
         $building->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
@@ -79,7 +81,7 @@ class BuildingController extends Controller
             throw new Exception('Silinecek bina bulunamadı.');
         }
 
-        Gate::authorize('delete', $building, 'Bina silme yetkiniz yok');
+        Gate::authorize(PermissionType::DELETE->value, $building, 'Bina silme yetkiniz yok');
         (new BuildingService())->deleteBuilding($building);
 
         return [

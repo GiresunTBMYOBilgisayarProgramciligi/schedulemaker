@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Models\Department;
 use App\Repositories\DepartmentRepository;
@@ -46,7 +48,7 @@ class DepartmentController extends Controller
      * Yeni bölüm oluşturur (POST /ajax/department/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize("create", Department::class, "Yeni bölüm oluşturma yetkiniz yok");
+    {            Gate::authorize(PermissionType::CREATE->value, Department::class, "Yeni bölüm oluşturma yetkiniz yok");
 
             $dto = (new DepartmentValidator())->getDTO($requestData);
             (new DepartmentService())->saveNew($dto);
@@ -66,7 +68,7 @@ class DepartmentController extends Controller
                 throw new Exception("Güncellenecek bölüm bulunamadı.");
             }
 
-            Gate::authorize("update", $department, "Bölüm güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $department, "Bölüm güncelleme yetkiniz yok");
 
             $dto = (new DepartmentValidator())->getDTO($requestData);
             
@@ -94,7 +96,7 @@ class DepartmentController extends Controller
                 throw new Exception("Silinecek bölüm bulunamadı.");
             }
 
-            Gate::authorize("delete", $department, "Bölüm silme yetkiniz yok");
+            Gate::authorize(PermissionType::DELETE->value, $department, "Bölüm silme yetkiniz yok");
 
             (new DepartmentService())->deleteDepartment($department);
 

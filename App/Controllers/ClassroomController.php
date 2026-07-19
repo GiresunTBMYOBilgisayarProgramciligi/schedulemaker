@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Models\Classroom;
 use App\Services\ClassroomService;
@@ -26,7 +28,7 @@ class ClassroomController extends Controller
      * Yeni derslik oluşturur (POST /ajax/classroom/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize("create", Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
+    {            Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
 
             $dto = (new ClassroomValidator())->getDTO($requestData);
             (new ClassroomService())->saveNew($dto);
@@ -46,7 +48,7 @@ class ClassroomController extends Controller
                 throw new Exception("Güncellenecek derslik bulunamadı.");
             }
 
-            Gate::authorize("update", $classroom, "Derslik güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $classroom, "Derslik güncelleme yetkiniz yok");
 
             $dto = (new ClassroomValidator())->getDTO($requestData);
             
@@ -74,7 +76,7 @@ class ClassroomController extends Controller
                 throw new Exception("Silinecek derslik bulunamadı.");
             }
 
-            Gate::authorize("delete", $classroom, "Derslik silme yetkiniz yok");
+            Gate::authorize(PermissionType::DELETE->value, $classroom, "Derslik silme yetkiniz yok");
 
             (new ClassroomService())->deleteClassroom($classroom);
 

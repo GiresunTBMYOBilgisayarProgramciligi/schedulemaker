@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Core\View;
 use App\Enums\ExamType;
@@ -62,7 +64,7 @@ class ScheduleController extends Controller
         $scheduleService = new ScheduleService();
         $schedule = $scheduleService->getOrCreateSchedule($dto);
         
-        Gate::authorize('update', $schedule);
+        Gate::authorize(PermissionType::UPDATE->value, $schedule);
 
         $availableLessons = (new AvailabilityService())->availableLessons($schedule, $preference_mode);
 
@@ -88,7 +90,7 @@ class ScheduleController extends Controller
         
         $scheduleService = new ScheduleService();
         $schedule = $scheduleService->getOrCreateSchedule($dto);
-        Gate::authorize('view', $schedule, "Programı görüntüleme yetkiniz yok");
+        Gate::authorize(PermissionType::VIEW->value, $schedule, "Programı görüntüleme yetkiniz yok");
 
         $HTMLOut = "";
 
@@ -207,7 +209,7 @@ class ScheduleController extends Controller
         if (count($dtos) > 0) {
             $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', clone $schedule);
+                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
             }
         }
 
@@ -241,10 +243,10 @@ class ScheduleController extends Controller
         // Update yetki kontrolü
         if (count($dtos) > 0) {
             $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) Gate::authorize('update', clone $schedule);
+            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
         } elseif (count($deletedDtos) > 0) {
             $schedule = (new ScheduleRepository())->find($deletedDtos[0]->scheduleId);
-            if ($schedule) Gate::authorize('update', clone $schedule);
+            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
         }
 
         $this->logger()->debug("Using LessonScheduleService::moveScheduleItems", $this->logContext());
@@ -275,7 +277,7 @@ class ScheduleController extends Controller
         if (count($dtos) > 0) {
             $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', clone $schedule);
+                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
             }
         }
 
@@ -303,7 +305,7 @@ class ScheduleController extends Controller
         if (count($dtos) > 0) {
             $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
             if ($schedule) {
-                Gate::authorize('update', clone $schedule);
+                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
             }
         }
 
@@ -352,10 +354,10 @@ class ScheduleController extends Controller
 
         if (count($dtos) > 0) {
             $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) Gate::authorize('update', clone $schedule);
+            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
         } elseif (count($deletedDtos) > 0) {
             $schedule = (new ScheduleRepository())->find($deletedDtos[0]->scheduleId);
-            if ($schedule) Gate::authorize('update', clone $schedule);
+            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
         }
 
         $this->logger()->debug("Using ExamScheduleService::moveExamScheduleItems", $this->logContext());
@@ -445,7 +447,7 @@ class ScheduleController extends Controller
         if (key_exists('id', $requestData)) {
             $schedule = (new ScheduleRepository())->find($requestData['id']);
             if ($schedule) {
-                Gate::authorize('view', $schedule, "Programı görüntüleme yetkiniz yok");
+                Gate::authorize(PermissionType::VIEW->value, $schedule, "Programı görüntüleme yetkiniz yok");
                 return [
                     "status" => "success",
                     "schedule" => $schedule->getArray()

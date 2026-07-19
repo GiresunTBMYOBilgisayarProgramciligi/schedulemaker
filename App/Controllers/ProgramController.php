@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Enums\PermissionType;
+
 use App\Core\Controller;
 use App\Models\Program;
 use App\Repositories\ProgramRepository;
@@ -45,7 +47,7 @@ class ProgramController extends Controller
      * Yeni program oluşturur (POST /ajax/program/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize("create", Program::class, "Yeni program oluşturma yetkiniz yok");
+    {            Gate::authorize(PermissionType::CREATE->value, Program::class, "Yeni program oluşturma yetkiniz yok");
 
             $dto = (new ProgramValidator())->getDTO($requestData);
             (new ProgramService())->saveNew($dto);
@@ -65,7 +67,7 @@ class ProgramController extends Controller
                 throw new Exception("Güncellenecek program bulunamadı.");
             }
 
-            Gate::authorize("update", $program, "Program güncelleme yetkiniz yok");
+            Gate::authorize(PermissionType::UPDATE->value, $program, "Program güncelleme yetkiniz yok");
 
             $dto = (new ProgramValidator())->getDTO($requestData);
             
@@ -93,7 +95,7 @@ class ProgramController extends Controller
                 throw new Exception("Silinecek program bulunamadı.");
             }
 
-            Gate::authorize("delete", $program, "Program silme yetkiniz yok");
+            Gate::authorize(PermissionType::DELETE->value, $program, "Program silme yetkiniz yok");
 
             (new ProgramService())->deleteProgram($program);
 
