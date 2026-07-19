@@ -23,24 +23,15 @@ class ProgramController extends Controller
 
 
     /**
-     * @param array $filters department_id Bölüm id numarası belirtilirse sadece o bölüme ait programlar listelenir
-     * @return array
-     * @throws Exception
-     */
-    public function getProgramsList(array $filters = []): array
-    {
-        return (new ProgramRepository())->findBy($filters);
-    }
-
-    /**
-     * AjaxRouter için program listesi döner
+     * AjaxRouter için program listesi döner (yetki filtrelemesi uygulanır)
      */
     public function getProgramsListResponse(int $department_id): array
-    {            $programs = $this->getProgramsList(['department_id' => $department_id, 'active' => true]);
-            return [
-                'status' => "success",
-                'programs' => $programs
-            ];
+    {
+        $programs = (new ProgramRepository())->getAuthorized('view', ['department_id' => $department_id, 'active' => true]);
+        return [
+            'status' => "success",
+            'programs' => $programs
+        ];
     }
 
     /**

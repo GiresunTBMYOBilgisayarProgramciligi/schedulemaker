@@ -21,7 +21,7 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
-use App\Services\DepartmentService;
+
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
@@ -627,7 +627,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editschedule');
         
-        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
+        $departments = (new DepartmentRepository())->getAuthorized('manage_schedule', ['active' => true]);
         
         if (empty($departments)) {
             throw new Exception("Ders programı düzenleme yetkiniz yok", 403);
@@ -635,7 +635,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAllUnits(),
+            "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
@@ -656,7 +656,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editexamschedule');
         
-        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
+        $departments = (new DepartmentRepository())->getAuthorized('manage_schedule', ['active' => true]);
 
         if (empty($departments)) {
             throw new Exception("Sınav programı düzenleme yetkiniz yok", 403);
@@ -664,7 +664,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAllUnits(),
+            "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
             "page_title" => "Sınav Programını Düzenle",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];
@@ -684,7 +684,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('exportschedule');
         
-        $departments = (new DepartmentService())->getAuthorizedDepartmentsForSchedule($currentUser);
+        $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
 
         if (empty($departments)) {
             throw new Exception("Ders programı Dışa aktarma yetkiniz yok", 403);
@@ -692,7 +692,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAllUnits(),
+            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Program Dışa Aktar",
             "classrooms" => (new ClassroomRepository())->findAll()
         ];

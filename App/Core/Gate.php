@@ -5,6 +5,10 @@ namespace App\Core;
 use App\Middlewares\AuthMiddleware;
 use Exception;
 use App\Core\Log;
+use App\Enums\PermissionType;
+use App\Models\Unit;
+use App\Models\Department;
+use App\Models\Program;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -67,6 +71,28 @@ class Gate
         $policy = new $policyClass();
 
         if (!method_exists($policy, $action)) {
+            // Eğer action 'manage_' ile başlıyorsa özel yetki (cascade) kontrolü yap
+            if (str_starts_with($action, 'manage_')) {
+                // 'before' kontrolü (manager/submanager gibi global yetkiler için)
+                if (method_exists($policy, 'before')) {
+                    $before = $policy->before($user, $action);
+                    if ($before !== null) {
+                        return $before;
+                    }
+                }
+
+                // department_head yetkisi sadece kendi bölümü ve alt programları için (manage_schedule)
+                if ($user->role === 'department_head' && $action === PermissionType::MANAGE_SCHEDULE->value) {
+                    if ($model instanceof Department && $model->id === $user->department_id) {
+                        return true;
+                    }
+                    if ($model instanceof Program && $model->department_id === $user->department_id) {
+                        return true;
+                    }
+                }
+
+                return self::hasCascadePermission($user->id, $action, $model);
+            }
             return false;
         }
 
@@ -192,7 +218,7 @@ class Gate
         $perms = self::getUserPermissions($userId);
 
         // Global yetkiler (örn. MANAGE_BUILDINGS) tüm sistemde geçerlidir
-        if (in_array($permission, [\App\Enums\PermissionType::MANAGE_BUILDINGS->value])) {
+        if (in_array($permission, [PermissionType::MANAGE_BUILDINGS->value])) {
             foreach ($perms as $scope => $items) {
                 foreach ($items as $id => $grantedPerms) {
                     if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
@@ -208,17 +234,17 @@ class Gate
         $programId = $data['program_id'] ?? null;
 
         if ($model) {
-            $programId = $programId ?? ($model->program_id ?? ($model instanceof \App\Models\Program ? $model->id : null));
-            $departmentId = $departmentId ?? ($model->department_id ?? ($model instanceof \App\Models\Department ? $model->id : null));
-            $unitId = $unitId ?? ($model->unit_id ?? ($model instanceof \App\Models\Unit ? $model->id : null));
+            $programId = $programId ?? ($model->program_id ?? ($model instanceof Program ? $model->id : null));
+            $departmentId = $departmentId ?? ($model->department_id ?? ($model instanceof Department ? $model->id : null));
+            $unitId = $unitId ?? ($model->unit_id ?? ($model instanceof Unit ? $model->id : null));
         }
 
         if ($programId && !$departmentId) {
-            $prog = (new \App\Models\Program())->find($programId);
+            $prog = (new Program())->find($programId);
             $departmentId = $prog->department_id ?? null;
         }
         if ($departmentId && !$unitId) {
-            $dept = (new \App\Models\Department())->find($departmentId);
+            $dept = (new Department())->find($departmentId);
             $unitId = $dept->unit_id ?? null;
         }
 
@@ -233,6 +259,25 @@ class Gate
         // 3. Birim Seviyesi
         if ($unitId && in_array($permission, $perms['units'][$unitId] ?? [])) {
             return true;
+        }
+
+        // --- AŞAĞI YÖNLÜ (KASKAD) KONTROL (Çocuklarda yetki var mı?) ---
+        if ($model) {
+            if ($model instanceof Unit) {
+                $departments = (new Department())->get()->where(['unit_id' => $model->id])->all();
+                foreach ($departments as $dept) {
+                    if (in_array($permission, $perms['departments'][$dept->id] ?? [])) return true;
+                    $programs = (new Program())->get()->where(['department_id' => $dept->id])->all();
+                    foreach ($programs as $prog) {
+                        if (in_array($permission, $perms['programs'][$prog->id] ?? [])) return true;
+                    }
+                }
+            } elseif ($model instanceof Department) {
+                $programs = (new Program())->get()->where(['department_id' => $model->id])->all();
+                foreach ($programs as $prog) {
+                    if (in_array($permission, $perms['programs'][$prog->id] ?? [])) return true;
+                }
+            }
         }
 
         return false;

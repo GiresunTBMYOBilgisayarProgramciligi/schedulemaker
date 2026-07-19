@@ -23,21 +23,11 @@ class DepartmentController extends Controller
 
 
     /**
-     * @param array $filters unit_id Birim id numarası belirtilirse sadece o birime ait bölümler listelenir
-     * @return array
-     * @throws Exception
-     */
-    public function getDepartmentsList(array $filters = []): array
-    {
-        return (new DepartmentRepository())->findBy($filters);
-    }
-
-    /**
-     * AjaxRouter için bölüm listesi döner
+     * AjaxRouter için bölüm listesi döner (yetki filtrelemesi uygulanır)
      */
     public function getDepartmentsListResponse(int $unit_id): array
     {
-        $departments = $this->getDepartmentsList(['unit_id' => $unit_id, 'active' => true]);
+        $departments = (new DepartmentRepository())->getAuthorized('view', ['unit_id' => $unit_id, 'active' => true]);
         return [
             'status' => "success",
             'departments' => $departments

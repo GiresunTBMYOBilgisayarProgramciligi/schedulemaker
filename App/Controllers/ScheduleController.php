@@ -395,8 +395,15 @@ class ScheduleController extends Controller
      */
     public function getAvailableClassrooms(array $requestData): array
     {
-        Gate::authorizeRole("department_head", false, "Uygun ders listesini almak için yetkiniz yok");
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableClassrooms");
+        if ($dto->schedule_id) {
+            $schedule = clone (new ScheduleRepository())->find($dto->schedule_id);
+            if ($schedule) {
+                Gate::authorize(PermissionType::UPDATE->value, $schedule, "Uygun derslik listesini almak için yetkiniz yok");
+            }
+        } else {
+            Gate::authorizeRole("department_head", false, "Uygun derslik listesini almak için yetkiniz yok");
+        }
         $service = new AvailabilityService();
         $classrooms = $service->availableClassrooms($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
         return [
@@ -413,8 +420,15 @@ class ScheduleController extends Controller
      */
     public function getAvailableObservers(array $requestData): array
     {
-        Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableObservers");
+        if ($dto->schedule_id) {
+            $schedule = clone (new ScheduleRepository())->find($dto->schedule_id);
+            if ($schedule) {
+                Gate::authorize(PermissionType::UPDATE->value, $schedule, "Uygun gözetmen listesini almak için yetkiniz yok");
+            }
+        } else {
+            Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
+        }
         $service = new AvailabilityService();
         $observers = $service->availableObservers($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
         return [

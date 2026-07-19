@@ -7,10 +7,6 @@ use App\Models\Program;
 use App\Models\Lesson;
 use App\DTOs\DepartmentDTO;
 use App\Core\Database;
-use App\Models\User;
-use App\Core\Gate;
-use App\Repositories\DepartmentRepository;
-use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -123,37 +119,5 @@ class DepartmentService extends BaseService
             ]);
             throw new Exception("Bölüm silinirken bir hata oluştu: " . $e->getMessage());
         }
-    }
-
-    /**
-     * Kullanıcının ders programı yönetme yetkisi olan bölümleri getirir
-     * @param User $currentUser
-     * @return array
-     */
-    public function getAuthorizedDepartmentsForSchedule(User $currentUser): array
-    {
-        $departments = [];
-        if (Gate::allowsRole("submanager")) {
-            $departments = (new DepartmentRepository())->getActiveDepartments();
-        } else {
-            $allDeps = (new DepartmentRepository())->getActiveDepartments();
-            $allPrograms = (new Program())->get()->all();
-            
-            foreach ($allDeps as $dep) {
-                if (Gate::allowsRole("department_head") && $currentUser->department_id === $dep->id) {
-                    $departments[] = $dep;
-                } elseif (Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $dep)) {
-                    $departments[] = $dep;
-                } else {
-                    foreach ($allPrograms as $prog) {
-                        if ($prog->department_id === $dep->id && Gate::hasCascadePermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value, $prog)) {
-                            $departments[] = $dep;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        return $departments;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use PDO;
 use App\Core\Database;
+use App\Core\Gate;
 use App\Core\Model;
 use Exception;
 
@@ -102,5 +103,20 @@ abstract class BaseRepository
         /** @var Model $model */
         $model = new $this->modelClass;
         return $model->get()->where($criteria)->count();
+    }
+
+    /**
+     * Kullanıcının belirtilen aksiyon için yetkili olduğu kayıtları getirir.
+     * AuthMiddleware üzerinden mevcut kullanıcıyı otomatik alır.
+     *
+     * @param string $action 'view', 'update', 'delete' vb.
+     * @param array $criteria Filtre kriterleri
+     * @return array
+     * @throws Exception
+     */
+    public function getAuthorized(string $action = 'view', array $criteria = []): array
+    {
+        $models = $this->findBy($criteria);
+        return array_values(array_filter($models, fn($model) => Gate::check($action, $model)));
     }
 }

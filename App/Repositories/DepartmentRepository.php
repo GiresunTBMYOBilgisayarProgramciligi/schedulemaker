@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Department;
-use App\Controllers\ProgramController;
+use App\Repositories\ProgramRepository;
 use Exception;
 
 class DepartmentRepository extends BaseRepository
@@ -27,15 +27,16 @@ class DepartmentRepository extends BaseRepository
      * Bölümü tanımlanmamış bir durum ise sadece program seçiniz verisi olur.
      * Eğer bölümü varsa sadece o programa ait liste gözükür
      * @param int|null $department_id
+     * @param string $action Yetki kontrolü için aksiyon türü ('view', 'update' vb.)
      * @return object[]
      * @throws Exception
      */
-    public function getDepartmentProgramsList(?int $department_id): array
+    public function getDepartmentProgramsList(?int $department_id, string $action = 'view'): array
     {
         if (is_null($department_id)) {
             $list = [(object) ["id" => 0, "name" => "Program Seçiniz"]];
         } else {
-            $list = (new ProgramController())->getProgramsList(['department_id' => $department_id]);
+            $list = (new ProgramRepository())->getAuthorized($action, ['department_id' => $department_id]);
             array_unshift($list, (object) ["id" => 0, "name" => "Program Seçiniz"]);
         }
         return $list;
