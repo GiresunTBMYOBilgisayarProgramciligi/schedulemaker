@@ -236,6 +236,19 @@ class Gate
             $unitId = $dept->unit_id ?? null;
         }
 
+        // Eğer hiçbir spesifik hedef belirtilmemişse (örn. liste sayfaları için),
+        // yetkinin herhangi bir yerde tanımlı olup olmadığına bak.
+        if (!$programId && !$departmentId && !$unitId) {
+            foreach ($perms as $scope => $items) {
+                foreach ($items as $id => $grantedPerms) {
+                    if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         // 1. Program Seviyesi
         if ($programId && in_array($permission, $perms['programs'][$programId] ?? [])) {
             return true;
