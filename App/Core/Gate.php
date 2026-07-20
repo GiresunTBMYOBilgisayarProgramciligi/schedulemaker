@@ -245,16 +245,30 @@ class Gate
             return self::hasAnyPermission($userId, $permission);
         }
 
+        $impliedPermissions = [$permission];
+        $manageProgramImplies = [PermissionType::MANAGE_PROGRAM->value, PermissionType::MANAGE_USERS->value, PermissionType::MANAGE_SCHEDULE->value, PermissionType::MANAGE_LESSONS->value];
+        if (in_array($permission, $manageProgramImplies)) {
+            $impliedPermissions[] = PermissionType::MANAGE_DEPARTMENT->value;
+            $impliedPermissions[] = PermissionType::MANAGE_UNIT->value;
+        }
+        if ($permission === PermissionType::MANAGE_DEPARTMENT->value) {
+            $impliedPermissions[] = PermissionType::MANAGE_UNIT->value;
+        }
+
+        $hasPerm = function($haystack) use ($impliedPermissions) {
+            return is_array($haystack) && count(array_intersect($haystack, $impliedPermissions)) > 0;
+        };
+
         // 1. Program Seviyesi
-        if ($programId && in_array($permission, $perms['programs'][$programId] ?? [])) {
+        if ($programId && $hasPerm($perms['programs'][$programId] ?? [])) {
             return true;
         }
         // 2. Bölüm Seviyesi
-        if ($departmentId && in_array($permission, $perms['departments'][$departmentId] ?? [])) {
+        if ($departmentId && $hasPerm($perms['departments'][$departmentId] ?? [])) {
             return true;
         }
         // 3. Birim Seviyesi
-        if ($unitId && in_array($permission, $perms['units'][$unitId] ?? [])) {
+        if ($unitId && $hasPerm($perms['units'][$unitId] ?? [])) {
             return true;
         }
 
@@ -263,16 +277,16 @@ class Gate
             if ($model instanceof Unit) {
                 $departments = (new Department())->get()->where(['unit_id' => $model->id])->all();
                 foreach ($departments as $dept) {
-                    if (in_array($permission, $perms['departments'][$dept->id] ?? [])) return true;
+                    if ($hasPerm($perms['departments'][$dept->id] ?? [])) return true;
                     $programs = (new Program())->get()->where(['department_id' => $dept->id])->all();
                     foreach ($programs as $prog) {
-                        if (in_array($permission, $perms['programs'][$prog->id] ?? [])) return true;
+                        if ($hasPerm($perms['programs'][$prog->id] ?? [])) return true;
                     }
                 }
             } elseif ($model instanceof Department) {
                 $programs = (new Program())->get()->where(['department_id' => $model->id])->all();
                 foreach ($programs as $prog) {
-                    if (in_array($permission, $perms['programs'][$prog->id] ?? [])) return true;
+                    if ($hasPerm($perms['programs'][$prog->id] ?? [])) return true;
                 }
             }
         }
@@ -292,9 +306,19 @@ class Gate
     {
         $perms = self::getUserPermissions($userId);
 
+        $impliedPermissions = [$permission];
+        $manageProgramImplies = [PermissionType::MANAGE_PROGRAM->value, PermissionType::MANAGE_USERS->value, PermissionType::MANAGE_SCHEDULE->value, PermissionType::MANAGE_LESSONS->value];
+        if (in_array($permission, $manageProgramImplies)) {
+            $impliedPermissions[] = PermissionType::MANAGE_DEPARTMENT->value;
+            $impliedPermissions[] = PermissionType::MANAGE_UNIT->value;
+        }
+        if ($permission === PermissionType::MANAGE_DEPARTMENT->value) {
+            $impliedPermissions[] = PermissionType::MANAGE_UNIT->value;
+        }
+
         foreach ($perms as $scope => $items) {
             foreach ($items as $id => $grantedPerms) {
-                if (is_array($grantedPerms) && in_array($permission, $grantedPerms)) {
+                if (is_array($grantedPerms) && count(array_intersect($impliedPermissions, $grantedPerms)) > 0) {
                     return true;
                 }
             }

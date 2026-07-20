@@ -725,7 +725,7 @@ class AdminPageController extends Controller
 
     public function getLogsPageData(AssetManager $assetManager): array
     {
-        Gate::authorizeRole("submanager", false, "Kayıtlara erişim yetkiniz yok");
+        Gate::authorizeRole("admin", false, "Kayıtlara erişim yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $logs = (new Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
         return [

@@ -125,6 +125,9 @@ class LessonPolicy extends BasePolicy
      */
     public function combine(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return $user->role === 'manager' || 
+               $user->role === 'submanager' || 
+               Gate::hasAnyPermission($user->id, PermissionType::MANAGE_LESSONS->value) ||
+               Gate::hasAnyPermission($user->id, PermissionType::MANAGE_SCHEDULE->value);
     }
 }

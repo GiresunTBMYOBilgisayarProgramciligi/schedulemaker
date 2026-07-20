@@ -141,7 +141,7 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function combine(array $requestData): array
-    {       Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
+    {       Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
             $dto = (new CombineLessonValidator())->getDTO($requestData);
             
             if (!$dto->parentId || !$dto->childId) {
@@ -161,7 +161,7 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function deleteParentLesson(array $requestData): array
-    {       Gate::authorizeRole("submanager", false, "Ders birşeltirmesi kaldırma yetkiniz yok");
+    {       Gate::authorize('combine', Lesson::class, "Ders birşeltirmesi kaldırma yetkiniz yok");
             
             $requestData['type'] = 'lesson';
             $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
@@ -184,7 +184,7 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function combineExamLesson(array $requestData): array
-    {            Gate::authorizeRole("department_head", false, "Sınav birleştirme yetkiniz yok");
+    {            Gate::authorize('combine', Lesson::class, "Sınav birleştirme yetkiniz yok");
             
             $dto = (new CombineExamLessonValidator())->getDTO($requestData);
             

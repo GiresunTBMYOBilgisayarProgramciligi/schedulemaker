@@ -15,12 +15,12 @@ class SettingPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin';
+        return false;
     }
 
     public function view(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return false;
     }
 
     /**
@@ -28,7 +28,7 @@ class SettingPolicy extends BasePolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return false;
     }
 
     /**
@@ -36,7 +36,7 @@ class SettingPolicy extends BasePolicy
      */
     public function update(User $user, Setting $setting): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return false;
     }
 
     /**
@@ -44,6 +44,6 @@ class SettingPolicy extends BasePolicy
      */
     public function delete(User $user, Setting $setting): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return false;
     }
 }
