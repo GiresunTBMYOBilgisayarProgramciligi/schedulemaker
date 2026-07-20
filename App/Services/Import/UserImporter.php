@@ -13,6 +13,8 @@ use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use App\Validators\UserValidator;
 use App\Exceptions\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -174,6 +176,22 @@ class UserImporter
                     $this->cache['users_by_mail'][$mail] = $userRepository->findByEmail($mail);
                 }
                 $user = $this->cache['users_by_mail'][$mail];
+
+                if ($user) {
+                    if (!Gate::check(PermissionType::UPDATE->value, $user)) {
+                        $rowErrors[] = "Bu kullanıcıyı güncelleme yetkiniz yok.";
+                    }
+                } else {
+                    if (!Gate::check(PermissionType::CREATE->value, $userDTO)) {
+                        $rowErrors[] = "Bu birime/bölüme kullanıcı ekleme yetkiniz yok.";
+                    }
+                }
+
+                if (!empty($rowErrors)) {
+                    $errors[] = "Satır " . ($index + 2) . ": " . implode(" | ", $rowErrors);
+                    $errorCount++;
+                    continue;
+                }
 
                 if ($user) {
                     $user->fill($userData);

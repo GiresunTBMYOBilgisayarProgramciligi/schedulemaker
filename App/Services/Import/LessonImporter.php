@@ -13,6 +13,8 @@ use App\Models\Lesson;
 use App\Services\LessonService;
 use App\Enums\ClassroomType;
 use App\Enums\LessonType;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use App\Validators\LessonValidator;
 use App\Exceptions\ValidationException;
 use Exception;
@@ -214,6 +216,23 @@ class LessonImporter
                 }
 
                 $lesson = (new Lesson())->get()->where(['code' => $code, 'program_id' => $program->id, 'group_no' => $group_no])->first();
+                
+                if ($lesson) {
+                    if (!Gate::check(PermissionType::UPDATE->value, $lesson)) {
+                        $rowErrors[] = "Bu dersi güncelleme yetkiniz yok.";
+                    }
+                } else {
+                    if (!Gate::check(PermissionType::CREATE->value, $lessonDTO)) {
+                        $rowErrors[] = "Bu bölüme ders ekleme yetkiniz yok.";
+                    }
+                }
+
+                if (!empty($rowErrors)) {
+                    $errors[] = "Satır " . ($rowIndex + 2) . ": " . implode(" | ", $rowErrors);
+                    $errorCount++;
+                    continue;
+                }
+
                 if ($lesson) {
                     $lesson->fill($lessonDTO->toArray());
                     $lessonService->updateLesson($lesson);
