@@ -54,7 +54,13 @@ use App\Core\Gate;
                             <ul class="list-group list-group-flush mb-3">
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
-                                        <b>Ders</b>
+                                        <b># id</b>
+                                    </div>
+                                    <span class="badge bg-primary "><?= $user->id ?></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div class="ms-3 me-auto">
+                                        <b>Ders sayısı</b>
                                     </div>
                                     <span class="badge text-bg-primary "><?= count($user->lessons) ?></span>
                                 </li>
