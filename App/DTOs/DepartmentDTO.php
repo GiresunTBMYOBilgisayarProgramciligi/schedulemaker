@@ -18,8 +18,8 @@ class DepartmentDTO
     {
         $dto = new self();
         $dto->name           = $data['name'] ?? null;
-        $dto->chairperson_id = isset($data['chairperson_id']) && $data['chairperson_id'] !== '' ? (int)$data['chairperson_id'] : null;
-        $dto->unit_id        = isset($data['unit_id']) && $data['unit_id'] !== '' ? (int)$data['unit_id'] : null;
+        $dto->chairperson_id = isset($data['chairperson_id']) && $data['chairperson_id'] !== '' && $data['chairperson_id'] !== '0' && $data['chairperson_id'] !== 0 ? (int)$data['chairperson_id'] : null;
+        $dto->unit_id        = isset($data['unit_id']) && $data['unit_id'] !== '' && $data['unit_id'] !== '0' && $data['unit_id'] !== 0 ? (int)$data['unit_id'] : null;
 
         if (isset($data['active'])) {
             $dto->active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);

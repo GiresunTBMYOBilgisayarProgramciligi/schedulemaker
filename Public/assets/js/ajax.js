@@ -202,6 +202,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (data.status === "success" && form && form.classList.contains("js-reset-on-success")) {
                     // işlemler tamamlandıktan sonra form resetleniyor. 
                     form.reset();
+                    // TomSelect bileşenlerini de görsel olarak sıfırla
+                    form.querySelectorAll('select').forEach(select => {
+                        if (select.tomselect) {
+                            select.tomselect.clear();
+                        }
+                    });
                 }
 
                 return data;
