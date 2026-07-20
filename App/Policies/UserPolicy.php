@@ -22,8 +22,10 @@ class UserPolicy extends BasePolicy
      */
     public function view(User $user, User $targetUser): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && ($user->unit_id == $targetUser->unit_id || empty($targetUser->unit_id)))) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && ($user->unit_id == $targetUser->unit_id || empty($targetUser->unit_id))) {
+                return true;
+            }
         }
 
         // Kullanıcı kendini görebilir
@@ -55,7 +57,10 @@ class UserPolicy extends BasePolicy
     public function create(User $user, $userData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            return true;
+            if (isset($userData->unit_id)) {
+                return !is_null($user->unit_id) && $user->unit_id == $userData->unit_id;
+            }
+            return !is_null($user->unit_id);
         }
 
         if ($user->role === 'department_head' && isset($userData->department_id)) {
@@ -79,8 +84,10 @@ class UserPolicy extends BasePolicy
      */
     public function update(User $user, User $targetUser): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $targetUser->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $targetUser->unit_id) {
+                return true;
+            }
         }
 
         // Kullanıcı kendi profilini güncelleyebilir
@@ -111,8 +118,10 @@ class UserPolicy extends BasePolicy
      */
     public function delete(User $user, User $targetUser): bool
     {
-        if ($user->role === 'manager') {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $targetUser->unit_id) {
+                return true;
+            }
         }
 
         if ($user->role === 'department_head') {

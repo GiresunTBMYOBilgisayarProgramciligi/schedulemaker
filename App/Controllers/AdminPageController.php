@@ -472,7 +472,7 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Department::class, "Bölümler listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "departments" => (new DepartmentRepository())->getAllDepartmentsWithChairperson(),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', [], ['chairperson']),
             "page_title" => "Bölüm Listesi"
         ];
     }
@@ -571,7 +571,7 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Program::class, "Programlar listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "programs" => (new ProgramRepository())->getAllProgramsWithDepartment(),
+            "programs" => (new ProgramRepository())->getAuthorized('view', [], ['department']),
             "page_title" => "Program Listesi",
         ];
     }
@@ -594,7 +594,7 @@ class AdminPageController extends Controller
     public function getEditProgramPageData(AssetManager $assetManager, $id = null): array
     {
         if (!is_null($id)) {
-            $program = (new Program())->find($id) ?: throw new Exception("Program bulunamadı");
+            $program = (new Program())->get()->with(['department'])->find($id) ?: throw new Exception("Program bulunamadı");
         } else {
             throw new Exception("Program id numarası belirtilmelidir");
         }

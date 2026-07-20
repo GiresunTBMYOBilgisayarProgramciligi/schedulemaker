@@ -22,8 +22,11 @@ class LessonPolicy extends BasePolicy
      */
     public function view(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
+                return true;
+            }
         }
 
         // Dersi veren akademisyen
@@ -46,7 +49,13 @@ class LessonPolicy extends BasePolicy
     public function create(User $user, $lessonData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            return true;
+            if (isset($lessonData->department_id)) {
+                $dept = (new \App\Models\Department())->find($lessonData->department_id);
+                if ($dept && !is_null($user->unit_id) && $user->unit_id == $dept->unit_id) {
+                    return true;
+                }
+            }
+            return !is_null($user->unit_id);
         }
 
         if ($user->role === 'department_head') {
@@ -69,8 +78,11 @@ class LessonPolicy extends BasePolicy
      */
     public function update(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
+                return true;
+            }
         }
 
         // Akademisyen kendi dersini güncelleyebilir (bazı alanlar kısıtlı olabilir ama yetki var)
@@ -92,8 +104,11 @@ class LessonPolicy extends BasePolicy
      */
     public function delete(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
+                return true;
+            }
         }
 
         // Bölüm başkanı kendi bölümünün derslerini silebilir

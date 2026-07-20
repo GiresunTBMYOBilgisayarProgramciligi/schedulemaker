@@ -22,8 +22,10 @@ class DepartmentPolicy extends BasePolicy
      */
     public function view(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
+                return true;
+            }
         }
 
         // Kullanıcı kendi bölümünü görebilir
@@ -39,16 +41,11 @@ class DepartmentPolicy extends BasePolicy
      */
     public function create(User $user, $departmentData = null): bool
     {
-        if ($user->role === 'manager') {
-            return true;
-        }
-
-        if ($user->role === 'submanager') {
-            // submanager sadece kendi birimi altına bölüm ekleyebilir
+        if ($user->role === 'manager' || $user->role === 'submanager') {
             if (isset($departmentData->unit_id)) {
-                return $user->unit_id == $departmentData->unit_id;
+                return !is_null($user->unit_id) && $user->unit_id == $departmentData->unit_id;
             }
-            return true;
+            return !is_null($user->unit_id);
         }
 
         // Eğer $departmentData ile unit_id geldiyse, o birim için MANAGE_DEPARTMENT yetkisi var mı?
@@ -65,8 +62,10 @@ class DepartmentPolicy extends BasePolicy
      */
     public function update(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
+                return true;
+            }
         }
 
 
@@ -79,8 +78,10 @@ class DepartmentPolicy extends BasePolicy
      */
     public function delete(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
+                return true;
+            }
         }
 
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_DEPARTMENT->value, $department);

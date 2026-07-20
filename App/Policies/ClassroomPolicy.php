@@ -28,7 +28,7 @@ class ClassroomPolicy extends BasePolicy
     public function view(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
@@ -41,7 +41,7 @@ class ClassroomPolicy extends BasePolicy
     {
         if ($classroom) {
             $unit = $classroom->getUnit();
-            if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+            if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
                 return true;
             }
             return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
@@ -59,7 +59,7 @@ class ClassroomPolicy extends BasePolicy
     public function update(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
@@ -71,7 +71,7 @@ class ClassroomPolicy extends BasePolicy
     public function delete(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && $user->unit_id === ($unit ? $unit->id : null)) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);

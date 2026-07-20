@@ -23,8 +23,11 @@ class ProgramPolicy extends BasePolicy
      */
     public function view(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
+                return true;
+            }
         }
 
         // Programın bağlı olduğu bölümün başkanı
@@ -53,8 +56,11 @@ class ProgramPolicy extends BasePolicy
      */
     public function update(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
+                return true;
+            }
         }
 
         // Bölüm başkanı kendi programlarını güncelleyebilir
@@ -70,8 +76,11 @@ class ProgramPolicy extends BasePolicy
      */
     public function delete(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
-            return true;
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
+                return true;
+            }
         }
 
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);

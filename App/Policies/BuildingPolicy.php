@@ -27,7 +27,7 @@ class BuildingPolicy extends BasePolicy
     public function view(User $user, Building $building): bool
     {
 
-        if (Gate::allowsRole('secretary') && $user->unit_id === $building->unit_id) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
 
@@ -45,7 +45,7 @@ class BuildingPolicy extends BasePolicy
     public function create(User $user, $building = null): bool
     {
 
-        if ($building && Gate::allowsRole('secretary') && $user->unit_id === $building->unit_id) {
+        if ($building && Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
 
@@ -57,7 +57,7 @@ class BuildingPolicy extends BasePolicy
      */
     public function update(User $user, Building $building): bool
     {
-        if (Gate::allowsRole('secretary') && $user->unit_id === $building->unit_id) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
@@ -68,7 +68,7 @@ class BuildingPolicy extends BasePolicy
      */
     public function delete(User $user, Building $building): bool
     {
-        if (Gate::allowsRole('secretary') && $user->unit_id === $building->unit_id) {
+        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
