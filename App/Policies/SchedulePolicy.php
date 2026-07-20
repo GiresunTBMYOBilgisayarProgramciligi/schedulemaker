@@ -25,14 +25,13 @@ class SchedulePolicy extends BasePolicy
 
     public function update(User $user, Schedule $schedule): bool
     {
-        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find((new \App\Models\Lesson())->find($schedule->lesson_id)->department_id)->unit_id)) {
-            return true;
-        }
-
         switch ($schedule->owner_type) {
             case 'program':
                 $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($program) {
+                    if ($user->role === 'manager' || $user->role === 'submanager') {
+                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                    }
                     if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $program)) return true;
                     
                     return $program->department->chairperson_id == $user->id;
@@ -42,6 +41,11 @@ class SchedulePolicy extends BasePolicy
             case 'user':
                 $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($scheduleUser) {
+                    if ($user->role === 'manager' || $user->role === 'submanager') {
+                        if (is_null($user->unit_id)) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
+                    }
                     // Hoca bölümsüzse veya kendi programıysa veya bölüm başkanıysa
                     if (!$scheduleUser->department_id) {
                         return true;
@@ -55,6 +59,9 @@ class SchedulePolicy extends BasePolicy
             case 'lesson':
                 $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($lesson) {
+                    if ($user->role === 'manager' || $user->role === 'submanager') {
+                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                    }
                     if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
 
                     return $lesson->department->chairperson_id == $user->id;
@@ -62,7 +69,7 @@ class SchedulePolicy extends BasePolicy
                 break;
 
             case 'classroom':
-                // Sınıf programları için genellikle üst yönetim yetkilidir, 
+                // Sınıf programları için genellikle üst yönetim yetkilidir
                 return true;
         }
 
