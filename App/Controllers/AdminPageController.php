@@ -281,7 +281,7 @@ class AdminPageController extends Controller
         if ($currentUser->role == "department_head") {
             $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['lessons'] = (new LessonRepository())->getAuthorized('view', [], ['lecturer', 'program', 'department']);
+            $view_data['lessons'] = (new LessonRepository())->getAuthorized('view', [], ['lecturer', 'program', 'department', 'building']);
         }
         return $view_data;
     }

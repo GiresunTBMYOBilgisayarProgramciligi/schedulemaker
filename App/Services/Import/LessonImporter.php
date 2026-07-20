@@ -19,6 +19,7 @@ use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
+use App\Repositories\BuildingRepository;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use function App\Helpers\formatLessonName;
 
@@ -32,6 +33,7 @@ class LessonImporter
     private array $cache = [
         'departments'   => [],
         'programs'      => [],
+        'buildings'     => [],
         'users_by_name' => [],
     ];
 
@@ -75,7 +77,7 @@ class LessonImporter
         $headers = array_shift($rows);
         $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
         $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
-        $expectedHeaders = ["Bölüm", "Program", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü"];
+        $expectedHeaders = ["Bölümü / Ana Bilim Dalı", "Programı / Bilim Dalı", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü","Bina"];
 
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
@@ -97,12 +99,12 @@ class LessonImporter
                 if ($isEmpty) continue;
 
                 $hasError = false;
-                [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type] = array_map(
+                [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type, $building_name] = array_map(
                     fn($item) => trim((string) ($item ?? '')),
                     $row
                 );
 
-                $data      = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type];
+                $data      = [$department_name, $program_name, $semester_no, $type, $code, $group_no, $name, $hours, $size, $lecturer_full_name, $classroom_type, $building_name];
                 $rowErrors = [];
 
                 foreach ($data as $dataIndex => $value) {
@@ -110,6 +112,15 @@ class LessonImporter
                         $rowErrors[] = $expectedHeaders[$dataIndex] . ". sütunda eksik veri!";
                         $hasError    = true;
                     }
+                }
+
+                // Caching Building
+                $building = null;
+                if (!empty($building_name)) {
+                    if (!isset($this->cache['buildings'][$building_name])) {
+                        $this->cache['buildings'][$building_name] = (new BuildingRepository())->findByName($building_name) ?: false;
+                    }
+                    $building = $this->cache['buildings'][$building_name];
                 }
 
                 // Caching Department
@@ -131,6 +142,9 @@ class LessonImporter
                     $program = $this->cache['programs'][$programCacheKey];
                 }
 
+                if (!empty($building_name) && $building === false) {
+                    $rowErrors[] = "Bina bulunamadı! ({$building_name})";
+                }
                 if (!empty($department_name) && $department === false) {
                     $rowErrors[] = "Bölüm bulunamadı! ({$department_name})";
                 }
@@ -177,6 +191,7 @@ class LessonImporter
                     'lecturer_id'    => $lecturer ? $lecturer->id : null,
                     'department_id'  => $department ? $department->id : null,
                     'program_id'     => $program ? $program->id : null,
+                    'building_id'    => $building ? $building->id : null,
                     'semester'       => $this->formData['semester'],
                     'classroom_type' => $clsTypeEnum?->value ?? $classroom_type,
                     'academic_year'  => $this->formData['academic_year'],
@@ -210,6 +225,12 @@ class LessonImporter
             }
 
         });
+
+        $username = $this->logContext()['username'] ?? "Sistem";
+        $this->logger()->info(
+            "{$username} Excel'den dersleri içe aktardı. Eklendi: " . count($addedLessons) . ", Güncellendi: " . count($updatedLessons) . ", Hatalı: {$errorCount}",
+            $this->logContext()
+        );
 
         return [
             "status"         => "success",

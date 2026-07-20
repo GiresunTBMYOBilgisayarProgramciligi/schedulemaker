@@ -61,3 +61,7 @@ ALTER TABLE users
     ADD CONSTRAINT fk_users_unit_id
         FOREIGN KEY (unit_id) REFERENCES units (id)
             ON DELETE SET NULL ON UPDATE CASCADE;
+
+#Var olan derslere bina tanımlaması (geçici)
+update lessons SET building_id=1 WHERE building_id IS NULL and department_id != 2;
+update lessons SET building_id=2 WHERE building_id IS NULL and department_id = 2;
