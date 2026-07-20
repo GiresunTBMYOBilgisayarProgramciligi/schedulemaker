@@ -12,6 +12,7 @@ use Exception;
 use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
+use App\Repositories\UnitRepository;
 use App\Validators\UserValidator;
 use App\Exceptions\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -25,6 +26,7 @@ class UserImporter
     private array $cache = [
         'departments' => [],
         'programs'    => [],
+        'units'       => [],
         'users_by_mail' => [],
     ];
 
@@ -82,10 +84,19 @@ class UserImporter
                 }
                 if ($isEmpty) continue;
 
-                [$mail, $title, $name, $last_name, $role, $department_name, $program_name] = array_map(
+                [$mail, $title, $name, $last_name, $role, $unit_name, $department_name, $program_name] = array_map(
                     fn($item) => trim((string) ($item ?? '')),
                     $row
                 );
+
+                // Caching Unit
+                $unit = null;
+                if (!empty($unit_name)) {
+                    if (!isset($this->cache['units'][$unit_name])) {
+                        $this->cache['units'][$unit_name] = (new UnitRepository())->findByName($unit_name) ?: false;
+                    }
+                    $unit = $this->cache['units'][$unit_name];
+                }
 
                 // Caching Department
                 $department = null;
@@ -107,6 +118,9 @@ class UserImporter
                 }
 
                 $rowErrors = [];
+                if (!empty($unit_name) && $unit === false) {
+                    $rowErrors[] = "Birim bulunamadı! ({$unit_name})";
+                }
                 if (!empty($department_name) && $department === false) {
                     $rowErrors[] = "Bölüm bulunamadı! ({$department_name})";
                 }
@@ -115,6 +129,11 @@ class UserImporter
                 }
 
                 // Compatibility Check
+                if ($unit && $department && $department->unit_id !== $unit->id) {
+                    $rowErrors[] = "Uyumsuzluk: {$unit->name} biriminin {$department->name} bölümü yok!";
+                } elseif (empty($unit_name) && !empty($department_name)) {
+                    $rowErrors[] = "Uyumsuzluk: Bölüm belirtildiğinde birim de belirtilmelidir!";
+                }
                 if ($department && $program && $program->department_id !== $department->id) {
                     $rowErrors[] = "Uyumsuzluk: {$department->name} bölümünün {$program->name} programı yok!";
                 } elseif (empty($department_name) && !empty($program_name)) {
@@ -130,6 +149,7 @@ class UserImporter
                     'name'          => mb_convert_case($name, MB_CASE_TITLE, "UTF-8"),
                     'last_name'     => mb_strtoupper($last_name, "UTF-8"),
                     'role'          => $roleEnum?->value ?? $role,
+                    'unit_id'       => $unit ? $unit->id : null,
                     'department_id' => $department ? $department->id : null,
                     'program_id'    => $program ? $program->id : null,
                 ];
