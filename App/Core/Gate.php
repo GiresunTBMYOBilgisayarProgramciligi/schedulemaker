@@ -81,20 +81,7 @@ class Gate
                     }
                 }
 
-                // manager ve submanager yetkisi kendi unit_id'si için geçerlidir
-                if ($user->role === 'manager' || $user->role === 'submanager') {
-                    $unitId = null;
-                    if (isset($model->unit_id)) {
-                        $unitId = $model->unit_id;
-                    } elseif ($model instanceof Program) {
-                        $dept = (new Department())->find($model->department_id);
-                        $unitId = $dept->unit_id ?? null;
-                    }
-                    
-                    if (!is_null($user->unit_id) && $user->unit_id == $unitId) {
-                        return true;
-                    }
-                }
+
 
                 // department_head yetkisi sadece kendi bölümü ve alt programları için (manage_schedule)
                 if ($user->role === 'department_head' && $action === PermissionType::MANAGE_SCHEDULE->value) {

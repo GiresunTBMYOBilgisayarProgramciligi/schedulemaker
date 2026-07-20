@@ -618,7 +618,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editschedule');
         
-        $departments = (new DepartmentRepository())->getAuthorized('manage_schedule', ['active' => true]);
+        $departments = (new DepartmentRepository())->getAuthorized('update', ['active' => true]);
         
         if (empty($departments)) {
             throw new Exception("Ders programı düzenleme yetkiniz yok", 403);
@@ -626,17 +626,11 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('update', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];
-        if (Gate::allowsRole("submanager")) {
-            $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
-        } else {
-            // Sadece yetkili olduğu bölümün veya kendi bölümünün hocalarını görsün
-            $deptIds = array_column($departments, 'id');
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => ['in' => $deptIds], '!role' => ['admin', 'user']])->all();
-        }
+        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ['admin', 'user']]);
         return $view_data;
     }
 
