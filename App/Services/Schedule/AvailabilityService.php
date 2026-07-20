@@ -7,6 +7,7 @@ use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;
 use App\Repositories\UserRepository;
+use App\Repositories\LessonRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -197,14 +198,14 @@ class AvailabilityService extends BaseService
             'semester' => $schedule->semester,
             'academic_year' => $schedule->academic_year
         ];
-        $lessonsList = (new Lesson())->get()->where($lessonFilters)->with([
+        $lessonsList = (new LessonRepository())->getAuthorized('update', $lessonFilters, [
             'lecturer', 
             'program', 
             'parentLesson' => $relationOptions, 
             'childLessons' => $relationOptions, 
             'examParentLesson' => $relationOptions, 
             'examChildLessons' => $relationOptions
-        ])->all();
+        ]);
         $this->logger->debug("availableLessons found " . count($lessonsList) . " potential lessons for schedule " . $schedule->id, $this->logContext());
 
         /**
