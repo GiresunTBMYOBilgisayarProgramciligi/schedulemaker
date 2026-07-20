@@ -472,7 +472,7 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Department::class, "Bölümler listesini görmek için yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "departments" => (new DepartmentRepository())->getAuthorized('view', [], ['chairperson']),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', [], ['chairperson', 'unit']),
             "page_title" => "Bölüm Listesi"
         ];
     }
