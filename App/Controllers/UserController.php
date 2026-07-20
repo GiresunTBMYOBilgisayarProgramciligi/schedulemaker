@@ -30,10 +30,10 @@ class UserController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorizeRole("submanager", false, "Kullanıcı oluşturma yetkiniz yok");
-
         // 1. Doğrulama ve DTO oluşturma
         $dto = (new UserValidator())->getDTO($requestData);
+
+        Gate::authorize(PermissionType::CREATE->value, User::class, "Kullanıcı oluşturma yetkiniz yok", $dto);
 
         // 3. Service'e gönder
         $userId = (new UserService())->saveNew($dto);

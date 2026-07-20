@@ -25,7 +25,7 @@ class SchedulePolicy extends BasePolicy
 
     public function update(User $user, Schedule $schedule): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find((new \App\Models\Lesson())->find($schedule->lesson_id)->department_id)->unit_id)) {
             return true;
         }
 

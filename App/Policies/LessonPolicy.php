@@ -22,7 +22,7 @@ class LessonPolicy extends BasePolicy
      */
     public function view(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
             return true;
         }
 
@@ -43,22 +43,22 @@ class LessonPolicy extends BasePolicy
     /**
      * Yeni ders ekleme yetkisi
      */
-    public function create(User $user, ?array $lessonData = null): bool
+    public function create(User $user, $lessonData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             return true;
         }
 
         if ($user->role === 'department_head') {
-             if (isset($lessonData['department_id'])) {
-                 return $user->department_id == $lessonData['department_id'];
+             if (isset($lessonData->department_id)) {
+                 return $user->department_id == $lessonData->department_id;
              }
              return true;
         }
 
-        if (isset($lessonData['department_id'])) {
-            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData['department_id']]) ||
-                   Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData['department_id']]);
+        if (isset($lessonData->department_id)) {
+            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData->department_id]) ||
+                   Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData->department_id]);
         }
 
         return false;
@@ -69,7 +69,7 @@ class LessonPolicy extends BasePolicy
      */
     public function update(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
             return true;
         }
 
@@ -92,7 +92,7 @@ class LessonPolicy extends BasePolicy
      */
     public function delete(User $user, Lesson $lesson): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($lesson->department_id)->unit_id)) {
             return true;
         }
 

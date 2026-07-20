@@ -51,21 +51,5 @@ class BuildingRepository extends BaseRepository
             ->first();
     }
 
-    /**
-     * @param string $action
-     * @param array $criteria
-     * @return array
-     * @throws Exception
-     */
-    public function getAuthorized(string $action = 'view', array $criteria = []): array
-    {
-        /** @var Building $model */
-        $model = new $this->modelClass;
-        $query = $model->get()->with(['unit']);
-        if (!empty($criteria)) {
-            $query->where($criteria);
-        }
-        $buildings = $query->all();
-        return array_values(array_filter($buildings, fn($b) => \App\Core\Gate::check($action, $b)));
-    }
+
 }

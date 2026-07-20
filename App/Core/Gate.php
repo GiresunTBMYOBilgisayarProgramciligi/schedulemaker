@@ -53,7 +53,7 @@ class Gate
      * @return bool
      * @throws Exception
      */
-    public static function check(string $action, $model): bool
+     public static function check(string $action, $model, $dto = null): bool
     {
         $user = AuthMiddleware::user();
 
@@ -121,7 +121,10 @@ class Gate
         }
 
         // Aksiyona özel metot çağrısı
-        return $policy->$action($user, $model);
+        if ($action === 'create' && $dto !== null) {
+            return $policy->$action($user, $dto);
+        }
+        return $policy->$action($user, $model, $dto);
     }
 
     /**
@@ -132,9 +135,9 @@ class Gate
      * @param string $message Hata mesajı
      * @throws Exception
      */
-    public static function authorize(string $action, $model, string $message = "Bu işlem için yetkiniz bulunmamaktadır."): void
+    public static function authorize(string $action, $model, string $message = "Bu işlem için yetkiniz bulunmamaktadır.", $dto = null): void
     {
-        if (!self::check($action, $model)) {
+        if (!self::check($action, $model, $dto)) {
             throw new Exception($message);
         }
     }

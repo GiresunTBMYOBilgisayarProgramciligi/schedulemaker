@@ -71,7 +71,7 @@ class AdminPageController extends Controller
         if ($currentUser->role == "department_head") {
             $view_data['users'] = (new UserRepository())->getUsersForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['users'] = (new UserRepository())->getAllUsersWithDetails();
+            $view_data['users'] = (new UserRepository())->getAuthorized('view', [], ['department', 'program', 'unit']);
         }
         return $view_data;
     }
@@ -83,25 +83,21 @@ class AdminPageController extends Controller
     {
         if ($department_id) {
             $department = (new Department())->find($department_id) ?: throw new Exception("Bölüm Bulunamadı");
-            if (!(Gate::authorize(PermissionType::UPDATE->value, $department))) {
-                throw new Exception("Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
-            }
+            Gate::authorize(PermissionType::UPDATE->value, $department, "Bu bölüme yeni kullanıcı ekleme yetkiniz yok");
         }
         if ($program_id) {
             $program = (new Program())->find($program_id) ?: throw new Exception("Program bulunamadı");
-            if (!(Gate::authorize(PermissionType::UPDATE->value, $program))) {
-                throw new Exception("Bu programa yeni kullanıcı ekleme yetkiniz yok");
-            }
+            Gate::authorize(PermissionType::UPDATE->value, $program, "Bu programa yeni kullanıcı ekleme yetkiniz yok");
         }
         if (!(isset($department) or isset($program))) {
-            Gate::authorizeRole("submanager", false, "Yeni kullanıcı ekleme yetkiniz yok");
+            Gate::authorize(PermissionType::CREATE->value, User::class, "Yeni kullanıcı ekleme yetkiniz yok");
         }
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Kullanıcı Ekle",
             "userController" => new UserController(),
-            "units" => (new UnitRepository())->getAllUnits(),
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAuthorized('view'),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_id" => $department_id,
             "program_id" => $program_id,
             "programs" => (new ProgramRepository())->getActiveProgramsWithDetails()
@@ -131,8 +127,8 @@ class AdminPageController extends Controller
             "canEditSpecialFields" => Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id),
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
-            "units" => (new UnitRepository())->getAllUnits(),
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAuthorized('view'),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
                 [
@@ -192,8 +188,8 @@ class AdminPageController extends Controller
         return [
             "user" => $user,
             "page_title" => $user->getFullName() . " Kullanıcı Düzenle",
-            "units" => (new UnitRepository())->getAllUnits(),
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
+            "units" => (new UnitRepository())->getAuthorized('view'),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
             "programController" => new ProgramController(),
@@ -285,7 +281,7 @@ class AdminPageController extends Controller
         if ($currentUser->role == "department_head") {
             $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['lessons'] = (new LessonRepository())->getAllLessonsWithDetails();
+            $view_data['lessons'] = (new LessonRepository())->getAuthorized('view', [], ['lecturer', 'program', 'department']);
         }
         return $view_data;
     }
@@ -296,18 +292,14 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         $view_data = [
             "page_title" => "Ders Ekle",
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
-            "units" => (new UnitRepository())->getAllUnits(),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view'),
             "lessonController" => new LessonController(),
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingRepository())->getAllBuildings(),
+            "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit']),
             "program_id" => $program_id
         ];
-        if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => $currentUser->department_id, '!role' => ['admin', 'user']])->all();
-        } else {
-            $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
-        }
+        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ["in" => ['admin', 'user']]]);
         if ($program_id) {
             $program = (new Program())->find($program_id);
             if ($program) {
@@ -333,21 +325,19 @@ class AdminPageController extends Controller
             "lessonController" => new LessonController(),
             "lesson" => $lesson,
             "page_title" => $lesson->getFullName(true) . " Düzenle",
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
-            "units" => (new UnitRepository())->getAllUnits(),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view'),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingRepository())->getAllBuildings()
+            "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit'])
         ];
         
-        if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new UserRepository())->getLecturersForDepartmentHead($currentUser->department_id);
+        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ["in" => ['admin', 'user']]]);
+        // Mevcut hocanın listede her zaman görünmesini sağla
+        $currentLecturerIds = array_map(fn($l) => $l->id, $view_data['lecturers']);
+        if (!in_array($lesson->lecturer_id, $currentLecturerIds)) {
             $view_data['lecturers'][] = clone (new UserRepository())->find($lesson->lecturer_id);
-        } elseif ($currentUser->role == "lecturer") {
-            $view_data['lecturers'][] = clone (new UserRepository())->find($lesson->lecturer_id);
-        } else {
-            $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
         }
         return $view_data;
     }
@@ -493,7 +483,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Bölüm Ekle",
-            "units"      => (new UnitRepository())->getAllUnits(),
+            "units"      => (new UnitRepository())->getAuthorized('view'),
         ];
     }
 
@@ -513,7 +503,7 @@ class AdminPageController extends Controller
             "departmentController" => new DepartmentController(),
             "department"           => $department,
             "page_title"           => ($department->name ?? '') . ' Düzenle',
-            "units"                => (new UnitRepository())->getAllUnits(),
+            "units"                => (new UnitRepository())->getAuthorized('view'),
         ];
     }
 
@@ -592,8 +582,8 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Program Ekle",
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
-            "units" => (new UnitRepository())->getAllUnits(),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view'),
             "department_id" => $department_id
         ];
     }
@@ -613,8 +603,8 @@ class AdminPageController extends Controller
         return [
             "programController" => new ProgramController(),
             "program" => $program,
-            "departments" => (new DepartmentRepository())->getActiveDepartments(),
-            "units" => (new UnitRepository())->getAllUnits(),
+            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view'),
             "page_title" => $program->name ?? "" . " Düzenle",
         ];
     }
@@ -638,7 +628,7 @@ class AdminPageController extends Controller
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
-            "classrooms" => (new ClassroomRepository())->findAll()
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];
         if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new UserRepository())->getAllLecturers();
@@ -667,7 +657,7 @@ class AdminPageController extends Controller
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
             "page_title" => "Sınav Programını Düzenle",
-            "classrooms" => (new ClassroomRepository())->findAll()
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];
         if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
@@ -695,7 +685,7 @@ class AdminPageController extends Controller
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Program Dışa Aktar",
-            "classrooms" => (new ClassroomRepository())->findAll()
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];
         if ($currentUser->role == "department_head") {
             $view_data['lecturers'] = (new UserRepository())->findBy(['department_id' => $currentUser->department_id]);
@@ -729,7 +719,7 @@ class AdminPageController extends Controller
         return [
             "page_title" => "Yetkileri Düzenle",
             "users"      => (new UserRepository())->getAllUsersWithDetails(),
-            "units"      => (new UnitRepository())->getAllUnits()
+            "units"      => (new UnitRepository())->getAuthorized('view')
         ];
     }
 
@@ -791,7 +781,7 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Unit::class, 'Birim listesini görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
         return [
-            'units'      => (new UnitRepository())->getAllUnits(),
+            'units'      => (new UnitRepository())->getAuthorized('view'),
             'unitTypes'  => UnitType::toArray(),
             'page_title' => 'Birim Listesi',
         ];

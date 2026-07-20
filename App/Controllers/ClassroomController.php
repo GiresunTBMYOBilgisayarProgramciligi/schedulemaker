@@ -28,9 +28,10 @@ class ClassroomController extends Controller
      * Yeni derslik oluşturur (POST /ajax/classroom/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik oluşturma yetkiniz yok");
-
+    {
             $dto = (new ClassroomValidator())->getDTO($requestData);
+            Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik oluşturma yetkiniz yok", $dto);
+
             (new ClassroomService())->saveNew($dto);
 
             return [

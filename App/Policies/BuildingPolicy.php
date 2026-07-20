@@ -42,7 +42,7 @@ class BuildingPolicy extends BasePolicy
     /**
      * Yeni bina ekleme yetkisi
      */
-    public function create(User $user, Building $building = null): bool
+    public function create(User $user, $building = null): bool
     {
 
         if ($building && Gate::allowsRole('secretary') && $user->unit_id === $building->unit_id) {

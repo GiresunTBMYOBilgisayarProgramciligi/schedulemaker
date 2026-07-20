@@ -23,7 +23,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function view(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
             return true;
         }
 
@@ -53,7 +53,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function update(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
             return true;
         }
 
@@ -70,7 +70,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function delete(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == (new \App\Models\Department())->find($program->department_id)->unit_id)) {
             return true;
         }
 

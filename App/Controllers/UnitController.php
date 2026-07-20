@@ -36,9 +36,8 @@ class UnitController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorize(PermissionType::CREATE->value, Unit::class, 'Yeni birim oluşturma yetkiniz yok');
-
         $dto = (new UnitValidator())->getDTO($requestData);
+        Gate::authorize(PermissionType::CREATE->value, Unit::class, 'Yeni birim oluşturma yetkiniz yok', $dto);
         (new UnitService())->saveNew($dto);
 
         return [

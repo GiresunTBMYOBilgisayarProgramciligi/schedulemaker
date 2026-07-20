@@ -38,9 +38,10 @@ class ProgramController extends Controller
      * Yeni program oluşturur (POST /ajax/program/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize(PermissionType::CREATE->value, Program::class, "Yeni program oluşturma yetkiniz yok");
-
+    {
             $dto = (new ProgramValidator())->getDTO($requestData);
+            Gate::authorize(PermissionType::CREATE->value, Program::class, "Yeni program oluşturma yetkiniz yok", $dto);
+
             (new ProgramService())->saveNew($dto);
 
             return [

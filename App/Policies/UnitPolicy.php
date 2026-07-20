@@ -22,7 +22,7 @@ class UnitPolicy extends BasePolicy
      */
     public function view(User $user, Unit $unit): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $unit->id)) {
             return true;
         }
 

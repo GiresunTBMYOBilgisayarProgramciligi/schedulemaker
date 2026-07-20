@@ -22,7 +22,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function view(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
             return true;
         }
 
@@ -37,9 +37,27 @@ class DepartmentPolicy extends BasePolicy
     /**
      * Yeni bölüm ekleme yetkisi
      */
-    public function create(User $user): bool
+    public function create(User $user, $departmentData = null): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'manager') {
+            return true;
+        }
+
+        if ($user->role === 'submanager') {
+            // submanager sadece kendi birimi altına bölüm ekleyebilir
+            if (isset($departmentData->unit_id)) {
+                return $user->unit_id == $departmentData->unit_id;
+            }
+            return true;
+        }
+
+        // Eğer $departmentData ile unit_id geldiyse, o birim için MANAGE_DEPARTMENT yetkisi var mı?
+        if (isset($departmentData->unit_id)) {
+            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_DEPARTMENT->value, null, ['unit_id' => $departmentData->unit_id]);
+        }
+
+        // Genel yetki kontrolü
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_DEPARTMENT->value);
     }
 
     /**
@@ -47,7 +65,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function update(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
             return true;
         }
 
@@ -61,7 +79,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function delete(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $department->unit_id)) {
             return true;
         }
 

@@ -24,21 +24,5 @@ class ClassroomRepository extends BaseRepository
             ->first();
     }
 
-    /**
-     * @param string $action
-     * @param array $criteria
-     * @return array
-     * @throws \Exception
-     */
-    public function getAuthorized(string $action = 'view', array $criteria = []): array
-    {
-        /** @var Classroom $model */
-        $model = new $this->modelClass;
-        $query = $model->get()->with(['building']);
-        if (!empty($criteria)) {
-            $query->where($criteria);
-        }
-        $classrooms = $query->all();
-        return array_values(array_filter($classrooms, fn($c) => \App\Core\Gate::check($action, $c)));
-    }
+
 }

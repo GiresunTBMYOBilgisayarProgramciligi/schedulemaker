@@ -114,9 +114,17 @@ abstract class BaseRepository
      * @return array
      * @throws Exception
      */
-    public function getAuthorized(string $action = 'view', array $criteria = []): array
+    public function getAuthorized(string $action = 'view', array $criteria = [], array $with = []): array
     {
-        $models = $this->findBy($criteria);
-        return array_values(array_filter($models, fn($model) => Gate::check($action, $model)));
+        /** @var Model $model */
+        $model = new $this->modelClass;
+        $query = $model->get()->where($criteria);
+        
+        if (!empty($with)) {
+            $query->with($with);
+        }
+        
+        $models = $query->all();
+        return array_values(array_filter($models, fn($m) => Gate::check($action, $m)));
     }
 }

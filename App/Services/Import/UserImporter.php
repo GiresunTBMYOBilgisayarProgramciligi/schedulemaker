@@ -62,7 +62,7 @@ class UserImporter
 
         // Başlık satırını al ve doğrula
         $headers = array_shift($rows);
-        $expectedHeaders = ["Mail", "Ünvanı", "Adı", "Soyadı", "Görevi", "Bölümü", "Programı"];
+        $expectedHeaders = ["Mail", "Ünvanı", "Adı", "Soyadı", "Görevi", "Fakülte / MYO / Enstitü", "Bölümü / Ana Bilim Dalı", "Programı / Bilim Dalı"];
         $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
         $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
 

@@ -38,9 +38,10 @@ class DepartmentController extends Controller
      * Yeni bölüm oluşturur (POST /ajax/department/add rotası için)
      */
     public function store(array $requestData): array
-    {            Gate::authorize(PermissionType::CREATE->value, Department::class, "Yeni bölüm oluşturma yetkiniz yok");
-
+    {
             $dto = (new DepartmentValidator())->getDTO($requestData);
+            Gate::authorize(PermissionType::CREATE->value, Department::class, "Yeni bölüm oluşturma yetkiniz yok", $dto);
+
             (new DepartmentService())->saveNew($dto);
 
             return [

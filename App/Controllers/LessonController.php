@@ -68,10 +68,8 @@ class LessonController extends Controller
      */
     public function store(array $requestData): array
     {            
-            $lesson = new Lesson();
-            Gate::authorize(PermissionType::CREATE->value, $lesson, "Yeni Ders oluşturma yetkiniz yok");
-
             $dto = (new LessonValidator())->getDTO($requestData);
+            Gate::authorize(PermissionType::CREATE->value, Lesson::class, "Yeni Ders oluşturma yetkiniz yok", $dto);
             
             (new LessonService())->saveNew($dto);
 

@@ -37,7 +37,7 @@ class ClassroomPolicy extends BasePolicy
     /**
      * Yeni derslik ekleme yetkisi
      */
-    public function create(User $user, ?Classroom $classroom = null): bool
+    public function create(User $user, $classroom = null): bool
     {
         if ($classroom) {
             $unit = $classroom->getUnit();

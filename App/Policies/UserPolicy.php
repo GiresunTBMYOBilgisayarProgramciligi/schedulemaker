@@ -22,7 +22,7 @@ class UserPolicy extends BasePolicy
      */
     public function view(User $user, User $targetUser): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && ($user->unit_id == $targetUser->unit_id || empty($targetUser->unit_id)))) {
             return true;
         }
 
@@ -31,35 +31,47 @@ class UserPolicy extends BasePolicy
             return true;
         }
 
-        // Bölüm başkanı sadece kendi bölümündeki kullanıcıları görebilir
+        // Bölüm başkanı sadece kendi bölümündeki kullanıcıları veya atanmamış olanları görebilir
         if ($user->role === 'department_head') {
-            return $user->department_id === $targetUser->department_id;
+            return $user->department_id === $targetUser->department_id || empty($targetUser->department_id);
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, ['department_id' => $targetUser->department_id, 'program_id' => $targetUser->program_id]);
+                // Kullanıcının targetUser'ın birimini yönetme yetkisi varsa kullanıcıları görebilir
+        if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, null, ['unit_id' => $targetUser->unit_id])) {
+            return true;
+        }
+
+        // Kullanıcıları yönetme özel yetkisi (Birim, Bölüm veya Program bazında)
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, [
+            'unit_id' => $targetUser->unit_id,
+            'department_id' => $targetUser->department_id,
+            'program_id' => $targetUser->program_id
+        ]);
     }
 
     /**
      * Yeni kullanıcı ekleme yetkisi
      */
-    public function create(User $user, ?array $userData = null): bool
+    public function create(User $user, $userData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             return true;
         }
 
-        if ($user->role === 'department_head' && isset($userData['department_id'])) {
-             return $user->department_id == $userData['department_id'];
+        if ($user->role === 'department_head' && isset($userData->department_id)) {
+             return $user->department_id == $userData->department_id;
         }
 
-        if (isset($userData['department_id']) || isset($userData['program_id'])) {
+        if (isset($userData->department_id) || isset($userData->program_id) || isset($userData->unit_id)) {
+            // Kullanıcıları yönetme özel yetkisi (Birim, Bölüm veya Program bazında)
             return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, [
-                'department_id' => $userData['department_id'] ?? null,
-                'program_id' => $userData['program_id'] ?? null
+                'unit_id' => $userData->unit_id ?? null,
+                'department_id' => $userData->department_id ?? null,
+                'program_id' => $userData->program_id ?? null
             ]);
         }
 
-        return false;
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value);
     }
 
     /**
@@ -67,7 +79,7 @@ class UserPolicy extends BasePolicy
      */
     public function update(User $user, User $targetUser): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($user->role === 'manager' || ($user->role === 'submanager' && $user->unit_id == $targetUser->unit_id)) {
             return true;
         }
 
@@ -81,7 +93,17 @@ class UserPolicy extends BasePolicy
             return $user->department_id === $targetUser->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, ['department_id' => $targetUser->department_id, 'program_id' => $targetUser->program_id]);
+                // Kullanıcının targetUser'ın birimini yönetme yetkisi varsa kullanıcıları görebilir
+        if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, null, ['unit_id' => $targetUser->unit_id])) {
+            return true;
+        }
+
+        // Kullanıcıları yönetme özel yetkisi (Birim, Bölüm veya Program bazında)
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, [
+            'unit_id' => $targetUser->unit_id,
+            'department_id' => $targetUser->department_id,
+            'program_id' => $targetUser->program_id
+        ]);
     }
 
     /**
@@ -97,6 +119,16 @@ class UserPolicy extends BasePolicy
              return $user->department_id === $targetUser->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, ['department_id' => $targetUser->department_id, 'program_id' => $targetUser->program_id]);
+                // Kullanıcının targetUser'ın birimini yönetme yetkisi varsa kullanıcıları görebilir
+        if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, null, ['unit_id' => $targetUser->unit_id])) {
+            return true;
+        }
+
+        // Kullanıcıları yönetme özel yetkisi (Birim, Bölüm veya Program bazında)
+        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_USERS->value, null, [
+            'unit_id' => $targetUser->unit_id,
+            'department_id' => $targetUser->department_id,
+            'program_id' => $targetUser->program_id
+        ]);
     }
 }
