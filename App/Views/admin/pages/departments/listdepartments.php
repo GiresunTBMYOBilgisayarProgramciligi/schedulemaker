@@ -74,9 +74,12 @@ use App\Models\Department;
                                     </div>
                                 </td>
                                 <td class="text-center">
+                                    <?php if (Gate::check("update", $department)): ?>
                                     <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <?php endif; ?>
+                                    <?php if (Gate::check("delete", $department)): ?>
                                     <form action="/ajax/deletedepartment/<?= $department->id ?>"
                                           class="ajaxFormDelete d-inline"
                                           id="deleteProgram-<?= $department->id ?>"
@@ -87,6 +90,7 @@ use App\Models\Department;
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>

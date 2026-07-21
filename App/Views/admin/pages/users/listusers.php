@@ -81,9 +81,11 @@ use App\Models\User;
                                     <td><?= $user->getRoleName() ?></td>
                                     <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
                                     <td class="text-center">
+                                        <?php if (Gate::check("update", $user)): ?>
                                         <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                             <i class="bi bi-pencil"></i>
                                         </a>
+                                        <?php endif; ?>
                                         <?php if (Gate::check("delete", $user)): ?>
                                             <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete d-inline"
                                                   id="deleteUser-<?= $user->id ?>" method="post">

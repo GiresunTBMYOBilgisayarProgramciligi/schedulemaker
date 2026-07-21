@@ -53,9 +53,12 @@ use App\Models\Building;
                                         <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
                                         <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
                                         <td class="text-center">
+                                            <?php if (Gate::check("update", $building)): ?>
                                             <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
+                                            <?php endif; ?>
+                                            <?php if (Gate::check("delete", $building)): ?>
                                             <form action="/ajax/deletebuilding/<?= $building->id ?>"
                                                   class="ajaxFormDelete d-inline"
                                                   id="deleteBuilding-<?= $building->id ?>"
@@ -65,6 +68,7 @@ use App\Models\Building;
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -219,9 +219,9 @@ use App\Core\Gate;
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
-
+                            <?php if (Gate::check("update", $user)): ?>
                             <button type="submit" class="btn btn-primary">Güncelle</button>
-
+                            <?php endif; ?>
                         </div>
 
                         </form>

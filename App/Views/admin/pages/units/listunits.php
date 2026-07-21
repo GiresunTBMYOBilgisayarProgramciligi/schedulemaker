@@ -64,9 +64,12 @@ use App\Models\Unit;
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-center">
+                                            <?php if (Gate::check("update", $unit)): ?>
                                             <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
+                                            <?php endif; ?>
+                                            <?php if (Gate::check("delete", $unit)): ?>
                                             <form action="/ajax/deleteunit/<?= $unit->id ?>"
                                                   class="ajaxFormDelete d-inline"
                                                   id="deleteUnit-<?= $unit->id ?>"
@@ -76,6 +79,7 @@ use App\Models\Unit;
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

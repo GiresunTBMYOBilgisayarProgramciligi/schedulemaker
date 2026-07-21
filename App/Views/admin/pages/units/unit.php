@@ -3,6 +3,8 @@
  * @var string $page_title
  * @var \App\Models\Unit $unit
  */
+use App\Core\Gate;
+use App\Models\Department;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -28,9 +30,11 @@
                         <div class="card-header">
                             <h3 class="card-title"><?= htmlspecialchars($unit->name ?? '') ?> <small class="text-muted">(<?= $unit->getTypeName() ?>)</small></h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("update", $unit)): ?>
                                 <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-warning">
                                     <i class="bi bi-pencil"></i> Düzenle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">
@@ -72,9 +76,12 @@
                                             <td><a href="/admin/department/<?= $dept->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($dept->name ?? '') ?></a></td>
                                             <td><?= $dept->chairperson?->getFullName() ?? '-' ?></td>
                                             <td class="text-center">
+                                                <?php if (Gate::check("update", $dept)): ?>
                                                 <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $dept)): ?>
                                                 <form action="/ajax/deletedepartment/<?= $dept->id ?>"
                                                       class="ajaxFormDelete d-inline"
                                                       id="deleteDepartment-<?= $dept->id ?>"
@@ -85,6 +92,7 @@
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

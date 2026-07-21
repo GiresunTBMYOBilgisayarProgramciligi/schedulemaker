@@ -133,9 +133,11 @@ use App\Core\Gate;
                                             <td><?= $lecturer->mail ?></td>
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
+                                                    <?php if (Gate::check("update", $lecturer)): ?>
                                                     <a href="/admin/edituser/<?= $lecturer->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
+                                                    <?php endif; ?>
                                                     <?php if (Gate::check("delete", $lecturer)): ?>
                                                         <form action="/ajax/deleteuser/<?= $lecturer->id ?>"
                                                               class="ajaxFormDelete d-inline" id="deleteUser-<?= $lecturer->id ?>"

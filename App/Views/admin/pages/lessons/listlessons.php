@@ -95,9 +95,12 @@ use App\Models\Lesson;
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
 
                                 <td class="text-center">
+                                    <?php if (Gate::check("update", $lesson)): ?>
                                     <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <?php endif; ?>
+                                    <?php if (Gate::check("delete", $lesson)): ?>
                                     <form action="/ajax/deletelesson/<?= $lesson->id ?>"
                                           class="ajaxFormDelete d-inline"
                                           id="deleteLesson-<?= $lesson->id ?>"
@@ -107,6 +110,7 @@ use App\Models\Lesson;
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>

@@ -3,6 +3,8 @@
  * @var string $page_title
  * @var \App\Models\Building $building
  */
+use App\Core\Gate;
+use App\Models\Classroom;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -28,9 +30,12 @@
                         <div class="card-header">
                             <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?> (Bağlı Birim: <?= htmlspecialchars($building->unit->name ?? 'Yok') ?>)</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("update", $building)): ?>
                                 <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                     <i class="bi bi-pencil"></i> Düzenle
                                 </a>
+                                <?php endif; ?>
+                                <?php if (Gate::check("delete", $building)): ?>
                                 <form action="/ajax/deletebuilding/<?= $building->id ?>"
                                       class="ajaxFormDelete d-inline"
                                       id="deleteBuilding-<?= $building->id ?>"
@@ -40,6 +45,7 @@
                                         <i class="bi bi-trash"></i> Sil
                                     </button>
                                 </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -74,9 +80,12 @@
                                             <td><?= $cls->getTypeName() ?></td>
                                             <td><?= $cls->class_size ?></td>
                                             <td class="text-center">
+                                                <?php if (Gate::check("update", $cls)): ?>
                                                 <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $cls)): ?>
                                                 <form action="/ajax/deleteclassroom/<?= $cls->id ?>"
                                                       class="ajaxFormDelete d-inline"
                                                       id="deleteClassroom-<?= $cls->id ?>"
@@ -86,6 +95,7 @@
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

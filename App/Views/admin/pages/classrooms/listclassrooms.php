@@ -72,9 +72,12 @@ use App\Models\Classroom;
                                 <td><?= $classroom->class_size ?></td>
                                 <td><?= $classroom->exam_size ?></td>
                                 <td class="text-center">
+                                    <?php if (Gate::check("update", $classroom)): ?>
                                     <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <?php endif; ?>
+                                    <?php if (Gate::check("delete", $classroom)): ?>
                                     <form action="/ajax/deleteclassroom/<?= $classroom->id ?>"
                                           class="ajaxFormDelete d-inline"
                                           id="deleteClassroom-<?= $classroom->id ?>"
@@ -84,6 +87,7 @@ use App\Models\Classroom;
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>

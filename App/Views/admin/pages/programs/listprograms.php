@@ -73,9 +73,12 @@ use App\Models\Program;
                                     </div>
                                 </td>
                                 <td class="text-center">
+                                    <?php if (Gate::check("update", $program)): ?>
                                     <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
+                                    <?php endif; ?>
+                                    <?php if (Gate::check("delete", $program)): ?>
                                     <form action="/ajax/deleteprogram/<?= $program->id ?>"
                                           class="ajaxFormDelete d-inline"
                                           id="deleteProgram-<?= $program->id ?>"
@@ -86,6 +89,7 @@ use App\Models\Program;
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?></tbody>

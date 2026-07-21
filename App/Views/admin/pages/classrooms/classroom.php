@@ -9,6 +9,7 @@
  * @var string $makeupScheduleHTML
  * @var array $classroomTypes
  */
+use App\Core\Gate;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -62,11 +63,15 @@
                             </dl>
                         </div>
                         <div class="card-footer">
+                            <?php if (Gate::check("update", $classroom)): ?>
                             <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-primary">Dersliği Düzenle</a>
+                            <?php endif; ?>
+                            <?php if (Gate::check("delete", $classroom)): ?>
                             <form action="/ajax/deleteclassroom/<?= $classroom->id ?>" class="ajaxFormDelete d-inline" method="post">
                                 <input type="hidden" name="id" value="<?= $classroom->id ?>">
                                 <input type="submit" class="btn btn-danger" value="Sil">
                             </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
