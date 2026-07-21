@@ -62,12 +62,6 @@ class UnitPolicy extends BasePolicy
      */
     public function delete(User $user, Unit $unit): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
-            if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
-                return true;
-            }
-        }
-
         return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
     }
 }
