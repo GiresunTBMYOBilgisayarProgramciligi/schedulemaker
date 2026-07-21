@@ -81,6 +81,7 @@ class UnitService extends BaseService
                 $departments = (new Department())->get()->where(['unit_id' => $unit->id])->all();
                 foreach ($departments as $department) {
                     $department->unit_id = null;
+                    $department->active = false;
                     $department->update();
                 }
 
@@ -88,12 +89,21 @@ class UnitService extends BaseService
             });
 
             $this->logger->info('Birim başarıyla silindi', ['id' => $unit->id]);
+        } catch (PDOException $e) {
+            $this->logger->error('Birim silinirken hata oluştu', [
+                'id'    => $unit->id,
+                'error' => $e->getMessage()
+            ]);
+            if ($e->getCode() == '23000') {
+                throw new Exception("Bu birimi silmek için öncelikle altındaki tüm binaları silmeli ya da başka bir birime taşımalısınız.");
+            }
+            throw new Exception("Birim silinirken bir hata oluştu.");
         } catch (Exception $e) {
             $this->logger->error('Birim silinirken hata oluştu', [
                 'id'    => $unit->id,
                 'error' => $e->getMessage()
             ]);
-            throw new Exception("Birim silinirken bir hata oluştu: " . $e->getMessage());
+            throw new Exception("Birim silinirken bir hata oluştu.");
         }
     }
 }
