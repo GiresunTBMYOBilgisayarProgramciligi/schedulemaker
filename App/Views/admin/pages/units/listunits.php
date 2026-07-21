@@ -4,6 +4,8 @@
  * @var \App\Models\Unit[] $units
  * @var array $unitTypes
  */
+use App\Core\Gate;
+use App\Models\Unit;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -30,9 +32,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Birimler</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Unit::class)): ?>
                                 <a href="/admin/addunit" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Birim Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

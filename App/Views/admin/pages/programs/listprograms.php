@@ -5,6 +5,8 @@
  * @var string $page_title
  * @var array $programs
  */
+use App\Core\Gate;
+use App\Models\Program;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -39,9 +41,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Programlar</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Program::class)): ?>
                                 <a href="/admin/addprogram" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Program Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

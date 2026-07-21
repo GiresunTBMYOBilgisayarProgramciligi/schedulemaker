@@ -6,7 +6,7 @@
  */
 
 use App\Core\Gate;
-
+use App\Models\User;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -43,9 +43,11 @@ use App\Core\Gate;
                         <div class="card-header">
                             <h3 class="card-title">Kullanıcılar</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", User::class)): ?>
                                 <a href="/admin/adduser" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Kullanıcı Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

@@ -5,6 +5,8 @@
  * @var string $page_title
  * @var array $classrooms
  */
+use App\Core\Gate;
+use App\Models\Classroom;
 ?>
 
 <!--begin::App Main-->
@@ -40,9 +42,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Derslikler</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Classroom::class)): ?>
                                 <a href="/admin/addclassroom" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Derslik Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

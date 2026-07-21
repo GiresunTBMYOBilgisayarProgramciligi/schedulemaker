@@ -5,6 +5,8 @@
  * @var array $lessons
  * @var string $page_title
  */
+use App\Core\Gate;
+use App\Models\Lesson;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -39,9 +41,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Dersler</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Lesson::class)): ?>
                                 <a href="/admin/addlesson" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Ders Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

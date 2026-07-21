@@ -3,6 +3,8 @@
  * @var string $page_title
  * @var \App\Models\Building[] $buildings
  */
+use App\Core\Gate;
+use App\Models\Building;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -27,9 +29,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Binalar</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Building::class)): ?>
                                 <a href="/admin/addbuilding" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Bina Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">

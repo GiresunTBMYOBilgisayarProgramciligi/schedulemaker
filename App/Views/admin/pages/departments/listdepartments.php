@@ -4,6 +4,8 @@
  * @var string $page_title
  * @var array $departments
  */
+use App\Core\Gate;
+use App\Models\Department;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -38,9 +40,11 @@
                         <div class="card-header">
                             <h3 class="card-title">Bölümler</h3>
                             <div class="card-tools">
+                                <?php if (Gate::check("create", Department::class)): ?>
                                 <a href="/admin/adddepartment" class="btn btn-sm btn-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Bölüm Ekle
                                 </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="card-body">
