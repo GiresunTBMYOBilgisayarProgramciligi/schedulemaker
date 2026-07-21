@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\AssetManager;
 use App\Core\Gate;
+use App\Exceptions\AuthorizationException;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
@@ -621,7 +622,7 @@ class AdminPageController extends Controller
         $departments = (new DepartmentRepository())->getAuthorized('update', ['active' => true]);
         
         if (empty($departments)) {
-            throw new Exception("Ders programı düzenleme yetkiniz yok", 403);
+            throw new AuthorizationException("Ders programı düzenleme yetkiniz yok", [], 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),
@@ -644,7 +645,7 @@ class AdminPageController extends Controller
         $departments = (new DepartmentRepository())->getAuthorized('manage_schedule', ['active' => true]);
 
         if (empty($departments)) {
-            throw new Exception("Sınav programı düzenleme yetkiniz yok", 403);
+            throw new AuthorizationException("Sınav programı düzenleme yetkiniz yok", [], 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),
@@ -672,7 +673,7 @@ class AdminPageController extends Controller
         $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
 
         if (empty($departments)) {
-            throw new Exception("Ders programı Dışa aktarma yetkiniz yok", 403);
+            throw new AuthorizationException("Ders programı Dışa aktarma yetkiniz yok", [], 403);
         }
         $view_data = [
             "scheduleController" => new ScheduleController(),

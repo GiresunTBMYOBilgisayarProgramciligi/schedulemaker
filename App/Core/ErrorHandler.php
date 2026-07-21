@@ -10,6 +10,7 @@ use App\Middlewares\AuthMiddleware;
 use App\Exceptions\ValidationException;
 use App\Exceptions\LessonHourExceededException;
 use App\Exceptions\ScheduleConflictException;
+use App\Exceptions\AuthorizationException;
 
 /**
  * Claude ile oluşturularak üzerinde düzenlemeler yapıldı
@@ -81,6 +82,9 @@ class ErrorHandler
         } elseif ($exception instanceof ScheduleConflictException) {
             // Schedule çakışması - 409 Conflict
             $this->renderErrorView('error', $exception, 409);
+        } elseif ($exception instanceof AuthorizationException) {
+            // Yetkilendirme hatası - 403 Forbidden
+            $this->renderErrorView('error', $exception, 403);
         } else {
             // Diğer tüm hatalar için genel şablon - 500 Internal Server Error
             $this->renderErrorView('error', $exception, 500);
@@ -231,21 +235,7 @@ class ErrorHandler
         // View'ı render et
         try {
             // View sınıfını kullanarak render et
-            // admin/errors/error sayfasını kullan
-            // $view argümanı 'error' ise 'errors/error' yolunu kullanacağız
-            $viewName = "admin/errors/error";
-
-            // Eğer $view farklı bir şey gelirse (örn: custom view), onu kullanmayı deneyebiliriz
-            // Ancak şuanlık oluşturduğumuz tek view 'admin/errors/error'
-
-            // Router::callView mantığına benzer işi burada manuel yapıyoruz veya View sınıfını direkt kullanıyoruz
-            // View construct: $view_folder, $view_page, $view_data
-            // Router'da: admin/pages/errors/error şeklinde 
-            // Theme.php pages/ altında arıyor.
-            // Dosyamız: App/Views/admin/pages/errors/error.php
-            // View sınıfı: $view_folder="admin", $view_page="errors/error"
-
-            $viewObj = new View("admin", "errors", "error");
+            $viewObj = new View("error", "error");
             $viewObj->Render($view_data);
             exit();
 

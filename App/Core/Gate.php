@@ -4,6 +4,7 @@ namespace App\Core;
 
 use App\Middlewares\AuthMiddleware;
 use Exception;
+use App\Exceptions\AuthorizationException;
 use App\Core\Log;
 use App\Enums\PermissionType;
 use App\Models\Unit;
@@ -140,7 +141,7 @@ class Gate
     public static function authorize(string $action, $model, string $message = "Bu işlem için yetkiniz bulunmamaktadır.", $dto = null): void
     {
         if (!self::check($action, $model, $dto)) {
-            throw new Exception($message);
+            throw new AuthorizationException($message);
         }
     }
 
@@ -179,7 +180,7 @@ class Gate
     public static function authorizeRole(string $role, bool $reverse = false, string $message = "Bu sayfayı görüntülemek için yetkiniz yok."): void
     {
         if (!self::allowsRole($role, $reverse)) {
-            throw new Exception($message);
+            throw new AuthorizationException($message);
         }
     }
 
