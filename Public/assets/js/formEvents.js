@@ -138,8 +138,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (chairpersonSelect.tomselect) {
                 chairpersonSelect.tomselect.clear();
                 chairpersonSelect.tomselect.clearOptions();
+                chairpersonSelect.tomselect.addOption({value: "", text: "Hoca Seçiniz"});
+                chairpersonSelect.tomselect.setValue("", true);
+                chairpersonSelect.tomselect.refreshOptions(false);
             } else {
-                chairpersonSelect.innerHTML = "<option></option>";
+                chairpersonSelect.innerHTML = "<option value=''>Hoca Seçiniz</option>";
             }
 
             if (!unitId || unitId === "0" || unitId === "") return;
@@ -153,13 +156,18 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(response => response.json())
             .then(data => {
-                if (data['lecturers'] && data['lecturers'].length > 0) {
-                    if (chairpersonSelect.tomselect) {
+                if (chairpersonSelect.tomselect) {
+                    chairpersonSelect.tomselect.clearOptions();
+                    chairpersonSelect.tomselect.addOption({value: "", text: "Hoca Seçiniz"});
+                    if (data['lecturers'] && data['lecturers'].length > 0) {
                         data['lecturers'].forEach(lecturer => {
                             chairpersonSelect.tomselect.addOption({value: lecturer.id, text: lecturer.name});
                         });
-                        chairpersonSelect.tomselect.refreshOptions(false);
-                    } else {
+                    }
+                    chairpersonSelect.tomselect.refreshOptions(false);
+                } else {
+                    chairpersonSelect.innerHTML = "<option value=''>Hoca Seçiniz</option>";
+                    if (data['lecturers'] && data['lecturers'].length > 0) {
                         data['lecturers'].forEach(lecturer => {
                             const option = document.createElement("option");
                             option.value = lecturer.id;
@@ -192,12 +200,23 @@ document.addEventListener("DOMContentLoaded", function () {
         unitSelect.addEventListener("change", function () {
             const unitId = this.value;
             if (programSelect) {
-                programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+                if (programSelect.tomselect) {
+                    programSelect.tomselect.clear();
+                    programSelect.tomselect.clearOptions();
+                    programSelect.tomselect.addOption({value: 0, text: "İlk olarak Bölüm Seçiniz"});
+                    programSelect.tomselect.setValue(0, true);
+                    programSelect.tomselect.refreshOptions(false);
+                } else {
+                    programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+                }
             }
 
             if (departmentSelect.tomselect) {
                 departmentSelect.tomselect.clear();
                 departmentSelect.tomselect.clearOptions();
+                departmentSelect.tomselect.addOption({value: 0, text: "Bölüm Seçiniz"});
+                departmentSelect.tomselect.setValue(0, true);
+                departmentSelect.tomselect.refreshOptions(false);
             } else {
                 departmentSelect.innerHTML = "<option value='0'>Bölüm Seçiniz</option>";
             }
@@ -213,34 +232,31 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(response => response.json())
             .then(data => {
-                if (data['departments'].length > 1 || data['departments'].length === 0) {
-                    if (departmentSelect.tomselect) {
-                        departmentSelect.tomselect.addOption({value: 0, text: "Bölüm Seçiniz"});
-                        data['departments'].forEach(dept => {
-                            departmentSelect.tomselect.addOption({value: dept.id, text: dept.name});
-                        });
-                        departmentSelect.tomselect.refreshOptions(false);
-                    } else {
-                        departmentSelect.innerHTML = "<option value='0'>Bölüm Seçiniz</option>";
-                        data['departments'].forEach(dept => {
-                            const option = document.createElement("option");
-                            option.value = dept.id;
-                            option.textContent = dept.name;
-                            departmentSelect.appendChild(option);
-                        });
-                    }
-                } else if (data['departments'].length === 1) {
-                    let dept = data['departments'][0];
-                    if (departmentSelect.tomselect) {
+                const deptList = data['departments'] || [];
+                if (departmentSelect.tomselect) {
+                    departmentSelect.tomselect.clearOptions();
+                    departmentSelect.tomselect.addOption({value: 0, text: "Bölüm Seçiniz"});
+                    deptList.forEach(dept => {
                         departmentSelect.tomselect.addOption({value: dept.id, text: dept.name});
-                        departmentSelect.tomselect.setValue(dept.id, true); // true = silent
+                    });
+
+                    if (deptList.length === 1) {
+                        departmentSelect.tomselect.setValue(deptList[0].id, true); // Tek seçenek varsa otomatik seç
                     } else {
+                        departmentSelect.tomselect.setValue(0, true);
+                    }
+                    departmentSelect.tomselect.refreshOptions(false);
+                } else {
+                    departmentSelect.innerHTML = "<option value='0'>Bölüm Seçiniz</option>";
+                    deptList.forEach(dept => {
                         const option = document.createElement("option");
                         option.value = dept.id;
                         option.textContent = dept.name;
-                        option.selected = true;
+                        if (deptList.length === 1) {
+                            option.selected = true; // Tek seçenek varsa otomatik seç
+                        }
                         departmentSelect.appendChild(option);
-                    }
+                    });
                 }
 
                 const selectedDeptId = departmentSelect.getAttribute('data-selected');
@@ -269,17 +285,32 @@ document.addEventListener("DOMContentLoaded", function () {
             
             if (!departmentId || departmentId === "0" || departmentId === "") {
                 if (programSelect) {
-                     programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+                    if (programSelect.tomselect) {
+                        programSelect.tomselect.clear();
+                        programSelect.tomselect.clearOptions();
+                        programSelect.tomselect.addOption({value: 0, text: "İlk olarak Bölüm Seçiniz"});
+                        programSelect.tomselect.setValue(0, true);
+                        programSelect.tomselect.refreshOptions(false);
+                    } else {
+                        programSelect.innerHTML = "<option value='0'>İlk olarak Bölüm Seçiniz</option>";
+                    }
                 }
                 return;
             }
             
-            if (programSelect.querySelector('option')) {
-                programSelect.querySelector('option').innerText = "";
-                spinner.showSpinner(programSelect.querySelector('option'));
+            if (programSelect.tomselect) {
+                programSelect.tomselect.clearOptions();
+                programSelect.tomselect.addOption({value: 0, text: "Yükleniyor..."});
+                programSelect.tomselect.setValue(0, true);
+                programSelect.tomselect.refreshOptions(false);
             } else {
-                programSelect.innerHTML = "<option value='0'>Yükleniyor...</option>";
-                spinner.showSpinner(programSelect.querySelector('option'));
+                if (programSelect.querySelector('option')) {
+                    programSelect.querySelector('option').innerText = "";
+                    spinner.showSpinner(programSelect.querySelector('option'));
+                } else {
+                    programSelect.innerHTML = "<option value='0'>Yükleniyor...</option>";
+                    spinner.showSpinner(programSelect.querySelector('option'));
+                }
             }
             
             // AJAX isteği gönder
@@ -291,28 +322,37 @@ document.addEventListener("DOMContentLoaded", function () {
             })
                 .then(response => response.json())
                 .then(data => {
-                    // Program select kutusunu temizle
-                    programSelect.innerHTML = "";
-                    console.log(data)
-                    if (data['programs'].length > 1) {
-                        const option = document.createElement("option");
-                        option.value = 0;
-                        option.textContent = "Program Seçiniz";
-                        programSelect.appendChild(option);
-                        // Gelen programları ekle
-                        data['programs'].forEach(program => {
+                    const progList = data['programs'] || [];
+
+                    if (programSelect.tomselect) {
+                        programSelect.tomselect.clearOptions();
+                        programSelect.tomselect.addOption({value: 0, text: "Program Seçiniz"});
+                        progList.forEach(program => {
+                            programSelect.tomselect.addOption({value: program.id, text: program.name});
+                        });
+
+                        if (progList.length === 1) {
+                            programSelect.tomselect.setValue(progList[0].id, true); // Tek seçenek varsa otomatik seç
+                        } else {
+                            programSelect.tomselect.setValue(0, true);
+                        }
+                        programSelect.tomselect.refreshOptions(false);
+                    } else {
+                        programSelect.innerHTML = "";
+                        const defaultOption = document.createElement("option");
+                        defaultOption.value = 0;
+                        defaultOption.textContent = "Program Seçiniz";
+                        programSelect.appendChild(defaultOption);
+
+                        progList.forEach(program => {
                             const option = document.createElement("option");
                             option.value = program.id;
                             option.textContent = program.name;
+                            if (progList.length === 1) {
+                                option.selected = true; // Tek seçenek varsa otomatik seç
+                            }
                             programSelect.appendChild(option);
                         });
-                    } else if (data['programs'].length === 1) {
-                        let program = data['programs'][0];
-                        const option = document.createElement("option");
-                        option.value = program.id;
-                        option.textContent = program.name;
-                        option.selected = true
-                        programSelect.appendChild(option);
                     }
 
                     // Select elementinin change olayını tetikle
@@ -321,7 +361,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Eğer önceden seçilmesi gereken bir program varsa
                     const selectedProgramId = programSelect.getAttribute('data-selected');
                     if (selectedProgramId && selectedProgramId !== "0") {
-                        programSelect.value = selectedProgramId;
+                        if (programSelect.tomselect) {
+                            programSelect.tomselect.setValue(selectedProgramId, true);
+                        } else {
+                            programSelect.value = selectedProgramId;
+                        }
                         programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli
                         programSelect.dispatchEvent(new Event("change"));
                     }
@@ -365,7 +409,8 @@ document.addEventListener("DOMContentLoaded", function () {
         let placeholder = select.getAttribute("placeholder") || "Seçmek için yazın";
 
         new TomSelect(select, {
-            placeholder: placeholder
+            placeholder: placeholder,
+            allowEmptyOption: true
         });
     });
 
