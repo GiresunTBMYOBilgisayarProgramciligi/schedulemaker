@@ -32,7 +32,7 @@ class UnitPolicy extends BasePolicy
             return true;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_UNIT->value, $unit);
     }
 
     /**
@@ -54,7 +54,7 @@ class UnitPolicy extends BasePolicy
             }
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_UNIT->value, $unit);
     }
 
     /**
@@ -62,6 +62,20 @@ class UnitPolicy extends BasePolicy
      */
     public function delete(User $user, Unit $unit): bool
     {
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_UNIT->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_UNIT->value, $unit);
+    }
+
+    /**
+     * Birim takvimini yönetme yetkisi
+     */
+    public function manage_schedule(User $user, Unit $unit): bool
+    {
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
+                return true;
+            }
+        }
+
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $unit);
     }
 }

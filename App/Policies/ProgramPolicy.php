@@ -24,7 +24,7 @@ class ProgramPolicy extends BasePolicy
     public function view(User $user, Program $program): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
             }
@@ -40,7 +40,7 @@ class ProgramPolicy extends BasePolicy
             return true;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_PROGRAM->value, $program);
     }
 
     /**
@@ -57,7 +57,7 @@ class ProgramPolicy extends BasePolicy
     public function update(User $user, Program $program): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
             }
@@ -68,7 +68,7 @@ class ProgramPolicy extends BasePolicy
             return $user->department_id === $program->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_PROGRAM->value, $program);
     }
 
     /**
@@ -77,12 +77,50 @@ class ProgramPolicy extends BasePolicy
     public function delete(User $user, Program $program): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $programUnitId = $program->department ? $program->department->unit_id : (new \App\Models\Department())->find($program->department_id)?->unit_id;
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
             }
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_PROGRAM->value, $program);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_PROGRAM->value, $program);
+    }
+
+    /**
+     * Programın ders/sınav programını yönetme yetkisi
+     */
+    public function manage_schedule(User $user, Program $program): bool
+    {
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
+                return true;
+            }
+        }
+
+        if ($user->role === 'department_head') {
+            return $user->department_id === $program->department_id;
+        }
+
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $program);
+    }
+
+    /**
+     * Programın derslerini yönetme yetkisi
+     */
+    public function manage_lessons(User $user, Program $program): bool
+    {
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
+            if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
+                return true;
+            }
+        }
+
+        if ($user->role === 'department_head') {
+            return $user->department_id === $program->department_id;
+        }
+
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, $program);
     }
 }

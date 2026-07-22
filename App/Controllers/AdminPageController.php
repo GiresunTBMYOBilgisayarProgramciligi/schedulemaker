@@ -619,7 +619,7 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('editschedule');
         
-        $departments = (new DepartmentRepository())->getAuthorized('update', ['active' => true]);
+        $departments = (new DepartmentRepository())->getAuthorized('manage_schedule', ['active' => true]);
         
         if (empty($departments)) {
             throw new AuthorizationException("Ders programı düzenleme yetkiniz yok", [], 403);
@@ -627,7 +627,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAuthorized('update', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
             "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];
@@ -650,7 +650,7 @@ class AdminPageController extends Controller
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
-            "units" => (new UnitRepository())->getAuthorized('manage_schedule', ['active' => true]),
+            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Sınav Programını Düzenle",
             "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
         ];

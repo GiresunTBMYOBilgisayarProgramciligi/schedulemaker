@@ -32,7 +32,7 @@ class SchedulePolicy extends BasePolicy
                     if ($user->role === 'manager' || $user->role === 'submanager') {
                         if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
                     }
-                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $program)) return true;
+                    if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $program)) return true;
                     
                     return $program->department->chairperson_id == $user->id;
                 }
@@ -50,7 +50,7 @@ class SchedulePolicy extends BasePolicy
                     if (!$scheduleUser->department_id) {
                         return true;
                     }
-                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
+                    if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
 
                     return $scheduleUser->department->chairperson_id == $user->id || $scheduleUser->id == $user->id;
                 }
@@ -62,7 +62,7 @@ class SchedulePolicy extends BasePolicy
                     if ($user->role === 'manager' || $user->role === 'submanager') {
                         if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
                     }
-                    if (Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
+                    if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
 
                     return $lesson->department->chairperson_id == $user->id;
                 }
@@ -74,6 +74,14 @@ class SchedulePolicy extends BasePolicy
         }
 
         return false;
+    }
+
+    /**
+     * Program takvimini yönetme yetkisi
+     */
+    public function manage_schedule(User $user, Schedule $schedule): bool
+    {
+        return $this->update($user, $schedule);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Lesson;
+use App\Models\Department;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
@@ -14,7 +15,7 @@ class LessonPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head' || Gate::hasAnyPermission($user->id, PermissionType::MANAGE_LESSONS->value);
+        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head' || $this->hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value);
     }
 
     /**
@@ -23,7 +24,7 @@ class LessonPolicy extends BasePolicy
     public function view(User $user, Lesson $lesson): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new Department())->find($lesson->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
                 return true;
             }
@@ -39,8 +40,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
-               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**
@@ -50,7 +51,7 @@ class LessonPolicy extends BasePolicy
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             if (isset($lessonData->department_id)) {
-                $dept = (new \App\Models\Department())->find($lessonData->department_id);
+                $dept = (new Department())->find($lessonData->department_id);
                 if ($dept && !is_null($user->unit_id) && $user->unit_id == $dept->unit_id) {
                     return true;
                 }
@@ -66,8 +67,8 @@ class LessonPolicy extends BasePolicy
         }
 
         if (isset($lessonData->department_id)) {
-            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData->department_id]) ||
-                   Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData->department_id]);
+            return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData->department_id]) ||
+                   $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData->department_id]);
         }
 
         return false;
@@ -79,7 +80,7 @@ class LessonPolicy extends BasePolicy
     public function update(User $user, Lesson $lesson): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new Department())->find($lesson->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
                 return true;
             }
@@ -95,8 +96,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
-               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**
@@ -105,7 +106,7 @@ class LessonPolicy extends BasePolicy
     public function delete(User $user, Lesson $lesson): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
-            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new \App\Models\Department())->find($lesson->department_id)?->unit_id;
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new Department())->find($lesson->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $lessonUnitId) {
                 return true;
             }
@@ -116,8 +117,8 @@ class LessonPolicy extends BasePolicy
             return $user->department_id === $lesson->department_id;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_LESSONS->value, $lesson) ||
-               Gate::hasCascadePermission($user->id, PermissionType::MANAGE_SCHEDULE->value, $lesson);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, $lesson) ||
+               $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $lesson);
     }
 
     /**
@@ -127,7 +128,23 @@ class LessonPolicy extends BasePolicy
     {
         return $user->role === 'manager' || 
                $user->role === 'submanager' || 
-               Gate::hasAnyPermission($user->id, PermissionType::MANAGE_LESSONS->value) ||
-               Gate::hasAnyPermission($user->id, PermissionType::MANAGE_SCHEDULE->value);
+               $this->hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value) ||
+               $this->hasAnyPermission($user, PermissionType::MANAGE_SCHEDULE->value);
+    }
+
+    /**
+     * Dersi ders/sınav programında yönetme yetkisi
+     */
+    public function manage_schedule(User $user, Lesson $lesson): bool
+    {
+        return $this->update($user, $lesson);
+    }
+
+    /**
+     * Dersi yönetme yetkisi
+     */
+    public function manage_lessons(User $user, Lesson $lesson): bool
+    {
+        return $this->update($user, $lesson);
     }
 }

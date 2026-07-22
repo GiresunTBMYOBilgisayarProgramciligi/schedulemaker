@@ -25,7 +25,8 @@ Sistemde bulunan roller, yetki seviyelerine göre yukarıdan aşağıya (100 -> 
 *   **Listeleme:** `manager` ve `submanager` (Sistemdeki birimleri listeleyebilir).
 *   **Görme (Detay):** Kullanıcının kendi birimi ise görebilir. Kendi birimindekileri yöneten `manager`, `submanager` veya ilgili birimde kaskad (kapsayıcı) olarak `MANAGE_UNIT` yetkisine sahip kullanıcılar.
 *   **Ekleme:** `admin` yapabilir. Ancak `MANAGE_UNIT` yetkisine sahip kullanıcılar da altındaki hiyerarşide ekleme haklarına zımni olarak sahip olur.
-*   **Düzenleme / Silme:** Kendi birimi için `manager` ve `submanager`. Ek olarak ilgili birim için `MANAGE_UNIT` kaskad özel yetkisine sahip kullanıcılar.
+*   **Düzenleme:** Kendi birimi için `manager` ve `submanager`. Ek olarak ilgili birim için `MANAGE_UNIT` kaskad özel yetkisine sahip kullanıcılar.
+*   **Silme:** Sadece `admin` ve `MANAGE_UNIT` kaskad özel yetkisine sahip kullanıcılar birim silebilir. (`manager` ve `submanager` varsayılan olarak birim silemez).
 
 ### Bölüm İşlemleri (`DepartmentPolicy`)
 *   **Listeleme:** `manager`, `submanager`, `department_head`.
@@ -75,12 +76,12 @@ Sistemde bulunan roller, yetki seviyelerine göre yukarıdan aşağıya (100 -> 
 
 ## 3. JSON Tabanlı Özel (Granüler) Yetkilendirme
 
-Varsayılan rol hiyerarşisinin yetmediği durumlarda (Örneğin bir Araştırma Görevlisine sadece belirli bir programın takvimini düzenleme yetkisi verilmek istendiğinde), Moodle mantığına benzer JSON tabanlı kaskad özel yetkilendirme kullanılır. Bu sistem `Gate::hasCascadePermission()` metodu üzerinden çalışır.
+Varsayılan rol hiyerarşisinin yetmediği durumlarda (Örneğin bir Araştırma Görevlisine sadece belirli bir programın takvimini düzenleme yetkisi verilmek istendiğinde), Moodle mantığına benzer JSON tabanlı kaskad özel yetkilendirme kullanılır. Bu sistem `BasePolicy::hasCascadePermission()` metodu üzerinden çalışır.
 
 Özel yetkiler, veritabanında `settings` tablosunda **`user_{id}`** anahtarı (key) ve `group = permissions` altında JSON formatında tutulur.
 
 ### Alt Sınıflara (Aşağı Yönlü) Yetki Mirası
-`Gate.php` içerisindeki kaskad kontrol mekanizması ile **üst yetkiye sahip bir kullanıcı, altındaki varlıklarda zımni olarak (implicit) yetkili sayılır.**
+`BasePolicy.php` içerisindeki kaskad kontrol mekanizması ile **üst yetkiye sahip bir kullanıcı, altındaki varlıklarda zımni olarak (implicit) yetkili sayılır.**
 Örneğin `manage_department` yetkisine sahip bir kullanıcı otomatik olarak o bölümün `manage_program`, `manage_users`, `manage_schedule` ve `manage_lessons` yetkilerine de sahiptir. `manage_unit` yetkisi tüm bunları kapsar.
 
 ### Özel Yetki JSON Yapısı (Örnek):
@@ -110,4 +111,8 @@ Varsayılan rol hiyerarşisinin yetmediği durumlarda (Örneğin bir Araştırma
 *   `manage_department` : İlgili Bölümü yönetme. (Alt sınıflara etki eder).
 *   `manage_program` : İlgili Programı yönetme. (Alt sınıflara etki eder).
 
-*Kullanıcı Policy sınıfları (Örn: `DepartmentPolicy.php`), herhangi bir eyleme karar verirken önce koda yazılı rol tabanlı varsayılan hiyerarşiyi kontrol eder. Oradan yetki alamazsa, kişinin `Gate::getUserPermissions($user->id)` ile gelen JSON verisinde ilgili varlık ve `action` (eylem) eşleşmesi olup olmadığını `hasCascadePermission` aracılığıyla kontrol eder (Yani Birim -> Bölüm -> Program şeklinde aşağı veya yukarı doğru miras alınır).*
+### Mimari Yapı (Gate & BasePolicy Ayrımı)
+
+- **`Gate.php` (Dispatcher):** Yalnızca model ile Policy sınıfını eşleştiren ve ilgili politika metodunu (`$policy->$action(...)`) tetikleyen yalın bir yönlendiricidir. İçerisinde rol veya iş kuralı kararları barındırmaz.
+- **`BasePolicy.php` (Base Class):** Tüm politika sınıflarının atasıdır. Global `admin` kontrolünü (`before()`) ve kaskad JSON yetki kontrolünü (`$this->hasCascadePermission(...)`) sağlar. Ayrıca tanımlanmamış `manage_*` aksiyonlarını `__call` sihirli metodu ile otomatik olarak kaskad kontrolüne yönlendirir.
+- **Politika Sınıfları (Örn: `DepartmentPolicy.php`, `ProgramPolicy.php`):** Her modelin rol bazlı iş kurallarını (örn. `department_head` veya `manager` rolleri için `manage_schedule`, `manage_lessons` vb.) açık metodlar halinde tanımlar. Rol yetkisi yoksa `$this->hasCascadePermission` ile kaskad JSON yetkilerine bakar.

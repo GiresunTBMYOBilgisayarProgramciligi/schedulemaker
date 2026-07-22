@@ -18,7 +18,7 @@ class BuildingPolicy extends BasePolicy
         if (Gate::allowsRole('secretary')) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
     }
 
     /**
@@ -31,12 +31,12 @@ class BuildingPolicy extends BasePolicy
             return true;
         }
 
-        $perms = Gate::getUserPermissions($user->id);
+        $perms = $this->getUserPermissions($user->id);
         if (in_array(PermissionType::MANAGE_BUILDINGS->value, $perms['buildings'][$building->id] ?? [])) {
             return true;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 
     /**
@@ -49,7 +49,7 @@ class BuildingPolicy extends BasePolicy
             return true;
         }
 
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 
     /**
@@ -60,7 +60,7 @@ class BuildingPolicy extends BasePolicy
         if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 
     /**
@@ -71,6 +71,6 @@ class BuildingPolicy extends BasePolicy
         if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $building);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 }

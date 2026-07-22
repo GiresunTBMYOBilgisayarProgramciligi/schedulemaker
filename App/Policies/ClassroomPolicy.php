@@ -19,7 +19,7 @@ class ClassroomPolicy extends BasePolicy
         if (Gate::allowsRole('secretary')) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
     }
 
     /**
@@ -31,7 +31,7 @@ class ClassroomPolicy extends BasePolicy
         if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 
     /**
@@ -44,13 +44,13 @@ class ClassroomPolicy extends BasePolicy
             if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
                 return true;
             }
-            return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
+            return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
         }
         
         if (Gate::allowsRole('secretary')) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
     }
 
     /**
@@ -62,7 +62,7 @@ class ClassroomPolicy extends BasePolicy
         if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 
     /**
@@ -74,6 +74,6 @@ class ClassroomPolicy extends BasePolicy
         if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
-        return Gate::hasCascadePermission($user->id, PermissionType::MANAGE_BUILDINGS->value, $unit);
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
     }
 }
