@@ -8,7 +8,15 @@ use App\Models\Classroom;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\User;
+use App\Models\Department;
+use App\Models\Unit;
 use App\Enums\OwnerType;
+use App\Repositories\UnitRepository;
+use App\Repositories\DepartmentRepository;
+use App\Repositories\ProgramRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\ClassroomRepository;
+use App\Repositories\LessonRepository;
 use Exception;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
@@ -45,7 +53,11 @@ class ScheduleExportFilterBuilder
                 break;
 
             case "department":
-                $scheduleFilters = $this->buildForDepartment($filters, $typeKey);
+                $scheduleFilters = $this->buildForDepartment($filters, $typeKey, $typeLabel);
+                break;
+
+            case "unit":
+                $scheduleFilters = $this->buildForUnit($filters, $typeKey, $typeLabel);
                 break;
 
             case OwnerType::USER->value:
@@ -89,45 +101,105 @@ class ScheduleExportFilterBuilder
         $result = [];
 
         if (!empty($filters["owner_id"])) {
-            $program = (new Program())->find($filters["owner_id"]);
+            $programs  = (new ProgramRepository())->getAuthorized('view', ['id' => $filters['owner_id'], 'active' => true]);
+            $fileTitle = !empty($programs) ? $programs[0]->name . ' ' . $typeLabel : "Program " . $typeLabel;
+        } else {
+            $programs  = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
+            $fileTitle = "Tüm Programlar " . $typeLabel;
+        }
+
+        foreach ($programs as $program) {
             foreach ($semesterNumbers as $semester_no) {
                 $result[] = [
-                    'file_title' => $program->name . ' ' . $typeLabel,
+                    'file_title' => $fileTitle,
                     'title'      => $program->name . " " . getClassFromSemesterNo($semester_no) . " " . $typeLabel,
-                    'type'       => 'program',
-                    'filter'     => $this->baseFilter($filters, $typeKey, 'program', $program->id, $semester_no),
+                    'type'       => OwnerType::PROGRAM->value,
+                    'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::PROGRAM->value, $program->id, $semester_no),
                 ];
-            }
-        } else {
-            $programs = (new Program())->get()->where(['active' => true])->all();
-            foreach ($programs as $program) {
-                foreach ($semesterNumbers as $semester_no) {
-                    $result[] = [
-                        'file_title' => "Tüm Programlar " . $typeLabel,
-                        'title'      => $program->name . " " . getClassFromSemesterNo($semester_no) . " " . $typeLabel,
-                        'type'       => 'program',
-                        'filter'     => $this->baseFilter($filters, $typeKey, 'program', $program->id, $semester_no),
-                    ];
-                }
             }
         }
 
         return $result;
     }
 
-    private function buildForDepartment(array $filters, string $typeKey): array
+    private function buildForDepartment(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
 
         if (!empty($filters["owner_id"])) {
-            $programs = (new Program())->get()->where(['department_id' => $filters['owner_id']])->all();
+            /** @var Department|null $department */
+            $department = (new DepartmentRepository())->find($filters['owner_id']);
+            $fileTitle  = $department ? $department->name . ' ' . $typeLabel : "Bölüm " . $typeLabel;
+            $programs   = (new ProgramRepository())->getAuthorized('view', ['department_id' => $filters['owner_id'], 'active' => true]);
+            
+            foreach ($programs as $program) {
+                $subFilters = $this->buildForProgram(
+                    array_merge($filters, ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $program->id]),
+                    getSemesterNumbers($filters["semester"]),
+                    $typeKey,
+                    $typeLabel
+                );
+                foreach ($subFilters as &$item) {
+                    $item['file_title'] = $fileTitle;
+                }
+                $result = array_merge($result, $subFilters);
+            }
         } else {
-            $programs = (new Program())->get()->where(['active' => true])->all();
+            $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
+            $fileTitle   = "Tüm Bölümler " . $typeLabel;
+
+            foreach ($departments as $department) {
+                $subFilters = $this->buildForDepartment(
+                    array_merge($filters, ['owner_type' => 'department', 'owner_id' => $department->id]),
+                    $typeKey,
+                    $typeLabel
+                );
+                foreach ($subFilters as &$item) {
+                    $item['file_title'] = $fileTitle;
+                }
+                $result = array_merge($result, $subFilters);
+            }
         }
 
-        foreach ($programs as $program) {
-            $programFilters = array_merge($filters, ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $program->id]);
-            $result = array_merge($result, $this->build($programFilters));
+        return $result;
+    }
+
+    private function buildForUnit(array $filters, string $typeKey, string $typeLabel): array
+    {
+        $result = [];
+
+        if (!empty($filters["owner_id"])) {
+            /** @var Unit|null $unit */
+            $unit        = (new UnitRepository())->find($filters['owner_id']);
+            $fileTitle   = $unit ? $unit->name . ' ' . $typeLabel : "Birim " . $typeLabel;
+            $departments = (new DepartmentRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id'], 'active' => true]);
+
+            foreach ($departments as $department) {
+                $subFilters = $this->buildForDepartment(
+                    array_merge($filters, ['owner_type' => 'department', 'owner_id' => $department->id]),
+                    $typeKey,
+                    $typeLabel
+                );
+                foreach ($subFilters as &$item) {
+                    $item['file_title'] = $fileTitle;
+                }
+                $result = array_merge($result, $subFilters);
+            }
+        } else {
+            $units     = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+            $fileTitle = "Tüm Birimler " . $typeLabel;
+
+            foreach ($units as $unit) {
+                $subFilters = $this->buildForUnit(
+                    array_merge($filters, ['owner_type' => 'unit', 'owner_id' => $unit->id]),
+                    $typeKey,
+                    $typeLabel
+                );
+                foreach ($subFilters as &$item) {
+                    $item['file_title'] = $fileTitle;
+                }
+                $result = array_merge($result, $subFilters);
+            }
         }
 
         return $result;
@@ -138,23 +210,20 @@ class ScheduleExportFilterBuilder
         $result = [];
 
         if (!empty($filters["owner_id"])) {
-            $lecturer = (new User())->find($filters["owner_id"]);
-            $result[] = [
-                'file_title' => $lecturer->getFullName(true) . " " . $typeLabel,
-                'title'      => $lecturer->getFullName() . " " . $typeLabel,
-                'type'       => 'user',
-                'filter'     => $this->baseFilter($filters, $typeKey, 'user', $lecturer->id, null),
-            ];
+            $lecturers = (new UserRepository())->getAuthorized('view', ['id' => $filters['owner_id'], '!role' => ['in' => ['admin', 'user']]]);
+            $fileTitle = !empty($lecturers) ? $lecturers[0]->getFullName(true) . " " . $typeLabel : "Hoca " . $typeLabel;
         } else {
-            $lecturers = (new User())->get()->where(['!role' => 'user'])->all();
-            foreach ($lecturers as $lecturer) {
-                $result[] = [
-                    'file_title' => "Tüm Hocalar " . $typeLabel,
-                    'title'      => $lecturer->getFullName() . " " . $typeLabel,
-                    'type'       => 'user',
-                    'filter'     => $this->baseFilter($filters, $typeKey, 'user', $lecturer->id, null),
-                ];
-            }
+            $lecturers = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+            $fileTitle = "Tüm Hocalar " . $typeLabel;
+        }
+
+        foreach ($lecturers as $lecturer) {
+            $result[] = [
+                'file_title' => $fileTitle,
+                'title'      => $lecturer->getFullName() . " " . $typeLabel,
+                'type'       => OwnerType::USER->value,
+                'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::USER->value, $lecturer->id, null),
+            ];
         }
 
         return $result;
@@ -165,23 +234,20 @@ class ScheduleExportFilterBuilder
         $result = [];
 
         if (!empty($filters["owner_id"])) {
-            $classroom = (new Classroom())->find($filters["owner_id"]);
-            $result[]  = [
-                'file_title' => $classroom->name . " " . $typeLabel,
-                'title'      => $classroom->name . " " . $typeLabel,
-                'type'       => 'classroom',
-                'filter'     => $this->baseFilter($filters, $typeKey, 'classroom', $classroom->id, null),
-            ];
+            $classrooms = (new ClassroomRepository())->getAuthorized('view', ['id' => $filters['owner_id']]);
+            $fileTitle  = !empty($classrooms) ? $classrooms[0]->name . " " . $typeLabel : "Derslik " . $typeLabel;
         } else {
-            $classrooms = (new Classroom())->get()->all();
-            foreach ($classrooms as $classroom) {
-                $result[] = [
-                    'file_title' => "Tüm Derslikler " . $typeLabel,
-                    'title'      => $classroom->name . " " . $typeLabel,
-                    'type'       => 'classroom',
-                    'filter'     => $this->baseFilter($filters, $typeKey, 'classroom', $classroom->id, null),
-                ];
-            }
+            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            $fileTitle  = "Tüm Derslikler " . $typeLabel;
+        }
+
+        foreach ($classrooms as $classroom) {
+            $result[] = [
+                'file_title' => $fileTitle,
+                'title'      => $classroom->name . " " . $typeLabel,
+                'type'       => OwnerType::CLASSROOM->value,
+                'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::CLASSROOM->value, $classroom->id, null),
+            ];
         }
 
         return $result;
@@ -192,23 +258,20 @@ class ScheduleExportFilterBuilder
         $result = [];
 
         if (!empty($filters["owner_id"])) {
-            $lesson   = (new Lesson())->find($filters["owner_id"]);
-            $result[] = [
-                'file_title' => $lesson->getFullName(true) . " " . $typeLabel,
-                'title'      => $lesson->getFullName(true) . " " . $typeLabel,
-                'type'       => 'lesson',
-                'filter'     => $this->baseFilter($filters, $typeKey, 'lesson', $lesson->id, null),
-            ];
+            $lessons   = (new LessonRepository())->getAuthorized('view', ['id' => $filters['owner_id']]);
+            $fileTitle = !empty($lessons) ? $lessons[0]->getFullName(true) . " " . $typeLabel : "Ders " . $typeLabel;
         } else {
-            $lessons = (new Lesson())->get()->all();
-            foreach ($lessons as $lesson) {
-                $result[] = [
-                    'file_title' => "Tüm Dersler " . $typeLabel,
-                    'title'      => $lesson->getFullName(true) . " " . $typeLabel,
-                    'type'       => 'lesson',
-                    'filter'     => $this->baseFilter($filters, $typeKey, 'lesson', $lesson->id, null),
-                ];
-            }
+            $lessons   = (new LessonRepository())->getAuthorized('view');
+            $fileTitle = "Tüm Dersler " . $typeLabel;
+        }
+
+        foreach ($lessons as $lesson) {
+            $result[] = [
+                'file_title' => $fileTitle,
+                'title'      => $lesson->getFullName(true) . " " . $typeLabel,
+                'type'       => OwnerType::LESSON->value,
+                'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::LESSON->value, $lesson->id, null),
+            ];
         }
 
         return $result;
@@ -229,3 +292,4 @@ class ScheduleExportFilterBuilder
         ];
     }
 }
+

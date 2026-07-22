@@ -90,7 +90,7 @@ use function App\Helpers\getSettingValue;
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
                                         data-bs-target="#program-tab-pane" type="button" role="tab"
-                                        aria-controls="program-tab-pane" aria-selected="true">Bölüm/Program
+                                        aria-controls="program-tab-pane" aria-selected="true">Birim/Bölüm/Program
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -123,6 +123,9 @@ use function App\Helpers\getSettingValue;
                                                             <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
+                                                    <div class="form-text">
+                                                        Birim seçilmezse tüm yetkili birimler dışa aktarılır
+                                                    </div>
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <select class="form-select tom-select" id="department_id"
@@ -130,7 +133,7 @@ use function App\Helpers\getSettingValue;
                                                         <option value="0">İlk olarak Birim Seçiniz</option>
                                                     </select>
                                                     <div class="form-text">
-                                                        Bölüm seçilmezse tüm programlar dışa aktarılır
+                                                        Bölüm seçilmezse birime ait tüm programlar dışa aktarılır
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-4">
@@ -138,7 +141,7 @@ use function App\Helpers\getSettingValue;
                                                         <select class="form-select" id="program_id" name="program_id">
                                                             <option value="0">İlk olarak Bölüm seçiniz</option>
                                                         </select>
-                                                        <div class="btn-group" role="group" aria-label="Bölüm/Program dışa aktarma">
+                                                        <div class="btn-group" role="group" aria-label="Birim/Bölüm/Program dışa aktarma">
                                                             <button class="btn btn-primary" type="button" id="departmentAndProgramExport">
                                                                 <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
                                                             </button>
@@ -148,7 +151,7 @@ use function App\Helpers\getSettingValue;
                                                         </div>
                                                     </div>
                                                     <div class="form-text">
-                                                        Program seçilmezse tüm programlar dışa aktarılır
+                                                        Program seçilmezse bölüme ait tüm programlar dışa aktarılır
                                                     </div>
                                                 </div>
                                             </div>

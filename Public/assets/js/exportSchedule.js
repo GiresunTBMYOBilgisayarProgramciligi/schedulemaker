@@ -3,6 +3,7 @@
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
 document.addEventListener("DOMContentLoaded", function () {
+    const unitSelect = document.getElementById("unit_id");
     const departmentSelect = document.getElementById("department_id");
     const programSelect = document.getElementById("program_id");
     const lecturerSelect = document.getElementById("lecturer_id");
@@ -24,7 +25,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (button.id.endsWith("Export")) {
             const ownerType = button.id === "singlePageExport" ? button.dataset.ownerType :
                 button.id === "lecturerExport" ? "user" :
-                    button.id === "classroomExport" ? "classroom" : "program";
+                    button.id === "classroomExport" ? "classroom" :
+                        (programSelect && programSelect.value > 0) ? "program" :
+                            (departmentSelect && departmentSelect.value > 0) ? "department" :
+                                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
 
             showExportOptionsModal(ownerType, scheduleType, async (options) => {
                 let data = new FormData();
@@ -41,12 +45,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     const selectId = button.id === "lecturerExport" ? "lecturer_id" :
                         button.id === "classroomExport" ? "classroom_id" :
-                            button.id === "departmentAndProgramExport" ? (programSelect && programSelect.value > 0 ? "program_id" : "department_id") : "";
+                            button.id === "departmentAndProgramExport" ? (
+                                programSelect && programSelect.value > 0 ? "program_id" :
+                                    departmentSelect && departmentSelect.value > 0 ? "department_id" :
+                                        unitSelect && unitSelect.value > 0 ? "unit_id" : ""
+                            ) : "";
 
                     if (selectId) {
                         const selectElement = document.getElementById(selectId);
                         if (selectElement && selectElement.value > 0) {
                             if (selectId === "department_id") data.set("owner_type", "department");
+                            else if (selectId === "unit_id") data.set("owner_type", "unit");
                             data.append("owner_id", selectElement.value);
                         }
                     }
@@ -87,6 +96,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else if (departmentSelect && departmentSelect.value > 0) {
                         data.append("owner_type", "department");
                         data.append("owner_id", departmentSelect.value);
+                    } else if (unitSelect && unitSelect.value > 0) {
+                        data.append("owner_type", "unit");
+                        data.append("owner_id", unitSelect.value);
                     } else {
                         data.append("owner_type", "program");
                     }
@@ -117,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <label class="form-check-label" for="show_code">Ders Kodu</label>
             </div>`;
 
-        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department" || (isExam && ownerType === "user")) {
+        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department" || ownerType === "unit" || (isExam && ownerType === "user")) {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_lecturer" checked>
                 <label class="form-check-label" for="show_lecturer">Hoca Adı</label>

@@ -58,6 +58,7 @@ class AdminPageController extends Controller
             $assetManager->addCss("/assets/css/schedule.css");
             $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true);
         }
+        $assetManager->addJs("/assets/js/exportSchedule.js");
         
         return $view_data;
     }
@@ -670,23 +671,22 @@ class AdminPageController extends Controller
     {
         $assetManager->loadPageAssets('exportschedule');
         
+        $units       = (new UnitRepository())->getAuthorized('view', ['active' => true]);
         $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
 
-        if (empty($departments)) {
+        if (empty($departments) && empty($units)) {
             throw new AuthorizationException("Ders programı Dışa aktarma yetkiniz yok", [], 403);
         }
+
         $view_data = [
             "scheduleController" => new ScheduleController(),
-            "departments" => $departments,
-            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
-            "page_title" => "Program Dışa Aktar",
-            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
+            "units"              => $units,
+            "departments"        => $departments,
+            "page_title"         => "Program Dışa Aktar",
+            "classrooms"         => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
+            "lecturers"          => (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]])
         ];
-        if ($currentUser->role == "department_head") {
-            $view_data['lecturers'] = (new UserRepository())->findBy(['department_id' => $currentUser->department_id]);
-        } else {
-            $view_data['lecturers'] = (new UserRepository())->findBy([]);
-        }
+
         return $view_data;
     }
 
