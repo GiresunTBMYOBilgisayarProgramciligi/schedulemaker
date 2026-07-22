@@ -90,7 +90,7 @@ use function App\Helpers\getSettingValue;
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
                                         data-bs-target="#program-tab-pane" type="button" role="tab"
-                                        aria-controls="program-tab-pane" aria-selected="true">Bölüm/Program
+                                        aria-controls="program-tab-pane" aria-selected="true">Birim/Bölüm/Program
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -115,18 +115,21 @@ use function App\Helpers\getSettingValue;
                                     <div class="row">
                                         <div class="col-12 mb-3">
                                             <div class="row">
-                                                <div class="col-12 col-md-6">
-                                                    <select class="form-select tom-select" id="department_id"
-                                                        name="department_id">
-                                                        <?php array_unshift($departments, (object) ["id" => 0, "name" => "Bölüm Seçiniz"]);
-                                                        foreach ($departments as $department): ?>
-                                                            <option value="<?= $department->id ?>">
-                                                                <?= $department->name ?>
-                                                            </option>
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="unit_id" name="unit_id" data-action="public">
+                                                        <option value="">Birim Seçiniz</option>
+                                                        <?php foreach ($units as $unit): ?>
+                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
-                                                <div class="col-12 col-md-6">
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="department_id"
+                                                        name="department_id" data-action="public">
+                                                        <option value="0">İlk olarak Birim Seçiniz</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-4">
                                                     <div class="input-group">
                                                         <select class="form-select" id="program_id" name="program_id">
                                                             <option value="0">İlk olarak Bölüm seçiniz</option>

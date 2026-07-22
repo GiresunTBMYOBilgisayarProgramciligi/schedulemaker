@@ -32,7 +32,7 @@ class ProgramRepository extends BaseRepository
         /** @var Program $model */
         $model = new $this->modelClass;
         return $model->get()->where(['active' => true])
-            ->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson']]])
+            ->with(['lecturers', 'lessons', 'department' => ['with' => ['chairperson', 'unit']]])
             ->all();
     }
 

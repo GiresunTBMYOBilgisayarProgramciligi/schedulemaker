@@ -48,6 +48,7 @@ class AdminPageController extends Controller
             "programController" => new ProgramController(),
             'userController' => new UserController(),
             "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
+            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Anasayfa"
         ];
         

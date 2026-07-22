@@ -224,7 +224,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!unitId || unitId === "0" || unitId === "") return;
 
             // AJAX isteği gönder
-            fetch(`/ajax/getDepartmentsList/${unitId}`, {
+            const actionParam = unitSelect.dataset.action ? `?action=${unitSelect.dataset.action}` : '';
+            fetch(`/ajax/getDepartmentsList/${unitId}${actionParam}`, {
                 method: "POST",
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -314,7 +315,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             
             // AJAX isteği gönder
-            fetch(`/ajax/getProgramsList/${departmentId}`, {
+            const actionParam = departmentSelect.dataset.action ? `?action=${departmentSelect.dataset.action}` : '';
+            fetch(`/ajax/getProgramsList/${departmentId}${actionParam}`, {
                 method: "POST",
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',

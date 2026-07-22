@@ -16,6 +16,7 @@ use App\Repositories\ClassroomRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
+use App\Repositories\UnitRepository;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -46,6 +47,19 @@ use App\Repositories\ProgramRepository;
         <div class="container-fluid">
             <!-- Small boxes (Stat box) -->
             <div class="row">
+                <div class="col">
+                    <!-- small box -->
+                    <div class="small-box text-bg-secondary">
+                        <div class="inner">
+                            <h3><?= (new UnitRepository())->count() ?></h3>
+
+                            <p>Birim</p>
+                        </div>
+                        <div class="small-box-icon">
+                            <i class="bi bi-bank"></i>
+                        </div>
+                    </div>
+                </div>
                 <div class="col">
                     <!-- small box -->
                     <div class="small-box text-bg-primary">
@@ -128,7 +142,7 @@ use App\Repositories\ProgramRepository;
                         <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
                             <div class="card d-flex flex-fill mb-3">
                                 <div class="card-header text-muted border-bottom-0">
-                                    <?= $program->department->name ?? '' ?>
+                                    <?= !empty($program->department?->unit?->name) ? htmlspecialchars($program->department->unit->name) . ' / ' : '' ?><?= $program->department->name ?? '' ?>
                                 </div>
                                 <div class="card-body pt-0">
                                     <div class="row">

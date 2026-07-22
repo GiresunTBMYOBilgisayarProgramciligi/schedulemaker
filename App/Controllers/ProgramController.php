@@ -27,7 +27,12 @@ class ProgramController extends Controller
      */
     public function getProgramsListResponse(int $department_id): array
     {
-        $programs = (new ProgramRepository())->getAuthorized('view', ['department_id' => $department_id, 'active' => true]);
+        $action = $_GET['action'] ?? 'view';
+        if ($action === 'public') {
+            $programs = (new ProgramRepository())->findBy(['department_id' => $department_id, 'active' => true]);
+        } else {
+            $programs = (new ProgramRepository())->getAuthorized($action, ['department_id' => $department_id, 'active' => true]);
+        }
         return [
             'status' => "success",
             'programs' => $programs
@@ -39,61 +44,63 @@ class ProgramController extends Controller
      */
     public function store(array $requestData): array
     {
-            $dto = (new ProgramValidator())->getDTO($requestData);
-            Gate::authorize(PermissionType::CREATE->value, Program::class, "Yeni program oluşturma yetkiniz yok", $dto);
+        $dto = (new ProgramValidator())->getDTO($requestData);
+        Gate::authorize(PermissionType::CREATE->value, Program::class, "Yeni program oluşturma yetkiniz yok", $dto);
 
-            (new ProgramService())->saveNew($dto);
+        (new ProgramService())->saveNew($dto);
 
-            return [
-                "status" => "success",
-                "msg" => "Program başarıyla oluşturuldu."
-            ];
+        return [
+            "status" => "success",
+            "msg" => "Program başarıyla oluşturuldu."
+        ];
     }
 
     /**
      * Mevcut programı günceller (POST /ajax/program/update rotası için)
      */
     public function update(array $requestData): array
-    {            $program = clone (new Program())->find($requestData['id']);
-            if (!$program) {
-                throw new Exception("Güncellenecek program bulunamadı.");
-            }
+    {
+        $program = clone (new Program())->find($requestData['id']);
+        if (!$program) {
+            throw new Exception("Güncellenecek program bulunamadı.");
+        }
 
-            Gate::authorize(PermissionType::UPDATE->value, $program, "Program güncelleme yetkiniz yok");
+        Gate::authorize(PermissionType::UPDATE->value, $program, "Program güncelleme yetkiniz yok");
 
-            $dto = (new ProgramValidator())->getDTO($requestData);
-            
-            // DTO'dan Model'e aktar
-            $program->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
+        $dto = (new ProgramValidator())->getDTO($requestData);
 
-            (new ProgramService())->updateProgram($program);
+        // DTO'dan Model'e aktar
+        $program->fill(array_merge(['id' => $requestData['id']], $dto->toArray()));
 
-            return [
-                "status" => "success",
-                "msg" => "Program başarıyla güncellendi."
-            ];
+        (new ProgramService())->updateProgram($program);
+
+        return [
+            "status" => "success",
+            "msg" => "Program başarıyla güncellendi."
+        ];
     }
 
     /**
      * Programı siler (POST /ajax/program/delete rotası için)
      */
     public function destroy(array $requestData): array
-    {            if (empty($requestData['id'])) {
-                throw new Exception("Silinecek program ID'si belirtilmedi.");
-            }
+    {
+        if (empty($requestData['id'])) {
+            throw new Exception("Silinecek program ID'si belirtilmedi.");
+        }
 
-            $program = clone (new Program())->find($requestData['id']);
-            if (!$program) {
-                throw new Exception("Silinecek program bulunamadı.");
-            }
+        $program = clone (new Program())->find($requestData['id']);
+        if (!$program) {
+            throw new Exception("Silinecek program bulunamadı.");
+        }
 
-            Gate::authorize(PermissionType::DELETE->value, $program, "Program silme yetkiniz yok");
+        Gate::authorize(PermissionType::DELETE->value, $program, "Program silme yetkiniz yok");
 
-            (new ProgramService())->deleteProgram($program);
+        (new ProgramService())->deleteProgram($program);
 
-            return [
-                "status" => "success",
-                "msg" => "Program başarıyla silindi."
-            ];
+        return [
+            "status" => "success",
+            "msg" => "Program başarıyla silindi."
+        ];
     }
 }

@@ -8,6 +8,7 @@ use App\Core\AssetManager;
 use App\Core\Router;
 use App\Models\Classroom;
 use App\Models\Department;
+use App\Models\Unit;
 use App\Models\User;
 use Exception;
 
@@ -42,6 +43,7 @@ class HomeRouter extends Router
         $userRepository = new UserRepository();
         $this->assetManager->loadPageAssets("homeIndex");
         $this->view_data = array_merge($this->view_data, [
+            "units" => (new Unit())->get()->where(['active'=>true])->all(),
             "departments" => (new Department())->get()->where(['active'=>true])->all(),
             "classrooms" => (new Classroom())->get()->all(),
             "lecturers" => $userRepository->findBy(['!role'=>'admin']),
