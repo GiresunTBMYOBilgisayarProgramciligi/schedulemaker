@@ -74,7 +74,21 @@ class Gate
 
         // 2. Misafir kullanıcı kontrolü (Oturum açmamışsa reddet)
         if (!$user) {
-            return false;
+            $allowGuest = false;
+            if (method_exists($policy, $action)) {
+                try {
+                    $refMethod = new \ReflectionMethod($policy, $action);
+                    $params = $refMethod->getParameters();
+                    if (count($params) > 0 && $params[0]->allowsNull()) {
+                        $allowGuest = true;
+                    }
+                } catch (\ReflectionException $e) {
+                    // Ignore
+                }
+            }
+            if (!$allowGuest) {
+                return false;
+            }
         }
 
         // 3. Yetki kararını tamamen ilgili Politika sınıfına devret (Metod varsa çalışır, yoksa BasePolicy::__call devreye girer)
