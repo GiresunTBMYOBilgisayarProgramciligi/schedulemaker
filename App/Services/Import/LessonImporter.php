@@ -222,7 +222,7 @@ class LessonImporter
                         $rowErrors[] = "Bu dersi güncelleme yetkiniz yok.";
                     }
                 } else {
-                    if (!Gate::check(PermissionType::CREATE->value, $lessonDTO)) {
+                    if (!Gate::check(PermissionType::CREATE->value, Lesson::class, $lessonDTO)) {
                         $rowErrors[] = "Bu bölüme ders ekleme yetkiniz yok.";
                     }
                 }
