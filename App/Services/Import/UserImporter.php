@@ -18,6 +18,7 @@ use App\Enums\PermissionType;
 use App\Validators\UserValidator;
 use App\Exceptions\ValidationException;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use App\Models\User;
 
 /**
  * Excel dosyasından kullanıcıları içe aktarır.
@@ -182,7 +183,7 @@ class UserImporter
                         $rowErrors[] = "Bu kullanıcıyı güncelleme yetkiniz yok.";
                     }
                 } else {
-                    if (!Gate::check(PermissionType::CREATE->value, \App\Models\User::class, $userDTO)) {
+                    if (!Gate::check(PermissionType::CREATE->value, User::class, $userDTO)) {
                         $rowErrors[] = "Bu birime/bölüme kullanıcı ekleme yetkiniz yok.";
                     }
                 }
