@@ -47,7 +47,7 @@ class LessonPolicy extends BasePolicy
     /**
      * Yeni ders ekleme yetkisi
      */
-    public function create(User $user, $lessonData = null): bool
+    public function create(User $user, $model = null, $lessonData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             if (isset($lessonData->department_id)) {
@@ -66,9 +66,13 @@ class LessonPolicy extends BasePolicy
              return true;
         }
 
-        if (isset($lessonData->department_id)) {
-            return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, null, ['department_id' => $lessonData->department_id]) ||
-                   $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lessonData->department_id]);
+        if (isset($lessonData->department_id) || isset($lessonData->program_id)) {
+            $data = [
+                'department_id' => $lessonData->department_id ?? null,
+                'program_id'    => $lessonData->program_id ?? null,
+            ];
+            return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, null, $data) ||
+                   $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, $data);
         }
 
         return false;
