@@ -39,7 +39,7 @@ class DepartmentPolicy extends BasePolicy
     /**
      * Yeni bölüm ekleme yetkisi
      */
-    public function create(User $user, $departmentData = null): bool
+    public function create(User $user, $model = null, $departmentData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             if (isset($departmentData->unit_id)) {

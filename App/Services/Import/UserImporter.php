@@ -182,7 +182,7 @@ class UserImporter
                         $rowErrors[] = "Bu kullanıcıyı güncelleme yetkiniz yok.";
                     }
                 } else {
-                    if (!Gate::check(PermissionType::CREATE->value, $userDTO)) {
+                    if (!Gate::check(PermissionType::CREATE->value, \App\Models\User::class, $userDTO)) {
                         $rowErrors[] = "Bu birime/bölüme kullanıcı ekleme yetkiniz yok.";
                     }
                 }

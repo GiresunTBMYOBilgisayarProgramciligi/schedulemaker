@@ -54,7 +54,7 @@ class UserPolicy extends BasePolicy
     /**
      * Yeni kullanıcı ekleme yetkisi
      */
-    public function create(User $user, $userData = null): bool
+    public function create(User $user, $model = null, $userData = null): bool
     {
         if ($user->role === 'manager' || $user->role === 'submanager') {
             if (isset($userData->unit_id)) {
