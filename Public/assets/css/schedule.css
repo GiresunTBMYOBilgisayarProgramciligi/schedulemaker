@@ -606,3 +606,21 @@
     .ts-dropdown {
         z-index: 1060 !important;
     }
+
+    /* Kilitli Öğeler */
+    .lesson-card.locked {
+        background-color: #f8d7da !important;
+        border-color: #f5c6cb !important;
+        color: #721c24 !important;
+        cursor: not-allowed;
+    }
+
+    .lesson-card.locked .lesson-name,
+    .lesson-card.locked .lesson-meta {
+        color: #721c24 !important;
+    }
+
+    .lesson-card.locked:hover {
+        transform: none;
+        box-shadow: none;
+    }

@@ -17,13 +17,13 @@ use App\Models\ScheduleItem;
 use App\Repositories\ScheduleItemRepository;
 use App\Repositories\ScheduleRepository;
 use App\Validators\ScheduleItemValidator;
+use App\DTOs\ToggleLockScheduleItemDTO;
 use Exception;
 
 use function App\Helpers\getSettingValue;
+
 /**
  * Schedule Service
- * 
- * Schedule ve ScheduleItem işlemleri için iş mantığı katmanı
  * 
  */
 class ScheduleService extends BaseService
@@ -691,6 +691,46 @@ class ScheduleService extends BaseService
     }
 
     /**
+     * Program öğelerinin kilit durumunu değiştirir (çoklu seçim destekli).
+     *
+     * @param ToggleLockScheduleItemDTO $dto
+     * @return array [successCount, finalState]
+     * @throws Exception
+     */
+    public function toggleLockScheduleItems(ToggleLockScheduleItemDTO $dto): array
+    {
+        $successCount = 0;
+        $finalState = null;
+
+        Database::transaction(function () use ($dto, &$successCount, &$finalState) {
+            foreach ($dto->ids as $id) {
+                /** @var ScheduleItem|null $item */
+                $item = $this->itemRepo->find($id);
+                if (!$item) {
+                    $this->logger->warning("toggleLockScheduleItems failed: Item not found", $this->logContext(['item_id' => $id]));
+                    continue;
+                }
+
+                $detail = $item->detail ?? [];
+                $isLocked = !empty($detail['is_locked']);
+                
+                // Eğer target_state belirtilmişse o duruma zorla, yoksa toggle yap
+                $newState = $dto->target_state !== null ? $dto->target_state : !$isLocked;
+                $detail['is_locked'] = $newState;
+                $finalState = $newState;
+
+                $item->detail = $detail;
+                $item->update();
+
+                $this->logger->info("Lock status updated successfully", $this->logContext(['item_id' => $item->id, 'is_locked' => $newState]));
+                $successCount++;
+            }
+        });
+
+        return [$successCount, $finalState];
+    }
+
+    /**
      * Schedule item'larını siler ve sibling'leri de temizler.
      *
      * @param ScheduleItemDTO[] $dtos Ekran üzerinden gelen silinecek item'ların DTO verileri
@@ -729,6 +769,10 @@ class ScheduleService extends BaseService
 
                 if (!$scheduleItem) {
                     continue;
+                }
+
+                if (!empty($scheduleItem->detail['is_locked'])) {
+                    throw new Exception("Kilitli olan öğeler üzerinde değişiklik yapılamaz.");
                 }
 
                 $type = 'lesson';

@@ -28,6 +28,8 @@ use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
 use App\Validators\Schedule\ScheduleConflictFilterValidator;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Validators\ScheduleItemValidator;
+use App\Validators\ToggleLockScheduleItemValidator;
+use App\Exceptions\ValidationException;
 use App\Repositories\ScheduleRepository;
 use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
@@ -217,6 +219,13 @@ class ScheduleController extends Controller
         $service = new LessonScheduleService();
         $result = $service->saveScheduleItems($dtos);
         
+        if (!$result->success) {
+            return [
+                "status" => "error",
+                "msg" => $result->warnings[0] ?? "Program kaydedilirken bir hata oluştu."
+            ];
+        }
+
         return [
             "status" => "success",
             "createdIds" => $result->createdIds,
@@ -253,6 +262,13 @@ class ScheduleController extends Controller
         $service = new LessonScheduleService();
         $result = $service->moveScheduleItems($dtos, $deletedDtos);
         
+        if (!$result->success) {
+            return [
+                "status" => "error",
+                "msg" => $result->warnings[0] ?? "Program güncellenirken bir hata oluştu."
+            ];
+        }
+
         return [
             "status" => "success",
             "createdIds" => $result->createdIds,
@@ -567,5 +583,50 @@ class ScheduleController extends Controller
 
         $exporter = ExporterFactory::create($dto->toArray(), 'ics');
         $exporter->export($dto->toArray(), $showOptions);
+    }
+
+    /**
+     * Program öğesini kilitler veya kilidini açar.
+     */
+    public function toggleLockScheduleItem(array $requestData): array
+    {
+        $this->logger()->info("toggleLockScheduleItem request received", $this->logContext(['request_data' => $requestData]));
+
+        try {
+            $dto = (new ToggleLockScheduleItemValidator())->getDTO($requestData);
+            
+            // İlk öğenin ait olduğu program üzerinden yetki kontrolü yap
+            $firstItemId = $dto->ids[0] ?? null;
+            if ($firstItemId) {
+                $item = (new ScheduleItem())->find($firstItemId);
+                if ($item) {
+                    $schedule = (new ScheduleRepository())->find($item->schedule_id);
+                    if ($schedule) {
+                        Gate::authorize(PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, $schedule);
+                    }
+                }
+            }
+
+            $service = new ScheduleService();
+            [$successCount, $finalState] = $service->toggleLockScheduleItems($dto);
+
+            if ($successCount === 0) {
+                return ["status" => "error", "msg" => "Öğeler bulunamadı veya güncellenemedi"];
+            }
+
+            return [
+                "status" => "success",
+                "msg" => $successCount > 1 
+                    ? "$successCount öğe " . ($finalState ? "kilitlendi" : "kilidi açıldı")
+                    : "Öğe " . ($finalState ? "kilitlendi" : "kilidi açıldı"),
+                "is_locked" => $finalState
+            ];
+        } catch (ValidationException $e) {
+            $this->logger()->warning("toggleLockScheduleItem validation failed", $this->logContext(['errors' => $e->getValidationErrors()]));
+            return ["status" => "error", "msg" => implode(", ", $e->getValidationErrors())];
+        } catch (Exception $e) {
+            $this->logger()->error("toggleLockScheduleItem failed", $this->logContext(['error' => $e->getMessage()]));
+            return ["status" => "error", "msg" => "İşlem sırasında hata oluştu: " . $e->getMessage()];
+        }
     }
 }

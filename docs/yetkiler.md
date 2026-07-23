@@ -68,6 +68,7 @@ Sistemde bulunan roller, yetki seviyelerine göre yukarıdan aşağıya (100 -> 
     *   **Kullanıcı Takvimi:** Bölümsüz hocalar kendi programını, hoca kendi programını, hocanın bölüm başkanı ve `MANAGE_SCHEDULE` yetkilileri.
     *   **Ders Takvimi:** Dersin bağlı olduğu bölümün başkanı ve `MANAGE_SCHEDULE` yetkilileri.
     *   **Sınıf Takvimi Durumu:** Sınıf takvimlerine (Classroom) müdahale edilmesi noktasında katı bir Gate kısıtlaması uygulanmamıştır (`return true`). Bu nedenle takvim yerleştirme işlemleri esnektir ve çakışmalar sistemin diğer uyarı/doğrulama (planlama ekranındaki filtreleme ve denetim mekanizmaları) adımları ile yönetilir.
+*   **Takvim Öğesi Kilitleme (`manage_lockScdheduleItem`):** `manager`, `submanager` (ve `admin`) rollerinin kendi yetki alanlarındaki, ek olarak `MANAGE_LOCK_SCHEDULE_ITEM` özel yetkisi atanmış kullanıcıların kilit açma/kapama işlemlerini yapabilmesini sağlar. Kilitli öğeler, kilidi açılana kadar kimse tarafından silinemez veya taşınamaz.
 
 ### Yönetim ve Ayarlar Sayfaları
 *   **Ayarlar Sayfası (`SettingPolicy`):** Sadece `admin` rolündeki kullanıcılar sistemi genel olarak etkileyen ayarlar sayfasını görüntüleyebilir ve düzenleyebilir.
@@ -105,6 +106,7 @@ Varsayılan rol hiyerarşisinin yetmediği durumlarda (Örneğin bir Araştırma
 *   `delete` : Belirtilen varlığı silebilme.
 *   `manage_users` : Belirtilen bölüm/program altına yeni kullanıcı ekleme, mevcut kullanıcıları güncelleme ve silme.
 *   `manage_schedule` : Belirtilen bölüm/program için takvime ders yerleştirme işlemlerini yönetme.
+*   `manage_lockScdheduleItem` : Belirtilen takvimde (bölüm/program vb.) yerleşik olan ders/sınav programı öğelerini kilitleme ve kilidini açma.
 *   `manage_lessons` : Belirtilen bölüm/program için ders tanımlama, güncelleme ve silme.
 *   `manage_buildings` : Bina listesi ile binaya ait derslikleri düzenleme (Genelde binalara veya birim geneline özel verilir).
 *   `manage_unit` : İlgili Birimi (Fakülte/Okul vb.) yönetme.

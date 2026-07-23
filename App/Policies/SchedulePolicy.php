@@ -99,4 +99,53 @@ class SchedulePolicy extends BasePolicy
     {
         return true;//home sayfasında tüm programlar gösterildiği için herkes görebilir. İlerde yetki kontrolü gerekebilir.
     }
+
+    /**
+     * Program öğesini kilitleme yetkisi
+     */
+    public function manage_lockScdheduleItem(User $user, Schedule $schedule): bool
+    {
+        switch ($schedule->owner_type) {
+            case 'program':
+                $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($program) {
+                    if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
+                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                    }
+                    if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, $program)) return true;
+                }
+                break;
+
+            case 'user':
+                $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($scheduleUser) {
+                    if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
+                        if (is_null($user->unit_id)) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
+                    }
+                    if ($scheduleUser->department_id) {
+                        if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, null, ['department_id' => $scheduleUser->department_id])) return true;
+                    }
+                }
+                break;
+
+            case 'lesson':
+                $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($lesson) {
+                    if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
+                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                    }
+                    if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, null, ['department_id' => $lesson->department_id])) return true;
+                }
+                break;
+
+            case 'classroom':
+                if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') return true;
+                if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, null)) return true;
+                break;
+        }
+
+        return false;
+    }
 }

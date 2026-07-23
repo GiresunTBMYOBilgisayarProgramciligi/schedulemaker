@@ -441,6 +441,15 @@ class AjaxRouter extends Router
         $this->response = (new ScheduleController())->saveExamScheduleItems($this->data);
         $this->sendResponse();
     }
+
+    /**
+     * Program öğesinin kilidini açar veya kilitler.
+     */
+    public function toggleLockScheduleItemAction(): void
+    {
+        $this->response = (new ScheduleController())->toggleLockScheduleItem($this->data);
+        $this->sendResponse();
+    }
     
     /**
      * Ders programı taşıma isteği (silme + kaydetme)

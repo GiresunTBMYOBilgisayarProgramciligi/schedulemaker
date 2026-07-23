@@ -46,13 +46,24 @@ if ($type === 'lesson') {
         $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
     }
 }
+
+if (!empty($scheduleItem->detail['is_locked'])) {
+    $popoverTitle = isset($popoverTitle) ? "Kilitli & " . $popoverTitle : "Kilitli Öğe";
+    $popoverContent = isset($popoverContent) 
+        ? "Bu öğe kilitlidir ve düzenlenemez. Ayrıca: " . $popoverContent 
+        : "Bu öğe kilitlenmiştir. Kilidi açılana kadar düzenlenemez.";
+    $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+}
 ?>
 <div <?= $attrString ?> <?= $popoverAttr ?> role="button" aria-grabbed="false" tabindex="0">
-    <?php if ((!isset($only_table) || !$only_table) && (!isset($preference_mode) || !$preference_mode)): ?>
+    <?php if ((!isset($only_table) || !$only_table) && (!isset($preference_mode) || !$preference_mode) && empty($scheduleItem->detail['is_locked'])): ?>
         <input type="checkbox" class="lesson-bulk-checkbox" title="Toplu işlem için seç">
     <?php endif; ?>
 
     <span class="lesson-name">
+        <?php if (!empty($scheduleItem->detail['is_locked'])): ?>
+            <i class="fa fa-lock me-1" title="Kilitli"></i>
+        <?php endif; ?>
         <?php if ($type === 'exam'): ?>
             <?php if ($schedule->owner_type !== 'program'): ?>
                 <?= $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) ?>

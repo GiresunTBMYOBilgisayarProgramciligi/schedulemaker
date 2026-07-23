@@ -16,6 +16,7 @@ enum PermissionType: string
     case MANAGE_PROGRAM = 'manage_program';
     case MANAGE_USERS = 'manage_users';
     case MANAGE_SCHEDULE = 'manage_schedule';
+    case MANAGE_LOCK_SCHEDULE_ITEM = 'manage_lockScdheduleItem';
 
     /**
      * Enum değerine ait okunabilir etiketi döndürür.
@@ -36,6 +37,7 @@ enum PermissionType: string
             self::MANAGE_PROGRAM => 'Programı Yönet',
             self::MANAGE_USERS => 'Kullanıcıları Yönet',
             self::MANAGE_SCHEDULE => 'Ders Programını Yönet',
+            self::MANAGE_LOCK_SCHEDULE_ITEM => 'Program Öğesini Kilitle/Aç',
         };
     }
 
@@ -50,6 +52,7 @@ enum PermissionType: string
             self::MANAGE_DEPARTMENT => ['units', 'departments'],
             self::MANAGE_PROGRAM, 
             self::MANAGE_SCHEDULE, 
+            self::MANAGE_LOCK_SCHEDULE_ITEM,
             self::MANAGE_LESSONS, 
             self::MANAGE_USERS => ['units', 'departments', 'programs'],
             self::MANAGE_BUILDINGS => ['units'],
@@ -71,6 +74,7 @@ enum PermissionType: string
             self::MANAGE_PROGRAM,
             self::MANAGE_USERS,
             self::MANAGE_SCHEDULE,
+            self::MANAGE_LOCK_SCHEDULE_ITEM,
         ];
     }
 }

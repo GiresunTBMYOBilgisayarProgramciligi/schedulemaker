@@ -41,8 +41,9 @@ class LessonScheduleService extends ScheduleService
             return Database::transaction(function () use ($dtos) {
                 $createdIds = [];
                 $affectedLessonIds = [];
+                $this->logger->info("Starting transaction for saving schedule items", $this->logContext(['dtos_count' => count($dtos)]));
                 foreach ($dtos as $index => $dto) {
-                    $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
+                    $this->logger->info("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
 
                     // İlgili bilgileri al
                     /** @var Schedule $schedule */
@@ -107,11 +108,16 @@ class LessonScheduleService extends ScheduleService
                 return SaveScheduleResult::success($createdIds, count($dtos));
             });
         } catch (Exception $e) {
-            $this->logger->error("Failed to save schedule items: " . $e->getMessage(), $this->logContext([
-                'error' => $e->getMessage(),
+            $this->logger->error("LessonScheduleService::saveScheduleItems ERROR: " . $e->getMessage(), $this->logContext([
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]));
-            throw $e;
+            
+            if ($e instanceof ValidationException) {
+                return new SaveScheduleResult([], 0, [$e->getMessage()], false);
+            }
+            return new SaveScheduleResult([], 0, ["Program kaydedilirken bir hata oluştu."], false);
         }
     }
 

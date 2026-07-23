@@ -88,6 +88,18 @@ class LessonScheduleCard extends ScheduleCard {
                 });
             }
         });
+
+        // Kilit İşlemi (manage_lockScdheduleItem)
+        const isLocked = lessonCard.dataset.isLocked === 'true';
+        const scheduleItemId = lessonCard.dataset.scheduleItemId;
+        if (scheduleItemId) {
+            menuItems.push({
+                text: isLocked ? 'Kilidi Aç' : 'Kilitle',
+                icon: isLocked ? 'bi-unlock' : 'bi-lock',
+                onClick: () => this.toggleLockScheduleItem(scheduleItemId, !isLocked)
+            });
+        }
+
         menuItems.forEach(item => {
             const menuItem = document.createElement('div');
             menuItem.className = 'context-menu-item';
@@ -97,6 +109,57 @@ class LessonScheduleCard extends ScheduleCard {
         });
 
         document.body.appendChild(menu);
+    }
+
+    /**
+     * Program öğesinin kilidini açar veya kilitler (çoklu seçimi destekler).
+     */
+    async toggleLockScheduleItem(scheduleItemId, targetLockState = null) {
+        let ids = [];
+        // Eğer tıklanan eleman seçili elemanlar listesinde değilse sadece ona işlem yap
+        if (scheduleItemId && !this.selectedScheduleItemIds.has(scheduleItemId)) {
+            ids.push(scheduleItemId);
+        } else if (this.selectedScheduleItemIds.size > 0) {
+            // Eğer çoklu seçim varsa hepsine uygula
+            ids = Array.from(this.selectedScheduleItemIds);
+        } else if (scheduleItemId) {
+            ids.push(scheduleItemId);
+        }
+
+        if (ids.length === 0) return;
+
+        let data = new FormData();
+        data.append("ids", JSON.stringify(ids));
+        if (targetLockState !== null) {
+            data.append("target_state", targetLockState ? '1' : '0');
+        }
+
+        try {
+            const response = await fetch("/ajax/toggleLockScheduleItem", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data,
+            });
+            const result = await response.json();
+
+            if (result.status === "error") {
+                new Toast().prepareToast("Hata", result.msg, "danger");
+            } else {
+                new Toast().prepareToast("Başarılı", result.msg, "success");
+                
+                // Seçimleri temizle
+                this.selectedScheduleItemIds.clear();
+                this.selectedLessonElements.forEach(el => el.classList.remove('selected-lesson'));
+                this.selectedLessonElements.clear();
+                const checkboxes = this.table.querySelectorAll('.lesson-bulk-checkbox');
+                checkboxes.forEach(cb => cb.checked = false);
+
+                await this.refreshScheduleCard();
+            }
+        } catch (error) {
+            console.error("toggleLockScheduleItem sistem hatası:", error);
+            new Toast().prepareToast("Hata", "İşlem sırasında hata oluştu.", "danger");
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

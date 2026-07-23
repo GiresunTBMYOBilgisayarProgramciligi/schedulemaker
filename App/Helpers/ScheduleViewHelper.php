@@ -67,6 +67,13 @@ class ScheduleViewHelper
             'data-status' => $scheduleItem->status,
         ];
 
+        $isLocked = !empty($scheduleItem->detail['is_locked']);
+        if ($isLocked) {
+            $attrs['class'] .= " locked";
+            $attrs['data-is-locked'] = 'true';
+            $attrs['draggable'] = 'false';
+        }
+
         // Exam tablosunda detail attribute'u eklenir
         if ($type === 'exam') {
             $attrs['data-detail'] = json_encode($scheduleItem->detail);
