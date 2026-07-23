@@ -22,12 +22,14 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
+use App\Repositories\LogRepository;
 use App\Policies\BuildingPolicy;
 
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\UnitType;
+use App\Enums\UserRole;
 use App\Enums\PermissionType;
 use App\Controllers\SettingsController;
 use function App\Helpers\getSemesterNumbers;
@@ -37,30 +39,100 @@ use Exception;
 class AdminPageController extends Controller
 {
     /**
+     * Dashboard ana sayfası için role göre özelleştirilmiş veri hazırlar.
+     *
      * @throws Exception
      */
     public function getIndexPageData(User $currentUser, AssetManager $assetManager): array
     {
+        $assetManager->addCss("/assets/css/schedule.css");
+        $assetManager->addJs("/assets/js/exportSchedule.js");
+
+        $dashboardRole = match(true) {
+            Gate::allowsRole('submanager')                                                                         => 'admin',
+            Gate::allowsRole('secretary')                                                                          => 'secretary',
+            $currentUser->role === UserRole::DepartmentHead->value && !is_null($currentUser->department_id)        => 'dept_head',
+            Gate::allowsRole('lecturer', true)                                                                     => 'lecturer',
+            default                                                                                                => 'user',
+        };
+
+        // Ortak veri
         $view_data = [
             "departmentController" => new DepartmentController(),
-            "classroomController" => new ClassroomController(),
-            "lessonController" => new LessonController(),
-            "programController" => new ProgramController(),
-            'userController' => new UserController(),
-            "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
-            "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
-            "page_title" => "Anasayfa"
+            "classroomController"  => new ClassroomController(),
+            "lessonController"     => new LessonController(),
+            "programController"    => new ProgramController(),
+            'userController'       => new UserController(),
+            "page_title"           => "Anasayfa",
+            "dashboardRole"        => $dashboardRole,
         ];
-        
-        if (!is_null($currentUser->program_id)) {
-            $assetManager->addCss("/assets/css/schedule.css");
-            $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $currentUser->program_id, 'type' => 'lesson'], true);
+
+        // --- Yönetici grubu (admin / manager / submanager) ---
+        if (Gate::allowsRole('submanager')) {
+            $view_data['stats'] = [
+                'units'      => (new UnitRepository())->count(),
+                'academics'  => (new UserRepository())->getAcademicCount(),
+                'classrooms' => (new ClassroomRepository())->count(),
+                'lessons'    => (new LessonRepository())->count(),
+                'departments'=> (new DepartmentRepository())->count(),
+                'programs'   => (new ProgramRepository())->count(),
+            ];
+            $view_data['recentLogs']   = $currentUser->role === UserRole::Admin->value ? (new LogRepository())->getRecent(10) : [];
+            $view_data["programs"]     = (new ProgramRepository())->getAuthorized('view', ['active' => true], ['lecturers', 'lessons', 'department' => ['with' => ['chairperson', 'unit']]]);
+            $view_data["units"]        = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+            $view_data["departments"]  = (new DepartmentRepository())->getAuthorized('view', [], ["chairperson", "unit"]);
+
+        // --- Sekreter ---
+        } elseif (Gate::allowsRole('secretary')) {
+            $unitId = $currentUser->unit_id;
+            $view_data['stats'] = [
+                'classrooms' => $unitId ? (new ClassroomRepository())->count(['unit_id' => $unitId]) : (new ClassroomRepository())->count(),
+                'buildings'  => $unitId ? (new BuildingRepository())->count(['unit_id' => $unitId]) : (new BuildingRepository())->count(),
+            ];
+
+        // --- Bölüm Başkanı (sadece department_head rolü) ---
+        } elseif ($currentUser->role === UserRole::DepartmentHead->value && !is_null($currentUser->department_id)) {
+            $department = (new DepartmentRepository())->findDepartmentWithDetails($currentUser->department_id);
+            $view_data['department']  = $department;
+            $view_data['stats'] = [
+                'programs'  => $department ? count($department->programs ?? []) : 0,
+                'academics' => $department ? count($department->users ?? []) : 0,
+                'lessons'   => $department ? count($department->lessons ?? []) : 0,
+            ];
+            // Bölüm başkanının ders programı (program_id varsa programa, yoksa kullanıcıya göre)
+            if (!is_null($currentUser->program_id)) {
+                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
+                    ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $currentUser->program_id, 'type' => 'lesson'], true
+                );
+            } else {
+                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
+                    ['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true
+                );
+            }
+
+        // --- Akademisyen / Araştırma Görevlisi ---
         } else {
-            $assetManager->addCss("/assets/css/schedule.css");
-            $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true);
+            // Kişisel ders programı
+            if (!is_null($currentUser->program_id)) {
+                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
+                    ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $currentUser->program_id, 'type' => 'lesson'], true
+                );
+            } else {
+                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
+                    ['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true
+                );
+            }
+
+            // Haftalık ders yükü (saat toplamı)
+            $userLessons = (new LessonRepository())->findBy(['lecturer_id' => $currentUser->id]);
+            $weeklyHours = array_sum(array_map(fn($l) => $l->hours ?? 0, $userLessons));
+            $view_data['stats'] = [
+                'lesson_count' => count($userLessons),
+                'weekly_hours' => $weeklyHours,
+            ];
+            $view_data['myLessons'] = $userLessons;
         }
-        $assetManager->addJs("/assets/js/exportSchedule.js");
-        
+
         return $view_data;
     }
 

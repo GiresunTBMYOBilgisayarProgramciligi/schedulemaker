@@ -81,7 +81,7 @@ class DepartmentRepository extends BaseRepository
         $model = new $this->modelClass;
         return $model->get()->where(["id" => $id])
             ->with([
-                "programs" => ['with' => ['department']], 
+                "programs" => ['with' => ['department', 'lecturers', 'lessons']],
                 "chairperson",
                 "unit",
                 "lessons" => ['with' => ['lecturer', 'program', 'parentLesson' => ['with' => ['program']]]], 

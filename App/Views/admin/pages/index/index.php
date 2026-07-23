@@ -1,22 +1,17 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
- * @var \App\Models\Program $program Bölüm listesinde döngüde kullanılan program değişkeni
- * @var \App\Controllers\DepartmentController $departmentController
- * @var \App\Controllers\ClassroomController $classroomController
- * @var \App\Controllers\LessonController $lessonController
- * @var \App\Controllers\ProgramController $programController
- * @var string $scheduleHTML
- * @var \App\Models\User $currentUser
- * @var array $programs
+ * @var \App\Models\User $currentUser    Oturum açmış kullanıcı
+ * @var string           $dashboardRole  'admin'|'secretary'|'dept_head'|'lecturer'|'user'
+ * @var array            $stats          İstatistik verileri (role göre farklı anahtarlar)
+ * @var array            $recentLogs     Son sistem logları (sadece admin grubu)
+ * @var array            $programs       Aktif programlar (sadece admin grubu)
+ * @var array            $units          Birimler (sadece admin grubu)
+ * @var \App\Models\Department $department  Bölüm detayı (sadece dept_head)
+ * @var string           $scheduleHTML   Ders programı HTML (dept_head / lecturer)
+ * @var array            $myLessons      Kullanıcının dersleri (sadece lecturer)
  */
 use App\Core\Gate;
-use App\Repositories\UserRepository;
-use App\Repositories\ClassroomRepository;
-use App\Repositories\DepartmentRepository;
-use App\Repositories\LessonRepository;
-use App\Repositories\ProgramRepository;
-use App\Repositories\UnitRepository;
+use App\Enums\PermissionType;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -25,14 +20,35 @@ use App\Repositories\UnitRepository;
         <!--begin::Container-->
         <div class="container-fluid">
             <!--begin::Row-->
-            <div class="row">
-                <div class="col-sm-6">
-                    <h3 class="mb-0">Başlangıç</h3>
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Kullanıcı Avatarı -->
+                        <img
+                            src="<?= $currentUser->getGravatarURL(64) ?>"
+                            alt="<?= htmlspecialchars($currentUser->getFullName()) ?>"
+                            class="rounded-circle shadow-sm border border-2 border-white"
+                            width="52" height="52"
+                        >
+                        <div>
+                            <h3 class="mb-0 fw-semibold">
+                                Merhaba, <?= htmlspecialchars($currentUser->getFullName()) ?> 👋
+                            </h3>
+                            <p class="text-muted mb-0 small">
+                                <span class="badge bg-primary me-1"><?= htmlspecialchars($currentUser->getRoleName()) ?></span>
+                                <?php if (!empty($currentUser->unit?->name)): ?>
+                                    <span class="me-1 text-muted"><?= htmlspecialchars($currentUser->unit->name) ?></span>
+                                <?php endif; ?>
+                                <i class="bi bi-calendar3 me-1"></i>
+                                <?= (new DateTime())->format('d.m.Y') ?>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-end">
-                        <li class="breadcrumb-item"><a href="#">Ana Sayfa</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Başlangıç</li>
+                <div class="col-sm-auto">
+                    <ol class="breadcrumb float-sm-end mb-0">
+                        <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
                     </ol>
                 </div>
             </div>
@@ -41,160 +57,29 @@ use App\Repositories\UnitRepository;
         <!--end::Container-->
     </div>
     <!--end::App Content Header-->
+
     <!--begin::App Content-->
     <div class="app-content">
         <!--begin::Container-->
         <div class="container-fluid">
-            <!-- Small boxes (Stat box) -->
-            <div class="row">
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-secondary">
-                        <div class="inner">
-                            <h3><?= (new UnitRepository())->count() ?></h3>
 
-                            <p>Birim</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-bank"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-primary">
-                        <div class="inner">
-                            <h3><?= (new UserRepository())->getAcademicCount() ?></h3>
+            <?php
+            // Role göre ilgili partial'ı yükle
+            $partialMap = [
+                'admin'     => 'dashboard_admin.php',
+                'secretary' => 'dashboard_secretary.php',
+                'dept_head' => 'dashboard_dept_head.php',
+                'lecturer'  => 'dashboard_lecturer.php',
+                'user'      => 'dashboard_user.php',
+            ];
+            $partialFile = $partialMap[$dashboardRole] ?? 'dashboard_user.php';
+            $partialPath = __DIR__ . '/partials/' . $partialFile;
 
-                            <p>Öğretim Elemanı</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-person-video3"></i>
-                        </div>
-                    </div>
-                </div>
-                <!-- ./col -->
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-success">
-                        <div class="inner">
-                            <h3><?= (new ClassroomRepository())->count() ?></h3>
+            if (file_exists($partialPath)) {
+                include $partialPath;
+            }
+            ?>
 
-                            <p>Derslik</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-door-open"></i>
-                        </div>
-                    </div>
-                </div>
-                <!-- ./col -->
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-warning">
-                        <div class="inner">
-                            <h3><?= (new LessonRepository())->count() ?></h3>
-
-                            <p>Ders</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-book"></i>
-                        </div>
-                    </div>
-                </div>
-                <!-- ./col -->
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-danger">
-                        <div class="inner">
-                            <h3><?= (new DepartmentRepository())->count() ?></h3>
-
-                            <p>Bölüm</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-buildings"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <!-- small box -->
-                    <div class="small-box text-bg-info">
-                        <div class="inner">
-                            <h3><?= (new ProgramRepository())->count() ?></h3>
-
-                            <p>Program</p>
-                        </div>
-                        <div class="small-box-icon">
-                            <i class="bi bi-building"></i>
-                        </div>
-                    </div>
-                </div>
-                <!-- ./col -->
-            </div>
-            <!-- /.row -->
-            <?php if (Gate::allowsRole("manager", true)): ?>
-                <h4><?= $currentUser->program->name ?? '' ?> Ders Programı</h4>
-                <?= $scheduleHTML ?>
-            <?php else: ?>
-                <h4>Programlar</h4>
-                <!-- Main row -->
-                <div class="row">
-                    <?php foreach ($programs as $program): ?>
-                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 d-flex align-items-stretch flex-column">
-                            <div class="card d-flex flex-fill mb-3">
-                                <div class="card-header text-muted border-bottom-0">
-                                    <?= !empty($program->department?->unit?->name) ? htmlspecialchars($program->department->unit->name) . ' / ' : '' ?><?= $program->department->name ?? '' ?>
-                                </div>
-                                <div class="card-body pt-0">
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <h2 class="lead"><b><?= $program->name ?></b></h2>
-
-                                            <ul class="list-group list-group-flush text-muted mt-2">
-                                                <li class="list-group-item small">
-                                                    <span class="">
-                                                        <i class="bi bi-mortarboard"></i>
-                                                    </span>
-                                                    <strong>Bölüm Başkan:</strong>
-                                                    <a
-                                                        href="/admin/profile/<?= $program->department->chairperson?->id ?? '#' ?>">
-                                                        <?= $program->department->chairperson?->getFullName() ?? '' ?>
-                                                    </a>
-                                                </li>
-                                                <li class="list-group-item small">
-                                                    <span class="">
-                                                        <i class="bi bi-person-vcard"></i>
-                                                    </span>
-                                                    <strong>Akademisyen Sayısı:</strong>
-                                                    <?= count($program->lecturers ?? []) ?>
-                                                </li>
-                                                <li class="list-group-item small">
-                                                    <span class="">
-                                                        <i class="bi bi-book"></i>
-                                                    </span>
-                                                    <strong>Ders Sayısı:</strong>
-                                                    <?= count($program->lessons ?? []) ?>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <div class="text-end">
-                                        <a href="/admin/department/<?= $program->department->id ?? '#' ?>"
-                                            class="btn btn-sm btn-primary">
-                                            Bölüm Detayları
-                                        </a>
-                                        <a href="/admin/program/<?= $program->id ?>" class="btn btn-sm btn-primary">
-                                            Detaylar
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <!-- /.row (main row) -->
-            <?php endif; ?>
         </div>
         <!--end::Container-->
     </div>
