@@ -486,7 +486,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
         return [
             "classroomController" => new ClassroomController(),
-            "classrooms" => (new ClassroomRepository())->getAuthorized('view'),
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
             "page_title" => "Derslik Listesi"
         ];
     }
