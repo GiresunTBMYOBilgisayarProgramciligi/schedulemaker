@@ -131,7 +131,7 @@ use App\Core\Gate;
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $program)): ?>
                                                     <?php if (Gate::check("update", $program)): ?>
-                                                        <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                        <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
                                                     <?php endif; ?>
@@ -140,7 +140,7 @@ use App\Core\Gate;
                                                               class="ajaxFormDelete d-inline"
                                                               id="deleteProgram-<?= $program->id ?>" method="post">
                                                             <input type="hidden" name="id" value="<?= $program->id ?>">
-                                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>
@@ -195,7 +195,7 @@ use App\Core\Gate;
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
                                                     <?php if (Gate::check("update", $lecturer)): ?>
-                                                    <a href="/admin/edituser/<?= $lecturer->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                    <a href="/admin/edituser/<?= $lecturer->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     <?php endif; ?>
@@ -204,7 +204,7 @@ use App\Core\Gate;
                                                               class="ajaxFormDelete d-inline" id="deleteUser-<?= $lecturer->id ?>"
                                                               method="post">
                                                             <input type="hidden" name="id" value="<?= $lecturer->id ?>">
-                                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>
@@ -271,7 +271,7 @@ use App\Core\Gate;
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $lesson)): ?>
                                                     <?php if (Gate::check("update", $lesson)): ?>
-                                                        <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                        <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
                                                     <?php endif; ?>
@@ -280,7 +280,7 @@ use App\Core\Gate;
                                                               class="ajaxFormDelete d-inline" id="deleteLesson-<?= $lesson->id ?>"
                                                               method="post">
                                                             <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
                                                         </form>

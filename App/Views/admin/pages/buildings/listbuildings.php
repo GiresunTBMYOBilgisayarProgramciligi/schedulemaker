@@ -30,7 +30,7 @@ use App\Models\Building;
                             <h3 class="card-title">Binalar</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Building::class)): ?>
-                                <a href="/admin/addbuilding" class="btn btn-sm btn-primary">
+                                <a href="/admin/addbuilding" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Bina Ekle
                                 </a>
                                 <?php endif; ?>
@@ -54,7 +54,7 @@ use App\Models\Building;
                                         <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
                                         <td class="text-center">
                                             <?php if (Gate::check("update", $building)): ?>
-                                            <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning">
+                                            <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <?php endif; ?>
@@ -64,7 +64,7 @@ use App\Models\Building;
                                                   id="deleteBuilding-<?= $building->id ?>"
                                                   method="post">
                                                 <input type="hidden" name="id" value="<?= $building->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>

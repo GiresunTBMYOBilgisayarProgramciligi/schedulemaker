@@ -31,7 +31,7 @@ use App\Models\Classroom;
                             <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?> (Bağlı Birim: <?= htmlspecialchars($building->unit->name ?? 'Yok') ?>)</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("update", $building)): ?>
-                                <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                     <i class="bi bi-pencil"></i> Düzenle
                                 </a>
                                 <?php endif; ?>
@@ -41,7 +41,7 @@ use App\Models\Classroom;
                                       id="deleteBuilding-<?= $building->id ?>"
                                       method="post">
                                     <input type="hidden" name="id" value="<?= $building->id ?>">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                         <i class="bi bi-trash"></i> Sil
                                     </button>
                                 </form>
@@ -81,7 +81,7 @@ use App\Models\Classroom;
                                             <td><?= $cls->class_size ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $cls)): ?>
-                                                <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <?php endif; ?>
@@ -91,7 +91,7 @@ use App\Models\Classroom;
                                                       id="deleteClassroom-<?= $cls->id ?>"
                                                       method="post">
                                                     <input type="hidden" name="id" value="<?= $cls->id ?>">
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>

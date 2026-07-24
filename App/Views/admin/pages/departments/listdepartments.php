@@ -41,7 +41,7 @@ use App\Models\Department;
                             <h3 class="card-title">Bölümler</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Department::class)): ?>
-                                <a href="/admin/adddepartment" class="btn btn-sm btn-primary">
+                                <a href="/admin/adddepartment" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Bölüm Ekle
                                 </a>
                                 <?php endif; ?>
@@ -75,7 +75,7 @@ use App\Models\Department;
                                 </td>
                                 <td class="text-center">
                                     <?php if (Gate::check("update", $department)): ?>
-                                    <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <?php endif; ?>
@@ -86,7 +86,7 @@ use App\Models\Department;
                                           method="post"
                                           data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
                                         <input type="hidden" name="id" value="<?= $department->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

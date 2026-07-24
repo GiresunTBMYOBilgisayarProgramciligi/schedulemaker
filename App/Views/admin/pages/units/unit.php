@@ -31,7 +31,7 @@ use App\Models\Department;
                             <h3 class="card-title"><?= htmlspecialchars($unit->name ?? '') ?> <small class="text-muted">(<?= $unit->getTypeName() ?>)</small></h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("update", $unit)): ?>
-                                <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-warning">
+                                <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-outline-warning">
                                     <i class="bi bi-pencil"></i> Düzenle
                                 </a>
                                 <?php endif; ?>
@@ -77,7 +77,7 @@ use App\Models\Department;
                                             <td><?= $dept->chairperson?->getFullName() ?? '-' ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $dept)): ?>
-                                                <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                                <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                                 <?php endif; ?>
@@ -88,7 +88,7 @@ use App\Models\Department;
                                                       method="post"
                                                       data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
                                                     <input type="hidden" name="id" value="<?= $dept->id ?>">
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </form>

@@ -43,7 +43,7 @@ use App\Models\Classroom;
                             <h3 class="card-title">Derslikler</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Classroom::class)): ?>
-                                <a href="/admin/addclassroom" class="btn btn-sm btn-primary">
+                                <a href="/admin/addclassroom" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Derslik Ekle
                                 </a>
                                 <?php endif; ?>
@@ -73,7 +73,7 @@ use App\Models\Classroom;
                                 <td><?= $classroom->exam_size ?></td>
                                 <td class="text-center">
                                     <?php if (Gate::check("update", $classroom)): ?>
-                                    <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <?php endif; ?>
@@ -83,7 +83,7 @@ use App\Models\Classroom;
                                           id="deleteClassroom-<?= $classroom->id ?>"
                                           method="post">
                                         <input type="hidden" name="id" value="<?= $classroom->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

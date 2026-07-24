@@ -42,7 +42,7 @@ use App\Models\Program;
                             <h3 class="card-title">Programlar</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Program::class)): ?>
-                                <a href="/admin/addprogram" class="btn btn-sm btn-primary">
+                                <a href="/admin/addprogram" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Program Ekle
                                 </a>
                                 <?php endif; ?>
@@ -74,7 +74,7 @@ use App\Models\Program;
                                 </td>
                                 <td class="text-center">
                                     <?php if (Gate::check("update", $program)): ?>
-                                    <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <?php endif; ?>
@@ -85,7 +85,7 @@ use App\Models\Program;
                                           method="post"
                                           data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
                                         <input type="hidden" name="id" value="<?= $program->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>

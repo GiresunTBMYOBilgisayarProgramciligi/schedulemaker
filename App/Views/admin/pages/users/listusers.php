@@ -44,7 +44,7 @@ use App\Models\User;
                             <h3 class="card-title">Kullanıcılar</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", User::class)): ?>
-                                <a href="/admin/adduser" class="btn btn-sm btn-primary">
+                                <a href="/admin/adduser" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Kullanıcı Ekle
                                 </a>
                                 <?php endif; ?>
@@ -82,7 +82,7 @@ use App\Models\User;
                                     <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
                                     <td class="text-center">
                                         <?php if (Gate::check("update", $user)): ?>
-                                        <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                        <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <?php endif; ?>
@@ -90,7 +90,7 @@ use App\Models\User;
                                             <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete d-inline"
                                                   id="deleteUser-<?= $user->id ?>" method="post">
                                                 <input type="hidden" name="id" value="<?= $user->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>

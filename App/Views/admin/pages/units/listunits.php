@@ -33,7 +33,7 @@ use App\Models\Unit;
                             <h3 class="card-title">Birimler</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Unit::class)): ?>
-                                <a href="/admin/addunit" class="btn btn-sm btn-primary">
+                                <a href="/admin/addunit" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Birim Ekle
                                 </a>
                                 <?php endif; ?>
@@ -65,7 +65,7 @@ use App\Models\Unit;
                                         </td>
                                         <td class="text-center">
                                             <?php if (Gate::check("update", $unit)): ?>
-                                            <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-warning">
+                                            <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-outline-warning">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <?php endif; ?>
@@ -75,7 +75,7 @@ use App\Models\Unit;
                                                   id="deleteUnit-<?= $unit->id ?>"
                                                   method="post">
                                                 <input type="hidden" name="id" value="<?= $unit->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>

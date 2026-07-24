@@ -42,7 +42,7 @@ use App\Models\Lesson;
                             <h3 class="card-title">Dersler</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("create", Lesson::class)): ?>
-                                <a href="/admin/addlesson" class="btn btn-sm btn-primary">
+                                <a href="/admin/addlesson" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-plus-lg"></i> Yeni Ders Ekle
                                 </a>
                                 <?php endif; ?>
@@ -96,7 +96,7 @@ use App\Models\Lesson;
 
                                 <td class="text-center">
                                     <?php if (Gate::check("update", $lesson)): ?>
-                                    <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-warning" title="Düzenle">
+                                    <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <?php endif; ?>
@@ -106,7 +106,7 @@ use App\Models\Lesson;
                                           id="deleteLesson-<?= $lesson->id ?>"
                                           method="post">
                                         <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Sil">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
