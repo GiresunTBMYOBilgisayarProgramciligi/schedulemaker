@@ -121,7 +121,42 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 $totalRows = count($slots);
                 
                 foreach ($slots as $rowIndex => $slot) {
-                    $timeLabel = $slot['slotStartTime']->format('H:i') . " - " . $slot['slotEndTime']->format('H:i');
+                    $slotStart = $slot['slotStartTime']->format('H:i');
+
+                    // Öğle Arası: 12:00 başlangıçlı slot birleştirilmiş tek satır olarak gösterilir
+                    if ($slotStart === '12:00') {
+                        $lunchEndTime = (clone $slot['slotEndTime'])->modify('+10 minutes')->format('H:i');
+                        $timeLabel    = $slotStart . ' - ' . $lunchEndTime;
+
+                        $this->sheet->setCellValue("A{$row}", $timeLabel);
+                        $this->sheet->getStyle("A{$row}")->getAlignment()
+                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                            ->setVertical(Alignment::VERTICAL_CENTER);
+
+                        // İçerik hücresi: 2. sütundan son sütuna kadar birleştir
+                        $contentStartCol = Coordinate::stringFromColumnIndex(2);
+                        $this->sheet->setCellValue("{$contentStartCol}{$row}", 'ÖĞLE ARASI');
+                        $this->sheet->mergeCells("{$contentStartCol}{$row}:{$lastCol}{$row}");
+
+                        // Stil: arka plan rengi + hizalama + bold
+                        $lunchStyle = "A{$row}:{$lastCol}{$row}";
+                        $this->sheet->getStyle($lunchStyle)->getFill()
+                            ->setFillType(Fill::FILL_SOLID)
+                            ->getStartColor()->setRGB('B8D4E8'); // Açık mavi tonu
+                        $this->sheet->getStyle($lunchStyle)->getFont()
+                            ->setBold(true)
+                            ->setItalic(true);
+                        $this->sheet->getStyle($lunchStyle)->getAlignment()
+                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                            ->setVertical(Alignment::VERTICAL_CENTER);
+                        $this->sheet->getStyle("A{$row}")->getFont()->setItalic(false);
+                        $this->sheet->getRowDimension($row)->setRowHeight(20);
+
+                        $row++;
+                        continue;
+                    }
+
+                    $timeLabel = $slotStart . " - " . $slot['slotEndTime']->format('H:i');
                     $this->sheet->setCellValue("A{$row}", $timeLabel);
                     $this->sheet->getStyle("A{$row}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
