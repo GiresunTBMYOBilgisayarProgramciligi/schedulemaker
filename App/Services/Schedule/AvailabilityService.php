@@ -189,8 +189,8 @@ class AvailabilityService extends BaseService
             ]);
         }
 
-        // Eğer program schedule'ı ise semester_no filtresini ekle
-        if ($schedule->semester_no !== null) {
+        // Yalnızca program schedule'larında semester_no filtresini uygula
+        if ($schedule->owner_type === OwnerType::PROGRAM->value && $schedule->semester_no !== null) {
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
         $relationOptions = [
