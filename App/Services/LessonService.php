@@ -18,10 +18,12 @@ use App\Models\LessonCombination;
 use App\DTOs\ScheduleItemDTO;
 use function App\Helpers\getSettingValue;
 use App\Repositories\LessonRepository;
+use App\Repositories\LessonAssignmentRepository;
 use App\Core\Gate;
 use App\DTOs\LessonDTO;
 use App\Enums\OwnerType;
 use Exception;
+
 
 /**
  * Ders yönetimi iş mantığı servisi.
@@ -60,6 +62,24 @@ class LessonService extends BaseService
                 $lesson = new Lesson();
                 $lesson->fill($dto->toArray());
                 $lesson->create();
+
+                $semester = $dto->semester ?? getSettingValue('semester');
+                $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
+                if (!empty($dto->lecturer_id) && !empty($semester) && !empty($academicYear)) {
+                    (new LessonAssignmentRepository())->upsert(
+                        $lesson->id,
+                        $dto->lecturer_id,
+                        $semester,
+                        $academicYear
+                    );
+                    $this->logger->info('Ders hoca ataması oluşturuldu', [
+                        'lesson_id' => $lesson->id,
+                        'lecturer_id' => $dto->lecturer_id,
+                        'semester' => $semester,
+                        'academic_year' => $academicYear
+                    ]);
+                }
+
                 $this->logger->info('Ders eklendi', ['id' => $lesson->id, 'name' => $lesson->name]);
                 return $lesson->id;
             });
@@ -69,6 +89,7 @@ class LessonService extends BaseService
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
+
     }
 
     /**
@@ -101,10 +122,29 @@ class LessonService extends BaseService
 
             $dto = LessonDTO::fromArray($requestData);
             $lessonFromDb->fill($dto->toArray());
+
+            if (!empty($requestData['lecturer_id'])) {
+                $semester = $requestData['semester'] ?? getSettingValue('semester');
+                $academicYear = $requestData['academic_year'] ?? getSettingValue('academic_year');
+                (new LessonAssignmentRepository())->upsert(
+                    $lessonFromDb->id,
+                    (int)$requestData['lecturer_id'],
+                    $semester,
+                    $academicYear
+                );
+                $this->logger->info('Ders hoca ataması güncellendi', [
+                    'lesson_id' => $lessonFromDb->id,
+                    'lecturer_id' => $requestData['lecturer_id'],
+                    'semester' => $semester,
+                    'academic_year' => $academicYear
+                ]);
+            }
         }
 
         return $this->updateLesson($lessonFromDb);
     }
+
+
 
     /**
      * Mevcut dersi günceller.
@@ -168,12 +208,11 @@ class LessonService extends BaseService
     /**
      * Çocuk dersi üst derse bağlar ve mevcut schedule'ı senkronize eder.
      *
-     * @param int $parentLessonId
-     * @param int $childLessonId
-     * @param array $slotsToSkip Kopyalanmayacak slotlar [item_id => [slot_index, ...]]
+     * @param CombineLessonDTO $dto
      * @throws Exception
      */
     public function combineLesson(CombineLessonDTO $dto): void
+
     {
         $parentLessonId = $dto->parentId;
         $childLessonId = $dto->childId;
@@ -271,10 +310,11 @@ class LessonService extends BaseService
     /**
      * Child dersin parent bağlantısını kaldırır ve tüm schedule kayıtlarını temizler.
      *
-     * @param int $lessonId Child dersin ID'si
+     * @param DeleteCombineLessonDTO $dto
      * @throws Exception
      */
     public function deleteParentLesson(DeleteCombineLessonDTO $dto): void
+
     {
         $lessonId = $dto->id;
         $this->logger->info('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
@@ -321,12 +361,16 @@ class LessonService extends BaseService
             throw new Exception("Ders bulunamadı");
         }
 
+        $semester = $currentLesson->semester ?? getSettingValue('semester');
+        $academicYear = $currentLesson->academic_year ?? getSettingValue('academic_year');
+
         // Aynı akademik yıl ve dönemdeki dersleri al
         $lessons = (new LessonRepository())->getExamCombineLessonList(
             $currentLesson->id, 
-            $currentLesson->semester, 
-            $currentLesson->academic_year
+            $semester, 
+            $academicYear
         );
+
 
         // Zaten bağlı olanları ve kendisini filtrele
         $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
@@ -365,8 +409,7 @@ class LessonService extends BaseService
      * Ders programını etkilemez, sadece sınav programında ortak sınav grubu oluşturur.
      * Hoca kısıtı yoktur — farklı hocaların dersleri birleştirilebilir.
      *
-     * @param int $parentLessonId Üst ders ID'si
-     * @param int $childLessonId Alt ders ID'si
+     * @param CombineExamLessonDTO $dto
      * @throws Exception
      */
     public function combineExamLesson(CombineExamLessonDTO $dto): void
@@ -464,10 +507,11 @@ class LessonService extends BaseService
      * Sınav birleştirme bağlantısını kaldırır.
      * Ders programını etkilemez, sadece sınav schedule'larını temizler.
      *
-     * @param int $lessonId Child dersin ID'si
+     * @param DeleteCombineLessonDTO $dto
      * @throws Exception
      */
     public function deleteExamParentLesson(DeleteCombineLessonDTO $dto): void
+
     {
         $lessonId = $dto->id;
         $this->logger->info('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);

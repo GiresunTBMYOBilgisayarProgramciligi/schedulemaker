@@ -168,7 +168,8 @@ class ScheduleViewHelper
             'data-lesson-hours' => $lesson->hours ?? 1,
             'data-group-no' => $isDummy ? 0 : $lesson->group_no,
             'data-lesson-code' => $lesson->code,
-            'data-lecturer-id' => $lesson->lecturer_id ?? null,
+            'data-lecturer-id' => $lesson->lecturer?->id,
+
             'data-status' => $isDummy ? ($lesson->status ?? '') : '',
             'data-program-id' => $isDummy ? null : $lesson->program_id,
             'data-size' => $isDummy ? null : ($lesson->size ?? 0),

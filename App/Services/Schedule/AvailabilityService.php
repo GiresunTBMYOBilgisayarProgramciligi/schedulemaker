@@ -13,12 +13,16 @@ use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
+use App\Models\LessonAssignment;
+
 
 use Exception;
 use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
 
 use App\Repositories\ScheduleRepository;
+use App\Repositories\LessonAssignmentRepository;
+
 
 /**
  * Ders ve Sınav programlarında müsait derslik ve gözetmen sorgulama servisi.
@@ -160,9 +164,15 @@ class AvailabilityService extends BaseService
 
         $available_lessons = [];
 
-        $lessonFilters = [
+        // Aktif dönem ve akademik yılda ataması bulunan derslerin ID'leri
+        $periodAssignments = (new LessonAssignment())->get()->where([
             'semester' => $schedule->semester,
-            'academic_year' => $schedule->academic_year,
+            'academic_year' => $schedule->academic_year
+        ])->all();
+        $periodLessonIds = array_unique(array_filter(array_column($periodAssignments, 'lesson_id')));
+
+        $lessonFilters = [
+            'id' => ['in' => !empty($periodLessonIds) ? $periodLessonIds : [-1]],
             '!type' => 4 // staj dersleri dahil değil
         ];
 
@@ -176,8 +186,10 @@ class AvailabilityService extends BaseService
                 'classroom_type' => $classroom->type,
             ]);
         } elseif ($schedule->owner_type == OwnerType::USER->value) {
+            $asgns = (new LessonAssignmentRepository())->findByLecturer($schedule->owner_id, $schedule->semester, $schedule->academic_year);
+            $assignedLessonIds = array_unique(array_filter(array_map(fn($a) => $a->lesson_id, $asgns)));
             $lessonFilters = array_merge($lessonFilters, [
-                'lecturer_id' => $schedule->owner_id,
+                'id' => ['in' => !empty($assignedLessonIds) ? $assignedLessonIds : [-1]],
             ]);
             //todo schedule type için enum kullanılmalı
             if($schedule->type == 'lesson') {
@@ -199,7 +211,7 @@ class AvailabilityService extends BaseService
             'academic_year' => $schedule->academic_year
         ];
         $lessonsList = (new LessonRepository())->getAuthorized('update', $lessonFilters, [
-            'lecturer', 
+            'lecturer' => $relationOptions, 
             'program', 
             'parentLesson' => $relationOptions, 
             'childLessons' => $relationOptions, 

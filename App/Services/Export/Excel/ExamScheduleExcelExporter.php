@@ -281,15 +281,10 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
             // Hoca Adı (Daima dersin asıl hocası)
-            if ($options['show_lecturer'] && !empty($data->lesson->lecturer_id)) {
-                $lessonLecturer = (new User())
-                    ->get()
-                    ->where(['id' => $data->lesson->lecturer_id])
-                    ->first();
-                if ($lessonLecturer) {
-                    $richContent->createText("\n(" . $lessonLecturer->getFullName() . ")");
-                }
+            if ($options['show_lecturer'] && $data->lesson?->lecturer) {
+                $richContent->createText("\n(" . $data->lesson->lecturer->getFullName() . ")");
             }
+
 
             // Program / Bölüm Adı
             if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom')) {

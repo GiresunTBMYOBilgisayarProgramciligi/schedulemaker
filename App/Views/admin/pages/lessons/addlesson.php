@@ -101,13 +101,11 @@ use function App\Helpers\getSettingValue;
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label" for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
-                                                required>
-                                                <option></option>
-                                                <?php foreach ($lecturers as $lecturer): ?>
-                                                    <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
-                                                    </option>
+                                            <label class="form-label" for="building_id">Bina Seçimi</label>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
+                                                <option value="">Bina seçiniz...</option>
+                                                <?php foreach ($buildings as $building): ?>
+                                                    <option value="<?= $building->id ?>"><?= htmlspecialchars($building->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -186,16 +184,19 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="col-form-label" for="building_id">Bina Seçimi</label>
-                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
-                                                <option value="">Bina seçiniz...</option>
-                                                <?php foreach ($buildings as $building): ?>
-                                                    <option value="<?= $building->id ?>"><?= htmlspecialchars($building->name) ?></option>
+                                            <label class="col-form-label" for="lecturer_id">Dersin Hocası</label>
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
+                                                required>
+                                                <option></option>
+                                                <?php foreach ($lecturers as $lecturer): ?>
+                                                    <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
+                                                    </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Ekle</button>

@@ -22,7 +22,9 @@ use Monolog\Logger;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\BuildingRepository;
+use App\Repositories\LessonAssignmentRepository;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+
 use function App\Helpers\formatLessonName;
 
 /**
@@ -233,14 +235,22 @@ class LessonImporter
                     continue;
                 }
 
+                $assignmentRepo = new LessonAssignmentRepository();
                 if ($lesson) {
                     $lesson->fill($lessonDTO->toArray());
                     $lessonService->updateLesson($lesson);
+                    if ($lecturer) {
+                        $assignmentRepo->upsert($lesson->id, $lecturer->id, $this->formData['semester'], $this->formData['academic_year']);
+                    }
                     $updatedLessons[$lesson->id] = $lesson->getFullName(true);
                 } else {
                     $lessonId = $lessonService->saveNew($lessonDTO);
+                    if ($lecturer) {
+                        $assignmentRepo->upsert($lessonId, $lecturer->id, $this->formData['semester'], $this->formData['academic_year']);
+                    }
                     $addedLessons[$lessonId] = $lessonDTO->name;
                 }
+
             }
 
         });

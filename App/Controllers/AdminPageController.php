@@ -23,7 +23,9 @@ use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
 use App\Repositories\LogRepository;
+use App\Repositories\LessonAssignmentRepository;
 use App\Policies\BuildingPolicy;
+
 
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
@@ -123,15 +125,20 @@ class AdminPageController extends Controller
                 );
             }
 
-            // Haftalık ders yükü (saat toplamı)
-            $userLessons = (new LessonRepository())->findBy(['lecturer_id' => $currentUser->id]);
+            // Haftalık ders yükü (saat toplamı) - Yeni atama sistemi ile
+            $assignmentRepo = new LessonAssignmentRepository();
+            $activeAssignments = $assignmentRepo->findActiveAssignmentsForLecturer($currentUser->id);
+            $userLessons = array_values(array_filter(array_map(fn($a) => $a->lesson, $activeAssignments)));
             $weeklyHours = array_sum(array_map(fn($l) => $l->hours ?? 0, $userLessons));
+
             $view_data['stats'] = [
                 'lesson_count' => count($userLessons),
                 'weekly_hours' => $weeklyHours,
             ];
             $view_data['myLessons'] = $userLessons;
         }
+
+
 
         return $view_data;
     }
@@ -197,9 +204,20 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         
 
+        $allAssignments = (new LessonAssignmentRepository())->findByLecturer($user->id);
+        $groupedAssignments = [];
+        foreach ($allAssignments as $asgn) {
+            if ($asgn->lesson) {
+                $periodKey = $asgn->academic_year . ' ' . $asgn->semester;
+                $groupedAssignments[$periodKey][] = $asgn->lesson;
+            }
+        }
+
         return [
             "user" => $user,
+            "groupedAssignments" => $groupedAssignments,
             "canEditSpecialFields" => Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id),
+
             "page_title" => $user->getFullName() . " Profil Sayfası",
             "userController" => new UserController(),
             "units" => (new UnitRepository())->getAuthorized('view'),
@@ -340,7 +358,8 @@ class AdminPageController extends Controller
                 true,
                 true
             ),
-            'combineLessonList' => (new LessonRepository())->getCombineLessonList($lesson->lecturer_id, $lesson->id, getSettingValue('semester'), getSettingValue('academic_year')),
+            'combineLessonList' => (new LessonRepository())->getCombineLessonList($lesson->lecturer?->id, $lesson->id, getSettingValue('semester'), getSettingValue('academic_year')),
+
             'examCombineLessonList' => (new LessonRepository())->getExamCombineLessonList($lesson->id, getSettingValue('semester'), getSettingValue('academic_year')),
         ];
     }
@@ -356,7 +375,14 @@ class AdminPageController extends Controller
         if ($currentUser->role == "department_head") {
             $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
-            $view_data['lessons'] = (new LessonRepository())->getAuthorized('view', [], ['lecturer', 'program', 'department', 'building']);
+            $view_data['lessons'] = (new LessonRepository())->getAuthorized('view', [], [
+                'lecturer', 
+                'program', 
+                'department', 
+                'building', 
+                'parentLesson' => ['with' => ['program']]
+            ]);
+
         }
         return $view_data;
     }

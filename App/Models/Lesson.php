@@ -59,12 +59,14 @@ class Lesson extends Model
     public ?Program $program = null;
     public ?Building $building = null;
     public ?Lesson $parentLesson = null;
+
     public array $childLessons = [];
     public ?Lesson $examParentLesson = null;
     public array $examChildLessons = [];
     public array $schedules = [];
+    public array $assignments = [];
     protected string $table_name = "lessons";
-    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'building', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'placed_hours', 'placed_size', 'remaining_size'];
+    protected array $excludeFromDb = ['lecturer_id', 'semester', 'academic_year', 'lecturer', 'department', 'program', 'building', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'assignments', 'placed_hours', 'placed_size', 'remaining_size'];
 
 
 
@@ -152,35 +154,89 @@ class Lesson extends Model
      * @param array $results
      * @param array $options
      * @return array
-     * @throws Exception
+     * @throws \Exception
      */
     public function getLecturerRelation(array $results, array $options = []): array
     {
-        $userIds = array_unique(array_column($results, 'lecturer_id'));
-        if (empty($userIds))
+        $lessonIds = array_column($results, 'id');
+        if (empty($lessonIds))
             return $results;
 
-        $query = (new User())->get()->where(['id' => ['in' => $userIds]]);
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
 
-        if (isset($options['with'])) {
-            $query->with($options['with']);
+        $assignments = (new LessonAssignment())->get()->where([
+            'lesson_id' => ['in' => $lessonIds],
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->all();
+
+        $assignmentByLesson = [];
+        $userIds = [];
+        foreach ($assignments as $assignment) {
+            $assignmentByLesson[$assignment->lesson_id] = $assignment;
+            $userIds[] = $assignment->lecturer_id;
         }
 
-        $users = $query->all();
+        $userIds = array_unique(array_filter($userIds));
         $usersKeyed = [];
-        foreach ($users as $user) {
-            $usersKeyed[$user->id] = $user;
+        if (!empty($userIds)) {
+            $query = (new User())->get()->where(['id' => ['in' => $userIds]]);
+            if (isset($options['with'])) {
+                $query->with($options['with']);
+            }
+            foreach ($query->all() as $user) {
+                $usersKeyed[$user->id] = $user;
+            }
         }
 
         foreach ($results as &$row) {
-            if (isset($row['lecturer_id']) && isset($usersKeyed[$row['lecturer_id']])) {
-                $row['lecturer'] = $usersKeyed[$row['lecturer_id']];
+            $row['semester'] = $row['semester'] ?? $semester;
+            $row['academic_year'] = $row['academic_year'] ?? $academicYear;
+            $assignment = $assignmentByLesson[$row['id']] ?? null;
+            if ($assignment && isset($usersKeyed[$assignment->lecturer_id])) {
+                $row['lecturer_id'] = $assignment->lecturer_id;
+                $row['lecturer'] = $usersKeyed[$assignment->lecturer_id];
             } else {
+                $row['lecturer_id'] = null;
                 $row['lecturer'] = null;
             }
         }
         return $results;
     }
+
+    /**
+     * @param array $results
+     * @param array $options
+     * @return array
+     * @throws \Exception
+     */
+    public function getAssignmentsRelation(array $results, array $options = []): array
+    {
+        $lessonIds = array_column($results, 'id');
+        if (empty($lessonIds))
+            return $results;
+
+        $query = (new LessonAssignment())->get()->where([
+            'lesson_id' => ['in' => $lessonIds]
+        ]);
+
+        if (isset($options['with'])) {
+            $query->with($options['with']);
+        }
+
+        $assignments = $query->all();
+        $grouped = [];
+        foreach ($assignments as $asgn) {
+            $grouped[$asgn->lesson_id][] = $asgn;
+        }
+
+        foreach ($results as &$row) {
+            $row['assignments'] = $grouped[$row['id']] ?? [];
+        }
+        return $results;
+    }
+
 
     /**
      * @param array $results

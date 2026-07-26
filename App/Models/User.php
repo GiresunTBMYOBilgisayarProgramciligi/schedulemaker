@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Core\Model;
 use App\Enums\UserRole;
 use App\Enums\OwnerType;
+use function App\Helpers\getSettingValue;
 use Exception;
 
 /**
@@ -53,24 +54,40 @@ class User extends Model
      */
     public function getLessonsRelation(array $results, array $options = []): array
     {
-        $ids = array_column($results, 'id');
-        if (empty($ids))
+        $userIds = array_column($results, 'id');
+        if (empty($userIds))
             return $results;
 
-        $query = (new Lesson())->get()
-            ->where([
-                'lecturer_id' => ['in' => $ids]
-            ]);
+        $semester = $options['semester'] ?? getSettingValue('semester');
+        $academicYear = $options['academic_year'] ?? getSettingValue('academic_year');
 
-        if (isset($options['with'])) {
-            $query->with($options['with']);
+        $where = ['lecturer_id' => ['in' => $userIds]];
+        if (!empty($semester)) {
+            $where['semester'] = $semester;
+        }
+        if (!empty($academicYear)) {
+            $where['academic_year'] = $academicYear;
         }
 
-        $lessons = $query->all();
+        $assignments = (new LessonAssignment())->get()->where($where)->all();
+
+        $lessonIds = array_unique(array_column($assignments, 'lesson_id'));
+        $lessonsKeyed = [];
+        if (!empty($lessonIds)) {
+            $query = (new Lesson())->get()->where(['id' => ['in' => $lessonIds]]);
+            if (isset($options['with'])) {
+                $query->with($options['with']);
+            }
+            foreach ($query->all() as $lesson) {
+                $lessonsKeyed[$lesson->id] = $lesson;
+            }
+        }
 
         $lessonsGrouped = [];
-        foreach ($lessons as $lesson) {
-            $lessonsGrouped[$lesson->lecturer_id][] = $lesson;
+        foreach ($assignments as $asgn) {
+            if (isset($lessonsKeyed[$asgn->lesson_id])) {
+                $lessonsGrouped[$asgn->lecturer_id][] = $lessonsKeyed[$asgn->lesson_id];
+            }
         }
 
         foreach ($results as &$row) {
@@ -78,6 +95,7 @@ class User extends Model
         }
         return $results;
     }
+
 
     /**
      * @param array $results

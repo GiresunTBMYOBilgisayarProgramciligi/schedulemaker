@@ -8,6 +8,7 @@
  */
 
 use App\Core\Gate;
+use function App\Helpers\getSettingValue;
 
 ?>
 <!--begin::App Main-->
@@ -60,19 +61,19 @@ use App\Core\Gate;
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
-                                        <b>Ders sayısı</b>
+                                        <b>Haftalık Ders Sayısı</b>
                                     </div>
                                     <span class="badge text-bg-primary "><?= count($user->lessons) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
-                                        <b>Öğrenci sayısı</b>
+                                        <b>Toplam Öğrenci Sayısı</b>
                                     </div>
                                     <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->size ?? 0), 0) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
-                                        <b>Ders Saati</b>
+                                        <b>Haftalık Ders Saati</b>
                                     </div>
                                     <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->hours ?? 0), 0) ?></span>
                                 </li>
@@ -251,31 +252,56 @@ use App\Core\Gate;
                         <div class="card-body">
                             <div class="tab-content" id="profileTabsContent">
                                 <div class="tab-pane fade show active" id="lessons" role="tabpanel" aria-labelledby="lessons-tab">
-                                    <div class="row">
-                                        <?php foreach ($user->lessons as $lesson): ?>
-                                            <div class="col-md-3 col-sm-6 p-1">
-                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-decoration-none text-reset">
-                                                    <div class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?? '' ?>" style="cursor: pointer;">
-                                                        <span class="lesson-name" title="<?= $lesson->name ?>">
-                                                            <?= $lesson->code ?> - <?= $lesson->name ?>
-                                                        </span>
-                                                        <div class="lesson-meta">
-                                                            <span class="lesson-lecturer">
-                                                                <?= $lesson->program->name ?? "-" ?>
-                                                            </span>
-                                                            <span class="lesson-classroom">
-                                                                <?= $lesson->hours ?> Saat / <?= $lesson->size ?> Kişi
-                                                            </span>
+                                    <?php if (!empty($groupedAssignments)): ?>
+                                        <div class="accordion" id="lessonsAccordion">
+                                            <?php 
+                                            $activePeriodKey = getSettingValue('academic_year') . ' ' . getSettingValue('semester');
+                                            $idx = 0;
+                                            foreach ($groupedAssignments as $periodKey => $lessons):
+                                                $idx++;
+                                                $collapseId = "collapsePeriod_" . $idx;
+                                                $isCurrent = ($periodKey === $activePeriodKey) || ($idx === 1 && !isset($groupedAssignments[$activePeriodKey]));
+                                            ?>
+                                                <div class="accordion-item mb-2 border rounded">
+                                                    <h2 class="accordion-header" id="heading_<?= $idx ?>">
+                                                        <button class="accordion-button <?= $isCurrent ? '' : 'collapsed' ?>" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="<?= $isCurrent ? 'true' : 'false' ?>" aria-controls="<?= $collapseId ?>">
+                                                            <strong><?= htmlspecialchars($periodKey) ?> Dönemi Dersleri</strong>
+                                                            <span class="badge text-bg-primary ms-2"><?= count($lessons) ?> Ders</span>
+                                                        </button>
+                                                    </h2>
+                                                    <div id="<?= $collapseId ?>" class="accordion-collapse collapse <?= $isCurrent ? 'show' : '' ?>" aria-labelledby="heading_<?= $idx ?>" data-bs-parent="#lessonsAccordion">
+                                                        <div class="accordion-body">
+                                                            <div class="row">
+                                                                <?php foreach ($lessons as $lesson): ?>
+                                                                    <div class="col-md-4 col-sm-6 p-1">
+                                                                        <a href="/admin/lesson/<?= $lesson->id ?>" class="text-decoration-none text-reset">
+                                                                            <div class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?? '' ?>" style="cursor: pointer;">
+                                                                                <span class="lesson-name" title="<?= htmlspecialchars($lesson->name) ?>">
+                                                                                    <?= htmlspecialchars($lesson->code) ?> - <?= htmlspecialchars($lesson->name) ?>
+                                                                                </span>
+                                                                                <div class="lesson-meta">
+                                                                                    <span class="lesson-lecturer">
+                                                                                        <?= htmlspecialchars($lesson->program->name ?? "-") ?>
+                                                                                    </span>
+                                                                                    <span class="lesson-classroom">
+                                                                                        <?= $lesson->hours ?> Saat / <?= $lesson->size ?> Kişi
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </a>
+                                                                    </div>
+                                                                <?php endforeach; ?>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </a>
-                                            </div>
-                                        <?php endforeach; ?>
-                                        <?php if (empty($user->lessons)): ?>
-                                            <div class="col-12 text-center text-muted">Hoca üzerine kayıtlı ders bulunamadı.</div>
-                                        <?php endif; ?>
-                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="col-12 text-center text-muted py-3">Hoca üzerine kayıtlı ders görevlendirmesi bulunamadı.</div>
+                                    <?php endif; ?>
                                 </div>
+
                                 <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
                                     <?= $scheduleHTML ?>
                                 </div>

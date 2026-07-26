@@ -86,14 +86,13 @@ class ExamScheduleService extends ScheduleService
                     $siblings = (new Lesson())->get()->where([
                         'code' => $mainLesson->code,
                         'program_id' => $mainLesson->program_id,
-                        'semester' => $mainLesson->semester,
-                        'academic_year' => $mainLesson->academic_year,
                         'semester_no' => $mainLesson->semester_no,
                         'group_no' => ['>' => 0],
                         'id' => ['!=' => $mainLesson->id]
                     ])->all();
                     $allGroupLessons = array_merge($allGroupLessons, $siblings);
                 }
+
 
                 $programOwners = [];
                 foreach ($allGroupLessons as $gl) {

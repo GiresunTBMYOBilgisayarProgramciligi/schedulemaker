@@ -31,7 +31,8 @@ class LessonPolicy extends BasePolicy
         }
 
         // Dersi veren akademisyen
-        if ($user->id === $lesson->lecturer_id) {
+        if ($user->id === $lesson->lecturer?->id) {
+
             return true;
         }
 
@@ -91,7 +92,8 @@ class LessonPolicy extends BasePolicy
         }
 
         // Akademisyen kendi dersini güncelleyebilir (bazı alanlar kısıtlı olabilir ama yetki var)
-        if ($user->id === $lesson->lecturer_id) {
+        if ($user->id === $lesson->lecturer?->id) {
+
             return true;
         }
 

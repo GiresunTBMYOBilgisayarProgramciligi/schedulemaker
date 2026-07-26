@@ -156,12 +156,11 @@ class ConflictService extends BaseService
                 $siblings = (new Lesson())->get()->where([
                     'code' => $lesson->code,
                     'program_id' => $lesson->program_id,
-                    'semester' => $lesson->semester,
-                    'academic_year' => $lesson->academic_year,
                     'semester_no' => $lesson->semester_no,
                     'group_no' => ['>' => 0],
                     'id' => ['!=' => $lesson->id]
                 ])->all();
+
 
                 foreach ($siblings as $sibling) {
                     $owners[] = [

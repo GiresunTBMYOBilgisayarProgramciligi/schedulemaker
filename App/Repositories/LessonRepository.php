@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Lesson;
+use App\Models\LessonAssignment;
 
 class LessonRepository extends BaseRepository
 {
@@ -56,12 +57,14 @@ class LessonRepository extends BaseRepository
                 'lecturer' => ['with' => ['lessons']], 
                 'department', 
                 'building',
+                'assignments' => ['with' => ['lecturer']],
                 'parentLesson' => ['with' => ['program']], 
                 'childLessons' => ['with' => ['program']], 
                 'examParentLesson' => ['with' => ['program']], 
                 'examChildLessons' => ['with' => ['program']]
             ])
             ->first();
+
     }
 
     /**
@@ -74,18 +77,32 @@ class LessonRepository extends BaseRepository
      * @return Lesson[]
      * @throws \Exception
      */
-    public function getCombineLessonList(int $lecturerId, int $excludeLessonId, string $semester, string $academicYear): array
+    public function getCombineLessonList(?int $lecturerId, int $excludeLessonId, string $semester, string $academicYear): array
     {
+        if (is_null($lecturerId)) {
+            return [];
+        }
+
+        $asgns = (new LessonAssignment())->get()->where([
+            'lecturer_id' => $lecturerId,
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+            '!lesson_id' => $excludeLessonId
+        ])->all();
+
+
+        $lessonIds = array_unique(array_column($asgns, 'lesson_id'));
+        if (empty($lessonIds)) {
+            return [];
+        }
+
         /** @var Lesson $model */
         $model = new $this->modelClass;
         return $model->get()->where([
-            'lecturer_id' => $lecturerId, 
-            '!id' => $excludeLessonId, 
-            'semester' => $semester, 
-            'academic_year' => $academicYear
+            'id' => ['in' => $lessonIds]
         ])->with([
             'program', 
-            'lecturer' => ['with' => ['lessons']], 
+            'lecturer' => ['semester' => $semester, 'academic_year' => $academicYear, 'with' => ['lessons']], 
             'department', 
             'parentLesson' => ['with' => ['program']], 
             'childLessons' => ['with' => ['program']]
@@ -103,13 +120,27 @@ class LessonRepository extends BaseRepository
      */
     public function getExamCombineLessonList(int $excludeLessonId, string $semester, string $academicYear): array
     {
+        $asgns = (new LessonAssignment())->get()->where([
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+            '!lesson_id' => $excludeLessonId
+        ])->all();
+
+        $lessonIds = array_unique(array_column($asgns, 'lesson_id'));
+        if (empty($lessonIds)) {
+            return [];
+        }
+
         /** @var Lesson $model */
         $model = new $this->modelClass;
         return $model->get()->where([
-            '!id' => $excludeLessonId, 
-            'semester' => $semester, 
-            'academic_year' => $academicYear
-        ])->with(['program', 'examParentLesson'])->all();
+            'id' => ['in' => $lessonIds]
+        ])->with([
+            'program', 
+            'examParentLesson' => ['semester' => $semester, 'academic_year' => $academicYear]
+        ])->all();
     }
+
+
 }
 

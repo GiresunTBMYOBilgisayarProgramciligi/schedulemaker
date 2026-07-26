@@ -108,15 +108,10 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                     }
 
                     // Hoca Adı (Daima dersin asıl hocası)
-                    if (!empty($data->lesson->lecturer_id)) {
-                        $lessonLecturer = (new User())
-                            ->get()
-                            ->where(['id' => $data->lesson->lecturer_id])
-                            ->first();
-                        if ($lessonLecturer) {
-                            $descriptionParts[] = "Hoca: " . $lessonLecturer->getFullName();
-                        }
+                    if ($data->lesson?->lecturer) {
+                        $descriptionParts[] = "Hoca: " . $data->lesson->lecturer->getFullName();
                     }
+
                     if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
                         $descriptionParts[] = "Program: " . $lesson->program->name;
                     }

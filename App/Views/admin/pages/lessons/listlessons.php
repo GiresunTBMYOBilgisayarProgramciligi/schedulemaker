@@ -86,13 +86,14 @@ use App\Models\Lesson;
                                 <td><?= $lesson->size ?></td>
                                 <td><?= $lesson->hours ?></td>
                                 <td><?= $lesson->semester_no ?></td>
-                                <td><?= $lesson->lecturer->getFullName() ?></td>
+                                <td><?= $lesson->lecturer?->getFullName() ?? '<span class="text-danger">Atanmamış</span>' ?></td>
                                 <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->semester ?></td>
-                                <td><?= $lesson->academic_year ?></td>
+                                <td><?= $lesson->semester ?? '<span class="text-danger">—</span>' ?></td>
+                                <td><?= $lesson->academic_year ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
                                 <td><?= $lesson->getClassroomTypeName() ?></td>
+
 
                                 <td class="text-center">
                                     <?php if (Gate::check("update", $lesson)): ?>

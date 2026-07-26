@@ -13,6 +13,7 @@
  */
 
 use App\Core\Gate;
+use function App\Helpers\getSettingValue;
 
 ?>
 <!--begin::App Main-->
@@ -113,13 +114,13 @@ use App\Core\Gate;
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label class="form-label" for="lecturer_id">Dersin Hocası</label>
-                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
-                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <option></option>
-                                                <?php foreach ($lecturers as $lecturer): ?>
-                                                    <option value="<?= $lecturer->id ?>"
-                                                        <?= $lecturer->id == $lesson->lecturer_id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
+                                            <label class="form-label" for="building_id">Bina Seçimi</label>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                <option value="">Bina seçiniz...</option>
+                                                <?php foreach ($buildings as $building): ?>
+                                                    <option value="<?= $building->id ?>" <?= $lesson->building_id == $building->id ? 'selected' : '' ?>>
+                                                        <?= htmlspecialchars($building->name) ?>
+                                                    </option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -182,7 +183,7 @@ use App\Core\Gate;
                                                 <select class="form-select" id="academic_year" name="academic_year"
                                                     <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $lesson->academic_year == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= ($lesson->academic_year ?? getSettingValue('academic_year')) == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                             <?= $year . ' - ' . $year + 1 ?>
                                                         </option>
                                                     <?php endfor; ?>
@@ -190,27 +191,29 @@ use App\Core\Gate;
                                                 <span class="input-group-text"> - </span>
                                                 <select class="form-select" id="semester" name="semester"
                                                     <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                    <option value="Güz" <?= $lesson->semester == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                    <option value="Bahar" <?= $lesson->semester == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                    <option value="Yaz" <?= $lesson->semester == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                    <option value="Güz" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                    <option value="Bahar" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                    <option value="Yaz" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                                 </select>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="col-form-label" for="building_id">Bina Seçimi</label>
-                                            <select class="form-select tom-select" id="building_id" name="building_id" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <option value="">Bina seçiniz...</option>
-                                                <?php foreach ($buildings as $building): ?>
-                                                    <option value="<?= $building->id ?>" <?= $lesson->building_id == $building->id ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($building->name) ?>
-                                                    </option>
+                                            <label class="col-form-label" for="lecturer_id">Dersin Hocası</label>
+                                            <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
+                                                <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                <option></option>
+                                                <?php foreach ($lecturers as $lecturer): ?>
+                                                    <option value="<?= $lecturer->id ?>"
+                                                        <?= $lecturer->id == $lesson->lecturer?->id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
+
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                             <div class="card-footer text-end">
                                 <button type="submit" class="btn btn-primary">Güncelle</button>

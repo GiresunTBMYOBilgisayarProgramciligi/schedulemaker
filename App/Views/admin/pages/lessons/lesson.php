@@ -83,10 +83,26 @@ use App\Core\Gate;
                                 <dd class="col-sm-4"><?= $lesson->building?->name ?? 'Belirtilmemiş' ?></dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
                                 <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
-                                <dt class="col-sm-2">Akademik yıl ve Dönem</dt>
-                                <dd class="col-sm-4"><?= $lesson->academic_year . " " . $lesson->semester ?></dd>
+                                <dt class="col-sm-2">Dersin Hocası (Aktif)</dt>
+                                <dd class="col-sm-4"><?= $lesson->lecturer?->getFullName() ?? 'Atanmamış' ?></dd>
+                                <dt class="col-sm-2">Dönemlik Görevlendirmeler</dt>
+                                <dd class="col-sm-4">
+                                    <?php if (!empty($lesson->assignments)): ?>
+                                        <ul class="list-unstyled mb-0">
+                                            <?php foreach ($lesson->assignments as $asgn): ?>
+                                                <li class="mb-1">
+                                                    <span class="badge text-bg-secondary me-1"><?= htmlspecialchars($asgn->academic_year) ?> <?= htmlspecialchars($asgn->semester) ?></span>
+                                                    <?= htmlspecialchars($asgn->lecturer?->getFullName() ?? 'Bilinmeyen Hoca') ?>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        <span class="text-muted">Görevlendirme kaydı yok</span>
+                                    <?php endif; ?>
+                                </dd>
                                 <dt class="col-sm-2">Mevcudu</dt>
                                 <dd class="col-sm-4"><?= $lesson->size ?></dd>
+
                                 <?php
                                 // ── Bağlı Olduğu Ders (parent_lesson_id + exam_parent_lesson_id) ──
                                 $parentLinks = [];
@@ -208,6 +224,7 @@ use App\Core\Gate;
                 </div>
                 <div class="col-3">
                     <?php $user = $lesson->lecturer; ?>
+                    <?php if ($user): ?>
                     <!-- Profile Image -->
                     <div class="card card-primary card-outline">
                         <div class="card-body box-profile">
@@ -249,7 +266,17 @@ use App\Core\Gate;
                         </div>
                     </div>
                     <!-- /.card -->
+                    <?php else: ?>
+                    <div class="card card-secondary card-outline">
+                        <div class="card-body box-profile text-center">
+                            <i class="bi bi-person-x display-4 text-muted"></i>
+                            <h5 class="mt-2 text-muted">Hoca Atanmamış</h5>
+                            <p class="small text-muted mb-0">Bu ders için aktif dönemde görevlendirilmiş akademisyen bulunmamaktadır.</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
+
             </div>
             <!--end::Row-->
             <!--begin::Row-->

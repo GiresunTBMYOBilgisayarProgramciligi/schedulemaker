@@ -151,19 +151,27 @@ create table if not exists lessons
     hours          int         NOT NULL DEFAULT 2,
     type           int          default 1,
     semester_no    int,
-    lecturer_id    int,
     department_id  int,
     program_id     int,
-    semester       varchar(20),
-    academic_year  varchar(12),
     classroom_type int,
     building_id    int,
     primary key (id),
     unique (code, program_id, group_no),
-    CONSTRAINT fk_lessons_lecturer_id foreign key (lecturer_id) references users (id) on delete set null,
     CONSTRAINT fk_lessons_department_id foreign key (department_id) references departments (id) on delete set null,
     CONSTRAINT fk_lessons_program_id foreign key (program_id) references programs (id) on delete set null,
     CONSTRAINT fk_lessons_building_id foreign key (building_id) references buildings (id) on delete set null
+) ENGINE = INNODB;
+
+create table if not exists lesson_assignments
+(
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    lesson_id     INT NOT NULL,
+    lecturer_id   INT NOT NULL,
+    semester      ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
+    academic_year VARCHAR(12) NOT NULL,
+    CONSTRAINT fk_la_lesson_id   FOREIGN KEY (lesson_id)   REFERENCES lessons(id) ON DELETE CASCADE,
+    CONSTRAINT fk_la_lecturer_id FOREIGN KEY (lecturer_id) REFERENCES users(id)   ON DELETE CASCADE,
+    UNIQUE KEY uq_la (lesson_id, semester, academic_year)
 ) ENGINE = INNODB;
 
 create table if not exists lesson_combinations

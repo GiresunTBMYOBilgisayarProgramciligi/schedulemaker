@@ -7,7 +7,9 @@ use App\Enums\PermissionType;
 use App\Core\Controller;
 use App\Models\Lesson;
 use App\Repositories\LessonRepository;
+use App\Repositories\LessonAssignmentRepository;
 use App\Core\Gate;
+
 use App\DTOs\LessonDTO;
 use App\Validators\LessonValidator;
 use App\Services\LessonService;
@@ -57,11 +59,14 @@ class LessonController extends Controller
      */
     public function getLessonsList(?int $lecturer_id = null): array
     {
-        $filters = [];
-        if (!is_null($lecturer_id))
-            $filters["lecturer_id"] = $lecturer_id;
-        return (new LessonRepository())->findBy($filters);
+        if (!is_null($lecturer_id)) {
+            $asgns = (new LessonAssignmentRepository())->findActiveAssignmentsForLecturer($lecturer_id);
+            return array_map(fn($a) => $a->lesson, array_filter($asgns, fn($a) => !is_null($a->lesson)));
+        }
+        return (new LessonRepository())->findBy([]);
     }
+
+
 
     /**
      * Yeni ders oluşturur (POST /ajax/lesson/add rotası için)

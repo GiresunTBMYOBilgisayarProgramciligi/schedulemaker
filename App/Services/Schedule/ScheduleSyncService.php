@@ -267,7 +267,8 @@ class ScheduleSyncService extends BaseService
                 if ($slotData->lesson_id == $parentLesson->id) {
                     $itemData[0] = [
                         'lesson_id' => $childLesson->id,
-                        'lecturer_id' => $childLesson->lecturer_id,
+                        'lecturer_id' => $childLesson->lecturer?->id,
+
                         'classroom_id' => $slotData->classroom->id,
                     ];
                     break;
