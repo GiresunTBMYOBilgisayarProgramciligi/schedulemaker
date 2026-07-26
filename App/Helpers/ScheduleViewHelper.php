@@ -58,10 +58,11 @@ class ScheduleViewHelper
             'data-lesson-code' => $slotData->lesson->code,
             'data-lesson-name' => $slotData->lesson->getFullName(addCode: true),
             'data-size' => $slotData->lesson->size,
-            'data-lecturer-id' => $slotData->lecturer?->id,
-            'data-lecturer-name' => $slotData->lecturer?->getFullName(),
-            'data-classroom-id' => $slotData->classroom?->id,
-            'data-classroom-name' => $slotData->classroom?->name,
+            'data-lecturer-id' => ($slotData->lecturer ?? null)?->id,
+            'data-lecturer-name' => ($slotData->lecturer ?? null)?->getFullName(),
+            'data-classroom-id' => ($slotData->classroom ?? null)?->id,
+            'data-classroom-name' => ($slotData->classroom ?? null)?->name,
+
             'data-classroom-size' => $slotData->classroom?->class_size,
             'data-classroom-exam-size' => $slotData->classroom?->exam_size,
             'data-status' => $scheduleItem->status,
@@ -168,14 +169,15 @@ class ScheduleViewHelper
             'data-lesson-hours' => $lesson->hours ?? 1,
             'data-group-no' => $isDummy ? 0 : $lesson->group_no,
             'data-lesson-code' => $lesson->code,
-            'data-lecturer-id' => $lesson->lecturer?->id,
+            'data-lecturer-id' => ($lesson->lecturer ?? null)?->id,
 
             'data-status' => $isDummy ? ($lesson->status ?? '') : '',
             'data-program-id' => $isDummy ? null : $lesson->program_id,
             'data-size' => $isDummy ? null : ($lesson->size ?? 0),
             // Sağ-tık menü için isimler
             'data-program-name' => $isDummy ? null : ($lesson->program->name ?? null),
-            'data-lecturer-name' => $isDummy ? null : ($lesson->lecturer?->getFullName()),
+            'data-lecturer-name' => $isDummy ? null : (($lesson->lecturer ?? null)?->getFullName()),
+
             'data-lesson-name' => $isDummy ? null : $lesson->getFullName(addCode: true),
         ];
 

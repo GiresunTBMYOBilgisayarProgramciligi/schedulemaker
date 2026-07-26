@@ -54,7 +54,8 @@ if (!$isDummy) {
                 <?php if ($isDummy): ?>
                     -
                 <?php else: ?>
-                    <?= $lesson->lecturer?->getFullName() ?>
+                    <?= ($lesson->lecturer ?? null)?->getFullName() ?>
+
                 <?php endif; ?>
             </span>
             <span class="lesson-classroom">
