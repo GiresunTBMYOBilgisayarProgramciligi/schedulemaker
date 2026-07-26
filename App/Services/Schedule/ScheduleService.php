@@ -428,6 +428,10 @@ class ScheduleService extends BaseService
         string $semester,
         string $type
     ): Schedule {
+        $semesterNo = ($owner['type'] === 'program' && isset($owner['semester_no']) && $owner['semester_no'] !== '')
+            ? (int) $owner['semester_no']
+            : null;
+
         // Önce varolan schedule'ı ara
         $existing = $this->scheduleRepo->findByOwnerAndPeriod(
             $owner['type'],
@@ -435,8 +439,9 @@ class ScheduleService extends BaseService
             $academicYear,
             $semester,
             $type,
-            isset($owner['semester_no']) && $owner['semester_no'] !== '' ? (int) $owner['semester_no'] : null
+            $semesterNo
         );
+
 
         if ($existing) {
             return $existing;
@@ -451,7 +456,7 @@ class ScheduleService extends BaseService
         $schedule->type = $type;
 
         // Program schedule'ları için semester_no gerekli
-        if (isset($owner['semester_no'])) {
+        if (isset($owner['semester_no']) && $owner['type'] === 'program') {
             $schedule->semester_no = $owner['semester_no'];
         }
 

@@ -350,14 +350,20 @@ class ScheduleExportFilterBuilder
      */
     private function baseFilter(array $filters, string $typeKey, string $ownerType, int $ownerId, ?int $semesterNo): array
     {
-        return [
+        $filter = [
             'type'         => $typeKey,
             'owner_type'   => $ownerType,
             'owner_id'     => $ownerId,
-            'semester_no'  => $semesterNo,
             'semester'     => $filters["semester"],
             'academic_year' => $filters["academic_year"],
         ];
+
+        if ($semesterNo !== null) {
+            $filter['semester_no'] = $semesterNo;
+        }
+
+        return $filter;
     }
+
 }
 

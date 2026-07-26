@@ -154,9 +154,10 @@ class ScheduleRepository extends BaseRepository
         ];
 
         // Program schedule'lar için semester_no da kontrol et
-        if ($semesterNo !== null) {
+        if ($ownerType === 'program' && $semesterNo !== null) {
             $conditions['semester_no'] = $semesterNo;
         }
+
 
         /** @var Schedule $schedule */
         $schedule = new $this->modelClass;
