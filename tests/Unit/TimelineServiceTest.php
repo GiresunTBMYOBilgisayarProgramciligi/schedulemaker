@@ -3,7 +3,8 @@
 namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use App\Services\TimelineService;
+use App\Services\Schedule\TimelineService;
+use App\Models\ScheduleItem;
 
 class TimelineServiceTest extends TestCase
 {
@@ -134,5 +135,63 @@ class TimelineServiceTest extends TestCase
         $data = [['lesson_id' => 11]];
         $lessonGroups = [11 => 0]; // group_no 0 means single
         $this->assertEquals('single', $this->service->determineStatus($data, 'normal', false, $lessonGroups));
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_are_items_mergeable()
+    {
+        $item1 = new ScheduleItem();
+        $item1->status = 'single';
+        $item1->data = [['lesson_id' => 5]];
+        $item1->detail = ['lecturer_id' => 10];
+
+        $item2 = new ScheduleItem();
+        $item2->status = 'single';
+        $item2->data = [['lesson_id' => 5]];
+        $item2->detail = ['lecturer_id' => 10];
+
+        $this->assertTrue($this->service->areItemsMergeable($item1, $item2));
+
+        // Farklı status
+        $item2->status = 'group';
+        $this->assertFalse($this->service->areItemsMergeable($item1, $item2));
+
+        // Preferred item'lar birleştirilmez
+        $item1->status = 'preferred';
+        $item2->status = 'preferred';
+        $this->assertFalse($this->service->areItemsMergeable($item1, $item2));
+
+        // Kilitli item'lar birleştirilmez
+        $item1->status = 'single';
+        $item2->status = 'single';
+        $item1->detail = ['is_locked' => true];
+        $this->assertFalse($this->service->areItemsMergeable($item1, $item2));
+    }
+
+    /**
+     * @test
+     */
+    public function it_checks_is_contiguous()
+    {
+        $prev = new ScheduleItem();
+        $prev->start_time = '08:00';
+        $prev->end_time = '08:50';
+
+        $next = new ScheduleItem();
+        $next->start_time = '09:00';
+        $next->end_time = '09:50';
+
+        // 10 dakika teneffüs -> bitişik
+        $this->assertTrue($this->service->isContiguous($prev, $next, 10));
+
+        // Tam bitişik (08:50 başlama) -> bitişik
+        $next->start_time = '08:50';
+        $this->assertTrue($this->service->isContiguous($prev, $next, 10));
+
+        // 15 dakika boşluk (teneffüs 10 dk) -> bitişik değil
+        $next->start_time = '09:05';
+        $this->assertFalse($this->service->isContiguous($prev, $next, 10));
     }
 }

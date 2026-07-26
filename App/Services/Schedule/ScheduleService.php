@@ -1042,7 +1042,8 @@ class ScheduleService extends BaseService
                 unset($segDetail['displaced_preferred']);
                 $newItem->detail = !empty($segDetail) ? $segDetail : null;
                 $newItem->create();
-                $createdItems[] = $newItem;
+                $mergedItem = $this->timelineService->mergeAdjacentItems($newItem, $break);
+                $createdItems[] = $mergedItem;
             }
         }
 
@@ -1302,7 +1303,8 @@ class ScheduleService extends BaseService
             // TimelineService'i güncellediğimizi varsayarsak segment['detail'] olmalı.
             $newItem->detail = $seg['detail'] ?? null;
             $newItem->create();
-            $createdGroupIds[] = $newItem->id;
+            $mergedItem = $this->timelineService->mergeAdjacentItems($newItem, $break);
+            $createdGroupIds[] = $mergedItem->id;
         }
 
         return $createdGroupIds;

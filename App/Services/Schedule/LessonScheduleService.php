@@ -281,7 +281,11 @@ class LessonScheduleService extends ScheduleService
             }
 
             $item->create();
-            $createdIds[] = $item->id;
+
+            $breakMinutes = (int) getSettingValue('break', 'lesson', 10);
+            $mergedItem = $this->timelineService->mergeAdjacentItems($item, $breakMinutes);
+
+            $createdIds[] = $mergedItem->id;
         }
 
         return $createdIds;

@@ -4,6 +4,7 @@ namespace App\Services\Schedule;
 
 
 use App\Models\Lesson;
+use App\Models\ScheduleItem;
 
 /**
  * TimelineService
@@ -156,5 +157,190 @@ class TimelineService
         }
 
         return $isGroup ? 'group' : 'single';
+    }
+
+    /**
+     * Verilen schedule item'ın hemen öncesinde ve sonrasında aynı ders/grup verisine sahip
+     * bitişik item'lar varsa bunları tek bir item olarak birleştirir.
+     * 
+     * @param ScheduleItem $anchor İşlem yapılacak merkez item
+     * @param int $break Teneffüs/boşluk süresi (dakika)
+     * @return ScheduleItem Birleştirilmiş veya orijinal item
+     */
+    public function mergeAdjacentItems(ScheduleItem $anchor, int $break = 10): ScheduleItem
+    {
+        if (!$anchor || !$anchor->id || !$anchor->schedule_id) {
+            return $anchor;
+        }
+
+        // Preferred ve Unavailable item'lar birleştirilmez
+        if (in_array($anchor->status, ['preferred', 'unavailable'])) {
+            return $anchor;
+        }
+
+        // Kilitli item'lar birleştirilmez
+        if (!empty($anchor->detail['is_locked'])) {
+            return $anchor;
+        }
+
+        // Aynı schedule, gün ve haftaya ait tüm item'ları çek
+        $allItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $anchor->schedule_id,
+            'day_index'   => $anchor->day_index,
+            'week_index'  => $anchor->week_index
+        ])->all();
+
+        if (count($allItems) <= 1) {
+            return $anchor;
+        }
+
+        // Başlangıç saatine göre sırala
+        usort($allItems, fn($a, $b) => strcmp($a->getShortStartTime(), $b->getShortStartTime()));
+
+        // Anchor item'ın sıralı listedeki indeksini bul
+        $anchorIndex = -1;
+        foreach ($allItems as $idx => $item) {
+            if ($item->id === $anchor->id) {
+                $anchorIndex = $idx;
+                break;
+            }
+        }
+
+        if ($anchorIndex === -1) {
+            return $anchor;
+        }
+
+        $mergeCandidates = [$anchor];
+
+        // Sola (geriye) doğru tara
+        $current = $anchor;
+        for ($i = $anchorIndex - 1; $i >= 0; $i--) {
+            $prev = $allItems[$i];
+            if ($this->areItemsMergeable($current, $prev) && $this->isContiguous($prev, $current, $break)) {
+                array_unshift($mergeCandidates, $prev);
+                $current = $prev;
+            } else {
+                break;
+            }
+        }
+
+        // Sağa (ileri) doğru tara
+        $current = $anchor;
+        for ($i = $anchorIndex + 1; $i < count($allItems); $i++) {
+            $next = $allItems[$i];
+            if ($this->areItemsMergeable($current, $next) && $this->isContiguous($current, $next, $break)) {
+                $mergeCandidates[] = $next;
+                $current = $next;
+            } else {
+                break;
+            }
+        }
+
+        // Eğer birleştirilecek başka item yoksa anchor'ı aynen döndür
+        if (count($mergeCandidates) <= 1) {
+            return $anchor;
+        }
+
+        // Birleşik zaman aralığını hesapla
+        $startTime = $mergeCandidates[0]->getShortStartTime();
+        $endTime   = $mergeCandidates[count($mergeCandidates) - 1]->getShortEndTime();
+
+        // displaced_preferred verilerini birleştir
+        $mergedDisplacedPreferred = [];
+        foreach ($mergeCandidates as $cand) {
+            if (!empty($cand->detail['displaced_preferred']) && is_array($cand->detail['displaced_preferred'])) {
+                foreach ($cand->detail['displaced_preferred'] as $dp) {
+                    $mergedDisplacedPreferred[] = $dp;
+                }
+            }
+        }
+
+        $detail = $anchor->detail ?? [];
+        if (!empty($mergedDisplacedPreferred)) {
+            // Mükerrer verileri temizle
+            $uniqueDp = [];
+            foreach ($mergedDisplacedPreferred as $dp) {
+                $key = ($dp['start'] ?? '') . '-' . ($dp['end'] ?? '');
+                $uniqueDp[$key] = $dp;
+            }
+            $detail['displaced_preferred'] = array_values($uniqueDp);
+        }
+
+        // Birleşen tüm elemanları sil
+        foreach ($mergeCandidates as $cand) {
+            $cand->delete();
+        }
+
+        // Yeni birleştirilmiş item'ı oluştur
+        $mergedItem = new ScheduleItem();
+        $mergedItem->schedule_id = $anchor->schedule_id;
+        $mergedItem->day_index   = $anchor->day_index;
+        $mergedItem->week_index  = $anchor->week_index;
+        $mergedItem->start_time  = $startTime;
+        $mergedItem->end_time    = $endTime;
+        $mergedItem->status      = $anchor->status;
+        $mergedItem->data        = $anchor->data;
+        $mergedItem->detail      = !empty($detail) ? $detail : null;
+        $mergedItem->create();
+
+        return $mergedItem;
+    }
+
+    /**
+     * İki schedule item'ın birleştirilebilir olup olmadığını kontrol eder
+     * 
+     * @param ScheduleItem $item1
+     * @param ScheduleItem $item2
+     * @return bool
+     */
+    public function areItemsMergeable(ScheduleItem $item1, ScheduleItem $item2): bool
+    {
+        if ($item1->status !== $item2->status) {
+            return false;
+        }
+
+        if (in_array($item1->status, ['preferred', 'unavailable'])) {
+            return false;
+        }
+
+        if (!empty($item1->detail['is_locked']) || !empty($item2->detail['is_locked'])) {
+            return false;
+        }
+
+        // Data karşılaştırması
+        $data1 = $item1->data ?? [];
+        $data2 = $item2->data ?? [];
+        if (serialize($data1) !== serialize($data2)) {
+            return false;
+        }
+
+        // Detail karşılaştırması (displaced_preferred ve is_locked hariç)
+        $detail1 = $item1->detail ?? [];
+        $detail2 = $item2->detail ?? [];
+        unset($detail1['displaced_preferred'], $detail1['is_locked']);
+        unset($detail2['displaced_preferred'], $detail2['is_locked']);
+
+        return serialize($detail1) === serialize($detail2);
+    }
+
+    /**
+     * İki item'ın zaman olarak bitişik olup olmadığını kontrol eder
+     * 
+     * @param ScheduleItem $prev Öncelikli item
+     * @param ScheduleItem $next Sonraki item
+     * @param int $breakMinutes İzin verilen maksimum teneffüs/boşluk süresi (dakika)
+     * @return bool
+     */
+    public function isContiguous(ScheduleItem $prev, ScheduleItem $next, int $breakMinutes): bool
+    {
+        $prevEnd = strtotime($prev->getShortEndTime());
+        $nextStart = strtotime($next->getShortStartTime());
+
+        if ($nextStart < $prevEnd) {
+            return false;
+        }
+
+        $gapMinutes = ($nextStart - $prevEnd) / 60;
+        return $gapMinutes <= $breakMinutes;
     }
 }
