@@ -379,6 +379,118 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    const classroomUnitSelect = document.getElementById("classroom_unit_id");
+    const classroomBuildingSelect = document.getElementById("classroom_building_id");
+    const classroomSelect = document.getElementById("classroom_id");
+
+    if (classroomUnitSelect && classroomBuildingSelect) {
+        classroomUnitSelect.addEventListener("change", function () {
+            const unitId = this.value;
+            if (classroomSelect) {
+                if (classroomSelect.tomselect) {
+                    classroomSelect.tomselect.clear();
+                    classroomSelect.tomselect.clearOptions();
+                    classroomSelect.tomselect.addOption({value: 0, text: "İlk olarak Bina Seçiniz"});
+                    classroomSelect.tomselect.setValue(0, true);
+                    classroomSelect.tomselect.refreshOptions(false);
+                } else {
+                    classroomSelect.innerHTML = "<option value='0'>İlk olarak Bina Seçiniz</option>";
+                }
+            }
+
+            if (classroomBuildingSelect.tomselect) {
+                classroomBuildingSelect.tomselect.clear();
+                classroomBuildingSelect.tomselect.clearOptions();
+                classroomBuildingSelect.tomselect.addOption({value: 0, text: "Bina Seçiniz"});
+                classroomBuildingSelect.tomselect.setValue(0, true);
+                classroomBuildingSelect.tomselect.refreshOptions(false);
+            } else {
+                classroomBuildingSelect.innerHTML = "<option value='0'>Bina Seçiniz</option>";
+            }
+
+            if (!unitId || unitId === "0" || unitId === "") return;
+
+            fetch(`/ajax/getBuildingsList/${unitId}`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const bldgList = data['buildings'] || [];
+                if (classroomBuildingSelect.tomselect) {
+                    classroomBuildingSelect.tomselect.clearOptions();
+                    classroomBuildingSelect.tomselect.addOption({value: 0, text: "Bina Seçiniz"});
+                    bldgList.forEach(bldg => {
+                        classroomBuildingSelect.tomselect.addOption({value: bldg.id, text: bldg.name});
+                    });
+                    classroomBuildingSelect.tomselect.refreshOptions(false);
+                } else {
+                    classroomBuildingSelect.innerHTML = "<option value='0'>Bina Seçiniz</option>";
+                    bldgList.forEach(bldg => {
+                        const option = document.createElement("option");
+                        option.value = bldg.id;
+                        option.textContent = bldg.name;
+                        classroomBuildingSelect.appendChild(option);
+                    });
+                }
+                classroomBuildingSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Binaları alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
+
+    if (classroomBuildingSelect && classroomSelect) {
+        classroomBuildingSelect.addEventListener("change", function () {
+            const buildingId = this.value;
+            if (!buildingId || buildingId === "0" || buildingId === "") {
+                if (classroomSelect.tomselect) {
+                    classroomSelect.tomselect.clear();
+                    classroomSelect.tomselect.clearOptions();
+                    classroomSelect.tomselect.addOption({value: 0, text: "İlk olarak Bina Seçiniz"});
+                    classroomSelect.tomselect.setValue(0, true);
+                    classroomSelect.tomselect.refreshOptions(false);
+                } else {
+                    classroomSelect.innerHTML = "<option value='0'>İlk olarak Bina Seçiniz</option>";
+                }
+                return;
+            }
+
+            fetch(`/ajax/getClassroomsList/${buildingId}`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const roomList = data['classrooms'] || [];
+                if (classroomSelect.tomselect) {
+                    classroomSelect.tomselect.clearOptions();
+                    classroomSelect.tomselect.addOption({value: 0, text: "Derslik Seçiniz"});
+                    roomList.forEach(room => {
+                        classroomSelect.tomselect.addOption({value: room.id, text: room.name});
+                    });
+                    classroomSelect.tomselect.refreshOptions(false);
+                } else {
+                    classroomSelect.innerHTML = "<option value='0'>Derslik Seçiniz</option>";
+                    roomList.forEach(room => {
+                        const option = document.createElement("option");
+                        option.value = room.id;
+                        option.textContent = room.name;
+                        classroomSelect.appendChild(option);
+                    });
+                }
+                classroomSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Derslikleri alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
+
+
     const nameInput = document.getElementById("name");
     const lastNameInput = document.getElementById("last_name");
     const codeInput = document.querySelector("input#code");

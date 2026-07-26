@@ -192,30 +192,51 @@ use function App\Helpers\getSettingValue;
                                 <!-- Derslik Tab -->
                                 <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel"
                                     aria-labelledby="classroom-tab" tabindex="0">
+                                    <!--begin::Row-->
                                     <div class="row">
-                                        <div class="col-12">
-                                            <div class="input-group mb-3">
-                                                <select class="form-select" id="classroom_id" name="classroom_id">
-                                                    <option value="0">Derslik Seçiniz</option>
-                                                    <?php foreach ($classrooms as $classroom): ?>
-                                                        <option value="<?= $classroom->id ?>"><?= $classroom->name ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
-                                                    <button class="btn btn-primary" type="button" id="classroomExport">
-                                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
-                                                    </button>
-                                                    <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
-                                                        <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
-                                                    </button>
+                                        <div class="col-12 mb-3">
+                                            <div class="row">
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id">
+                                                        <option value="">Birim Seçiniz</option>
+                                                        <?php foreach ($units as $unit): ?>
+                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <div class="form-text">
+                                                        Birim seçilmezse tüm derslikler dışa aktarılır
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="form-text">
-                                                Derslik seçilmezse tüm derslik programları dışa aktarılır
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="classroom_building_id" name="classroom_building_id">
+                                                        <option value="0">İlk olarak Birim Seçiniz</option>
+                                                    </select>
+                                                    <div class="form-text">
+                                                        Bina seçilmezse birime ait tüm derslikler dışa aktarılır
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-md-4">
+                                                    <div class="input-group">
+                                                        <select class="form-select" id="classroom_id" name="classroom_id">
+                                                            <option value="0">İlk olarak Bina Seçiniz</option>
+                                                        </select>
+                                                        <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
+                                                            <button class="btn btn-primary" type="button" id="classroomExport">
+                                                                <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
+                                                                <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-text">
+                                                        Derslik seçilmezse binaya ait tüm derslikler dışa aktarılır
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <!--end::Row-->
                                 </div>
                             </div>
                         </div>

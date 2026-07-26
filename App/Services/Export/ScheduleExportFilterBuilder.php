@@ -4,14 +4,13 @@ namespace App\Services\Export;
 
 use App\Enums\ExamType;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
-use App\Models\Classroom;
-use App\Models\Lesson;
-use App\Models\Program;
-use App\Models\User;
 use App\Models\Department;
 use App\Models\Unit;
+use App\Models\Building;
+
 use App\Enums\OwnerType;
 use App\Repositories\UnitRepository;
+use App\Repositories\BuildingRepository;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UserRepository;
@@ -60,6 +59,14 @@ class ScheduleExportFilterBuilder
                 $scheduleFilters = $this->buildForUnit($filters, $typeKey, $typeLabel);
                 break;
 
+            case "building":
+                $scheduleFilters = $this->buildForBuilding($filters, $typeKey, $typeLabel);
+                break;
+
+            case "classroom_unit":
+                $scheduleFilters = $this->buildForClassroomUnit($filters, $typeKey, $typeLabel);
+                break;
+
             case OwnerType::USER->value:
                 $scheduleFilters = $this->buildForUser($filters, $typeKey, $typeLabel);
                 break;
@@ -78,6 +85,7 @@ class ScheduleExportFilterBuilder
 
         return $scheduleFilters;
     }
+
 
     /**
      * Program türüne göre kısa etiket üretir.
@@ -252,6 +260,66 @@ class ScheduleExportFilterBuilder
 
         return $result;
     }
+
+    private function buildForBuilding(array $filters, string $typeKey, string $typeLabel): array
+    {
+        $result = [];
+
+        if (!empty($filters["owner_id"])) {
+            /** @var Building|null $building */
+            $building = (new BuildingRepository())->find($filters['owner_id']);
+            $fileTitle  = $building ? $building->name . ' Derslikleri ' . $typeLabel : "Bina " . $typeLabel;
+            $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => $filters['owner_id']]);
+        } else {
+            $fileTitle  = "Tüm Binaların Derslikleri " . $typeLabel;
+            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+        }
+
+        foreach ($classrooms as $classroom) {
+            $result[] = [
+                'file_title' => $fileTitle,
+                'title'      => $classroom->name . " " . $typeLabel,
+                'type'       => OwnerType::CLASSROOM->value,
+                'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::CLASSROOM->value, $classroom->id, null),
+            ];
+        }
+
+        return $result;
+    }
+
+    private function buildForClassroomUnit(array $filters, string $typeKey, string $typeLabel): array
+    {
+        $result = [];
+
+        if (!empty($filters["owner_id"])) {
+            /** @var Unit|null $unit */
+            $unit        = (new UnitRepository())->find($filters['owner_id']);
+            $fileTitle   = $unit ? $unit->name . ' Derslikleri ' . $typeLabel : "Birim Derslikleri " . $typeLabel;
+            $buildings   = (new BuildingRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id']]);
+            $buildingIds = array_column($buildings, 'id');
+
+            if (!empty($buildingIds)) {
+                $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => ['in' => $buildingIds]]);
+            } else {
+                $classrooms = [];
+            }
+        } else {
+            $fileTitle  = "Tüm Birim Derslikleri " . $typeLabel;
+            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+        }
+
+        foreach ($classrooms as $classroom) {
+            $result[] = [
+                'file_title' => $fileTitle,
+                'title'      => $classroom->name . " " . $typeLabel,
+                'type'       => OwnerType::CLASSROOM->value,
+                'filter'     => $this->baseFilter($filters, $typeKey, OwnerType::CLASSROOM->value, $classroom->id, null),
+            ];
+        }
+
+        return $result;
+    }
+
 
     private function buildForLesson(array $filters, string $typeKey, string $typeLabel): array
     {

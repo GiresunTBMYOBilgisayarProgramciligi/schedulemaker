@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const departmentSelect = document.getElementById("department_id");
     const programSelect = document.getElementById("program_id");
     const lecturerSelect = document.getElementById("lecturer_id");
+    const classroomUnitSelect = document.getElementById("classroom_unit_id");
+    const classroomBuildingSelect = document.getElementById("classroom_building_id");
     const classroomSelect = document.getElementById("classroom_id");
 
     // Tüm click eventlerini tek noktadan yakala
@@ -25,10 +27,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (button.id.endsWith("Export")) {
             const ownerType = button.id === "singlePageExport" ? button.dataset.ownerType :
                 button.id === "lecturerExport" ? "user" :
-                    button.id === "classroomExport" ? "classroom" :
-                        (programSelect && programSelect.value > 0) ? "program" :
-                            (departmentSelect && departmentSelect.value > 0) ? "department" :
-                                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
+                button.id === "classroomExport" ? (
+                    (classroomSelect && classroomSelect.value > 0) ? "classroom" :
+                    (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? "building" :
+                    (classroomUnitSelect && classroomUnitSelect.value > 0) ? "classroom_unit" : "classroom"
+                ) :
+                (programSelect && programSelect.value > 0) ? "program" :
+                (departmentSelect && departmentSelect.value > 0) ? "department" :
+                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
 
             showExportOptionsModal(ownerType, scheduleType, async (options) => {
                 let data = new FormData();
@@ -42,14 +48,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (button.id === "singlePageExport") {
                     data.append("owner_id", button.dataset.ownerId);
+                } else if (button.id === "classroomExport") {
+                    let ownerId = (classroomSelect && classroomSelect.value > 0) ? classroomSelect.value :
+                        (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? classroomBuildingSelect.value :
+                        (classroomUnitSelect && classroomUnitSelect.value > 0) ? classroomUnitSelect.value : "";
+                    if (ownerId) {
+                        data.append("owner_id", ownerId);
+                    }
                 } else {
                     const selectId = button.id === "lecturerExport" ? "lecturer_id" :
-                        button.id === "classroomExport" ? "classroom_id" :
-                            button.id === "departmentAndProgramExport" ? (
-                                programSelect && programSelect.value > 0 ? "program_id" :
-                                    departmentSelect && departmentSelect.value > 0 ? "department_id" :
-                                        unitSelect && unitSelect.value > 0 ? "unit_id" : ""
-                            ) : "";
+                        button.id === "departmentAndProgramExport" ? (
+                            programSelect && programSelect.value > 0 ? "program_id" :
+                                departmentSelect && departmentSelect.value > 0 ? "department_id" :
+                                    unitSelect && unitSelect.value > 0 ? "unit_id" : ""
+                        ) : "";
 
                     if (selectId) {
                         const selectElement = document.getElementById(selectId);
@@ -87,8 +99,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     data.append("owner_type", "user");
                     if (lecturerSelect && lecturerSelect.value > 0) data.append("owner_id", lecturerSelect.value);
                 } else if (button.id === "classroomCalendar") {
-                    data.append("owner_type", "classroom");
-                    if (classroomSelect && classroomSelect.value > 0) data.append("owner_id", classroomSelect.value);
+                    if (classroomSelect && classroomSelect.value > 0) {
+                        data.append("owner_type", "classroom");
+                        data.append("owner_id", classroomSelect.value);
+                    } else if (classroomBuildingSelect && classroomBuildingSelect.value > 0) {
+                        data.append("owner_type", "building");
+                        data.append("owner_id", classroomBuildingSelect.value);
+                    } else if (classroomUnitSelect && classroomUnitSelect.value > 0) {
+                        data.append("owner_type", "classroom_unit");
+                        data.append("owner_id", classroomUnitSelect.value);
+                    } else {
+                        data.append("owner_type", "classroom");
+                    }
                 } else if (button.id === "departmentAndProgramCalendar") {
                     if (programSelect && programSelect.value > 0) {
                         data.append("owner_type", "program");
@@ -114,6 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+
     /**
      * Dışa aktarma seçeneklerini soran modalı gösterir
      */
@@ -129,14 +152,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 <label class="form-check-label" for="show_code">Ders Kodu</label>
             </div>`;
 
-        if (ownerType === "program" || ownerType === "classroom" || ownerType === "department" || ownerType === "unit" || (isExam && ownerType === "user")) {
+        if (ownerType === "program" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit" || ownerType === "department" || ownerType === "unit" || (isExam && ownerType === "user")) {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_lecturer" checked>
                 <label class="form-check-label" for="show_lecturer">Hoca Adı</label>
             </div>`;
         }
 
-        if (ownerType === "user" || ownerType === "classroom") {
+        if (ownerType === "user" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit") {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_program" checked>
                 <label class="form-check-label" for="show_program">Program/Bölüm Adı</label>

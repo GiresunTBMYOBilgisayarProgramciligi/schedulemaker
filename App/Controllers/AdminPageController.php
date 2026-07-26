@@ -939,9 +939,10 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
 
         return [
-            'buildings'  => (new BuildingRepository())->getAuthorized('view'),
+            'buildings'  => (new BuildingRepository())->getAuthorized('view', [], ['unit']),
             'page_title' => 'Bina Listesi',
         ];
+
     }
 
     public function getAddBuildingPageData(AssetManager $assetManager): array

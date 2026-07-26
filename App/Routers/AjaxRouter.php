@@ -8,7 +8,6 @@ use App\Controllers\ClassroomController;
 use App\Controllers\DepartmentController;
 use App\Controllers\UnitController;
 use App\Controllers\BuildingController;
-use App\Services\LessonService;
 use App\Controllers\LessonController;
 use App\Controllers\ProgramController;
 use App\Controllers\ScheduleController;
@@ -17,13 +16,8 @@ use App\Controllers\Auth\PasswordResetController;
 
 use App\Controllers\SettingsController;
 use App\Core\Router;
-use App\Services\Import\UserImporter;
-use App\Services\Import\LessonImporter;
-use App\Models\Lesson;
 use App\Models\User;
 use Exception;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use App\Core\Gate;
 use App\Attributes\AuthRequired;
 use App\Attributes\PublicAction;
 
@@ -359,6 +353,27 @@ class AjaxRouter extends Router
         $this->response = (new DepartmentController())->getDepartmentsListResponse((int)$unit_id);
         $this->sendResponse();
     }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getBuildingsListAction($unit_id): void
+    {
+        $this->response = (new BuildingController())->getBuildingsListResponse((int)$unit_id);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getClassroomsListAction($building_id): void
+    {
+        $this->response = (new ClassroomController())->getClassroomsListResponse((int)$building_id);
+        $this->sendResponse();
+    }
+
 
     /*
      * Schedules Ajax Actions

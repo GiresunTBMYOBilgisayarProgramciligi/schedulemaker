@@ -8,11 +8,9 @@ use App\Core\Controller;
 use App\Models\Classroom;
 use App\Services\ClassroomService;
 use App\Validators\ClassroomValidator;
-use App\DTOs\ClassroomDTO;
 use App\Core\Gate;
-use App\Enums\ClassroomType;
+use App\Repositories\ClassroomRepository;
 use Exception;
-use App\Exceptions\ValidationException;
 
 /**
  * Controller sınıfından türetilmiştir. Derslikler ile ilgili işlemleri yönetir.
@@ -22,6 +20,24 @@ class ClassroomController extends Controller
     protected string $table_name = "classrooms";
     protected string $modelName = "App\Models\Classroom";
 
+    /**
+     * AjaxRouter için derslik listesi döner (binaya göre filtreli, yetki kontrollü).
+     */
+    public function getClassroomsListResponse(int $building_id): array
+    {
+        $action = $_GET['action'] ?? 'view';
+        $criteria = $building_id > 0 ? ['building_id' => $building_id] : [];
+        if ($action === 'public') {
+            $classrooms = (new ClassroomRepository())->findBy($criteria);
+        } else {
+            $classrooms = (new ClassroomRepository())->getAuthorized($action, $criteria);
+        }
+
+        return [
+            'status'     => 'success',
+            'classrooms' => $classrooms,
+        ];
+    }
 
 
     /**

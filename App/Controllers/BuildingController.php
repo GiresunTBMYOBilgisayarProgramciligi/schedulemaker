@@ -30,6 +30,26 @@ class BuildingController extends Controller
     }
 
     /**
+     * AjaxRouter için bina listesi döner (birime göre filtreli, yetki kontrollü).
+     */
+    public function getBuildingsListResponse(int $unit_id): array
+    {
+        $action = $_GET['action'] ?? 'view';
+        $criteria = $unit_id > 0 ? ['unit_id' => $unit_id] : [];
+        if ($action === 'public') {
+            $buildings = (new BuildingRepository())->findBy($criteria);
+        } else {
+            $buildings = (new BuildingRepository())->getAuthorized($action, $criteria);
+        }
+
+        return [
+            'status'    => 'success',
+            'buildings' => $buildings,
+        ];
+    }
+
+
+    /**
      * Yeni bina oluşturur (POST /ajax/building/add)
      */
     public function store(array $requestData): array
