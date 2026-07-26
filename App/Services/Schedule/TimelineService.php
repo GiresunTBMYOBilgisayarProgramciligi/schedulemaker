@@ -2,7 +2,7 @@
 
 namespace App\Services\Schedule;
 
-
+use App\Services\BaseService;
 use App\Models\Lesson;
 use App\Models\ScheduleItem;
 
@@ -12,7 +12,7 @@ use App\Models\ScheduleItem;
  * Schedule item'larını birleştirme (merge) ve parçalama (partial delete) 
  * gibi karmaşık zaman çizelgesi operasyonlarını yönetir.
  */
-class TimelineService
+class TimelineService extends BaseService
 {
     /**
      * "Flatten Timeline" mantığı ile zaman çizelgesini kritik noktalara ayırır.
@@ -161,7 +161,7 @@ class TimelineService
 
     /**
      * Verilen schedule item'ın hemen öncesinde ve sonrasında aynı ders/grup verisine sahip
-     * bitişik item'lar varsa bunları tek bir item olarak birleştirir.
+     * bitişik item'lar varsa mevcuttakileri silip tek bir item olarak birleştirir.
      * 
      * @param ScheduleItem $anchor İşlem yapılacak merkez item
      * @param int $break Teneffüs/boşluk süresi (dakika)
@@ -170,16 +170,26 @@ class TimelineService
     public function mergeAdjacentItems(ScheduleItem $anchor, int $break = 10): ScheduleItem
     {
         if (!$anchor || !$anchor->id || !$anchor->schedule_id) {
+            $this->logger->debug("mergeAdjacentItems atlandı: Geçersiz anchor nesnesi", $this->logContext([
+                'anchor_id' => $anchor->id ?? null
+            ]));
             return $anchor;
         }
 
         // Preferred ve Unavailable item'lar birleştirilmez
         if (in_array($anchor->status, ['preferred', 'unavailable'])) {
+            $this->logger->debug("mergeAdjacentItems atlandı: Special status", $this->logContext([
+                'item_id' => $anchor->id,
+                'status' => $anchor->status
+            ]));
             return $anchor;
         }
 
         // Kilitli item'lar birleştirilmez
         if (!empty($anchor->detail['is_locked'])) {
+            $this->logger->debug("mergeAdjacentItems atlandı: Item kilitli", $this->logContext([
+                'item_id' => $anchor->id
+            ]));
             return $anchor;
         }
 
@@ -191,6 +201,11 @@ class TimelineService
         ])->all();
 
         if (count($allItems) <= 1) {
+            $this->logger->debug("mergeAdjacentItems atlandı: Günde tek item var", $this->logContext([
+                'schedule_id' => $anchor->schedule_id,
+                'day_index' => $anchor->day_index,
+                'item_id' => $anchor->id
+            ]));
             return $anchor;
         }
 
@@ -200,13 +215,16 @@ class TimelineService
         // Anchor item'ın sıralı listedeki indeksini bul
         $anchorIndex = -1;
         foreach ($allItems as $idx => $item) {
-            if ($item->id === $anchor->id) {
+            if ((int)$item->id === (int)$anchor->id) {
                 $anchorIndex = $idx;
                 break;
             }
         }
 
         if ($anchorIndex === -1) {
+            $this->logger->warning("mergeAdjacentItems uyarısı: Anchor sıralı listede bulunamadı", $this->logContext([
+                'item_id' => $anchor->id
+            ]));
             return $anchor;
         }
 
@@ -238,12 +256,19 @@ class TimelineService
 
         // Eğer birleştirilecek başka item yoksa anchor'ı aynen döndür
         if (count($mergeCandidates) <= 1) {
+            $this->logger->debug("mergeAdjacentItems: Birleştirilecek komşu öğe bulunamadı", $this->logContext([
+                'item_id' => $anchor->id,
+                'schedule_id' => $anchor->schedule_id,
+                'day_index' => $anchor->day_index
+            ]));
             return $anchor;
         }
 
         // Birleşik zaman aralığını hesapla
         $startTime = $mergeCandidates[0]->getShortStartTime();
         $endTime   = $mergeCandidates[count($mergeCandidates) - 1]->getShortEndTime();
+        $candidateIds = array_map(fn($c) => (int)$c->id, $mergeCandidates);
+        $oldRanges = array_map(fn($c) => $c->getShortStartTime() . '-' . $c->getShortEndTime(), $mergeCandidates);
 
         // displaced_preferred verilerini birleştir
         $mergedDisplacedPreferred = [];
@@ -266,6 +291,16 @@ class TimelineService
             $detail['displaced_preferred'] = array_values($uniqueDp);
         }
 
+        $this->logger->info("Schedule items otomatik birleştiriliyor (auto-merge)", $this->logContext([
+            'schedule_id'   => $anchor->schedule_id,
+            'day_index'     => $anchor->day_index,
+            'status'        => $anchor->status,
+            'merged_count'  => count($mergeCandidates),
+            'candidate_ids' => $candidateIds,
+            'old_ranges'    => $oldRanges,
+            'new_range'     => $startTime . '-' . $endTime
+        ]));
+
         // Birleşen tüm elemanları sil
         foreach ($mergeCandidates as $cand) {
             $cand->delete();
@@ -283,6 +318,12 @@ class TimelineService
         $mergedItem->detail      = !empty($detail) ? $detail : null;
         $mergedItem->create();
 
+        $this->logger->info("Auto-merge tamamlandı, yeni item oluşturuldu", $this->logContext([
+            'new_item_id'  => $mergedItem->id,
+            'schedule_id'  => $mergedItem->schedule_id,
+            'time_range'   => $startTime . '-' . $endTime
+        ]));
+
         return $mergedItem;
     }
 
@@ -296,6 +337,10 @@ class TimelineService
     public function areItemsMergeable(ScheduleItem $item1, ScheduleItem $item2): bool
     {
         if ($item1->status !== $item2->status) {
+            $this->logger->debug("Merge engel (Status farkı)", $this->logContext([
+                'item1_id' => $item1->id, 'status1' => $item1->status,
+                'item2_id' => $item2->id, 'status2' => $item2->status
+            ]));
             return false;
         }
 
@@ -304,13 +349,22 @@ class TimelineService
         }
 
         if (!empty($item1->detail['is_locked']) || !empty($item2->detail['is_locked'])) {
+            $this->logger->debug("Merge engel (Öğe kilitli)", $this->logContext([
+                'item1_id' => $item1->id, 'item1_locked' => !empty($item1->detail['is_locked']),
+                'item2_id' => $item2->id, 'item2_locked' => !empty($item2->detail['is_locked'])
+            ]));
             return false;
         }
 
-        // Data karşılaştırması
-        $data1 = $item1->data ?? [];
-        $data2 = $item2->data ?? [];
-        if (serialize($data1) !== serialize($data2)) {
+        // Data karşılaştırması (Normalize edilmiş halleri ile)
+        $normData1 = $this->normalizeData($item1->data);
+        $normData2 = $this->normalizeData($item2->data);
+
+        if (serialize($normData1) !== serialize($normData2)) {
+            $this->logger->debug("Merge engel (Data uyuşmazlığı)", $this->logContext([
+                'item1_id' => $item1->id, 'data1' => $normData1,
+                'item2_id' => $item2->id, 'data2' => $normData2
+            ]));
             return false;
         }
 
@@ -320,7 +374,49 @@ class TimelineService
         unset($detail1['displaced_preferred'], $detail1['is_locked']);
         unset($detail2['displaced_preferred'], $detail2['is_locked']);
 
-        return serialize($detail1) === serialize($detail2);
+        if (serialize($detail1) !== serialize($detail2)) {
+            $this->logger->debug("Merge engel (Detail uyuşmazlığı)", $this->logContext([
+                'item1_id' => $item1->id, 'detail1' => $detail1,
+                'item2_id' => $item2->id, 'detail2' => $detail2
+            ]));
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * ScheduleItem data alanını tutarlı sıralama ile normalize eder
+     * 
+     * @param mixed $data
+     * @return array
+     */
+    private function normalizeData($data): array
+    {
+        if (empty($data) || !is_array($data)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($data as $item) {
+            if (is_array($item)) {
+                ksort($item);
+                $normalized[] = $item;
+            }
+        }
+
+        usort($normalized, function ($a, $b) {
+            $l1 = (int)($a['lesson_id'] ?? 0);
+            $l2 = (int)($b['lesson_id'] ?? 0);
+            if ($l1 !== $l2) {
+                return $l1 <=> $l2;
+            }
+            $u1 = (int)($a['lecturer_id'] ?? 0);
+            $u2 = (int)($b['lecturer_id'] ?? 0);
+            return $u1 <=> $u2;
+        });
+
+        return $normalized;
     }
 
     /**
@@ -337,10 +433,23 @@ class TimelineService
         $nextStart = strtotime($next->getShortStartTime());
 
         if ($nextStart < $prevEnd) {
+            $this->logger->debug("Merge engel (Zaman örtüşmesi veya çakışması)", $this->logContext([
+                'prev_id' => $prev->id, 'prev_end' => $prev->getShortEndTime(),
+                'next_id' => $next->id, 'next_start' => $next->getShortStartTime()
+            ]));
             return false;
         }
 
         $gapMinutes = ($nextStart - $prevEnd) / 60;
-        return $gapMinutes <= $breakMinutes;
+        if ($gapMinutes > $breakMinutes) {
+            $this->logger->debug("Merge engel (Teneffüs sınırından fazla saat aralığı)", $this->logContext([
+                'prev_id' => $prev->id, 'prev_end' => $prev->getShortEndTime(),
+                'next_id' => $next->id, 'next_start' => $next->getShortStartTime(),
+                'gap_minutes' => $gapMinutes, 'max_allowed_break' => $breakMinutes
+            ]));
+            return false;
+        }
+
+        return true;
     }
 }
