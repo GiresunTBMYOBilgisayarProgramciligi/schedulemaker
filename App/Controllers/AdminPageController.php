@@ -205,6 +205,25 @@ class AdminPageController extends Controller
         
 
         $allAssignments = (new LessonAssignmentRepository())->findByLecturer($user->id);
+
+        $semesterOrder = [
+            'Güz'   => 1,
+            'Bahar' => 2,
+            'Yaz'   => 3,
+        ];
+
+        usort($allAssignments, function ($a, $b) use ($semesterOrder) {
+            $yearCmp = strnatcmp($a->academic_year ?? '', $b->academic_year ?? '');
+            if ($yearCmp !== 0) {
+                return $yearCmp;
+            }
+
+            $orderA = $semesterOrder[$a->semester ?? ''] ?? 99;
+            $orderB = $semesterOrder[$b->semester ?? ''] ?? 99;
+
+            return $orderA <=> $orderB;
+        });
+
         $groupedAssignments = [];
         foreach ($allAssignments as $asgn) {
             if ($asgn->lesson) {
