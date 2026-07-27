@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.2.9] - 2026-07-27
+
+### Added
+- **Ders Görevlendirmesi Mimarisi (LessonAssignment)**: Ders ve öğretim elemanı atamaları için dönemsel `LessonAssignment` mimarisine geçildi (#85).
+- **Otomatik Hücre Birleştirme (Auto-Merge)**: Ders programında aynı derse ait bitişik saat dilimindeki öğeler için otomatik birleştirme ve detaylı loglama altyapısı eklendi.
+- **Öğe Kilitleme**: Ders ve sınav programı öğeleri (slotları) için kilitleme (lock) özelliği eklendi.
+- **Bina & Derslik Geliştirmeleri**: Bina listesinde bağlı birim adlarının gösterimi, derslik sayfasında bina ilişkisi ve kademeli seçim altyapısı eklendi.
+
+### Changed
+- **Listeler ve İkonlar**: Arayüz listelerinde görsel ikon düzenlemeleri ve iyileştirmeler yapıldı (#78).
+- **Kod Mimarisi (Clean Code)**: Satır içi (inline) namespace kullanımı kaldırılarak PSR standartlarına uygun `use` bildirimlerine geçildi.
+
+### Fixed
+- **Sınav Programı Sürükle-Bırak & Model Düzeltmeleri**: Sınav programında sürükle-bırak taşıma, veritabanı sorgularındaki `semester` sütun hataları ve `Lesson::IsScheduleComplete()` metodundaki çakışmalar giderildi.
+- **Program Dışı Takvimler ve Dışa Aktarım**: Program dışı takvimlerde `semester_no` kısıtlamaları kaldırıldı, veritabanı temizlendi ve dışa aktarım eşleşme hataları düzeltildi.
+- **Yetkilendirme (Policy & Importer)**: `LessonPolicy::create`, `UserImporter` ve `LessonImporter` sınıflarındaki `Gate::check` yetki doğrulamaları ve kaskad izin kontrolleri düzeltildi.
+- **Null-Safe Erişimler**: `stdClass` nesnelerinde öğretim elemanı (lecturer) erişimleri null-safe hale getirilerek tanımsız özellik (undefined property) hataları engellendi.
+
+## [0.2.8] - 2026-07-23
+
+### Added
+- **Kaskad & Merkezi Yetkilendirme (Gate & Policy)**: Rol hiyerarşisi genişletildi; `Gate` ve `BasePolicy` ayrımı, `PermissionType` enum yapısı ve otomatik kaskad (hiyerarşik yukarı/aşağı yetki kontrolü) altyapısı entegre edildi (#80).
+- **Bina & Birim İlişkisi**: Binaların birimlere (`unit_id`) bağlanması ve yetki mimarisi entegrasyonu sağlandı.
+- **Dinamik AJAX Form Seçimleri**: Formlarda birim, bölüm ve program seçimleri için sıralı ve dinamik AJAX listeleme özelliği eklendi (#81).
+- **Yetki Tabanlı Arayüz Elemanları**: Liste ve detay sayfalarındaki işlem butonları (Yeni Ekle, Sil vb.) ile sidebar menü öğeleri kullanıcının yetkilerine göre şartlı gösterilecek şekilde güncellendi.
+- **Merkezi Hata Sayfası**: Merkezi yetkilendirme istisnaları (Authorization Exception) ve hata görünümleri için birleşik hata sayfası eklendi.
+
+### Changed
+- **Dinamik Veritabanı Filtreleme Mimarisi**: Controller katmanındaki manuel yetki filtrelemeleri temizlenerek `BaseRepository::getAuthorized()` metoduna taşındı; veri sorgularının dinamik yetki filtrelemesiyle çalışması sağlandı.
+- **Dışa Aktarma (Export)**: Program ve veri dışa aktarma (export) süreçlerinde birim ve yetki entegrasyonu tamamlandı (#84).
+- **İçe Aktarma (Import)**: Öğretim elemanı (Hoca) ve ders içe aktarma (Excel) işlemleri düzenlendi, süreçlere yetki kontrolleri dahil edildi (#83).
+- **Arayüz ve Tema**: AdminLTE teması için açık/koyu mod seçeneği, ayarlar sayfası tasarımı yenilemesi ve sidebar menü sadeleştirmeleri yapıldı.
+- **İlişkisel Mimari Temizliği**: Kullanılmayan `parent_lesson_id` sütunları kaldırılarak modeller arası ilişkisel yapıya geçildi.
+
+### Fixed
+- Birim silinirken bağlı bölümlerin pasif duruma getirilmesi ve uygun hata mesajının görüntülenmesi sağlandı.
+- `SchedulePolicy` update metodunda oluşan `undefined property lesson_id` hatası çözüldü.
+- Manager ve Submanager rollerinin birim kısıtlamaları (`unit_id`) ve `manage_*` yetki kontrolleri düzeltildi.
+- Bölüm ekleme formlarında TomSelect sıfırlanma ve doğrulama (validation) kuralları hataları giderildi.
+- Derslik ve ders programı düzenleme sayfalarında `AvailabilityService` entegrasyonu yapılarak yalnızca yetkili olunan derslerin listelenmesi sağlandı.
+- Policy sınıflarında nullable User kabul eden durumlarda konuk (guest) erişimine izin verecek Gate kontrolü düzeltildi.
+
 ## [0.2.7] - 2026-07-16
 
 ### Added
