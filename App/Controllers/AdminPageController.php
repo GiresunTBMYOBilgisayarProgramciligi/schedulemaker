@@ -213,7 +213,7 @@ class AdminPageController extends Controller
         ];
 
         usort($allAssignments, function ($a, $b) use ($semesterOrder) {
-            $yearCmp = strnatcmp($a->academic_year ?? '', $b->academic_year ?? '');
+            $yearCmp = strnatcmp($b->academic_year ?? '', $a->academic_year ?? '');
             if ($yearCmp !== 0) {
                 return $yearCmp;
             }
