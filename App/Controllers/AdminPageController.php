@@ -456,8 +456,11 @@ class AdminPageController extends Controller
         $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ["in" => ['admin', 'user']]]);
         // Mevcut hocanın listede her zaman görünmesini sağla
         $currentLecturerIds = array_map(fn($l) => $l->id, $view_data['lecturers']);
-        if (!in_array($lesson->lecturer_id, $currentLecturerIds)) {
-            $view_data['lecturers'][] = clone (new UserRepository())->find($lesson->lecturer_id);
+        if (!empty($lesson->lecturer_id) && !in_array($lesson->lecturer_id, $currentLecturerIds)) {
+            $currentLecturer = (new UserRepository())->find($lesson->lecturer_id);
+            if ($currentLecturer) {
+                $view_data['lecturers'][] = clone $currentLecturer;
+            }
         }
         return $view_data;
     }
