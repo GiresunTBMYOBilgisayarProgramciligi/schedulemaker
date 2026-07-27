@@ -28,12 +28,15 @@ abstract class BaseRepository
 
     /**
      * ID'ye göre kayıt bulur
-     * @param int $id
+     * @param int|null $id
      * @return Model|null
      * @throws Exception
      */
-    public function find(int $id): ?Model
+    public function find(?int $id): ?Model
     {
+        if (is_null($id)) {
+            return null;
+        }
         /** @var Model $model */
         $model = new $this->modelClass;
         return $model->find($id);
