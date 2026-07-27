@@ -410,7 +410,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!unitId || unitId === "0" || unitId === "") return;
 
-            fetch(`/ajax/getBuildingsList/${unitId}`, {
+            const actionParam = this.dataset.action ? `?action=${this.dataset.action}` : '';
+            fetch(`/ajax/getBuildingsList/${unitId}${actionParam}`, {
                 method: "POST",
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -458,7 +459,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            fetch(`/ajax/getClassroomsList/${buildingId}`, {
+            const actionParam = this.dataset.action ? `?action=${this.dataset.action}` : '';
+            fetch(`/ajax/getClassroomsList/${buildingId}${actionParam}`, {
                 method: "POST",
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -485,6 +487,57 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
                 new Toast().prepareToast("Hata", "Derslikleri alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
+
+    const lecturerUnitSelect = document.getElementById("lecturer_unit_id");
+    const lecturerSelect = document.getElementById("lecturer_id");
+
+    if (lecturerUnitSelect && lecturerSelect) {
+        lecturerUnitSelect.addEventListener("change", function () {
+            const unitId = this.value;
+            if (lecturerSelect.tomselect) {
+                lecturerSelect.tomselect.clear();
+                lecturerSelect.tomselect.clearOptions();
+                lecturerSelect.tomselect.addOption({value: 0, text: "İlk olarak Birim Seçiniz"});
+                lecturerSelect.tomselect.setValue(0, true);
+                lecturerSelect.tomselect.refreshOptions(false);
+            } else {
+                lecturerSelect.innerHTML = "<option value='0'>İlk olarak Birim Seçiniz</option>";
+            }
+
+            if (!unitId || unitId === "0" || unitId === "") return;
+
+            const actionParam = this.dataset.action ? `?action=${this.dataset.action}` : '';
+            fetch(`/ajax/getLecturersList/${unitId}${actionParam}`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const lectList = data['lecturers'] || [];
+                if (lecturerSelect.tomselect) {
+                    lecturerSelect.tomselect.clearOptions();
+                    lecturerSelect.tomselect.addOption({value: 0, text: "Öğretim Üyesi / Görevlisi Seçiniz"});
+                    lectList.forEach(lect => {
+                        lecturerSelect.tomselect.addOption({value: lect.id, text: lect.name});
+                    });
+                    lecturerSelect.tomselect.refreshOptions(false);
+                } else {
+                    lecturerSelect.innerHTML = "<option value='0'>Öğretim Üyesi / Görevlisi Seçiniz</option>";
+                    lectList.forEach(lect => {
+                        const option = document.createElement("option");
+                        option.value = lect.id;
+                        option.textContent = lect.name;
+                        lecturerSelect.appendChild(option);
+                    });
+                }
+                lecturerSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Hocaları alırken hata oluştu.", "danger");
                 console.error(error);
             });
         });
@@ -540,6 +593,12 @@ document.addEventListener("DOMContentLoaded", function () {
     // Eğer sayfa yüklendiğinde bölüm seçili gelmişse ve program seçili değilse (Yönlendirme ile gelmişse)
     if (departmentSelect && departmentSelect.value !== "0" && departmentSelect.value !== "" && programSelect && (!programSelect.value || programSelect.value === "0")) {
         departmentSelect.dispatchEvent(new Event("change"));
+    }
+
+    if (lecturerUnitSelect && lecturerUnitSelect.value !== "0" && lecturerUnitSelect.value !== "") {
+        if (lecturerSelect && (!lecturerSelect.value || lecturerSelect.value === "0" || lecturerSelect.value === "")) {
+            lecturerUnitSelect.dispatchEvent(new Event("change"));
+        }
     }
 
 });

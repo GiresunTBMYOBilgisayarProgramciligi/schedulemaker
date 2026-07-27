@@ -147,45 +147,68 @@ use function App\Helpers\getSettingValue;
                                 </div>
                                 <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel"
                                     aria-labelledby="lecturer-tab" tabindex="0">
+                                    <!--begin::Row-->
                                     <div class="row">
-                                        <div class="col-12">
-                                            <div class=" input-group mb-3">
-                                                <select class="form-select tom-select " id="lecturer_id"
-                                                    name="lecturer_id"
-                                                    placeholder=" Öğretim Üyesi / Görevlisi Seçimek izin yazınız">
-                                                    <option></option>
-                                                    <?php foreach ($lecturers as $lecturer): ?>
-                                                        <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <button class="btn btn-primary" type="button"
-                                                    id="lecturerScheduleButton" data-only-table="true">
-                                                    Göster
-                                                </button>
+                                        <div class="col-12 mb-3">
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id" data-action="public">
+                                                        <option value="">Birim Seçiniz</option>
+                                                        <?php foreach ($units as $unit): ?>
+                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <div class="input-group">
+                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
+                                                            <option value="0">İlk olarak Birim Seçiniz</option>
+                                                        </select>
+                                                        <button class="btn btn-primary" type="button"
+                                                            id="lecturerScheduleButton" data-only-table="true">
+                                                            Göster
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <!--end::Row-->
                                 </div>
                                 <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel"
                                     aria-labelledby="classroom-tab" tabindex="0">
+                                    <!--begin::Row-->
                                     <div class="row">
-                                        <div class="col-12">
-                                            <div class="input-group mb-3">
-                                                <select class="form-select" id="classroom_id" name="classroom_id">
-                                                    <option value="0">Derslik Seçiniz</option>
-                                                    <?php foreach ($classrooms as $classroom): ?>
-                                                        <option value="<?= $classroom->id ?>"><?= $classroom->name ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <button class="btn btn-primary" type="button"
-                                                    id="classroomScheduleButton" data-only-table="true">
-                                                    Göster
-                                                </button>
+                                        <div class="col-12 mb-3">
+                                            <div class="row">
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id" data-action="public">
+                                                        <option value="">Birim Seçiniz</option>
+                                                        <?php foreach ($units as $unit): ?>
+                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-4">
+                                                    <select class="form-select tom-select" id="classroom_building_id" name="classroom_building_id" data-action="public">
+                                                        <option value="0">İlk olarak Birim Seçiniz</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12 col-md-4">
+                                                    <div class="input-group">
+                                                        <select class="form-select" id="classroom_id" name="classroom_id">
+                                                            <option value="0">İlk olarak Bina Seçiniz</option>
+                                                        </select>
+                                                        <button type="button" class="btn btn-primary"
+                                                            id="classroomScheduleButton" data-only-table="true">
+                                                            Göster
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <!--end::Row-->
                                 </div>
                             </div>
                         </div>
