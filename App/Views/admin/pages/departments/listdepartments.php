@@ -54,7 +54,7 @@ use App\Models\Department;
                             <th>İd</th>
                             <th>Adı</th>
                             <th>Bölüm Başkanı</th>
-                            <th>Üst Birim</th>
+                            <th class="filterable">Üst Birim</th>
                             <th>Aktif</th>
                             <th class="text-center">İşlemler</th>
                         </tr>
