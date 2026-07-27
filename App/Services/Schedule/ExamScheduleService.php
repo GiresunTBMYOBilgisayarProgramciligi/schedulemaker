@@ -266,11 +266,39 @@ class ExamScheduleService extends ScheduleService
 
         // Eğer bu bir program/ders item'ı ise, kendisi primaryProgramItemId
         if (!$programItemId) {
-            $programItemId = $baseItem->id;
+            $programItemId = $baseDetail['program_item_id'] ?? $baseItem->id;
         }
 
-        // 1. Program/Ders item'ları: aynı gün+hafta+zaman ile bul
-        $programSiblings = (new ScheduleItem())
+        $primaryItem = ($programItemId == $baseItem->id) ? $baseItem : (new ScheduleItem())->find($programItemId);
+
+        // İlgili ders ID'lerini bul
+        $lessonId = $primaryItem?->data[0]['lesson_id'] ?? $baseItem->data[0]['lesson_id'] ?? null;
+        $relatedLessonIds = [];
+        if ($lessonId) {
+            $lesson = (new Lesson())->where(['id' => $lessonId])->with(['examChildLessons', 'examParentLesson'])->first();
+            if ($lesson) {
+                $mainLesson = !empty($lesson->examParentLesson) ? $lesson->examParentLesson : $lesson;
+                $relatedLessonIds[] = (int)$mainLesson->id;
+                foreach ($mainLesson->examChildLessons ?? [] as $child) {
+                    $relatedLessonIds[] = (int)$child->id;
+                }
+                if ($mainLesson->group_no > 0) {
+                    $groupSiblings = (new Lesson())->get()->where([
+                        'code' => $mainLesson->code,
+                        'program_id' => $mainLesson->program_id,
+                        'semester_no' => $mainLesson->semester_no,
+                        'group_no' => ['>' => 0]
+                    ])->all();
+                    foreach ($groupSiblings as $sib) {
+                        $relatedLessonIds[] = (int)$sib->id;
+                    }
+                }
+            }
+        }
+        $relatedLessonIds = array_unique($relatedLessonIds);
+
+        // 1. Aynı zaman dilimindeki sınav item'larını getir ve filtrele
+        $candidates = (new ScheduleItem())
             ->get()
             ->where([
                 'day_index' => $baseItem->day_index,
@@ -280,45 +308,46 @@ class ExamScheduleService extends ScheduleService
             ])
             ->all();
 
-        // Sadece midterm/final/makeup tipi schedule'lara ait olanları filtrele
         $siblings = [];
         $siblingIds = [];
+        $scheduleCache = [$schedule->id => $schedule];
 
-        foreach ($programSiblings as $item) {
-            $itemSchedule = (new Schedule())->find($item->schedule_id);
-            if ($itemSchedule && ExamType::isExamType($itemSchedule->type)) {
-                $siblings[] = $item;
-                $siblingIds[] = $item->id;
-            }
-        }
-
-        // 2. Atama (gözetmen/derslik) item'larını detail.program_item_id üzerinden bul
-        // Bu tür item'lar gün/saat eşleşmesine ek olarak detail.program_item_id'ye göre bağlıdır
-        $allExamItems = (new ScheduleItem())
-            ->get()
-            ->where([
-                'day_index' => $baseItem->day_index,
-                'week_index' => $baseItem->week_index,
-                'start_time' => $baseItem->start_time,
-                'end_time' => $baseItem->end_time,
-            ])
-            ->all();
-
-        foreach ($allExamItems as $item) {
-            if (in_array($item->id, $siblingIds)) {
-                continue;
-            }
-
+        foreach ($candidates as $item) {
             $detail = $item->detail;
             if (is_string($detail)) {
                 $detail = json_decode($detail, true);
             }
 
-            if (isset($detail['program_item_id']) && $detail['program_item_id'] == $programItemId) {
-                $itemSchedule = (new Schedule())->find($item->schedule_id);
+            $isMatch = false;
+
+            // a) Bu item primary program item'ın kendisi mi?
+            if ($item->id == $programItemId) {
+                $isMatch = true;
+            }
+            // b) Atama item'ı mı ve program_item_id eşleşiyor mu?
+            elseif (isset($detail['program_item_id']) && $detail['program_item_id'] == $programItemId) {
+                $isMatch = true;
+            }
+            // c) Program/ders item'ı ve ders ID'si bu sınava ait derslerden biri mi?
+            else {
+                $itemLessonId = (int)($item->data[0]['lesson_id'] ?? 0);
+                if ($itemLessonId && in_array($itemLessonId, $relatedLessonIds)) {
+                    $isMatch = true;
+                }
+            }
+
+            if ($isMatch) {
+                $schedId = $item->schedule_id;
+                if (!isset($scheduleCache[$schedId])) {
+                    $scheduleCache[$schedId] = (new Schedule())->find($schedId);
+                }
+                $itemSchedule = $scheduleCache[$schedId];
+
                 if ($itemSchedule && ExamType::isExamType($itemSchedule->type)) {
-                    $siblings[] = $item;
-                    $siblingIds[] = $item->id;
+                    if (!in_array($item->id, $siblingIds)) {
+                        $siblings[] = $item;
+                        $siblingIds[] = $item->id;
+                    }
                 }
             }
         }

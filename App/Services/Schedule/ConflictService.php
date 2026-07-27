@@ -72,9 +72,9 @@ class ConflictService extends BaseService
                 throw new Exception("Geçersiz data formatı - array of objects bekleniyor");
             }
 
-            $lessonId = $data[0]['lesson_id'] ?? null;
-            $lecturerId = $data[0]['lecturer_id'] ?? null;
-            $classroomId = $data[0]['classroom_id'] ?? null;
+            $lessonId = isset($data[0]['lesson_id']) && $data[0]['lesson_id'] !== '' ? (int)$data[0]['lesson_id'] : null;
+            $lecturerId = isset($data[0]['lecturer_id']) && $data[0]['lecturer_id'] !== '' ? (int)$data[0]['lecturer_id'] : null;
+            $classroomId = isset($data[0]['classroom_id']) && $data[0]['classroom_id'] !== '' ? (int)$data[0]['classroom_id'] : null;
 
             if (!$lessonId) {
                 throw new Exception("lesson_id bulunamadı");
@@ -109,18 +109,21 @@ class ConflictService extends BaseService
      * - Eğer item'ın detail.assignments değeri varsa → sınav item'ı (gözetmen+derslik owner'ları)
      * - Yoksa → normal ders item'ı (hoca+derslik+program+ders owner'ları)
      *
-     * @param array    $itemData    Item verisi
-     * @param Lesson   $lesson      İlgili ders
-     * @param int|null $lecturerId  Hoca ID (ders için)
-     * @param int|null $classroomId Derslik ID (ders için)
+     * @param array               $itemData    Item verisi
+     * @param Lesson              $lesson      İlgili ders
+     * @param int|string|null     $lecturerId  Hoca ID (ders için)
+     * @param int|string|null     $classroomId Derslik ID (ders için)
      * @return array Owner listesi [['type' => 'user|classroom|program|lesson', 'id' => int], ...]
      */
     private function determineOwners(
         array $itemData,
         Lesson $lesson,
-        ?int $lecturerId,
-        ?int $classroomId
+        int|string|null $lecturerId = null,
+        int|string|null $classroomId = null
     ): array {
+        $lecturerId = ($lecturerId !== null && $lecturerId !== '') ? (int)$lecturerId : null;
+        $classroomId = ($classroomId !== null && $classroomId !== '') ? (int)$classroomId : null;
+
         $owners = [];
         $examAssignments = $itemData['detail']['assignments'] ?? null;
 
@@ -139,16 +142,20 @@ class ConflictService extends BaseService
             ];
 
             foreach ($examAssignments as $assignment) {
-                $owners[] = [
-                    'type' => 'classroom',
-                    'id' => $assignment['classroom_id'],
-                    'lesson_context' => $lesson
-                ];
-                $owners[] = [
-                    'type' => 'user',
-                    'id' => $assignment['observer_id'],
-                    'lesson_context' => $lesson
-                ];
+                if (!empty($assignment['classroom_id'])) {
+                    $owners[] = [
+                        'type' => 'classroom',
+                        'id' => (int)$assignment['classroom_id'],
+                        'lesson_context' => $lesson
+                    ];
+                }
+                if (!empty($assignment['observer_id'])) {
+                    $owners[] = [
+                        'type' => 'user',
+                        'id' => (int)$assignment['observer_id'],
+                        'lesson_context' => $lesson
+                    ];
+                }
             }
 
             // Sınav programında aynı koda sahip diğer grupları da dahil et (Kullanıcı Talebi: Tek ders olarak işleme girme)

@@ -110,14 +110,20 @@ class ExamScheduleCard extends ScheduleCard {
             });
         }
 
-        // Kilit İşlemi (manage_lockScdheduleItem)
-        const isLocked = lessonCard.dataset.isLocked === 'true';
+        // Sınavı düzenle butonu
         const scheduleItemId = lessonCard.dataset.scheduleItemId;
+        const isLocked = lessonCard.dataset.isLocked === 'true';
         if (scheduleItemId) {
             menuItems.push({
-                text: isLocked ? 'Kilidi Aç' : 'Kilitle',
-                icon: isLocked ? 'bi-unlock' : 'bi-lock',
-                onClick: () => this.toggleLockScheduleItem(scheduleItemId, !isLocked)
+                text: 'Sınavı Düzenle',
+                icon: 'bi-pencil-fill',
+                onClick: () => {
+                    if (isLocked) {
+                        new Toast().prepareToast("Uyarı", "Kilitli bir sınav ögesi düzenlenemez. Önce kilidi açın.", "warning");
+                    } else {
+                        this.editExamScheduleItem(lessonCard);
+                    }
+                }
             });
         }
 
@@ -188,12 +194,104 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     /**
-     * Sınav atama modalını açar (Çoklu derslik ve gözetmen seçimi)
+     * Sınav programı ögesini düzenleme işlemi (Modal açıp var olan verileri yükler,
+     * kullanıcı onayladığında eski ögeyi silip yeni verilerle oluşturur).
      */
-    async openAssignmentModal(title = "Sınav Atama ve Derslik Seçimi") {
+    async editExamScheduleItem(lessonCard) {
+        if (!lessonCard) return;
+
+        const scheduleItemId = lessonCard.dataset.scheduleItemId;
+        const lessonId = lessonCard.dataset.lessonId;
+        const lessonName = lessonCard.dataset.lessonName || 'Ders';
+        const lessonCode = lessonCard.dataset.lessonCode || '';
+        const groupNo = lessonCard.dataset.groupNo || 0;
+        const size = lessonCard.dataset.size || 0;
+        const cell = lessonCard.closest('td');
+
+        if (!scheduleItemId || !cell) return;
+
+        let detail = {};
+        if (lessonCard.dataset.detail) {
+            try {
+                detail = JSON.parse(lessonCard.dataset.detail);
+            } catch (e) {
+                console.error("JSON parse error for lesson card detail", e);
+            }
+        }
+
+        const itemData = this.getLessonItemData(lessonCard);
+        if (!itemData) return;
+
+        const currentHours = this.getDurationInHours(itemData.start_time, itemData.end_time) || 1;
+
+        this.resetDraggedLesson();
+        this.draggedLesson.lesson_id = lessonId;
+        this.draggedLesson.lesson_name = lessonName;
+        this.draggedLesson.lesson_code = lessonCode;
+        this.draggedLesson.group_no = groupNo;
+        this.draggedLesson.size = size;
+        this.draggedLesson.lecturer_id = lessonCard.dataset.lecturerId;
+        this.draggedLesson.end_element = cell;
+        this.draggedLesson.schedule_item_id = scheduleItemId;
+        this.draggedLesson.HTMLElement = lessonCard;
+
+        const initialData = {
+            hours: currentHours,
+            assignments: detail.assignments || [],
+            ignore_remaining: !!detail.ignore_remaining
+        };
+
+        const modalTitle = `${lessonName} - Sınav Düzenle`;
+        const result = await this.openAssignmentModal(modalTitle, initialData);
+
+        if (!result) {
+            this.resetDraggedLesson();
+            return;
+        }
+
+        let classroom = result.classroom || result.assignments?.[0];
+        if (result.assignments && result.assignments.length > 0) {
+            classroom = {
+                id: result.assignments[0].classroom_id,
+                name: result.assignments[0].classroom_name,
+                exam_size: result.assignments[0].classroom_exam_size,
+                size: result.assignments[0].classroom_size
+            };
+        }
+
+        let hours = result.hours;
+
+        try {
+            // 1. Çakışma Kontrolü (Client-side)
+            await this.checkCrash(hours, classroom);
+
+            // 2. Yeni öğeleri oluştur
+            const newItems = this.generateScheduleItems(result, classroom);
+
+            // 3. Silinecek eski öğeyi DTO verisi olarak hazırla
+            const deletedItems = [itemData];
+
+            // 4. Taşıma/güncelleme (Silme + Ekleme tek transaction backend)
+            let moveResult = await this.moveScheduleItems(newItems, deletedItems);
+            if (moveResult) {
+                new Toast().prepareToast("Başarılı", "Sınav bilgileri güncellendi.", "success");
+                await this.refreshScheduleCard();
+            }
+        } catch (errorMessage) {
+            new Toast().prepareToast("Hata", errorMessage, "danger");
+        } finally {
+            this.resetDraggedLesson();
+        }
+    }
+
+    /**
+     * Sınav atama modalını açar (Çoklu derslik ve gözetmen seçimi).
+     * initialData verilirse mevcut verileri doldurur (düzenleme modu).
+     */
+    async openAssignmentModal(title = "Sınav Atama ve Derslik Seçimi", initialData = null) {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
-            let initialHours = 2; // Varsayılan 2 slot
+            let initialHours = initialData ? (parseInt(initialData.hours) || 2) : 2;
             let lessonSize = parseInt(this.draggedLesson.size) || 0;
 
             let modalContentHTML = `
@@ -236,7 +334,9 @@ class ExamScheduleCard extends ScheduleCard {
             const emptySlot = this.draggedLesson.end_element.querySelector('.empty-slot');
             const dateText = emptySlot && emptySlot.dataset.date ? ` (${emptySlot.dataset.date})` : "";
             
-            title = `${this.draggedLesson.lesson_name} - ${days[dayIndex]}${dateText} - ${startTime}`;
+            if (!initialData) {
+                title = `${this.draggedLesson.lesson_name} - ${days[dayIndex]}${dateText} - ${startTime}`;
+            }
             scheduleModal.prepareModal(title, modalContentHTML, true, false, "lg");
             scheduleModal.showModal();
 
@@ -248,6 +348,10 @@ class ExamScheduleCard extends ScheduleCard {
             let remainingCount = scheduleModal.body.querySelector("#remaining-count");
             let ignoreRemainingWrapper = scheduleModal.body.querySelector("#ignore-remaining-wrapper");
             let ignoreRemainingCheck = scheduleModal.body.querySelector("#ignore-remaining-check");
+
+            if (initialData && initialData.ignore_remaining) {
+                ignoreRemainingCheck.checked = true;
+            }
 
             const updateCapacity = () => {
                 let total = 0;
@@ -295,7 +399,7 @@ class ExamScheduleCard extends ScheduleCard {
                                     ts.getOption(optValue)?.classList.remove('d-none');
                                 }
                             });
-                        } else {
+                        } else if (select && select.options) {
                             Array.from(select.options).forEach(option => {
                                 if (option.value && option.value !== currentValue && selectedValues.includes(option.value)) {
                                     option.classList.add('d-none');
@@ -321,7 +425,7 @@ class ExamScheduleCard extends ScheduleCard {
                 return ts;
             };
 
-            const addRow = async (isFirst = false) => {
+            const addRow = async (isFirst = false, initialAssignment = null) => {
                 let rowCount = rowsContainer.querySelectorAll(".row").length;
                 let rowId = `row-${Date.now()}-${rowCount}`;
                 let rowHTML = `
@@ -352,11 +456,30 @@ class ExamScheduleCard extends ScheduleCard {
                     this.fetchAvailableObservers(observerSelect, hoursInput.value)
                 ]);
 
-                // TomSelect'leri AJAX verileri doldurulduktan sonra initialize et
-                //const classroomTS = initTomSelect(classroomSelect, 'Derslik seçin...');
                 const observerTS = initTomSelect(observerSelect, 'Gözetmen seçmek için yazmaya başlayın...');
 
-                if (isFirst && this.draggedLesson.lecturer_id) {
+                if (initialAssignment) {
+                    if (initialAssignment.classroom_id) {
+                        let opt = Array.from(classroomSelect.options).find(o => o.value == initialAssignment.classroom_id);
+                        if (!opt) {
+                            opt = document.createElement('option');
+                            opt.value = initialAssignment.classroom_id;
+                            opt.innerText = initialAssignment.classroom_name || 'Mevcut Derslik';
+                            opt.dataset.examSize = initialAssignment.classroom_exam_size || 0;
+                            classroomSelect.appendChild(opt);
+                        }
+                        classroomSelect.value = initialAssignment.classroom_id;
+                    }
+                    if (initialAssignment.observer_id) {
+                        if (!observerTS.options[initialAssignment.observer_id]) {
+                            observerTS.addOption({
+                                value: initialAssignment.observer_id,
+                                text: initialAssignment.observer_name || 'Mevcut Gözetmen'
+                            });
+                        }
+                        observerTS.setValue(initialAssignment.observer_id);
+                    }
+                } else if (isFirst && this.draggedLesson.lecturer_id) {
                     observerTS.setValue(this.draggedLesson.lecturer_id);
                 }
 
@@ -368,7 +491,6 @@ class ExamScheduleCard extends ScheduleCard {
 
                 if (!isFirst) {
                     rowElement.querySelector(".remove-row-btn").addEventListener("click", () => {
-                        // TomSelect instance'larını temizle
                         const cTS = tomSelectInstances.get(classroomSelect);
                         const oTS = tomSelectInstances.get(observerSelect);
                         if (cTS) { cTS.destroy(); tomSelectInstances.delete(classroomSelect); }
@@ -383,7 +505,13 @@ class ExamScheduleCard extends ScheduleCard {
             };
 
             addRowBtn.addEventListener("click", () => addRow());
-            addRow(true);
+            if (initialData && Array.isArray(initialData.assignments) && initialData.assignments.length > 0) {
+                initialData.assignments.forEach((asgn, index) => {
+                    addRow(index === 0, asgn);
+                });
+            } else {
+                addRow(true);
+            }
 
             scheduleModal.modal.addEventListener("hidden.bs.modal", () => {
                 resolve(null);
@@ -405,10 +533,10 @@ class ExamScheduleCard extends ScheduleCard {
                         isValid = false;
                     } else {
                         selectedData.assignments.push({
-                            classroom_id: classroomSelect.value,
+                            classroom_id: parseInt(classroomSelect.value),
                             classroom_name: classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, ""),
-                            classroom_exam_size: classroomSelect.selectedOptions[0].dataset.examSize,
-                            observer_id: observerSelect.value,
+                            classroom_exam_size: parseInt(classroomSelect.selectedOptions[0].dataset.examSize || 0),
+                            observer_id: parseInt(observerSelect.value),
                             observer_name: observerSelect.selectedOptions[0].innerText
                         });
                     }
@@ -464,18 +592,35 @@ class ExamScheduleCard extends ScheduleCard {
             const movingScheduleItemId = this.draggedLesson?.schedule_item_id || this.draggedLesson?.HTMLElement?.dataset?.scheduleItemId;
 
             for (let i = 0; checkedHours < parseInt(selectedHours); i++) {
-                let row = dropTable.rows[startRowIndex + i];
+                const currentRowIndex = startRowIndex + i;
+                let row = dropTable.rows[currentRowIndex];
                 if (!row) {
-                    console.error("checkCrash: Row not found at index", startRowIndex + i, "for day", targetDayIndex);
+                    console.error("checkCrash: Row not found at index", currentRowIndex, "for day", targetDayIndex);
                     console.error("checkCrash error: Out of bounds"); reject("Eklenen sınav saatleri programın dışına taşıyor.");
                     return;
                 }
 
                 // Sadece ilgili güne ait hücreyi bul
-                let cell = Array.from(row.cells).find(c => parseInt(c.dataset.dayIndex) === targetDayIndex);
+                let cell = Array.from(row.cells).find(c => c.dataset.dayIndex == targetDayIndex);
+
+                // Eğer ilgili satırda hücre bulunamadıysa (üst satırlardaki rowspan nedeniyle atlanmış olabilir)
+                if (!cell) {
+                    for (let r = currentRowIndex - 1; r >= 0; r--) {
+                        let prevRow = dropTable.rows[r];
+                        if (!prevRow) continue;
+                        let prevCell = Array.from(prevRow.cells).find(c => c.dataset.dayIndex == targetDayIndex);
+                        if (prevCell && prevCell.rowSpan) {
+                            let span = parseInt(prevCell.rowSpan);
+                            if (r + span > currentRowIndex) {
+                                cell = prevCell;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if (!cell) {
-                    console.error("checkCrash: Cell not found for targetDayIndex", targetDayIndex, "in row", startRowIndex + i, ". Available dayIndexes:", Array.from(row.cells).map(c => c.dataset.dayIndex));
+                    console.error("checkCrash: Cell not found for targetDayIndex", targetDayIndex, "in row", currentRowIndex, ". Available dayIndexes:", Array.from(row.cells).map(c => c.dataset.dayIndex));
                     console.error("checkCrash error: Table structure inconsistent"); reject("Hücre bulunamadı (Tablo yapısı tutarsız).");
                     return;
                 }
@@ -564,8 +709,8 @@ class ExamScheduleCard extends ScheduleCard {
             }
         }
 
-        let lecturerId = ds.lecturerId;
-        let classroomId = ds.classroomId;
+        let lecturerId = ds.lecturerId ? parseInt(ds.lecturerId) : null;
+        let classroomId = ds.classroomId ? parseInt(ds.classroomId) : null;
 
         // Sınav programı için veri süzme (Program/Ders görünümünde hoca ve derslik null olmalı)
         if (this.owner_type === 'program' || this.owner_type === 'lesson') {
@@ -577,8 +722,8 @@ class ExamScheduleCard extends ScheduleCard {
         const table = cell.closest('table') || this.table;
 
         return {
-            id: ds.scheduleItemId,
-            schedule_id: this.id,
+            id: ds.scheduleItemId ? parseInt(ds.scheduleItemId) : null,
+            schedule_id: parseInt(this.id),
             day_index: dayIndex,
             week_index: parseInt(table?.dataset?.weekIndex || 0),
             start_time: cell.dataset.startTime,
@@ -586,7 +731,7 @@ class ExamScheduleCard extends ScheduleCard {
             status: ds.status || (parseInt(ds.groupNo) > 0 ? "group" : "single"),
             data: [
                 {
-                    lesson_id: ds.lessonId,
+                    lesson_id: ds.lessonId ? parseInt(ds.lessonId) : null,
                     lecturer_id: lecturerId,
                     classroom_id: classroomId
                 }
@@ -710,58 +855,31 @@ class ExamScheduleCard extends ScheduleCard {
             status: (this.draggedLesson.group_no > 0 ? "group" : "single"),
             detail: input.assignments ? { assignments: input.assignments, ...(input.ignore_remaining ? { ignore_remaining: true } : {}) } : null
         }];
+
         const targetDayIndex = parseInt(this.draggedLesson.end_element.dataset.dayIndex);
         const targetTable = this.draggedLesson.end_element.closest('table');
-        const startRowIndex = this.draggedLesson.end_element.closest('tr').rowIndex;
 
         itemsToProcess.forEach(itemInfo => {
-            let currentItem = null;
-            let addedHours = 0;
-            let currentSlotOffset = 0;
-            let hoursNeeded = itemInfo.hours;
+            let hoursNeeded = itemInfo.hours || 1;
+            let startCell = this.draggedLesson.end_element;
+            let startTime = startCell.dataset.startTime;
+            let slotDuration = this.lessonHourToMinute(1) + this.breakDuration;
+            let totalMinutes = hoursNeeded * slotDuration;
+            let endTime = this.addMinutes(startTime, totalMinutes);
 
-            while (addedHours < hoursNeeded) {
-                let rowIndex = startRowIndex + currentSlotOffset;
-                if (rowIndex >= targetTable.rows.length) break;
-
-                let row = targetTable.rows[rowIndex];
-                let cell = Array.from(row.cells).find(c => parseInt(c.dataset.dayIndex) === targetDayIndex);
-
-                if (cell && (cell.classList.contains("drop-zone") || cell === this.draggedLesson.end_element) && !cell.querySelector('.slot-unavailable')) {
-                    if (!currentItem) {
-                        currentItem = {
-                            'id': null,
-                            'schedule_id': this.id,
-                            'day_index': targetDayIndex,
-                            'week_index': parseInt(targetTable.dataset.weekIndex || 0),
-                            'start_time': cell.dataset.startTime,
-                            'end_time': null,
-                            'status': itemInfo.status,
-                            'data': Array.isArray(itemInfo.data) ? itemInfo.data : [itemInfo.data],
-                            'detail': itemInfo.detail || null
-                        };
-                    }
-
-                    let slotDuration = this.lessonHourToMinute(1);
-                    if (currentItem.end_time) {
-                        currentItem.end_time = this.addMinutes(currentItem.end_time, slotDuration + this.breakDuration);
-                    } else {
-                        currentItem.end_time = this.addMinutes(currentItem.start_time, slotDuration);
-                    }
-                    addedHours++;
-                    currentSlotOffset++;
-                } else {
-                    if (currentItem) {
-                        scheduleItems.push(currentItem);
-                        currentItem = null;
-                    }
-                    currentSlotOffset++;
-                }
-            }
-            if (currentItem) {
-                scheduleItems.push(currentItem);
-            }
+            scheduleItems.push({
+                'id': null,
+                'schedule_id': parseInt(this.id),
+                'day_index': targetDayIndex,
+                'week_index': parseInt(targetTable?.dataset?.weekIndex || 0),
+                'start_time': startTime,
+                'end_time': endTime,
+                'status': itemInfo.status,
+                'data': Array.isArray(itemInfo.data) ? itemInfo.data : [itemInfo.data],
+                'detail': itemInfo.detail || null
+            });
         });
+
         return scheduleItems;
     }
 
