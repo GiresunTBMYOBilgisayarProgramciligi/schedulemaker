@@ -89,9 +89,24 @@ class LessonScheduleCard extends ScheduleCard {
             }
         });
 
-        // Kilit İşlemi (manage_lockScdheduleItem)
-        const isLocked = lessonCard.dataset.isLocked === 'true';
+        // Dersliği Düzenle seçeneği
         const scheduleItemId = lessonCard.dataset.scheduleItemId;
+        const isLocked = lessonCard.dataset.isLocked === 'true';
+        if (scheduleItemId) {
+            menuItems.push({
+                text: 'Dersliği Düzenle',
+                icon: 'bi-door-open-fill',
+                onClick: () => {
+                    if (isLocked) {
+                        new Toast().prepareToast("Uyarı", "Kilitli bir ders ögesi düzenlenemez. Önce kilidi açın.", "warning");
+                    } else {
+                        this.editClassroomModal(lessonCard);
+                    }
+                }
+            });
+        }
+
+        // Kilit İşlemi (manage_lockScdheduleItem)
         if (scheduleItemId) {
             menuItems.push({
                 text: isLocked ? 'Kilidi Aç' : 'Kilitle',
@@ -228,6 +243,11 @@ class LessonScheduleCard extends ScheduleCard {
             let addedHours = 0;
             let hoursNeeded = itemInfo.hours;
 
+            let itemData = itemInfo.data;
+            if (classroom && classroom.id && Array.isArray(itemData)) {
+                itemData = itemData.map(d => ({ ...d, classroom_id: classroom.id }));
+            }
+
             while (addedHours < hoursNeeded) {
                 let rowIndex = this.draggedLesson.end_element.closest("tr").rowIndex + currentSlotOffset;
                 if (rowIndex >= this.table.rows.length) break;
@@ -245,7 +265,7 @@ class LessonScheduleCard extends ScheduleCard {
                             'start_time': cell.dataset.startTime,
                             'end_time': null,
                             'status': itemInfo.status,
-                            'data': itemInfo.data,
+                            'data': itemData,
                             'detail': itemInfo.detail || null
                         };
                     }
@@ -384,7 +404,7 @@ class LessonScheduleCard extends ScheduleCard {
      * Ders programı öğelerini kaydetme API çağrısı.
      * Endpoint: /ajax/saveScheduleItem
      */
-    async saveScheduleItems(scheduleItems) {
+    async saveScheduleItems(scheduleItems, suppressToast = false) {
         let data = new FormData();
         data.append('items', JSON.stringify(scheduleItems));
 
@@ -397,16 +417,20 @@ class LessonScheduleCard extends ScheduleCard {
             .then((data) => {
                 if (data.status === "error") {
                     console.error("saveScheduleItems API hatası:", data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
-                    return false;
+                    if (!suppressToast) {
+                        new Toast().prepareToast("Hata", data.msg, "danger");
+                    }
+                    return { status: "error", msg: data.msg };
                 } else {
-                    return data.createdIds || true;
+                    return { status: "success", createdIds: data.createdIds || true };
                 }
             })
             .catch((error) => {
-                console.error("saveScheduleItems sistem hatası:");
-                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
-                return false;
+                console.error("saveScheduleItems sistem hatası:", error);
+                if (!suppressToast) {
+                    new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                }
+                return { status: "error", msg: "Sistem hatası!" };
             });
     }
 
@@ -414,7 +438,7 @@ class LessonScheduleCard extends ScheduleCard {
      * Ders programı öğelerini taşıma API çağrısı (silme + kaydetme tek transaction).
      * Endpoint: /ajax/moveScheduleItems
      */
-    async moveScheduleItems(scheduleItems, deletedItems) {
+    async moveScheduleItems(scheduleItems, deletedItems, suppressToast = false) {
         let data = new FormData();
         data.append('items', JSON.stringify(scheduleItems));
         data.append('deleted_items', JSON.stringify(deletedItems));
@@ -428,16 +452,20 @@ class LessonScheduleCard extends ScheduleCard {
             .then((data) => {
                 if (data.status === "error") {
                     console.error("moveScheduleItems API hatası:", data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
-                    return false;
+                    if (!suppressToast) {
+                        new Toast().prepareToast("Hata", data.msg, "danger");
+                    }
+                    return { status: "error", msg: data.msg };
                 } else {
-                    return data.createdIds || true;
+                    return { status: "success", createdIds: data.createdIds || true };
                 }
             })
             .catch((error) => {
-                console.error("moveScheduleItems sistem hatası:");
-                new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
-                return false;
+                console.error("moveScheduleItems sistem hatası:", error);
+                if (!suppressToast) {
+                    new Toast().prepareToast("Hata", "Sistem hatası!", "danger");
+                }
+                return { status: "error", msg: "Sistem hatası!" };
             });
     }
 
@@ -476,7 +504,7 @@ class LessonScheduleCard extends ScheduleCard {
             .then((data) => {
                 if (data.status === "error") {
                     console.error("deleteScheduleItems API hatası:", data.msg);
-                    new Toast().prepareToast("Hata", data.msg, "danger")
+                    new Toast().prepareToast("Hata", data.msg, "danger");
                     return false;
                 } else {
                     return true;
@@ -489,6 +517,161 @@ class LessonScheduleCard extends ScheduleCard {
             });
     }
 
+    /**
+     * Ders ögesinin dersliğini düzenleme modalını açar.
+     * İlgili schedule_item_id'ye ait tüm slotları otomatik seçerek işlemi tüm parçalar üzerinde yürütür.
+     */
+    async editClassroomModal(lessonCard) {
+        if (!lessonCard) return;
+
+        const scheduleItemId = lessonCard.dataset.scheduleItemId;
+        const targetLessonId = lessonCard.dataset.lessonId;
+        const targetGroupNo = lessonCard.dataset.groupNo;
+        if (!scheduleItemId) return;
+
+        let sameItemCards = Array.from(this.table.querySelectorAll(`.lesson-card[data-schedule-item-id="${scheduleItemId}"]`));
+        if (targetLessonId) {
+            sameItemCards = sameItemCards.filter(card => {
+                if (card.dataset.lessonId !== targetLessonId) return false;
+                if (targetGroupNo && card.dataset.groupNo && card.dataset.groupNo !== targetGroupNo) return false;
+                return true;
+            });
+        }
+        if (sameItemCards.length === 0) sameItemCards = [lessonCard];
+
+        sameItemCards.sort((a, b) => (a.closest('tr')?.rowIndex || 0) - (b.closest('tr')?.rowIndex || 0));
+
+        this.clearSelection();
+        sameItemCards.forEach(card => {
+            card.classList.add('selected-lesson');
+            this.selectedLessonElements.add(card);
+            this.selectedScheduleItemIds.add(scheduleItemId);
+        });
+
+        const firstCard = sameItemCards[0];
+        const lastCard = sameItemCards[sameItemCards.length - 1];
+        const firstCell = firstCard.closest('td');
+        const lastCell = lastCard.closest('td');
+
+        if (!firstCell || !lastCell) {
+            this.clearSelection();
+            return;
+        }
+
+        const fullStartTime = firstCell.dataset.startTime;
+        const fullEndTime = lastCell.dataset.endTime;
+        const totalHours = this.getDurationInHours(fullStartTime, fullEndTime) || sameItemCards.length;
+
+        const baseData = this.getLessonItemData(firstCard);
+        if (!baseData) {
+            this.clearSelection();
+            return;
+        }
+
+        const itemData = {
+            ...baseData,
+            start_time: fullStartTime,
+            end_time: fullEndTime
+        };
+
+        this.resetDraggedLesson();
+        this.draggedLesson = {
+            lesson_id: lessonCard.dataset.lessonId,
+            lesson_name: lessonCard.dataset.lessonName || 'Ders',
+            lesson_code: lessonCard.dataset.lessonCode || '',
+            lesson_hours: totalHours,
+            group_no: lessonCard.dataset.groupNo || 0,
+            size: lessonCard.dataset.size || 0,
+            lecturer_id: lessonCard.dataset.lecturerId,
+            end_element: firstCell,
+            schedule_item_id: scheduleItemId,
+            HTMLElement: firstCard
+        };
+
+        const initialClassroom = {
+            id: lessonCard.dataset.classroomId,
+            name: lessonCard.dataset.classroomName
+        };
+
+        const result = await this.openAssignmentModal(`${this.draggedLesson.lesson_name} - Dersliği Düzenle`, initialClassroom);
+        if (result && result.classroom) {
+            try {
+                await this.checkCrash(result.hours, result.classroom);
+                const newItems = this.generateScheduleItems(result.hours, result.classroom);
+                const moveResult = await this.moveScheduleItems(newItems, [itemData]);
+                if (moveResult && moveResult.status !== 'error') {
+                    new Toast().prepareToast("Başarılı", "Derslik güncellendi.", "success");
+                    await this.refreshScheduleCard();
+                }
+            } catch (errorMessage) {
+                if (typeof errorMessage === 'string') {
+                    new Toast().prepareToast("Hata", errorMessage, "danger");
+                }
+            }
+        }
+
+        this.clearSelection();
+        this.resetDraggedLesson();
+    }
+
+    /**
+     * Sürükle ve bırak veya taşıma işlemlerinde derslik çakışmasını yakalar ve gerekirse derslik seçimi yaptırır.
+     */
+    async dropTableToTable(isBulk = false) {
+        let itemsToMove = [], classroom = null, totalHours = 0, itemsToDelete = [], detailedItems = [];
+
+        const elements = (isBulk && this.selectedLessonElements.size > 0) ? Array.from(this.selectedLessonElements).sort((a, b) => a.closest('tr').rowIndex - b.closest('tr').rowIndex) : [this.draggedLesson.HTMLElement];
+
+        elements.forEach(el => {
+            const data = this.getLessonItemData(el);
+            if (data) {
+                const hours = this.getDurationInHours(data.start_time, data.end_time) || 1;
+                itemsToMove.push({ element: el, data: data });
+                itemsToDelete.push(data);
+                totalHours += hours;
+                detailedItems.push({ hours, data: data.data, status: data.status, originalElement: el });
+                if (!classroom) classroom = { id: el.dataset.classroomId, name: el.querySelector('.lesson-classroom')?.innerText || "", size: el.dataset.classroomSize, exam_size: el.dataset.classroomExamSize };
+            }
+        });
+
+        if (itemsToMove.length === 0) return;
+
+        let moveResult = null;
+        try {
+            await this.checkCrash(totalHours, classroom);
+            const newItems = this.generateScheduleItems(detailedItems, classroom);
+            moveResult = await this.moveScheduleItems(newItems, itemsToDelete, true);
+        } catch (errorMessage) {
+            moveResult = { status: 'error', msg: typeof errorMessage === 'string' ? errorMessage : "Çakışma var" };
+        }
+
+        if (moveResult && moveResult.status === 'success') {
+            await this.refreshScheduleCard();
+        } else if (moveResult && moveResult.status === 'error') {
+            if (this.owner_type !== 'classroom') {
+                const modalResult = await this.openAssignmentModal("Derslik Çakışması - Alternatif Derslik Seçin", null);
+                if (modalResult && modalResult.classroom) {
+                    try {
+                        classroom = modalResult.classroom;
+                        await this.checkCrash(totalHours, classroom);
+                        const newItems = this.generateScheduleItems(detailedItems, classroom);
+                        let retryMove = await this.moveScheduleItems(newItems, itemsToDelete, false);
+                        if (retryMove && retryMove.status !== 'error') {
+                            await this.refreshScheduleCard();
+                            this.resetDraggedLesson();
+                            return;
+                        }
+                    } catch (err) {
+                        new Toast().prepareToast("Hata", typeof err === 'string' ? err : "İşlem sırasında hata oluştu", "danger");
+                    }
+                }
+            } else {
+                new Toast().prepareToast("Hata", moveResult.msg, "danger");
+            }
+        }
+        this.resetDraggedLesson();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Atama ve Çakışma
     // ─────────────────────────────────────────────────────────────────────────
@@ -496,12 +679,12 @@ class LessonScheduleCard extends ScheduleCard {
     /**
      * Ders atama modalını açar
      */
-    async openAssignmentModal(title = "Sınıf ve Saat Seçimi") {
+    async openAssignmentModal(title = "Sınıf ve Saat Seçimi", initialClassroom = null) {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
-            let maxHours = this.draggedLesson.lesson_hours;
-            let initialHours = this.draggedLesson.lesson_hours;
-            let sizeString = this.draggedLesson.size>0 ? this.draggedLesson.size+" Öğrenci için " : "";
+            let maxHours = this.draggedLesson.lesson_hours || 1;
+            let initialHours = this.draggedLesson.lesson_hours || 1;
+            let sizeString = this.draggedLesson.size > 0 ? this.draggedLesson.size + " Öğrenci için " : "";
 
             let modalContentHTML = `
             <form>
@@ -523,8 +706,14 @@ class LessonScheduleCard extends ScheduleCard {
             let selectedHoursInput = scheduleModal.body.querySelector("#selected_hours");
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
 
-            const updateLists = () => {
-                this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
+            const updateLists = async () => {
+                await this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
+                if (initialClassroom && initialClassroom.id) {
+                    let opt = Array.from(classroomSelect.options).find(o => o.value == initialClassroom.id);
+                    if (opt) {
+                        classroomSelect.value = initialClassroom.id;
+                    }
+                }
             };
 
             selectedHoursInput.addEventListener("change", updateLists);
@@ -580,11 +769,17 @@ class LessonScheduleCard extends ScheduleCard {
             let checkedHours = 0;
             const newLessonCode = this.draggedLesson.lesson_code;
             const newGroupNo = this.draggedLesson.group_no;
+            const movingItemId = this.draggedLesson?.schedule_item_id || this.draggedLesson?.HTMLElement?.dataset?.scheduleItemId;
+
+            const isSelfCard = (lesson) => {
+                if (lesson === this.draggedLesson?.HTMLElement || this.selectedLessonElements?.has(lesson)) return true;
+                const id = lesson.dataset.scheduleItemId;
+                return (movingItemId && id && String(id) === String(movingItemId)) || (this.selectedScheduleItemIds && id && this.selectedScheduleItemIds.has(id));
+            };
 
             for (let i = 0; checkedHours < selectedHours; i++) {
                 let row = this.table.rows[this.draggedLesson.end_element.closest("tr").rowIndex + i];
                 if (!row) {
-                    console.error("checkCrash hatası: Ders saatleri programın dışına taşıyor. Row index:", this.draggedLesson.end_element.closest("tr").rowIndex + i);
                     reject("Eklenen ders saatleri programın dışına taşıyor.");
                     return;
                 }
@@ -597,39 +792,36 @@ class LessonScheduleCard extends ScheduleCard {
                     continue;
                 }
 
-                let lessons = cell.querySelectorAll('.lesson-card');
+                let lessons = Array.from(cell.querySelectorAll('.lesson-card'));
                 if (lessons.length !== 0) {
                     let isGroup = Boolean(cell.querySelector('.lesson-group-container'));
 
                     if (!isGroup) {
-                        console.error("checkCrash hatası: Hedef hücre grup dersi değil. Hücre içeriği:", cell.innerHTML);
-                        reject("Bu alana ders ekleyemezsiniz.");
-                        return;
+                        if (!lessons.every(isSelfCard)) {
+                            reject("Bu alana ders ekleyemezsiniz.");
+                            return;
+                        }
                     } else {
-                        let hasCrash = false;
-                        lessons.forEach((lesson) => {
+                        for (let lesson of lessons) {
+                            if (isSelfCard(lesson)) continue;
+
                             if (this.draggedLesson.group_no < 1) {
-                                hasCrash = true;
-                                console.error("checkCrash hatası: Eklenen ders gruplu değil.");
                                 reject("Eklenen ders gruplu değil, bu alana eklenemez");
+                                return;
                             }
                             if (lesson.dataset.lecturerId == this.draggedLesson.lecturer_id) {
-                                hasCrash = true;
-                                console.error("checkCrash hatası: Hoca çakışması. Hoca ID:", this.draggedLesson.lecturer_id);
                                 reject("Hoca aynı anda iki farklı derse giremez.");
+                                return;
                             }
                             if (lesson.dataset.lessonCode === newLessonCode) {
-                                hasCrash = true;
-                                console.error("checkCrash hatası: Ders kodu çakışması. Ders kodu:", newLessonCode);
                                 reject("Lütfen farklı bir ders seçin.");
+                                return;
                             }
                             if (lesson.dataset.groupNo === newGroupNo) {
-                                hasCrash = true;
-                                console.error("checkCrash hatası: Grup numarası çakışması. Grup no:", newGroupNo);
                                 reject("Grup numaraları aynı olamaz.");
+                                return;
                             }
-                        });
-                        if (hasCrash) return;
+                        }
                     }
                 }
                 checkedHours++;
