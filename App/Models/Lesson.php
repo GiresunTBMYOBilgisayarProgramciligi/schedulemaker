@@ -585,8 +585,6 @@ class Lesson extends Model
                 $siblings = (new Lesson())->get()->where([
                     'code' => $this->code,
                     'program_id' => $this->program_id,
-                    'semester' => $this->semester,
-                    'academic_year' => $this->academic_year,
                     'semester_no' => $this->semester_no,
                     'group_no' => ['>' => 0],
                     'id' => ['!=' => $this->id]

@@ -454,6 +454,15 @@ class ExamScheduleCard extends ScheduleCard {
             const dropTable = this.draggedLesson.end_element.closest("table") || this.table;
             const startRowIndex = this.draggedLesson.end_element.closest("tr").rowIndex;
 
+            const movingElements = new Set();
+            if (this.draggedLesson?.HTMLElement) {
+                movingElements.add(this.draggedLesson.HTMLElement);
+            }
+            if (this.selectedLessonElements && this.selectedLessonElements.size > 0) {
+                this.selectedLessonElements.forEach(el => movingElements.add(el));
+            }
+            const movingScheduleItemId = this.draggedLesson?.schedule_item_id || this.draggedLesson?.HTMLElement?.dataset?.scheduleItemId;
+
             for (let i = 0; checkedHours < parseInt(selectedHours); i++) {
                 let row = dropTable.rows[startRowIndex + i];
                 if (!row) {
@@ -485,28 +494,40 @@ class ExamScheduleCard extends ScheduleCard {
                 let lessons = cell.querySelectorAll('.lesson-card');
                 if (lessons.length !== 0) {
                     for (let existingLesson of lessons) {
+                        // Taşınan dersin kendisini çakışma kontrolünden muaf tut
+                        if (movingElements.has(existingLesson)) {
+                            continue;
+                        }
+                        const existItemId = existingLesson.dataset.scheduleItemId;
+                        if (movingScheduleItemId && existItemId && String(existItemId) === String(movingScheduleItemId)) {
+                            continue;
+                        }
+                        if (this.selectedScheduleItemIds && existItemId && this.selectedScheduleItemIds.has(existItemId)) {
+                            continue;
+                        }
+
                         const existCode = existingLesson.getAttribute("data-lesson-code");
                         const existClassroomId = existingLesson.getAttribute("data-classroom-id");
                         const existLecturerId = existingLesson.getAttribute("data-lecturer-id");
 
-                        let existMatch = existCode.match(/^(.+)\.(\d+)$/);
-                        let currentMatch = newLessonCode.match(/^(.+)\.(\d+)$/);
-                        let existBase = existMatch ? existMatch[1] : existCode;
-                        let currentBase = currentMatch ? currentMatch[1] : newLessonCode;
+                        if (existCode) {
+                            let existMatch = existCode.match(/^(.+)\.(\d+)$/);
+                            let currentMatch = newLessonCode ? newLessonCode.match(/^(.+)\.(\d+)$/) : null;
+                            let existBase = existMatch ? existMatch[1] : existCode;
+                            let currentBase = currentMatch ? currentMatch[1] : newLessonCode;
 
-                        if (existBase !== currentBase) {
-                            // Sınav birleştirme (exam_parent_lesson_id) durumunda farklı ders kodları
-                            // aynı zaman diliminde olabilir. Kontrolü backend'e bırakıyoruz.
-                            console.warn("checkCrash: Base lesson mismatch (may be exam combined)", existBase, currentBase, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
+                            if (existBase !== currentBase) {
+                                console.warn("checkCrash: Base lesson mismatch (may be exam combined)", existBase, currentBase, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
+                            }
                         }
 
-                        if (existClassroomId == newClassroomId) {
+                        if (existClassroomId && newClassroomId && existClassroomId == newClassroomId) {
                             console.error("checkCrash: Classroom conflict", existClassroomId, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
                             console.error("checkCrash error: Classroom conflict"); reject("Aynı derslikte aynı saatte birden fazla sınav olamaz.");
                             return;
                         }
 
-                        if (existLecturerId == newLecturerId) {
+                        if (existLecturerId && newLecturerId && existLecturerId == newLecturerId) {
                             console.error("checkCrash: Lecturer conflict", existLecturerId, "at row", startRowIndex + i, "day", targetDayIndex, "Existing lesson:", existingLesson);
                             console.error("checkCrash error: Lecturer conflict"); reject("Aynı gözetmen aynı saatte birden fazla sınavda görev alamaz.");
                             return;
@@ -520,25 +541,58 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     /**
-     * Sınav programı için gün indeksini dataset üzerinden alır (rowspan desteği için)
+     * Sınav programındaki bir lesson-card elementinden veri çıkartır.
+     * Sınav kurallarına uygun olarak hazırlanır (detail JSON ayrıştırma, gün indeksi, 
+     * program/ders görünümünde lecturer_id ve classroom_id null yapılması vb.).
      */
     getLessonItemData(element) {
-        let itemData = super.getLessonItemData(element);
-        if (itemData) {
-            const cell = element.closest('td');
-            if (cell && cell.dataset.dayIndex !== undefined) {
-                itemData.day_index = parseInt(cell.dataset.dayIndex);
-            }
+        if (!element) return null;
+        const ds = element.dataset;
+        const cell = element.closest('td');
 
-            // Sınav programı için veri süzme (Program/Ders programında hoca ve derslik null olmalı)
-            if (this.owner_type === 'program' || this.owner_type === 'lesson') {
-                if (itemData.data && itemData.data[0]) {
-                    itemData.data[0].lecturer_id = null;
-                    itemData.data[0].classroom_id = null;
-                }
+        if (!cell) {
+            console.warn("Element is not inside a table cell:", element);
+            return null;
+        }
+
+        let detail = null;
+        if (ds.detail) {
+            try {
+                detail = JSON.parse(ds.detail);
+            } catch (e) {
+                console.error("Exam detail parse error:", e);
             }
         }
-        return itemData;
+
+        let lecturerId = ds.lecturerId;
+        let classroomId = ds.classroomId;
+
+        // Sınav programı için veri süzme (Program/Ders görünümünde hoca ve derslik null olmalı)
+        if (this.owner_type === 'program' || this.owner_type === 'lesson') {
+            lecturerId = null;
+            classroomId = null;
+        }
+
+        const dayIndex = cell.dataset.dayIndex !== undefined ? parseInt(cell.dataset.dayIndex) : null;
+        const table = cell.closest('table') || this.table;
+
+        return {
+            id: ds.scheduleItemId,
+            schedule_id: this.id,
+            day_index: dayIndex,
+            week_index: parseInt(table?.dataset?.weekIndex || 0),
+            start_time: cell.dataset.startTime,
+            end_time: cell.dataset.endTime,
+            status: ds.status || (parseInt(ds.groupNo) > 0 ? "group" : "single"),
+            data: [
+                {
+                    lesson_id: ds.lessonId,
+                    lecturer_id: lecturerId,
+                    classroom_id: classroomId
+                }
+            ],
+            detail: detail
+        };
     }
 
     async saveScheduleItems(scheduleItems) {
