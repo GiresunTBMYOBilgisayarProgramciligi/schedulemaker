@@ -7,7 +7,8 @@ namespace App\Enums;
  */
 enum UserTitle: string
 {
-    case ResAssist = 'Araş. Gör.';
+    case ResAssist = 'Arş. Gör.';
+    case DrResAssist = 'Arş. Gör. Dr.';
     case Lecturer = 'Öğr. Gör.';
     case DrLecturer = 'Öğr. Gör. Dr.';
     case AsstProf = 'Dr. Öğr. Üyesi';
