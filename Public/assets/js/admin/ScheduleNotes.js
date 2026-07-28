@@ -91,6 +91,43 @@ class ScheduleNotesHandler {
             });
         }, 500);
 
+        // Düzenleyici tarafı: Not Silme Butonu (myHTMLElements.js Modal sınıfı ile onay alma)
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-delete-schedule-note');
+            if (btn) {
+                e.preventDefault();
+                const noteId = btn.dataset.noteId;
+                const confirmMessage = (typeof gettext !== 'undefined' && gettext.deleteMessage) 
+                    ? gettext.deleteMessage 
+                    : "Bu akademisyen notunu silmek istediğinizden emin misiniz?";
+
+                const title = (typeof gettext !== 'undefined' && gettext.confirmDelete) 
+                    ? gettext.confirmDelete 
+                    : "Silme Onayı";
+
+                const deleteBtnText = (typeof gettext !== 'undefined' && gettext.delete) 
+                    ? gettext.delete 
+                    : "Sil";
+
+                if (typeof Modal !== 'undefined') {
+                    let confirmDeleteModal = new Modal();
+                    confirmDeleteModal.prepareModal(title, confirmMessage, true, true, "sm");
+                    if (confirmDeleteModal.confirmButton) {
+                        confirmDeleteModal.confirmButton.textContent = deleteBtnText;
+                        confirmDeleteModal.confirmButton.classList.remove('btn-success');
+                        confirmDeleteModal.confirmButton.classList.add('btn-danger');
+                    }
+                    confirmDeleteModal.showModal();
+                    confirmDeleteModal.confirmButton.addEventListener("click", () => {
+                        confirmDeleteModal.closeModal();
+                        self.deleteScheduleNote(noteId);
+                    });
+                } else if (confirm(confirmMessage)) {
+                    self.deleteScheduleNote(noteId);
+                }
+            }
+        });
+
         // Düzenleyici tarafı: Durum Güncelleme Butonu
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('.btn-save-note-status');
@@ -274,12 +311,9 @@ class ScheduleNotesHandler {
                                 </div>
                                 <div class="d-flex align-items-center ms-auto gap-3">
                                     <span class="badge ${note.badge_class} fs-6">${note.status_label}</span>
-                                    <form action="/ajax/deleteScheduleNote" method="POST" class="ajaxFormDelete d-inline" data-confirm-message="Bu program notunu silmek istediğinize emin misiniz?">
-                                        <input type="hidden" name="note_id" value="${note.id}">
-                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Notu Sil">
-                                            <i class="bi bi-trash fs-5"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-schedule-note" data-note-id="${note.id}" title="Notu Sil">
+                                        <i class="bi bi-trash fs-5"></i>
+                                    </button>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -324,6 +358,54 @@ class ScheduleNotesHandler {
             }
         } catch (err) {
             if (modalBody) modalBody.innerHTML = '<div class="alert alert-danger">Sunucu ile iletişim kurulurken bir hata oluştu.</div>';
+        }
+    }
+
+    /**
+     * Düzenleyici bir akademisyen notunu siler.
+     */
+    async deleteScheduleNote(noteId) {
+        const formData = new FormData();
+        formData.append('note_id', noteId);
+
+        try {
+            const response = await fetch('/ajax/deleteScheduleNote', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const res = await response.json();
+
+            if (res.status === 'success') {
+                this.notify('Başarılı', res.msg || 'Not başarıyla silindi.', 'success');
+
+                // İlgili not kartını DOM'dan kaldır
+                const card = document.querySelector(`.schedule-note-item[data-note-id="${noteId}"]`);
+                if (card) {
+                    card.remove();
+                }
+
+                // Eğer başka not kalmadıysa bilgi mesajı göster
+                const modalBody = document.getElementById('schedule-notes-modal-body');
+                if (modalBody && modalBody.querySelectorAll('.schedule-note-item').length === 0) {
+                    modalBody.innerHTML = `
+                        <div class="alert alert-info text-center my-3" role="alert">
+                            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                            Seçilen kritere ait henüz iletilmiş akademisyen notu bulunmamaktadır.
+                        </div>
+                    `;
+                }
+
+                // Rozet ve sayacı güncelle
+                this.updateNotesCountBadge();
+            } else {
+                this.notify('Hata', res.msg || 'Not silinemedi.', 'danger');
+            }
+        } catch (err) {
+            this.notify('Hata', 'Not silinirken sunucu ile iletişim kurulamadı.', 'danger');
         }
     }
 
