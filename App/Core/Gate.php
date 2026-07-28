@@ -26,6 +26,7 @@ class Gate
         'App\Models\Unit' => 'App\Policies\UnitPolicy',
         'App\Models\Building' => 'App\Policies\BuildingPolicy',
         'App\Models\Setting' => 'App\Policies\SettingPolicy',
+        'App\Models\ScheduleNote' => 'App\Policies\ScheduleNotePolicy',
     ];
 
     /**

@@ -1,27 +1,24 @@
-#v0.2.8 -> v0.2.9
-
-CREATE TABLE IF NOT EXISTS lesson_assignments (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    lesson_id     INT NOT NULL,
-    lecturer_id   INT NOT NULL,
-    semester      ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
+#v0.2.9 -> v0.3.0
+CREATE TABLE IF NOT EXISTS schedule_notes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     academic_year VARCHAR(12) NOT NULL,
-    CONSTRAINT fk_la_lesson_id   FOREIGN KEY (lesson_id)   REFERENCES lessons(id) ON DELETE CASCADE,
-    CONSTRAINT fk_la_lecturer_id FOREIGN KEY (lecturer_id) REFERENCES users(id)   ON DELETE CASCADE,
-    UNIQUE KEY uq_la (lesson_id, semester, academic_year)
+    semester ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
+    schedule_type ENUM('lesson', 'midterm-exam', 'final-exam', 'makeup-exam') NOT NULL,
+    note TEXT NOT NULL,
+    status ENUM('pending', 'read', 'completed', 'rejected') DEFAULT 'pending',
+    editor_feedback TEXT NULL,
+    read_at TIMESTAMP NULL,
+    read_by INT NULL,
+    status_updated_at TIMESTAMP NULL,
+    status_updated_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_schedule_notes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_notes_read_by FOREIGN KEY (read_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_schedule_notes_status_by FOREIGN KEY (status_updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_user_schedule_note (user_id, academic_year, semester, schedule_type),
+    INDEX idx_schedule_note_context (academic_year, semester, schedule_type),
+    INDEX idx_status (status)
 ) ENGINE = INNODB;
 
--- Backfill data from lessons to lesson_assignments if exists
-INSERT INTO lesson_assignments (lesson_id, lecturer_id, semester, academic_year)
-SELECT id, lecturer_id, semester, academic_year
-FROM lessons
-WHERE lecturer_id IS NOT NULL
-  AND semester IS NOT NULL
-  AND academic_year IS NOT NULL
-ON DUPLICATE KEY UPDATE lecturer_id = VALUES(lecturer_id);
-
--- Drop old columns and foreign keys from lessons table
-ALTER TABLE lessons DROP FOREIGN KEY lessons_ibfk_1;
-ALTER TABLE lessons DROP COLUMN lecturer_id;
-ALTER TABLE lessons DROP COLUMN semester;
-ALTER TABLE lessons DROP COLUMN academic_year;

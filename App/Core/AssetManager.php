@@ -194,6 +194,9 @@ class AssetManager
                 [
                     'path' => '/assets/js/exportSchedule.js'
                 ],
+                [
+                    'path' => '/assets/js/admin/ScheduleNotes.js'
+                ],
             ],
             'css' => [
                 [
@@ -226,6 +229,9 @@ class AssetManager
                 ],
                 [
                     'path' => '/assets/js/exportSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ScheduleNotes.js'
                 ],
             ],
             'css' => [
@@ -274,6 +280,9 @@ class AssetManager
                 ],
                 [
                     'path' => '/assets/js/exportSchedule.js'
+                ],
+                [
+                    'path' => '/assets/js/admin/ScheduleNotes.js'
                 ],
             ],
             'css' => [

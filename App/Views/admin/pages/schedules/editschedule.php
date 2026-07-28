@@ -66,6 +66,9 @@ use function App\Helpers\getSettingValue;
                                             Yaz
                                         </option>
                                     </select>
+                                    <button type="button" class="btn btn-warning" id="btn-show-schedule-notes" title="Hoca Notları & İstekleri">
+                                        <i class="bi bi-journal-text me-1"></i> Hoca Notları (<span id="schedule-notes-count">0</span>)
+                                    </button>
                                 </div>
                             </div>
                             <div class="card-tools">
@@ -216,3 +219,4 @@ use function App\Helpers\getSettingValue;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
+<?php require __DIR__ . '/partials/schedule_notes_modal.php'; ?>

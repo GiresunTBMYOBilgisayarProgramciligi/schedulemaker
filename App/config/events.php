@@ -4,13 +4,20 @@ use App\Core\EventDispatcher;
 use App\Events\UserForgotPasswordEvent;
 use App\Listeners\SendPasswordResetEmailListener;
 
+use App\Events\ScheduleNoteStatusUpdatedEvent;
+use App\Listeners\SendScheduleNoteFeedbackEmailListener;
+
 $dispatcher = EventDispatcher::getInstance();
 
 // Tüm olay (event) ve dinleyici (listener) kayıtlarını buraya ekleyebilirsiniz.
-// Örnek: WordPress'in add_action() fonksiyonuna benzer şekilde, 
-// sistemin herhangi bir yerinden EventDispatcher::getInstance()->listen() çağrılarak da olaylar eklenebilir.
 
 $dispatcher->listen(
     UserForgotPasswordEvent::class,
     SendPasswordResetEmailListener::class
 );
+
+$dispatcher->listen(
+    ScheduleNoteStatusUpdatedEvent::class,
+    SendScheduleNoteFeedbackEmailListener::class
+);
+

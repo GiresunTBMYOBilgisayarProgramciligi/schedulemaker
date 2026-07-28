@@ -15,6 +15,7 @@ use App\Controllers\Auth\PasswordResetController;
 
 
 use App\Controllers\SettingsController;
+use App\Controllers\ScheduleNoteController;
 use App\Core\Router;
 use App\Models\User;
 use Exception;
@@ -641,6 +642,44 @@ class AjaxRouter extends Router
     public function deleteBuildingAction(): void
     {
         $this->response = (new BuildingController())->destroy($this->data);
+        $this->sendResponse();
+    }
+
+    /*
+     * ScheduleNote (Hoca Notları) Ajax Actions
+     */
+    /** @throws Exception */
+    public function saveScheduleNoteAction(): void
+    {
+        $this->response = (new ScheduleNoteController())->saveNote($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function getMyScheduleNotesAction(): void
+    {
+        $this->response = (new ScheduleNoteController())->getMyNotes($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function getProgramScheduleNotesAction(): void
+    {
+        $this->response = (new ScheduleNoteController())->getProgramNotes($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function updateScheduleNoteStatusAction(): void
+    {
+        $this->response = (new ScheduleNoteController())->updateStatus($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function deleteScheduleNoteAction(): void
+    {
+        $this->response = (new ScheduleNoteController())->deleteNote($this->data);
         $this->sendResponse();
     }
 }
