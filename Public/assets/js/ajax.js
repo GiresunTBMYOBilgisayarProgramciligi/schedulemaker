@@ -62,33 +62,36 @@ document.addEventListener("DOMContentLoaded", function () {
         fetchForm(form, data);
     }
 
-    // Silme işlemi için onay fonksiyonu
+    // Silme işlemi için onay ve AJAX gönderim fonksiyonu
     function handleAjaxDelete(event) {
+        // Tablo satırı (tr) veya kart öğesi (.schedule-note-item) tespit edilir
         let lessonRow = event.target.closest('tr');
         let cardItem = event.target.closest('.schedule-note-item');
         event.preventDefault();
         const form = event.target;
         const confirmMessage = form.getAttribute('data-confirm-message') || gettext.deleteMessage;
         let confirmDeleteModal = new Modal();
-        confirmDeleteModal.prepareModal(gettext.confirmDelete, confirmMessage, true)
-        confirmDeleteModal.confirmButton.textContent = gettext.delete
-        confirmDeleteModal.showModal()
+        confirmDeleteModal.prepareModal(gettext.confirmDelete, confirmMessage, true);
+        confirmDeleteModal.confirmButton.textContent = gettext.delete;
+        confirmDeleteModal.showModal();
         confirmDeleteModal.confirmButton.addEventListener("click", () => {
             confirmDeleteModal.closeModal();
             fetchForm(form, new FormData(form)).then((data) => {
                 if (data && data.status === "success") {
+                    // Not/Kart öğesi silindiyse öğeyi DOM'dan kaldır ve rozet sayısını güncelle
                     if (cardItem) {
                         cardItem.remove();
                         if (window.scheduleNotesHandler && typeof window.scheduleNotesHandler.updateNotesCountBadge === 'function') {
                             window.scheduleNotesHandler.updateNotesCountBadge();
                         }
                     } else if (lessonRow && typeof dataTable !== 'undefined' && dataTable) {
+                        // Tablo satırı ise DataTables üzerinden satırı kaldır
                         dataTable.row(lessonRow).remove().draw();
                     } else {
                         window.history.back();
                     }
                 }
-            })
+            });
         });
     }
 
