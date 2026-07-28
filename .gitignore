@@ -130,3 +130,4 @@ Public/assets/node_modules
 reset.sql
 insert.sql
 Logs/*
+.phpunit.cache
