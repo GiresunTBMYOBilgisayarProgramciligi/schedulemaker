@@ -98,18 +98,6 @@ class ScheduleNotesHandler {
             }
         });
 
-        // Not Silme Butonu
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('.btn-delete-schedule-note');
-            if (btn) {
-                e.preventDefault();
-                const card = btn.closest('.schedule-note-item');
-                if (!card) return;
-                const noteId = card.dataset.noteId;
-                self.deleteNote(noteId, card);
-            }
-        });
-
         // Akademisyen tarafı: Not Kaydetme Formu
         document.addEventListener('submit', function (e) {
             if (e.target && e.target.matches('#form-save-schedule-note')) {
@@ -236,9 +224,12 @@ class ScheduleNotesHandler {
                                 </div>
                                 <div class="d-flex align-items-center ms-auto gap-3">
                                     <span class="badge ${note.badge_class} fs-6">${note.status_label}</span>
-                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-schedule-note" title="Notu Sil">
-                                        <i class="bi bi-trash fs-5"></i>
-                                    </button>
+                                    <form action="/ajax/deleteScheduleNote" method="POST" class="ajaxFormDelete d-inline" data-confirm-message="Bu program notunu silmek istediğinize emin misiniz?">
+                                        <input type="hidden" name="note_id" value="${note.id}">
+                                        <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Notu Sil">
+                                            <i class="bi bi-trash fs-5"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -321,65 +312,6 @@ class ScheduleNotesHandler {
             btn.disabled = false;
             btn.innerHTML = originalHtml;
             this.notify('Hata', 'İşlem sırasında bir hata oluştu.', 'danger');
-        }
-    }
-
-    /**
-     * Notu siler (Özel Modal onay penceresi kullanarak).
-     */
-    deleteNote(noteId, cardElement) {
-        const self = this;
-        const confirmMessage = 'Bu program notunu silmek istediğinize emin misiniz?';
-
-        if (typeof Modal !== 'undefined') {
-            const confirmModal = new Modal();
-            const title = (typeof gettext !== 'undefined' && gettext.confirmDelete) ? gettext.confirmDelete : 'Silme Onayı';
-            const btnText = (typeof gettext !== 'undefined' && gettext.delete) ? gettext.delete : 'Sil';
-
-            confirmModal.prepareModal(title, confirmMessage, true);
-            confirmModal.confirmButton.textContent = btnText;
-            confirmModal.showModal();
-            confirmModal.confirmButton.addEventListener("click", () => {
-                confirmModal.closeModal();
-                self.executeDeleteNote(noteId, cardElement);
-            });
-        } else if (confirm(confirmMessage)) {
-            self.executeDeleteNote(noteId, cardElement);
-        }
-    }
-
-    /**
-     * Silme isteğini sunucuya gönderir.
-     */
-    async executeDeleteNote(noteId, cardElement) {
-        const formData = new FormData();
-        formData.append('note_id', noteId);
-
-        try {
-            const response = await fetch('/ajax/deleteScheduleNote', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-
-            const res = await response.json();
-
-            if (res.status === 'success') {
-                this.notify('Başarılı', res.msg, 'success');
-                if (cardElement) {
-                    cardElement.remove();
-                }
-                this.updateNotesCountBadge();
-                if (typeof window.loadMyScheduleNotes === 'function') {
-                    window.loadMyScheduleNotes();
-                }
-            } else {
-                this.notify('Hata', res.msg || 'Silme işlemi başarısız.', 'danger');
-            }
-        } catch (err) {
-            this.notify('Hata', 'Silme işlemi sırasında sunucu hatası oluştu.', 'danger');
         }
     }
 

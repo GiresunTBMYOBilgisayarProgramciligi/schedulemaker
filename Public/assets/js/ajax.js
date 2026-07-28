@@ -64,7 +64,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Silme işlemi için onay fonksiyonu
     function handleAjaxDelete(event) {
-        let lessonRow = event.target.closest('tr'); //todo kullanıcı ders, derslik silme işleminde de bu metod kullanılıyorsa lessonRow değişkeninin ismi değişmeli
+        let lessonRow = event.target.closest('tr');
+        let cardItem = event.target.closest('.schedule-note-item');
         event.preventDefault();
         const form = event.target;
         const confirmMessage = form.getAttribute('data-confirm-message') || gettext.deleteMessage;
@@ -76,11 +77,15 @@ document.addEventListener("DOMContentLoaded", function () {
             confirmDeleteModal.closeModal();
             fetchForm(form, new FormData(form)).then((data) => {
                 if (data && data.status === "success") {
-                    if (lessonRow) {
+                    if (cardItem) {
+                        cardItem.remove();
+                        if (window.scheduleNotesHandler && typeof window.scheduleNotesHandler.updateNotesCountBadge === 'function') {
+                            window.scheduleNotesHandler.updateNotesCountBadge();
+                        }
+                    } else if (lessonRow && typeof dataTable !== 'undefined' && dataTable) {
                         dataTable.row(lessonRow).remove().draw();
-                        //lessonRow.remove();
                     } else {
-                        window.history.back()
+                        window.history.back();
                     }
                 }
             })

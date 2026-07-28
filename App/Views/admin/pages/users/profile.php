@@ -503,9 +503,12 @@ window.loadMyScheduleNotes = async function() {
                             <span class="fw-bold">${note.academic_year} ${note.semester} (${typeTitle})</span>
                             <div class="d-flex align-items-center ms-auto gap-3">
                                 <span class="badge ${note.badge_class}">${note.status_label}</span>
-                                <button type="button" class="btn btn-sm btn-link text-danger p-0 btn-delete-schedule-note" title="Notu Sil">
-                                    <i class="bi bi-trash fs-5"></i>
-                                </button>
+                                <form action="/ajax/deleteScheduleNote" method="POST" class="ajaxFormDelete d-inline" data-confirm-message="Bu program notunu silmek istediğinize emin misiniz?">
+                                    <input type="hidden" name="note_id" value="${note.id}">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Notu Sil">
+                                        <i class="bi bi-trash fs-5"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                         <div class="card-body p-3">
