@@ -325,13 +325,33 @@ class ScheduleNotesHandler {
     }
 
     /**
-     * Notu siler.
+     * Notu siler (Özel Modal onay penceresi kullanarak).
      */
-    async deleteNote(noteId, cardElement) {
-        if (!confirm('Bu program notunu silmek istediğinize emin misiniz?')) {
-            return;
-        }
+    deleteNote(noteId, cardElement) {
+        const self = this;
+        const confirmMessage = 'Bu program notunu silmek istediğinize emin misiniz?';
 
+        if (typeof Modal !== 'undefined') {
+            const confirmModal = new Modal();
+            const title = (typeof gettext !== 'undefined' && gettext.confirmDelete) ? gettext.confirmDelete : 'Silme Onayı';
+            const btnText = (typeof gettext !== 'undefined' && gettext.delete) ? gettext.delete : 'Sil';
+
+            confirmModal.prepareModal(title, confirmMessage, true);
+            confirmModal.confirmButton.textContent = btnText;
+            confirmModal.showModal();
+            confirmModal.confirmButton.addEventListener("click", () => {
+                confirmModal.closeModal();
+                self.executeDeleteNote(noteId, cardElement);
+            });
+        } else if (confirm(confirmMessage)) {
+            self.executeDeleteNote(noteId, cardElement);
+        }
+    }
+
+    /**
+     * Silme isteğini sunucuya gönderir.
+     */
+    async executeDeleteNote(noteId, cardElement) {
         const formData = new FormData();
         formData.append('note_id', noteId);
 
