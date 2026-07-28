@@ -56,31 +56,34 @@ class ScheduleNoteService extends BaseService
     }
 
     /**
-     * Program düzenleyici için programa özel hoca notlarını getirir ve incelenenleri görüldü olarak işaretler.
+     * Program düzenleyici için programa özel hoca notlarını getirir.
      */
-    public function getProgramNotes(int $programId, string $academicYear, string $semester, string $scheduleType, User $editor): array
+    public function getProgramNotes(int $programId, string $academicYear, string $semester, string $scheduleType, User $editor, bool $markAsRead = true): array
     {
         $notes = $this->repository->getProgramNotes($programId, $academicYear, $semester, $scheduleType);
 
-        // Notları okundu olarak işaretle
-        foreach ($notes as $note) {
-            /** @var ScheduleNote $note */
-            $this->repository->markAsRead($note->id, $editor->id);
+        if ($markAsRead) {
+            foreach ($notes as $note) {
+                /** @var ScheduleNote $note */
+                $this->repository->markAsRead($note->id, $editor->id);
+            }
         }
 
         return $notes;
     }
 
     /**
-     * Program düzenleyici için seçili akademisyene ait notları getirir ve görüldü olarak işaretler.
+     * Program düzenleyici için seçili akademisyene ait notları getirir.
      */
-    public function getLecturerNotes(int $userId, string $academicYear, string $semester, string $scheduleType, User $editor): array
+    public function getLecturerNotes(int $userId, string $academicYear, string $semester, string $scheduleType, User $editor, bool $markAsRead = true): array
     {
         $notes = $this->repository->getLecturerNotes($userId, $academicYear, $semester, $scheduleType);
 
-        foreach ($notes as $note) {
-            /** @var ScheduleNote $note */
-            $this->repository->markAsRead($note->id, $editor->id);
+        if ($markAsRead) {
+            foreach ($notes as $note) {
+                /** @var ScheduleNote $note */
+                $this->repository->markAsRead($note->id, $editor->id);
+            }
         }
 
         return $notes;

@@ -67,7 +67,7 @@ use function App\Helpers\getSettingValue;
                                         </option>
                                     </select>
                                     <button type="button" class="btn btn-warning" id="btn-show-schedule-notes" title="Hoca Notları & İstekleri">
-                                        <i class="bi bi-journal-text me-1"></i> Hoca Notları (<span id="schedule-notes-count">0</span>)
+                                        <i class="bi bi-journal-text me-1"></i> Notlar<span id="schedule-notes-count"></span>
                                     </button>
                                 </div>
                             </div>

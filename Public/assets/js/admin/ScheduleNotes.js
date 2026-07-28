@@ -79,6 +79,18 @@ class ScheduleNotesHandler {
             }
         });
 
+        // TomSelect bileşenlerinin değişimlerini dinle
+        setTimeout(() => {
+            ['#program_id', '#lecturer_id', '#academic_year', '#semester', '#schedule_type'].forEach(selector => {
+                const el = document.querySelector(selector);
+                if (el && el.tomselect) {
+                    el.tomselect.on('change', function() {
+                        self.updateNotesCountBadge();
+                    });
+                }
+            });
+        }, 500);
+
         // Düzenleyici tarafı: Durum Güncelleme Butonu
         document.addEventListener('click', function (e) {
             const btn = e.target.closest('.btn-save-note-status');
@@ -108,7 +120,7 @@ class ScheduleNotesHandler {
     }
 
     /**
-     * Seçili programa veya hocaya ait akademisyen not sayısını günceller.
+     * Seçili programa veya hocaya ait akademisyen not sayısını ve durum dökümünü günceller.
      */
     async updateNotesCountBadge() {
         const { programId, lecturerId, academicYear, semester, scheduleType } = this.getContextParams();
@@ -116,7 +128,7 @@ class ScheduleNotesHandler {
         if (!countEl) return;
 
         if (programId <= 0 && lecturerId <= 0) {
-            countEl.textContent = '0';
+            countEl.innerHTML = '';
             return;
         }
 
@@ -126,6 +138,7 @@ class ScheduleNotesHandler {
         formData.append('academic_year', academicYear);
         formData.append('semester', semester);
         formData.append('schedule_type', scheduleType);
+        formData.append('mark_read', '0'); // Sayım yapılırken görüldü olarak işaretleme
 
         try {
             const response = await fetch('/ajax/getProgramScheduleNotes', {
@@ -140,7 +153,44 @@ class ScheduleNotesHandler {
 
             if (res.status === 'success') {
                 const notes = res.data || [];
-                countEl.textContent = notes.length;
+
+                if (notes.length === 0) {
+                    countEl.innerHTML = ' (0)';
+                    return;
+                }
+
+                let pendingCount = 0;
+                let readCount = 0;
+                let completedCount = 0;
+                let rejectedCount = 0;
+
+                notes.forEach(n => {
+                    if (n.status === 'completed') {
+                        completedCount++;
+                    } else if (n.status === 'rejected') {
+                        rejectedCount++;
+                    } else if (n.status === 'read') {
+                        readCount++;
+                    } else {
+                        pendingCount++;
+                    }
+                });
+
+                let icons = [];
+                if (pendingCount > 0) {
+                    icons.push(`<span class="ms-1" title="Görülmemiş Notlar"><i class="bi bi-eye-slash-fill"></i> ${pendingCount}</span>`);
+                }
+                if (readCount > 0) {
+                    icons.push(`<span class="ms-1" title="Görülen Notlar"><i class="bi bi-eye-fill"></i> ${readCount}</span>`);
+                }
+                if (completedCount > 0) {
+                    icons.push(`<span class="ms-1 text-success" title="Gereği Yapılan Notlar"><i class="bi bi-check-circle-fill"></i> ${completedCount}</span>`);
+                }
+                if (rejectedCount > 0) {
+                    icons.push(`<span class="ms-1 text-danger" title="Reddedilen Notlar"><i class="bi bi-x-circle-fill"></i> ${rejectedCount}</span>`);
+                }
+
+                countEl.innerHTML = icons.length > 0 ? ` (${icons.join(' ')})` : ' (0)';
             }
         } catch (err) {
             // Sessizce geç
@@ -182,6 +232,7 @@ class ScheduleNotesHandler {
         formData.append('academic_year', academicYear);
         formData.append('semester', semester);
         formData.append('schedule_type', scheduleType);
+        formData.append('mark_read', '1'); // Modal açıldığında notları görüldü olarak işaretle
 
         try {
             const response = await fetch('/ajax/getProgramScheduleNotes', {
@@ -196,10 +247,9 @@ class ScheduleNotesHandler {
 
             if (res.status === 'success') {
                 const notes = res.data || [];
-                const countEl = document.getElementById('schedule-notes-count');
-                if (countEl) {
-                    countEl.textContent = notes.length;
-                }
+                
+                // Modal açıldığında da rozeti güncelle
+                this.updateNotesCountBadge();
 
                 if (!modalBody) return;
 
@@ -305,6 +355,7 @@ class ScheduleNotesHandler {
 
             if (res.status === 'success') {
                 this.notify('Başarılı', res.msg, 'success');
+                this.updateNotesCountBadge();
             } else {
                 this.notify('Hata', res.msg || 'Güncelleme başarısız.', 'danger');
             }

@@ -123,12 +123,14 @@ class ScheduleNoteController extends Controller
             throw new Exception("Lütfen önce bir program veya hoca seçiniz.");
         }
 
+        $markAsRead = !isset($requestData['mark_read']) || ($requestData['mark_read'] !== '0' && $requestData['mark_read'] !== 0 && $requestData['mark_read'] !== false);
+
         Gate::authorize('canManageNotes', ScheduleNote::class, "Program notlarını görme yetkiniz yok.");
 
         if ($lecturerId > 0 && $programId <= 0) {
-            $notes = $this->service->getLecturerNotes($lecturerId, $academicYear, $semester, $scheduleType, $currentUser);
+            $notes = $this->service->getLecturerNotes($lecturerId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
         } else {
-            $notes = $this->service->getProgramNotes($programId, $academicYear, $semester, $scheduleType, $currentUser);
+            $notes = $this->service->getProgramNotes($programId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
         }
 
         $data = array_map(function (ScheduleNote $note) {

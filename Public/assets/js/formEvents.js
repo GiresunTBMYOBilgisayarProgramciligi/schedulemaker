@@ -334,7 +334,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         });
 
                         if (progList.length === 1) {
-                            programSelect.tomselect.setValue(progList[0].id, true); // Tek seçenek varsa otomatik seç
+                            programSelect.tomselect.setValue(progList[0].id, true); // Tek seçenek varsa otomatik seç (sessiz)
                         } else {
                             programSelect.tomselect.setValue(0, true);
                         }
@@ -357,8 +357,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         });
                     }
 
-                    // Select elementinin change olayını tetikle
-                    programSelect.dispatchEvent(new Event("change"));
+                    // Select elementinin change olayını kabarcıklanarak (bubbles) tek bir kez tetikle
+                    programSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
                     // Eğer önceden seçilmesi gereken bir program varsa
                     const selectedProgramId = programSelect.getAttribute('data-selected');
@@ -369,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             programSelect.value = selectedProgramId;
                         }
                         programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli
-                        programSelect.dispatchEvent(new Event("change"));
+                        programSelect.dispatchEvent(new Event("change", { bubbles: true }));
                     }
                 })
                 .catch(error => {
