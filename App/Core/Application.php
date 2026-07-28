@@ -7,6 +7,7 @@ namespace App\Core;
 
 use Exception;
 
+use App\Exceptions\NotFoundException;
 use App\Middlewares\AuthMiddleware;
 use App\Attributes\AuthRequired;
 use App\Attributes\PublicAction;
@@ -38,7 +39,7 @@ class Application
     protected $parameters = array();
 
     /**
-     * @throws Exception
+     * @throws NotFoundException|Exception
      */
     public function __construct()
     {
@@ -46,7 +47,7 @@ class Application
         $this->ParseURL();
         $class = "App\\Routers\\" . $this->router;//namespace
         if (!class_exists($class)) {
-            throw new Exception("Router class '$class' not found.");
+            throw new NotFoundException("Router class '$class' not found.");
         }
         /** @var object $this->router */
         $this->router = new $class;

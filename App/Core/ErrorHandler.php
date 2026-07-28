@@ -11,6 +11,7 @@ use App\Exceptions\ValidationException;
 use App\Exceptions\LessonHourExceededException;
 use App\Exceptions\ScheduleConflictException;
 use App\Exceptions\AuthorizationException;
+use App\Exceptions\NotFoundException;
 
 /**
  * Claude ile oluşturularak üzerinde düzenlemeler yapıldı
@@ -69,8 +70,12 @@ class ErrorHandler
      */
     public function handleException($exception)
     {
-        // Hatayı logla
-        $this->logException($exception);
+        // 404 (Bulunamadı) hatalarını veritabanı ERROR loguna yazmıyoruz
+        $isNotFound = ($exception instanceof NotFoundException || $exception->getCode() === 404);
+
+        if (!$isNotFound) {
+            $this->logException($exception);
+        }
 
         // İstisna türüne göre farklı HTTP yanıtları ver
         if ($exception instanceof ValidationException) {
@@ -85,6 +90,9 @@ class ErrorHandler
         } elseif ($exception instanceof AuthorizationException) {
             // Yetkilendirme hatası - 403 Forbidden
             $this->renderErrorView('error', $exception, 403);
+        } elseif ($isNotFound) {
+            // Sayfa/Kaynak Bulunamadı - 404 Not Found
+            $this->renderErrorView('error', $exception, 404);
         } else {
             // Diğer tüm hatalar için genel şablon - 500 Internal Server Error
             $this->renderErrorView('error', $exception, 500);

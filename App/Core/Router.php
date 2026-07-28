@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use Exception;
+use App\Exceptions\NotFoundException;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
 
@@ -113,6 +114,6 @@ class Router
             return;
         }
 
-        throw new Exception("Aradığınız sayfa veya işlem bulunamadı. Lütfen URL'yi kontrol edin.");
+        throw new NotFoundException("Aradığınız sayfa veya işlem bulunamadı. Lütfen URL'yi kontrol edin.");
     }
 }

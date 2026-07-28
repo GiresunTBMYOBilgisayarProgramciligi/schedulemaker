@@ -5,6 +5,12 @@
 
     RewriteEngine On
 
+    # Gizli dosyalara erişimi engelle (.env, .git vb.)
+    RewriteRule ^(\.env|\.git|\.htaccess) - [F,L]
+
+    # Bilinen zararlı bot taramalarını ve WordPress/phpMyAdmin saldırı yollarını engelle
+    RewriteRule ^(wp-login|wp-admin|xmlrpc|phpmyadmin|adminer|\.well-known/.*) - [F,L]
+
     # Handle Front Router...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
