@@ -110,9 +110,6 @@ class AssetManager
                 ]
             ],
             'js' => [
-                [
-                    'path' => "/assets/node_modules/jquery/dist/jquery.min.js"
-                ],
                 [//DataTables core
                     'path' => '/assets/node_modules/datatables.net/js/dataTables.min.js'
                 ],

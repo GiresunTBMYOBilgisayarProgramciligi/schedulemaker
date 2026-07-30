@@ -63,8 +63,10 @@ let dataTable = new DataTable('.dataTable', {
 
             // "İşlemler" sütununu dışa aktarmadan hariç tutmak için işaretle
             if (headerText === "İşlemler") {
-                $(column.header()).addClass('no-export');
-                $(column.nodes()).addClass('no-export');
+                column.header().classList.add('no-export');
+                column.nodes().each(function (node) {
+                    node.classList.add('no-export');
+                });
             }
 
             if (header.classList.contains("filterable")) {
