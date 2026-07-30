@@ -89,4 +89,26 @@ class DepartmentRepository extends BaseRepository
             ])
             ->first();
     }
+
+    /**
+     * Belirtilen kullanıcının herhangi bir bölümde başkan olup olmadığını kontrol eder.
+     * Opsiyonel olarak belirli bir bölüm ID'si hariç tutulabilir.
+     *
+     * @param int $userId Kontrol edilecek kullanıcı ID'si
+     * @param int|null $excludeDepartmentId Hariç tutulacak bölüm ID'si (güncelleme senaryosu için)
+     * @return bool
+     * @throws Exception
+     */
+    public function isChairpersonOfAnyDepartment(int $userId, ?int $excludeDepartmentId = null): bool
+    {
+        /** @var Department $model */
+        $model = new $this->modelClass;
+        $where = ['chairperson_id' => $userId];
+
+        if ($excludeDepartmentId !== null) {
+            $where['!id'] = $excludeDepartmentId;
+        }
+
+        return $this->count($where) > 0;
+    }
 }

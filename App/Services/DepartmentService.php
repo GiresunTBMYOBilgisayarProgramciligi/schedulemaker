@@ -7,6 +7,8 @@ use App\Models\Program;
 use App\Models\Lesson;
 use App\DTOs\DepartmentDTO;
 use App\Core\Database;
+use App\Core\EventDispatcher;
+use App\Events\ChairpersonChangedEvent;
 use Exception;
 use PDOException;
 
@@ -24,7 +26,7 @@ class DepartmentService extends BaseService
         $this->logger->info('Yeni bölüm ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
-            return Database::transaction(function () use ($dto) {
+            $departmentId = Database::transaction(function () use ($dto) {
                 $department = new Department();
                 $department->fill($dto->toArray());
                 $department->create();
@@ -43,6 +45,15 @@ class DepartmentService extends BaseService
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
+
+        // Bölüm başkanı rol senkronizasyonu (sadece bölüm başarıyla oluşturulduysa)
+        if ($dto->chairperson_id !== null) {
+            EventDispatcher::getInstance()->dispatch(
+                new ChairpersonChangedEvent(null, $dto->chairperson_id)
+            );
+        }
+
+        return $departmentId;
     }
 
     /**
@@ -57,10 +68,12 @@ class DepartmentService extends BaseService
     {
         $this->logger->info('Bölüm güncelleniyor', ['id' => $department->id]);
 
+        // Başkan değişikliğini tespit etmek için eski kaydı transaction öncesinde oku
+        $oldDepartment = (new Department())->get()->where(['id' => $department->id])->first();
+        $oldChairpersonId = $oldDepartment?->chairperson_id;
+
         try {
-            return Database::transaction(function () use ($department) {
-                // Mevcut aktiflik durumunu kontrol et (Veritabanındaki eski hali)
-                $oldDepartment = (new Department())->get()->where(['id' => $department->id])->first();
+            $departmentId = Database::transaction(function () use ($department, $oldDepartment) {
                 $wasActive = $oldDepartment?->active ?? false;
 
                 $department->update();
@@ -89,6 +102,15 @@ class DepartmentService extends BaseService
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
+
+        // Başkan değiştiyse rol senkronizasyonu tetikle (sadece güncelleme başarılıysa)
+        if ($oldChairpersonId !== $department->chairperson_id) {
+            EventDispatcher::getInstance()->dispatch(
+                new ChairpersonChangedEvent($oldChairpersonId, $department->chairperson_id)
+            );
+        }
+
+        return $departmentId;
     }
 
     /**
@@ -102,6 +124,9 @@ class DepartmentService extends BaseService
     public function deleteDepartment(Department $department): void
     {
         $this->logger->info('Bölüm siliniyor', ['id' => $department->id]);
+
+        // Silme öncesi başkan ID'sini sakla (silme sonrası erişilemez olacak)
+        $oldChairpersonId = $department->chairperson_id;
 
         try {
             Database::transaction(function () use ($department) {
@@ -128,6 +153,13 @@ class DepartmentService extends BaseService
                 'error' => $e->getMessage()
             ]);
             throw new Exception("Bölüm silinirken bir hata oluştu: " . $e->getMessage());
+        }
+
+        // Eski başkanın rolünü düşür (sadece silme başarılıysa)
+        if ($oldChairpersonId !== null) {
+            EventDispatcher::getInstance()->dispatch(
+                new ChairpersonChangedEvent($oldChairpersonId, null)
+            );
         }
     }
 }
