@@ -23,6 +23,11 @@ class ScheduleNoteMailer extends Mailer
                 return false;
             }
 
+            // Görüldü veya Beklemede durumlarında e-posta bildirimi gönderilmez
+            if ($note->status === \App\Enums\ScheduleNoteStatus::READ->value || $note->status === \App\Enums\ScheduleNoteStatus::PENDING->value) {
+                return false;
+            }
+
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $this->mailer->Subject = 'Ders Programı İstek Durumu: ' . $note->getStatusEnum()->getLabel();
 
