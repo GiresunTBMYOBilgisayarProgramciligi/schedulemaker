@@ -49,51 +49,53 @@ use App\Models\Program;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-bordered table-striped dataTable">
-                        <thead>
-                        <tr>
-                            <th scope="col">İd</th>
-                            <th scope="col">Adı</th>
-                            <th scope="col" class="filterable">Bölüm</th>
-                            <th scope="col">Aktif</th>
-                            <th scope="col" class="text-center">İşlemler</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($programs as $program): ?>
-                            <tr>
-                                <td><?= $program->id ?></td>
-                                <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
-                                <td><?= $program->department?->name ?></td>
-                                <td>
-                                    <div class="form-check form-switch ">
-                                        <input name="active" class="form-check-input" type="checkbox"
-                                               id="flexSwitchCheckChecked"
-                                                <?= $program->active ? "checked" : "" ?> disabled>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <?php if (Gate::check("update", $program)): ?>
-                                    <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <?php endif; ?>
-                                    <?php if (Gate::check("delete", $program)): ?>
-                                    <form action="/ajax/deleteprogram/<?= $program->id ?>"
-                                          class="ajaxFormDelete d-inline"
-                                          id="deleteProgram-<?= $program->id ?>"
-                                          method="post"
-                                          data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
-                                        <input type="hidden" name="id" value="<?= $program->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?></tbody>
-                    </table>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">İd</th>
+                                        <th scope="col">Adı</th>
+                                        <th scope="col" class="filterable">Bölüm</th>
+                                        <th scope="col">Aktif</th>
+                                        <th scope="col" class="text-center">İşlemler</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($programs as $program): ?>
+                                        <tr>
+                                            <td><?= $program->id ?></td>
+                                            <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
+                                            <td><?= $program->department?->name ?></td>
+                                            <td>
+                                                <div class="form-check form-switch ">
+                                                    <input name="active" class="form-check-input" type="checkbox"
+                                                           id="flexSwitchCheckChecked"
+                                                            <?= $program->active ? "checked" : "" ?> disabled>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $program)): ?>
+                                                <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $program)): ?>
+                                                <form action="/ajax/deleteprogram/<?= $program->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteProgram-<?= $program->id ?>"
+                                                      method="post"
+                                                      data-confirm-message="Programı sildiğinizde bu programa ait tüm dersler de silinecektir. Devam etmek istiyor musunuz?">
+                                                    <input type="hidden" name="id" value="<?= $program->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

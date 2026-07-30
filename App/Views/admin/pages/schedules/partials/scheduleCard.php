@@ -12,7 +12,7 @@ use function App\Helpers\getSettingValue;
 <?php
 $no_card = isset($no_card) && $no_card;
 $cardClasses = $no_card ? "schedule-card" : "card schedule-card card-outline card-primary";
-$headerClasses = $no_card ? "d-flex justify-content-between align-items-center mb-3" : "card-header " . ((isset($weekCount) && $weekCount > 1) ? 'd-flex justify-content-between align-items-center' : '');
+$headerClasses = $no_card ? "d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" : "card-header d-flex justify-content-between align-items-center flex-wrap gap-2";
 $bodyClasses = $no_card ? "" : "card-body";
 ?>
 <!--begin::Row Program Satırı-->

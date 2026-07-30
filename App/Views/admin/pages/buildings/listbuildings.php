@@ -37,43 +37,45 @@ use App\Models\Building;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-bordered table-striped dataTable">
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Bina Adı</th>
-                                    <th>Bağlı Birim</th>
-                                    <th>İşlemler</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($buildings as $building): ?>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
                                     <tr>
-                                        <td><?= $building->id ?></td>
-                                        <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
-                                        <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
-                                        <td class="text-center">
-                                            <?php if (Gate::check("update", $building)): ?>
-                                            <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <?php endif; ?>
-                                            <?php if (Gate::check("delete", $building)): ?>
-                                            <form action="/ajax/deletebuilding/<?= $building->id ?>"
-                                                  class="ajaxFormDelete d-inline"
-                                                  id="deleteBuilding-<?= $building->id ?>"
-                                                  method="post">
-                                                <input type="hidden" name="id" value="<?= $building->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                            <?php endif; ?>
-                                        </td>
+                                        <th>#</th>
+                                        <th>Bina Adı</th>
+                                        <th>Bağlı Birim</th>
+                                        <th>İşlemler</th>
                                     </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($buildings as $building): ?>
+                                        <tr>
+                                            <td><?= $building->id ?></td>
+                                            <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
+                                            <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $building)): ?>
+                                                <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $building)): ?>
+                                                <form action="/ajax/deletebuilding/<?= $building->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteBuilding-<?= $building->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id" value="<?= $building->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

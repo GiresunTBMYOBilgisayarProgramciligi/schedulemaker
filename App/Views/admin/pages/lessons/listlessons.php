@@ -49,73 +49,75 @@ use App\Models\Lesson;
                             </div>
                         </div>
                         <div class="card-body">
-                    <table class="table table-bordered table-striped dataTable">
-                        <thead>
-                        <tr>
-                            <th scope="col">İd</th>
-                            <th scope="col">Kodu</th>
-                            <th scope="col" class="filterable">Adı</th>
-                            <th scope="col" class="filterable">Türü</th>
-                            <th scope="col">Mevcudu</th>
-                            <th scope="col">Saati</th>
-                            <th scope="col" class="filterable">Yarıyılı</th>
-                            <th scope="col" class="filterable">Hocası</th>
-                            <th scope="col" class="filterable">Bölüm</th>
-                            <th scope="col" class="filterable">Program</th>
-                            <th scope="col" class="filterable">Dönem</th>
-                            <th scope="col" class="filterable">Yıl</th>
-                            <th scope="col" class="filterable">Bina</th>
-                            <th scope="col">Derslik türü</th>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">İd</th>
+                                        <th scope="col">Kodu</th>
+                                        <th scope="col" class="filterable">Adı</th>
+                                        <th scope="col" class="filterable">Türü</th>
+                                        <th scope="col">Mevcudu</th>
+                                        <th scope="col">Saati</th>
+                                        <th scope="col" class="filterable">Yarıyılı</th>
+                                        <th scope="col" class="filterable">Hocası</th>
+                                        <th scope="col" class="filterable">Bölüm</th>
+                                        <th scope="col" class="filterable">Program</th>
+                                        <th scope="col" class="filterable">Dönem</th>
+                                        <th scope="col" class="filterable">Yıl</th>
+                                        <th scope="col" class="filterable">Bina</th>
+                                        <th scope="col">Derslik türü</th>
 
-                            <th scope="col" class="text-center">İşlemler</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($lessons as $lesson): ?>
-                            <tr>
-                                <td><?= $lesson->id ?></td>
-                                <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
-                                <td
-                                    <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
-                                >
-                                    <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
-                                        <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
-                                    </a>
-                                </td>
-                                <td><?= $lesson->getTypeName() ?></td>
-                                <td><?= $lesson->size ?></td>
-                                <td><?= $lesson->hours ?></td>
-                                <td><?= $lesson->semester_no ?></td>
-                                <td><?= $lesson->lecturer?->getFullName() ?? '<span class="text-danger">Atanmamış</span>' ?></td>
-                                <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->semester ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->academic_year ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                <td><?= $lesson->getClassroomTypeName() ?></td>
+                                        <th scope="col" class="text-center">İşlemler</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($lessons as $lesson): ?>
+                                        <tr>
+                                            <td><?= $lesson->id ?></td>
+                                            <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
+                                            <td
+                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
+                                            >
+                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
+                                                    <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                </a>
+                                            </td>
+                                            <td><?= $lesson->getTypeName() ?></td>
+                                            <td><?= $lesson->size ?></td>
+                                            <td><?= $lesson->hours ?></td>
+                                            <td><?= $lesson->semester_no ?></td>
+                                            <td><?= $lesson->lecturer?->getFullName() ?? '<span class="text-danger">Atanmamış</span>' ?></td>
+                                            <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->semester ?? '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->academic_year ?? '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->getClassroomTypeName() ?></td>
 
 
-                                <td class="text-center">
-                                    <?php if (Gate::check("update", $lesson)): ?>
-                                    <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <?php endif; ?>
-                                    <?php if (Gate::check("delete", $lesson)): ?>
-                                    <form action="/ajax/deletelesson/<?= $lesson->id ?>"
-                                          class="ajaxFormDelete d-inline"
-                                          id="deleteLesson-<?= $lesson->id ?>"
-                                          method="post">
-                                        <input type="hidden" name="id" value="<?= $lesson->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?></tbody>
-                    </table>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $lesson)): ?>
+                                                <a href="/admin/editlesson/<?= $lesson->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $lesson)): ?>
+                                                <form action="/ajax/deletelesson/<?= $lesson->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteLesson-<?= $lesson->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

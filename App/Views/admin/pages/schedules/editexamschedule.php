@@ -38,6 +38,18 @@ use function App\Helpers\getSettingValue;
     <div class="app-content">
         <!--begin::Container-->
         <div class="container-fluid">
+            <!-- Mobile device warning alert -->
+            <div class="alert alert-warning alert-dismissible fade show d-md-none mb-3 shadow-sm border-warning" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-laptop fs-3 me-3 text-warning"></i>
+                    <div>
+                        <strong>Bilgisayar Kullanımı Tavsiye Edilir</strong>
+                        <div class="small">Sınav programı düzenleme ve sürükle-bırak işlemleri masaüstü/dizüstü bilgisayarlar için tasarlanmıştır. Mobil cihazlarda takvimi inceleyebilir, ancak düzenlemeleri bilgisayardan yapmanız önerilir.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+            </div>
+
             <!--begin::Row-->
             <div class="row mb-3">
                 <div class="col-12">
@@ -88,7 +100,7 @@ use function App\Helpers\getSettingValue;
                         <!-- /.card-header -->
                         <div class="card-body">
                             <!-- Tabs navs -->
-                            <ul class="nav nav-tabs mb-3" id="scheduleTabs" role="tablist">
+                            <ul class="nav nav-tabs mb-3 flex-nowrap overflow-x-auto" id="scheduleTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
                                         data-bs-target="#program-tab-pane" type="button" role="tab"

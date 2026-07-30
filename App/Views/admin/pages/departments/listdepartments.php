@@ -48,53 +48,55 @@ use App\Models\Department;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-bordered table-striped dataTable">
-                        <thead>
-                        <tr>
-                            <th>İd</th>
-                            <th>Adı</th>
-                            <th>Bölüm Başkanı</th>
-                            <th class="filterable">Üst Birim</th>
-                            <th>Aktif</th>
-                            <th class="text-center">İşlemler</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($departments as $department): ?>
-                            <tr>
-                                <td><?= $department->id ?></td>
-                                <td><a href="/admin/department/<?= $department->id ?>" class="text-dark" title="Görüntüle"><?= $department->name ?></a></td>
-                                <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
-                                <td><?= $department->unit?->name ?? '' ?></td>
-                                <td>
-                                    <div class="form-check form-switch ">
-                                        <input name="active" class="form-check-input" type="checkbox"
-                                               id="flexSwitchCheckChecked"
-                                                <?= $department->active ? "checked" : "" ?> disabled>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <?php if (Gate::check("update", $department)): ?>
-                                    <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <?php endif; ?>
-                                    <?php if (Gate::check("delete", $department)): ?>
-                                    <form action="/ajax/deletedepartment/<?= $department->id ?>"
-                                          class="ajaxFormDelete d-inline"
-                                          id="deleteProgram-<?= $department->id ?>"
-                                          method="post"
-                                          data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
-                                        <input type="hidden" name="id" value="<?= $department->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?></tbody>
-                    </table>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                    <tr>
+                                        <th>İd</th>
+                                        <th>Adı</th>
+                                        <th>Bölüm Başkanı</th>
+                                        <th class="filterable">Üst Birim</th>
+                                        <th>Aktif</th>
+                                        <th class="text-center">İşlemler</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($departments as $department): ?>
+                                        <tr>
+                                            <td><?= $department->id ?></td>
+                                            <td><a href="/admin/department/<?= $department->id ?>" class="text-dark" title="Görüntüle"><?= $department->name ?></a></td>
+                                            <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
+                                            <td><?= $department->unit?->name ?? '' ?></td>
+                                            <td>
+                                                <div class="form-check form-switch ">
+                                                    <input name="active" class="form-check-input" type="checkbox"
+                                                           id="flexSwitchCheckChecked"
+                                                            <?= $department->active ? "checked" : "" ?> disabled>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $department)): ?>
+                                                <a href="/admin/editdepartment/<?= $department->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $department)): ?>
+                                                <form action="/ajax/deletedepartment/<?= $department->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteProgram-<?= $department->id ?>"
+                                                      method="post"
+                                                      data-confirm-message="Bölümü sildiğinizde altındaki tüm programlar ve bu programlara ait dersler de silinecektir. Devam etmek istiyor musunuz?">
+                                                    <input type="hidden" name="id" value="<?= $department->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

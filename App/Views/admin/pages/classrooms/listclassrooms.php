@@ -50,48 +50,50 @@ use App\Models\Classroom;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-bordered table-striped dataTable">
-                        <thead>
-                        <tr>
-                            <th scope="col">İd</th>
-                            <th scope="col">Adı</th>
-                            <th scope="col" class="filterable">Türü</th>
-                            <th scope="col" class="filterable">Bina</th>
-                            <th scope="col">Ders Mevcudu</th>
-                            <th scope="col">Sınav Mevcudu</th>
-                            <th scope="col" class="text-center">İşlemler</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($classrooms as $classroom): ?>
-                            <tr>
-                                <td><?= $classroom->id ?></td>
-                                <td><a href="/admin/classroom/<?= $classroom->id ?>" class="text-dark" title="Görüntüle"><?= $classroom->name ?></a></td>
-                                <td><?= $classroom->getTypeName() ?></td>
-                                <td><?= $classroom->building->name ?? '-' ?></td>
-                                <td><?= $classroom->class_size ?></td>
-                                <td><?= $classroom->exam_size ?></td>
-                                <td class="text-center">
-                                    <?php if (Gate::check("update", $classroom)): ?>
-                                    <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <?php endif; ?>
-                                    <?php if (Gate::check("delete", $classroom)): ?>
-                                    <form action="/ajax/deleteclassroom/<?= $classroom->id ?>"
-                                          class="ajaxFormDelete d-inline"
-                                          id="deleteClassroom-<?= $classroom->id ?>"
-                                          method="post">
-                                        <input type="hidden" name="id" value="<?= $classroom->id ?>">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?></tbody>
-                    </table>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">İd</th>
+                                        <th scope="col">Adı</th>
+                                        <th scope="col" class="filterable">Türü</th>
+                                        <th scope="col" class="filterable">Bina</th>
+                                        <th scope="col">Ders Mevcudu</th>
+                                        <th scope="col">Sınav Mevcudu</th>
+                                        <th scope="col" class="text-center">İşlemler</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($classrooms as $classroom): ?>
+                                        <tr>
+                                            <td><?= $classroom->id ?></td>
+                                            <td><a href="/admin/classroom/<?= $classroom->id ?>" class="text-dark" title="Görüntüle"><?= $classroom->name ?></a></td>
+                                            <td><?= $classroom->getTypeName() ?></td>
+                                            <td><?= $classroom->building->name ?? '-' ?></td>
+                                            <td><?= $classroom->class_size ?></td>
+                                            <td><?= $classroom->exam_size ?></td>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $classroom)): ?>
+                                                <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $classroom)): ?>
+                                                <form action="/ajax/deleteclassroom/<?= $classroom->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteClassroom-<?= $classroom->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id" value="<?= $classroom->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

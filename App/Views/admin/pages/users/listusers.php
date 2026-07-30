@@ -51,55 +51,57 @@ use App\Models\User;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table id="user-list-table" class="table table-bordered table-striped dataTable">
-                        <thead>
-                            <tr>
-                                <!--<th scope="col">İd</th>-->
-                                <th scope="col">Ünvanı</th>
-                                <th scope="col">Adı</th>
-                                <th scope="col">Soyadı</th>
-                                <th scope="col">e-Posta</th>
-                                <th scope="col" class="filterable">Üst Birim</th>
-                                <th scope="col" class="filterable">Bölüm</th>
-                                <th scope="col" class="filterable">Program</th>
-                                <th scope="col" class="filterable">Yetki</th>
-                                <!--<ths cope="col">Kayıt Tarihi</th>-->
-                                <th scope="col" class="text-center">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($users as $user): ?>
-                                <tr>
-                                    <!--<td><?php /*= $user->id */ ?></td>-->
-                                    <td><?= $user->title ?></td>
-                                    <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->name ?></a></td>
-                                    <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->last_name ?></a></td>
-                                    <td><?= $user->mail ?></td>
-                                    <td><?= $user->unit->name ?? '' ?></td>
-                                    <td><?= $user->department->name ?? '' ?></td>
-                                    <td><?= $user->program->name ?? '' ?></td>
-                                    <td><?= $user->getRoleName() ?></td>
-                                    <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
-                                    <td class="text-center">
-                                        <?php if (Gate::check("update", $user)): ?>
-                                        <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <?php endif; ?>
-                                        <?php if (Gate::check("delete", $user)): ?>
-                                            <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete d-inline"
-                                                  id="deleteUser-<?= $user->id ?>" method="post">
-                                                <input type="hidden" name="id" value="<?= $user->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            <div class="table-responsive">
+                                <table id="user-list-table" class="table table-bordered table-striped dataTable">
+                                    <thead>
+                                        <tr>
+                                            <!--<th scope="col">İd</th>-->
+                                            <th scope="col">Ünvanı</th>
+                                            <th scope="col">Adı</th>
+                                            <th scope="col">Soyadı</th>
+                                            <th scope="col">e-Posta</th>
+                                            <th scope="col" class="filterable">Üst Birim</th>
+                                            <th scope="col" class="filterable">Bölüm</th>
+                                            <th scope="col" class="filterable">Program</th>
+                                            <th scope="col" class="filterable">Yetki</th>
+                                            <!--<ths cope="col">Kayıt Tarihi</th>-->
+                                            <th scope="col" class="text-center">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($users as $user): ?>
+                                            <tr>
+                                                <!--<td><?php /*= $user->id */ ?></td>-->
+                                                <td><?= $user->title ?></td>
+                                                <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->name ?></a></td>
+                                                <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->last_name ?></a></td>
+                                                <td><?= $user->mail ?></td>
+                                                <td><?= $user->unit->name ?? '' ?></td>
+                                                <td><?= $user->department->name ?? '' ?></td>
+                                                <td><?= $user->program->name ?? '' ?></td>
+                                                <td><?= $user->getRoleName() ?></td>
+                                                <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
+                                                <td class="text-center">
+                                                    <?php if (Gate::check("update", $user)): ?>
+                                                    <a href="/admin/edituser/<?= $user->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <?php endif; ?>
+                                                    <?php if (Gate::check("delete", $user)): ?>
+                                                        <form action="/ajax/deleteuser/<?= $user->id ?>" class="ajaxFormDelete d-inline"
+                                                              id="deleteUser-<?= $user->id ?>" method="post">
+                                                            <input type="hidden" name="id" value="<?= $user->id ?>">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

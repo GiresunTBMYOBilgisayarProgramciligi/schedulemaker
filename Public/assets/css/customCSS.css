@@ -1,0 +1,65 @@
+/* --- Mobile UX & Responsive Custom Enhancements --- */
+
+/* Schedule Table Container & Horizontal Touch Scroll */
+.schedule-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+/* Sticky time-slot column on small / mobile screens */
+@media (max-width: 991.98px) {
+    .schedule-table th.time-slot,
+    .schedule-table td.time-slot {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        background-color: var(--bs-body-bg, #f8f9fa);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08);
+    }
+}
+
+/* Horizontal tab scroll on mobile devices */
+.nav-tabs.flex-nowrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.nav-tabs.flex-nowrap::-webkit-scrollbar {
+    height: 3px;
+}
+
+.nav-tabs.flex-nowrap::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.nav-tabs.flex-nowrap .nav-item {
+    flex: 0 0 auto;
+}
+
+/* Responsive Table Wrapper Touch Support */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+/* Touch-friendly adjustments for smaller screens */
+@media (max-width: 767.98px) {
+    .btn-group .btn {
+        padding: 0.375rem 0.6rem;
+        font-size: 0.825rem;
+    }
+    .available-schedule-items {
+        max-height: 35vh !important;
+    }
+    .card-header .card-title {
+        font-size: 1.1rem;
+    }
+    .app-content-header h3 {
+        font-size: 1.3rem;
+    }
+}

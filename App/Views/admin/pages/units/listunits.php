@@ -40,51 +40,53 @@ use App\Models\Unit;
                             </div>
                         </div>
                         <div class="card-body">
-                            <table class="table table-bordered table-striped dataTable">
-                                <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Ad</th>
-                                    <th>Tür</th>
-                                    <th>Durum</th>
-                                    <th>İşlemler</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($units as $unit): ?>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped dataTable">
+                                    <thead>
                                     <tr>
-                                        <td><?= $unit->id ?></td>
-                                        <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
-                                        <td><?= $unit->getTypeName() ?></td>
-                                        <td>
-                                            <?php if ($unit->active): ?>
-                                                <span class="badge bg-success">Aktif</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary">Pasif</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-center">
-                                            <?php if (Gate::check("update", $unit)): ?>
-                                            <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-outline-warning">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <?php endif; ?>
-                                            <?php if (Gate::check("delete", $unit)): ?>
-                                            <form action="/ajax/deleteunit/<?= $unit->id ?>"
-                                                  class="ajaxFormDelete d-inline"
-                                                  id="deleteUnit-<?= $unit->id ?>"
-                                                  method="post">
-                                                <input type="hidden" name="id" value="<?= $unit->id ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                            <?php endif; ?>
-                                        </td>
+                                        <th>#</th>
+                                        <th>Ad</th>
+                                        <th>Tür</th>
+                                        <th>Durum</th>
+                                        <th>İşlemler</th>
                                     </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach ($units as $unit): ?>
+                                        <tr>
+                                            <td><?= $unit->id ?></td>
+                                            <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
+                                            <td><?= $unit->getTypeName() ?></td>
+                                            <td>
+                                                <?php if ($unit->active): ?>
+                                                    <span class="badge bg-success">Aktif</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-secondary">Pasif</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-center">
+                                                <?php if (Gate::check("update", $unit)): ?>
+                                                <a href="/admin/editunit/<?= $unit->id ?>" class="btn btn-sm btn-outline-warning">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <?php endif; ?>
+                                                <?php if (Gate::check("delete", $unit)): ?>
+                                                <form action="/ajax/deleteunit/<?= $unit->id ?>"
+                                                      class="ajaxFormDelete d-inline"
+                                                      id="deleteUnit-<?= $unit->id ?>"
+                                                      method="post">
+                                                    <input type="hidden" name="id" value="<?= $unit->id ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
