@@ -43,7 +43,7 @@ $bodyClasses = $no_card ? "" : "card-body";
                     </div>
                 <?php endif; ?>
 
-                <div class="d-flex <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
+                <div class="d-flex ms-auto <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
                     <div class="btn-group" role="group" aria-label="Dışa aktarma">
                         <button id="singlePageExport" type="button" class="btn btn-outline-primary btn-sm"
                             data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>">
