@@ -17,12 +17,14 @@ class ProgramDTO
 
     public static function fromArray(array $data): self
     {
-        $active = null;
         if (isset($data['active'])) {
             $active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             if ($active === null && ($data['active'] === 'on' || $data['active'] === 1 || $data['active'] === '1')) {
                 $active = true;
             }
+        } else {
+            // Checkbox işaretli değilken form active anahtarını göndermez, bu durumda false olmalı
+            $active = false;
         }
 
         return new self(
