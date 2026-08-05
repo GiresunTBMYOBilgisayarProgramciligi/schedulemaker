@@ -49,12 +49,12 @@ class ProgramService extends BaseService
      */
     public function updateProgram(Program $program): int
     {
-        $this->logger->info('Program güncelleniyor', ['id' => $program->id]);
+        $this->logger->info('Program güncelleniyor', ['program' => $program]);
 
         try {
             return Database::transaction(function () use ($program) {
                 $program->update();
-                $this->logger->info('Program güncellendi', ['id' => $program->id]);
+                $this->logger->info('Program güncellendi', ['program' => $program]);
                 return $program->id;
             });
         } catch (PDOException $e) {
