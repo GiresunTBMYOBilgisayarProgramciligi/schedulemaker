@@ -134,15 +134,23 @@ class LessonScheduleService extends ScheduleService
     {
         $this->logger->debug("LessonScheduleService::moveScheduleItems START");
 
-        return Database::transaction(function () use ($dtos, $deletedDtos) {
-            // Önce silinecek öğeleri sil
-            if (!empty($deletedDtos)) {
-                $this->deleteScheduleItems($deletedDtos);
-            }
-            
-            // Sonra yeni öğeleri kaydet (çakışma kontrolü burada yapılıyor ve silinmiş öğeleri görmeyecek)
-            return $this->saveScheduleItems($dtos);
-        });
+        try {
+            return Database::transaction(function () use ($dtos, $deletedDtos) {
+                if (!empty($deletedDtos)) {
+                    $this->deleteScheduleItems($deletedDtos);
+                }
+                
+                $saveResult = $this->saveScheduleItems($dtos);
+                
+                if (!$saveResult->success) {
+                    throw new Exception(implode("\n", $saveResult->warnings));
+                }
+                
+                return $saveResult;
+            });
+        } catch (Exception $e) {
+            return new SaveScheduleResult([], 0, [$e->getMessage()], false);
+        }
     }
 
     /**

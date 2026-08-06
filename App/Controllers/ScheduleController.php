@@ -20,6 +20,7 @@ use function App\Helpers\getSettingValue;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
 use App\DTOs\ScheduleFilterDTO;
 use App\DTOs\SaveScheduleResult;
+use App\DTOs\ScheduleItemDTO;
 use App\Services\Schedule\LessonScheduleService;
 use App\Services\Schedule\ExamScheduleService;
 use App\Services\Schedule\ConflictService;
@@ -238,7 +239,7 @@ class ScheduleController extends Controller
      * çakışan kısım prefered değil ise çakışma hatası verilir.
      * çakışan kısım yoksa item kaydedilir.
      */
-    private function getChangeDetail(string $actionText, \App\DTOs\ScheduleItemDTO $dto): string
+    private function getChangeDetail(string $actionText, ScheduleItemDTO $dto): string
     {
         $days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
         $dayName = $days[$dto->dayIndex] ?? '';
@@ -248,7 +249,8 @@ class ScheduleController extends Controller
         $lessonId = null;
         
         if (!empty($dto->data) && is_array($dto->data)) {
-            $firstEntry = reset($dto->data);
+            $firstKey = array_key_first($dto->data);
+            $firstEntry = $dto->data[$firstKey];
             if (is_array($firstEntry) && isset($firstEntry['lesson_id'])) {
                 $lessonId = $firstEntry['lesson_id'];
             } elseif (isset($dto->data['lesson_id'])) {
@@ -257,7 +259,7 @@ class ScheduleController extends Controller
         }
         
         if ($lessonId) {
-            $lesson = (new \App\Models\Lesson())->find($lessonId);
+            $lesson = (new Lesson())->find($lessonId);
             if ($lesson) {
                 $lessonName = $lesson->name;
             }

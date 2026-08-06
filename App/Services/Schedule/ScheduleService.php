@@ -1258,13 +1258,19 @@ class ScheduleService extends BaseService
             if (!empty($mergedData)) {
                 // Mükerrer dersleri temizle
                 $uniqueData = [];
-                $seenLessonIds = [];
+                $seenHashes = [];
                 foreach ($mergedData as $d) {
                     $lid = $d['lesson_id'] ?? null;
-                    if ($lid && !in_array($lid, $seenLessonIds)) {
-                        $seenLessonIds[] = $lid;
-                        $uniqueData[] = $d;
-                    } elseif (!$lid) {
+                    if ($lid) {
+                        $cid = $d['classroom_id'] ?? '';
+                        $lec = $d['lecturer_id'] ?? '';
+                        $hash = $lid . '_' . $cid . '_' . $lec;
+                        
+                        if (!in_array($hash, $seenHashes)) {
+                            $seenHashes[] = $hash;
+                            $uniqueData[] = $d;
+                        }
+                    } else {
                         $uniqueData[] = $d;
                     }
                 }
