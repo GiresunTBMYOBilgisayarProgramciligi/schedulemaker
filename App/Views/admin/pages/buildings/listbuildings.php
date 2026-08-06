@@ -37,19 +37,41 @@ use App\Models\Building;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped dataTable">
                                     <thead>
                                     <tr>
+                                        <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                        </th>
                                         <th>#</th>
                                         <th>Bina Adı</th>
                                         <th>Bağlı Birim</th>
-                                        <th>İşlemler</th>
+                                        <th class="text-center no-export">İşlemler</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <?php foreach ($buildings as $building): ?>
                                         <tr>
+                                            <td class="text-center no-export">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $building->id ?>">
+                                            </td>
                                             <td><?= $building->id ?></td>
                                             <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
                                             <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
@@ -83,3 +105,18 @@ use App\Models\Building;
         </div>
     </div>
 </main>
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'building',
+        deleteUrl: '/ajax/bulkDeleteBuildings',
+        updateUrl: '/ajax/bulkUpdateBuildings',
+        deleteConfirmMessage: 'Seçili binaları silmek istediğinize emin misiniz?',
+        editableFields: [
+            { name: 'unit_id', label: 'Bağlı Birim', type: 'select', options: <?= json_encode($unitOptions ?? []) ?> }
+        ]
+    });
+});
+</script>

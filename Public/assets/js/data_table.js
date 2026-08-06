@@ -49,6 +49,15 @@ let dataTable = new DataTable('.dataTable', {
     },
     pageLength: 25,
     lengthMenu: [10, 25, 50, 100],
+    columnDefs: [
+        {
+            targets: 'no-sort',
+            orderable: false,
+            searchable: false,
+            width: '20px',
+            className: 'text-center'
+        }
+    ],
     language: {
         url: '/assets/js/datatable_tr.json'
     },

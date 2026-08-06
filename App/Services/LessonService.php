@@ -639,4 +639,95 @@ class LessonService extends BaseService
             'items'              => $slots,
         ];
     }
+
+    // ──────────────────────────────────────────
+    // Toplu İşlemler
+    // ──────────────────────────────────────────
+
+    /**
+     * Birden fazla dersi toplu siler.
+     *
+     * @param int[] $ids
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu ders silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $lesson = (new Lesson())->find($id);
+                if (!$lesson) {
+                    $failed[$id] = "Ders bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $lesson)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteLesson($lesson);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu ders silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla dersi toplu günceller.
+     *
+     * @param int[] $ids
+     * @param array<string, mixed> $fields
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu ders güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $lesson = clone (new Lesson())->find($id);
+                if (!$lesson) {
+                    $failed[$id] = "Ders bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $lesson)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                foreach ($fields as $fieldName => $fieldValue) {
+                    $lesson->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                }
+
+                $this->updateLesson($lesson);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu ders güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
 }

@@ -16,6 +16,7 @@ use App\Controllers\Auth\PasswordResetController;
 
 use App\Controllers\SettingsController;
 use App\Controllers\ScheduleNoteController;
+use App\Controllers\BulkActionController;
 use App\Core\Router;
 use App\Models\User;
 use Exception;
@@ -680,6 +681,107 @@ class AjaxRouter extends Router
     public function deleteScheduleNoteAction(): void
     {
         $this->response = (new ScheduleNoteController())->deleteNote($this->data);
+        $this->sendResponse();
+    }
+
+    /*
+     * Bulk Actions (Toplu İşlemler)
+     */
+    /** @throws Exception */
+    public function bulkDeleteProgramsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeletePrograms($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateProgramsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdatePrograms($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteLessonsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteLessons($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateLessonsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateLessons($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteUsersAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteUsers($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateUsersAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateUsers($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteClassroomsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteClassrooms($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateClassroomsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateClassrooms($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteDepartmentsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteDepartments($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateDepartmentsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateDepartments($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteUnitsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteUnits($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateUnitsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateUnits($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkDeleteBuildingsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkDeleteBuildings($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function bulkUpdateBuildingsAction(): void
+    {
+        $this->response = (new BulkActionController())->bulkUpdateBuildings($this->data);
         $this->sendResponse();
     }
 }

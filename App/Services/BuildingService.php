@@ -6,6 +6,8 @@ use App\Models\Building;
 use App\Models\Classroom;
 use App\DTOs\BuildingDTO;
 use App\Core\Database;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -95,5 +97,92 @@ class BuildingService extends BaseService
             ]);
             throw new Exception("Bina silinirken bir hata oluştu: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Birden fazla binayı toplu siler.
+     *
+     * @param int[] $ids
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu bina silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $building = (new Building())->find($id);
+                if (!$building) {
+                    $failed[$id] = "Bina bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $building)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteBuilding($building);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu bina silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla binayı toplu günceller.
+     *
+     * @param int[] $ids
+     * @param array<string, mixed> $fields
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu bina güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $building = clone (new Building())->find($id);
+                if (!$building) {
+                    $failed[$id] = "Bina bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $building)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                foreach ($fields as $fieldName => $fieldValue) {
+                    $building->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                }
+
+                $this->updateBuilding($building);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu bina güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
     }
 }

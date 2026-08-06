@@ -48,21 +48,43 @@ use App\Models\Department;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped dataTable">
                                     <thead>
                                     <tr>
+                                        <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                        </th>
                                         <th>İd</th>
                                         <th>Adı</th>
                                         <th>Bölüm Başkanı</th>
                                         <th class="filterable">Üst Birim</th>
                                         <th>Aktif</th>
-                                        <th class="text-center">İşlemler</th>
+                                        <th class="text-center no-export">İşlemler</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <?php foreach ($departments as $department): ?>
                                         <tr>
+                                            <td class="text-center no-export">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $department->id ?>">
+                                            </td>
                                             <td><?= $department->id ?></td>
                                             <td><a href="/admin/department/<?= $department->id ?>" class="text-dark" title="Görüntüle"><?= $department->name ?></a></td>
                                             <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
@@ -108,3 +130,19 @@ use App\Models\Department;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'department',
+        deleteUrl: '/ajax/bulkDeleteDepartments',
+        updateUrl: '/ajax/bulkUpdateDepartments',
+        deleteConfirmMessage: 'Seçili bölümleri silmek istediğinize emin misiniz? Altındaki tüm programlar ve dersler de silinecektir.',
+        editableFields: [
+            { name: 'active', label: 'Aktiflik Durumu', type: 'switch' },
+            { name: 'unit_id', label: 'Üst Birim', type: 'select', options: <?= json_encode($unitOptions ?? []) ?> }
+        ]
+    });
+});
+</script>

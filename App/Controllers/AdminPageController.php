@@ -150,6 +150,11 @@ class AdminPageController extends Controller
         $view_data = [
             "page_title" => "Kullanıcı Listesi",
         ];
+
+        $view_data['unitOptions'] = array_map(fn($u) => ['value' => $u->id, 'label' => $u->name], (new UnitRepository())->findAll());
+        $view_data['deptOptions'] = array_map(fn($d) => ['value' => $d->id, 'label' => $d->name], (new DepartmentRepository())->findAll());
+        $view_data['progOptions'] = array_map(fn($p) => ['value' => $p->id, 'label' => $p->name], (new ProgramRepository())->findAll());
+        $view_data['roleOptions'] = array_map(fn($r) => ['value' => $r->value, 'label' => $r->label()], UserRole::cases());
         if ($currentUser->role == "department_head") {
             $view_data['users'] = (new UserRepository())->getUsersForDepartmentHead($currentUser->department_id);
         } else {
@@ -391,6 +396,9 @@ class AdminPageController extends Controller
             "lessonController" => new LessonController(),
             "page_title" => "Ders Listesi"
         ];
+        
+        $view_data['buildingOptions'] = array_map(fn($b) => ['value' => $b->id, 'label' => $b->name], (new BuildingRepository())->findAll());
+        $view_data['lecturerOptions'] = array_map(fn($u) => ['value' => $u->id, 'label' => $u->getFullName()], (new UserRepository())->findAll());
         if ($currentUser->role == "department_head") {
             $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
@@ -535,7 +543,8 @@ class AdminPageController extends Controller
         return [
             "classroomController" => new ClassroomController(),
             "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
-            "page_title" => "Derslik Listesi"
+            "page_title" => "Derslik Listesi",
+            "buildingOptions" => array_map(fn($b) => ['value' => $b->id, 'label' => $b->name], (new BuildingRepository())->findAll())
         ];
     }
 
@@ -596,7 +605,8 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
         return [
             "departments" => (new DepartmentRepository())->getAuthorized('view', [], ['chairperson', 'unit']),
-            "page_title" => "Bölüm Listesi"
+            "page_title" => "Bölüm Listesi",
+            "unitOptions" => array_map(fn($u) => ['value' => $u->id, 'label' => $u->name], (new UnitRepository())->findAll())
         ];
     }
 
@@ -696,6 +706,7 @@ class AdminPageController extends Controller
         return [
             "programs" => (new ProgramRepository())->getAuthorized('view', [], ['department']),
             "page_title" => "Program Listesi",
+            "deptOptions" => array_map(fn($d) => ['value' => $d->id, 'label' => $d->name], (new DepartmentRepository())->findAll())
         ];
     }
 
@@ -963,6 +974,7 @@ class AdminPageController extends Controller
         return [
             'buildings'  => (new BuildingRepository())->getAuthorized('view', [], ['unit']),
             'page_title' => 'Bina Listesi',
+            "unitOptions" => array_map(fn($u) => ['value' => $u->id, 'label' => $u->name], (new UnitRepository())->findAll())
         ];
 
     }

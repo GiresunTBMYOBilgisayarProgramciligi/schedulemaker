@@ -63,3 +63,14 @@
         font-size: 1.3rem;
     }
 }
+
+/* DataTables Bulk Checkbox Column Width Control */
+table.dataTable thead th.no-sort:first-child,
+table.dataTable tbody td:has(.bulk-select-row) {
+    width: 25px !important;
+    max-width: 25px !important;
+    min-width: 25px !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+    text-align: center !important;
+}

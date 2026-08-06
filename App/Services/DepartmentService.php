@@ -9,6 +9,8 @@ use App\DTOs\DepartmentDTO;
 use App\Core\Database;
 use App\Core\EventDispatcher;
 use App\Events\ChairpersonChangedEvent;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -161,5 +163,96 @@ class DepartmentService extends BaseService
                 new ChairpersonChangedEvent($oldChairpersonId, null)
             );
         }
+    }
+
+    /**
+     * Birden fazla bölümü toplu siler.
+     *
+     * @param int[] $ids
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu bölüm silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $department = (new Department())->find($id);
+                if (!$department) {
+                    $failed[$id] = "Bölüm bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $department)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteDepartment($department);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu bölüm silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla bölümü toplu günceller.
+     *
+     * @param int[] $ids
+     * @param array<string, mixed> $fields
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu bölüm güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $department = clone (new Department())->find($id);
+                if (!$department) {
+                    $failed[$id] = "Bölüm bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $department)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                foreach ($fields as $fieldName => $fieldValue) {
+                    if ($fieldName === 'active') {
+                        $department->active = filter_var($fieldValue, FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $department->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                    }
+                }
+
+                $this->updateDepartment($department);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu bölüm güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
     }
 }

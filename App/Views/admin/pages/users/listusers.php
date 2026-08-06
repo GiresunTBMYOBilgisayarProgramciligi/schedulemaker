@@ -51,10 +51,29 @@ use App\Models\User;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table id="user-list-table" class="table table-bordered table-striped dataTable">
                                     <thead>
                                         <tr>
+                                            <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                                <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                            </th>
                                             <!--<th scope="col">İd</th>-->
                                             <th scope="col">Ünvanı</th>
                                             <th scope="col">Adı</th>
@@ -65,12 +84,15 @@ use App\Models\User;
                                             <th scope="col" class="filterable">Program</th>
                                             <th scope="col" class="filterable">Yetki</th>
                                             <!--<ths cope="col">Kayıt Tarihi</th>-->
-                                            <th scope="col" class="text-center">İşlemler</th>
+                                            <th scope="col" class="text-center no-export">İşlemler</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($users as $user): ?>
                                             <tr>
+                                                <td class="text-center no-export">
+                                                    <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $user->id ?>">
+                                                </td>
                                                 <!--<td><?php /*= $user->id */ ?></td>-->
                                                 <td><?= $user->title ?></td>
                                                 <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->name ?></a></td>
@@ -113,3 +135,21 @@ use App\Models\User;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'user',
+        deleteUrl: '/ajax/bulkDeleteUsers',
+        updateUrl: '/ajax/bulkUpdateUsers',
+        deleteConfirmMessage: 'Seçili kullanıcıları silmek istediğinize emin misiniz?',
+        editableFields: [
+            { name: 'role', label: 'Yetki Rolü', type: 'select', options: <?= json_encode($roleOptions ?? []) ?> },
+            { name: 'unit_id', label: 'Üst Birim', type: 'select', options: <?= json_encode($unitOptions ?? []) ?> },
+            { name: 'department_id', label: 'Bölüm', type: 'select', options: <?= json_encode($deptOptions ?? []) ?> },
+            { name: 'program_id', label: 'Program', type: 'select', options: <?= json_encode($progOptions ?? []) ?> }
+        ]
+    });
+});
+</script>

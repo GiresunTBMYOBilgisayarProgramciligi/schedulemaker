@@ -50,22 +50,44 @@ use App\Models\Classroom;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped dataTable">
                                     <thead>
                                     <tr>
+                                        <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                        </th>
                                         <th scope="col">İd</th>
                                         <th scope="col">Adı</th>
                                         <th scope="col" class="filterable">Türü</th>
                                         <th scope="col" class="filterable">Bina</th>
                                         <th scope="col">Ders Mevcudu</th>
                                         <th scope="col">Sınav Mevcudu</th>
-                                        <th scope="col" class="text-center">İşlemler</th>
+                                        <th scope="col" class="text-center no-export">İşlemler</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <?php foreach ($classrooms as $classroom): ?>
                                         <tr>
+                                            <td class="text-center no-export">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $classroom->id ?>">
+                                            </td>
                                             <td><?= $classroom->id ?></td>
                                             <td><a href="/admin/classroom/<?= $classroom->id ?>" class="text-dark" title="Görüntüle"><?= $classroom->name ?></a></td>
                                             <td><?= $classroom->getTypeName() ?></td>
@@ -105,3 +127,18 @@ use App\Models\Classroom;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'classroom',
+        deleteUrl: '/ajax/bulkDeleteClassrooms',
+        updateUrl: '/ajax/bulkUpdateClassrooms',
+        deleteConfirmMessage: 'Seçili derslikleri silmek istediğinize emin misiniz? Bu dersliklere ait ders programı kayıtları da temizlenecektir.',
+        editableFields: [
+            { name: 'building_id', label: 'Bina', type: 'select', options: <?= json_encode($buildingOptions ?? []) ?> }
+        ]
+    });
+});
+</script>

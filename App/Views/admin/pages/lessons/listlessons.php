@@ -49,10 +49,29 @@ use App\Models\Lesson;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped dataTable">
                                     <thead>
                                     <tr>
+                                        <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                        </th>
                                         <th scope="col">İd</th>
                                         <th scope="col">Kodu</th>
                                         <th scope="col" class="filterable">Adı</th>
@@ -68,12 +87,15 @@ use App\Models\Lesson;
                                         <th scope="col" class="filterable">Bina</th>
                                         <th scope="col">Derslik türü</th>
 
-                                        <th scope="col" class="text-center">İşlemler</th>
+                                        <th scope="col" class="text-center no-export">İşlemler</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <?php foreach ($lessons as $lesson): ?>
                                         <tr>
+                                            <td class="text-center no-export">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $lesson->id ?>">
+                                            </td>
                                             <td><?= $lesson->id ?></td>
                                             <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
                                             <td
@@ -129,3 +151,25 @@ use App\Models\Lesson;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'lesson',
+        deleteUrl: '/ajax/bulkDeleteLessons',
+        updateUrl: '/ajax/bulkUpdateLessons',
+        deleteConfirmMessage: 'Seçili dersleri silmek istediğinize emin misiniz? Bu işlem ders programındaki tüm ilişkili kayıtları da temizleyecektir.',
+        editableFields: [
+            { name: 'semester', label: 'Dönem', type: 'select', options: [
+                { value: 'Güz', label: 'Güz' },
+                { value: 'Bahar', label: 'Bahar' },
+                { value: 'Yaz', label: 'Yaz' }
+            ] },
+            { name: 'academic_year', label: 'Akademik Yıl (örn: 2025-2026)', type: 'text' },
+            { name: 'building_id', label: 'Bina', type: 'select', options: <?= json_encode($buildingOptions ?? []) ?> },
+            { name: 'lecturer_id', label: 'Öğretim Elemanı', type: 'select', options: <?= json_encode($lecturerOptions ?? []) ?> }
+        ]
+    });
+});
+</script>

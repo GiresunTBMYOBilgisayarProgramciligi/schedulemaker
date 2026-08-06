@@ -7,6 +7,8 @@ use App\Models\Lesson;
 use App\DTOs\ProgramDTO;
 use App\Services\Schedule\ScheduleService;
 use App\Core\Database;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -99,5 +101,99 @@ class ProgramService extends BaseService
             ]);
             throw new Exception("Program silinirken bir hata oluştu: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Birden fazla programı toplu siler.
+     * Her kayıt için ayrı ayrı yetki kontrolü yapılır.
+     *
+     * @param int[] $ids Silinecek program ID'leri
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu program silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $program = (new Program())->find($id);
+                if (!$program) {
+                    $failed[$id] = "Program bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $program)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteProgram($program);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu program silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla programı toplu günceller.
+     * Her kayıt için ayrı ayrı yetki kontrolü yapılır.
+     *
+     * @param int[] $ids Güncellenecek program ID'leri
+     * @param array<string, mixed> $fields Güncellenecek alanlar
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu program güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $program = clone (new Program())->find($id);
+                if (!$program) {
+                    $failed[$id] = "Program bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $program)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                // Gelen alanları modele uygula
+                foreach ($fields as $fieldName => $fieldValue) {
+                    if ($fieldName === 'active') {
+                        $program->active = filter_var($fieldValue, FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $program->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                    }
+                }
+
+                $this->updateProgram($program);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu program güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
     }
 }

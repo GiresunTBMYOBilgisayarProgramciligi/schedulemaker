@@ -6,6 +6,8 @@ use App\Models\Unit;
 use App\Models\Department;
 use App\DTOs\UnitDTO;
 use App\Core\Database;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -105,5 +107,96 @@ class UnitService extends BaseService
             ]);
             throw new Exception("Birim silinirken bir hata oluştu.");
         }
+    }
+
+    /**
+     * Birden fazla birimi toplu siler.
+     *
+     * @param int[] $ids
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu birim silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $unit = (new Unit())->find($id);
+                if (!$unit) {
+                    $failed[$id] = "Birim bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $unit)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteUnit($unit);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu birim silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla birimi toplu günceller.
+     *
+     * @param int[] $ids
+     * @param array<string, mixed> $fields
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu birim güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $unit = clone (new Unit())->find($id);
+                if (!$unit) {
+                    $failed[$id] = "Birim bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $unit)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                foreach ($fields as $fieldName => $fieldValue) {
+                    if ($fieldName === 'active') {
+                        $unit->active = filter_var($fieldValue, FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $unit->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                    }
+                }
+
+                $this->updateUnit($unit);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu birim güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
     }
 }

@@ -9,6 +9,8 @@ use App\DTOs\UserDTO;
 use App\DTOs\SettingDTO;
 use App\Repositories\UserRepository;
 use App\Core\Database;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
@@ -218,5 +220,98 @@ class UserService extends BaseService
         $sql = "UPDATE users SET last_login = NOW() WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$user->id]);
+    }
+
+    // ──────────────────────────────────────────
+    // Toplu İşlemler
+    // ──────────────────────────────────────────
+
+    /**
+     * Birden fazla kullanıcıyı toplu siler.
+     *
+     * @param int[] $ids
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $this->logger->info('Toplu kullanıcı silme başlatıldı', ['ids' => $ids]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $user = (new User())->find($id);
+                if (!$user) {
+                    $failed[$id] = "Kullanıcı bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::DELETE->value, $user)) {
+                    $failed[$id] = "Silme yetkiniz yok.";
+                    continue;
+                }
+
+                $this->deleteUser($user);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu kullanıcı silme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
+    }
+
+    /**
+     * Birden fazla kullanıcıyı toplu günceller.
+     *
+     * @param int[] $ids
+     * @param array<string, mixed> $fields
+     * @return array{success: int[], failed: array<int, string>}
+     */
+    public function bulkUpdate(array $ids, array $fields): array
+    {
+        $this->logger->info('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+
+        $success = [];
+        $failed = [];
+
+        foreach ($ids as $id) {
+            try {
+                $user = clone (new User())->find($id);
+                if (!$user) {
+                    $failed[$id] = "Kullanıcı bulunamadı.";
+                    continue;
+                }
+
+                if (!Gate::check(PermissionType::UPDATE->value, $user)) {
+                    $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                foreach ($fields as $fieldName => $fieldValue) {
+                    $user->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
+                }
+
+                // Şifre güncellenmemeli, null bırakılıyor
+                $user->password = null;
+                $this->updateUser($user);
+                $success[] = $id;
+            } catch (Exception $e) {
+                $failed[$id] = $e->getMessage();
+            }
+        }
+
+        $this->logger->info('Toplu kullanıcı güncelleme tamamlandı', [
+            'success_count' => count($success),
+            'failed_count' => count($failed)
+        ]);
+
+        return ['success' => $success, 'failed' => $failed];
     }
 }

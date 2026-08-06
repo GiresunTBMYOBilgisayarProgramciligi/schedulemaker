@@ -40,20 +40,42 @@ use App\Models\Unit;
                             </div>
                         </div>
                         <div class="card-body">
+                            <!--begin::Bulk Actions Toolbar-->
+                            <div id="bulkActionsToolbar" class="alert alert-info d-flex align-items-center justify-content-between mb-3 d-none">
+                                <div>
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span><strong><span id="bulkSelectedCount">0</span></strong> kayıt seçildi</span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-warning" id="bulkEditBtn">
+                                        <i class="bi bi-pencil me-1"></i> Toplu Düzenle
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="bulkDeleteBtn">
+                                        <i class="bi bi-trash me-1"></i> Toplu Sil
+                                    </button>
+                                </div>
+                            </div>
+                            <!--end::Bulk Actions Toolbar-->
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped dataTable">
                                     <thead>
                                     <tr>
+                                        <th scope="col" class="no-sort no-export text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="bulkSelectAll">
+                                        </th>
                                         <th>#</th>
                                         <th>Ad</th>
                                         <th>Tür</th>
                                         <th>Durum</th>
-                                        <th>İşlemler</th>
+                                        <th class="text-center no-export">İşlemler</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <?php foreach ($units as $unit): ?>
                                         <tr>
+                                            <td class="text-center no-export">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $unit->id ?>">
+                                            </td>
                                             <td><?= $unit->id ?></td>
                                             <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
                                             <td><?= $unit->getTypeName() ?></td>
@@ -95,3 +117,18 @@ use App\Models\Unit;
     </div>
 </main>
 <!--end::App Main-->
+
+<script src="/assets/js/bulkActions.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    BulkActions.init({
+        entity: 'unit',
+        deleteUrl: '/ajax/bulkDeleteUnits',
+        updateUrl: '/ajax/bulkUpdateUnits',
+        deleteConfirmMessage: 'Seçili birimleri silmek istediğinize emin misiniz?',
+        editableFields: [
+            { name: 'active', label: 'Aktiflik Durumu', type: 'switch' }
+        ]
+    });
+});
+</script>
