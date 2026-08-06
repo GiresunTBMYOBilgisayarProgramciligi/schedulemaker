@@ -21,6 +21,9 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("only_table", departmentAndProgramScheduleButton.dataset.onlyTable)
+            if (!window.location.pathname.startsWith('/admin')) {
+                data.append("is_published", "true");
+            }
             if (programSelect.value > 0) {
                 data.append("owner_type", "program");
                 data.append("owner_id", programSelect.value);
@@ -39,6 +42,9 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("only_table", lecturerScheduleButton.dataset.onlyTable)
+            if (!window.location.pathname.startsWith('/admin')) {
+                data.append("is_published", "true");
+            }
             if (lecturerSelect.value > 0) {
                 data.append("owner_type", "user");
                 data.append("owner_id", lecturerSelect.value);
@@ -58,6 +64,9 @@ document.addEventListener("DOMContentLoaded", function () {
             data.append("semester", document.getElementById("semester").value);
             data.append("academic_year", document.getElementById("academic_year").value);
             data.append("only_table", classroomScheduleButton.dataset.onlyTable)
+            if (!window.location.pathname.startsWith('/admin')) {
+                data.append("is_published", "true");
+            }
             if (classroomSelect.value > 0) {
                 data.append("owner_type", "classroom");
                 data.append("owner_id", classroomSelect.value);

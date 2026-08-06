@@ -1,5 +1,7 @@
 <?php
 use App\Models\Schedule;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use function App\Helpers\getSettingValue;
 /**
  * @var Schedule $schedule
@@ -67,6 +69,19 @@ $bodyClasses = $no_card ? "" : "card-body";
                     </div><!--end::schedule-table-wrapper-->
                 </div><!--end::Row-->
             </div><!--end::card-body-->
+            <?php if (!$no_card): ?>
+            <div class="card-footer d-flex align-items-center bg-light">
+                <div class="text-muted small">
+                    <i class="bi bi-clock-history me-1"></i> Son Güncelleme: <?= !empty($schedule->updated_at) ? (new \DateTime($schedule->updated_at))->format('d.m.Y H:i') : 'Bilinmiyor' ?>
+                </div>
+                <?php if (Gate::check(PermissionType::PUBLISH_SCHEDULE->value, $schedule)): ?>
+                <div class="form-check form-switch m-0 ms-auto" title="Kullanıcıların görmesi için programı yayınlayın">
+                    <input class="form-check-input publish-schedule-toggle" type="checkbox" role="switch" id="publish-switch-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>" <?= !empty($schedule->is_published) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="publish-switch-<?= $schedule->id ?>"><?= !empty($schedule->is_published) ? 'Yayında' : 'Yayınla' ?></label>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div><!--end::Card-->
     </div>
 </div><!--end::Row-->

@@ -525,6 +525,34 @@ class AjaxRouter extends Router
         $this->response = (new ScheduleController())->deleteScheduleItems($this->data);
         $this->sendResponse();
     }
+
+    /**
+     * @throws Exception
+     */
+    public function togglePublishScheduleAction(): void
+    {
+        $this->response = (new ScheduleController())->togglePublishSchedule($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function bulkPublishSchedulesAction(): void
+    {
+        $this->response = (new ScheduleController())->bulkPublishSchedules($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function notifyScheduleChangesAction(): void
+    {
+        $this->response = (new ScheduleController())->notifyScheduleChanges($this->data);
+        $this->sendResponse();
+    }
+
     /**
      * @throws Exception
      */

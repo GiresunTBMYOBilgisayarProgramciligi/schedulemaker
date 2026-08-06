@@ -23,6 +23,7 @@ use App\DTOs\SaveScheduleResult;
 use App\Services\Schedule\LessonScheduleService;
 use App\Services\Schedule\ExamScheduleService;
 use App\Services\Schedule\ConflictService;
+use App\Services\Schedule\SchedulePublishService;
 use App\Services\Export\ExporterFactory;
 use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
 use App\Validators\Schedule\ScheduleConflictFilterValidator;
@@ -88,11 +89,39 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTML(array $requestData = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
+        $is_published_only = isset($requestData['is_published']) && $requestData['is_published'] === "true";
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
         
         $scheduleService = new ScheduleService();
-        $schedule = $scheduleService->getOrCreateSchedule($dto);
-        Gate::authorize(PermissionType::VIEW->value, $schedule, "Programı görüntüleme yetkiniz yok");
+        
+        $schedule = null;
+        if ($is_published_only) {
+            $shouldCheckEarly = true;
+            if ($dto->owner_type === OwnerType::PROGRAM->value && $dto->semester_no === null) {
+                $shouldCheckEarly = false;
+            }
+            
+            if ($shouldCheckEarly) {
+                $schedule = (new ScheduleRepository())->findByOwnerAndPeriod(
+                    $dto->owner_type,
+                    $dto->owner_id,
+                    $dto->academic_year,
+                    $dto->semester,
+                    $dto->type,
+                    $dto->owner_type === OwnerType::PROGRAM->value ? $dto->semester_no : null
+                );
+                
+                if (!$schedule || !$schedule->is_published) {
+                    return "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>";
+                }
+            }
+        } else {
+            $schedule = $scheduleService->getOrCreateSchedule($dto);
+        }
+        
+        if ($schedule !== null) {
+            Gate::authorize(PermissionType::VIEW->value, $schedule, "Programı görüntüleme yetkiniz yok");
+        }
 
         $HTMLOut = "";
 
@@ -105,10 +134,27 @@ class ScheduleController extends Controller
         } else {
             $currentSemesters = getSemesterNumbers($dto->semester);
             foreach ($currentSemesters as $semester_no) {
+                if ($is_published_only) {
+                    $sch = (new ScheduleRepository())->findByOwnerAndPeriod(
+                        $dto->owner_type,
+                        $dto->owner_id,
+                        $dto->academic_year,
+                        $dto->semester,
+                        $dto->type,
+                        $semester_no
+                    );
+                    if (!$sch || !$sch->is_published) {
+                        continue; // Skip this semester if not published
+                    }
+                }
+                
                 $data = $dto->toArray();
                 $data['semester_no'] = $semester_no;
                 $specificDto = ScheduleFilterDTO::fromArray($data);
                 $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
+            }
+            if ($is_published_only && empty($HTMLOut)) {
+                $HTMLOut = "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>";
             }
         }
 
@@ -184,13 +230,44 @@ class ScheduleController extends Controller
      */
     
     /**
-     * Ders programı öğelerini kaydeder (Ajax endpoint wrapper)
+     * Ders programı öğelerini (ScheduleItems) kaydetme isteğini işler.
      * 
      * gelen item verilerine göre ilk olarak çakışan item kontrol edilir checkScheduleCrashAction ile yapılan yeterli olmaz preferred item kontrolü ve düzenlemesi burada yapılmalı
      * çakışan item'in prefered olup olmadığı kontrol edilir. 
      * perefered item saat aralıkları kontrol edilir. eklenecek itemin saat aralıkları ile çakışan kısmı silinir. (silme işlemi start ve end time güncellemesi ile yapılır)
      * çakışan kısım prefered değil ise çakışma hatası verilir.
      * çakışan kısım yoksa item kaydedilir.
+     */
+    private function getChangeDetail(string $actionText, \App\DTOs\ScheduleItemDTO $dto): string
+    {
+        $days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+        $dayName = $days[$dto->dayIndex] ?? '';
+        $timeStr = $dto->startTime . ' - ' . $dto->endTime;
+        
+        $lessonName = 'Bir ders';
+        $lessonId = null;
+        
+        if (!empty($dto->data) && is_array($dto->data)) {
+            $firstEntry = reset($dto->data);
+            if (is_array($firstEntry) && isset($firstEntry['lesson_id'])) {
+                $lessonId = $firstEntry['lesson_id'];
+            } elseif (isset($dto->data['lesson_id'])) {
+                $lessonId = $dto->data['lesson_id'];
+            }
+        }
+        
+        if ($lessonId) {
+            $lesson = (new \App\Models\Lesson())->find($lessonId);
+            if ($lesson) {
+                $lessonName = $lesson->name;
+            }
+        }
+        
+        return sprintf('%s %s saatleri arasındaki "%s" %s', $dayName, $timeStr, $lessonName, $actionText);
+    }
+
+    /**
+     * Ders programı öğelerini (ScheduleItems) kaydetme isteğini işler.
      * 
      * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
      * @return array Response dizisi
@@ -224,6 +301,21 @@ class ScheduleController extends Controller
                 "status" => "error",
                 "msg" => $result->warnings[0] ?? "Program kaydedilirken bir hata oluştu."
             ];
+        }
+
+        $publishService = new SchedulePublishService();
+        foreach ($dtos as $dto) {
+            $lecturerId = null;
+            if (is_array($dto->data)) {
+                foreach ($dto->data as $dayData) {
+                    if (isset($dayData['lecturer_id']) && !empty($dayData['lecturer_id'])) {
+                        $lecturerId = $dayData['lecturer_id'];
+                        break;
+                    }
+                }
+            }
+            $detail = $this->getChangeDetail('eklendi/güncellendi', $dto);
+            $publishService->recordChange($dto->scheduleId, 'save', $detail, $lecturerId);
         }
 
         return [
@@ -269,6 +361,21 @@ class ScheduleController extends Controller
             ];
         }
 
+        $publishService = new SchedulePublishService();
+        foreach ($dtos as $dto) {
+            $lecturerId = null;
+            if (is_array($dto->data)) {
+                foreach ($dto->data as $dayData) {
+                    if (isset($dayData['lecturer_id']) && !empty($dayData['lecturer_id'])) {
+                        $lecturerId = $dayData['lecturer_id'];
+                        break;
+                    }
+                }
+            }
+            $detail = $this->getChangeDetail('yer değiştirdi', $dto);
+            $publishService->recordChange($dto->scheduleId, 'move', $detail, $lecturerId);
+        }
+
         return [
             "status" => "success",
             "createdIds" => $result->createdIds,
@@ -300,6 +407,24 @@ class ScheduleController extends Controller
         $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
         $service = new LessonScheduleService();
         $result = $service->deleteScheduleItems($dtos);
+        
+        if ($result->success) {
+            $publishService = new SchedulePublishService();
+            foreach ($dtos as $dto) {
+                $lecturerId = null;
+                if (is_array($dto->data)) {
+                    foreach ($dto->data as $dayData) {
+                        if (isset($dayData['lecturer_id']) && !empty($dayData['lecturer_id'])) {
+                            $lecturerId = $dayData['lecturer_id'];
+                            break;
+                        }
+                    }
+                }
+                $detail = $this->getChangeDetail('silindi', $dto);
+                $publishService->recordChange($dto->scheduleId, 'delete', $detail, $lecturerId);
+            }
+        }
+        
         return $result->toArray();
     }
 
@@ -339,6 +464,24 @@ class ScheduleController extends Controller
                             $createdItems[] = $item->getArray();
                         }
                     }
+                }
+            }
+            
+            $publishService = new SchedulePublishService();
+            foreach ($dtos as $dto) {
+                $lecturerId = null;
+                $assignments = $dto->detail['assignments'] ?? [];
+                if (!empty($assignments)) {
+                    foreach ($assignments as $assignment) {
+                        $lecturerId = $assignment['observer_id'] ?? null;
+                        if ($lecturerId) {
+                            $detail = $this->getChangeDetail('eklendi/güncellendi (Sınav)', $dto);
+                            $publishService->recordChange($dto->scheduleId, 'save', $detail, $lecturerId);
+                        }
+                    }
+                } else {
+                    $detail = $this->getChangeDetail('eklendi/güncellendi (Sınav)', $dto);
+                    $publishService->recordChange($dto->scheduleId, 'save', $detail, null);
                 }
             }
         }
@@ -391,6 +534,19 @@ class ScheduleController extends Controller
                         }
                     }
                 }
+            }
+            
+            $publishService = new SchedulePublishService();
+            foreach ($dtos as $dto) {
+                $lecturerId = null;
+                $assignments = $dto->detail['assignments'] ?? [];
+                if (!empty($assignments)) {
+                    foreach ($assignments as $assignment) {
+                        $lecturerId = $assignment['observer_id'] ?? null;
+                    }
+                }
+                $detail = $this->getChangeDetail('yer değiştirdi (Sınav)', $dto);
+                $publishService->recordChange($dto->scheduleId, 'move', $detail, $lecturerId);
             }
         }
 
@@ -628,5 +784,61 @@ class ScheduleController extends Controller
             $this->logger()->error("toggleLockScheduleItem failed", $this->logContext(['error' => $e->getMessage()]));
             return ["status" => "error", "msg" => "İşlem sırasında hata oluştu: " . $e->getMessage()];
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function togglePublishSchedule(array $requestData): array
+    {
+        if (!isset($requestData['id'])) {
+            return ["status" => "error", "msg" => "Program ID belirtilmedi"];
+        }
+
+        $schedule = (new ScheduleRepository())->find($requestData['id']);
+        if (!$schedule) {
+            return ["status" => "error", "msg" => "Program bulunamadı"];
+        }
+
+        Gate::authorize(PermissionType::UPDATE->value, clone $schedule, "Programı yayınlama yetkiniz yok");
+
+        return (new SchedulePublishService())->togglePublish($requestData['id']);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function bulkPublishSchedules(array $requestData): array
+    {
+        Gate::authorizeRole('admin', false, "Toplu yayınlama işlemi için yetkiniz yok");
+
+        $count = (new SchedulePublishService())->bulkPublish(
+            $requestData['semester'] ?? null,
+            $requestData['academic_year'] ?? null
+        );
+
+        return [
+            "status" => "success",
+            "msg" => "$count adet program başarıyla yayınlandı."
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function notifyScheduleChanges(array $requestData): array
+    {
+        Gate::authorizeRole('admin', false, "Değişiklik bildirimlerini gönderme yetkiniz yok");
+
+        $notifiedCount = (new SchedulePublishService())->notifyChanges();
+        
+        if ($notifiedCount === 0) {
+            return ["status" => "info", "msg" => "Bildirilecek değişiklik bulunamadı."];
+        }
+
+        return [
+            "status" => "success",
+            "msg" => "$notifiedCount hocaya bildirim e-postası gönderildi."
+        ];
     }
 }

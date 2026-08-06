@@ -22,3 +22,20 @@ CREATE TABLE IF NOT EXISTS schedule_notes (
     INDEX idx_status (status)
 ) ENGINE = INNODB;
 
+ALTER TABLE schedules
+    ADD COLUMN is_published BOOLEAN DEFAULT false AFTER academic_year,
+    ADD COLUMN published_at TIMESTAMP NULL AFTER is_published,
+    ADD COLUMN updated_at TIMESTAMP NULL AFTER published_at;
+
+CREATE TABLE IF NOT EXISTS schedule_changes_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    lecturer_id INT NULL,
+    action_type VARCHAR(50) NOT NULL,
+    detail TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_schedule_changes_queue_schedule FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_changes_queue_lecturer FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_schedule_changes_queue_schedule (schedule_id),
+    INDEX idx_schedule_changes_queue_lecturer (lecturer_id)
+) ENGINE = INNODB;

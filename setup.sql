@@ -42,6 +42,9 @@ create table if not exists schedules
     semester_no   int,
     semester      ENUM('Güz','Bahar','Yaz') NOT NULL,
     academic_year varchar(12),
+    is_published  BOOLEAN DEFAULT false,
+    published_at  TIMESTAMP NULL,
+    updated_at    TIMESTAMP NULL,
     primary key (id),
     unique (owner_type, owner_id, semester_no, semester, academic_year, type)
 ) ENGINE = INNODB;
@@ -273,3 +276,15 @@ CREATE TABLE IF NOT EXISTS schedule_notes (
     INDEX idx_status (status)
 ) ENGINE = INNODB;
 
+CREATE TABLE IF NOT EXISTS schedule_changes_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    lecturer_id INT NULL,
+    action_type VARCHAR(50) NOT NULL,
+    detail TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_schedule_changes_queue_schedule FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_changes_queue_lecturer FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_schedule_changes_queue_schedule (schedule_id),
+    INDEX idx_schedule_changes_queue_lecturer (lecturer_id)
+) ENGINE = INNODB;

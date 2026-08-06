@@ -62,4 +62,59 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // Toplu Yayınla ve Değişiklikleri Bildir butonları
+    const btnBulkPublish = document.getElementById('btn-bulk-publish');
+    if (btnBulkPublish) {
+        btnBulkPublish.addEventListener('click', async function () {
+            if (confirm("Tüm programlar yayınlanacak. Emin misiniz?")) {
+                try {
+                    const response = await fetch('/ajax/bulkPublishSchedules', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        new Toast().prepareToast("Başarılı", data.msg, "success");
+                        // Sayfadaki switch butonları da güncelleyelim
+                        document.querySelectorAll('.publish-schedule-toggle').forEach(el => {
+                            el.checked = true;
+                            el.nextElementSibling.innerText = 'Yayında';
+                        });
+                    } else {
+                        new Toast().prepareToast("Hata", data.msg || 'Hata oluştu', "danger");
+                    }
+                } catch (error) {
+                    new Toast().prepareToast("Hata", 'Bir hata oluştu.', "danger");
+                }
+            }
+        });
+    }
+
+    const btnNotifyChanges = document.getElementById('btn-notify-changes');
+    if (btnNotifyChanges) {
+        btnNotifyChanges.addEventListener('click', async function () {
+            if (confirm("Değişiklik olan programlar için hocalara bildirim gönderilecek. Emin misiniz?")) {
+                try {
+                    const response = await fetch('/ajax/notifyScheduleChanges', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success' || data.status === 'info') {
+                        new Toast().prepareToast("Bilgi", data.msg, data.status === 'success' ? "success" : "info");
+                    } else {
+                        new Toast().prepareToast("Hata", data.msg || 'Hata oluştu', "danger");
+                    }
+                } catch (error) {
+                    new Toast().prepareToast("Hata", 'Bir hata oluştu.', "danger");
+                }
+            }
+        });
+    }
+
 });

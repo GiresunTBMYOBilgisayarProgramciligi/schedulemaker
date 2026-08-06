@@ -28,3 +28,11 @@ $dispatcher->listen(
     ChairpersonChangedEvent::class,
     SyncChairpersonRoleListener::class
 );
+
+use App\Events\ScheduleChangesNotifiedEvent;
+use App\Listeners\SendScheduleChangesEmailListener;
+
+$dispatcher->listen(
+    ScheduleChangesNotifiedEvent::class,
+    SendScheduleChangesEmailListener::class
+);

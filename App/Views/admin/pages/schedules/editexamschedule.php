@@ -88,9 +88,15 @@ use function App\Helpers\getSettingValue;
                                     <button type="button" class="btn btn-warning" id="btn-show-schedule-notes" title="Hoca Notları & İstekleri">
                                         <i class="bi bi-journal-text me-1"></i>Notlar<span id="schedule-notes-count"></span>
                                     </button>
+                                    <button type="button" class="btn btn-sm btn-success" id="btn-bulk-publish">
+                                        <i class="bi bi-globe me-1"></i> Tümünü Yayınla
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-info text-white" id="btn-notify-changes">
+                                        <i class="bi bi-envelope me-1"></i> Değişiklikleri Bildir
+                                    </button>
                                 </div>
                             </div>
-                            <div class="card-tools">
+                            <div class="card-tools d-flex gap-2">
                                 <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
                                     <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
                                     <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>

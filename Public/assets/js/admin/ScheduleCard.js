@@ -136,6 +136,38 @@ class ScheduleCard {
 
         this.removeLessonDropZone = this.card.querySelector(".available-schedule-items.drop-zone")
 
+        let publishToggle = this.card.querySelector('.publish-schedule-toggle');
+        if (publishToggle) {
+            // Remove existing listeners if any
+            let newPublishToggle = publishToggle.cloneNode(true);
+            publishToggle.parentNode.replaceChild(newPublishToggle, publishToggle);
+            
+            newPublishToggle.addEventListener('change', async (e) => {
+                let formData = new FormData();
+                formData.append('id', this.id);
+                try {
+                    const response = await fetch('/ajax/togglePublishSchedule', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        new Toast().prepareToast("Başarılı", data.msg, "success");
+                        e.target.nextElementSibling.innerText = data.is_published ? 'Yayında' : 'Yayınla';
+                    } else {
+                        new Toast().prepareToast("Hata", data.msg || 'Hata oluştu', "danger");
+                        e.target.checked = !e.target.checked; // Revert change
+                    }
+                } catch (error) {
+                    new Toast().prepareToast("Hata", 'Bir hata oluştu.', "danger");
+                    e.target.checked = !e.target.checked; // Revert change
+                }
+            });
+        }
+
         this.initStickyHeaders();
 
         // initBulkSelection and initContextMenu are now in initialize() to ensure single binding via delegation.

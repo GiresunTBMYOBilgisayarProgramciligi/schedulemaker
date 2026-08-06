@@ -37,6 +37,9 @@ class Schedule extends Model
     public ?int $semester_no = null;
     public ?string $semester = null;
     public ?string $academic_year = null;
+    public ?bool $is_published = null;
+    public ?string $published_at = null;
+    public ?string $updated_at = null;
 
     /**
      * @var ScheduleItem[]

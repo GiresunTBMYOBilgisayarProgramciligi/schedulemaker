@@ -97,7 +97,12 @@ class SchedulePolicy extends BasePolicy
      */
     public function view(?User $user, Schedule $schedule): bool
     {
-        return true;//home sayfasında tüm programlar gösterildiği için herkes görebilir. İlerde yetki kontrolü gerekebilir.
+        if (!$schedule->is_published) {
+            if (!$user) return false;
+            if (in_array($user->role, ['admin', 'manager', 'submanager'])) return true;
+            return $this->update($user, $schedule);
+        }
+        return true;
     }
 
     /**
@@ -143,6 +148,54 @@ class SchedulePolicy extends BasePolicy
             case 'classroom':
                 if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') return true;
                 if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, null)) return true;
+                break;
+        }
+
+        return false;
+    }
+    /**
+     * Program yayınlama yetkisi
+     */
+    public function publish_schedule(User $user, Schedule $schedule): bool
+    {
+        switch ($schedule->owner_type) {
+            case 'program':
+                $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($program) {
+                    if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
+                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                    }
+                    if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, $program)) return true;
+                }
+                break;
+
+            case 'user':
+                $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($scheduleUser) {
+                    if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
+                        if (is_null($user->unit_id)) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
+                    }
+                    if ($scheduleUser->department_id) {
+                        if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
+                    }
+                }
+                break;
+
+            case 'lesson':
+                $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
+                if ($lesson) {
+                    if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
+                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                    }
+                    if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
+                }
+                break;
+
+            case 'classroom':
+                if (in_array($user->role, ['admin', 'manager', 'submanager'])) return true;
+                if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null)) return true;
                 break;
         }
 
