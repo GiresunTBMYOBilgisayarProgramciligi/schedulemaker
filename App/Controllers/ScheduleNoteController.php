@@ -148,6 +148,7 @@ class ScheduleNoteController extends Controller
                 'badge_class' => $note->getStatusEnum()->getBadgeClass(),
                 'editor_feedback' => $note->editor_feedback,
                 'read_at' => $note->read_at?->format('d.m.Y H:i'),
+                'read_by' => $note->read_by,
                 'read_by_name' => $note->readByUser?->getFullName(),
                 'updated_at' => $note->updated_at?->format('d.m.Y H:i'),
             ];

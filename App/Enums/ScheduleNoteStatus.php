@@ -8,6 +8,7 @@ enum ScheduleNoteStatus: string
     case READ = 'read';
     case COMPLETED = 'completed';
     case REJECTED = 'rejected';
+    case INFO_SENT = 'info_sent';
 
     /**
      * Etiketi döndürür.
@@ -19,6 +20,7 @@ enum ScheduleNoteStatus: string
             self::READ => 'Görüldü',
             self::COMPLETED => 'Gereği Yapıldı',
             self::REJECTED => 'Reddedildi',
+            self::INFO_SENT => 'Bilgi Verildi',
         };
     }
 
@@ -32,6 +34,7 @@ enum ScheduleNoteStatus: string
             self::READ => 'text-bg-info',
             self::COMPLETED => 'text-bg-success',
             self::REJECTED => 'text-bg-danger',
+            self::INFO_SENT => 'text-bg-warning',
         };
     }
 }

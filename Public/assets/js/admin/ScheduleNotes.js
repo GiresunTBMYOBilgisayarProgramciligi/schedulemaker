@@ -200,12 +200,15 @@ class ScheduleNotesHandler {
                 let readCount = 0;
                 let completedCount = 0;
                 let rejectedCount = 0;
+                let infoSentCount = 0;
 
                 notes.forEach(n => {
                     if (n.status === 'completed') {
                         completedCount++;
                     } else if (n.status === 'rejected') {
                         rejectedCount++;
+                    } else if (n.status === 'info_sent') {
+                        infoSentCount++;
                     } else if (n.status === 'read') {
                         readCount++;
                     } else {
@@ -219,6 +222,9 @@ class ScheduleNotesHandler {
                 }
                 if (readCount > 0) {
                     icons.push(`<span class="ms-1" title="Görülen Notlar"><i class="bi bi-eye-fill"></i> ${readCount}</span>`);
+                }
+                if (infoSentCount > 0) {
+                    icons.push(`<span class="ms-1 text-warning" title="Bilgi Verilen Notlar"><i class="bi bi-info-circle-fill"></i> ${infoSentCount}</span>`);
                 }
                 if (completedCount > 0) {
                     icons.push(`<span class="ms-1 text-success" title="Gereği Yapılan Notlar"><i class="bi bi-check-circle-fill"></i> ${completedCount}</span>`);
@@ -306,7 +312,9 @@ class ScheduleNotesHandler {
                         <div class="card card-outline card-secondary mb-3 schedule-note-item" data-note-id="${note.id}">
                             <div class="card-header bg-light d-flex justify-content-between align-items-center p-2 px-3">
                                 <div>
-                                    <strong class="fs-6">${note.lecturer_name || ''}</strong>
+                                    <strong class="fs-6">
+                                        ${note.user_id ? `<a href="/admin/profile/${note.user_id}" target="_blank" class="text-primary text-decoration-none" title="Hoca Profilini Göster">${note.lecturer_name || ''}</a>` : (note.lecturer_name || '')}
+                                    </strong>
                                     <small class="text-muted d-block">${note.academic_year} - ${note.semester} (${note.schedule_type})</small>
                                 </div>
                                 <div class="d-flex align-items-center ms-auto gap-3">
@@ -322,7 +330,7 @@ class ScheduleNotesHandler {
                                 </blockquote>
                                 ${note.read_at ? `
                                     <p class="text-muted small mb-2">
-                                        <i class="bi bi-eye-fill text-info"></i> Görüldü: <strong>${note.read_by_name || 'Düzenleyici'}</strong> (${note.read_at})
+                                        <i class="bi bi-eye-fill text-info"></i> Görüldü: <strong>${note.read_by ? `<a href="/admin/profile/${note.read_by}" target="_blank" class="text-dark text-decoration-none" title="Profilini Göster">${note.read_by_name || 'Düzenleyici'}</a>` : (note.read_by_name || 'Düzenleyici')}</strong> (${note.read_at})
                                     </p>
                                 ` : ''}
                                 
@@ -333,6 +341,7 @@ class ScheduleNotesHandler {
                                         <select class="form-select form-select-sm note-status-select">
                                             <option value="completed" ${note.status === 'completed' ? 'selected' : ''}>Gereği Yapıldı</option>
                                             <option value="rejected" ${note.status === 'rejected' ? 'selected' : ''}>Reddedildi</option>
+                                            <option value="info_sent" ${note.status === 'info_sent' ? 'selected' : ''}>Bilgi Verildi</option>
                                         </select>
                                     </div>
                                     <div class="col-md-5">

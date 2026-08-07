@@ -533,6 +533,7 @@ window.loadMyScheduleNotes = async function() {
                                         <select class="form-select form-select-sm note-status-select">
                                             <option value="completed" ${note.status === 'completed' ? 'selected' : ''}>Gereği Yapıldı</option>
                                             <option value="rejected" ${note.status === 'rejected' ? 'selected' : ''}>Reddedildi</option>
+                                            <option value="info_sent" ${note.status === 'info_sent' ? 'selected' : ''}>Bilgi Verildi</option>
                                         </select>
                                     </div>
                                     <div class="col-md-5">
