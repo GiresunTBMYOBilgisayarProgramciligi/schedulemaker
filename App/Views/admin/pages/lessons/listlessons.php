@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'Yaz', label: 'Yaz' }
             ] },
             { name: 'academic_year', label: 'Akademik Yıl (örn: 2025-2026)', type: 'text' },
+            { name: 'program_id', label: 'Bölüm / Program', type: 'department-program', deptOptions: <?= json_encode($deptOptions ?? []) ?> },
             { name: 'building_id', label: 'Bina', type: 'select', options: <?= json_encode($buildingOptions ?? []) ?> },
             { name: 'lecturer_id', label: 'Öğretim Elemanı', type: 'select', options: <?= json_encode($lecturerOptions ?? []) ?> }
         ]

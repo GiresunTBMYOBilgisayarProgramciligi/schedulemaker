@@ -251,6 +251,9 @@ const BulkActions = (() => {
                 fields: fields,
             });
         });
+
+        // department-program cascade alanları için event bağla
+        initDepartmentProgramCascade(editModal.body);
     }
 
     /**
@@ -262,6 +265,34 @@ const BulkActions = (() => {
         html += '<div class="row">';
 
         config.editableFields.forEach(field => {
+            if (field.type === 'department-program') {
+                // Bölüm + Program cascade alanı (tam satır genişliğinde)
+                html += '<div class="col-12 mb-3">';
+                html += `<div class="form-check mb-2">`;
+                html += `<input class="form-check-input bulk-field-toggle" type="checkbox" id="toggle_program_id" data-field="program_id">`;
+                html += `<label class="form-check-label fw-bold" for="toggle_program_id">${field.label}</label>`;
+                html += `</div>`;
+                html += '<div class="ms-4 row g-2" id="bulk_dept_program_wrapper">';
+                html += '<div class="col-12 col-md-6">';
+                html += `<select class="form-select form-select-sm bulk-dept-select" id="bulk_department_id" disabled>`;
+                html += `<option value="0">Bölüm Seçiniz</option>`;
+                if (field.deptOptions && Array.isArray(field.deptOptions)) {
+                    field.deptOptions.forEach(opt => {
+                        html += `<option value="${opt.value}">${opt.label}</option>`;
+                    });
+                }
+                html += `</select>`;
+                html += '</div>';
+                html += '<div class="col-12 col-md-6">';
+                html += `<select class="form-select form-select-sm bulk-field-input" name="program_id" id="bulk_program_id" disabled>`;
+                html += `<option value="0">Önce Bölüm Seçiniz</option>`;
+                html += `</select>`;
+                html += '</div>';
+                html += '</div>'; // row
+                html += '</div>'; // col-12
+                return; // forEach devam
+            }
+
             html += '<div class="col-md-6 mb-3">';
             html += `<div class="form-check mb-1">`;
             html += `<input class="form-check-input bulk-field-toggle" type="checkbox" id="toggle_${field.name}" data-field="${field.name}">`;
@@ -326,6 +357,68 @@ const BulkActions = (() => {
         });
 
         return fields;
+    }
+
+    /**
+     * Toplu düzenleme modalındaki Bölüm → Program cascade select bağlantısını kurar.
+     * formEvents.js'teki departmentSelect → programSelect AJAX akışının aynısıdır.
+     * @param {HTMLElement} container Modal gövdesi
+     */
+    function initDepartmentProgramCascade(container) {
+        const deptToggle   = container.querySelector('#toggle_program_id');
+        const deptSelect   = container.querySelector('#bulk_department_id');
+        const programSelect = container.querySelector('#bulk_program_id');
+
+        if (!deptToggle || !deptSelect || !programSelect) return;
+
+        // Toggle aktif/pasif olduğunda bölüm ve program select'lerini de aktif/pasif yap
+        deptToggle.addEventListener('change', function () {
+            deptSelect.disabled   = !this.checked;
+            programSelect.disabled = !this.checked;
+            if (!this.checked) {
+                deptSelect.value = '0';
+                programSelect.innerHTML = '<option value="0">Önce Bölüm Seçiniz</option>';
+            }
+        });
+
+        // Bölüm değiştiğinde program listesini AJAX ile yükle
+        deptSelect.addEventListener('change', function () {
+            const departmentId = this.value;
+
+            programSelect.innerHTML = '<option value="0">Yükleniyor...</option>';
+            programSelect.disabled = true;
+
+            if (!departmentId || departmentId === '0') {
+                programSelect.innerHTML = '<option value="0">Önce Bölüm Seçiniz</option>';
+                return;
+            }
+
+            fetch(`/ajax/getProgramsList/${departmentId}`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const progList = data['programs'] || [];
+                    programSelect.innerHTML = '<option value="0">Program Seçiniz</option>';
+                    progList.forEach(prog => {
+                        const opt = document.createElement('option');
+                        opt.value = prog.id;
+                        opt.textContent = prog.name;
+                        programSelect.appendChild(opt);
+                    });
+                    if (progList.length === 1) {
+                        programSelect.value = progList[0].id;
+                    }
+                    programSelect.disabled = false;
+                })
+                .catch(error => {
+                    new Toast().prepareToast('Hata', 'Programları alırken hata oluştu.', 'danger');
+                    console.error(error);
+                    programSelect.innerHTML = '<option value="0">Hata oluştu</option>';
+                    programSelect.disabled = false;
+                });
+        });
     }
 
     /**

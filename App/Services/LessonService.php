@@ -14,11 +14,12 @@ use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
 use App\DTOs\CombineExamLessonDTO;
 use App\DTOs\DeleteCombineLessonDTO;
-use App\Models\LessonCombination;
+
 use App\DTOs\ScheduleItemDTO;
 use function App\Helpers\getSettingValue;
 use App\Repositories\LessonRepository;
 use App\Repositories\LessonAssignmentRepository;
+use App\Repositories\LessonCombinationRepository;
 use App\Core\Gate;
 use App\DTOs\LessonDTO;
 use App\Enums\OwnerType;
@@ -112,15 +113,33 @@ class LessonService extends BaseService
 
         if ($isLecturerOwnLesson) {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
-            
-            $lessonFromDb->size = (int)($requestData['size'] ?? 0);
+
+            $lessonFromDb->size = (int) ($requestData['size'] ?? 0);
             if (isset($requestData['classroom_type']) && $requestData['classroom_type'] !== '') {
-                $lessonFromDb->classroom_type = (int)$requestData['classroom_type'];
+                $lessonFromDb->classroom_type = (int) $requestData['classroom_type'];
             }
         } else {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
 
             $dto = LessonDTO::fromArray($requestData);
+
+            // program_id değişiyorsa, hedef programda aynı code+group_no kombinasyonu var mı kontrol et
+            if (!empty($dto->program_id) && $dto->program_id !== $lessonFromDb->program_id) {
+                $targetCode    = $dto->code ?? $lessonFromDb->code;
+                $targetGroupNo = $dto->group_no ?? $lessonFromDb->group_no;
+                /** @var Lesson|null $conflicting */
+                $conflicting = (new LessonRepository())->findOneBy([
+                    'code'       => $targetCode,
+                    'program_id' => $dto->program_id,
+                    'group_no'   => $targetGroupNo,
+                    'id'         => ['!=' => $lessonFromDb->id],
+                ]);
+                if ($conflicting) {
+                    // Hedef programda çakışan kayıt var: kaynağın verilerini çakışana aktar, kaynağı sil
+                    return $this->mergeSourceIntoConflicting($lessonFromDb, $conflicting);
+                }
+            }
+
             $lessonFromDb->fill($dto->toArray());
 
             if (!empty($requestData['lecturer_id'])) {
@@ -128,7 +147,7 @@ class LessonService extends BaseService
                 $academicYear = $requestData['academic_year'] ?? getSettingValue('academic_year');
                 (new LessonAssignmentRepository())->upsert(
                     $lessonFromDb->id,
-                    (int)$requestData['lecturer_id'],
+                    (int) $requestData['lecturer_id'],
                     $semester,
                     $academicYear
                 );
@@ -165,10 +184,71 @@ class LessonService extends BaseService
             });
         } catch (Exception $e) {
             if ($e->getCode() == '23000') {
-                throw new Exception("Bu kodda zaten kayıtlı. Lütfen farklı bir kod giriniz.");
+                throw new Exception("Güncelleme başarısız: Bu ders (aynı kod ve grup no ile) belirtilen programda zaten mevcut olabilir.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Çakışma durumunda kaynak dersi hedef (çakışan) derse birleştirir.
+     *
+     * Yapılan işlemler (tek transaction içinde):
+     *  1. Çakışan kaydın scalar alanları kaynaktan güncellenir.
+     *  2. Kaynak derse ait lesson_assignment'lar çakışan derse upsert edilir.
+     *  3. Kaynak dersi referans eden lesson_combination satırları çakışan id'sine taşınır.
+     *  4. Kaynak dersin schedule kayıtları silinir, ardından kaynak ders silinir.
+     *
+     * @param Lesson $source     Taşınmak istenen (kaynak) ders
+     * @param Lesson $conflicting Hedef programda zaten var olan (çakışan) ders
+     * @return int               Güncellenen çakışan dersin ID'si
+     * @throws Exception
+     */
+    private function mergeSourceIntoConflicting(Lesson $source, Lesson $conflicting): int
+    {
+        $this->logger->info('Ders birleştirme başlatıldı: kaynak → çakışan', [
+            'source_id'      => $source->id,
+            'conflicting_id' => $conflicting->id,
+        ]);
+
+        Database::transaction(function () use ($source, $conflicting) {
+            // 1. Kaynak dersin scalar alanlarını çakışan derse aktar
+            //    Unique key alanları (code, group_no, program_id) değiştirilmez.
+            $transferFields = ['name', 'size', 'hours', 'type', 'semester_no', 'department_id', 'classroom_type', 'building_id'];
+            foreach ($transferFields as $field) {
+                if (!is_null($source->$field)) {
+                    $conflicting->$field = $source->$field;
+                }
+            }
+            $conflicting->update();
+
+            // 2. Kaynak derse ait lesson_assignment'ları çakışan derse taşı
+            $assignmentRepo = new LessonAssignmentRepository();
+            $sourceAssignments = $assignmentRepo->findByLesson($source->id);
+            foreach ($sourceAssignments as $assignment) {
+                $assignmentRepo->upsert(
+                    $conflicting->id,
+                    $assignment->lecturer_id,
+                    $assignment->semester,
+                    $assignment->academic_year
+                );
+            }
+
+            // 3. lesson_combinations: kaynak dersi referans eden satırları çakışan derse yönlendir
+            //    (CASCADE DELETE devreye girmeden önce yapılmalı)
+            (new LessonCombinationRepository())->transferCombinations($source->id, $conflicting->id);
+
+            // 4. Kaynak dersin schedule kayıtlarını temizle ve kaynağı sil
+            $this->scheduleService->wipeResourceSchedules('lesson', $source->id);
+            $source->delete();
+        });
+
+        $this->logger->info('Ders birleştirme tamamlandı', [
+            'source_id'      => $source->id,
+            'conflicting_id' => $conflicting->id,
+        ]);
+
+        return $conflicting->id;
     }
 
     /**
@@ -212,7 +292,6 @@ class LessonService extends BaseService
      * @throws Exception
      */
     public function combineLesson(CombineLessonDTO $dto): void
-
     {
         $parentLessonId = $dto->parentId;
         $childLessonId = $dto->childId;
@@ -246,9 +325,9 @@ class LessonService extends BaseService
             // Child zaten başka bir derse bağlıysa hata
             if ($childLesson->parentLesson) {
                 throw new Exception(
-                    $childLesson->getFullName(addCode:true,addProgram:true)
+                    $childLesson->getFullName(addCode: true, addProgram: true)
                     . " zaten "
-                    . $childLesson->parentLesson->getFullName(addCode:true,addProgram:true)
+                    . $childLesson->parentLesson->getFullName(addCode: true, addProgram: true)
                     . " dersine bağlı"
                 );
             }
@@ -270,31 +349,18 @@ class LessonService extends BaseService
             $this->scheduleService->wipeResourceSchedules('lesson', $childLesson->id);
 
             // Bağlantıyı kur (ders + sınav birleştirme)
-            $lc1 = new LessonCombination();
-            $lc1->parent_lesson_id = $parentLesson->id;
-            $lc1->child_lesson_id = $childLesson->id;
-            $lc1->type = 'lesson';
-            $lc1->semester = $dto->semester;
-            $lc1->academic_year = $dto->academicYear;
-            $lc1->create();
-
-            $lc2 = new LessonCombination();
-            $lc2->parent_lesson_id = $parentLesson->id;
-            $lc2->child_lesson_id = $childLesson->id;
-            $lc2->type = 'exam';
-            $lc2->semester = $dto->semester;
-            $lc2->academic_year = $dto->academicYear;
-            $lc2->create();
+            $combinationRepo = new LessonCombinationRepository();
+            $combinationRepo->createLessonAndExamLink(
+                $parentLesson->id,
+                $childLesson->id,
+                $dto->semester,
+                $dto->academicYear
+            );
 
             // Child'ın alt child'larını da parent'a bağla
             foreach ($childLesson->childLessons as $grandChild) {
                 $this->scheduleService->wipeResourceSchedules('lesson', $grandChild->id);
-                $db = new LessonCombination();
-                $db->get()->where([
-                    'child_lesson_id' => $grandChild->id,
-                    'semester' => $dto->semester,
-                    'academic_year' => $dto->academicYear
-                ])->update(['parent_lesson_id' => $parentLesson->id]);
+                $combinationRepo->reparentChild($grandChild->id, $parentLesson->id, $dto->semester, $dto->academicYear);
             }
 
             // Parent'ın mevcut schedule'ı varsa child için item kopyala (seçilen slotlar hariç)
@@ -314,7 +380,6 @@ class LessonService extends BaseService
      * @throws Exception
      */
     public function deleteParentLesson(DeleteCombineLessonDTO $dto): void
-
     {
         $lessonId = $dto->id;
         $this->logger->info('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
@@ -325,13 +390,7 @@ class LessonService extends BaseService
 
         $this->scheduleService->wipeResourceSchedules('lesson', $lessonId);
 
-        $db = new LessonCombination();
-        $db->get()->where([
-            'child_lesson_id' => $lessonId,
-            'type' => 'lesson',
-            'semester' => $dto->semester,
-            'academic_year' => $dto->academicYear
-        ])->delete();
+        (new LessonCombinationRepository())->deleteLessonLink($lessonId, $dto->semester, $dto->academicYear);
 
         $this->logger->info('Ders bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
     }
@@ -356,7 +415,7 @@ class LessonService extends BaseService
         }
 
         $currentLesson = clone (new LessonRepository())->findLessonWithDetails($lessonId);
-            
+
         if (!$currentLesson) {
             throw new Exception("Ders bulunamadı");
         }
@@ -366,15 +425,15 @@ class LessonService extends BaseService
 
         // Aynı akademik yıl ve dönemdeki dersleri al
         $lessons = (new LessonRepository())->getExamCombineLessonList(
-            $currentLesson->id, 
-            $semester, 
+            $currentLesson->id,
+            $semester,
             $academicYear
         );
 
 
         // Zaten bağlı olanları ve kendisini filtrele
         $existingChildIds = array_map(fn($c) => $c->id, $currentLesson->examChildLessons);
-        
+
         $result = [];
         foreach ($lessons as $lesson) {
             // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
@@ -394,9 +453,9 @@ class LessonService extends BaseService
             }
 
             $result[] = [
-                'id'    => $lesson->id,
-                'text'  => $label,
-                'size'  => $lesson->size,
+                'id' => $lesson->id,
+                'text' => $label,
+                'size' => $lesson->size,
                 'program' => $lesson->program->name ?? '',
             ];
         }
@@ -474,23 +533,17 @@ class LessonService extends BaseService
             }
 
             // Sınav birleştirme bağlantısını kur
-            $lc = new LessonCombination();
-            $lc->parent_lesson_id = $parentLesson->id;
-            $lc->child_lesson_id = $childLesson->id;
-            $lc->type = 'exam';
-            $lc->semester = $dto->semester;
-            $lc->academic_year = $dto->academicYear;
-            $lc->create();
+            $combinationRepo = new LessonCombinationRepository();
+            $combinationRepo->createExamLink(
+                $parentLesson->id,
+                $childLesson->id,
+                $dto->semester,
+                $dto->academicYear
+            );
 
             // Child'ın exam alt child'larını da parent'a bağla
             foreach ($childLesson->examChildLessons as $grandChild) {
-                $db = new LessonCombination();
-                $db->get()->where([
-                    'child_lesson_id' => $grandChild->id,
-                    'type' => 'exam',
-                    'semester' => $dto->semester,
-                    'academic_year' => $dto->academicYear
-                ])->update(['parent_lesson_id' => $parentLesson->id]);
+                $combinationRepo->reparentExamChild($grandChild->id, $parentLesson->id, $dto->semester, $dto->academicYear);
             }
 
             // Parent'ın mevcut sınav programı varsa child için kopyala
@@ -511,7 +564,6 @@ class LessonService extends BaseService
      * @throws Exception
      */
     public function deleteExamParentLesson(DeleteCombineLessonDTO $dto): void
-
     {
         $lessonId = $dto->id;
         $this->logger->info('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
@@ -535,13 +587,7 @@ class LessonService extends BaseService
             }
         }
 
-        $db = new LessonCombination();
-        $db->get()->where([
-            'child_lesson_id' => $lessonId,
-            'type' => 'exam',
-            'semester' => $dto->semester,
-            'academic_year' => $dto->academicYear
-        ])->delete();
+        (new LessonCombinationRepository())->deleteExamLink($lessonId, $dto->semester, $dto->academicYear);
 
         $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
     }
@@ -562,7 +608,7 @@ class LessonService extends BaseService
 
         $parentLesson = (new Lesson())->find($dto->parentId)
             ?: throw new Exception("Üst ders bulunamadı");
-        $childLesson  = (new Lesson())->find($dto->childId)
+        $childLesson = (new Lesson())->find($dto->childId)
             ?: throw new Exception("Bağlanacak ders bulunamadı");
 
         $hoursDiff = $parentLesson->hours - $childLesson->hours;
@@ -584,7 +630,7 @@ class LessonService extends BaseService
 
         // Ayarlardan ders süresi ve mola bilgisini al
         $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
-        $break    = (int) getSettingValue('break', 'lesson', 10);    // dakika
+        $break = (int) getSettingValue('break', 'lesson', 10);    // dakika
 
         $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
@@ -594,8 +640,9 @@ class LessonService extends BaseService
                 continue;
             }
             $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
-                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
-            if (!$start) continue;
+                ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start)
+                continue;
 
             // İtem kaç saat içeriyor?
             $slotStart = clone $start;
@@ -607,13 +654,13 @@ class LessonService extends BaseService
                 $slotEnd->modify("+{$duration} minutes");
 
                 $slots[] = [
-                    'id'         => "{$item->id}_{$slotIndex}",
-                    'item_id'    => $item->id,
+                    'id' => "{$item->id}_{$slotIndex}",
+                    'item_id' => $item->id,
                     'slot_index' => $slotIndex,
-                    'day_name'   => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
-                    'day_index'  => $item->day_index,
+                    'day_name' => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
+                    'day_index' => $item->day_index,
                     'start_time' => $slotStart->format('H:i'),
-                    'end_time'   => $slotEnd->format('H:i'),
+                    'end_time' => $slotEnd->format('H:i'),
                 ];
 
                 // Bir sonraki slot başlangıcı: mola ekle
@@ -623,8 +670,9 @@ class LessonService extends BaseService
 
                 // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
                 $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
-                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
-                if (!$itemEnd || $slotStart >= $itemEnd) break;
+                    ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd)
+                    break;
             }
         }
 
@@ -633,10 +681,10 @@ class LessonService extends BaseService
 
         return [
             'needs_confirmation' => true,
-            'hours_diff'         => $hoursDiff,
-            'parent_hours'       => $parentLesson->hours,
-            'child_hours'        => $childLesson->hours,
-            'items'              => $slots,
+            'hours_diff' => $hoursDiff,
+            'parent_hours' => $parentLesson->hours,
+            'child_hours' => $childLesson->hours,
+            'items' => $slots,
         ];
     }
 
@@ -701,22 +749,9 @@ class LessonService extends BaseService
 
         foreach ($ids as $id) {
             try {
-                $lesson = clone (new Lesson())->find($id);
-                if (!$lesson) {
-                    $failed[$id] = "Ders bulunamadı.";
-                    continue;
-                }
-
-                if (!Gate::check(PermissionType::UPDATE->value, $lesson)) {
-                    $failed[$id] = "Güncelleme yetkiniz yok.";
-                    continue;
-                }
-
-                foreach ($fields as $fieldName => $fieldValue) {
-                    $lesson->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
-                }
-
-                $this->updateLesson($lesson);
+                // Toplu düzenlemede tüm yetki ve ilişkili tablo (LessonAssignment vb) kontrollerini 
+                // tekil güncelleme yapan updateLessonData metodu üzerinden yürüt.
+                $this->updateLessonData($id, $fields, false);
                 $success[] = $id;
             } catch (Exception $e) {
                 $failed[$id] = $e->getMessage();

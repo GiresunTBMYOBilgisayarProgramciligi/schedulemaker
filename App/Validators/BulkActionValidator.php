@@ -28,6 +28,8 @@ class BulkActionValidator extends BaseValidator
             'academic_year' => 'string',
             'building_id' => 'integer',
             'lecturer_id' => 'integer',
+            'department_id' => 'integer',
+            'program_id' => 'integer',
         ],
         'user' => [
             'role' => 'string',

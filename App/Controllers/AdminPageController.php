@@ -399,6 +399,8 @@ class AdminPageController extends Controller
         
         $view_data['buildingOptions'] = array_map(fn($b) => ['value' => $b->id, 'label' => $b->name], (new BuildingRepository())->findAll());
         $view_data['lecturerOptions'] = array_map(fn($u) => ['value' => $u->id, 'label' => $u->getFullName()], (new UserRepository())->findAll());
+        $view_data['deptOptions'] = array_map(fn($d) => ['value' => $d->id, 'label' => $d->name], (new DepartmentRepository())->findAll());
+        $view_data['progOptions'] = array_map(fn($p) => ['value' => $p->id, 'label' => $p->name], (new ProgramRepository())->findAll());
         if ($currentUser->role == "department_head") {
             $view_data['lessons'] = (new LessonRepository())->getLessonsForDepartmentHead($currentUser->department_id);
         } else {
