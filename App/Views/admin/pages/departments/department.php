@@ -243,8 +243,6 @@ use App\Core\Gate;
                                         <th scope="col">Türü</th>
                                         <th scope="col">Saati</th>
                                         <th scope="col" class="filterable">Yarıyılı</th>
-                                        <th scope="col" class="filterable">Dönemi</th>
-                                        <th scope="col" class="filterable">Yıl</th>
                                         <th scope="col" class="filterable">Hocası</th>
                                         <th scope="col" class="filterable">Program</th>
                                         <th scope="col" class="text-center">İşlemler</th>
@@ -264,8 +262,6 @@ use App\Core\Gate;
                                             <td><?= $lesson->getTypeName() ?></td>
                                             <td><?= $lesson->hours ?></td>
                                             <td><?= $lesson->semester_no ?></td>
-                                            <td><?= $lesson->semester ?></td>
-                                            <td><?= $lesson->academic_year ?></td>
                                             <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
                                             <td><?= $lesson->program?->name ?? '' ?></td>
                                             <td class="text-center">

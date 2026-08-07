@@ -82,8 +82,6 @@ use App\Models\Lesson;
                                         <th scope="col" class="filterable">Hocası</th>
                                         <th scope="col" class="filterable">Bölüm</th>
                                         <th scope="col" class="filterable">Program</th>
-                                        <th scope="col" class="filterable">Dönem</th>
-                                        <th scope="col" class="filterable">Yıl</th>
                                         <th scope="col" class="filterable">Bina</th>
                                         <th scope="col">Derslik türü</th>
 
@@ -112,8 +110,6 @@ use App\Models\Lesson;
                                             <td><?= $lesson->lecturer?->getFullName() ?? '<span class="text-danger">Atanmamış</span>' ?></td>
                                             <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
                                             <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                            <td><?= $lesson->semester ?? '<span class="text-danger">—</span>' ?></td>
-                                            <td><?= $lesson->academic_year ?? '<span class="text-danger">—</span>' ?></td>
                                             <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
                                             <td><?= $lesson->getClassroomTypeName() ?></td>
 

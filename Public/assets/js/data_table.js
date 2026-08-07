@@ -79,10 +79,9 @@ let dataTable = new DataTable('.dataTable', {
             }
 
             if (header.classList.contains("filterable")) {
-                header.style.whiteSpace = 'nowrap'; // satır kaymalarını önlemek için
                 // Filtre ikonu sarmalayıcı
-                let filterWrapper = document.createElement('div');
-                filterWrapper.classList.add('dropdown', 'd-inline-block', 'me-2'); // sağa boşluk
+                let filterWrapper = document.createElement('span');
+                filterWrapper.classList.add('dropdown', 'd-inline-block', 'ms-1'); // sola boşluk
 
                 let filterIcon = document.createElement("i");
                 filterIcon.classList.add("bi", "bi-funnel", "dropdown-toggle");
@@ -145,7 +144,16 @@ let dataTable = new DataTable('.dataTable', {
                 });
 
                 filterWrapper.appendChild(dropdownMenu);
-                header.appendChild(filterWrapper);
+                
+                let titleSpan = header.querySelector('.dt-column-title');
+                if (titleSpan) {
+                    titleSpan.style.display = 'inline-flex';
+                    titleSpan.style.alignItems = 'center';
+                    titleSpan.appendChild(filterWrapper);
+                } else {
+                    header.style.whiteSpace = 'nowrap';
+                    header.appendChild(filterWrapper);
+                }
 
                 // Tıklamaların sıralama tetiklemesini engelle
                 filterIcon.addEventListener('click', function (e) {
