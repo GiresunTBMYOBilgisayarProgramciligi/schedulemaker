@@ -37,7 +37,7 @@ class SchedulePublishService
     /**
      * @throws Exception
      */
-    public function bulkPublish(?string $semester = null, ?string $academicYear = null): int
+    public function bulkPublish(?string $semester = null, ?string $academicYear = null, bool $publishStatus = true): int
     {
         $semester = $semester ?? getSettingValue('semester');
         $academicYear = $academicYear ?? getSettingValue('academic_year');
@@ -49,15 +49,38 @@ class SchedulePublishService
 
         $count = 0;
         foreach ($schedules as $schedule) {
-            if (!$schedule->is_published) {
-                $schedule->is_published = true;
-                $schedule->published_at = date('Y-m-d H:i:s');
+            if ((bool)$schedule->is_published !== $publishStatus) {
+                $schedule->is_published = $publishStatus ? 1 : 0;
+                $schedule->published_at = $publishStatus ? date('Y-m-d H:i:s') : null;
                 $schedule->update();
                 $count++;
             }
         }
 
         return $count;
+    }
+
+    public function getPublishStats(?string $semester = null, ?string $academicYear = null): array
+    {
+        $semester = $semester ?? getSettingValue('semester');
+        $academicYear = $academicYear ?? getSettingValue('academic_year');
+
+        $totalCount = (new Schedule())->get()->where([
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->count();
+
+        $unpublishedCount = (new Schedule())->get()->where([
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+            'is_published' => 0
+        ])->count();
+
+        return [
+            'total_count' => $totalCount,
+            'unpublished_count' => $unpublishedCount,
+            'all_published' => $totalCount > 0 && $unpublishedCount === 0
+        ];
     }
 
     /**

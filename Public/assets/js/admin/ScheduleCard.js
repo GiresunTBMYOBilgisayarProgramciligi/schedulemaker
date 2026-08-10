@@ -157,6 +157,9 @@ class ScheduleCard {
                     if (data.status === 'success') {
                         new Toast().prepareToast("Başarılı", data.msg, "success");
                         e.target.nextElementSibling.innerText = data.is_published ? 'Yayında' : 'Yayınla';
+                        if (typeof window.updateBulkPublishButtonState === 'function') {
+                            window.updateBulkPublishButtonState();
+                        }
                     } else {
                         new Toast().prepareToast("Hata", data.msg || 'Hata oluştu', "danger");
                         e.target.checked = !e.target.checked; // Revert change

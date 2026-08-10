@@ -547,6 +547,15 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
+    public function getBulkPublishStatusAction(): void
+    {
+        $this->response = (new ScheduleController())->getBulkPublishStatus($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
     public function notifyScheduleChangesAction(): void
     {
         $this->response = (new ScheduleController())->notifyScheduleChanges($this->data);

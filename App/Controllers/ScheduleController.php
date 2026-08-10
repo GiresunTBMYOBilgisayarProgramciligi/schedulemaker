@@ -857,14 +857,18 @@ class ScheduleController extends Controller
     {
         Gate::authorizeRole('admin', false, "Toplu yayınlama işlemi için yetkiniz yok");
 
+        $action = isset($requestData['action']) && $requestData['action'] === 'unpublish' ? false : true;
+
         $count = (new SchedulePublishService())->bulkPublish(
             $requestData['semester'] ?? null,
-            $requestData['academic_year'] ?? null
+            $requestData['academic_year'] ?? null,
+            $action
         );
 
+        $msg = $action ? "$count adet program başarıyla yayınlandı." : "$count adet program yayından kaldırıldı.";
         return [
             "status" => "success",
-            "msg" => "$count adet program başarıyla yayınlandı."
+            "msg" => $msg
         ];
     }
 
@@ -884,6 +888,23 @@ class ScheduleController extends Controller
         return [
             "status" => "success",
             "msg" => "$notifiedCount hocaya bildirim e-postası gönderildi."
+        ];
+    }
+
+    /**
+     * Seçilen dönem için tüm ders programlarının yayınlanıp yayınlanmadığını kontrol eder
+     */
+    public function getBulkPublishStatus(array $requestData): array
+    {
+        $stats = (new SchedulePublishService())->getPublishStats(
+            $requestData['semester'] ?? null,
+            $requestData['academic_year'] ?? null
+        );
+
+        return [
+            "status" => "success",
+            "all_published" => $stats['all_published'],
+            "total_count" => $stats['total_count']
         ];
     }
 }
