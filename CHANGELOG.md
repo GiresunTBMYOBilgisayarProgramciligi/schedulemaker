@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0] - 2026-08-10
+
+### Added
+- **Hoca İstekleri ve Program Notları Yönetim Sistemi**: Akademisyenlerin dönemsel kısıt ve notlarını profil sayfasından iletebilmesi, yetkililerin durum güncelleme ('Gereği Yapıldı', 'Reddedildi', 'Bilgi Verildi'), okundu takibi, silme yetkileri ve otomatik e-posta bilgilendirme sistemi eklendi (#75).
+- **Liste Sayfaları Toplu İşlem (Bulk Actions) & Ders Birleştirme**: Liste sayfaları için toplu seçim, silme, pasifleştirme, bölüm/program kaskad güncellemesi ve mükerrer ders birleştirme mantığı entegre edildi.
+- **Sağ-Tık Arayüz İşlemleri ve Derslik Çakışma Yönetimi**: Ders programı kartlarında sağ tık ile derslik düzenleme ve çakışma durumunda otomatik boş derslik değiştirme önerisi sunan modal eklendi (#14).
+- **Birim Bazlı Kademeli Seçim Altyapısı**: Derslik, hoca ve takvim sayfalarında üst birim ve bölümlere göre dinamik kademeli filtreleme altyapısı eklendi.
+- **Otomatik Rol Güncelleme**: Bir kullanıcıya bölüm başkanı atandığında kullanıcının rolünün otomatik güncellenmesi sağlandı.
+
+### Changed
+- **DataTables 3.0 & Vanilla JS Dönüşümü**: DataTables kütüphanesi v3.0 sürümüne yükseltildi ve jQuery bağımlılığı kaldırılarak Vanilla JS yapısına geçildi.
+- **Arayüz ve Mobil Uyumluluk (Responsive)**: Mobil cihazlar için arayüz kullanımı, modal pencereleri, DataTables filtre ikon hizalamaları iyileştirildi; ders listelerinden Dönem/Yıl sütunları sadeleştirildi.
+- **Standart Modal & Silme Mekanizması**: Silme ve onay süreçleri projedeki standart `Modal` sınıfı ve `ajaxFormDelete` yapısıyla yeniden yapılandırıldı.
+
+### Fixed
+- **Profil Sayfası ve Bağlı Dersler**: Profil sayfasındaki ders akordiyonunun akademik yıl ve döneme göre sıralanması sağlandı, bağlı (child) derslere popover bilgisi eklendi ve haftalık ders saati toplamından bağlı dersler hariç tutuldu.
+- **Ders & Sınav Programı Düzeltmeleri**: Grup ders birleştirmelerindeki veri kayıpları, transaction rollback ve DTO pointer hataları ile sınav ögesi düzenleme/çoğaltma sorunları giderildi (#61).
+- **404 Hata Yönetimi**: Tanımsız rotalar `NotFoundException` ile yakalanarak veritabanı hata logu kirliliği engellendi.
+- **Repository ve Model Hata Düzeltmeleri**: `BaseRepository::find` metodunda null ID kontrolleri eklendi, atanmamış öğretim elemanı durumlarındaki null ID hataları ve pasif durumdaki checkbox kaydetme sorunları çözüldü.
+
 ## [0.2.9] - 2026-07-27
 
 ### Added
