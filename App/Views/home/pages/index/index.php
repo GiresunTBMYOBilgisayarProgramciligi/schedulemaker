@@ -4,6 +4,9 @@
  * @var array $departments
  * @var array $lecturers
  * @var array $classrooms
+ * @var string|int|null $selected_unit_id
+ * @var string|int|null $selected_department_id
+ * @var string|int|null $selected_program_id
  */
 
 use App\Enums\ExamType;
@@ -114,24 +117,27 @@ use function App\Helpers\getSettingValue;
                                     <!--begin::Row-->
                                     <div class="row">
                                         <div class="col-12 mb-3">
+                                        <!-- todo bu yapı tüm projede aynı düzen ve değişken isimlerinde olmalı-->
                                             <div class="row">
                                                 <div class="col-12 col-md-4">
                                                     <select class="form-select tom-select" id="unit_id" name="unit_id" data-action="public">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= $unit->id ?>" <?= ($selected_unit_id ?? '') == $unit->id ? 'selected' : '' ?>>
+                                                                <?= htmlspecialchars($unit->name) ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <select class="form-select tom-select" id="department_id"
-                                                        name="department_id" data-action="public">
+                                                        name="department_id" data-action="public" data-selected="<?= htmlspecialchars($selected_department_id ?? '') ?>">
                                                         <option value="0">İlk olarak Birim Seçiniz</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <div class="input-group">
-                                                        <select class="form-select" id="program_id" name="program_id">
+                                                        <select class="form-select" id="program_id" name="program_id" data-selected="<?= htmlspecialchars($selected_program_id ?? '') ?>">
                                                             <option value="0">İlk olarak Bölüm seçiniz</option>
                                                         </select>
                                                         <button type="button" class="btn btn-primary"

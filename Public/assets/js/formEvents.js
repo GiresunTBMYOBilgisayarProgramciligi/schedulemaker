@@ -360,12 +360,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Select elementinin change olayını kabarcıklanarak (bubbles) tek bir kez tetikle
                     programSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
-                    // Eğer önceden seçilmesi gereken bir program varsa
+                   
                     const selectedProgramId = programSelect.getAttribute('data-selected');
                     if (selectedProgramId && selectedProgramId !== "0") {
                         if (programSelect.tomselect) {
                             programSelect.tomselect.setValue(selectedProgramId, true);
-                        } else {
+                        } else { // Eğer önceden seçilmesi gereken bir program varsa
                             programSelect.value = selectedProgramId;
                         }
                         programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli

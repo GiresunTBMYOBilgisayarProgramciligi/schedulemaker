@@ -47,6 +47,9 @@ class HomeRouter extends Router
             "departments" => (new Department())->get()->where(['active'=>true])->all(),
             "classrooms" => (new Classroom())->get()->all(),
             "lecturers" => $userRepository->findBy(['!role'=>'admin']),
+            "selected_unit_id" => $_GET['unit_id'] ?? $_GET['unit'] ?? '',
+            "selected_department_id" => $_GET['department_id'] ?? $_GET['department'] ?? '',
+            "selected_program_id" => $_GET['program_id'] ?? $_GET['program'] ?? '',
             "page_title" => "Anasayfa"]);
         $this->callView("home/index");
     }
