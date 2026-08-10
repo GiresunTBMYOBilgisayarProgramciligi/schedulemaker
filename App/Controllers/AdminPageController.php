@@ -129,7 +129,7 @@ class AdminPageController extends Controller
             $assignmentRepo = new LessonAssignmentRepository();
             $activeAssignments = $assignmentRepo->findActiveAssignmentsForLecturer($currentUser->id);
             $userLessons = array_values(array_filter(array_map(fn($a) => $a->lesson, $activeAssignments)));
-            $weeklyHours = array_sum(array_map(fn($l) => $l->hours ?? 0, $userLessons));
+            $weeklyHours = (new UserRepository())->calculateWeeklyHours($userLessons);
 
             $view_data['stats'] = [
                 'lesson_count' => count($userLessons),

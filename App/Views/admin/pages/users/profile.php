@@ -8,6 +8,7 @@
  */
 
 use App\Core\Gate;
+use App\Repositories\UserRepository;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -75,7 +76,7 @@ use function App\Helpers\getSettingValue;
                                     <div class="ms-3 me-auto">
                                         <b>Haftalık Ders Saati</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + (empty($l->parentLesson) ? ($l->hours ?? 0) : 0), 0) ?></span>
+                                    <span class="badge text-bg-primary "><?= (new UserRepository())->calculateWeeklyHours($user->lessons) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">

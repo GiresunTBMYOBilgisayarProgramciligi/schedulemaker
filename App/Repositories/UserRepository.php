@@ -157,4 +157,20 @@ class UserRepository extends BaseRepository
             '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
         ])->all();
     }
+
+    /**
+     * Verilen ders listesinden haftalık ders saatini hesaplar.
+     * Birleştirilmiş (child) dersler hariç tutularak yalnızca ana derslerin saatleri toplanır.
+     *
+     * @param array $lessons Lesson nesneleri dizisi
+     * @return int
+     */
+    public function calculateWeeklyHours(array $lessons): int
+    {
+        return array_reduce(
+            $lessons,
+            fn(int $sum, $lesson) => $sum + (empty($lesson->parentLesson) ? ($lesson->hours ?? 0) : 0),
+            0
+        );
+    }
 }
