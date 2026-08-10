@@ -77,7 +77,7 @@ class UserRepository extends BaseRepository
         return $model->get()->where(['id' => $id])->with([
             'department', 
             'program', 
-            'lessons' => ['with' => ['department', 'program']], 
+            'lessons' => ['with' => ['department', 'program', 'parentLesson']], 
             'schedules' => ['with' => ['items']]
         ])->first();
     }

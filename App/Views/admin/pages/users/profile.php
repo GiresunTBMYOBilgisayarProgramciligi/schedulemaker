@@ -75,7 +75,7 @@ use function App\Helpers\getSettingValue;
                                     <div class="ms-3 me-auto">
                                         <b>Haftalık Ders Saati</b>
                                     </div>
-                                    <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + ($l->hours ?? 0), 0) ?></span>
+                                    <span class="badge text-bg-primary "><?= array_reduce($user->lessons, fn($sum, $l) => $sum + (empty($l->parentLesson) ? ($l->hours ?? 0) : 0), 0) ?></span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div class="ms-3 me-auto">
@@ -280,7 +280,15 @@ use function App\Helpers\getSettingValue;
                                                                 <?php foreach ($lessons as $lesson): ?>
                                                                     <div class="col-md-4 col-sm-6 p-1">
                                                                         <a href="/admin/lesson/<?= $lesson->id ?>" class="text-decoration-none text-reset">
-                                                                            <div class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?? '' ?>" style="cursor: pointer;">
+                                                                            <?php
+                                                                            $popoverAttr = '';
+                                                                            if (!empty($lesson->parentLesson)) {
+                                                                                $popoverTitle = 'Birleştirilmiş Ders';
+                                                                                $popoverContent = 'Bu ders ' . $lesson->parentLesson->getFullName(addCode: true, addProgram: true) . ' dersine bağlıdır.';
+                                                                                $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+                                                                            }
+                                                                            ?>
+                                                                            <div class="lesson-card w-100 <?= $lesson->getScheduleCSSClass() ?? '' ?>" style="cursor: pointer;" <?= $popoverAttr ?>>
                                                                                 <span class="lesson-name" title="<?= htmlspecialchars($lesson->name) ?>">
                                                                                     <?= htmlspecialchars($lesson->code) ?> - <?= htmlspecialchars($lesson->name) ?>
                                                                                 </span>
@@ -416,6 +424,7 @@ use function App\Helpers\getSettingValue;
 </main>
 <!--end::App Main-->
 <script>
+    //todo bu kodlar ayrı bir dosyaya taşınacak ve assetmanager ile profil sayfalarına yüklenecek
 window.currentUserNotes = [];
 
 window.checkFormExistingNote = function() {
@@ -563,6 +572,8 @@ window.loadMyScheduleNotes = async function() {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#lessons [data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el, { trigger: 'hover' }));
+
     const notesTab = document.getElementById('notes-tab');
     if (notesTab) {
         notesTab.addEventListener('shown.bs.tab', function() {

@@ -110,7 +110,7 @@ class LessonAssignmentRepository extends BaseRepository
         if (!is_null($academicYear)) {
             $filters['academic_year'] = $academicYear;
         }
-        return $model->get()->where($filters)->with(['lesson' => ['with' => ['program', 'department', 'building']]])->all();
+        return $model->get()->where($filters)->with(['lesson' => ['with' => ['program', 'department', 'building', 'parentLesson']]])->all();
     }
 
 }
