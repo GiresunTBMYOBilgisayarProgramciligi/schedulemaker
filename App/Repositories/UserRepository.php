@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\UserTitle;
+use App\Repositories\LessonAssignmentRepository;
 use Exception;
 
 class UserRepository extends BaseRepository
@@ -159,18 +160,60 @@ class UserRepository extends BaseRepository
     }
 
     /**
-     * Verilen ders listesinden haftalık ders saatini hesaplar.
-     * Birleştirilmiş (child) dersler hariç tutularak yalnızca ana derslerin saatleri toplanır.
+     * Akademisyenin aktif dönemdeki derslerini getirir.
      *
-     * @param array $lessons Lesson nesneleri dizisi
-     * @return int
+     * @param User|int $user Kullanıcı nesnesi veya ID'si
+     * @return array Lesson nesneleri dizisi
+     * @throws Exception
      */
-    public function calculateWeeklyHours(array $lessons): int
+    public function getActiveLessons(User|int $user): array
     {
-        return array_reduce(
-            $lessons,
-            fn(int $sum, $lesson) => $sum + (empty($lesson->parentLesson) ? ($lesson->hours ?? 0) : 0),
-            0
-        );
+        if ($user instanceof User && !empty($user->lessons)) {
+            return $user->lessons;
+        }
+
+        $userId = $user instanceof User ? $user->id : $user;
+        $activeAssignments = (new LessonAssignmentRepository())->findActiveAssignmentsForLecturer($userId);
+        return array_values(array_filter(array_map(fn($a) => $a->lesson, $activeAssignments)));
+    }
+
+    /**
+     * Verilen kullanıcı veya ders listesinden haftalık ders saatini hesaplar.
+     * $withChild false ise birleştirilmiş (çocuk) dersler hesaba katılmaz, true ise katılır.
+     *
+     * @param User|array $userOrLessons Kullanıcı nesnesi veya Lesson nesneleri dizisi
+     * @param bool $withChild Çocuk (birleştirilmiş) derslerin dahil edilip edilmeyeceği
+     * @return int
+     * @throws Exception
+     */
+    public function calculateWeeklyHours(User|array $userOrLessons, bool $withChild = false): int
+    {
+        if ($userOrLessons instanceof User) {
+            return $userOrLessons->getWeeklyHours($withChild);
+        }
+
+        $user = new User();
+        $user->lessons = $userOrLessons;
+        return $user->getWeeklyHours($withChild);
+    }
+
+    /**
+     * Verilen kullanıcı veya ders listesinden ders sayısını hesaplar.
+     * $withChild false ise birleştirilmiş (çocuk) dersler hesaba katılmaz, true ise katılır.
+     *
+     * @param User|array $userOrLessons Kullanıcı nesnesi veya Lesson nesneleri dizisi
+     * @param bool $withChild Çocuk (birleştirilmiş) derslerin dahil edilip edilmeyeceği
+     * @return int
+     * @throws Exception
+     */
+    public function calculateLessonCount(User|array $userOrLessons, bool $withChild = false): int
+    {
+        if ($userOrLessons instanceof User) {
+            return $userOrLessons->getLessonCount($withChild);
+        }
+
+        $user = new User();
+        $user->lessons = $userOrLessons;
+        return $user->getLessonCount($withChild);
     }
 }

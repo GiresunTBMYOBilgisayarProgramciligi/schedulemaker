@@ -265,4 +265,54 @@ class User extends Model
         $default = "";
         return "https://www.gravatar.com/avatar/" . md5(strtolower(trim($this->mail))) . "?d=" . urlencode($default) . "&s=" . $size;
     }
+
+    /**
+     * Kullanıcının haftalık ders saatini hesaplar.
+     * $withChild false ise birleştirilmiş (çocuk) dersler katılmaz, true ise hepsi katılır.
+     *
+     * @param bool $withChild
+     * @return int
+     */
+    public function getWeeklyHours(bool $withChild = false): int
+    {
+        return array_reduce(
+            $this->lessons,
+            fn(int $sum, $lesson) => $sum + ($withChild || empty($lesson->parentLesson) ? ($lesson->hours ?? 0) : 0),
+            0
+        );
+    }
+
+    /**
+     * Kullanıcının ders sayısını hesaplar.
+     * $withChild false ise birleştirilmiş (çocuk) dersler katılmaz, true ise hepsi katılır.
+     *
+     * @param bool $withChild
+     * @return int
+     */
+    public function getLessonCount(bool $withChild = false): int
+    {
+        if ($withChild) {
+            return count($this->lessons);
+        }
+
+        return array_reduce(
+            $this->lessons,
+            fn(int $sum, $lesson) => $sum + (empty($lesson->parentLesson) ? 1 : 0),
+            0
+        );
+    }
+
+    /**
+     * Kullanıcının derslerindeki toplam öğrenci sayısını hesaplar.
+     *
+     * @return int
+     */
+    public function getTotalStudents(): int
+    {
+        return array_reduce(
+            $this->lessons,
+            fn(int $sum, $lesson) => $sum + ($lesson->size ?? 0),
+            0
+        );
+    }
 }

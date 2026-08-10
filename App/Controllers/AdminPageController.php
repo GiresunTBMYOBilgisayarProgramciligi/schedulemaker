@@ -126,16 +126,13 @@ class AdminPageController extends Controller
             }
 
             // Haftalık ders yükü (saat toplamı) - Yeni atama sistemi ile
-            $assignmentRepo = new LessonAssignmentRepository();
-            $activeAssignments = $assignmentRepo->findActiveAssignmentsForLecturer($currentUser->id);
-            $userLessons = array_values(array_filter(array_map(fn($a) => $a->lesson, $activeAssignments)));
-            $weeklyHours = (new UserRepository())->calculateWeeklyHours($userLessons);
+            $currentUser->lessons = (new UserRepository())->getActiveLessons($currentUser);
 
             $view_data['stats'] = [
-                'lesson_count' => count($userLessons),
-                'weekly_hours' => $weeklyHours,
+                'lesson_count' => $currentUser->getLessonCount(),
+                'weekly_hours' => $currentUser->getWeeklyHours(),
             ];
-            $view_data['myLessons'] = $userLessons;
+            $view_data['myLessons'] = $currentUser->lessons;
         }
 
 
