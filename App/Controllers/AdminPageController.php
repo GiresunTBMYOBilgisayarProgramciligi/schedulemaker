@@ -101,28 +101,24 @@ class AdminPageController extends Controller
                 'academics' => $department ? count($department->users ?? []) : 0,
                 'lessons'   => $department ? count($department->lessons ?? []) : 0,
             ];
-            // Bölüm başkanının ders programı (program_id varsa programa, yoksa kullanıcıya göre)
-            if (!is_null($currentUser->program_id)) {
-                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
-                    ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $currentUser->program_id, 'type' => 'lesson'], true
-                );
-            } else {
+            // Bölüm başkanının ders programı
+            try {
                 $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
                     ['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true
                 );
+            } catch (\Throwable $e) {
+                $view_data["scheduleHTML"] = "<div class='alert alert-warning m-3'><i class='bi bi-exclamation-triangle me-2'></i>Ders programı yüklenemedi.</div>";
             }
 
         // --- Akademisyen / Araştırma Görevlisi ---
         } else {
             // Kişisel ders programı
-            if (!is_null($currentUser->program_id)) {
-                $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
-                    ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $currentUser->program_id, 'type' => 'lesson'], true
-                );
-            } else {
+            try {
                 $view_data["scheduleHTML"] = (new ScheduleController())->getSchedulesHTML(
                     ['owner_type' => OwnerType::USER->value, 'owner_id' => $currentUser->id, 'type' => 'lesson'], true
                 );
+            } catch (\Throwable $e) {
+                $view_data["scheduleHTML"] = "<div class='alert alert-warning m-3'><i class='bi bi-exclamation-triangle me-2'></i>Ders programı yüklenemedi.</div>";
             }
 
             // Haftalık ders yükü (saat toplamı) - Yeni atama sistemi ile
