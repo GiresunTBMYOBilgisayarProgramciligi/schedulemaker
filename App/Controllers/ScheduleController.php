@@ -121,7 +121,9 @@ class ScheduleController extends Controller
         }
         
         if ($schedule !== null) {
-            Gate::authorize(PermissionType::VIEW->value, $schedule, "Programı görüntüleme yetkiniz yok");
+            if (!Gate::check(PermissionType::VIEW->value, $schedule)) {
+                return "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Program henüz yayınlanmadı.</div>";
+            }
         }
 
         $HTMLOut = "";

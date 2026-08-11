@@ -58,11 +58,6 @@
         <div class="card card-outline card-primary h-100">
             <div class="card-header">
                 <h3 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ders Programım</h3>
-                <div class="card-tools">
-                    <a href="/admin/exportschedule" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-download me-1"></i>Dışa Aktar
-                    </a>
-                </div>
             </div>
             <div class="card-body">
                 <?php if (!empty($scheduleHTML)): ?>
