@@ -4,7 +4,6 @@
 include "theme/head.php";
 ?>
 <!--begin::Body-->
-<!--todo theme atarı profil sayfasından yapılmalı ve cookie olarak tanımlanmalı-->
 
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary sidebar-mini sidebar-collapse" data-overlayscrollbars-initialize>
     <!--begin::App Wrapper-->
