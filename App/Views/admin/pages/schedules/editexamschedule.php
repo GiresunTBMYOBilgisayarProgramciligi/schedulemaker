@@ -6,6 +6,7 @@
  * @var array $classrooms
  */
 
+use App\Core\View;
 use App\Enums\ExamType;
 use function App\Helpers\getSettingValue;
 
@@ -131,34 +132,16 @@ use function App\Helpers\getSettingValue;
                                     <!--begin::Row-->
                                     <div class="row">
                                         <div class="col-12 mb-3">
-                                            <div class="row">
-                                                <div class="col-12 col-md-4">
-                                                    <select class="form-select tom-select" id="unit_id" name="unit_id">
-                                                        <option value="">Birim Seçiniz</option>
-                                                        <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-12 col-md-4">
-                                                    <select class="form-select tom-select" id="department_id"
-                                                        name="department_id">
-                                                        <option value="0">İlk olarak Birim Seçiniz</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-12 col-md-4">
-                                                    <div class="input-group">
-                                                        <select class="form-select" id="program_id" name="program_id">
-                                                            <option value="0">İlk olarak Bölüm seçiniz</option>
-                                                        </select>
-                                                        <button type="button" class="btn btn-primary"
-                                                            id="departmentAndProgramScheduleButton"
-                                                            data-only-table="false" data-schedule-type="exam">
-                                                            Düzenle
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <?= View::renderComponent('schedules/_programSelector', [
+                                                'units' => $units ?? [],
+                                                'selectedUnitId' => $selected_unit_id ?? '',
+                                                'selectedDepartmentId' => $selected_department_id ?? '',
+                                                'selectedProgramId' => $selected_program_id ?? '',
+                                                'buttonId' => 'departmentAndProgramScheduleButton',
+                                                'buttonText' => 'Düzenle',
+                                                'dataOnlyTable' => 'false',
+                                                'dataScheduleType' => 'exam'
+                                            ]) ?>
 
                                         </div>
                                     </div>
