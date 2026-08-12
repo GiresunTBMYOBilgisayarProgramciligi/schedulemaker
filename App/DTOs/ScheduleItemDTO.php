@@ -5,7 +5,6 @@ namespace App\DTOs;
 use App\Enums\ScheduleItemStatus;
 
 /**
- * todo bunun adının DTO olması gerekmez mi? 
  * Schedule Item verisi için Data Transfer Object
  * 
  * Immutable, type-safe veri taşıyıcı

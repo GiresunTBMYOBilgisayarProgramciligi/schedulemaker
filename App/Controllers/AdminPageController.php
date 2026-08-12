@@ -752,12 +752,39 @@ class AdminPageController extends Controller
         if (empty($departments)) {
             throw new AuthorizationException("Ders programı düzenleme yetkiniz yok", [], 403);
         }
+        $selectedUnitId = $_GET['unit_id'] ?? null;
+        $selectedDepartmentId = $department_id ?? $_GET['department_id'] ?? null;
+        $selectedProgramId = $_GET['program_id'] ?? null;
+
+        if (!empty($selectedProgramId)) {
+            $authorizedProgs = (new ProgramRepository())->getAuthorized('view', ['id' => (int)$selectedProgramId, 'active' => true]);
+            $prog = $authorizedProgs[0] ?? null;
+            if ($prog) {
+                $selectedDepartmentId = $selectedDepartmentId ?? $prog->department_id;
+            } else {
+                $selectedProgramId = null;
+            }
+        }
+
+        if (!empty($selectedDepartmentId)) {
+            $authorizedDepts = (new DepartmentRepository())->getAuthorized('manage_schedule', ['id' => (int)$selectedDepartmentId, 'active' => true]);
+            $dept = $authorizedDepts[0] ?? null;
+            if ($dept) {
+                $selectedUnitId = $selectedUnitId ?? $dept->unit_id;
+            } else {
+                $selectedDepartmentId = null;
+            }
+        }
+
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
-            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
+            "selected_unit_id" => $selectedUnitId,
+            "selected_department_id" => $selectedDepartmentId,
+            "selected_program_id" => $selectedProgramId,
         ];
         $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ['admin', 'user']]);
         return $view_data;
@@ -775,12 +802,39 @@ class AdminPageController extends Controller
         if (empty($departments)) {
             throw new AuthorizationException("Sınav programı düzenleme yetkiniz yok", [], 403);
         }
+        $selectedUnitId = $_GET['unit_id'] ?? null;
+        $selectedDepartmentId = $department_id ?? $_GET['department_id'] ?? null;
+        $selectedProgramId = $_GET['program_id'] ?? null;
+
+        if (!empty($selectedProgramId)) {
+            $authorizedProgs = (new ProgramRepository())->getAuthorized('view', ['id' => (int)$selectedProgramId, 'active' => true]);
+            $prog = $authorizedProgs[0] ?? null;
+            if ($prog) {
+                $selectedDepartmentId = $selectedDepartmentId ?? $prog->department_id;
+            } else {
+                $selectedProgramId = null;
+            }
+        }
+
+        if (!empty($selectedDepartmentId)) {
+            $authorizedDepts = (new DepartmentRepository())->getAuthorized('manage_schedule', ['id' => (int)$selectedDepartmentId, 'active' => true]);
+            $dept = $authorizedDepts[0] ?? null;
+            if ($dept) {
+                $selectedUnitId = $selectedUnitId ?? $dept->unit_id;
+            } else {
+                $selectedDepartmentId = null;
+            }
+        }
+
         $view_data = [
             "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Sınav Programını Düzenle",
-            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building'])
+            "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
+            "selected_unit_id" => $selectedUnitId,
+            "selected_department_id" => $selectedDepartmentId,
+            "selected_program_id" => $selectedProgramId,
         ];
         if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();

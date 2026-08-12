@@ -86,6 +86,9 @@ use App\Core\Gate;
                                 <a href="/admin/editprogram/<?= $program->id ?>" class="btn btn-primary">Programı
                                     Düzenle</a>
                             <?php endif; ?>
+                            <?php if (Gate::check("manage_schedule", $program)): ?>
+                                <a href="/admin/editschedule?department_id=<?= $program->department_id ?>&program_id=<?= $program->id ?>" class="btn btn-info text-white">Ders Programını Düzenle</a>
+                            <?php endif; ?>
                             <?php if (Gate::check("update", $program)): ?>
                                 <a href="/admin/addlesson/<?= $program->id ?>" class="btn btn-success">Ders Ekle</a>
                                 <a href="/admin/adduser/<?= $program->department_id ?>/<?= $program->id ?>"

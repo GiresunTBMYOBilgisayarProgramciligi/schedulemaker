@@ -95,8 +95,8 @@
         <div class="card card-outline card-info h-100">
             <div class="card-header">
                 <h3 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ders Programım</h3>
-                <div class="card-tools"><!-- todo get ile bölüm ve program bilgisi editschedule sayfasına aktarılsın. home indexte olduğu gibi -->
-                    <a href="/admin/editschedule" class="btn btn-sm btn-outline-info">
+                <div class="card-tools">
+                    <a href="/admin/editschedule<?= !empty($department?->id) ? '?department_id=' . $department->id : '' ?>" class="btn btn-sm btn-outline-info">
                         Programı Düzenle
                     </a>
                 </div>
