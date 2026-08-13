@@ -280,6 +280,11 @@
         <div class="card card-outline card-secondary h-100">
             <div class="card-header">
                 <h3 class="card-title"><i class="bi bi-clock-history me-1"></i> Son Sistem Aktiviteleri</h3>
+                <div class="card-tools">
+                    <a href="/admin/logs" class="btn btn-sm btn-outline-secondary me-1"
+                       onclick="event.stopPropagation()">Tümünü Gör</a>
+                    <i class="bi bi-chevron-up collapse-icon"></i>
+                </div>
             </div>
             <div class="card-body p-0" style="overflow-y:auto; max-height:890px;">
                 <?php if (!empty($recentLogs)): ?>
