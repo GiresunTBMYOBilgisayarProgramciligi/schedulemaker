@@ -12,6 +12,7 @@ enum UnitType: string
     case Institute  = 'enstitu';
     case Vocational = 'myo';
     case School     = 'yuksekokul';
+    case Rectorate  = 'rektorluk';
 
     /**
      * Arayüzde gösterilecek Türkçe etiketleri döndürür.
@@ -23,6 +24,7 @@ enum UnitType: string
             self::Institute  => 'Enstitü',
             self::Vocational => 'Meslek Yüksekokulu',
             self::School     => 'Yüksekokul',
+            self::Rectorate  => 'Rektörlük',
         };
     }
 
