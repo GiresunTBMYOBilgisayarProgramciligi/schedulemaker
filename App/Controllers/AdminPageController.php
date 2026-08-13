@@ -6,6 +6,7 @@ use App\Core\Controller;
 use App\Core\AssetManager;
 use App\Core\Gate;
 use App\Exceptions\AuthorizationException;
+use App\Middlewares\AuthMiddleware;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
@@ -470,7 +471,10 @@ class AdminPageController extends Controller
 
     public function getImportLessonsPageData(AssetManager $assetManager): array
     {
-        Gate::authorizeRole("submanager", false, "Ders İçe aktarma yetkiniz yok");
+        $user = AuthMiddleware::user();
+        if (!Gate::allowsRole("department_head") && (!$user || !Gate::hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value))) {
+            throw new AuthorizationException("Ders İçe aktarma yetkiniz yok");
+        }
         $assetManager->loadPageAssets('importpages');
         return [
             "page_title" => " Ders İçe aktar",
