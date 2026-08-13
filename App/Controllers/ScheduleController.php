@@ -112,7 +112,7 @@ class ScheduleController extends Controller
                     $dto->owner_type === OwnerType::PROGRAM->value ? $dto->semester_no : null
                 );
                 
-                if (!$schedule || !$schedule->is_published) {
+                if (!$schedule || !Gate::check(PermissionType::VIEW->value, $schedule)) {
                     return "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>";
                 }
             }
@@ -146,8 +146,8 @@ class ScheduleController extends Controller
                         $dto->type,
                         $semester_no
                     );
-                    if (!$sch || !$sch->is_published) {
-                        continue; // Skip this semester if not published
+                    if (!$sch || !Gate::check(PermissionType::VIEW->value, $sch)) {
+                        continue; // Skip this semester if not accessible/published
                     }
                 }
                 

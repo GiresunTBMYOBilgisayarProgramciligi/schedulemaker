@@ -30,11 +30,11 @@ class SchedulePolicy extends BasePolicy
                 $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($program) {
                     if ($user->role === 'manager' || $user->role === 'submanager') {
-                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($program->department && $program->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $program)) return true;
                     
-                    return $program->department->chairperson_id == $user->id;
+                    return !empty($program->department?->chairperson_id) && $program->department->chairperson_id == $user->id;
                 }
                 break;
 
@@ -43,16 +43,16 @@ class SchedulePolicy extends BasePolicy
                 if ($scheduleUser) {
                     if ($user->role === 'manager' || $user->role === 'submanager') {
                         if (is_null($user->unit_id)) return true;
-                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department && $scheduleUser->department->unit_id == $user->unit_id) return true;
                         if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
                     }
-                    // Hoca bölümsüzse veya kendi programıysa veya bölüm başkanıysa
-                    if (!$scheduleUser->department_id) {
+                    // Hoca bölümsüzse veya kendi programıysa
+                    if (!$scheduleUser->department_id || $scheduleUser->id == $user->id) {
                         return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
 
-                    return $scheduleUser->department->chairperson_id == $user->id || $scheduleUser->id == $user->id;
+                    return !empty($scheduleUser->department?->chairperson_id) && $scheduleUser->department->chairperson_id == $user->id;
                 }
                 break;
 
@@ -60,11 +60,11 @@ class SchedulePolicy extends BasePolicy
                 $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($lesson) {
                     if ($user->role === 'manager' || $user->role === 'submanager') {
-                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($lesson->department && $lesson->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
 
-                    return $lesson->department->chairperson_id == $user->id;
+                    return !empty($lesson->department?->chairperson_id) && $lesson->department->chairperson_id == $user->id;
                 }
                 break;
 
@@ -99,8 +99,21 @@ class SchedulePolicy extends BasePolicy
     {
         if (!$schedule->is_published) {
             if (!$user) return false;
-            if (in_array($user->role, ['admin', 'manager', 'submanager'])) return true;
-            return $this->update($user, $schedule);
+            if (in_array($user->role, ['admin', 'manager', 'submanager', 'department_head'])) return true;
+            if ($this->update($user, $schedule)) return true;
+
+            // Sınıf programları sisteme giriş yapmış yetkili kullanıcılar tarafından görüntülenebilir
+            if ($schedule->owner_type === 'classroom') {
+                return true;
+            }
+
+            // Hoca programı: Ders programı yönetme yetkisi (manage_schedule) olan kullanıcılar
+            // çakışma ve müsaitlik kontrolü yapabilmek için hoca programını görüntüleyebilir
+            if ($schedule->owner_type === 'user' && $this->hasAnyPermission($user, PermissionType::MANAGE_SCHEDULE->value)) {
+                return true;
+            }
+
+            return false;
         }
         return true;
     }
@@ -115,7 +128,7 @@ class SchedulePolicy extends BasePolicy
                 $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($program) {
                     if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
-                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($program->department && $program->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, $program)) return true;
                 }
@@ -126,7 +139,7 @@ class SchedulePolicy extends BasePolicy
                 if ($scheduleUser) {
                     if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
                         if (is_null($user->unit_id)) return true;
-                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department && $scheduleUser->department->unit_id == $user->unit_id) return true;
                         if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
                     }
                     if ($scheduleUser->department_id) {
@@ -139,7 +152,7 @@ class SchedulePolicy extends BasePolicy
                 $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($lesson) {
                     if ($user->role === 'manager' || $user->role === 'submanager' || $user->role === 'admin') {
-                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($lesson->department && $lesson->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_LOCK_SCHEDULE_ITEM->value, null, ['department_id' => $lesson->department_id])) return true;
                 }
@@ -163,7 +176,7 @@ class SchedulePolicy extends BasePolicy
                 $program = (new Program())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($program) {
                     if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
-                        if (is_null($user->unit_id) || $program->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($program->department && $program->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, $program)) return true;
                 }
@@ -174,7 +187,7 @@ class SchedulePolicy extends BasePolicy
                 if ($scheduleUser) {
                     if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
                         if (is_null($user->unit_id)) return true;
-                        if ($scheduleUser->department_id && $scheduleUser->department->unit_id == $user->unit_id) return true;
+                        if ($scheduleUser->department_id && $scheduleUser->department && $scheduleUser->department->unit_id == $user->unit_id) return true;
                         if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
                     }
                     if ($scheduleUser->department_id) {
@@ -187,7 +200,7 @@ class SchedulePolicy extends BasePolicy
                 $lesson = (new Lesson())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($lesson) {
                     if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
-                        if (is_null($user->unit_id) || $lesson->department->unit_id == $user->unit_id) return true;
+                        if (is_null($user->unit_id) || ($lesson->department && $lesson->department->unit_id == $user->unit_id)) return true;
                     }
                     if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null, ['department_id' => $lesson->department_id])) return true;
                 }
