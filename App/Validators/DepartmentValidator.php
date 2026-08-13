@@ -25,10 +25,8 @@ class DepartmentValidator extends BaseValidator
             $errors['name'] = 'Bölüm adı 2 ile 100 karakter arasında olmalıdır.';
         }
 
-        // Başkan doğrulaması
-        if (empty($data['chairperson_id']) || $data['chairperson_id'] === '0') {
-            $errors['chairperson_id'] = 'Bölüm başkanı seçimi zorunludur.';
-        } elseif (!is_numeric($data['chairperson_id'])) {
+        // Başkan doğrulaması (Opsiyonel)
+        if (!empty($data['chairperson_id']) && $data['chairperson_id'] !== '0' && !is_numeric($data['chairperson_id'])) {
             $errors['chairperson_id'] = 'Bölüm başkanı ID değeri sayısal olmalıdır.';
         }
 
