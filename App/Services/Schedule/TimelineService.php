@@ -291,7 +291,7 @@ class TimelineService extends BaseService
             $detail['displaced_preferred'] = array_values($uniqueDp);
         }
 
-        $this->logger->info("Schedule items otomatik birleştiriliyor (auto-merge)", $this->logContext([
+        $this->logger->debug("Schedule items otomatik birleştiriliyor (auto-merge)", $this->logContext([
             'schedule_id'   => $anchor->schedule_id,
             'day_index'     => $anchor->day_index,
             'status'        => $anchor->status,

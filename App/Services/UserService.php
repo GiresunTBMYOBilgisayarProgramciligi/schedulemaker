@@ -37,7 +37,7 @@ class UserService extends BaseService
      */
     public function saveNew(UserDTO $dto): int
     {
-        $this->logger->info('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
+        $this->logger->debug('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
 
         $userData = $dto->toArray();
         $password = !empty($userData['password']) ? $userData['password'] : bin2hex(random_bytes(8));
@@ -117,7 +117,7 @@ class UserService extends BaseService
      */
     public function updateUser(User $user): int
     {
-        $this->logger->info('Kullanıcı güncelleniyor', ['id' => $user->id]);
+        $this->logger->debug('Kullanıcı güncelleniyor', ['id' => $user->id]);
 
         $excluded = ['register_date', 'last_login'];
 
@@ -151,7 +151,7 @@ class UserService extends BaseService
      */
     public function deleteUser(User $user): void
     {
-        $this->logger->info('Kullanıcı siliniyor', ['id' => $user->id]);
+        $this->logger->debug('Kullanıcı siliniyor', ['id' => $user->id]);
 
         try {
             Database::transaction(function () use ($user) {
@@ -234,7 +234,7 @@ class UserService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu kullanıcı silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu kullanıcı silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -276,7 +276,7 @@ class UserService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

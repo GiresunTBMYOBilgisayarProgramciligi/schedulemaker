@@ -18,7 +18,7 @@ class SettingsService extends BaseService
      */
     public function saveMultipleSettings(array $settingsData): bool
     {
-        $this->logger->info('Toplu ayar güncellemesi başlatıldı');
+        $this->logger->debug('Toplu ayar güncellemesi başlatıldı');
 
         try {
             return Database::transaction(function () use ($settingsData) {

@@ -41,9 +41,9 @@ class LessonScheduleService extends ScheduleService
             return Database::transaction(function () use ($dtos) {
                 $createdIds = [];
                 $affectedLessonIds = [];
-                $this->logger->info("Starting transaction for saving schedule items", $this->logContext(['dtos_count' => count($dtos)]));
+                $this->logger->debug("Starting transaction for saving schedule items", $this->logContext(['dtos_count' => count($dtos)]));
                 foreach ($dtos as $index => $dto) {
-                    $this->logger->info("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
+                    $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
 
                     // İlgili bilgileri al
                     /** @var Schedule $schedule */

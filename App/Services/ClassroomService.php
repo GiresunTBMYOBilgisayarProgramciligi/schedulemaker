@@ -28,7 +28,7 @@ class ClassroomService extends BaseService
      */
     public function saveNew(ClassroomDTO $dto): int
     {
-        $this->logger->info('Yeni derslik ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni derslik ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -56,7 +56,7 @@ class ClassroomService extends BaseService
      */
     public function updateClassroom(Classroom $classroom): int
     {
-        $this->logger->info('Derslik güncelleniyor', ['id' => $classroom->id]);
+        $this->logger->debug('Derslik güncelleniyor', ['id' => $classroom->id]);
 
         try {
             return Database::transaction(function () use ($classroom) {
@@ -82,7 +82,7 @@ class ClassroomService extends BaseService
      */
     public function deleteClassroom(Classroom $classroom): void
     {
-        $this->logger->info('Derslik siliniyor', ['id' => $classroom->id]);
+        $this->logger->debug('Derslik siliniyor', ['id' => $classroom->id]);
 
         try {
             Database::transaction(function () use ($classroom) {
@@ -111,7 +111,7 @@ class ClassroomService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu derslik silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu derslik silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -153,7 +153,7 @@ class ClassroomService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu derslik güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu derslik güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

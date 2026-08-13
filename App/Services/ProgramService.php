@@ -23,7 +23,7 @@ class ProgramService extends BaseService
      */
     public function saveNew(ProgramDTO $dto): int
     {
-        $this->logger->info('Yeni program ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni program ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -56,7 +56,7 @@ class ProgramService extends BaseService
      */
     public function updateProgram(Program $program): int
     {
-        $this->logger->info('Program güncelleniyor', ['program' => $program]);
+        $this->logger->debug('Program güncelleniyor', ['program' => $program]);
 
         try {
             return Database::transaction(function () use ($program) {
@@ -86,7 +86,7 @@ class ProgramService extends BaseService
      */
     public function deleteProgram(Program $program): void
     {
-        $this->logger->info('Program siliniyor', ['id' => $program->id]);
+        $this->logger->debug('Program siliniyor', ['id' => $program->id]);
 
         try {
             Database::transaction(function () use ($program) {
@@ -122,7 +122,7 @@ class ProgramService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu program silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu program silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -165,7 +165,7 @@ class ProgramService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu program güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu program güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

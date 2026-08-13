@@ -22,7 +22,7 @@ class UnitService extends BaseService
      */
     public function saveNew(UnitDTO $dto): int
     {
-        $this->logger->info('Yeni birim ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni birim ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -50,7 +50,7 @@ class UnitService extends BaseService
      */
     public function updateUnit(Unit $unit): int
     {
-        $this->logger->info('Birim güncelleniyor', ['id' => $unit->id]);
+        $this->logger->debug('Birim güncelleniyor', ['id' => $unit->id]);
 
         try {
             return Database::transaction(function () use ($unit) {
@@ -75,7 +75,7 @@ class UnitService extends BaseService
      */
     public function deleteUnit(Unit $unit): void
     {
-        $this->logger->info('Birim siliniyor', ['id' => $unit->id]);
+        $this->logger->debug('Birim siliniyor', ['id' => $unit->id]);
 
         try {
             Database::transaction(function () use ($unit) {
@@ -117,7 +117,7 @@ class UnitService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu birim silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu birim silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -159,7 +159,7 @@ class UnitService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu birim güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu birim güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

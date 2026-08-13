@@ -56,7 +56,7 @@ class LessonService extends BaseService
      */
     public function saveNew(LessonDTO $dto): int
     {
-        $this->logger->info('Yeni ders ekleniyor', ['name' => $dto->name, 'code' => $dto->code ?? null]);
+        $this->logger->debug('Yeni ders ekleniyor', ['name' => $dto->name, 'code' => $dto->code ?? null]);
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -174,7 +174,7 @@ class LessonService extends BaseService
      */
     public function updateLesson(Lesson $lesson): int
     {
-        $this->logger->info('Ders güncelleniyor', ['id' => $lesson->id]);
+        $this->logger->debug('Ders güncelleniyor', ['id' => $lesson->id]);
 
         try {
             return Database::transaction(function () use ($lesson) {
@@ -206,7 +206,7 @@ class LessonService extends BaseService
      */
     private function mergeSourceIntoConflicting(Lesson $source, Lesson $conflicting): int
     {
-        $this->logger->info('Ders birleştirme başlatıldı: kaynak → çakışan', [
+        $this->logger->debug('Ders birleştirme başlatıldı: kaynak → çakışan', [
             'source_id'      => $source->id,
             'conflicting_id' => $conflicting->id,
         ]);
@@ -260,7 +260,7 @@ class LessonService extends BaseService
      */
     public function deleteLesson(Lesson $lesson): void
     {
-        $this->logger->info('Ders siliniyor', ['id' => $lesson->id]);
+        $this->logger->debug('Ders siliniyor', ['id' => $lesson->id]);
 
         try {
             Database::transaction(function () use ($lesson) {
@@ -297,7 +297,7 @@ class LessonService extends BaseService
         $childLessonId = $dto->childId;
         $slotsToSkip = $dto->getParsedItemsToRemove();
 
-        $this->logger->info('Ders birleştirme başlatıldı', [
+        $this->logger->debug('Ders birleştirme başlatıldı', [
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
         ]);
@@ -382,7 +382,7 @@ class LessonService extends BaseService
     public function deleteParentLesson(DeleteCombineLessonDTO $dto): void
     {
         $lessonId = $dto->id;
-        $this->logger->info('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
+        $this->logger->debug('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
 
         /** @var Lesson $lesson */
         $lesson = (new Lesson())->find($lessonId)
@@ -476,7 +476,7 @@ class LessonService extends BaseService
         $parentLessonId = $dto->parentId;
         $childLessonId = $dto->childId;
 
-        $this->logger->info('Sınav birleştirme başlatıldı', [
+        $this->logger->debug('Sınav birleştirme başlatıldı', [
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
         ]);
@@ -566,7 +566,7 @@ class LessonService extends BaseService
     public function deleteExamParentLesson(DeleteCombineLessonDTO $dto): void
     {
         $lessonId = $dto->id;
-        $this->logger->info('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
+        $this->logger->debug('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
 
         /** @var Lesson $lesson */
         $lesson = (new Lesson())->find($lessonId)
@@ -700,7 +700,7 @@ class LessonService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu ders silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu ders silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -742,7 +742,7 @@ class LessonService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu ders güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu ders güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

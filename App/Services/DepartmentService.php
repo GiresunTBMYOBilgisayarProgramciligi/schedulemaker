@@ -25,7 +25,7 @@ class DepartmentService extends BaseService
      */
     public function saveNew(DepartmentDTO $dto): int
     {
-        $this->logger->info('Yeni bölüm ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni bölüm ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
             $departmentId = Database::transaction(function () use ($dto) {
@@ -68,7 +68,7 @@ class DepartmentService extends BaseService
      */
     public function updateDepartment(Department $department): int
     {
-        $this->logger->info('Bölüm güncelleniyor', ['id' => $department->id]);
+        $this->logger->debug('Bölüm güncelleniyor', ['id' => $department->id]);
 
         // Başkan değişikliğini tespit etmek için eski kaydı transaction öncesinde oku
         $oldDepartment = (new Department())->get()->where(['id' => $department->id])->first();
@@ -125,7 +125,7 @@ class DepartmentService extends BaseService
      */
     public function deleteDepartment(Department $department): void
     {
-        $this->logger->info('Bölüm siliniyor', ['id' => $department->id]);
+        $this->logger->debug('Bölüm siliniyor', ['id' => $department->id]);
 
         // Silme öncesi başkan ID'sini sakla (silme sonrası erişilemez olacak)
         $oldChairpersonId = $department->chairperson_id;
@@ -173,7 +173,7 @@ class DepartmentService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu bölüm silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu bölüm silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -215,7 +215,7 @@ class DepartmentService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu bölüm güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu bölüm güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];

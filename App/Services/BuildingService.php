@@ -22,7 +22,7 @@ class BuildingService extends BaseService
      */
     public function saveNew(BuildingDTO $dto): int
     {
-        $this->logger->info('Yeni bina ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni bina ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -50,7 +50,7 @@ class BuildingService extends BaseService
      */
     public function updateBuilding(Building $building): int
     {
-        $this->logger->info('Bina güncelleniyor', ['id' => $building->id]);
+        $this->logger->debug('Bina güncelleniyor', ['id' => $building->id]);
 
         try {
             return Database::transaction(function () use ($building) {
@@ -75,7 +75,7 @@ class BuildingService extends BaseService
      */
     public function deleteBuilding(Building $building): void
     {
-        $this->logger->info('Bina siliniyor', ['id' => $building->id]);
+        $this->logger->debug('Bina siliniyor', ['id' => $building->id]);
 
         try {
             Database::transaction(function () use ($building) {
@@ -107,7 +107,7 @@ class BuildingService extends BaseService
      */
     public function bulkDelete(array $ids): array
     {
-        $this->logger->info('Toplu bina silme başlatıldı', ['ids' => $ids]);
+        $this->logger->debug('Toplu bina silme başlatıldı', ['ids' => $ids]);
 
         $success = [];
         $failed = [];
@@ -149,7 +149,7 @@ class BuildingService extends BaseService
      */
     public function bulkUpdate(array $ids, array $fields): array
     {
-        $this->logger->info('Toplu bina güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $this->logger->debug('Toplu bina güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
 
         $success = [];
         $failed = [];
