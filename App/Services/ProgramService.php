@@ -36,7 +36,12 @@ class ProgramService extends BaseService
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                throw new Exception("Bu isimde bir program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                    throw new Exception("Bu bölümde bu isimde bir program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                } else {
+                    $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
+                    throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");
+                }
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
@@ -61,7 +66,12 @@ class ProgramService extends BaseService
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                throw new Exception("Bu isimde bir program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                    throw new Exception("Bu bölümde bu isimde bir program zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                } else {
+                    $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
+                    throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");
+                }
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }

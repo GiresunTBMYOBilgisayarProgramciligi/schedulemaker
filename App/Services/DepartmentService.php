@@ -39,7 +39,7 @@ class DepartmentService extends BaseService
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                    throw new Exception("Bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                    throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 } else {
                     $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
                     throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");
@@ -96,7 +96,7 @@ class DepartmentService extends BaseService
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
                 if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                    throw new Exception("Bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                    throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
                 } else {
                     $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
                     throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");

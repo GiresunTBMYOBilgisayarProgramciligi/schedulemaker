@@ -114,7 +114,7 @@ create table if not exists departments
     active         tinyint(1) default 0,
     unit_id        int,
     primary key (id),
-    unique (name),
+    unique (unit_id, name),
     CONSTRAINT fk_departments_chairperson_id foreign key (chairperson_id) references users (id) on delete set null on update cascade,
     CONSTRAINT fk_departments_unit_id foreign key (unit_id) references units (id) on delete set null on update cascade
 ) ENGINE = INNODB;
@@ -140,7 +140,7 @@ create table if not exists programs
     department_id int,
     active tinyint(1) default 0,
     primary key (id),
-    unique (name),
+    unique (department_id, name),
     CONSTRAINT fk_programs_department_id foreign key (department_id) references departments (id) on delete set null
 ) ENGINE = INNODB;
 
