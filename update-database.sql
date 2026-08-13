@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS schedule_notes (
     semester ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
     schedule_type ENUM('lesson', 'midterm-exam', 'final-exam', 'makeup-exam') NOT NULL,
     note TEXT NOT NULL,
-    status ENUM('pending', 'read', 'completed', 'rejected') DEFAULT 'pending',
+    status ENUM('pending', 'read', 'completed', 'rejected', 'info_sent') DEFAULT 'pending',
     editor_feedback TEXT NULL,
     read_at TIMESTAMP NULL,
     read_by INT NULL,
@@ -39,3 +39,6 @@ CREATE TABLE IF NOT EXISTS schedule_changes_queue (
     INDEX idx_schedule_changes_queue_schedule (schedule_id),
     INDEX idx_schedule_changes_queue_lecturer (lecturer_id)
 ) ENGINE = INNODB;
+
+ALTER TABLE schedule_notes MODIFY COLUMN status ENUM('pending', 'read', 'completed', 'rejected', 'info_sent') DEFAULT 'pending';
+

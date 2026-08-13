@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS schedule_notes (
     semester ENUM('Güz', 'Bahar', 'Yaz') NOT NULL,
     schedule_type ENUM('lesson', 'midterm-exam', 'final-exam', 'makeup-exam') NOT NULL,
     note TEXT NOT NULL,
-    status ENUM('pending', 'read', 'completed', 'rejected') DEFAULT 'pending',
+    status ENUM('pending', 'read', 'completed', 'rejected', 'info_sent') DEFAULT 'pending',
     editor_feedback TEXT NULL,
     read_at TIMESTAMP NULL,
     read_by INT NULL,
