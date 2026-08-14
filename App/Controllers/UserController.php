@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Enums\PermissionType;
+use App\Enums\UserRole;
 
 use App\Core\Controller;
 use App\Models\User;
@@ -140,7 +141,15 @@ class UserController extends Controller
      */
     public function getLecturersByUnitResponse(int $unitId): array
     {
-        $lecturers = (new UserRepository())->getLecturersByUnit($unitId);
+        $action = $_GET['action'] ?? 'view';
+        if ($action === 'public') {
+            $lecturers = (new UserRepository())->getLecturersByUnit($unitId);
+        } else {
+            $lecturers = (new UserRepository())->getAuthorized($action, [
+                'unit_id' => $unitId,
+                '!role'   => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+            ]);
+        }
 
         $lecturersList = [];
         foreach ($lecturers as $lecturer) {
