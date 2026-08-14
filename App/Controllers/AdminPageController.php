@@ -1054,7 +1054,7 @@ class AdminPageController extends Controller
             throw new Exception('Bina bulunamadı.');
         }
 
-        $building = (new Building())->with('classrooms')->find($id);
+        $building = (new BuildingRepository())->findBuildingWithClassrooms($id);
         if (!$building) {
             throw new Exception('Bina bulunamadı.');
         }
