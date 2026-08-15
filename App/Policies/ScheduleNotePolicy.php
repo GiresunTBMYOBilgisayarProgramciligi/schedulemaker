@@ -5,8 +5,9 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\ScheduleNote;
 use App\DTOs\ScheduleNoteDTO;
-
 use App\Enums\UserRole;
+use App\Enums\PermissionType;
+use App\Repositories\DepartmentRepository;
 
 class ScheduleNotePolicy extends BasePolicy
 {
@@ -62,12 +63,25 @@ class ScheduleNotePolicy extends BasePolicy
      */
     public function canManageNotes(User $user): bool
     {
-        return in_array($user->role, [
+        if (in_array($user->role, [
             UserRole::Admin->value,
             UserRole::Manager->value,
             UserRole::SubManager->value,
-            UserRole::Secretary->value,
             UserRole::DepartmentHead->value,
-        ], true);
+        ], true)) {
+            return true;
+        }
+
+        // Bölüm başkanı mı? (chairperson_id == $user->id)
+        if ((new DepartmentRepository())->isChairpersonOfAnyDepartment($user->id)) {
+            return true;
+        }
+
+        // Ders programı yönetme özel yetkisi var mı?
+        if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value)) {
+            return true;
+        }
+
+        return false;
     }
 }
