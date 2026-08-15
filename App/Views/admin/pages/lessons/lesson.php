@@ -201,7 +201,7 @@ use App\Core\Gate;
                             </dl>
                         </div>
                         <div class="card-footer text-end">
-                            <?php if (Gate::allowsRole("department_head")): ?>
+                            <?php if (Gate::check("combine", $lesson)): ?>
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                     data-bs-target="#CombineLessonModal">Ders Birleştir
                                 </button>
