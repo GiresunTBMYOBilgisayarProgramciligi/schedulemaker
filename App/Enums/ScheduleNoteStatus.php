@@ -31,10 +31,10 @@ enum ScheduleNoteStatus: string
     {
         return match ($this) {
             self::PENDING => 'text-bg-secondary',
-            self::READ => 'text-bg-info',
+            self::READ => 'text-bg-secondary',
             self::COMPLETED => 'text-bg-success',
             self::REJECTED => 'text-bg-danger',
-            self::INFO_SENT => 'text-bg-warning',
+            self::INFO_SENT => 'text-bg-info',
         };
     }
 }

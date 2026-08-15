@@ -224,7 +224,7 @@ class ScheduleNotesHandler {
                     icons.push(`<span class="ms-1" title="Görülen Notlar"><i class="bi bi-eye-fill"></i> ${readCount}</span>`);
                 }
                 if (infoSentCount > 0) {
-                    icons.push(`<span class="ms-1 text-warning" title="Bilgi Verilen Notlar"><i class="bi bi-info-circle-fill"></i> ${infoSentCount}</span>`);
+                    icons.push(`<span class="ms-1 text-info" title="Bilgi Verilen Notlar"><i class="bi bi-info-circle-fill"></i> ${infoSentCount}</span>`);
                 }
                 if (completedCount > 0) {
                     icons.push(`<span class="ms-1 text-success" title="Gereği Yapılan Notlar"><i class="bi bi-check-circle-fill"></i> ${completedCount}</span>`);

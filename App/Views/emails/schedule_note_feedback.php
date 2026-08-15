@@ -11,8 +11,8 @@
         .badge { display: inline-block; padding: 6px 12px; font-weight: bold; border-radius: 4px; color: #fff; }
         .badge-completed { background-color: #28a745; }
         .badge-rejected { background-color: #dc3545; }
-        .badge-info-sent { background-color: #ffc107; color: #212529; }
-        .badge-read { background-color: #17a2b8; }
+        .badge-info-sent { background-color: #17a2b8; }
+        .badge-read { background-color: #6c757d; }
         .feedback-box { background: #f8f9fa; border-left: 4px solid #007bff; padding: 12px; margin-top: 15px; font-style: italic; }
         .footer { font-size: 12px; color: #777; text-align: center; margin-top: 20px; border-top: 1px solid #eeeeee; padding-top: 10px; }
     </style>
