@@ -166,6 +166,7 @@
         width: 100%;
         border-collapse: collapse;
         min-width: 800px;
+        table-layout: fixed;
         /* Mobilde scroll olması için */
     }
 
@@ -177,6 +178,13 @@
         vertical-align: middle;
         height: 1px;
         /* Rowspan içindeki h-100 elemanların esnemesi için */
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .schedule-table th:not(.time-slot),
+    .schedule-table td:not(.time-slot) {
+        max-width: 450px;
     }
 
     /* Başlık Stilleri */
@@ -191,7 +199,9 @@
 
     /* Saat Sütunu */
     .time-slot {
-        width: 100px;
+        width: 90px;
+        min-width: 90px;
+        max-width: 100px;
         font-weight: bold;
         color: #6c757d;
         background-color: #f8f9fa;
@@ -214,6 +224,13 @@
         font-size: 0.9rem;
         position: relative;
         /* Checkbox için eklendi */
+        width: 100%;
+        max-width: 450px;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     .lesson-card.h-100 {
@@ -316,6 +333,8 @@
         display: block;
         margin-bottom: 4px;
         color: #1976d2;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     .lesson-meta {
@@ -323,6 +342,10 @@
         justify-content: space-between;
         font-size: 0.8rem;
         color: #546e7a;
+        gap: 4px;
+        flex-wrap: wrap;
+        word-break: break-word;
+        overflow-wrap: break-word;
     }
 
     .lesson-lecturer {
