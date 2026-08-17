@@ -120,7 +120,7 @@ use App\Enums\PermissionType;
                 <?php endif; ?>
 
                 <!-- Kurumsal Yapı -->
-                <?php if (Gate::allowsRole("submanager") || (Gate::allowsRole("department_head", true) && (!empty($currentUser->department_id) || !empty($currentUser->program_id)))): ?>
+                <?php if (Gate::allowsRole("submanager") || (Gate::allowsRole("department_head", true) && (!empty($currentUser->department_id) || !empty($currentUser->program_id))) || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_UNIT->value) || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_DEPARTMENT->value) || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_PROGRAM->value)): ?>
                 <li class="nav-header">KURUMSAL YAPI</li>
                 <?php endif; ?>
                 <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_UNIT->value)): ?>

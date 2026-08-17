@@ -14,7 +14,10 @@ class UserPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        return $user->role === 'manager' || 
+               $user->role === 'submanager' || 
+               $user->role === 'department_head' ||
+               $this->hasAnyPermission($user, PermissionType::MANAGE_USERS->value);
     }
 
     /**

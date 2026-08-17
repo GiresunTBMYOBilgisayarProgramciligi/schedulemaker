@@ -137,51 +137,54 @@ class LessonController extends Controller
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      */
     public function previewCombine(array $requestData): array
-    {            Gate::authorizeRole("submanager", false, "Ders birleştirme yetkiniz yok");
-            $dto = (new CombineLessonValidator())->getDTO($requestData);
-            return (new LessonService())->previewCombineLesson($dto);
+    {
+        Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
+        $dto = (new CombineLessonValidator())->getDTO($requestData);
+        return (new LessonService())->previewCombineLesson($dto);
     }
 
     /**
      * @throws Exception
      */
     public function combine(array $requestData): array
-    {       Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
-            $dto = (new CombineLessonValidator())->getDTO($requestData);
-            
-            if (!$dto->parentId || !$dto->childId) {
-                throw new Exception("Birleştirmek için dersler belirtilmemiş");
-            }
+    {
+        Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
+        $dto = (new CombineLessonValidator())->getDTO($requestData);
+        
+        if (!$dto->parentId || !$dto->childId) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
 
-            (new LessonService())->combineLesson($dto);
+        (new LessonService())->combineLesson($dto);
 
-            return [
-                "msg"      => "Dersler Başarıyla birleştirildi.",
-                "status"   => "success",
-                "redirect" => "self"
-            ];
+        return [
+            "msg"      => "Dersler Başarıyla birleştirildi.",
+            "status"   => "success",
+            "redirect" => "self"
+        ];
     }
 
     /**
      * @throws Exception
      */
     public function deleteParentLesson(array $requestData): array
-    {       Gate::authorize('combine', Lesson::class, "Ders birşeltirmesi kaldırma yetkiniz yok");
-            
-            $requestData['type'] = 'lesson';
-            $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
-            
-            if (empty($dto->id)) {
-                throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
-            }
+    {
+        Gate::authorize('combine', Lesson::class, "Ders birleştirmesi kaldırma yetkiniz yok");
+        
+        $requestData['type'] = 'lesson';
+        $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
+        
+        if (empty($dto->id)) {
+            throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
+        }
 
-            (new LessonService())->deleteParentLesson($dto);
-            
-            return [
-                "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
-                "status" => "success",
-                "redirect" => "self"
-            ];
+        (new LessonService())->deleteParentLesson($dto);
+        
+        return [
+            "msg" => "Ders birleştirmesi başarıyla kaldırıldı.",
+            "status" => "success",
+            "redirect" => "self"
+        ];
     }
 
     /**
@@ -189,41 +192,43 @@ class LessonController extends Controller
      * @throws Exception
      */
     public function combineExamLesson(array $requestData): array
-    {            Gate::authorize('combine', Lesson::class, "Sınav birleştirme yetkiniz yok");
-            
-            $dto = (new CombineExamLessonValidator())->getDTO($requestData);
-            
-            if (empty($dto->parentId) || empty($dto->childId)) {
-                throw new Exception("Birleştirmek için dersler belirtilmemiş");
-            }
+    {
+        Gate::authorize('combine', Lesson::class, "Sınav birleştirme yetkiniz yok");
+        
+        $dto = (new CombineExamLessonValidator())->getDTO($requestData);
+        
+        if (empty($dto->parentId) || empty($dto->childId)) {
+            throw new Exception("Birleştirmek için dersler belirtilmemiş");
+        }
 
-            (new LessonService())->combineExamLesson($dto);
+        (new LessonService())->combineExamLesson($dto);
 
-            return [
-                "msg"      => "Sınavlar Başarıyla birleştirildi.",
-                "status"   => "success",
-                "redirect" => "self"
-            ];
+        return [
+            "msg"      => "Sınavlar Başarıyla birleştirildi.",
+            "status"   => "success",
+            "redirect" => "self"
+        ];
     }
 
     /**
      * Sınav birleştirme bağlantısını kaldırır.
      */
     public function deleteExamParentLesson(array $requestData): array
-    {            $requestData['type'] = 'exam';
-            $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
+    {
+        $requestData['type'] = 'exam';
+        $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
 
-            if (empty($dto->id)) {
-                throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
-            }
-            Gate::authorizeRole("department_head", false, "Sınav birleştirmesi kaldırma yetkiniz yok");
-            (new LessonService())->deleteExamParentLesson($dto);
-            
-            return [
-                "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",
-                "status"   => "success",
-                "redirect" => "self"
-            ];
+        if (empty($dto->id)) {
+            throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
+        }
+        Gate::authorize('combine', Lesson::class, "Sınav birleştirmesi kaldırma yetkiniz yok");
+        (new LessonService())->deleteExamParentLesson($dto);
+        
+        return [
+            "msg"      => "Sınav birleştirmesi başarıyla kaldırıldı.",
+            "status"   => "success",
+            "redirect" => "self"
+        ];
     }
 
     /**
@@ -231,17 +236,18 @@ class LessonController extends Controller
      * Aynı akademik yıl ve dönemdeki dersleri döner.
      */
     public function getExamCombinableLessons(array $requestData): array
-    {            Gate::authorizeRole("department_head", false, "Sınav birleştirme listesini almak için yetkiniz yok");
+    {
+        Gate::authorize('combine', Lesson::class, "Sınav birleştirme listesini almak için yetkiniz yok");
 
-            $lessonId = (int) ($requestData['lesson_id'] ?? 0);
-            $search = trim($requestData['search'] ?? '');
+        $lessonId = (int) ($requestData['lesson_id'] ?? 0);
+        $search = trim($requestData['search'] ?? '');
 
-            $lessons = (new LessonService())->getExamCombinableLessonsForSelect($lessonId, $search);
+        $lessons = (new LessonService())->getExamCombinableLessonsForSelect($lessonId, $search);
 
-            return [
-                'status'  => 'success',
-                'lessons' => $lessons,
-            ];
+        return [
+            'status'  => 'success',
+            'lessons' => $lessons,
+        ];
     }
 
     /**

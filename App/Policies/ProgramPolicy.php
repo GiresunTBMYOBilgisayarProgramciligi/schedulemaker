@@ -15,7 +15,10 @@ class ProgramPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager' || $user->role === 'department_head';
+        return $user->role === 'manager' || 
+               $user->role === 'submanager' || 
+               $user->role === 'department_head' ||
+               $this->hasAnyPermission($user, PermissionType::MANAGE_PROGRAM->value);
     }
 
     /**
@@ -46,9 +49,17 @@ class ProgramPolicy extends BasePolicy
     /**
      * Yeni program ekleme yetkisi
      */
-    public function create(User $user): bool
+    public function create(User $user, $model = null, $programData = null): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            return true;
+        }
+
+        if (isset($programData->department_id)) {
+            return $this->hasCascadePermission($user, PermissionType::MANAGE_PROGRAM->value, null, ['department_id' => $programData->department_id]);
+        }
+
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_PROGRAM->value);
     }
 
     /**

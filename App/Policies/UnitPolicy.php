@@ -14,7 +14,9 @@ class UnitPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || $user->role === 'submanager';
+        return $user->role === 'manager' || 
+               $user->role === 'submanager' ||
+               $this->hasAnyPermission($user, PermissionType::MANAGE_UNIT->value);
     }
 
     /**
