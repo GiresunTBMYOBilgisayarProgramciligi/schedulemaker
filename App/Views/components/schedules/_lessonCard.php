@@ -95,13 +95,12 @@ if (!empty($scheduleItem->detail['is_locked'])) {
             </div>
         <?php else: ?>
             <div class="d-flex justify-content-between w-100">
-                <span class="lesson-lecturer">
+                <span class="lesson-lecturer" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
                     <?= ($slotData->lecturer ?? null)?->getFullName() ?>
                 </span>
-                <span class="lesson-classroom">
+                <span class="lesson-classroom" title="<?= htmlspecialchars(($slotData->classroom ?? null)?->name ?? '') ?>">
                     <?= ($slotData->classroom ?? null)?->name ?>
                 </span>
-
             </div>
         <?php endif; ?>
         <?php if (!($schedule->owner_type == OwnerType::USER->value && $type == "exam")): ?>

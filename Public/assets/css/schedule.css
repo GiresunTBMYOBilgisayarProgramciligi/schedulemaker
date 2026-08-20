@@ -184,7 +184,7 @@
 
     .schedule-table th:not(.time-slot),
     .schedule-table td:not(.time-slot) {
-        max-width: 450px;
+        max-width: 550px;
     }
 
     /* Başlık Stilleri */
@@ -429,6 +429,7 @@
         flex-direction: column;
         justify-content: center;
         font-size: 0.8rem;
+        padding: 6px;
     }
 
     .lesson-group-container .lesson-name {
@@ -440,13 +441,27 @@
 
     .lesson-group-container .lesson-meta {
         font-size: 0.75rem;
+        flex-wrap: nowrap;
     }
 
-    .lesson-group-container .lesson-lecturer,
-    .lesson-group-container .lesson-classroom {
+    .lesson-group-container .lesson-meta > .d-flex {
+        min-width: 0;
+        align-items: center;
+    }
+
+    .lesson-group-container .lesson-lecturer {
+        flex: 1 1 auto;
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        margin-right: 4px;
+    }
+
+    .lesson-group-container .lesson-classroom {
+        flex-shrink: 0;
+        white-space: nowrap;
+        margin-left: auto;
     }
 
     /* --- Ders Türü ve Renk Tanımlamaları --- */
