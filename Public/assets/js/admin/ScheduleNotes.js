@@ -446,7 +446,22 @@ class ScheduleNotesHandler {
 
             if (res.status === 'success') {
                 this.notify('Başarılı', res.msg, 'success');
+
+                // Not kartındaki durum etiketini (badge) güncelle
+                const card = document.querySelector(`.schedule-note-item[data-note-id="${noteId}"]`);
+                if (card && res.data) {
+                    const badgeEl = card.querySelector('.badge');
+                    if (badgeEl) {
+                        badgeEl.className = `badge ${res.data.badge_class} fs-6`;
+                        badgeEl.textContent = res.data.status_label;
+                    }
+                }
+
                 this.updateNotesCountBadge();
+
+                if (typeof window.loadMyScheduleNotes === 'function') {
+                    window.loadMyScheduleNotes();
+                }
             } else {
                 this.notify('Hata', res.msg || 'Güncelleme başarısız.', 'danger');
             }

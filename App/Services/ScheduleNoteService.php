@@ -100,12 +100,12 @@ class ScheduleNoteService extends BaseService
     /**
      * Düzenleyici durum günceller ve akademisyene bildirim e-postası fırlatır.
      */
-    public function updateStatus(ScheduleNoteStatusDTO $dto, User $editor): bool
+    public function updateStatus(ScheduleNoteStatusDTO $dto, User $editor): ?ScheduleNote
     {
         $updated = $this->repository->updateStatus($dto, $editor->id);
 
         if ($updated) {
-            /** @var ScheduleNote $note */
+            /** @var ScheduleNote|null $note */
             $note = $this->repository->find($dto->noteId);
             if ($note) {
                 /** @var User|null $lecturer */
@@ -122,9 +122,11 @@ class ScheduleNoteService extends BaseService
                 'status' => $dto->status->value,
                 'editor_id' => $editor->id
             ]));
+
+            return $note;
         }
 
-        return $updated;
+        return null;
     }
 
     /**

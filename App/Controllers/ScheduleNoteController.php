@@ -175,11 +175,19 @@ class ScheduleNoteController extends Controller
         $validator = new ScheduleNoteValidator();
         $dto = $validator->getStatusDTO($requestData);
 
-        $this->service->updateStatus($dto, $currentUser);
+        $note = $this->service->updateStatus($dto, $currentUser);
 
         return [
             "status" => "success",
-            "msg" => "İstek durumu ve geri bildirim başarıyla güncellendi."
+            "msg" => "İstek durumu ve geri bildirim başarıyla güncellendi.",
+            "data" => [
+                "id" => $dto->noteId,
+                "status" => $note?->status ?? $dto->status->value,
+                "status_label" => $note ? $note->getStatusEnum()->getLabel() : $dto->status->getLabel(),
+                "badge_class" => $note ? $note->getStatusEnum()->getBadgeClass() : $dto->status->getBadgeClass(),
+                "editor_feedback" => $note?->editor_feedback ?? $dto->editorFeedback,
+                "status_updated_at" => $note?->status_updated_at?->format('d.m.Y H:i'),
+            ]
         ];
     }
 
