@@ -697,6 +697,7 @@ class ScheduleService extends BaseService
 
     /**
      * Program öğelerinin kilit durumunu değiştirir (çoklu seçim destekli).
+     * Sibling (kardeş) öğelerin de kilit durumu senkronize edilir.
      *
      * @param ToggleLockScheduleItemDTO $dto
      * @return array [successCount, finalState]
@@ -708,9 +709,19 @@ class ScheduleService extends BaseService
         $finalState = null;
 
         Database::transaction(function () use ($dto, &$successCount, &$finalState) {
+            $processedSiblingIds = [];
+
             foreach ($dto->ids as $id) {
+                if (in_array($id, $processedSiblingIds)) {
+                    continue;
+                }
+
                 /** @var ScheduleItem|null $item */
-                $item = $this->itemRepo->find($id);
+                $item = (new ScheduleItem())
+                    ->where(['id' => $id])
+                    ->with('schedule')
+                    ->first();
+
                 if (!$item) {
                     $this->logger->warning("toggleLockScheduleItems failed: Item not found", $this->logContext(['item_id' => $id]));
                     continue;
@@ -718,17 +729,53 @@ class ScheduleService extends BaseService
 
                 $detail = $item->detail ?? [];
                 $isLocked = !empty($detail['is_locked']);
-                
+
                 // Eğer target_state belirtilmişse o duruma zorla, yoksa toggle yap
                 $newState = $dto->target_state !== null ? $dto->target_state : !$isLocked;
-                $detail['is_locked'] = $newState;
                 $finalState = $newState;
 
-                $item->detail = $detail;
-                $item->update();
+                // Schedule türünü belirle
+                $type = 'lesson';
+                if ($item->schedule && ExamType::isExamType($item->schedule->type)) {
+                    $type = 'exam';
+                }
 
-                $this->logger->info("Lock status updated successfully", $this->logContext(['item_id' => $item->id, 'is_locked' => $newState]));
-                $successCount++;
+                // Sibling (kardeş) öğeleri bul
+                $baseLessonIds = [];
+                foreach ($item->getSlotDatas() as $sd) {
+                    if ($sd->lesson) {
+                        $baseLessonIds[] = (int) $sd->lesson->id;
+                    }
+                }
+
+                $siblings = $this->findSiblingItems($item, $baseLessonIds);
+                if ($type === 'exam') {
+                    $examSiblings = (new ExamScheduleService())->findExamSiblingItems($item);
+                    if (count($examSiblings) > 1) {
+                        $siblings = $examSiblings;
+                    }
+                }
+
+                // Tüm sibling'lerin kilit durumunu güncelle
+                foreach ($siblings as $sibling) {
+                    if (in_array($sibling->id, $processedSiblingIds)) {
+                        continue;
+                    }
+
+                    $siblingDetail = $sibling->detail ?? [];
+                    $siblingDetail['is_locked'] = $newState;
+                    $sibling->detail = $siblingDetail;
+                    $sibling->update();
+
+                    $processedSiblingIds[] = $sibling->id;
+                    $successCount++;
+
+                    $this->logger->info("Lock status updated successfully", $this->logContext([
+                        'item_id' => $sibling->id,
+                        'is_locked' => $newState,
+                        'is_sibling' => ($sibling->id !== $item->id)
+                    ]));
+                }
             }
         });
 
