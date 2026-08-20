@@ -311,6 +311,7 @@ class LessonScheduleCard extends ScheduleCard {
         data.append("academic_year", this.academic_year);
         data.append("type", this.type);
         data.append("week_index", this.currentWeekIndex);
+        data.append("owner_type", this.owner_type);
 
         let toast = new Toast();
         toast.prepareToast("Yükleniyor", "Program durumu kontrol ediliyor...");
@@ -331,12 +332,14 @@ class LessonScheduleCard extends ScheduleCard {
                     break;
                 }
                 case 'program': {
-                    const [classroomRes, lecturerRes] = await Promise.all([
+                    const [classroomRes, lecturerRes, programRes] = await Promise.all([
                         fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
+                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                        fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
                     ]);
                     classroomData = await classroomRes.json();
                     lecturerData = await lecturerRes.json();
+                    programData = await programRes.json();
                     break;
                 }
                 case 'classroom': {

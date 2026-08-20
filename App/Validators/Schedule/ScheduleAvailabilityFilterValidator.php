@@ -44,7 +44,7 @@ class ScheduleAvailabilityFilterValidator extends BaseScheduleFilterValidator
             ],
             'checkProgramScheduleAction' => [
                 'required' => ['type', 'lesson_id'],
-                'optional' => ['week_index'],
+                'optional' => ['week_index', 'owner_type'],
                 'defaults' => ['semester', 'academic_year', 'week_index'],
             ],
         ];

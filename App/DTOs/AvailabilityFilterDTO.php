@@ -20,7 +20,8 @@ readonly class AvailabilityFilterDTO
         public ?int $schedule_id = null,
         public mixed $items = null,
         public ?int $exam_duration = null, // Sınav süresi
-        public ?string $classroom_type = null // İstenen derslik tipi
+        public ?string $classroom_type = null, // İstenen derslik tipi
+        public ?string $owner_type = null // Program çakışma filtresinde kullanılır
     ) {
     }
 
@@ -38,7 +39,8 @@ readonly class AvailabilityFilterDTO
             schedule_id: isset($data['schedule_id']) ? (int)$data['schedule_id'] : null,
             items: $data['items'] ?? null,
             exam_duration: isset($data['exam_duration']) ? (int)$data['exam_duration'] : null,
-            classroom_type: $data['classroom_type'] ?? null
+            classroom_type: $data['classroom_type'] ?? null,
+            owner_type: $data['owner_type'] ?? null
         );
     }
 
@@ -57,6 +59,7 @@ readonly class AvailabilityFilterDTO
             'items' => $this->items,
             'exam_duration' => $this->exam_duration,
             'classroom_type' => $this->classroom_type,
+            'owner_type' => $this->owner_type,
         ], fn($value) => $value !== null);
     }
 }

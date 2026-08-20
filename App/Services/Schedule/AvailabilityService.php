@@ -504,6 +504,7 @@ class AvailabilityService extends BaseService
      *   lesson_id, type, semester, academic_year, week_index
      * @return array [unavailableCells => ...]
      * @throws Exception
+     * todo array değil dto almalı diğer Availability metodlar da incelenmeli
      */
     public function getProgramAvailability(array $filters): array
     {
@@ -515,18 +516,32 @@ class AvailabilityService extends BaseService
         $slots = $this->timelineManager->getTimeSlots($filters['type']);
         $unavailableCells = [];
 
-        $schedules = (new Schedule())->get()->where([
-            'owner_type' => OwnerType::PROGRAM->value,
-            'owner_id' => $program->id,
-            'type' => $filters['type'],
-            'semester' => $filters['semester'],
-            'academic_year' => $filters['academic_year'],
-            'semester_no' => $lesson->semester_no
-        ])->all();
+        $schedules = [];
+
+        // owner_type 'program' ise mevcut programın kendi çakışmalarını zaten tabloda görüyoruz,
+        // sadece bağlı çocuk derslerin programlarını kontrol etmemiz yeterli.
+        $ownerType = $filters['owner_type'] ?? null;
+
+        if ($ownerType !== OwnerType::PROGRAM->value) {
+            $schedules = (new Schedule())->get()->where([
+                'owner_type' => OwnerType::PROGRAM->value,
+                'owner_id' => $program->id,
+                'type' => $filters['type'],
+                'semester' => $filters['semester'],
+                'academic_year' => $filters['academic_year'],
+                'semester_no' => $lesson->semester_no
+            ])->all();
+        }
+
         // çocuk derslerin programları da dahil ediliyor
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
                 if ($childLesson->program_id) {
+                    // program owner_type'ta kendi programımızı zaten hariç tuttuk,
+                    // çocuk ders kendi programımızla aynıysa onu da atla
+                    if ($ownerType === OwnerType::PROGRAM->value && $childLesson->program_id == $program->id) {
+                        continue;
+                    }
                     $childSchedules = (new Schedule())->get()->where([
                         'owner_type' => OwnerType::PROGRAM->value,
                         'owner_id' => $childLesson->program_id,
