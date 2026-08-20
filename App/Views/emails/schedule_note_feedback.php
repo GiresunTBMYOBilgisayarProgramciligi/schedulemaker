@@ -54,7 +54,7 @@
         </p>
     </div>
     <div class="footer">
-        Bu e-posta otomatik olarak oluşturulmuştur. Lütfen doğrudan yanıtlamayınız.<br>
+        Bu e-posta otomatik olarak oluşturulmuştur. Lütfen doğrudan yanıtlamayınız. Yanıtlarınızı sistem üzerindeki ilgili notu güncelleyerek belirtebilirsiniz.<br>
         &copy; <?= date('Y') ?> Schedule Maker
     </div>
 </div>
