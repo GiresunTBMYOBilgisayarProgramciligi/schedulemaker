@@ -519,25 +519,30 @@ class LessonScheduleCard extends ScheduleCard {
 
     /**
      * Ders ögesinin dersliğini düzenleme modalını açar.
-     * İlgili schedule_item_id'ye ait tüm slotları otomatik seçerek işlemi tüm parçalar üzerinde yürütür.
+     * İlgili schedule_item_id'ye ait veya seçili tüm slotları otomatik toplayarak işlemi tüm parçalar üzerinde yürütür.
      */
     async editClassroomModal(lessonCard) {
         if (!lessonCard) return;
 
-        const scheduleItemId = lessonCard.dataset.scheduleItemId;
-        const targetLessonId = lessonCard.dataset.lessonId;
-        const targetGroupNo = lessonCard.dataset.groupNo;
-        if (!scheduleItemId) return;
-
-        let sameItemCards = Array.from(this.table.querySelectorAll(`.lesson-card[data-schedule-item-id="${scheduleItemId}"]`));
-        if (targetLessonId) {
-            sameItemCards = sameItemCards.filter(card => {
-                if (card.dataset.lessonId !== targetLessonId) return false;
-                if (targetGroupNo && card.dataset.groupNo && card.dataset.groupNo !== targetGroupNo) return false;
-                return true;
-            });
+        let sameItemCards = [];
+        if (this.selectedLessonElements.size > 0 && this.selectedLessonElements.has(lessonCard)) {
+            sameItemCards = Array.from(this.selectedLessonElements);
+        } else {
+            const scheduleItemId = lessonCard.dataset.scheduleItemId;
+            const targetLessonId = lessonCard.dataset.lessonId;
+            const targetGroupNo = lessonCard.dataset.groupNo;
+            if (scheduleItemId) {
+                sameItemCards = Array.from(this.table.querySelectorAll(`.lesson-card[data-schedule-item-id="${scheduleItemId}"]`));
+                if (targetLessonId) {
+                    sameItemCards = sameItemCards.filter(card => {
+                        if (card.dataset.lessonId !== targetLessonId) return false;
+                        if (targetGroupNo && card.dataset.groupNo && card.dataset.groupNo !== targetGroupNo) return false;
+                        return true;
+                    });
+                }
+            }
+            if (sameItemCards.length === 0) sameItemCards = [lessonCard];
         }
-        if (sameItemCards.length === 0) sameItemCards = [lessonCard];
 
         sameItemCards.sort((a, b) => (a.closest('tr')?.rowIndex || 0) - (b.closest('tr')?.rowIndex || 0));
 
@@ -545,60 +550,62 @@ class LessonScheduleCard extends ScheduleCard {
         sameItemCards.forEach(card => {
             card.classList.add('selected-lesson');
             this.selectedLessonElements.add(card);
-            this.selectedScheduleItemIds.add(scheduleItemId);
+            if (card.dataset.scheduleItemId) {
+                this.selectedScheduleItemIds.add(card.dataset.scheduleItemId);
+            }
         });
 
         const firstCard = sameItemCards[0];
-        const lastCard = sameItemCards[sameItemCards.length - 1];
         const firstCell = firstCard.closest('td');
-        const lastCell = lastCard.closest('td');
-
-        if (!firstCell || !lastCell) {
+        if (!firstCell) {
             this.clearSelection();
             return;
         }
 
-        const fullStartTime = firstCell.dataset.startTime;
-        const fullEndTime = lastCell.dataset.endTime;
-        const totalHours = this.getDurationInHours(fullStartTime, fullEndTime) || sameItemCards.length;
+        let itemsToDelete = [];
+        let detailedItems = [];
+        let totalHours = 0;
 
-        const baseData = this.getLessonItemData(firstCard);
-        if (!baseData) {
+        sameItemCards.forEach(card => {
+            const data = this.getLessonItemData(card);
+            if (data) {
+                const hours = this.getDurationInHours(data.start_time, data.end_time) || 1;
+                itemsToDelete.push(data);
+                totalHours += hours;
+                detailedItems.push({ hours, data: data.data, status: data.status, originalElement: card });
+            }
+        });
+
+        if (itemsToDelete.length === 0) {
             this.clearSelection();
             return;
         }
-
-        const itemData = {
-            ...baseData,
-            start_time: fullStartTime,
-            end_time: fullEndTime
-        };
 
         this.resetDraggedLesson();
         this.draggedLesson = {
-            lesson_id: lessonCard.dataset.lessonId,
-            lesson_name: lessonCard.dataset.lessonName || 'Ders',
-            lesson_code: lessonCard.dataset.lessonCode || '',
+            lesson_id: firstCard.dataset.lessonId,
+            lesson_name: firstCard.dataset.lessonName || 'Ders',
+            lesson_code: firstCard.dataset.lessonCode || '',
             lesson_hours: totalHours,
-            group_no: lessonCard.dataset.groupNo || 0,
-            size: lessonCard.dataset.size || 0,
-            lecturer_id: lessonCard.dataset.lecturerId,
+            group_no: firstCard.dataset.groupNo || 0,
+            size: firstCard.dataset.size || 0,
+            lecturer_id: firstCard.dataset.lecturerId,
             end_element: firstCell,
-            schedule_item_id: scheduleItemId,
+            schedule_item_id: firstCard.dataset.scheduleItemId,
             HTMLElement: firstCard
         };
 
         const initialClassroom = {
-            id: lessonCard.dataset.classroomId,
-            name: lessonCard.dataset.classroomName
+            id: firstCard.dataset.classroomId,
+            name: firstCard.dataset.classroomName
         };
 
-        const result = await this.openAssignmentModal(`${this.draggedLesson.lesson_name} - Dersliği Düzenle`, initialClassroom);
+        const result = await this.openAssignmentModal(`${this.draggedLesson.lesson_name} - Dersliği Düzenle`, initialClassroom, totalHours);
         if (result && result.classroom) {
             try {
-                await this.checkCrash(result.hours, result.classroom);
-                const newItems = this.generateScheduleItems(result.hours, result.classroom);
-                const moveResult = await this.moveScheduleItems(newItems, [itemData]);
+                await this.checkCrash(totalHours, result.classroom);
+                const newItems = this.generateScheduleItems(detailedItems, result.classroom);
+                const moveResult = await this.moveScheduleItems(newItems, itemsToDelete);
                 if (moveResult && moveResult.status !== 'error') {
                     new Toast().prepareToast("Başarılı", "Derslik güncellendi.", "success");
                     await this.refreshScheduleCard();
@@ -636,6 +643,17 @@ class LessonScheduleCard extends ScheduleCard {
 
         if (itemsToMove.length === 0) return;
 
+        if (elements.length > 0) {
+            const firstEl = elements[0];
+            this.draggedLesson.lesson_id = this.draggedLesson.lesson_id || firstEl.dataset.lessonId;
+            this.draggedLesson.lesson_name = this.draggedLesson.lesson_name || firstEl.dataset.lessonName;
+            this.draggedLesson.lesson_code = this.draggedLesson.lesson_code || firstEl.dataset.lessonCode;
+            this.draggedLesson.lecturer_id = this.draggedLesson.lecturer_id || firstEl.dataset.lecturerId;
+            this.draggedLesson.size = this.draggedLesson.size || firstEl.dataset.size;
+            this.draggedLesson.group_no = this.draggedLesson.group_no || firstEl.dataset.groupNo;
+        }
+        this.draggedLesson.lesson_hours = totalHours;
+
         let moveResult = null;
         try {
             await this.checkCrash(totalHours, classroom);
@@ -649,7 +667,7 @@ class LessonScheduleCard extends ScheduleCard {
             await this.refreshScheduleCard();
         } else if (moveResult && moveResult.status === 'error') {
             if (this.owner_type !== 'classroom') {
-                const modalResult = await this.openAssignmentModal("Derslik Çakışması - Alternatif Derslik Seçin", null);
+                const modalResult = await this.openAssignmentModal("Derslik Çakışması - Alternatif Derslik Seçin", classroom, totalHours);
                 if (modalResult && modalResult.classroom) {
                     try {
                         classroom = modalResult.classroom;
@@ -679,18 +697,18 @@ class LessonScheduleCard extends ScheduleCard {
     /**
      * Ders atama modalını açar
      */
-    async openAssignmentModal(title = "Sınıf ve Saat Seçimi", initialClassroom = null) {
+    async openAssignmentModal(title = "Sınıf ve Saat Seçimi", initialClassroom = null, initialHours = null) {
         return new Promise((resolve, reject) => {
             let scheduleModal = new Modal();
-            let maxHours = this.draggedLesson.lesson_hours || 1;
-            let initialHours = this.draggedLesson.lesson_hours || 1;
+            let hoursToUse = parseInt(initialHours || this.draggedLesson.lesson_hours || 1);
+            let maxHours = this.draggedLesson.lesson_hours ? Math.max(parseInt(this.draggedLesson.lesson_hours), hoursToUse) : hoursToUse;
             let sizeString = this.draggedLesson.size > 0 ? this.draggedLesson.size + " Öğrenci için " : "";
 
             let modalContentHTML = `
             <form>
                 <div class="form-floating mb-3">
                     <input class="form-control" id="selected_hours" type="number" 
-                           value="${initialHours}" 
+                           value="${hoursToUse}" 
                            min=1 max=${maxHours}>
                     <label for="selected_hours">Süre (Saat)</label>
                 </div>
@@ -752,7 +770,7 @@ class LessonScheduleCard extends ScheduleCard {
 
                 const result = {
                     classroom: selectedClassroom,
-                    hours: selectedHoursInput.value
+                    hours: parseInt(selectedHoursInput.value)
                 };
 
                 scheduleModal.closeModal();
