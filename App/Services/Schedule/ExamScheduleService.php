@@ -408,7 +408,7 @@ class ExamScheduleService extends ScheduleService
 
         $lessonName = !empty($lessonNames) ? implode(", ", $lessonNames) : "Bilinmeyen Ders";
 
-        $this->logger->info(
+        $this->logger->debug(
             "$typeLabel programı düzenlendi: Eklendi/Güncellendi. Program: $screenName, Ders: $lessonName",
             $this->logContext()
         );

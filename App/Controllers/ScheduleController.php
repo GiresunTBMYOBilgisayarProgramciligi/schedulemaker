@@ -35,6 +35,7 @@ use App\Exceptions\ValidationException;
 use App\Repositories\ScheduleRepository;
 use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
+use App\Helpers\ScheduleLogHelper;
 use App\Core\Gate;
 use App\Enums\OwnerType;
 
@@ -241,83 +242,8 @@ class ScheduleController extends Controller
      * çakışan kısım prefered değil ise çakışma hatası verilir.
      * çakışan kısım yoksa item kaydedilir.
      */
-    private function getChangeDetail(string $actionText, ScheduleItemDTO $dto, ?ScheduleItemDTO $oldDto = null): string
-    {
-        $days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-        $dayName = $days[$dto->dayIndex] ?? '';
-        $timeStr = $dto->startTime . ' - ' . $dto->endTime;
-        
-        $lessonName = 'Bir ders';
-        $lessonId = null;
-        
-        if (!empty($dto->data) && is_array($dto->data)) {
-            $firstKey = array_key_first($dto->data);
-            $firstEntry = $dto->data[$firstKey];
-            if (is_array($firstEntry) && isset($firstEntry['lesson_id'])) {
-                $lessonId = $firstEntry['lesson_id'];
-            } elseif (isset($dto->data['lesson_id'])) {
-                $lessonId = $dto->data['lesson_id'];
-            }
-        }
-        
-        if ($lessonId) {
-            $lesson = (new Lesson())->find($lessonId);
-            if ($lesson) {
-                $lessonName = $lesson->name;
-            }
-        }
-        
-        if ($oldDto) {
-            $oldDayName = $days[$oldDto->dayIndex] ?? '';
-            $oldTimeStr = $oldDto->startTime . ' - ' . $oldDto->endTime;
-            return sprintf('"%s" %s %s saatinden %s %s saatine %s', $lessonName, $oldDayName, $oldTimeStr, $dayName, $timeStr, $actionText);
-        }
-        
-        return sprintf('%s %s saatleri arasındaki "%s" %s', $dayName, $timeStr, $lessonName, $actionText);
-    }
-
-    /**
-     * ScheduleItemDTO içerisinden (ders veya sınav) ilgili hoca/gözetmen ID'lerini çıkarır
-     * @param ScheduleItemDTO $dto
-     * @return array<int>
-     */
-    private function extractLecturerIds(ScheduleItemDTO $dto): array
-    {
-        $lecturerIds = [];
-        
-        // Dersler için lecturer_id kontrolü
-        if (!empty($dto->data) && is_array($dto->data)) {
-            foreach ($dto->data as $dayData) {
-                if (is_array($dayData) && !empty($dayData['lecturer_id'])) {
-                    $lecturerIds[] = (int) $dayData['lecturer_id'];
-                } elseif (isset($dto->data['lecturer_id'])) {
-                    $lecturerIds[] = (int) $dto->data['lecturer_id'];
-                }
-            }
-        }
-        
-        // Sınavlar için observer_id kontrolü
-        $assignments = $dto->detail['assignments'] ?? [];
-        if (!empty($assignments) && is_array($assignments)) {
-            foreach ($assignments as $assignment) {
-                if (!empty($assignment['observer_id'])) {
-                    $lecturerIds[] = (int) $assignment['observer_id'];
-                }
-            }
-        }
-        
-        return array_unique($lecturerIds);
-    }
-
-    /**
-     * Ders programı öğelerini (ScheduleItems) kaydetme isteğini işler.
-     * 
-     * @param array $requestData AJAX'tan gelen $_POST / $_GET dizisi
-     * @return array Response dizisi
-     */
     public function saveScheduleItems(array $requestData): array
     {
-        
         $items = json_decode($requestData['items'] ?? '[]', true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             return [
@@ -346,18 +272,8 @@ class ScheduleController extends Controller
             ];
         }
 
-        $publishService = new SchedulePublishService();
         foreach ($dtos as $dto) {
-            $lecturerIds = $this->extractLecturerIds($dto);
-            $detail = $this->getChangeDetail('eklendi/güncellendi', $dto);
-            
-            if (empty($lecturerIds)) {
-                $publishService->recordChange($dto->scheduleId, 'save', $detail, null);
-            } else {
-                foreach ($lecturerIds as $lecturerId) {
-                    $publishService->recordChange($dto->scheduleId, 'save', $detail, $lecturerId);
-                }
-            }
+            ScheduleLogHelper::logAndRecordChange('save', 'eklendi/güncellendi', $dto, null, false);
         }
 
         return [
@@ -403,19 +319,9 @@ class ScheduleController extends Controller
             ];
         }
 
-        $publishService = new SchedulePublishService();
         foreach ($dtos as $index => $dto) {
-            $lecturerIds = $this->extractLecturerIds($dto);
             $oldDto = $deletedDtos[$index] ?? null;
-            $detail = $this->getChangeDetail('taşındı', $dto, $oldDto);
-            
-            if (empty($lecturerIds)) {
-                $publishService->recordChange($dto->scheduleId, 'move', $detail, null);
-            } else {
-                foreach ($lecturerIds as $lecturerId) {
-                    $publishService->recordChange($dto->scheduleId, 'move', $detail, $lecturerId);
-                }
-            }
+            ScheduleLogHelper::logAndRecordChange('move', 'taşındı', $dto, $oldDto, false);
         }
 
         return [
@@ -457,18 +363,8 @@ class ScheduleController extends Controller
             ];
         }
 
-        $publishService = new SchedulePublishService();
         foreach ($dtos as $dto) {
-            $lecturerIds = $this->extractLecturerIds($dto);
-            $detail = $this->getChangeDetail('silindi', $dto);
-            
-            if (empty($lecturerIds)) {
-                $publishService->recordChange($dto->scheduleId, 'delete', $detail, null);
-            } else {
-                foreach ($lecturerIds as $lecturerId) {
-                    $publishService->recordChange($dto->scheduleId, 'delete', $detail, $lecturerId);
-                }
-            }
+            ScheduleLogHelper::logAndRecordChange('delete', 'silindi', $dto, null, false);
         }
         
         return [
@@ -516,18 +412,8 @@ class ScheduleController extends Controller
                 }
             }
             
-            $publishService = new SchedulePublishService();
             foreach ($dtos as $dto) {
-                $lecturerIds = $this->extractLecturerIds($dto);
-                $detail = $this->getChangeDetail('eklendi/güncellendi (Sınav)', $dto);
-                
-                if (empty($lecturerIds)) {
-                    $publishService->recordChange($dto->scheduleId, 'save', $detail, null);
-                } else {
-                    foreach ($lecturerIds as $lecturerId) {
-                        $publishService->recordChange($dto->scheduleId, 'save', $detail, $lecturerId);
-                    }
-                }
+                ScheduleLogHelper::logAndRecordChange('save', 'eklendi/güncellendi', $dto, null, true);
             }
         }
 
@@ -581,19 +467,9 @@ class ScheduleController extends Controller
                 }
             }
             
-            $publishService = new SchedulePublishService();
             foreach ($dtos as $index => $dto) {
-                $lecturerIds = $this->extractLecturerIds($dto);
                 $oldDto = $deletedDtos[$index] ?? null;
-                $detail = $this->getChangeDetail('taşındı (Sınav)', $dto, $oldDto);
-                
-                if (empty($lecturerIds)) {
-                    $publishService->recordChange($dto->scheduleId, 'move', $detail, null);
-                } else {
-                    foreach ($lecturerIds as $lecturerId) {
-                        $publishService->recordChange($dto->scheduleId, 'move', $detail, $lecturerId);
-                    }
-                }
+                ScheduleLogHelper::logAndRecordChange('move', 'taşındı', $dto, $oldDto, true);
             }
         }
 

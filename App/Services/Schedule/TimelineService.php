@@ -318,7 +318,7 @@ class TimelineService extends BaseService
         $mergedItem->detail      = !empty($detail) ? $detail : null;
         $mergedItem->create();
 
-        $this->logger->info("Auto-merge tamamlandı, yeni item oluşturuldu", $this->logContext([
+        $this->logger->debug("Auto-merge tamamlandı, yeni item oluşturuldu", $this->logContext([
             'new_item_id'  => $mergedItem->id,
             'schedule_id'  => $mergedItem->schedule_id,
             'time_range'   => $startTime . '-' . $endTime

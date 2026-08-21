@@ -3,6 +3,8 @@
  * @var array $logs
  * @var \App\Core\AssetManager $assetManager
  */
+
+use App\Helpers\LogViewHelper;
 ?>
 <main class="app-main">
     <div class="app-content-header">
@@ -46,7 +48,7 @@
                                         <td><?= htmlspecialchars($log->created_at) ?></td>
                                         <td><?= htmlspecialchars($log->username ?: ('#' . ($log->user_id ?? '-'))) ?></td>
                                         <td>
-                                            <?= $log->getLevelHtml() ?>
+                                            <?= LogViewHelper::renderLevelBadge($log) ?>
                                         </td>
                                         <td class="text-wrap" style="max-width: 420px; white-space: normal;">
                                             <?= htmlspecialchars($log->message) ?>
@@ -59,13 +61,13 @@
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?= $log->getSource() ?>
+                                            <?= LogViewHelper::renderSource($log) ?>
                                         </td>
                                         <td class="text-break" style="max-width: 240px;">
                                             <?= htmlspecialchars((string) $log->url) ?>
                                         </td>
                                         <td><?= htmlspecialchars((string) $log->ip) ?></td>
-                                        <td><?= $log->getContextHtml() ?></td>
+                                        <td><?= LogViewHelper::renderContextModal($log) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

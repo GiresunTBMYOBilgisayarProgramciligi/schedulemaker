@@ -68,7 +68,7 @@ class ScheduleService extends BaseService
                 // Child lesson kontrolü
                 if ($lesson->parent_id !== null) {
                     // Child lesson → Fazla saatleri otomatik temizle
-                    $this->logger->info("Child lesson hour limit exceeded, cleaning up", $this->logContext([
+                    $this->logger->debug("Child lesson hour limit exceeded, cleaning up", $this->logContext([
                         'lesson_id' => $lesson->id,
                         'lesson_name' => $lesson->getFullName(true,true,true,true),
                         'parent_id' => $lesson->parent_id,
@@ -205,7 +205,7 @@ class ScheduleService extends BaseService
             }
         }
 
-        $this->logger->info("Child lesson excess hours cleaned up", $this->logContext([
+        $this->logger->debug("Child lesson excess hours cleaned up", $this->logContext([
             'lesson_id' => $childLesson->id,
             'deleted_items' => $totalDeleted,
             'shortened_items' => $totalShortened,
@@ -770,7 +770,7 @@ class ScheduleService extends BaseService
                     $processedSiblingIds[] = $sibling->id;
                     $successCount++;
 
-                    $this->logger->info("Lock status updated successfully", $this->logContext([
+                    $this->logger->debug("Lock status updated successfully", $this->logContext([
                         'item_id' => $sibling->id,
                         'is_locked' => $newState,
                         'is_sibling' => ($sibling->id !== $item->id)
@@ -958,7 +958,7 @@ class ScheduleService extends BaseService
                 $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
             }
 
-                $this->logger->info(
+                $this->logger->debug(
                     "Schedule item'lar silindi: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
                     $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
                 );

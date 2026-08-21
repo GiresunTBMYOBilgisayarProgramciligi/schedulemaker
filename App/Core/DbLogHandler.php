@@ -12,26 +12,46 @@ use Throwable;
  */
 class DbLogHandler extends AbstractProcessingHandler
 {
-    private PDO $pdo;
+    private ?PDO $pdo = null;
 
     public function __construct($level = \Monolog\Level::Debug, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
-        // Create a dedicated PDO to avoid relying on Controller/Model constructors
-        $dsn = "mysql:host=" . ($_ENV['DB_HOST'] ?? 'localhost') . ";dbname=" . ($_ENV['DB_NAME'] ?? '');
-        $user = $_ENV['DB_USER'] ?? '';
-        $pass = $_ENV['DB_PASS'] ?? '';
-        $this->pdo = new PDO($dsn, $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // avoid throwing in handler
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        // Ensure utf8mb4
-        $this->pdo->exec("SET NAMES utf8mb4");
+    }
+
+    /**
+     * Lazy PDO connection initialization
+     */
+    private function getPdo(): ?PDO
+    {
+        if ($this->pdo instanceof PDO) {
+            return $this->pdo;
+        }
+
+        try {
+            $dsn = "mysql:host=" . ($_ENV['DB_HOST'] ?? 'localhost') . ";dbname=" . ($_ENV['DB_NAME'] ?? '') . ";charset=utf8mb4";
+            $user = $_ENV['DB_USER'] ?? '';
+            $pass = $_ENV['DB_PASS'] ?? '';
+            $this->pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // avoid throwing in handler
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+            $this->pdo->exec("SET NAMES utf8mb4");
+            return $this->pdo;
+        } catch (Throwable $e) {
+            error_log('[DbLogHandler] connection failed: ' . $e->getMessage());
+            return null;
+        }
     }
 
     protected function write(LogRecord $record): void
     {
         try {
+            $pdo = $this->getPdo();
+            if (!$pdo) {
+                return;
+            }
+
             $ctx = $record->context ?? [];
             $extra = $record->extra ?? [];
 
@@ -47,7 +67,7 @@ class DbLogHandler extends AbstractProcessingHandler
             $ip = $ctx['ip'] ?? null;
             $trace = $ctx['trace'] ?? null;
 
-            $stmt = $this->pdo->prepare(
+            $stmt = $pdo->prepare(
                 "INSERT INTO logs
                 (`created_at`, `username`, `user_id`, `level`, `channel`, `message`, `class`, `method`, `function`, `file`, `line`, `url`, `ip`, `trace`, `context`, `extra`)
                 VALUES (NOW(), :username, :user_id, :level, :channel, :message, :class, :method, :function, :file, :line, :url, :ip, :trace, :context, :extra)"

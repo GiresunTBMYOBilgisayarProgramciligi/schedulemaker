@@ -2,6 +2,7 @@
 
 namespace App\Services\Schedule;
 
+use App\Services\BaseService;
 use App\Models\Schedule;
 use App\Models\ScheduleChangeQueue;
 use App\Repositories\ScheduleRepository;
@@ -10,7 +11,7 @@ use App\Events\ScheduleChangesNotifiedEvent;
 use Exception;
 use function App\Helpers\getSettingValue;
 
-class SchedulePublishService
+class SchedulePublishService extends BaseService
 {
     /**
      * @throws Exception
@@ -27,9 +28,16 @@ class SchedulePublishService
         $schedule->published_at = $schedule->is_published ? date('Y-m-d H:i:s') : null;
         $schedule->update();
 
+        $actionText = $schedule->is_published ? "yayınlandı" : "yayından kaldırıldı";
+        $screenName = $schedule->getScheduleScreenName();
+        $this->logger->info("Program ($screenName) {$actionText}.", $this->logContext([
+            'schedule_id' => $schedule->id,
+            'is_published' => $schedule->is_published
+        ]));
+
         return [
             "status" => "success",
-            "msg" => "Program " . ($schedule->is_published ? "yayınlandı" : "yayından kaldırıldı"),
+            "msg" => "Program " . $actionText,
             "is_published" => $schedule->is_published
         ];
     }
@@ -56,6 +64,14 @@ class SchedulePublishService
                 $count++;
             }
         }
+
+        $actionText = $publishStatus ? "yayınlandı" : "yayından kaldırıldı";
+        $this->logger->info("Toplu program işlemi: {$count} adet program {$actionText} ($academicYear - $semester).", $this->logContext([
+            'count' => $count,
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+            'publish_status' => $publishStatus
+        ]));
 
         return $count;
     }
@@ -114,6 +130,11 @@ class SchedulePublishService
             }
             $notifiedCount++;
         }
+
+        $this->logger->info("Değişiklik bildirimleri gönderildi: {$notifiedCount} öğretim elemanına e-posta iletildi.", $this->logContext([
+            'notified_count' => $notifiedCount,
+            'total_changes' => count($changes)
+        ]));
 
         return $notifiedCount;
     }

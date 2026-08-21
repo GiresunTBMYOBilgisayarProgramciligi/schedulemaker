@@ -9,6 +9,8 @@
  * @var \App\Models\Unit[] $units
  * @var \App\Models\Department[] $departments
  */
+
+use App\Helpers\LogViewHelper;
 ?>
 
 <!-- İstatistik Kartları -->
@@ -294,7 +296,7 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1 me-2" style="min-width:0;">
                                 <div class="d-flex align-items-center gap-1 mb-1">
-                                    <?= $log->getLevelHtml() ?>
+                                    <?= LogViewHelper::renderLevelBadge($log) ?>
                                     <span class="text-muted small text-truncate"><?= htmlspecialchars($log->channel ?? '') ?></span>
                                 </div>
                                 <p class="mb-0 small text-truncate" title="<?= htmlspecialchars($log->message ?? '') ?>">

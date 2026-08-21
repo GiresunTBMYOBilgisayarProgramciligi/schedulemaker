@@ -100,7 +100,7 @@ class LessonScheduleService extends ScheduleService
                     $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type);
                 }
 
-                $this->logger->info("Schedule items saved successfully", $this->logContext([
+                $this->logger->debug("Schedule items saved successfully", $this->logContext([
                     'created_count' => count($createdIds),
                     'schedule_id' => $dtos[0]->scheduleId ?? null
                 ]));
