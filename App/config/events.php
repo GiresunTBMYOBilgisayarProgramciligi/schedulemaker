@@ -3,12 +3,14 @@
 use App\Core\EventDispatcher;
 use App\Events\UserForgotPasswordEvent;
 use App\Listeners\SendPasswordResetEmailListener;
-
 use App\Events\ScheduleNoteStatusUpdatedEvent;
 use App\Listeners\SendScheduleNoteFeedbackEmailListener;
-
 use App\Events\ChairpersonChangedEvent;
 use App\Listeners\SyncChairpersonRoleListener;
+use App\Events\ScheduleChangesNotifiedEvent;
+use App\Listeners\SendScheduleChangesEmailListener;
+use App\Events\SchedulePublishedEvent;
+use App\Listeners\SendSchedulePublishedEmailListener;
 
 $dispatcher = EventDispatcher::getInstance();
 
@@ -29,10 +31,12 @@ $dispatcher->listen(
     SyncChairpersonRoleListener::class
 );
 
-use App\Events\ScheduleChangesNotifiedEvent;
-use App\Listeners\SendScheduleChangesEmailListener;
-
 $dispatcher->listen(
     ScheduleChangesNotifiedEvent::class,
     SendScheduleChangesEmailListener::class
+);
+
+$dispatcher->listen(
+    SchedulePublishedEvent::class,
+    SendSchedulePublishedEmailListener::class
 );

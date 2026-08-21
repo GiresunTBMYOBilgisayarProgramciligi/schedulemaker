@@ -12,4 +12,13 @@ interface ScheduleExporterInterface
      * @param array $showOptions Gösterim seçenekleri (show_code, show_lecturer, show_program, show_observer)
      */
     public function export(array $filters, array $showOptions): void;
+
+    /**
+     * Dışa aktarılan dosyanın ham içeriğini (binary Excel veya ICS metni) string olarak döner.
+     *
+     * @param array $filters
+     * @param array $showOptions
+     * @return string
+     */
+    public function getRawContent(array $filters, array $showOptions): string;
 }

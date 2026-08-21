@@ -3,8 +3,11 @@
 namespace App\Mailers;
 
 use App\Core\Mailer;
+use App\Core\View;
+use App\Enums\ScheduleNoteStatus;
 use App\Models\ScheduleNote;
 use App\Models\User;
+use Exception;
 
 class ScheduleNoteMailer extends Mailer
 {
@@ -24,28 +27,23 @@ class ScheduleNoteMailer extends Mailer
             }
 
             // Görüldü veya Beklemede durumlarında e-posta bildirimi gönderilmez
-            if ($note->status === \App\Enums\ScheduleNoteStatus::READ->value || $note->status === \App\Enums\ScheduleNoteStatus::PENDING->value) {
+            if ($note->status === ScheduleNoteStatus::READ->value || $note->status === ScheduleNoteStatus::PENDING->value) {
                 return false;
             }
 
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $this->mailer->Subject = 'Ders Programı İstek Durumu: ' . $note->getStatusEnum()->getLabel();
 
-            ob_start();
-            extract([
-                'note' => $note,
+            $body = View::renderEmail('schedule_note_feedback', [
+                'note'     => $note,
                 'lecturer' => $lecturer,
-                'editor' => $editor
+                'editor'   => $editor
             ]);
-            $viewsPath = $_ENV['VIEWS_PATH'] ?? dirname(__DIR__) . '/Views';
-            require $viewsPath . '/emails/schedule_note_feedback.php';
-            $body = ob_get_clean();
 
             $this->mailer->Body = $body;
 
             return $this->send();
-        } catch (\Exception $e) {
-            if (ob_get_level() > 0) ob_end_clean();
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -63,21 +61,16 @@ class ScheduleNoteMailer extends Mailer
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $this->mailer->Subject = 'Ders Programı Notunuz Silindi';
 
-            ob_start();
-            extract([
-                'note' => $note,
-                'lecturer' => $lecturer,
+            $body = View::renderEmail('schedule_note_deleted', [
+                'note'      => $note,
+                'lecturer'  => $lecturer,
                 'deletedBy' => $deletedBy
             ]);
-            $viewsPath = $_ENV['VIEWS_PATH'] ?? dirname(__DIR__) . '/Views';
-            require $viewsPath . '/emails/schedule_note_deleted.php';
-            $body = ob_get_clean();
 
             $this->mailer->Body = $body;
 
             return $this->send();
-        } catch (\Exception $e) {
-            if (ob_get_level() > 0) ob_end_clean();
+        } catch (Exception $e) {
             return false;
         }
     }

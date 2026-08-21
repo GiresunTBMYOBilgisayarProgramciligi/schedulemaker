@@ -95,6 +95,33 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     }
 
     /**
+     * Spreadsheet içeriğini derler ve dosya adını döndürür.
+     */
+    abstract protected function buildSpreadsheet(array $filters, array $showOptions): string;
+
+    /**
+     * Dosyayı tarayıcıya indirme olarak gönderir.
+     */
+    #[NoReturn]
+    public function export(array $filters, array $showOptions): void
+    {
+        $fileName = $this->buildSpreadsheet($filters, $showOptions);
+        $this->download($fileName);
+    }
+
+    /**
+     * Dışa aktarılan Excel dosyasının ham binary içeriğini string olarak döndürür.
+     */
+    public function getRawContent(array $filters, array $showOptions): string
+    {
+        $this->buildSpreadsheet($filters, $showOptions);
+        $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
+        ob_start();
+        $writer->save('php://output');
+        return (string) ob_get_clean();
+    }
+
+    /**
      * Dosyayı tarayıcıya indirme olarak gönderir.
      */
     #[NoReturn]

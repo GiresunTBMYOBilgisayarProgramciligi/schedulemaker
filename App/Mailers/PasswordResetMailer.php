@@ -3,7 +3,9 @@
 namespace App\Mailers;
 
 use App\Core\Mailer;
+use App\Core\View;
 use App\Models\User;
+use Exception;
 
 class PasswordResetMailer extends Mailer
 {
@@ -20,12 +22,11 @@ class PasswordResetMailer extends Mailer
             $this->mailer->addAddress($user->mail, $user->getFullName());
             $this->mailer->Subject = 'Şifre Sıfırlama İsteği';
 
-            // Şablonu bir view dosyasından alıyoruz
-            ob_start();
             $resetLink = $this->getAppUrl() . "/auth/resetpassword?token=" . urlencode($token) . "&email=" . urlencode($user->mail);
-            extract(['user' => $user, 'resetLink' => $resetLink]);
-            require $_ENV['VIEWS_PATH'] . '/emails/password_reset.php';
-            $body = ob_get_clean();
+            $body = View::renderEmail('password_reset', [
+                'user'      => $user,
+                'resetLink' => $resetLink
+            ]);
 
             $this->mailer->Body = $body;
 

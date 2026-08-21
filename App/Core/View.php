@@ -115,4 +115,26 @@ class View
             throw new Exception("Component view dosyası bulunamadı: " . $fullPath);
         }
     }
+
+    /**
+     * E-posta şablonunu render eder
+     * @param string $templateName emails klasörü altındaki şablon dosyasının adı (örn: 'schedule_published', 'schedule_changes', 'partials/schedule_table')
+     * @param array $data Şablon içerisinde kullanılacak veriler
+     * @return string Render edilen HTML içeriği
+     * @throws Exception
+     */
+    public static function renderEmail(string $templateName, array $data = []): string
+    {
+        $viewsPath = $_ENV['VIEWS_PATH'] ?? dirname(__DIR__, 2) . '/App/Views';
+        $fullPath  = $viewsPath . '/emails/' . $templateName . '.php';
+
+        if (file_exists($fullPath)) {
+            extract($data);
+            ob_start();
+            include $fullPath;
+            return (string) ob_get_clean();
+        } else {
+            throw new Exception("E-posta şablon dosyası bulunamadı: " . $fullPath);
+        }
+    }
 }

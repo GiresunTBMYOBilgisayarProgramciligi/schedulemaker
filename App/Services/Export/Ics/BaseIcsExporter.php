@@ -56,6 +56,31 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     }
 
     /**
+     * ICS satırlarını ve dosya adını derler.
+     * @return array{lines: array, fileName: string}
+     */
+    abstract protected function buildIcs(array $filters, array $showOptions): array;
+
+    /**
+     * ICS içeriğini tarayıcıya indirme olarak gönderir.
+     */
+    #[NoReturn]
+    public function export(array $filters, array $showOptions): void
+    {
+        $result = $this->buildIcs($filters, $showOptions);
+        $this->sendIcsResponse($result['lines'], $result['fileName']);
+    }
+
+    /**
+     * ICS dosya içeriğini metin (string) olarak döner.
+     */
+    public function getRawContent(array $filters, array $showOptions): string
+    {
+        $result = $this->buildIcs($filters, $showOptions);
+        return implode("\r\n", $result['lines']) . "\r\n";
+    }
+
+    /**
      * ICS içeriğini tarayıcıya indirilecek dosya olarak gönderir.
      */
     #[NoReturn]

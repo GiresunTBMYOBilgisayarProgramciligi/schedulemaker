@@ -30,9 +30,9 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
     /**
      * @param array $filters    Doğrulanmış filtre dizisi
      * @param array $showOptions ['show_code', 'show_lecturer', 'show_program', 'show_observer']
+     * @return string Dosya adı
      */
-    #[NoReturn]
-    public function export(array $filters, array $showOptions): void
+    protected function buildSpreadsheet(array $filters, array $showOptions): string
     {
         $username  = $this->logContext()['username'] ?? "Sistem";
         $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
@@ -250,7 +250,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
         $fileTitle      = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
         $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . $fileTitle . ".xlsx";
-        $this->download($exportFileName);
+        return $exportFileName;
     }
 
     /**

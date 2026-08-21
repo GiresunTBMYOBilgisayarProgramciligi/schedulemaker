@@ -11,8 +11,12 @@ use JetBrains\PhpStorm\NoReturn;
  */
 class LessonScheduleIcsExporter extends BaseIcsExporter
 {
-    #[NoReturn]
-    public function export(array $filters, array $showOptions): void
+    /**
+     * @param array $filters
+     * @param array $showOptions
+     * @return array{lines: array, fileName: string}
+     */
+    protected function buildIcs(array $filters, array $showOptions): array
     {
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now      = new \DateTime('now', $timezone);
@@ -79,7 +83,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
 
         $lines[]  = 'END:VCALENDAR';
         $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester']) . '-ders-programi.ics';
-        $this->sendIcsResponse($lines, $fileName);
+        return ['lines' => $lines, 'fileName' => $fileName];
     }
 
     private function buildCalendarHeader(array $filters): array

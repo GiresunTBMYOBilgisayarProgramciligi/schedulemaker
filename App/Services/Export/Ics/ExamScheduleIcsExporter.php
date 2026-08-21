@@ -18,8 +18,12 @@ use JetBrains\PhpStorm\NoReturn;
  */
 class ExamScheduleIcsExporter extends BaseIcsExporter
 {
-    #[NoReturn]
-    public function export(array $filters, array $showOptions): void
+    /**
+     * @param array $filters
+     * @param array $showOptions
+     * @return array{lines: array, fileName: string}
+     */
+    protected function buildIcs(array $filters, array $showOptions): array
     {
         $type     = $filters['type'];
         $timezone = new \DateTimeZone('Europe/Istanbul');
@@ -144,7 +148,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
         $lines[]  = 'END:VCALENDAR';
         $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester'] . '-' . $type) . '-programi.ics';
-        $this->sendIcsResponse($lines, $fileName);
+        return ['lines' => $lines, 'fileName' => $fileName];
     }
 
     /**

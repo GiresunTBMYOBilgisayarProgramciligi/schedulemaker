@@ -8,6 +8,7 @@ use App\Models\ScheduleChangeQueue;
 use App\Repositories\ScheduleRepository;
 use App\Core\EventDispatcher;
 use App\Events\ScheduleChangesNotifiedEvent;
+use App\Events\SchedulePublishedEvent;
 use Exception;
 use function App\Helpers\getSettingValue;
 
@@ -27,6 +28,10 @@ class SchedulePublishService extends BaseService
         $schedule->is_published = !$schedule->is_published;
         $schedule->published_at = $schedule->is_published ? date('Y-m-d H:i:s') : null;
         $schedule->update();
+
+        if ($schedule->is_published) {
+            EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
+        }
 
         $actionText = $schedule->is_published ? "yayınlandı" : "yayından kaldırıldı";
         $screenName = $schedule->getScheduleScreenName();
@@ -62,6 +67,10 @@ class SchedulePublishService extends BaseService
                 $schedule->published_at = $publishStatus ? date('Y-m-d H:i:s') : null;
                 $schedule->update();
                 $count++;
+
+                if ($publishStatus) {
+                    EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
+                }
             }
         }
 
