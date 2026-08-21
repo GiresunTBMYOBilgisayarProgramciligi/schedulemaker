@@ -100,29 +100,33 @@
     document.addEventListener('DOMContentLoaded', function () {
         const confirmBtn = document.getElementById('confirmClearLogs');
         if (confirmBtn) {
-            confirmBtn.addEventListener('click', function () {
+            confirmBtn.addEventListener('click', async function () {
                 // Modalı kapat
                 const modalElement = document.getElementById('clearLogsModal');
                 const modal = bootstrap.Modal.getInstance(modalElement);
 
-                // AJAX İsteği
-                $.ajax({
-                    url: '/ajax/clearLogs',
-                    type: 'POST',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            modal.hide();
-                            // Başarı mesajı ve sayfa yenileme
-                            location.reload();
-                        } else {
-                            alert(response.msg || 'Bir hata oluştu');
+                try {
+                    const response = await fetch('/ajax/clearLogs', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
-                    },
-                    error: function () {
-                        alert('Loglar temizlenirken sunucu hatası oluştu');
+                    });
+
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        if (modal) {
+                            modal.hide();
+                        }
+                        // Başarı mesajı ve sayfa yenileme
+                        location.reload();
+                    } else {
+                        alert(data.msg || 'Bir hata oluştu');
                     }
-                });
+                } catch (error) {
+                    alert('Loglar temizlenirken sunucu hatası oluştu');
+                }
             });
         }
     });
