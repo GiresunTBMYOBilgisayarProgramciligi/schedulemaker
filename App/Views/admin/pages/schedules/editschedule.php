@@ -99,46 +99,47 @@ use function App\Helpers\getSettingValue;
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
+                            <?php $activeTab = $active_tab ?? 'program'; ?>
                             <!-- Tabs navs -->
                             <ul class="nav nav-tabs mb-3 flex-nowrap overflow-x-auto" id="scheduleTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
+                                    <button class="nav-link <?= $activeTab === 'program' ? 'active' : '' ?>" id="program-tab" data-bs-toggle="tab"
                                         data-bs-target="#program-tab-pane" type="button" role="tab"
-                                        aria-controls="program-tab-pane" aria-selected="true">Bölüm/Program</button>
+                                        aria-controls="program-tab-pane" aria-selected="<?= $activeTab === 'program' ? 'true' : 'false' ?>">Bölüm/Program</button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="lecturer-tab" data-bs-toggle="tab"
+                                    <button class="nav-link <?= $activeTab === 'lecturer' ? 'active' : '' ?>" id="lecturer-tab" data-bs-toggle="tab"
                                         data-bs-target="#lecturer-tab-pane" type="button" role="tab"
-                                        aria-controls="lecturer-tab-pane" aria-selected="false">Hoca</button>
+                                        aria-controls="lecturer-tab-pane" aria-selected="<?= $activeTab === 'lecturer' ? 'true' : 'false' ?>">Hoca</button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="classroom-tab" data-bs-toggle="tab"
+                                    <button class="nav-link <?= $activeTab === 'classroom' ? 'active' : '' ?>" id="classroom-tab" data-bs-toggle="tab"
                                         data-bs-target="#classroom-tab-pane" type="button" role="tab"
-                                        aria-controls="classroom-tab-pane" aria-selected="false">Derslik</button>
+                                        aria-controls="classroom-tab-pane" aria-selected="<?= $activeTab === 'classroom' ? 'true' : 'false' ?>">Derslik</button>
                                 </li>
                             </ul>
 
                             <!-- Tabs content -->
                             <div class="tab-content" id="scheduleTabsContent">
-                                <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel"
+                                <div class="tab-pane fade <?= $activeTab === 'program' ? 'show active' : '' ?>" id="program-tab-pane" role="tabpanel"
                                     aria-labelledby="program-tab" tabindex="0">
                                     <!--begin::Row-->
                                     <div class="row">
                                         <div class="col-12 mb-3">
                                             <?= View::renderComponent('schedules/_programSelector', [
-                                                'units' => $units ?? [],
-                                                'selectedUnitId' => $selected_unit_id ?? '',
-                                                'selectedDepartmentId' => $selected_department_id ?? '',
-                                                'selectedProgramId' => $selected_program_id ?? '',
-                                                'buttonId' => 'departmentAndProgramScheduleButton',
-                                                'buttonText' => 'Düzenle',
-                                                'dataOnlyTable' => 'false'
-                                            ]) ?>
+                                                 'units' => $units ?? [],
+                                                 'selectedUnitId' => $selected_unit_id ?? '',
+                                                 'selectedDepartmentId' => $selected_department_id ?? '',
+                                                 'selectedProgramId' => $selected_program_id ?? '',
+                                                 'buttonId' => 'departmentAndProgramScheduleButton',
+                                                 'buttonText' => 'Düzenle',
+                                                 'dataOnlyTable' => 'false'
+                                             ]) ?>
 
                                         </div>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel"
+                                <div class="tab-pane fade <?= $activeTab === 'lecturer' ? 'show active' : '' ?>" id="lecturer-tab-pane" role="tabpanel"
                                     aria-labelledby="lecturer-tab" tabindex="0">
                                     <!--begin::Row-->
                                     <div class="row">
@@ -148,13 +149,13 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= $unit->id ?>" <?= (!empty($selected_lecturer_unit_id) && (string)$selected_lecturer_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-6">
                                                     <div class="input-group">
-                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
+                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz" data-selected="<?= htmlspecialchars((string)($selected_lecturer_id ?? '')) ?>">
                                                             <option value="0">İlk olarak Birim Seçiniz</option>
                                                         </select>
                                                         <button class="btn btn-primary" type="button"

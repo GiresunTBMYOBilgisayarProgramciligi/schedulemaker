@@ -151,4 +151,31 @@ class UserPolicy extends BasePolicy
     {
         return $this->update($user, $targetUser);
     }
+
+    /**
+     * Kullanıcının ders/sınav programını yönetme yetkisi
+     */
+    public function manage_schedule(User $user, User $targetUser): bool
+    {
+        if ($user->role === 'manager' || $user->role === 'submanager') {
+            if (!is_null($user->unit_id) && ($user->unit_id == $targetUser->unit_id || empty($targetUser->unit_id))) {
+                return true;
+            }
+        }
+
+        if ($user->role === 'department_head') {
+            return !empty($targetUser->department_id) && $user->department_id === $targetUser->department_id;
+        }
+
+        if ($this->hasCascadePermission($user, PermissionType::MANAGE_UNIT->value, null, ['unit_id' => $targetUser->unit_id])) {
+            return true;
+        }
+
+        return $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, [
+            'unit_id' => $targetUser->unit_id,
+            'department_id' => $targetUser->department_id,
+            'program_id' => $targetUser->program_id
+        ]);
+    }
 }
+

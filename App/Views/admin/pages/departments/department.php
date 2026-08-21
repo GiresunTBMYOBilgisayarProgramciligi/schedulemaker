@@ -85,7 +85,7 @@ use App\Core\Gate;
                                     Ekle</a>
                             <?php endif; ?>
                             <?php if (Gate::check("manage_schedule", $department)): ?>
-                                <a href="/admin/editschedule?department_id=<?= $department->id ?>" class="btn btn-info text-white">Ders Programını Düzenle</a>
+                                <a href="/admin/editschedule?department_id=<?= $department->id ?>" class="btn btn-info text-white">Ders/Sınav Programını Düzenle</a>
                             <?php endif; ?>
                             <?php if (Gate::check("edit", $department)): ?>
                                 <a href="/admin/adduser/<?= $department->id ?>" class="btn btn-success">Hoca Ekle</a>

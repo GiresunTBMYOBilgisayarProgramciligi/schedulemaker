@@ -230,15 +230,15 @@ class AdminRouter extends Router
     /**
      * @throws Exception
      */
-    public function EditScheduleAction($department_id = null)
+    public function EditScheduleAction()
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getEditSchedulePageData($this->currentUser, $this->assetManager, $department_id));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditSchedulePageData($this->assetManager));
         $this->callView("admin/schedules/editschedule");
     }
 
-    public function EditExamScheduleAction($department_id = null)
+    public function EditExamScheduleAction()
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getEditExamSchedulePageData($this->currentUser, $this->assetManager, $department_id));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditExamSchedulePageData($this->assetManager));
         $this->callView("admin/schedules/editexamschedule");
     }
 

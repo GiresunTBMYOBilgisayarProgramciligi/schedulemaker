@@ -370,6 +370,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                         programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli
                         programSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+                        const programScheduleBtn = document.getElementById('departmentAndProgramScheduleButton');
+                        if (programScheduleBtn) {
+                            programScheduleBtn.click();
+                        }
                     }
                 })
                 .catch(error => {
@@ -534,6 +539,21 @@ document.addEventListener("DOMContentLoaded", function () {
                         lecturerSelect.appendChild(option);
                     });
                 }
+                const selectedLecturerId = lecturerSelect.getAttribute('data-selected');
+                if (selectedLecturerId && selectedLecturerId !== "0") {
+                    if (lecturerSelect.tomselect) {
+                        lecturerSelect.tomselect.setValue(selectedLecturerId, true);
+                    } else {
+                        lecturerSelect.value = selectedLecturerId;
+                    }
+                    lecturerSelect.removeAttribute('data-selected');
+
+                    const lecturerScheduleBtn = document.getElementById('lecturerScheduleButton');
+                    if (lecturerScheduleBtn) {
+                        lecturerScheduleBtn.click();
+                    }
+                }
+
                 lecturerSelect.dispatchEvent(new Event("change"));
             })
             .catch(error => {

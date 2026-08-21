@@ -88,9 +88,12 @@ use function App\Helpers\getSettingValue;
                         </div>
                         <!-- /.card-body -->
                         <div class="card-footer text-end">
+                            <?php if (Gate::check("manage_schedule", $user)): ?>
+                                <a href="/admin/editschedule?lecturer_id=<?= $user->id ?>" class="btn btn-info text-white">Ders/Sınav Programını Düzenle</a>
+                            <?php endif; ?>
                             <?php if (Gate::check("delete",$user)): ?>
                                 <form action="/ajax/deleteuser/<?= $user->id ?>"
-                                      class="ajaxFormDelete"
+                                      class="ajaxFormDelete d-inline"
                                       id="deleteUser-<?= $user->id ?>"
                                       method="post">
                                     <input type="hidden" name="id"

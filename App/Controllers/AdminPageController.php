@@ -747,7 +747,7 @@ class AdminPageController extends Controller
     /**
      * @throws Exception
      */
-    public function getEditSchedulePageData(User $currentUser, AssetManager $assetManager, $department_id = null): array
+    public function getEditSchedulePageData(AssetManager $assetManager): array
     {
         $assetManager->loadPageAssets('editschedule');
         
@@ -757,8 +757,20 @@ class AdminPageController extends Controller
             throw new AuthorizationException("Ders programı düzenleme yetkiniz yok", [], 403);
         }
         $selectedUnitId = $_GET['unit_id'] ?? null;
-        $selectedDepartmentId = $department_id ?? $_GET['department_id'] ?? null;
+        $selectedDepartmentId = $_GET['department_id'] ?? null;
         $selectedProgramId = $_GET['program_id'] ?? null;
+        $selectedLecturerId = $_GET['lecturer_id'] ?? null;
+        $selectedLecturerUnitId = null;
+
+        if (!empty($selectedLecturerId)) {
+            /** @var User|null $lecturer */
+            $lecturer = (new UserRepository())->find((int)$selectedLecturerId);
+            if ($lecturer) {
+                $selectedLecturerUnitId = $lecturer->unit_id;
+            } else {
+                $selectedLecturerId = null;
+            }
+        }
 
         if (!empty($selectedProgramId)) {
             $authorizedProgs = (new ProgramRepository())->getAuthorized('view', ['id' => (int)$selectedProgramId, 'active' => true]);
@@ -789,6 +801,9 @@ class AdminPageController extends Controller
             "selected_unit_id" => $selectedUnitId,
             "selected_department_id" => $selectedDepartmentId,
             "selected_program_id" => $selectedProgramId,
+            "selected_lecturer_id" => $selectedLecturerId,
+            "selected_lecturer_unit_id" => $selectedLecturerUnitId,
+            "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',
         ];
         $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ['admin', 'user']]);
         return $view_data;
@@ -797,7 +812,7 @@ class AdminPageController extends Controller
     /**
      * @throws Exception
      */
-    public function getEditExamSchedulePageData(User $currentUser, AssetManager $assetManager, $department_id = null): array
+    public function getEditExamSchedulePageData(AssetManager $assetManager): array
     {
         $assetManager->loadPageAssets('editexamschedule');
         
@@ -807,8 +822,20 @@ class AdminPageController extends Controller
             throw new AuthorizationException("Sınav programı düzenleme yetkiniz yok", [], 403);
         }
         $selectedUnitId = $_GET['unit_id'] ?? null;
-        $selectedDepartmentId = $department_id ?? $_GET['department_id'] ?? null;
+        $selectedDepartmentId = $_GET['department_id'] ?? null;
         $selectedProgramId = $_GET['program_id'] ?? null;
+        $selectedLecturerId = $_GET['lecturer_id'] ?? null;
+        $selectedLecturerUnitId = null;
+
+        if (!empty($selectedLecturerId)) {
+            /** @var User|null $lecturer */
+            $lecturer = (new UserRepository())->find((int)$selectedLecturerId);
+            if ($lecturer) {
+                $selectedLecturerUnitId = $lecturer->unit_id;
+            } else {
+                $selectedLecturerId = null;
+            }
+        }
 
         if (!empty($selectedProgramId)) {
             $authorizedProgs = (new ProgramRepository())->getAuthorized('view', ['id' => (int)$selectedProgramId, 'active' => true]);
@@ -839,6 +866,9 @@ class AdminPageController extends Controller
             "selected_unit_id" => $selectedUnitId,
             "selected_department_id" => $selectedDepartmentId,
             "selected_program_id" => $selectedProgramId,
+            "selected_lecturer_id" => $selectedLecturerId,
+            "selected_lecturer_unit_id" => $selectedLecturerUnitId,
+            "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',
         ];
         if (Gate::allowsRole("submanager")) {
             $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
