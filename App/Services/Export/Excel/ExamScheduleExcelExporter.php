@@ -2,8 +2,8 @@
 
 namespace App\Services\Export\Excel;
 
-use App\Controllers\ScheduleController;
 use App\Enums\ExamType;
+use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
@@ -42,7 +42,6 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             $this->logContext()
         );
 
-        $scheduleController = new ScheduleController();
         $maxDayIndex        = getSettingValue('maxDayIndex', 'exam', 4);
         $colsPerDay         = 1;
         $totalCols          = ($maxDayIndex + 1) * $colsPerDay + 1;
@@ -163,7 +162,15 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
                         if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
                             $items = is_array($slot['days'][$dayKey]) ? $slot['days'][$dayKey] : [$slot['days'][$dayKey]];
-                            
+
+                            // Tercih/müsait değil item'lerini dışa aktarma
+                            $items = array_filter($items, fn($item) => !in_array($item->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value]));
+                            $items = array_values($items);
+
+                            if (empty($items)) {
+                                continue;
+                            }
+
                             // Rowspan hesapla
                             $rowSpan = 1;
                             $firstItemId = $items[0]->id;

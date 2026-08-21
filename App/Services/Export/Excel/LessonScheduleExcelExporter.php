@@ -2,7 +2,7 @@
 
 namespace App\Services\Export\Excel;
 
-use App\Controllers\ScheduleController;
+use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use JetBrains\PhpStorm\NoReturn;
@@ -22,7 +22,7 @@ use App\Helpers\ScheduleViewHelper;
 class LessonScheduleExcelExporter extends BaseExcelExporter
 {
     /**
-     * @param array $filters    Doğrulanmış filtre dizisi
+     * @param array $filters    Doğrulanmış filtre dizisi todo dto alması gerekmez mi?
      * @param array $showOptions ['show_code', 'show_lecturer', 'show_program']
      */
     #[NoReturn]
@@ -34,8 +34,6 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
             "{$username} {$ownerType} bazlı ders programı çıktısı aldı.",
             $this->logContext()
         );
-
-        $scheduleController = new ScheduleController();
 
         $type        = 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
@@ -56,7 +54,6 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 continue;
             }
 
-            $weekCount   = 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
             $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
 
@@ -173,6 +170,14 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
                         if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
                             $items = is_array($slot['days'][$dayKey]) ? $slot['days'][$dayKey] : [$slot['days'][$dayKey]];
+
+                            // Tercih/müsait değil item'lerini dışa aktarma
+                            $items = array_filter($items, fn($item) => !in_array($item->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value]));
+                            $items = array_values($items);
+
+                            if (empty($items)) {
+                                continue;
+                            }
 
                             // Rowspan hesapla
                             $rowSpan = 1;

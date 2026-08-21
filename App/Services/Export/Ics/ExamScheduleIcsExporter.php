@@ -3,6 +3,7 @@
 namespace App\Services\Export\Ics;
 
 use App\Enums\ExamType;
+use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\User;
 use JetBrains\PhpStorm\NoReturn;
@@ -53,6 +54,10 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
             if (!$schedule || empty($schedule->items)) continue;
 
             foreach ($schedule->items as $scheduleItem) {
+                // Tercih/müsait değil item'lerini dışa aktarma
+                if (in_array($scheduleItem->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value])) {
+                    continue;
+                }
                 $startText = $scheduleItem->getShortStartTime();
                 $endText   = $scheduleItem->getShortEndTime();
                 if (empty($startText) || empty($endText)) continue;
