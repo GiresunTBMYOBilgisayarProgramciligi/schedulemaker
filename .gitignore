@@ -131,3 +131,4 @@ reset.sql
 insert.sql
 Logs/*
 .phpunit.cache/*
+.phpunit.cache/test-results
