@@ -81,7 +81,7 @@ class LessonImporter
         $headers = array_shift($rows);
         $headers = array_map(fn($item) => is_string($item) ? trim($item) : $item, $headers);
         $headers = array_values(array_filter($headers, fn($item) => !is_null($item) && $item !== ''));
-        $expectedHeaders = ["Bölümü / Ana Bilim Dalı", "Programı / Bilim Dalı", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Mevcudu", "Hocası", "Derslik türü","Bina"];
+        $expectedHeaders = ["Bölümü / Ana Bilim Dalı", "Programı / Bilim Dalı", "Yarıyılı", "Türü", "Dersin Kodu", 'Grup No', "Dersin Adı", "Saati", "Kontenjan/Mevcut", "Hocası", "Derslik türü","Bina"];
 
         if ($headers !== $expectedHeaders) {
             throw new Exception("Excel başlıkları beklenen formatta değil!");
