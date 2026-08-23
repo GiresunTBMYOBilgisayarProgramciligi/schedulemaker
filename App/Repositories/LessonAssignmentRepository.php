@@ -3,6 +3,8 @@
 namespace App\Repositories;
 
 use App\Models\LessonAssignment;
+use App\Core\EventDispatcher;
+use App\Events\LessonAssignedEvent;
 use function App\Helpers\getSettingValue;
 use Exception;
 
@@ -33,6 +35,7 @@ class LessonAssignmentRepository extends BaseRepository
         if ($existing) {
             $existing->lecturer_id = $lecturerId;
             $existing->update();
+            EventDispatcher::getInstance()->dispatch(new LessonAssignedEvent($existing));
             return $existing;
         }
 
@@ -42,6 +45,8 @@ class LessonAssignmentRepository extends BaseRepository
         $newAssignment->semester = $semester;
         $newAssignment->academic_year = $academicYear;
         $newAssignment->create();
+        
+        EventDispatcher::getInstance()->dispatch(new LessonAssignedEvent($newAssignment));
         return $newAssignment;
     }
 

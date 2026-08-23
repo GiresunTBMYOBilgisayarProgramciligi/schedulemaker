@@ -31,8 +31,9 @@ class User extends Model
     public ?Unit $unit = null;
     public array $schedules = [];
     public array $lessons = [];
+    public array $affiliations = [];
     protected array $dateFields = ['register_date', 'last_login'];
-    protected array $excludeFromDb = ['department', 'program', 'unit', 'schedules', 'lessons'];
+    protected array $excludeFromDb = ['department', 'program', 'unit', 'schedules', 'lessons', 'affiliations'];
     protected string $table_name = "users";
 
 
@@ -44,6 +45,35 @@ class User extends Model
     public function getLogDetail(): string
     {
         return $this->getFullName();
+    }
+
+    public function getAffiliations(): array
+    {
+        if (!empty($this->affiliations)) {
+            return $this->affiliations;
+        }
+        if (!$this->id) {
+            return [];
+        }
+        $this->affiliations = (new UserAffiliation())->get()->where(['user_id' => $this->id])->all();
+        return $this->affiliations;
+    }
+
+    public function getAffiliationsRelation(array $results, array $options = []): array
+    {
+        $userIds = array_unique(array_column($results, 'id'));
+        if (empty($userIds)) return $results;
+
+        $affiliations = (new UserAffiliation())->get()->where(['user_id' => ['in' => $userIds]])->all();
+        $grouped = [];
+        foreach ($affiliations as $aff) {
+            $grouped[$aff->user_id][] = $aff;
+        }
+
+        foreach ($results as &$row) {
+            $row['affiliations'] = $grouped[$row['id']] ?? [];
+        }
+        return $results;
     }
 
     /**
@@ -314,5 +344,62 @@ class User extends Model
             fn(int $sum, $lesson) => $sum + ($lesson->size ?? 0),
             0
         );
+    }
+
+    /**
+     * Kadrosunun bulunduğu birim ve ders verdiği diğer ilişkili birimlerin ID'lerini döndürür.
+     * @return array
+     */
+    public function getRelatedUnitIds(): array
+    {
+        $ids = [];
+        if ($this->unit_id) {
+            $ids[] = $this->unit_id;
+        }
+        $affiliations = (new UserAffiliation())->get()->where(['user_id' => $this->id])->all();
+        foreach ($affiliations as $affil) {
+            if ($affil->unit_id) {
+                $ids[] = $affil->unit_id;
+            }
+        }
+        return array_unique($ids);
+    }
+
+    /**
+     * Kadrosunun bulunduğu bölüm ve ders verdiği diğer ilişkili bölümlerin ID'lerini döndürür.
+     * @return array
+     */
+    public function getRelatedDepartmentIds(): array
+    {
+        $ids = [];
+        if ($this->department_id) {
+            $ids[] = $this->department_id;
+        }
+        $affiliations = (new UserAffiliation())->get()->where(['user_id' => $this->id])->all();
+        foreach ($affiliations as $affil) {
+            if ($affil->department_id) {
+                $ids[] = $affil->department_id;
+            }
+        }
+        return array_unique($ids);
+    }
+
+    /**
+     * Kadrosunun bulunduğu program ve ders verdiği diğer ilişkili programların ID'lerini döndürür.
+     * @return array
+     */
+    public function getRelatedProgramIds(): array
+    {
+        $ids = [];
+        if ($this->program_id) {
+            $ids[] = $this->program_id;
+        }
+        $affiliations = (new UserAffiliation())->get()->where(['user_id' => $this->id])->all();
+        foreach ($affiliations as $affil) {
+            if ($affil->program_id) {
+                $ids[] = $affil->program_id;
+            }
+        }
+        return array_unique($ids);
     }
 }

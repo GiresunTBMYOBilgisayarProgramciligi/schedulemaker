@@ -167,6 +167,26 @@ class AjaxRouter extends Router
         $this->sendResponse();
     }
 
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getAllLecturersListAction(): void
+    {
+        $this->response = (new UserController())->getAllLecturersListResponse();
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function getFilteredLecturersListAction(): void
+    {
+        $this->response = (new UserController())->getFilteredLecturersListResponse($this->data);
+        $this->sendResponse();
+    }
+
     /*
      * Lessons Ajax Actions
      */

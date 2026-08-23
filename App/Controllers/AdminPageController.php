@@ -423,7 +423,7 @@ class AdminPageController extends Controller
             "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit']),
             "program_id" => $program_id
         ];
-        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ["in" => ['admin', 'user']]]);
+        $view_data['lecturers'] = [];
         if ($program_id) {
             $program = (new Program())->find($program_id);
             if ($program) {
@@ -457,7 +457,7 @@ class AdminPageController extends Controller
             "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit'])
         ];
         
-        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ["in" => ['admin', 'user']]]);
+        $view_data['lecturers'] = $lesson->lecturer ? [$lesson->lecturer] : [];
         // Mevcut hocanın listede her zaman görünmesini sağla
         $currentLecturerIds = array_map(fn($l) => $l->id, $view_data['lecturers']);
         if (!empty($lesson->lecturer_id) && !in_array($lesson->lecturer_id, $currentLecturerIds)) {

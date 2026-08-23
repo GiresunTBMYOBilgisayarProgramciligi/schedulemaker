@@ -234,6 +234,35 @@ class ScheduleController extends Controller
      */
     
     /**
+     * Gelen DTO'lar için yetki kontrolü yapar. Hoca programıysa ek olarak dersin yetkisini kontrol eder.
+     * @param array $dtos
+     */
+    private function authorizeScheduleItemChanges(array $dtos): void
+    {
+        if (empty($dtos)) return;
+
+        $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
+        if (!$schedule) return;
+
+        Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
+
+        if ($schedule->owner_type === OwnerType::USER->value) {
+            $checkedLessons = [];
+            foreach ($dtos as $dto) {
+                if (empty($dto->lesson_id) || in_array($dto->lesson_id, $checkedLessons)) {
+                    continue;
+                }
+                $lessonSchedule = clone $schedule;
+                $lessonSchedule->owner_type = OwnerType::LESSON->value;
+                $lessonSchedule->owner_id = $dto->lesson_id;
+                
+                Gate::authorize(PermissionType::UPDATE->value, clone $lessonSchedule);
+                $checkedLessons[] = $dto->lesson_id;
+            }
+        }
+    }
+
+    /**
      * Ders programı öğelerini (ScheduleItems) kaydetme isteğini işler.
      * 
      * gelen item verilerine göre ilk olarak çakışan item kontrol edilir checkScheduleCrashAction ile yapılan yeterli olmaz preferred item kontrolü ve düzenlemesi burada yapılmalı
@@ -254,12 +283,7 @@ class ScheduleController extends Controller
 
         $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
-        if (count($dtos) > 0) {
-            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) {
-                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
-            }
-        }
+        $this->authorizeScheduleItemChanges($dtos);
 
         $this->logger()->debug("Using LessonScheduleService::saveScheduleItems", $this->logContext());
         $service = new LessonScheduleService();
@@ -300,13 +324,7 @@ class ScheduleController extends Controller
         $deletedDtos = (new ScheduleItemValidator())->getBatchDTO($deletedItems);
 
         // Update yetki kontrolü
-        if (count($dtos) > 0) {
-            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
-        } elseif (count($deletedDtos) > 0) {
-            $schedule = (new ScheduleRepository())->find($deletedDtos[0]->scheduleId);
-            if ($schedule) Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
-        }
+        $this->authorizeScheduleItemChanges(array_merge($dtos, $deletedDtos));
 
         $this->logger()->debug("Using LessonScheduleService::moveScheduleItems", $this->logContext());
         $service = new LessonScheduleService();
@@ -345,12 +363,7 @@ class ScheduleController extends Controller
 
         $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
-        if (count($dtos) > 0) {
-            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) {
-                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
-            }
-        }
+        $this->authorizeScheduleItemChanges($dtos);
 
         $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
         $service = new LessonScheduleService();
@@ -388,12 +401,7 @@ class ScheduleController extends Controller
 
         $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
 
-        if (count($dtos) > 0) {
-            $schedule = (new ScheduleRepository())->find($dtos[0]->scheduleId);
-            if ($schedule) {
-                Gate::authorize(PermissionType::UPDATE->value, clone $schedule);
-            }
-        }
+        $this->authorizeScheduleItemChanges($dtos);
 
         $this->logger()->debug("Using ExamScheduleService::saveExamScheduleItems", $this->logContext());
         $service = new ExamScheduleService();

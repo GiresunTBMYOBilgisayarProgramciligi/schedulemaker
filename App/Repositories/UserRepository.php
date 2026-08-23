@@ -94,7 +94,24 @@ class UserRepository extends BaseRepository
     {
         /** @var User $model */
         $model = new $this->modelClass;
-        return $model->get()->where(['department_id' => $deptId])->with(['department', 'program', 'unit'])->all();
+        $users = $model->get()->where(['department_id' => $deptId])->with(['department', 'program', 'unit'])->all();
+
+        $affiliations = (new \App\Models\UserAffiliation())->get()->where(['department_id' => $deptId])->all();
+        $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
+
+        if (!empty($affiliatedUserIds)) {
+            $affiliatedUsers = (new $this->modelClass)->get()->where([
+                'id' => ['in' => $affiliatedUserIds]
+            ])->with(['department', 'program', 'unit'])->all();
+
+            $userIds = array_column($users, 'id');
+            foreach ($affiliatedUsers as $au) {
+                if (!in_array($au->id, $userIds)) {
+                    $users[] = $au;
+                }
+            }
+        }
+        return $users;
     }
 
     /**
@@ -121,10 +138,28 @@ class UserRepository extends BaseRepository
     {
         /** @var User $model */
         $model = new $this->modelClass;
-        return $model->get()->where([
+        $users = $model->get()->where([
             'department_id' => $deptId, 
             '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
         ])->all();
+
+        $affiliations = (new \App\Models\UserAffiliation())->get()->where(['department_id' => $deptId])->all();
+        $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
+
+        if (!empty($affiliatedUserIds)) {
+            $affiliatedUsers = (new $this->modelClass)->get()->where([
+                'id' => ['in' => $affiliatedUserIds],
+                '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+            ])->all();
+
+            $userIds = array_column($users, 'id');
+            foreach ($affiliatedUsers as $au) {
+                if (!in_array($au->id, $userIds)) {
+                    $users[] = $au;
+                }
+            }
+        }
+        return $users;
     }
 
     /**
@@ -151,12 +186,53 @@ class UserRepository extends BaseRepository
      */
     public function getLecturersByUnit(int $unitId): array
     {
-        /** @var User $model */
+        return $this->getFilteredLecturers($unitId, 0, 0);
+    }
+
+    /**
+     * @param int $unitId
+     * @param int $departmentId
+     * @param int $programId
+     * @return User[]
+     * @throws Exception
+     */
+    public function getFilteredLecturers(int $unitId, int $departmentId, int $programId): array
+    {
+        $filters = ['!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]];
+        
+        if ($unitId > 0) $filters['unit_id'] = $unitId;
+        if ($departmentId > 0) $filters['department_id'] = $departmentId;
+        if ($programId > 0) $filters['program_id'] = $programId;
+
         $model = new $this->modelClass;
-        return $model->get()->where([
-            'unit_id' => $unitId,
-            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
-        ])->all();
+        $users = $model->get()->where($filters)->with(['unit', 'department'])->all();
+
+        // Affiliations
+        $affFilters = [];
+        if ($unitId > 0) $affFilters['unit_id'] = $unitId;
+        if ($departmentId > 0) $affFilters['department_id'] = $departmentId;
+        if ($programId > 0) $affFilters['program_id'] = $programId;
+
+        if (!empty($affFilters)) {
+            $affiliations = (new \App\Models\UserAffiliation())->get()->where($affFilters)->all();
+            $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
+
+            if (!empty($affiliatedUserIds)) {
+                $affiliatedUsers = (new $this->modelClass)->get()->where([
+                    'id' => ['in' => $affiliatedUserIds],
+                    '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+                ])->with(['unit', 'department'])->all();
+
+                $userIds = array_column($users, 'id');
+                foreach ($affiliatedUsers as $au) {
+                    if (!in_array($au->id, $userIds)) {
+                        $users[] = $au;
+                    }
+                }
+            }
+        }
+        
+        return $users;
     }
 
     /**

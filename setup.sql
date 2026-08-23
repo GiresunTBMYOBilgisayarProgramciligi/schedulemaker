@@ -106,6 +106,20 @@ create table if not exists users
     unique (mail)
 ) ENGINE = INNODB;
 
+create table if not exists user_affiliations
+(
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,
+    unit_id       INT,
+    department_id INT,
+    program_id    INT,
+    CONSTRAINT fk_ua_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ua_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ua_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ua_program FOREIGN KEY (program_id) REFERENCES programs(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_user_affiliation (user_id, unit_id, department_id, program_id)
+) ENGINE = INNODB;
+
 create table if not exists departments
 (
     id             int AUTO_INCREMENT,

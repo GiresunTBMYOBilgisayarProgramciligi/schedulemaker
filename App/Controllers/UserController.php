@@ -142,13 +142,13 @@ class UserController extends Controller
     public function getLecturersByUnitResponse(int $unitId): array
     {
         $action = $_GET['action'] ?? 'view';
-        if ($action === 'public') {
-            $lecturers = (new UserRepository())->getLecturersByUnit($unitId);
-        } else {
-            $lecturers = (new UserRepository())->getAuthorized($action, [
-                'unit_id' => $unitId,
-                '!role'   => ["in" => [UserRole::User->value, UserRole::Admin->value]]
-            ]);
+        
+        // Önce birime bağlı tüm akademisyenleri (kendi kadrosu veya affiliation) getir
+        $lecturers = (new UserRepository())->getLecturersByUnit($unitId);
+        
+        if ($action !== 'public') {
+            // Sonra yetkiye göre filtrele
+            $lecturers = array_values(array_filter($lecturers, fn($m) => Gate::check($action, $m)));
         }
 
         $lecturersList = [];
@@ -156,6 +156,64 @@ class UserController extends Controller
             $lecturersList[] = [
                 'id' => $lecturer->id,
                 'name' => $lecturer->getFullName()
+            ];
+        }
+
+        return [
+            'status' => 'success',
+            'lecturers' => $lecturersList
+        ];
+    }
+
+    /**
+     * @return array
+     * @throws Exception
+     */
+    public function getAllLecturersListResponse(): array
+    {
+        $lecturers = (new User())->get()->where([
+            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+        ])->with(['unit'])->all();
+
+        $lecturersList = [];
+        foreach ($lecturers as $lecturer) {
+            $unitName = $lecturer->unit ? $lecturer->unit->name : 'Birim Yok';
+            $lecturersList[] = [
+                'id' => $lecturer->id,
+                'name' => $lecturer->getFullName() . " ($unitName)"
+            ];
+        }
+
+        return [
+            'status' => 'success',
+            'lecturers' => $lecturersList
+        ];
+    }
+
+    /**
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function getFilteredLecturersListResponse(array $requestData): array
+    {
+        $unitId = (int)($requestData['unit_id'] ?? 0);
+        $departmentId = (int)($requestData['department_id'] ?? 0);
+        $programId = (int)($requestData['program_id'] ?? 0);
+
+        $lecturers = (new UserRepository())->getFilteredLecturers($unitId, $departmentId, $programId);
+
+        $lecturersList = [];
+        foreach ($lecturers as $lecturer) {
+            $affiliationName = 'Birim Yok';
+            if ($lecturer->department) {
+                $affiliationName = $lecturer->department->name;
+            } elseif ($lecturer->unit) {
+                $affiliationName = $lecturer->unit->name;
+            }
+            $lecturersList[] = [
+                'id' => $lecturer->id,
+                'name' => $lecturer->getFullName() . " ($affiliationName)"
             ];
         }
 

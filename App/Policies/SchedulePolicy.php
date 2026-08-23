@@ -41,18 +41,35 @@ class SchedulePolicy extends BasePolicy
             case 'user':
                 $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($scheduleUser) {
+                    $affiliations = $scheduleUser->getAffiliations();
+                    
                     if ($user->role === 'manager' || $user->role === 'submanager') {
                         if (is_null($user->unit_id)) return true;
                         if ($scheduleUser->department_id && $scheduleUser->department && $scheduleUser->department->unit_id == $user->unit_id) return true;
                         if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
+                        
+                        foreach ($affiliations as $aff) {
+                            if ($aff->unit_id == $user->unit_id) return true;
+                        }
                     }
-                    // Hoca bölümsüzse veya kendi programıysa
-                    if (!$scheduleUser->department_id || $scheduleUser->id == $user->id) {
+                    
+                    // Kendi programıysa
+                    if ($scheduleUser->id == $user->id) {
                         return true;
                     }
+                    
                     if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
-
-                    return !empty($scheduleUser->department?->chairperson_id) && $scheduleUser->department->chairperson_id == $user->id;
+                    if (!empty($scheduleUser->department?->chairperson_id) && $scheduleUser->department->chairperson_id == $user->id) return true;
+                    
+                    // Affiliations check for department head / cascade
+                    foreach ($affiliations as $aff) {
+                        if ($aff->department_id) {
+                            if ($this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, null, ['department_id' => $aff->department_id])) return true;
+                            
+                            $affDept = (new Department())->find($aff->department_id);
+                            if ($affDept && $affDept->chairperson_id == $user->id) return true;
+                        }
+                    }
                 }
                 break;
 

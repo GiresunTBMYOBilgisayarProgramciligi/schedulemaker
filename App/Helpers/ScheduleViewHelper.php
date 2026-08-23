@@ -9,6 +9,8 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use Exception;
 use App\Core\View;
+use App\Core\Gate;
+use App\Enums\PermissionType;
 use App\DTOs\ScheduleFilterDTO;
 use App\Services\Schedule\AvailabilityService;
 use App\Services\Schedule\ScheduleService;
@@ -136,18 +138,32 @@ class ScheduleViewHelper
     {
         // Draggable belirleme
         $draggable = 'true';
-        if (!$isDummy) {
-            // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
-            $isExam = ExamType::isExamType($schedule->type);
-            $isChild = $isExam
-                ? !empty($lesson->examParentLesson)
-                : !empty($lesson->parentLesson);
+        if (!Gate::check(PermissionType::UPDATE->value, clone $schedule)) {
+            $draggable = 'false';
+        } else {
+            if ($schedule->owner_type === OwnerType::USER->value && !$isDummy && !empty($lesson->id)) {
+                $lessonSchedule = clone $schedule;
+                $lessonSchedule->owner_type = OwnerType::LESSON->value;
+                $lessonSchedule->owner_id = $lesson->id;
+                
+                if (!Gate::check(PermissionType::UPDATE->value, $lessonSchedule)) {
+                    $draggable = 'false';
+                }
+            }
+            
+            if ($draggable === 'true' && !$isDummy) {
+                // Sınav programında exam_parent_lesson_id, ders programında parent_lesson_id
+                $isExam = ExamType::isExamType($schedule->type);
+                $isChild = $isExam
+                    ? !empty($lesson->examParentLesson)
+                    : !empty($lesson->parentLesson);
 
-            if ($isChild
-                || $schedule->academic_year != getSettingValue('academic_year')
-                || $schedule->semester != getSettingValue('semester')
-            ) {
-                $draggable = 'false';
+                if ($isChild
+                    || $schedule->academic_year != getSettingValue('academic_year')
+                    || $schedule->semester != getSettingValue('semester')
+                ) {
+                    $draggable = 'false';
+                }
             }
         }
 
@@ -282,6 +298,20 @@ class ScheduleViewHelper
         if ($onlyTable || $preferenceMode) {
             return false;
         }
+        if (!Gate::check(PermissionType::UPDATE->value, clone $schedule)) {
+            return false;
+        }
+        
+        if ($schedule->owner_type === OwnerType::USER->value && !empty($slotData->lesson)) {
+            $lessonSchedule = clone $schedule;
+            $lessonSchedule->owner_type = OwnerType::LESSON->value;
+            $lessonSchedule->owner_id = $slotData->lesson->id;
+            
+            if (!Gate::check(PermissionType::UPDATE->value, $lessonSchedule)) {
+                return false;
+            }
+        }
+        
         return true;
     }
 

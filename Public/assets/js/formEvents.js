@@ -563,6 +563,104 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    const btnLoadAllLecturers = document.getElementById("btn-load-all-lecturers");
+    if (btnLoadAllLecturers && lecturerSelect) {
+        btnLoadAllLecturers.addEventListener("click", function () {
+            // Butona tıklandığında yükleniyor efekti verilebilir
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Yükleniyor...';
+            this.disabled = true;
+
+            fetch(`/ajax/getAllLecturersList`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const lectList = data['lecturers'] || [];
+                if (lecturerSelect.tomselect) {
+                    lecturerSelect.tomselect.clearOptions();
+                    lecturerSelect.tomselect.addOption({value: 0, text: "Öğretim Üyesi / Görevlisi Seçiniz"});
+                    lectList.forEach(lect => {
+                        lecturerSelect.tomselect.addOption({value: lect.id, text: lect.name});
+                    });
+                    lecturerSelect.tomselect.refreshOptions(false);
+                } else {
+                    lecturerSelect.innerHTML = "<option value='0'>Öğretim Üyesi / Görevlisi Seçiniz</option>";
+                    lectList.forEach(lect => {
+                        const option = document.createElement("option");
+                        option.value = lect.id;
+                        option.textContent = lect.name;
+                        lecturerSelect.appendChild(option);
+                    });
+                }
+                new Toast().prepareToast("Başarılı", "Tüm üniversite hocaları listeye eklendi.", "success");
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Tüm hocaları alırken hata oluştu.", "danger");
+                console.error(error);
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    }
+
+    const btnLoadFilteredLecturers = document.getElementById("btn-load-filtered-lecturers");
+    if (btnLoadFilteredLecturers && lecturerSelect) {
+        btnLoadFilteredLecturers.addEventListener("click", function () {
+            const unitId = document.getElementById("unit_id")?.value || 0;
+            const departmentId = document.getElementById("department_id")?.value || 0;
+            const programId = document.getElementById("program_id")?.value || 0;
+
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            this.disabled = true;
+
+            fetch(`/ajax/getFilteredLecturersList`, {
+                method: "POST",
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    unit_id: unitId,
+                    department_id: departmentId,
+                    program_id: programId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const lectList = data['lecturers'] || [];
+                if (lecturerSelect.tomselect) {
+                    lecturerSelect.tomselect.clearOptions();
+                    lecturerSelect.tomselect.addOption({value: 0, text: "Öğretim Üyesi / Görevlisi Seçiniz"});
+                    lectList.forEach(lect => {
+                        lecturerSelect.tomselect.addOption({value: lect.id, text: lect.name});
+                    });
+                    lecturerSelect.tomselect.refreshOptions(false);
+                } else {
+                    lecturerSelect.innerHTML = "<option value='0'>Öğretim Üyesi / Görevlisi Seçiniz</option>";
+                    lectList.forEach(lect => {
+                        const option = document.createElement("option");
+                        option.value = lect.id;
+                        option.textContent = lect.name;
+                        lecturerSelect.appendChild(option);
+                    });
+                }
+                new Toast().prepareToast("Başarılı", "Hoca listesi güncellendi.", "success");
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Hocaları alırken hata oluştu.", "danger");
+                console.error(error);
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    }
 
     const nameInput = document.getElementById("name");
     const lastNameInput = document.getElementById("last_name");

@@ -184,7 +184,13 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="col-form-label" for="lecturer_id">Dersin Hocası</label>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="col-form-label mb-0" for="lecturer_id">Dersin Hocası</label>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-load-filtered-lecturers" title="Seçili Birime Ait Hocaları Getir"><i class="bi bi-arrow-clockwise"></i> Listeyi Getir</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-load-all-lecturers" title="Tüm Birimlerden Seç"><i class="bi bi-globe"></i></button>
+                                                </div>
+                                            </div>
                                             <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
                                                 required>
                                                 <option></option>

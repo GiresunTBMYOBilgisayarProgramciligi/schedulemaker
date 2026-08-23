@@ -11,6 +11,8 @@ use App\Events\ScheduleChangesNotifiedEvent;
 use App\Listeners\SendScheduleChangesEmailListener;
 use App\Events\SchedulePublishedEvent;
 use App\Listeners\SendSchedulePublishedEmailListener;
+use App\Events\LessonAssignedEvent;
+use App\Listeners\SyncLecturerAffiliationsListener;
 
 $dispatcher = EventDispatcher::getInstance();
 
@@ -39,4 +41,9 @@ $dispatcher->listen(
 $dispatcher->listen(
     SchedulePublishedEvent::class,
     SendSchedulePublishedEmailListener::class
+);
+
+$dispatcher->listen(
+    LessonAssignedEvent::class,
+    SyncLecturerAffiliationsListener::class
 );
