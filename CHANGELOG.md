@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.3.1] - 2026-08-23
+
+### Added
+- **Ders Programı Yayım & Bildirim**: Yayına alınan ders programları için e-posta bildirim sistemi (Excel/ICS ekleri ve HTML tablo desteğiyle) eklendi.
+- **Toplu Yayınlama**: Ders programlarında toplu yayınlama ve yayından kaldırma özellikleri geliştirildi.
+- **Entegre Düzenleme**: Hoca ve program bazlı ders programı düzenleme entegrasyonu tamamlandı.
+- **Loglama Geliştirmeleri**: Loglama mimarisi iyileştirildi, schedule logları sadeleştirildi ve arayüz kodları ayrıştırıldı; Admin dashboard'a son loglar için "Tümünü Gör" butonu eklendi.
+- **Filtreleme & Arayüz**: Anasayfada GET parametreleri ile otomatik birim, bölüm ve program seçimi eklendi.
+- **Kısıtlamalar & Görsellik**: Program tablosunda bağlı (child) derslerin program çakışmaları vurgulandı; preferred ve unavailable statüsündeki öğelerin Excel ve ICS çıktılarından filtrelenmesi sağlandı.
+- **Birim Türleri**: "Rektörlük" birim türü sisteme tanımlandı.
+- **Bildirim & Durumlar**: `ScheduleNote` tablolarına "Bilgi Verildi" durumu eklendi.
+
+### Changed
+- **Gelişmiş Yetkilendirme & Çapraz Bağlantılar (Cross-Departmental)**: Akademisyenlerin farklı birimlerdeki dersleri için `UserAffiliation` (Görevlendirme/Bağ) altyapısı kuruldu; SchedulePolicy ve ScheduleController'a yetkilendirilmeyen bölümlerin derslerini arayüz manipülasyonu ile değiştirmeyi engelleyen ders bazlı kilit mekanizması getirildi.
+- **Vanilla JS Dönüşümü**: jQuery kullanımı projeden tamamen kaldırılarak DataTables vanilla javascript yapısına aktarıldı.
+- **Arayüz (UI/UX) İyileştirmeleri**: Program tablosu sütun ve kart genişliklerine max 450px sınırı eklendi; ders içe aktarma işlemlerinde mevcudu başlığı "Kontenjan/Mevcut" olarak değiştirildi; Bina ismi güncellendi.
+- **Kod Mimarisi & Refactoring**: Ders saati, ders sayısı, haftalık ders saati hesaplama mantıkları Controller'dan alınıp `User` modeli ve `UserRepository` içerisine taşındı. Birim/Bölüm/Program seçim filtreleri `_programSelector` bileşenine aktarıldı.
+
+### Fixed
+- **Yetkilendirme Hataları**: Ders birleştirme yetki kontrolleri, bina detay sayfasındaki bağlı birim ilişkisi, kurumsal yapı listeleme ve ithal (import) yetkilendirme filtreleri sıkılaştırıldı ve düzeltildi. `ScheduleNotePolicy::canManageNotes` kaskad yetki kontrolü onarıldı.
+- **Sürükle-Bırak & Kilitler**: `toggleLockScheduleItems` işlemi, gruba bağlı diğer sibling öğeleri de kilitleyecek şekilde güncellendi.
+- **Bölüm/Program Eşsizlik Kısıtlamaları**: Bölüm ve program `unique` kısıtlamaları (constraint) birim ve bölüm bazlı olarak güncellenerek mükerrer kayıtlardan kaynaklı hatalar önlendi.
+- **Derslik Çakışmaları**: Gruplu derslerde derslik isminin okunmaması sorunu ve derslik çakışmasındaki ders saati mantık hatası düzeltildi.
+- **Görünürlük (Visibility)**: Yetkisiz kullanıcıların yayınlanmamış programları görüntüleme hatası düzeltildi; bölüm başkanları ve yöneticiler için unpublished (yayınlanmamış) program görünürlükleri sağlandı.
+- **E-posta & Arayüz Düzeltmeleri**: Program istek durum e-posta şablonu metinleri ve rozet/ikon renkleri düzeltildi. Akademisyen panosunda kişisel ders programı yükleme hatası giderildi.
 ## [0.3.0] - 2026-08-10
 
 ### Added

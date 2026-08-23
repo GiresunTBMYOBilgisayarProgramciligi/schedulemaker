@@ -10,17 +10,7 @@ MODIFY COLUMN status ENUM(
     'info_sent'
 ) DEFAULT 'pending';
 
--- programs tablosundaki tekil 'name' kısıtlamasını kaldırıp (department_id, name) bileşik indexi ekleme
-ALTER TABLE programs DROP INDEX name;
 
-ALTER TABLE programs
-ADD UNIQUE KEY unique_program_department_name (department_id, name);
-
--- departments tablosundaki tekil 'name' kısıtlamasını kaldırıp (unit_id, name) bileşik indexi ekleme
-ALTER TABLE departments DROP INDEX name;
-
-ALTER TABLE departments
-ADD UNIQUE KEY unique_department_unit_name (unit_id, name);
 -- Issue 86: Hocaların Birim Bağı (Multiple Affiliations)
 create table if not exists user_affiliations
 (
