@@ -558,18 +558,18 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
-    public function bulkPublishSchedulesAction(): void
+    public function bulkPublishByScopeAction(): void
     {
-        $this->response = (new ScheduleController())->bulkPublishSchedules($this->data);
+        $this->response = (new ScheduleController())->bulkPublishByScope($this->data);
         $this->sendResponse();
     }
 
     /**
      * @throws Exception
      */
-    public function getBulkPublishStatusAction(): void
+    public function getPublishStatusByScopeAction(): void
     {
-        $this->response = (new ScheduleController())->getBulkPublishStatus($this->data);
+        $this->response = (new ScheduleController())->getPublishStatusByScope($this->data);
         $this->sendResponse();
     }
 

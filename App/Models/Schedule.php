@@ -142,8 +142,8 @@ class Schedule extends Model
         $typeLabel = $this->getScheduleTypeName();
         return match ($this->owner_type) {
             OwnerType::USER->value => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
-            OwnerType::LESSON->value => (new Lesson())->find($this->owner_id)?->getFullName(true) . " $typeLabel Programı",
-            OwnerType::PROGRAM->value => (new Program())->find($this->owner_id)?->name . " " . getClassFromSemesterNo($this->semester_no) . ". Sınıf $typeLabel Programı",
+            OwnerType::LESSON->value => (new Lesson())->get()->where(['id' => $this->owner_id])->with('program')->first()?->getFullName(true, false, true, true) . " $typeLabel Programı",
+            OwnerType::PROGRAM->value => (new Program())->find($this->owner_id)?->name . " " . ($this->semester_no ? getClassFromSemesterNo($this->semester_no) . ". Sınıf " : "") . "$typeLabel Programı",
             OwnerType::CLASSROOM->value => (new Classroom())->find($this->owner_id)?->name . " $typeLabel Programı",
             default => "$typeLabel Programı",
         };

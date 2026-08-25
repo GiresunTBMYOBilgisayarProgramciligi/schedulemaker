@@ -905,6 +905,34 @@ class AdminPageController extends Controller
         return $view_data;
     }
 
+    public function getPublishSchedulePageData(User $currentUser, AssetManager $assetManager): array
+    {
+        if (!Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+            throw new AuthorizationException("Ders programı yayınlama yetkiniz yok", [], 403);
+        }
+
+        $assetManager->loadPageAssets('exportschedule');
+        $assetManager->addJs('/assets/js/publishSchedule.js');
+        
+        $units       = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+        $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
+
+        if (empty($departments) && empty($units)) {
+            throw new AuthorizationException("Ders programı yayınlama yetkiniz yok", [], 403);
+        }
+
+        $view_data = [
+            "scheduleController" => new ScheduleController(),
+            "units"              => $units,
+            "departments"        => $departments,
+            "page_title"         => "Program Yayınla",
+            "classrooms"         => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
+            "lecturers"          => (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]])
+        ];
+
+        return $view_data;
+    }
+
     public function getSettingsPageData(AssetManager $assetManager): array
     {
         Gate::authorize(PermissionType::CREATE->value, Setting::class, "Ayarları görüntüleme yetkiniz yok.");

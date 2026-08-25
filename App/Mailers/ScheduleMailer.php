@@ -106,6 +106,47 @@ class ScheduleMailer extends Mailer
         }
     }
 
+    /**
+     * @param User $lecturer
+     * @param string $unitName
+     * @param string $scheduleType
+     * @param string $semester
+     * @param string $academicYear
+     * @return bool
+     */
+    public function sendCrossUnitNotification(
+        User $lecturer,
+        string $unitName,
+        string $scheduleType,
+        string $semester,
+        string $academicYear
+    ): bool {
+        try {
+            if (empty($lecturer->mail)) {
+                return false;
+            }
+
+            $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
+            $this->mailer->Subject = "{$academicYear} {$semester} Dönemi {$unitName} {$scheduleType} Yayınlandı";
+
+            $body = View::renderEmail('schedule_cross_unit_published', [
+                'lecturer' => $lecturer,
+                'unitName' => $unitName,
+                'scheduleType' => $scheduleType,
+                'semester' => $semester,
+                'academicYear' => $academicYear,
+                'appUrl'   => $this->getAppUrl()
+            ]);
+
+            $this->mailer->Body = $body;
+            $this->mailer->AltBody = strip_tags(str_replace(['<br>', '</li>', '</p>'], "\n", $body));
+
+            return $this->send();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
     private function getAppUrl(): string
     {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";

@@ -115,6 +115,14 @@ use App\Enums\PermissionType;
                                     <p>Dışa Aktar</p>
                                 </a>
                             </li>
+                            <?php if (Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)): ?>
+                            <li class="nav-item">
+                                <a href="/admin/publishschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'publishschedule')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-globe"></i>
+                                    <p>Program Yayınla</p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
                         </ul>
                     </li>
                 <?php endif; ?>

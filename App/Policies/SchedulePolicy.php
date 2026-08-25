@@ -7,6 +7,7 @@ use App\Models\Schedule;
 use App\Models\Program;
 use App\Models\Lesson;
 use App\Models\Department;
+use App\Models\Classroom;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
@@ -202,13 +203,23 @@ class SchedulePolicy extends BasePolicy
             case 'user':
                 $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($scheduleUser) {
+                    $affiliations = $scheduleUser->getAffiliations();
                     if (in_array($user->role, ['admin', 'manager', 'submanager'])) {
                         if (is_null($user->unit_id)) return true;
                         if ($scheduleUser->department_id && $scheduleUser->department && $scheduleUser->department->unit_id == $user->unit_id) return true;
                         if (empty($scheduleUser->department_id) && $scheduleUser->unit_id == $user->unit_id) return true;
+                        
+                        foreach ($affiliations as $aff) {
+                            if ($aff->unit_id == $user->unit_id) return true;
+                        }
                     }
                     if ($scheduleUser->department_id) {
                         if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null, ['department_id' => $scheduleUser->department_id])) return true;
+                    }
+                    foreach ($affiliations as $aff) {
+                        if ($aff->department_id) {
+                            if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null, ['department_id' => $aff->department_id])) return true;
+                        }
                     }
                 }
                 break;
@@ -224,7 +235,12 @@ class SchedulePolicy extends BasePolicy
                 break;
 
             case 'classroom':
-                if (in_array($user->role, ['admin', 'manager', 'submanager'])) return true;
+                if ($user->role === 'admin') return true;
+                if (in_array($user->role, ['manager', 'submanager'])) {
+                    if (is_null($user->unit_id)) return true;
+                    $classroom = (new Classroom())->where(["id" => $schedule->owner_id])->with(['building'])->first();
+                    if ($classroom && $classroom->building && $classroom->building->unit_id == $user->unit_id) return true;
+                }
                 if ($this->hasCascadePermission($user, PermissionType::PUBLISH_SCHEDULE->value, null)) return true;
                 break;
         }

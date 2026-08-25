@@ -251,6 +251,15 @@ class AdminRouter extends Router
         $this->callView("admin/schedules/exportschedule");
     }
 
+    /**
+     * @throws Exception
+     */
+    public function publishScheduleAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getPublishSchedulePageData($this->currentUser, $this->assetManager));
+        $this->callView("admin/schedules/publishschedule");
+    }
+
     /*
      * Ayarlar
      */

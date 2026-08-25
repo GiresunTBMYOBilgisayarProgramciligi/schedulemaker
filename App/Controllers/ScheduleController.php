@@ -37,6 +37,8 @@ use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
 use App\Helpers\ScheduleLogHelper;
 use App\Core\Gate;
+use App\Middlewares\AuthMiddleware;
+use App\Exceptions\AuthorizationException;
 use App\Enums\OwnerType;
 
 class ScheduleController extends Controller
@@ -737,22 +739,48 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Scope (Birim/Bölüm/Program) bazlı toplu program yayınlama/kaldırma işlemi
+     *
      * @throws Exception
      */
-    public function bulkPublishSchedules(array $requestData): array
+    public function bulkPublishByScope(array $requestData): array
     {
-        Gate::authorizeRole('admin', false, "Toplu yayınlama işlemi için yetkiniz yok");
+        $user = AuthMiddleware::user();
+        if (!$user || !Gate::hasAnyPermission($user->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+            throw new AuthorizationException("Ders programı yayınlama yetkiniz yok.");
+        }
+
+        $scope = $requestData['scope'] ?? null;
+        $scopeId = isset($requestData['scope_id']) ? (int)$requestData['scope_id'] : null;
+        
+        if (!$scope || !$scopeId) {
+            return ["status" => "error", "msg" => "Geçersiz birim/bölüm/program seçimi."];
+        }
 
         $action = isset($requestData['action']) && $requestData['action'] === 'unpublish' ? false : true;
 
-        $count = (new SchedulePublishService())->bulkPublish(
-            $requestData['semester'] ?? null,
-            $requestData['academic_year'] ?? null,
+        $result = (new SchedulePublishService())->bulkPublishByScope(
+            $scope,
+            $scopeId,
+            $requestData['semester'] ?? getSettingValue('semester'),
+            $requestData['academic_year'] ?? getSettingValue('academic_year'),
+            $requestData['type'] ?? '',
             $action,
-            $requestData['type'] ?? null
+            $requestData['owner_type_tab'] ?? null
         );
 
+        $count = $result['count'];
+        $notifiedCount = $result['notified_users'];
+        $crossUnitCount = $result['cross_unit_notified'];
+        
         $msg = $action ? "$count adet program başarıyla yayınlandı." : "$count adet program yayından kaldırıldı.";
+        if ($action && $notifiedCount > 0) {
+            $msg .= " ($notifiedCount hocaya e-posta gönderildi)";
+        }
+        if ($action && $crossUnitCount > 0) {
+            $msg .= " (Farklı birimden $crossUnitCount hocaya bilgilendirme e-postası gönderildi)";
+        }
+
         return [
             "status" => "success",
             "msg" => $msg
@@ -779,20 +807,38 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Seçilen dönem için tüm ders programlarının yayınlanıp yayınlanmadığını kontrol eder
+     * Seçilen kapsam için yayın istatistiklerini getirir
      */
-    public function getBulkPublishStatus(array $requestData): array
+    public function getPublishStatusByScope(array $requestData): array
     {
-        $stats = (new SchedulePublishService())->getPublishStats(
-            $requestData['semester'] ?? null,
-            $requestData['academic_year'] ?? null,
-            $requestData['type'] ?? null
+        $user = AuthMiddleware::user();
+        if (!$user || !Gate::hasAnyPermission($user->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+            throw new AuthorizationException("Ders programı durumunu görüntüleme yetkiniz yok.");
+        }
+
+        $scope = $requestData['scope'] ?? null;
+        $scopeId = isset($requestData['scope_id']) ? (int)$requestData['scope_id'] : null;
+        
+        if (!$scope || !$scopeId) {
+            return ["status" => "error", "msg" => "Geçersiz seçim."];
+        }
+
+        $stats = (new SchedulePublishService())->getPublishStatsByScope(
+            $scope,
+            $scopeId,
+            $requestData['semester'] ?? getSettingValue('semester'),
+            $requestData['academic_year'] ?? getSettingValue('academic_year'),
+            $requestData['type'] ?? '',
+            $requestData['owner_type_tab'] ?? null
         );
 
         return [
             "status" => "success",
             "all_published" => $stats['all_published'],
-            "total_count" => $stats['total_count']
+            "total_count" => $stats['total_count'],
+            "published_count" => $stats['published_count'],
+            "unpublished_count" => $stats['unpublished_count'],
+            "details" => $stats['details'] ?? []
         ];
     }
 }

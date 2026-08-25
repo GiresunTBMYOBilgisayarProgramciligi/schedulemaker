@@ -7,6 +7,7 @@
  */
 
 use App\Core\View;
+use App\Enums\ExamType;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -25,7 +26,7 @@ use function App\Helpers\getSettingValue;
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item">Takvim İşlemleri</li>
-                        <li class="breadcrumb-item active">Ders Programı Düzenle</li>
+                        <li class="breadcrumb-item active">Program Yayınla</li>
                     </ol>
                 </div>
             </div>
@@ -38,27 +39,22 @@ use function App\Helpers\getSettingValue;
     <div class="app-content">
         <!--begin::Container-->
         <div class="container-fluid">
-            <!-- Mobile device warning alert -->
-            <div class="alert alert-warning alert-dismissible fade show d-md-none mb-3 shadow-sm border-warning" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-laptop fs-3 me-3 text-warning"></i>
-                    <div>
-                        <strong>Bilgisayar Kullanımı Tavsiye Edilir</strong>
-                        <div class="small">Ders programı düzenleme ve sürükle-bırak işlemleri masaüstü/dizüstü bilgisayarlar için tasarlanmıştır. Mobil cihazlarda takvimi inceleyebilir, ancak düzenlemeleri bilgisayardan yapmanız önerilir.</div>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-            </div>
-
             <!--begin::Row-->
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="card card-primary card-outline">
                         <!-- .card-header -->
                         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                            <h3 class="card-title flex-fill">Ders Programı Düzenle</h3>
+                            <h3 class="card-title flex-fill"></h3>
                             <div class="flex-fill">
                                 <div class="input-group">
+                                    <select class="form-select" id="schedule_type" name="schedule_type">
+                                        <option value="lesson">Ders Programı</option>
+                                        <option value="<?= ExamType::MIDTERM->value ?>">Ara Sınav Programı</option>
+                                        <option value="<?= ExamType::FINAL->value ?>">Final Programı</option>
+                                        <option value="<?= ExamType::MAKEUP->value ?>">Bütünleme Programı</option>
+                                    </select>
+                                    <span class="input-group-text"> - </span>
                                     <select class="form-select" id="academic_year" name="academic_year">
                                         <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
                                             <option value="<?= $year . ' - ' . $year + 1 ?>"
@@ -79,16 +75,9 @@ use function App\Helpers\getSettingValue;
                                             Yaz
                                         </option>
                                     </select>
-                                    <button type="button" class="btn btn-warning" id="btn-show-schedule-notes" title="Hoca Notları & İstekleri">
-                                        <i class="bi bi-journal-text me-1"></i> Notlar<span id="schedule-notes-count"></span>
-                                    </button>
-
-                                    <button type="button" class="btn btn-sm btn-info text-white" id="btn-notify-changes">
-                                        <i class="bi bi-envelope me-1"></i> Değişiklikleri Bildir
-                                    </button>
                                 </div>
                             </div>
-                            <div class="card-tools d-flex gap-2">
+                            <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
                                     <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
                                     <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
@@ -97,47 +86,60 @@ use function App\Helpers\getSettingValue;
                         </div>
                         <!-- /.card-header -->
                         <div class="card-body">
-                            <?php $activeTab = $active_tab ?? 'program'; ?>
                             <!-- Tabs navs -->
-                            <ul class="nav nav-tabs mb-3 flex-nowrap overflow-x-auto" id="scheduleTabs" role="tablist">
+                            <ul class="nav nav-tabs mb-3" id="publishTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link <?= $activeTab === 'program' ? 'active' : '' ?>" id="program-tab" data-bs-toggle="tab"
+                                    <button class="nav-link active" id="program-tab" data-bs-toggle="tab"
                                         data-bs-target="#program-tab-pane" type="button" role="tab"
-                                        aria-controls="program-tab-pane" aria-selected="<?= $activeTab === 'program' ? 'true' : 'false' ?>">Bölüm/Program</button>
+                                        aria-controls="program-tab-pane" aria-selected="true" data-tab-value="program">Birim/Bölüm/Program
+                                    </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link <?= $activeTab === 'lecturer' ? 'active' : '' ?>" id="lecturer-tab" data-bs-toggle="tab"
+                                    <button class="nav-link" id="lecturer-tab" data-bs-toggle="tab"
                                         data-bs-target="#lecturer-tab-pane" type="button" role="tab"
-                                        aria-controls="lecturer-tab-pane" aria-selected="<?= $activeTab === 'lecturer' ? 'true' : 'false' ?>">Hoca</button>
+                                        aria-controls="lecturer-tab-pane" aria-selected="false" data-tab-value="user">Hoca
+                                    </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link <?= $activeTab === 'classroom' ? 'active' : '' ?>" id="classroom-tab" data-bs-toggle="tab"
+                                    <button class="nav-link" id="classroom-tab" data-bs-toggle="tab"
                                         data-bs-target="#classroom-tab-pane" type="button" role="tab"
-                                        aria-controls="classroom-tab-pane" aria-selected="<?= $activeTab === 'classroom' ? 'true' : 'false' ?>">Derslik</button>
+                                        aria-controls="classroom-tab-pane" aria-selected="false" data-tab-value="classroom">Derslik
+                                    </button>
                                 </li>
                             </ul>
 
                             <!-- Tabs content -->
-                            <div class="tab-content" id="scheduleTabsContent">
-                                <div class="tab-pane fade <?= $activeTab === 'program' ? 'show active' : '' ?>" id="program-tab-pane" role="tabpanel"
+                            <div class="tab-content" id="publishTabsContent">
+                                <!-- Bölüm/Program Tab -->
+                                <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel"
                                     aria-labelledby="program-tab" tabindex="0">
                                     <!--begin::Row-->
                                     <div class="row">
                                         <div class="col-12 mb-3">
                                             <?= View::renderComponent('schedules/_programSelector', [
-                                                 'units' => $units ?? [],
-                                                 'selectedUnitId' => $selected_unit_id ?? '',
-                                                 'selectedDepartmentId' => $selected_department_id ?? '',
-                                                 'selectedProgramId' => $selected_program_id ?? '',
-                                                 'buttonId' => 'departmentAndProgramScheduleButton',
-                                                 'buttonText' => 'Düzenle',
-                                                 'dataOnlyTable' => 'false'
-                                             ]) ?>
-
+                                                'units' => $units ?? [],
+                                                'selectedUnitId' => $selected_unit_id ?? '',
+                                                'selectedDepartmentId' => $selected_department_id ?? '',
+                                                'selectedProgramId' => $selected_program_id ?? '',
+                                                'showFormText' => true,
+                                                'customButtonHtml' => '<div class="d-flex align-items-center gap-3">'
+                                                    . '<div class="btn-group publish-btn-group" role="group" aria-label="Birim/Bölüm/Program yayınlama">'
+                                                    . '<button class="btn btn-success btn-publish" type="button" data-action="publish" disabled>'
+                                                    . '<i class="bi bi-globe me-1"></i>Yayınla'
+                                                    . '</button>'
+                                                    . '<button class="btn btn-secondary btn-unpublish" type="button" data-action="unpublish" disabled>'
+                                                    . '<i class="bi bi-globe-x me-1"></i>Yayından Kaldır'
+                                                    . '</button>'
+                                                    . '</div>'
+                                                    . '<span class="badge text-bg-info publish-stats d-none"></span>'
+                                                    . '</div>'
+                                            ]) ?>
                                         </div>
                                     </div>
+                                    <!--end::Row-->
                                 </div>
-                                <div class="tab-pane fade <?= $activeTab === 'lecturer' ? 'show active' : '' ?>" id="lecturer-tab-pane" role="tabpanel"
+                                <!-- Hoca Tab -->
+                                <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel"
                                     aria-labelledby="lecturer-tab" tabindex="0">
                                     <!--begin::Row-->
                                     <div class="row">
@@ -147,19 +149,30 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>" <?= (!empty($selected_lecturer_unit_id) && (string)$selected_lecturer_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
+                                                    <div class="form-text">
+                                                        Birim seçilmezse işlem yapılamaz.
+                                                    </div>
                                                 </div>
                                                 <div class="col-12 col-md-6">
                                                     <div class="input-group">
-                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz" data-selected="<?= htmlspecialchars((string)($selected_lecturer_id ?? '')) ?>">
+                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
                                                             <option value="0">İlk olarak Birim Seçiniz</option>
                                                         </select>
-                                                        <button class="btn btn-primary" type="button"
-                                                            id="lecturerScheduleButton" data-only-table="false">
-                                                            Düzenle
-                                                        </button>
+                                                        <div class="btn-group publish-btn-group" role="group" aria-label="Hoca yayınlama">
+                                                            <button class="btn btn-success btn-publish" type="button" data-action="publish" disabled>
+                                                                <i class="bi bi-globe me-1"></i>Yayınla
+                                                            </button>
+                                                            <button class="btn btn-secondary btn-unpublish" type="button" data-action="unpublish" disabled>
+                                                                <i class="bi bi-globe-x me-1"></i>Yayından Kaldır
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-text mt-1">
+                                                        Hoca seçilmezse birime ait tüm hoca programları işlem görür.
+                                                        <span class="badge text-bg-info publish-stats ms-2 d-none"></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -167,6 +180,7 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                     <!--end::Row-->
                                 </div>
+                                <!-- Derslik Tab -->
                                 <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel"
                                     aria-labelledby="classroom-tab" tabindex="0">
                                     <!--begin::Row-->
@@ -180,21 +194,35 @@ use function App\Helpers\getSettingValue;
                                                             <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
+                                                    <div class="form-text">
+                                                        Birim seçilmezse işlem yapılamaz.
+                                                    </div>
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <select class="form-select tom-select" id="classroom_building_id" name="classroom_building_id">
                                                         <option value="0">İlk olarak Birim Seçiniz</option>
                                                     </select>
+                                                    <div class="form-text">
+                                                        Bina seçilmezse birime ait tüm derslikler işlem görür.
+                                                    </div>
                                                 </div>
                                                 <div class="col-12 col-md-4">
                                                     <div class="input-group">
                                                         <select class="form-select" id="classroom_id" name="classroom_id">
                                                             <option value="0">İlk olarak Bina Seçiniz</option>
                                                         </select>
-                                                        <button type="button" class="btn btn-primary"
-                                                            id="classroomScheduleButton" data-only-table="false">
-                                                            Düzenle
-                                                        </button>
+                                                        <div class="btn-group publish-btn-group" role="group" aria-label="Derslik yayınlama">
+                                                            <button class="btn btn-success btn-publish" type="button" data-action="publish" disabled>
+                                                                <i class="bi bi-globe me-1"></i>Yayınla
+                                                            </button>
+                                                            <button class="btn btn-secondary btn-unpublish" type="button" data-action="unpublish" disabled>
+                                                                <i class="bi bi-globe-x me-1"></i>Yayından Kaldır
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-text mt-1">
+                                                        Derslik seçilmezse binaya ait tüm derslikler işlem görür.
+                                                        <span class="badge text-bg-info publish-stats ms-2 d-none"></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -203,19 +231,23 @@ use function App\Helpers\getSettingValue;
                                     <!--end::Row-->
                                 </div>
                             </div>
+                            
+                            <!-- Sonuç konteyneri -->
+                            <div id="publish_results_container" class="mt-4" style="display:none;">
+                                <div class="alert alert-info">
+                                    <h5 class="alert-heading mb-1"><i class="bi bi-info-circle me-2"></i>İşlem Sonucu</h5>
+                                    <p class="mb-0 result-text"></p>
+                                </div>
+                            </div>
                         </div>
                         <!--end::card-body-->
                     </div>
                 </div>
             </div>
             <!--end::Row-->
-            <div id="schedule_container">
-                <!-- Programlar buraya yüklenecek -->
-            </div>
         </div>
         <!--end::Container-->
     </div>
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
-<?php require __DIR__ . '/partials/schedule_notes_modal.php'; ?>
