@@ -24,9 +24,8 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
     /**
      * @param array $filters    Doğrulanmış filtre dizisi todo dto alması gerekmez mi?
      * @param array $showOptions ['show_code', 'show_lecturer', 'show_program']
-     * @return string Dosya adı
      */
-    protected function buildSpreadsheet(array $filters, array $showOptions): string
+    protected function buildSpreadsheet(array $filters, array $showOptions): void
     {
         $username  = $this->logContext()['username'] ?? "Sistem";
         $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
@@ -268,10 +267,6 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
         }
 
         $this->autoSizeColumns('A', $lastCol);
-
-        $fileTitle   = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
-        $exportFileName = $filters['academic_year'] . " " . $filters['semester'] . " " . $fileTitle . ".xlsx";
-        return $exportFileName;
     }
 
     /**

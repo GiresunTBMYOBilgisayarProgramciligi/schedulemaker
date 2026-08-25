@@ -5,8 +5,6 @@ namespace App\Services\Export\Ics;
 use App\Enums\ExamType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
-use App\Models\User;
-use JetBrains\PhpStorm\NoReturn;
 
 /**
  * Sınav programını (Ara Sınav / Final / Bütünleme) ICS takvim formatında dışa aktarır.
@@ -21,7 +19,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
     /**
      * @param array $filters
      * @param array $showOptions
-     * @return array{lines: array, fileName: string}
+     * @return array
      */
     protected function buildIcs(array $filters, array $showOptions): array
     {
@@ -147,8 +145,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
         }
 
         $lines[]  = 'END:VCALENDAR';
-        $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester'] . '-' . $type) . '-programi.ics';
-        return ['lines' => $lines, 'fileName' => $fileName];
+        return $lines;
     }
 
     /**

@@ -14,7 +14,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
     /**
      * @param array $filters
      * @param array $showOptions
-     * @return array{lines: array, fileName: string}
+     * @return array
      */
     protected function buildIcs(array $filters, array $showOptions): array
     {
@@ -82,8 +82,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
         }
 
         $lines[]  = 'END:VCALENDAR';
-        $fileName = $this->slugify($filters['academic_year'] . '-' . $filters['semester']) . '-ders-programi.ics';
-        return ['lines' => $lines, 'fileName' => $fileName];
+        return $lines;
     }
 
     private function buildCalendarHeader(array $filters): array

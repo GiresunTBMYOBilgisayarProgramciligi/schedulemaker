@@ -50,15 +50,21 @@ class SchedulePublishService extends BaseService
     /**
      * @throws Exception
      */
-    public function bulkPublish(?string $semester = null, ?string $academicYear = null, bool $publishStatus = true): int
+    public function bulkPublish(?string $semester = null, ?string $academicYear = null, bool $publishStatus = true, ?string $type = null): int
     {
         $semester = $semester ?? getSettingValue('semester');
         $academicYear = $academicYear ?? getSettingValue('academic_year');
 
-        $schedules = (new Schedule())->get()->where([
+        $where = [
             'semester' => $semester,
             'academic_year' => $academicYear
-        ])->all();
+        ];
+        
+        if ($type) {
+            $where['type'] = $type;
+        }
+
+        $schedules = (new Schedule())->get()->where($where)->all();
 
         $count = 0;
         foreach ($schedules as $schedule) {
@@ -85,21 +91,24 @@ class SchedulePublishService extends BaseService
         return $count;
     }
 
-    public function getPublishStats(?string $semester = null, ?string $academicYear = null): array
+    public function getPublishStats(?string $semester = null, ?string $academicYear = null, ?string $type = null): array
     {
         $semester = $semester ?? getSettingValue('semester');
         $academicYear = $academicYear ?? getSettingValue('academic_year');
 
-        $totalCount = (new Schedule())->get()->where([
+        $whereTotal = [
             'semester' => $semester,
             'academic_year' => $academicYear
-        ])->count();
+        ];
+        
+        if ($type) {
+            $whereTotal['type'] = $type;
+        }
 
-        $unpublishedCount = (new Schedule())->get()->where([
-            'semester' => $semester,
-            'academic_year' => $academicYear,
-            'is_published' => 0
-        ])->count();
+        $totalCount = (new Schedule())->get()->where($whereTotal)->count();
+
+        $whereUnpublished = array_merge($whereTotal, ['is_published' => 0]);
+        $unpublishedCount = (new Schedule())->get()->where($whereUnpublished)->count();
 
         return [
             'total_count' => $totalCount,

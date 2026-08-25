@@ -14,6 +14,14 @@ interface ScheduleExporterInterface
     public function export(array $filters, array $showOptions): void;
 
     /**
+     * Dışa aktarılacak dosyanın adını üretir.
+     *
+     * @param array $filters
+     * @return string
+     */
+    public function getFileName(array $filters): string;
+
+    /**
      * Dışa aktarılan dosyanın ham içeriğini (binary Excel veya ICS metni) string olarak döner.
      *
      * @param array $filters

@@ -748,7 +748,8 @@ class ScheduleController extends Controller
         $count = (new SchedulePublishService())->bulkPublish(
             $requestData['semester'] ?? null,
             $requestData['academic_year'] ?? null,
-            $action
+            $action,
+            $requestData['type'] ?? null
         );
 
         $msg = $action ? "$count adet program başarıyla yayınlandı." : "$count adet program yayından kaldırıldı.";
@@ -784,7 +785,8 @@ class ScheduleController extends Controller
     {
         $stats = (new SchedulePublishService())->getPublishStats(
             $requestData['semester'] ?? null,
-            $requestData['academic_year'] ?? null
+            $requestData['academic_year'] ?? null,
+            $requestData['type'] ?? null
         );
 
         return [

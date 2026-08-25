@@ -50,12 +50,18 @@ window.updateBulkPublishButtonState = async function () {
     
     const semesterEl = document.getElementById('semester');
     const academicYearEl = document.getElementById('academic_year');
+    const scheduleTypeEl = document.getElementById('schedule_type');
     
     if (!semesterEl || !academicYearEl) return;
     
     const formData = new FormData();
     formData.append('semester', semesterEl.value);
     formData.append('academic_year', academicYearEl.value);
+    if (scheduleTypeEl) {
+        formData.append('type', scheduleTypeEl.value);
+    } else {
+        formData.append('type', 'lesson');
+    }
     
     try {
         const response = await fetch('/ajax/getBulkPublishStatus', {
@@ -95,11 +101,15 @@ window.updateBulkPublishButtonState = async function () {
 document.addEventListener("DOMContentLoaded", function () {
     const semesterEl = document.getElementById('semester');
     const academicYearEl = document.getElementById('academic_year');
+    const scheduleTypeEl = document.getElementById('schedule_type');
     if (semesterEl) {
         semesterEl.addEventListener('change', window.updateBulkPublishButtonState);
     }
     if (academicYearEl) {
         academicYearEl.addEventListener('change', window.updateBulkPublishButtonState);
+    }
+    if (scheduleTypeEl) {
+        scheduleTypeEl.addEventListener('change', window.updateBulkPublishButtonState);
     }
     
     // DOM yüklendiğinde mevcut kartları başlat
@@ -130,8 +140,10 @@ document.addEventListener("DOMContentLoaded", function () {
         btnBulkPublish.addEventListener('click', async function () {
             const semesterEl = document.getElementById('semester');
             const academicYearEl = document.getElementById('academic_year');
+            const scheduleTypeEl = document.getElementById('schedule_type');
             const semester = semesterEl ? semesterEl.value : '';
             const academicYear = academicYearEl ? academicYearEl.value : '';
+            const scheduleType = scheduleTypeEl ? scheduleTypeEl.value : 'lesson';
             const action = btnBulkPublish.dataset.action || 'publish';
             const isPublishing = action === 'publish';
             
@@ -153,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const formData = new FormData();
                     if (semester) formData.append('semester', semester);
                     if (academicYear) formData.append('academic_year', academicYear);
+                    formData.append('type', scheduleType);
                     formData.append('action', action);
                     
                     const response = await fetch('/ajax/bulkPublishSchedules', {

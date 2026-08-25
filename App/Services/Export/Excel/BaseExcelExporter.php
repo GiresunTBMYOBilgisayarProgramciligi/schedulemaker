@@ -95,9 +95,37 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     }
 
     /**
-     * Spreadsheet içeriğini derler ve dosya adını döndürür.
+     * Spreadsheet içeriğini derler.
      */
-    abstract protected function buildSpreadsheet(array $filters, array $showOptions): string;
+    abstract protected function buildSpreadsheet(array $filters, array $showOptions): void;
+
+    /**
+     * Dosya adını üretir.
+     */
+    public function getFileName(array $filters): string
+    {
+        $scheduleFilters = $this->filterBuilder->build($filters);
+        $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
+        $baseName = $filters['academic_year'] . "-" . $filters['semester'] . "-" . $fileTitle;
+        
+        return $this->slugify($baseName) . ".xlsx";
+    }
+
+    /**
+     * Basit slug üretici (dosya adı için)
+     */
+    protected function slugify(string $text): string
+    {
+        $turkish = ['ı', 'ğ', 'ü', 'ş', 'i', 'ö', 'ç', 'I', 'Ğ', 'Ü', 'Ş', 'İ', 'Ö', 'Ç'];
+        $english = ['i', 'g', 'u', 's', 'i', 'o', 'c', 'i', 'g', 'u', 's', 'i', 'o', 'c'];
+        $text = str_replace($turkish, $english, mb_strtolower($text, 'UTF-8'));
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '-', $text);
+        return strtolower($text);
+    }
 
     /**
      * Dosyayı tarayıcıya indirme olarak gönderir.
@@ -105,8 +133,8 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     #[NoReturn]
     public function export(array $filters, array $showOptions): void
     {
-        $fileName = $this->buildSpreadsheet($filters, $showOptions);
-        $this->download($fileName);
+        $this->buildSpreadsheet($filters, $showOptions);
+        $this->download($this->getFileName($filters));
     }
 
     /**

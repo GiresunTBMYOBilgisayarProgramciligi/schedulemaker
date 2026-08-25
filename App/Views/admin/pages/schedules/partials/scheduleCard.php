@@ -74,12 +74,19 @@ $bodyClasses = $no_card ? "" : "card-body";
                 <div class="text-muted small">
                     <i class="bi bi-clock-history me-1"></i> Son Güncelleme: <?= !empty($schedule->updated_at) ? (new \DateTime($schedule->updated_at))->format('d.m.Y H:i') : 'Bilinmiyor' ?>
                 </div>
-                <?php if (Gate::check(PermissionType::PUBLISH_SCHEDULE->value, $schedule)): ?>
-                <div class="form-check form-switch m-0 ms-auto" title="Kullanıcıların görmesi için programı yayınlayın">
-                    <input class="form-check-input publish-schedule-toggle" type="checkbox" role="switch" id="publish-switch-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>" <?= !empty($schedule->is_published) ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="publish-switch-<?= $schedule->id ?>"><?= !empty($schedule->is_published) ? 'Yayında' : 'Yayınla' ?></label>
+                <div class="ms-auto d-flex align-items-center">
+                    <?php if (!empty($schedule->published_at)): ?>
+                    <div class="text-muted small me-3">
+                        <i class="bi bi-calendar-check me-1"></i> Yayınlanma: <?= (new \DateTime($schedule->published_at))->format('d.m.Y H:i') ?>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (Gate::check(PermissionType::PUBLISH_SCHEDULE->value, $schedule)): ?>
+                    <div class="form-check form-switch m-0" title="Kullanıcıların görmesi için programı yayınlayın">
+                        <input class="form-check-input publish-schedule-toggle" type="checkbox" role="switch" id="publish-switch-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>" <?= !empty($schedule->is_published) ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="publish-switch-<?= $schedule->id ?>"><?= !empty($schedule->is_published) ? 'Yayında' : 'Yayınla' ?></label>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div><!--end::Card-->

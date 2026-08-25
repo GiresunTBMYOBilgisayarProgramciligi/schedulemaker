@@ -56,7 +56,9 @@ class ScheduleMailer extends Mailer
         User $lecturer,
         Schedule $schedule,
         string $excelContent,
-        string $icsContent
+        string $excelFileName,
+        string $icsContent,
+        string $icsFileName
     ): bool {
         try {
             if (empty($lecturer->mail)) {
@@ -66,16 +68,14 @@ class ScheduleMailer extends Mailer
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $academicYear = htmlspecialchars($schedule->academic_year ?? '');
             $semester     = htmlspecialchars($schedule->semester ?? '');
-            $this->mailer->Subject = "{$academicYear} {$semester} Dönemi Ders Programınız Yayınlandı";
-
-            $fileNameBase = ($schedule->academic_year ?? '') . '-' . ($schedule->semester ?? '') . '-ders-programi';
-            $fileNameBase = preg_replace('~[^-\w]+~', '_', $fileNameBase);
+            $typeLabel    = $schedule->getScheduleTypeName();
+            $this->mailer->Subject = "{$academicYear} {$semester} Dönemi {$typeLabel} Programınız Yayınlandı";
 
             // Excel Eki
             if (!empty($excelContent)) {
                 $this->mailer->addStringAttachment(
                     $excelContent,
-                    $fileNameBase . '.xlsx',
+                    $excelFileName,
                     'base64',
                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                 );
@@ -85,7 +85,7 @@ class ScheduleMailer extends Mailer
             if (!empty($icsContent)) {
                 $this->mailer->addStringAttachment(
                     $icsContent,
-                    $fileNameBase . '.ics',
+                    $icsFileName,
                     'base64',
                     'text/calendar; charset=utf-8'
                 );

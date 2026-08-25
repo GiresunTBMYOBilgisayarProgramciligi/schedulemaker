@@ -129,12 +129,17 @@ class Schedule extends Model
     }
     public function getScheduleTypeName(): string
     {
-        return ExamType::isExamType($this->type) ? "sınav" : "ders";
+        return match ($this->type) {
+            ExamType::MIDTERM->value => 'Ara Sınav',
+            ExamType::FINAL->value   => 'Final',
+            ExamType::MAKEUP->value  => 'Bütünleme',
+            default                  => 'Ders',
+        };
     }
 
     public function getScheduleScreenName(): string
     {
-        $typeLabel = $this->getScheduleTypeName() === "sınav" ? "Sınav" : "Ders";
+        $typeLabel = $this->getScheduleTypeName();
         return match ($this->owner_type) {
             OwnerType::USER->value => (new User())->find($this->owner_id)?->getFullName() . " $typeLabel Programı",
             OwnerType::LESSON->value => (new Lesson())->find($this->owner_id)?->getFullName(true) . " $typeLabel Programı",

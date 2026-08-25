@@ -52,12 +52,14 @@ class SendSchedulePublishedEmailListener
 
             $excelExporter = ExporterFactory::create($filters, 'excel');
             $excelContent  = $excelExporter->getRawContent($filters, $showOptions);
+            $excelFileName = $excelExporter->getFileName($filters);
 
             $icsExporter   = ExporterFactory::create($filters, 'ics');
             $icsContent    = $icsExporter->getRawContent($filters, $showOptions);
+            $icsFileName   = $icsExporter->getFileName($filters);
 
             $mailer = new ScheduleMailer();
-            $sent = $mailer->sendSchedulePublishedNotification($lecturer, $schedule, $excelContent, $icsContent);
+            $sent = $mailer->sendSchedulePublishedNotification($lecturer, $schedule, $excelContent, $excelFileName, $icsContent, $icsFileName);
 
             if ($sent) {
                 Log::logger()->info("Ders programı yayınlama bildirimi e-posta ile iletildi.", [

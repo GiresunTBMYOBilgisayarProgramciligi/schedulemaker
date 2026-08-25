@@ -47,6 +47,9 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
      */
     protected function slugify(string $text): string
     {
+        $turkish = ['ı', 'ğ', 'ü', 'ş', 'i', 'ö', 'ç', 'I', 'Ğ', 'Ü', 'Ş', 'İ', 'Ö', 'Ç'];
+        $english = ['i', 'g', 'u', 's', 'i', 'o', 'c', 'i', 'g', 'u', 's', 'i', 'o', 'c'];
+        $text = str_replace($turkish, $english, mb_strtolower($text, 'UTF-8'));
         $text = preg_replace('~[^\pL\d]+~u', '-', $text);
         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
         $text = preg_replace('~[^-\w]+~', '', $text);
@@ -56,10 +59,22 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     }
 
     /**
-     * ICS satırlarını ve dosya adını derler.
-     * @return array{lines: array, fileName: string}
+     * ICS satırlarını derler.
+     * @return array
      */
     abstract protected function buildIcs(array $filters, array $showOptions): array;
+
+    /**
+     * Dosya adını üretir.
+     */
+    public function getFileName(array $filters): string
+    {
+        $scheduleFilters = $this->filterBuilder->build($filters);
+        $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
+        $baseName = $filters['academic_year'] . "-" . $filters['semester'] . "-" . $fileTitle;
+        
+        return $this->slugify($baseName) . ".ics";
+    }
 
     /**
      * ICS içeriğini tarayıcıya indirme olarak gönderir.
@@ -67,8 +82,8 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     #[NoReturn]
     public function export(array $filters, array $showOptions): void
     {
-        $result = $this->buildIcs($filters, $showOptions);
-        $this->sendIcsResponse($result['lines'], $result['fileName']);
+        $lines = $this->buildIcs($filters, $showOptions);
+        $this->sendIcsResponse($lines, $this->getFileName($filters));
     }
 
     /**
@@ -76,8 +91,8 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
      */
     public function getRawContent(array $filters, array $showOptions): string
     {
-        $result = $this->buildIcs($filters, $showOptions);
-        return implode("\r\n", $result['lines']) . "\r\n";
+        $lines = $this->buildIcs($filters, $showOptions);
+        return implode("\r\n", $lines) . "\r\n";
     }
 
     /**
