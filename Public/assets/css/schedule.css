@@ -466,17 +466,58 @@
     /* Varsayılan Değerler (Lesson Card temel) */
     .lesson-card {
         --bg-start: #e3f2fd;
-        /* Normal Mavi */
         --border-color: #2196f3;
         --text-color-primary: #1565c0;
 
         background-color: var(--bg-start);
-        border-left: 4px solid var(--border-color);
+        border-left: 3.5px solid var(--border-color);
         color: #546e7a;
+        border-radius: 0.5rem;
+        padding: 7px 9px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .lesson-card:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
     }
 
     .lesson-card .lesson-name {
         color: var(--text-color-primary);
+        font-weight: 700;
+        font-size: 0.85rem;
+        line-height: 1.25;
+    }
+
+    .lesson-card .lesson-meta {
+        font-size: 0.78rem;
+    }
+
+    .lesson-card .lesson-lecturer {
+        color: var(--text-color-primary);
+        font-weight: 500;
+        opacity: 0.9;
+    }
+
+    /* Derslik Rozeti (Pill Badge) */
+    .lesson-classroom-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.12rem 0.45rem;
+        border-radius: 0.35rem;
+        background-color: rgba(255, 255, 255, 0.85);
+        color: var(--text-color-primary);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        white-space: nowrap;
+    }
+
+    .lesson-observer-item {
+        padding: 3px 6px;
+        border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.55);
+        margin-bottom: 2px;
     }
 
     /* 1. Ders Türleri (Base Types) */
@@ -518,36 +559,91 @@
     }
 
     /* 2. Grup Tanımlamaları (Gradient Mixins) */
-    /* Grup rengi border'ı ezmez, sadece background gradient ve opsiyonel text rengi ekler */
-
     /* Grup A (Indigo) */
     .lesson-group-1 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #e8eaf6 100%);
-        /*border-color: #3f51b5 !important;*/
         border-width: 2px;
-
     }
-
 
     /* Grup B (Pink) */
     .lesson-group-2 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #fce4ec 100%);
-        /*border-color: #e91e63 !important;*/
         border-width: 2px;
     }
 
     /* Grup C (Deep Purple) */
     .lesson-group-3 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #ede7f6 100%);
-        /*border-color: #673ab7 !important;*/
         border-width: 2px;
     }
 
     /* Grup D (Cyan) */
     .lesson-group-4 {
         background: linear-gradient(135deg, var(--bg-start) 0%, #e0f7fa 100%);
-        /*border-color: #009688 !important;*/
         border-width: 2px;
+    }
+
+    /* --- Koyu Tema (Dark Mode) Desteği --- */
+    [data-bs-theme="dark"] .lesson-card {
+        color: #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    }
+
+    [data-bs-theme="dark"] .lesson-type-normal {
+        --bg-start: rgba(13, 110, 253, 0.16);
+        --border-color: #3b82f6;
+        --text-color-primary: #93c5fd;
+    }
+
+    [data-bs-theme="dark"] .lesson-type-lab {
+        --bg-start: rgba(249, 115, 22, 0.16);
+        --border-color: #f97316;
+        --text-color-primary: #fdba74;
+    }
+
+    [data-bs-theme="dark"] .lesson-type-uzem {
+        --bg-start: rgba(16, 185, 129, 0.16);
+        --border-color: #10b981;
+        --text-color-primary: #86efac;
+    }
+
+    [data-bs-theme="dark"] .lesson-type-child {
+        --bg-start: rgba(148, 163, 184, 0.12);
+        --border-color: #64748b;
+        --text-color-primary: #cbd5e1;
+        color: #94a3b8;
+    }
+
+    [data-bs-theme="dark"] .lesson-type-parent {
+        --bg-start: rgba(168, 85, 247, 0.16);
+        --border-color: #a855f7;
+        --text-color-primary: #d8b4fe;
+    }
+
+    [data-bs-theme="dark"] .lesson-classroom-badge {
+        background-color: rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.15);
+        color: var(--text-color-primary);
+    }
+
+    [data-bs-theme="dark"] .lesson-observer-item {
+        background-color: rgba(0, 0, 0, 0.28);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-1 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, rgba(63, 81, 181, 0.22) 100%);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-2 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, rgba(233, 30, 99, 0.22) 100%);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-3 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, rgba(103, 58, 183, 0.22) 100%);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-4 {
+        background: linear-gradient(135deg, var(--bg-start) 0%, rgba(0, 150, 136, 0.22) 100%);
     }
 
     /* Context Menu Styles */
@@ -736,6 +832,13 @@
     .nav-tabs-portal {
         border-bottom: 2px solid var(--bs-border-color-translucent);
         gap: 0.5rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        overflow-y: hidden;
+    }
+
+    .nav-tabs-portal::-webkit-scrollbar {
+        display: none;
     }
 
     .nav-tabs-portal .nav-link {

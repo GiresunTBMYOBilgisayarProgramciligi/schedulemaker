@@ -27,14 +27,16 @@ $label = $isExam ? 'Sınav Bağlı Dersler' : 'Bağlı Dersler';
 
 if (!empty($children)):
 ?>
-    <div class="lesson-observers-list w-100 mt-1 border-top pt-1">
-        <small class="d-block text-muted" style="font-size: 0.7rem; margin-bottom: 2px;"><?= $label ?></small>
+    <div class="lesson-observers-list w-100 mt-1 border-top border-secondary-subtle pt-1">
+        <small class="d-flex align-items-center text-muted fw-semibold" style="font-size: 0.68rem; margin-bottom: 2px;">
+            <i class="bi bi-diagram-3 me-1"></i> <?= $label ?>
+        </small>
         <?php foreach ($children as $child): 
             if ($child->program): 
             $childName = $child->getFullName(addGroup: true, addProgram: true, addClassNumber: true);?>
                 <div class="lesson-observer-item small d-flex justify-content-between w-100">
                     <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars($childName) ?>">
-                        <?= htmlspecialchars($childName) ?>
+                        <i class="bi bi-link-45deg opacity-75"></i> <?= htmlspecialchars($childName) ?>
                     </span>
                 </div>
         <?php endif;

@@ -131,7 +131,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                 </label>
 
                 <!-- Navigation Tabs -->
-                <ul class="nav nav-tabs nav-tabs-portal flex-nowrap overflow-x-auto" id="scheduleTabs" role="tablist">
+                <ul class="nav nav-tabs nav-tabs-portal" id="scheduleTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active d-inline-flex align-items-center gap-2" id="program-tab" data-bs-toggle="tab"
                             data-bs-target="#program-tab-pane" type="button" role="tab"
