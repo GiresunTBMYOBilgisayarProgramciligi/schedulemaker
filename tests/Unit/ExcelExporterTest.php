@@ -1,0 +1,74 @@
+<?php
+
+namespace Tests\Unit;
+
+use Tests\BaseTestCase;
+use App\Services\Export\Excel\LessonScheduleExcelExporter;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+
+class ExcelExporterTest extends BaseTestCase
+{
+    private int $unitId;
+    private int $deptId;
+    private int $programId;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->unitId = $this->insert('units', [
+            'name' => 'Görele Güzel Sanatlar Fakültesi',
+            'type' => 'fakulte',
+            'active' => 1
+        ]);
+
+        $this->deptId = $this->insert('departments', [
+            'name' => 'Grafik Tasarımı',
+            'unit_id' => $this->unitId,
+            'active' => 1
+        ]);
+
+        $this->programId = $this->insert('programs', [
+            'name' => 'Grafik',
+            'department_id' => $this->deptId,
+            'active' => 1
+        ]);
+    }
+
+    public function testHeaderIncludesResolvedUnitName(): void
+    {
+        $exporter = new class extends LessonScheduleExcelExporter {
+            public function testResolveUnitName(array $filters): string
+            {
+                return $this->resolveUnitName($filters);
+            }
+
+            public function getSheetCellValue(string $cell): mixed
+            {
+                return $this->sheet->getCell($cell)->getValue();
+            }
+
+            public function testWriteFileTitle(array $filters): int
+            {
+                return $this->writeFileTitle($filters);
+            }
+        };
+
+        $filters = [
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => $this->programId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ];
+
+        $unitName = $exporter->testResolveUnitName($filters);
+        $this->assertEquals('Görele Güzel Sanatlar Fakültesi', $unitName);
+
+        $exporter->testWriteFileTitle($filters);
+        $headerValue = $exporter->getSheetCellValue('A2');
+
+        $this->assertStringContainsString('GİRESUN ÜNİVERSİTESİ', $headerValue);
+        $this->assertStringContainsString('GÖRELE GÜZEL SANATLAR FAKÜLTESİ', $headerValue);
+    }
+}

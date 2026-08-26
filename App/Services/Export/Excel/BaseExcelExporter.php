@@ -5,9 +5,17 @@ namespace App\Services\Export\Excel;
 use App\Core\Log;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
+use App\Models\Classroom;
+use App\Models\Unit;
+use App\Repositories\BuildingRepository;
+use App\Repositories\ClassroomRepository;
+use App\Repositories\DepartmentRepository;
+use App\Repositories\LessonRepository;
+use App\Repositories\ProgramRepository;
+use App\Repositories\UnitRepository;
+use App\Repositories\UserRepository;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleExportFilterBuilder;
-use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -52,7 +60,46 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     }
 
     /**
-     * Belge üst başlığını yazar (üniversite adı + dönem satırı).
+     * Filtre bilgilerinden veya sistemdeki aktif birimlerden birim adını çözümler.
+     */
+    protected function resolveUnitName(array $filters): string
+    {
+        $ownerType = $filters['owner_type'] ?? '';
+        $ownerId   = !empty($filters['owner_id']) ? (int) $filters['owner_id'] : null;
+
+        if (!empty($filters['unit_id'])) {
+            /** @var Unit|null $unit */
+            $unit = (new UnitRepository())->find((int) $filters['unit_id']);
+            return $unit?->name ?? '';
+        }
+
+        if ($ownerId && $ownerType) {
+            $unitId = match ($ownerType) {
+                'unit', 'classroom_unit' => $ownerId,
+                'department' => (new DepartmentRepository())->find($ownerId)?->unit_id,
+                OwnerType::PROGRAM->value => (new DepartmentRepository())->find((new ProgramRepository())->find($ownerId)?->department_id)?->unit_id,
+                OwnerType::USER->value => (new UserRepository())->find($ownerId)?->unit_id ?? (new DepartmentRepository())->find((new UserRepository())->find($ownerId)?->department_id)?->unit_id,
+                OwnerType::CLASSROOM->value => ((new ClassroomRepository())->find($ownerId) instanceof \App\Models\Classroom) ? (new ClassroomRepository())->find($ownerId)->getUnit()?->id : null,
+                'building' => (new BuildingRepository())->find($ownerId)?->unit_id,
+                OwnerType::LESSON->value => (new DepartmentRepository())->find((new LessonRepository())->find($ownerId)?->department_id)?->unit_id,
+                default => null,
+            };
+
+            if ($unitId) {
+                /** @var Unit|null $unit */
+                $unit = (new UnitRepository())->find($unitId);
+                if ($unit) {
+                    return $unit->name;
+                }
+            }
+        }
+
+        $activeUnits = (new UnitRepository())->getActiveUnits();
+        return !empty($activeUnits) ? $activeUnits[0]->name : '';
+    }
+
+    /**
+     * Belge üst başlığını yazar (üniversite adı + birim adı + dönem satırı).
      * @return int Başlık sonrası ilk boş satır numarası
      */
     protected function writeFileTitle(array $filters): int
@@ -63,7 +110,14 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $totalCols    = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol      = Coordinate::stringFromColumnIndex($totalCols);
 
-        $this->sheet->setCellValue('A2', 'GİRESUN ÜNİVERSİTESİ TİREBOLU MEHMET BAYRAK MESLEK YÜKSEKOKULU');
+        $unitName = $this->resolveUnitName($filters);
+        $headerTitle = 'GİRESUN ÜNİVERSİTESİ';
+        if (!empty($unitName)) {
+            $unitNameUpper = strtr($unitName, ['i' => 'İ', 'ı' => 'I', 'ğ' => 'Ğ', 'ü' => 'Ü', 'ş' => 'Ş', 'ö' => 'Ö', 'ç' => 'Ç']);
+            $headerTitle .= ' ' . mb_strtoupper($unitNameUpper, 'UTF-8');
+        }
+
+        $this->sheet->setCellValue('A2', $headerTitle);
         $this->sheet->mergeCells("A2:{$lastCol}2");
         $this->sheet->getStyle("A2:{$lastCol}2")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
