@@ -95,7 +95,12 @@ abstract class BasePolicy
      */
     public function hasCascadePermission(User|int $user, string $permission, $model = null, array $data = []): bool
     {
-        $userId = $user instanceof User ? $user->id : (int) $user;
+        $userObj = $user instanceof User ? $user : (new User())->find((int) $user);
+        if ($userObj && $userObj->role === 'admin') {
+            return true;
+        }
+
+        $userId = $userObj ? $userObj->id : (int) $user;
         $perms = $this->getUserPermissions($userId);
 
         // --- Adım 1: Hiyerarşik ID'leri tespit et ---
@@ -118,7 +123,7 @@ abstract class BasePolicy
 
         // Spesifik bir hedef (Birim/Bölüm/Program) belirtilmemişse genel yetki var mı diye bakılır
         if (!$programId && !$departmentId && !$unitId) {
-            return $this->hasAnyPermission($userId, $permission);
+            return $this->hasAnyPermission($userObj ?? $userId, $permission);
         }
 
         // --- Adım 2: İstenen yetkiyi kapsayan üst yetkileri tanımla (Kaskad Miras Eşleşmesi) ---
@@ -174,7 +179,12 @@ abstract class BasePolicy
      */
     public function hasAnyPermission(User|int $user, string $permission): bool
     {
-        $userId = $user instanceof User ? $user->id : (int) $user;
+        $userObj = $user instanceof User ? $user : (new User())->find((int) $user);
+        if ($userObj && in_array($userObj->role, ['admin', 'manager', 'submanager'])) {
+            return true;
+        }
+
+        $userId = $userObj ? $userObj->id : (int) $user;
         $perms = $this->getUserPermissions($userId);
 
         $impliedPermissions = match ($permission) {

@@ -381,12 +381,36 @@
                                     </div>
 
                                     <!-- Mail Settings Tab -->
+                                    <?php $isTestMailMode = (@$settings['mail']['mail_driver'] !== 'smtp'); ?>
                                     <div class="tab-pane fade" id="mail" role="tabpanel">
                                         <div class="card">
-                                            <div class="card-header">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
                                                 <h3 class="card-title">Mail Ayarları</h3>
+                                                <?php if ($isTestMailMode): ?>
+                                                <a href="/mail_log.html" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-envelope-paper"></i> Simülasyon Loglarını Aç (/mail_log.html)
+                                                </a>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-12">
+                                                        <label class="col-form-label fw-bold" for="settings[mail][mail_driver][value]">Mail Gönderim Modu</label>
+                                                        <input type="hidden" name="settings[mail][mail_driver][type]" value="string">
+                                                        <select class="form-select border-primary" id="settings[mail][mail_driver][value]" name="settings[mail][mail_driver][value]">
+                                                            <option value="log" <?= (@$settings['mail']['mail_driver'] !== 'smtp') ? 'selected' : '' ?>>
+                                                                🧪 Simülasyon / Test Modu (E-postaları gönderme, /mail_log.html dosyasına kaydet)
+                                                            </option>
+                                                            <option value="smtp" <?= (@$settings['mail']['mail_driver'] === 'smtp') ? 'selected' : '' ?>>
+                                                                🚀 Canlı Mod (Gerçek SMTP sunucusu ile kullanıcılara e-posta gönder)
+                                                            </option>
+                                                        </select>
+                                                        <div class="form-text">
+                                                            Test modunda kullanıcılar rahatsız edilmez; oluşturulan tüm e-postalar ve ekleri web üzerinden incelenmek üzere <code>Public/mail_log.html</code> dosyasına kaydedilir.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr>
                                                 <div class="row mb-3">
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][smtp_host][value]">SMTP Host</label>

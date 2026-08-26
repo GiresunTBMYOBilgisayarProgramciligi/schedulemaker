@@ -3,19 +3,17 @@
 namespace Tests\Integration;
 
 use Tests\BaseTestCase;
-use App\Services\ScheduleService;
-use App\Helpers\TimeHelper;
-use App\Services\TimelineService;
+use App\Services\Schedule\LessonScheduleService;
+use App\DTOs\ScheduleItemDTO;
 
 class ScheduleServiceIntegrationTest extends BaseTestCase
 {
-    private ScheduleService $service;
+    private LessonScheduleService $service;
 
     protected function setUp(): void
     {
         parent::setUp();
-        // ScheduleService bağımlılıklarını kendisi yönetiyor
-        $this->service = new ScheduleService();
+        $this->service = new LessonScheduleService();
     }
 
     /**
@@ -32,7 +30,7 @@ class ScheduleServiceIntegrationTest extends BaseTestCase
             'code' => 'T101' . $rand, 
             'name' => 'Test Lesson', 
             'program_id' => $progId, 
-            'lecturer_id' => $userId,
+            'department_id' => $deptId,
             'hours' => 2,
             'semester_no' => 1
         ]);
@@ -45,21 +43,18 @@ class ScheduleServiceIntegrationTest extends BaseTestCase
             'semester_no' => 1
         ]);
 
-        // 2. Servisi çağır (ScheduleService::saveScheduleItems array of objects bekliyor)
-        $items = [
-            [
-                'schedule_id' => $scheduleId,
-                'day_index' => 1,
-                'week_index' => 0,
-                'start_time' => '08:00',
-                'end_time' => '09:50',
-                'status' => 'single',
-                // Data alanı validator'ın beklediği gibi bir array of objects (json string değil, decode edilmiş halde) olmalı
-                'data' => [['lesson_id' => $lessonId, 'lecturer_id' => $userId, 'classroom_id' => null]]
-            ]
-        ];
+        // 2. Servisi çağır (LessonScheduleService::saveScheduleItems array of ScheduleItemDTO bekliyor)
+        $dto = ScheduleItemDTO::fromArray([
+            'schedule_id' => $scheduleId,
+            'day_index' => 1,
+            'week_index' => 0,
+            'start_time' => '08:00',
+            'end_time' => '09:50',
+            'status' => 'single',
+            'data' => [['lesson_id' => $lessonId, 'lecturer_id' => $userId, 'classroom_id' => null]]
+        ]);
 
-        $result = $this->service->saveScheduleItems($items);
+        $result = $this->service->saveScheduleItems([$dto]);
 
         // 3. Doğrula
         $this->assertTrue($result->success);

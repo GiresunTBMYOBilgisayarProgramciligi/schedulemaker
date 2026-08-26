@@ -746,7 +746,7 @@ class ScheduleController extends Controller
     public function bulkPublishByScope(array $requestData): array
     {
         $user = AuthMiddleware::user();
-        if (!$user || !Gate::hasAnyPermission($user->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+        if (!$user || !Gate::hasAnyPermission($user, PermissionType::PUBLISH_SCHEDULE->value)) {
             throw new AuthorizationException("Ders programı yayınlama yetkiniz yok.");
         }
 
@@ -812,7 +812,7 @@ class ScheduleController extends Controller
     public function getPublishStatusByScope(array $requestData): array
     {
         $user = AuthMiddleware::user();
-        if (!$user || !Gate::hasAnyPermission($user->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+        if (!$user || !Gate::hasAnyPermission($user, PermissionType::PUBLISH_SCHEDULE->value)) {
             throw new AuthorizationException("Ders programı durumunu görüntüleme yetkiniz yok.");
         }
 

@@ -7,10 +7,14 @@ use App\Models\User;
  * @var User $lecturer
  * @var Schedule $schedule
  * @var string $appUrl
+ * @var string|null $unitName
+ * @var string|null $departmentName
+ * @var string|null $programName
  */
 
 $academicYear = htmlspecialchars($schedule->academic_year ?? '');
 $semester     = htmlspecialchars($schedule->semester ?? '');
+$typeLabel    = htmlspecialchars($schedule->getScheduleTypeName());
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -21,11 +25,43 @@ $semester     = htmlspecialchars($schedule->semester ?? '');
 <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f6f9; color: #333;">
 <div style="max-width: 750px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; border: 1px solid #e0e0e0; line-height: 1.6;">
     <h2 style="color: #2c3e50; margin-top: 0;">Sayın <?= htmlspecialchars($lecturer->getFullName()) ?>,</h2>
-    <p><strong><?= $academicYear ?> <?= $semester ?></strong> dönemi haftalık ders programınız yayınlanmıştır.</p>
+    <p><strong><?= $academicYear ?> <?= $semester ?></strong> dönemi haftalık <strong><?= $typeLabel ?></strong> programınız yayınlanmıştır.</p>
+    
+    <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #3498db; border-radius: 4px; padding: 12px 18px; margin: 18px 0;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <?php if (!empty($unitName)): ?>
+                <tr>
+                    <td style="padding: 4px 0; color: #6c757d; width: 130px;"><strong>Birim:</strong></td>
+                    <td style="padding: 4px 0; color: #212529;"><strong><?= htmlspecialchars($unitName) ?></strong></td>
+                </tr>
+            <?php endif; ?>
+            <?php if (!empty($departmentName)): ?>
+                <tr>
+                    <td style="padding: 4px 0; color: #6c757d;"><strong>Bölüm:</strong></td>
+                    <td style="padding: 4px 0; color: #212529;"><?= htmlspecialchars($departmentName) ?></td>
+                </tr>
+            <?php endif; ?>
+            <?php if (!empty($programName)): ?>
+                <tr>
+                    <td style="padding: 4px 0; color: #6c757d;"><strong>Program:</strong></td>
+                    <td style="padding: 4px 0; color: #212529;"><?= htmlspecialchars($programName) ?></td>
+                </tr>
+            <?php endif; ?>
+            <tr>
+                <td style="padding: 4px 0; color: #6c757d;"><strong>Akademik Dönem:</strong></td>
+                <td style="padding: 4px 0; color: #212529;"><?= $academicYear ?> <?= $semester ?></td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 0; color: #6c757d;"><strong>Program Türü:</strong></td>
+                <td style="padding: 4px 0; color: #212529;"><?= $typeLabel ?></td>
+            </tr>
+        </table>
+    </div>
+
     <p>Ders programınızın <strong>Excel (.xlsx)</strong> ve takvim uygulamalarınıza aktarabileceğiniz <strong>Takvim (.ics)</strong> dosyaları e-posta ekinde yer almaktadır.</p>
     
     <div style="margin: 25px 0;">
-        <h3 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px;">Haftalık Ders Programınız</h3>
+        <h3 style="color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px;">Haftalık Program Tablonuz</h3>
         <?= View::renderEmail('partials/schedule_table', ['schedule' => $schedule]) ?>
     </div>
 

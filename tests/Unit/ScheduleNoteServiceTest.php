@@ -8,6 +8,7 @@ use App\DTOs\ScheduleNoteStatusDTO;
 use App\Enums\ScheduleNoteStatus;
 use App\Services\ScheduleNoteService;
 use App\Models\User;
+use App\Models\ScheduleNote;
 
 class ScheduleNoteServiceTest extends BaseTestCase
 {
@@ -58,12 +59,12 @@ class ScheduleNoteServiceTest extends BaseTestCase
             academicYear: '2025 - 2026',
             semester: 'Güz',
             scheduleType: 'lesson',
-            note: 'Çarşamba da ders olmasın'
+            note: 'Salı tam gün ders olmasın'
         );
 
         $updatedNote = $this->service->saveNote($updatedDto);
         $this->assertEquals($note->id, $updatedNote->id);
-        $this->assertEquals('Çarşamba da ders olmasın', $updatedNote->note);
+        $this->assertEquals('Salı tam gün ders olmasın', $updatedNote->note);
     }
 
     public function testUpdateStatus(): void
@@ -90,7 +91,8 @@ class ScheduleNoteServiceTest extends BaseTestCase
         );
 
         $result = $this->service->updateStatus($statusDto, $editor);
-        $this->assertTrue($result);
+        $this->assertNotNull($result);
+        $this->assertInstanceOf(ScheduleNote::class, $result);
 
         $myNotes = $this->service->getMyNotes($this->userId);
         $this->assertCount(1, $myNotes);
@@ -123,7 +125,7 @@ class ScheduleNoteServiceTest extends BaseTestCase
 
         $this->service->updateStatus($statusDto, $editor);
 
-        $noteModel = new \App\Models\ScheduleNote();
+        $noteModel = new ScheduleNote();
         $notes = $noteModel->get()->where(['id' => $note->id])->with(['user', 'readByUser', 'statusUpdatedByUser'])->all();
 
         $this->assertCount(1, $notes);

@@ -841,4 +841,11 @@ class AjaxRouter extends Router
         $this->response = (new BulkActionController())->bulkUpdateBuildings($this->data);
         $this->sendResponse();
     }
+
+    /** @throws Exception */
+    public function clearMailLogsAction(): void
+    {
+        $this->response = (new SettingsController())->clearMailLogs();
+        $this->sendResponse();
+    }
 }

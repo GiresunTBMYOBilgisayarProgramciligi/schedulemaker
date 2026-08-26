@@ -164,10 +164,9 @@ class SchedulePublishService extends BaseService
         $crossUnitUsers = [];
 
         // 1. İlgili Entity ID'lerini Topla
-        if ($scope === 'unit' || $scope === 'department') {
-            $departmentIds = ($scope === 'department')
-                ? [$scopeId]
-                : array_map(fn($d) => $d->id, (new Department())->get()->where(['unit_id' => $scopeId])->all());
+        if ($scope === 'unit') {
+            $departments = (new Department())->get()->where(['unit_id' => $scopeId])->all();
+            $departmentIds = array_map(fn($d) => $d->id, $departments);
 
             if (!empty($departmentIds)) {
                 $programs = (new Program())->get()->where(['department_id' => ['in' => $departmentIds]])->all();
@@ -177,19 +176,41 @@ class SchedulePublishService extends BaseService
                 $lessonIds = array_map(fn($l) => $l->id, $lessons);
             }
 
-            if ($scope === 'unit') {
-                $buildings = (new Building())->get()->where(['unit_id' => $scopeId])->all();
-                $buildingIds = array_map(fn($b) => $b->id, $buildings);
-                if (!empty($buildingIds)) {
-                    $classrooms = (new Classroom())->get()->where(['building_id' => ['in' => $buildingIds]])->all();
-                    $classroomIds = array_map(fn($c) => $c->id, $classrooms);
-                }
-
-                $affiliations = (new UserAffiliation())->get()->where(['unit_id' => $scopeId])->all();
-            } else {
-                $affiliations = (new UserAffiliation())->get()->where(['department_id' => $scopeId])->all();
+            $buildings = (new Building())->get()->where(['unit_id' => $scopeId])->all();
+            $buildingIds = array_map(fn($b) => $b->id, $buildings);
+            if (!empty($buildingIds)) {
+                $classrooms = (new Classroom())->get()->where(['building_id' => ['in' => $buildingIds]])->all();
+                $classroomIds = array_map(fn($c) => $c->id, $classrooms);
             }
-            $userIds = array_map(fn($a) => $a->user_id, $affiliations);
+
+            // Birime, birimin bölümlerine veya birimin programlarına kadrolu olan hocalar
+            $unitUsers = (new User())->get()->where(['unit_id' => $scopeId])->all();
+            $userIds = array_map(fn($u) => $u->id, $unitUsers);
+            if (!empty($departmentIds)) {
+                $deptUsers = (new User())->get()->where(['department_id' => ['in' => $departmentIds]])->all();
+                $userIds = array_merge($userIds, array_map(fn($u) => $u->id, $deptUsers));
+            }
+            if (!empty($programIds)) {
+                $progUsers = (new User())->get()->where(['program_id' => ['in' => $programIds]])->all();
+                $userIds = array_merge($userIds, array_map(fn($u) => $u->id, $progUsers));
+            }
+
+        } elseif ($scope === 'department') {
+            $departmentIds = [$scopeId];
+
+            $programs = (new Program())->get()->where(['department_id' => $scopeId])->all();
+            $programIds = array_map(fn($p) => $p->id, $programs);
+
+            $lessons = (new Lesson())->get()->where(['department_id' => $scopeId])->all();
+            $lessonIds = array_map(fn($l) => $l->id, $lessons);
+
+            // Bölüme veya bölümün programlarına kadrolu olan hocalar
+            $deptUsers = (new User())->get()->where(['department_id' => $scopeId])->all();
+            $userIds = array_map(fn($u) => $u->id, $deptUsers);
+            if (!empty($programIds)) {
+                $progUsers = (new User())->get()->where(['program_id' => ['in' => $programIds]])->all();
+                $userIds = array_merge($userIds, array_map(fn($u) => $u->id, $progUsers));
+            }
 
         } elseif ($scope === 'program') {
             $programIds = [$scopeId];
@@ -197,39 +218,12 @@ class SchedulePublishService extends BaseService
             $lessons = (new Lesson())->get()->where(['program_id' => $scopeId])->all();
             $lessonIds = array_map(fn($l) => $l->id, $lessons);
 
-            if (!empty($lessonIds)) {
-                $assignments = (new LessonAssignment())->get()->where([
-                    'lesson_id' => ['in' => $lessonIds],
-                    'semester' => $semester,
-                    'academic_year' => $academicYear
-                ])->all();
-                $lecturerIds = array_unique(array_filter(array_map(fn($a) => $a->lecturer_id, $assignments)));
-
-                if (!empty($lecturerIds)) {
-                    $program = (new Program())->find($scopeId);
-                    if ($program) {
-                        $department = (new Department())->find($program->department_id);
-                        $unitId = $department ? $department->unit_id : null;
-
-                        foreach ($lecturerIds as $lecturerId) {
-                            $affiliations = (new UserAffiliation())->get()->where(['user_id' => $lecturerId])->all();
-                            $isAffiliated = false;
-                            foreach ($affiliations as $aff) {
-                                if ($aff->program_id == $scopeId || $aff->department_id == $program->department_id || $aff->unit_id == $unitId) {
-                                    $isAffiliated = true;
-                                    break;
-                                }
-                            }
-                            if ($isAffiliated) {
-                                $userIds[] = $lecturerId;
-                            }
-                        }
-                    }
-                }
-            }
+            // Sadece bu programa kadrolu olan hocalar (users.program_id)
+            $progUsers = (new User())->get()->where(['program_id' => $scopeId])->all();
+            $userIds = array_map(fn($u) => $u->id, $progUsers);
         }
         
-        $userIds = array_unique($userIds);
+        $userIds = array_values(array_unique(array_filter($userIds)));
 
         // 2. Schedule'ları Bul
         $scheduleModel = new Schedule();
@@ -253,8 +247,8 @@ class SchedulePublishService extends BaseService
             }
         }
 
-        // 3. Farklı Birim Hocalarını Bul
-        // Yayınlanacak derslere (lessonIds) giren ama userIds içinde OLMAYAN hocalar
+        // 3. Farklı Birim / Bölüm / Program Hocalarını Bul
+        // Yayınlanacak derslere (lessonIds) giren ama bu kapsamın kadrosunda OLMAYAN (userIds içinde yer almayan) hocalar
         if (!empty($lessonIds)) {
             $assignments = (new LessonAssignment())->get()->where([
                 'lesson_id' => ['in' => $lessonIds],
@@ -351,12 +345,24 @@ class SchedulePublishService extends BaseService
         }
 
         $unitName = "";
+        $departmentName = "";
+        $programName = "";
+
         if ($scope === 'unit') {
-            $unitName = (new Unit())->find($scopeId)?->name ?? 'Birim';
+            $unit = (new Unit())->find($scopeId);
+            $unitName = $unit?->name ?? 'Birim';
         } elseif ($scope === 'department') {
-            $unitName = (new Department())->find($scopeId)?->name ?? 'Bölüm';
+            $dept = (new Department())->find($scopeId);
+            $departmentName = $dept?->name ?? '';
+            $unit = $dept ? (new Unit())->find($dept->unit_id) : null;
+            $unitName = $unit?->name ?? '';
         } elseif ($scope === 'program') {
-            $unitName = (new Program())->find($scopeId)?->name ?? 'Program';
+            $prog = (new Program())->find($scopeId);
+            $programName = $prog?->name ?? '';
+            $dept = $prog ? (new Department())->find($prog->department_id) : null;
+            $departmentName = $dept?->name ?? '';
+            $unit = $dept ? (new Unit())->find($dept->unit_id) : null;
+            $unitName = $unit?->name ?? '';
         }
 
         $scheduleModel = new Schedule();
@@ -368,7 +374,22 @@ class SchedulePublishService extends BaseService
         foreach ($crossUnitUsers as $lecturerId => $lessonIds) {
             $lecturer = (new User())->find($lecturerId);
             if ($lecturer && !empty($lecturer->mail)) {
-                $sent = $mailer->sendCrossUnitNotification($lecturer, $unitName, $typeLabel, $semester, $academicYear);
+                $lessonNames = [];
+                if (!empty($lessonIds)) {
+                    $lessons = (new Lesson())->get()->where(['id' => ['in' => $lessonIds]])->all();
+                    $lessonNames = array_map(fn($l) => ($l->code ? "{$l->code} - " : "") . $l->name, $lessons);
+                }
+
+                $sent = $mailer->sendCrossUnitNotification(
+                    $lecturer,
+                    $unitName,
+                    $typeLabel,
+                    $semester,
+                    $academicYear,
+                    $departmentName ?: null,
+                    $programName ?: null,
+                    $lessonNames
+                );
                 if ($sent) {
                     $count++;
                 }

@@ -69,15 +69,33 @@ class SettingsController extends Controller
 
     /**
      * Log tablosunu temizler
-     * @return void
+     * @return array
      * @throws Exception
      */
     public function clearLogs(): array
     {
-        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");            $this->database->exec("TRUNCATE TABLE logs");
-            return [
-                "status" => "success",
-                "msg" => "Loglar başarıyla temizlendi"
-            ];
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
+        $this->database->exec("TRUNCATE TABLE logs");
+        return [
+            "status" => "success",
+            "msg" => "Loglar başarıyla temizlendi"
+        ];
+    }
+
+    /**
+     * Test / Simülasyon mail log dosyasını temizler
+     * @return array
+     */
+    public function clearMailLogs(): array
+    {
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
+        $logFilePath = dirname(__DIR__, 2) . '/Public/mail_log.html';
+        if (file_exists($logFilePath)) {
+            @unlink($logFilePath);
+        }
+        return [
+            'status' => 'success',
+            'msg'    => 'Mail logları başarıyla temizlendi.'
+        ];
     }
 }

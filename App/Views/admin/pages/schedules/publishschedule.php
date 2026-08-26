@@ -10,6 +10,8 @@ use App\Core\View;
 use App\Enums\ExamType;
 use function App\Helpers\getSettingValue;
 
+$mailDriver = getSettingValue('mail_driver', 'mail', 'log');
+$isTestMode = ($mailDriver !== 'smtp');
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -19,8 +21,13 @@ use function App\Helpers\getSettingValue;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                <div class="col-sm-6 d-flex align-items-center">
+                    <h3 class="mb-0 me-3"><?= $page_title ?></h3>
+                    <?php if ($isTestMode): ?>
+                        <a href="/mail_log.html" target="_blank" class="btn btn-outline-info btn-sm shadow-sm" title="Gönderilen test maillerini görüntüle">
+                            <i class="bi bi-envelope-paper"></i> Test Mail Logları
+                        </a>
+                    <?php endif; ?>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">

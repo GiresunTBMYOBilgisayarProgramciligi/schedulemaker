@@ -35,22 +35,30 @@ class Log
         $dbHandler = new DbLogHandler($dbLevel, true);
         $logger->pushHandler($dbHandler);
 
-        $logDir = $_ENV['LOG_PATH'];
+        $logDir = $_ENV['LOG_PATH'] ?? dirname(__DIR__, 2) . '/Logs';
         if (!is_dir($logDir)) {
             @mkdir($logDir, 0777, true);
         }
+
         // Optional fallback to file in DEBUG
         if (($_ENV['DEBUG'] ?? 'false') === 'true') {
-            // Debug log: captures ONLY Debug level
-            $debugHandler = new StreamHandler($logDir . '/debug.log', Level::Debug);
-            $logger->pushHandler(new FilterHandler($debugHandler, Level::Debug, Level::Debug));
+            $debugFile = $logDir . '/debug.log';
+            if (!file_exists($debugFile) ? is_writable($logDir) : is_writable($debugFile)) {
+                $debugHandler = new StreamHandler($debugFile, Level::Debug);
+                $logger->pushHandler(new FilterHandler($debugHandler, Level::Debug, Level::Debug));
+            }
         }
-        // Info log: captures ONLY Info level
-        $infoHandler = new StreamHandler($logDir . '/info.log', Level::Info);
-        $logger->pushHandler(new FilterHandler($infoHandler, Level::Info, Level::Info));
+        
+        $infoFile = $logDir . '/info.log';
+        if (!file_exists($infoFile) ? is_writable($logDir) : is_writable($infoFile)) {
+            $infoHandler = new StreamHandler($infoFile, Level::Info);
+            $logger->pushHandler(new FilterHandler($infoHandler, Level::Info, Level::Info));
+        }
 
-        // Error log: captures Error and above
-        $logger->pushHandler(new StreamHandler($logDir . '/error.log', Level::Error, true));
+        $errorFile = $logDir . '/error.log';
+        if (!file_exists($errorFile) ? is_writable($logDir) : is_writable($errorFile)) {
+            $logger->pushHandler(new StreamHandler($errorFile, Level::Error, true));
+        }
 
         self::$logger = $logger;
         return self::$logger;

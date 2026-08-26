@@ -34,12 +34,6 @@ abstract class BaseTestCase extends TestCase
     protected function getDb()
     {
         if (!self::$db) {
-            // Singleton bağlantıyı sıfırla ki test bazlı izolasyon olsun
-            $ref = new \ReflectionClass(Database::class);
-            $prop = $ref->getProperty('connection');
-            $prop->setAccessible(true);
-            $prop->setValue(null, null);
-
             self::$db = Database::getConnection();
         }
         return self::$db;

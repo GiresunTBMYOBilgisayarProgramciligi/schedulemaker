@@ -50,16 +50,104 @@ abstract class Mailer
     }
 
     /**
-     * E-postayı gönderir. Alt sınıflar içerik ve alıcı atamalarını yaptıktan sonra bu metodu çağırır.
+     * E-postayı gönderir veya simülasyon modunda ise dosyaya kaydeder.
      * 
      * @return bool Gönderim başarılıysa true, aksi halde false.
      */
     public function send(): bool
     {
+        // Simülasyon / Test modu kontrolü (mail_driver !== 'smtp' ise test modunda çalışır)
+        $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
+        if ($mailDriver === 'log' || $mailDriver === 'file' || (bool)getSettingValue('mail_simulation', 'mail', true)) {
+            $result = $this->logEmailToFile();
+            $this->resetMailerState();
+            return $result;
+        }
+
         try {
-            return $this->mailer->send();
+            $result = $this->mailer->send();
+            $this->resetMailerState();
+            return $result;
         } catch (Exception $e) {
             Log::logger()->error("E-posta gönderme hatası: {$this->mailer->ErrorInfo}", Log::context($this));
+            $this->resetMailerState();
+            return false;
+        }
+    }
+
+    /**
+     * Mailer nesnesindeki alıcıları ve ekleri sıfırlar
+     */
+    public function resetMailerState(): void
+    {
+        $this->mailer->clearAllRecipients();
+        $this->mailer->clearAttachments();
+        $this->mailer->clearCustomHeaders();
+        $this->mailer->clearReplyTos();
+        $this->mailer->clearCCs();
+        $this->mailer->clearBCCs();
+    }
+
+    /**
+     * E-postayı gerçekte göndermek yerine Public/mail_log.html dosyasına görsel olarak kaydeder.
+     */
+    protected function logEmailToFile(): bool
+    {
+        try {
+            $toAddresses = $this->mailer->getToAddresses();
+            $recipients = [];
+            foreach ($toAddresses as $to) {
+                $email = $to[0] ?? '';
+                $name = $to[1] ?? '';
+                $recipients[] = htmlspecialchars($name ? "$name <$email>" : $email);
+            }
+            $recipientStr = !empty($recipients) ? implode(', ', $recipients) : 'Belirtilmedi';
+
+            $subject = htmlspecialchars($this->mailer->Subject ?? 'Konusuz E-posta');
+            $body = $this->mailer->Body ?? '';
+            $dateStr = date('d.m.Y H:i:s');
+
+            $attachments = $this->mailer->getAttachments();
+            $attachmentBadges = '';
+            if (!empty($attachments)) {
+                foreach ($attachments as $att) {
+                    $attName = htmlspecialchars($att[2] ?? $att[1] ?? 'Ek Dosya');
+                    $attachmentBadges .= "<span class='badge bg-secondary me-1'><i class='bi bi-paperclip'></i> {$attName}</span>";
+                }
+            } else {
+                $attachmentBadges = "<span class='text-muted small'>Ek yok</span>";
+            }
+
+            $logFilePath = dirname(__DIR__, 2) . '/Public/mail_log.html';
+
+            $newEntry = View::renderEmail('simulation/mail_card', [
+                'subject' => $subject,
+                'recipientStr' => $recipientStr,
+                'dateStr' => $dateStr,
+                'attachmentBadges' => $attachmentBadges,
+                'body' => $body
+            ]);
+
+            if (!file_exists($logFilePath) || filesize($logFilePath) === 0) {
+                $initialTemplate = View::renderEmail('simulation/mail_log_page');
+                @file_put_contents($logFilePath, $initialTemplate);
+            }
+
+            $existingContent = @file_get_contents($logFilePath) ?: '';
+            if (str_contains($existingContent, '<!-- NEW_ENTRIES_HERE -->')) {
+                $updatedContent = str_replace('<!-- NEW_ENTRIES_HERE -->', "<!-- NEW_ENTRIES_HERE -->\n" . $newEntry, $existingContent);
+            } else {
+                $updatedContent = str_replace('</div>' . "\n" . '    </div>' . "\n" . '    <script>', $newEntry . "\n        </div>\n    </div>\n    <script>", $existingContent);
+            }
+
+            if (@file_put_contents($logFilePath, $updatedContent) === false) {
+                Log::logger()->warning("Mail log dosyasına yazılamadı: {$logFilePath}", Log::context($this));
+            }
+
+            Log::logger()->info("E-posta simülasyon modunda yakalandı: {$recipientStr} - {$subject}", Log::context($this));
+            return true;
+        } catch (\Throwable $e) {
+            Log::logger()->error("E-posta loglama hatası: {$e->getMessage()}", Log::context($this));
             return false;
         }
     }

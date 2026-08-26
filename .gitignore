@@ -132,3 +132,4 @@ insert.sql
 Logs/*
 .phpunit.cache/*
 .phpunit.cache/test-results
+Public/mail_log.html

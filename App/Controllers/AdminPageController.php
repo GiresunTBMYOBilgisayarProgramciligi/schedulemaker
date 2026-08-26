@@ -907,7 +907,7 @@ class AdminPageController extends Controller
 
     public function getPublishSchedulePageData(User $currentUser, AssetManager $assetManager): array
     {
-        if (!Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)) {
+        if (!Gate::hasAnyPermission($currentUser, PermissionType::PUBLISH_SCHEDULE->value)) {
             throw new AuthorizationException("Ders programı yayınlama yetkiniz yok", [], 403);
         }
 
@@ -917,7 +917,7 @@ class AdminPageController extends Controller
         $units       = (new UnitRepository())->getAuthorized('view', ['active' => true]);
         $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
 
-        if (empty($departments) && empty($units)) {
+        if ($currentUser->role !== 'admin' && empty($departments) && empty($units)) {
             throw new AuthorizationException("Ders programı yayınlama yetkiniz yok", [], 403);
         }
 

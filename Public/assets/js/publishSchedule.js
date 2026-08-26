@@ -44,7 +44,11 @@ document.addEventListener('DOMContentLoaded', function () {
     selectorIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.addEventListener('change', checkPublishStatus);
+            el.addEventListener('change', function () {
+                const resultsContainer = document.getElementById('publish_results_container');
+                if (resultsContainer) resultsContainer.style.display = 'none';
+                checkPublishStatus();
+            });
         }
     });
 
@@ -52,9 +56,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabElements = document.querySelectorAll('button[data-bs-toggle="tab"]');
     tabElements.forEach(tabEl => {
         tabEl.addEventListener('shown.bs.tab', function () {
-            checkPublishStatus();
             const resultsContainer = document.getElementById('publish_results_container');
             if (resultsContainer) resultsContainer.style.display = 'none';
+            checkPublishStatus();
         });
     });
 
@@ -116,10 +120,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const statsLabel = activePane.querySelector('.publish-stats');
         const btnPublish = activePane.querySelector('.btn-publish');
         const btnUnpublish = activePane.querySelector('.btn-unpublish');
-
-        // Hide results
-        const resultsContainer = document.getElementById('publish_results_container');
-        if (resultsContainer) resultsContainer.style.display = 'none';
 
         if (!scope || !scopeId || scope === 'user_single' || scope === 'classroom_single') {
             if (btnPublish) btnPublish.disabled = true;
@@ -239,38 +239,59 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             const modal = new Modal();
-            modal.showConfirmModal(
+            modal.prepareModal(
                 'Emin misiniz?',
-                `Seçili kapsamdaki programları <b>${actionText}</b> istediğinize emin misiniz? Bu işlem biraz zaman alabilir ve hocalar iletilecek e-postalar sıraya alınır.`,
-                async function() {
-                    const originalHtml = currentBtn.innerHTML;
-                    currentBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
-                    currentBtn.disabled = true;
-
-                    try {
-                        const response = await fetchPost('/ajax/bulkPublishByScope', data);
-                        modal.close();
-                        if (response.status === 'success') {
-                            const resultsContainer = document.getElementById('publish_results_container');
-                            const resultText = resultsContainer ? resultsContainer.querySelector('.result-text') : null;
-                            if (resultsContainer && resultText) {
-                                resultsContainer.style.display = 'block';
-                                resultText.innerHTML = response.msg;
-                            }
-                            checkPublishStatus();
-                        } else {
-                            new Modal().showErrorModal('Hata', response.msg);
-                            currentBtn.innerHTML = originalHtml;
-                            currentBtn.disabled = false;
-                        }
-                    } catch (error) {
-                        modal.close();
-                        new Modal().showErrorModal('Hata', 'Sunucu ile iletişim kurulamadı.');
-                        currentBtn.innerHTML = originalHtml;
-                        currentBtn.disabled = false;
-                    }
-                }
+                `Seçili kapsamdaki programları <b>${actionText}</b> istediğinize emin misiniz? Bu işlem biraz zaman alabilir ve hocalara iletilecek e-postalar sıraya alınır.`,
+                true,
+                true,
+                'md'
             );
+            modal.confirmButton.textContent = 'Evet, Devam Et';
+            modal.confirmButton.onclick = async function() {
+                const originalHtml = currentBtn.innerHTML;
+                currentBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> İşleniyor...';
+                currentBtn.disabled = true;
+                modal.closeModal();
+
+                try {
+                    const response = await fetchPost('/ajax/bulkPublishByScope', data);
+                    currentBtn.innerHTML = originalHtml;
+                    currentBtn.disabled = false;
+
+                    if (response.status === 'success') {
+                        const resultsContainer = document.getElementById('publish_results_container');
+                        const resultText = resultsContainer ? resultsContainer.querySelector('.result-text') : null;
+                        if (resultsContainer && resultText) {
+                            resultsContainer.style.display = 'block';
+                            resultText.innerHTML = response.msg;
+                        }
+
+                        const successModal = new Modal();
+                        successModal.prepareModal(
+                            'İşlem Başarılı',
+                            `<div class="text-success mb-2"><i class="bi bi-check-circle-fill me-2 fs-5"></i> ${response.msg}</div>
+                             <div class="mt-3 text-muted small">Gönderilen veya yakalanan e-postaları <a href="/mail_log.html" target="_blank" class="fw-bold text-decoration-underline">Test Mail Logları</a> sayfasından inceleyebilirsiniz.</div>`,
+                            false,
+                            true,
+                            'md'
+                        );
+                        successModal.showModal();
+
+                        checkPublishStatus();
+                    } else {
+                        const errModal = new Modal();
+                        errModal.prepareModal('Hata', response.msg, false, true, 'sm', 'danger');
+                        errModal.showModal();
+                    }
+                } catch (error) {
+                    currentBtn.innerHTML = originalHtml;
+                    currentBtn.disabled = false;
+                    const errModal = new Modal();
+                    errModal.prepareModal('Hata', 'Sunucu ile iletişim kurulamadı.', false, true, 'sm', 'danger');
+                    errModal.showModal();
+                }
+            };
+            modal.showModal();
         });
     });
 });
