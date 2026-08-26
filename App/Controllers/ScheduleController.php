@@ -96,6 +96,15 @@ class ScheduleController extends Controller
         $is_published_only = isset($requestData['is_published']) && $requestData['is_published'] === "true";
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
         
+        // Non-program owners (User, Classroom, Lesson) never have semester_no
+        if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
+            if ($dto->semester_no !== null) {
+                $data = $dto->toArray();
+                $data['semester_no'] = null;
+                $dto = ScheduleFilterDTO::fromArray($data);
+            }
+        }
+
         $scheduleService = new ScheduleService();
         
         $schedule = null;
@@ -120,7 +129,10 @@ class ScheduleController extends Controller
                 }
             }
         } else {
-            $schedule = $scheduleService->getOrCreateSchedule($dto);
+            // Only get or create schedule here if it is not a multi-semester program request
+            if (!($dto->owner_type === OwnerType::PROGRAM->value && $dto->semester_no === null)) {
+                $schedule = $scheduleService->getOrCreateSchedule($dto);
+            }
         }
         
         if ($schedule !== null) {

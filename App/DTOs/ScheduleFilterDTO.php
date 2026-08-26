@@ -23,7 +23,7 @@ readonly class ScheduleFilterDTO
             type: $data['type'] ?? 'lesson',
             semester: $data['semester'] ?? null,
             academic_year: $data['academic_year'] ?? null,
-            semester_no: isset($data['semester_no']) && $data['semester_no'] !== '' ? (int)$data['semester_no'] : null,
+            semester_no: isset($data['semester_no']) && $data['semester_no'] !== '' && !is_array($data['semester_no']) ? (int)$data['semester_no'] : null,
             owner_type: $data['owner_type'] ?? null,
             owner_id: isset($data['owner_id']) && $data['owner_id'] !== '' ? (int)$data['owner_id'] : null
         );

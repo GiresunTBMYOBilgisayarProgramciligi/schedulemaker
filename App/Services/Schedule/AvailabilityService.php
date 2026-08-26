@@ -84,20 +84,20 @@ class AvailabilityService extends BaseService
         $availableClassrooms = [];
 
         foreach ($classrooms as $classroom) {
-            $classroomSchedule = clone $this->scheduleRepo->findOrCreate([
-                'type' => $schedule->type,
-                'owner_type' => OwnerType::CLASSROOM->value,
-                'owner_id' => $classroom->id,
-                'semester_no' => null,
-                'semester' => $schedule->semester,
-                'academic_year' => $schedule->academic_year,
-            ]);
+            $classroomSchedule = $this->scheduleRepo->findByOwnerAndPeriod(
+                OwnerType::CLASSROOM->value,
+                $classroom->id,
+                $schedule->academic_year,
+                $schedule->semester,
+                $schedule->type,
+                null
+            );
 
-            $existingItems = (new ScheduleItem())->get()->where([
+            $existingItems = $classroomSchedule ? (new ScheduleItem())->get()->where([
                 'schedule_id' => $classroomSchedule->id,
                 'day_index' => $filters['day_index'],
                 'week_index' => $filters['week_index'],
-            ])->all();
+            ])->all() : [];
 
             $isAvailable = true;
 
@@ -325,20 +325,20 @@ class AvailabilityService extends BaseService
         $availableObservers = [];
 
         foreach ($observers as $observer) {
-            $userSchedule = clone $this->scheduleRepo->findOrCreate([
-                'type' => $filters['type'],
-                'owner_type' => OwnerType::USER->value,
-                'owner_id' => $observer->id,
-                'semester_no' => null,
-                'semester' => $filters['semester'],
-                'academic_year' => $filters['academic_year'],
-            ]);
+            $userSchedule = $this->scheduleRepo->findByOwnerAndPeriod(
+                OwnerType::USER->value,
+                $observer->id,
+                $filters['academic_year'],
+                $filters['semester'],
+                $filters['type'],
+                null
+            );
 
-            $existingItems = (new ScheduleItem())->get()->where([
+            $existingItems = $userSchedule ? (new ScheduleItem())->get()->where([
                 'schedule_id' => $userSchedule->id,
                 'day_index' => $filters['day_index'],
                 'week_index' => $filters['week_index'],
-            ])->all();
+            ])->all() : [];
 
             $isAvailable = true;
             foreach ($itemsToCheck as $checkItem) {

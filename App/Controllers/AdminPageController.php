@@ -246,7 +246,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => 'lesson',
-                    'semester_no' => getSemesterNumbers()
                 ],
                 false,
                 true
@@ -256,7 +255,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::MIDTERM->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 false,
                 true
@@ -266,7 +264,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::FINAL->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 false,
                 true
@@ -276,7 +273,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::USER->value,
                     'owner_id' => $user->id,
                     'type' => ExamType::MAKEUP->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 false,
                 true
@@ -341,7 +337,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => 'lesson',
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true,
                 true
@@ -351,7 +346,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::MIDTERM->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true,
                 true
@@ -361,7 +355,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::FINAL->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true,
                 true
@@ -371,7 +364,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::LESSON->value,
                     'owner_id' => $lesson->id,
                     'type' => ExamType::MAKEUP->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true,
                 true
@@ -502,7 +494,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => 'lesson',
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true
             ),
@@ -511,7 +502,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::MIDTERM->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true
             ),
@@ -520,7 +510,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::FINAL->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true
             ),
@@ -529,7 +518,6 @@ class AdminPageController extends Controller
                     'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $classroom->id,
                     'type' => ExamType::MAKEUP->value,
-                    'semester_no' => getSemesterNumbers()
                 ],
                 true
             ),

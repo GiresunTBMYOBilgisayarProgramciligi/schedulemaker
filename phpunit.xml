@@ -23,6 +23,7 @@
         <env name="DB_PASS" value="123456"/>
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_NAME" value="schedule_maker"/>
+        <env name="VIEWS_PATH" value="App/Views"/>
     </php>
     <source>
         <include>
