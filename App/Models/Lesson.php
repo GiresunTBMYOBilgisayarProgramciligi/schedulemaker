@@ -735,8 +735,13 @@ class Lesson extends Model
 
         return $this->remaining_size <= 0;
     }
-
-    public function getScheduleCSSClass(bool $isExam = false): string
+    /**
+     * Todo bu metod Schedule_İtem modeline taşınabilir. gösterilen şey aslında item lesson değil 
+     * @param bool $isExam
+     * @param bool $onlyTable
+     * @return string
+     */
+    public function getScheduleCSSClass(bool $isExam = false, bool $onlyTable = false): string
     {
         $isChild = $isExam
             ? !empty($this->examParentLesson)
@@ -744,7 +749,7 @@ class Lesson extends Model
 
         // 1. Ders Türü Belirleme
         $typeClass = "lesson-type-normal"; // Varsayılan
-        if ($isChild) {
+        if ($isChild && !$onlyTable) {
             $typeClass = "lesson-type-child";
         } elseif ($this->classroom_type == 2) {
             $typeClass = "lesson-type-lab";

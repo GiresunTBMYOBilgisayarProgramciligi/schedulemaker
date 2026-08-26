@@ -100,7 +100,8 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                     <?php endif; ?>
                                 </td>
                             <?php else: ?>
-                                <td class="drop-zone" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
+                                <?php $emptyDropZone = (isset($only_table) && $only_table) ? '' : 'drop-zone'; ?>
+                                <td class="<?= $emptyDropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
                                     data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                     <div class="empty-slot"></div>

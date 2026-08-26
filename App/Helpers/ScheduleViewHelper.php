@@ -42,13 +42,14 @@ class ScheduleViewHelper
         object       $slotData,
         Schedule     $schedule,
         bool         $draggable,
-        string       $type = 'lesson'
+        string       $type = 'lesson',
+        bool         $only_table = false
     ): array
     {
         $isExam = ($type === 'exam');
-        $cssClass = "lesson-card " . $slotData->lesson->getScheduleCSSClass($isExam);
+        $cssClass = "lesson-card " . $slotData->lesson->getScheduleCSSClass($isExam, $only_table);
         if ($isExam) {
-            $cssClass = "lesson-card h-100 m-0 " . $slotData->lesson->getScheduleCSSClass(true);
+            $cssClass = "lesson-card h-100 m-0 " . $slotData->lesson->getScheduleCSSClass(true, $only_table);
         }
 
         $attrs = [
@@ -71,7 +72,7 @@ class ScheduleViewHelper
         ];
 
         $isLocked = !empty($scheduleItem->detail['is_locked']);
-        if ($isLocked) {
+        if ($isLocked && !$only_table) {
             $attrs['class'] .= " locked";
             $attrs['data-is-locked'] = 'true';
             $attrs['draggable'] = 'false';
