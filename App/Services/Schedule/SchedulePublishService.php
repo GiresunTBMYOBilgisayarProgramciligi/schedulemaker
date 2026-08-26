@@ -61,12 +61,39 @@ class SchedulePublishService extends BaseService
     }
 
     /**
+     * İçerisinde hiçbir öğe (schedule_item) bulunmayan boş schedule kayıtlarını temizler.
+     * 
+     * @param string|null $semester
+     * @param string|null $academicYear
+     * @param string|null $type
+     * @return int Silinen boş schedule sayısı
+     */
+    public function cleanEmptySchedules(?string $semester = null, ?string $academicYear = null, ?string $type = null): int
+    {
+        $deletedCount = (new ScheduleRepository())->deleteEmptySchedules($semester, $academicYear, $type);
+        if ($deletedCount > 0) {
+            $this->logger->info("Boş schedule kayıtları temizlendi: {$deletedCount} adet kayıt silindi.", $this->logContext([
+                'deleted_count' => $deletedCount,
+                'semester' => $semester,
+                'academic_year' => $academicYear,
+                'type' => $type
+            ]));
+        }
+        return $deletedCount;
+    }
+
+    /**
      * @throws Exception
      */
     public function bulkPublish(?string $semester = null, ?string $academicYear = null, bool $publishStatus = true, ?string $type = null): int
     {
         $semester = $semester ?? getSettingValue('semester');
         $academicYear = $academicYear ?? getSettingValue('academic_year');
+
+        // Yayınlama öncesinde boş schedule kayıtlarını temizle
+        if ($publishStatus) {
+            $this->cleanEmptySchedules($semester, $academicYear, $type);
+        }
 
         $where = [
             'semester' => $semester,
@@ -282,6 +309,11 @@ class SchedulePublishService extends BaseService
         bool $publishStatus = true,
         ?string $ownerTypeTab = null
     ): array {
+        // Yayınlama öncesinde boş schedule kayıtlarını temizle
+        if ($publishStatus) {
+            $this->cleanEmptySchedules($semester, $academicYear, $type);
+        }
+
         $scheduleIdsData = $this->collectScheduleIdsByScope($scope, $scopeId, $semester, $academicYear, $type);
         $scheduleIdsToProcess = $this->filterScheduleIdsByTab($scheduleIdsData, $ownerTypeTab);
 

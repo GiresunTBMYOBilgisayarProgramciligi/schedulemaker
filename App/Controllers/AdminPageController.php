@@ -34,6 +34,7 @@ use App\Enums\OwnerType;
 use App\Enums\UnitType;
 use App\Enums\UserRole;
 use App\Enums\PermissionType;
+use App\Services\Schedule\SchedulePublishService;
 use App\Controllers\SettingsController;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
@@ -909,6 +910,9 @@ class AdminPageController extends Controller
         if ($currentUser->role !== 'admin' && empty($departments) && empty($units)) {
             throw new AuthorizationException("Ders programı yayınlama yetkiniz yok", [], 403);
         }
+
+        // Program yayınlama sayfası yüklendiğinde boş schedule kayıtlarını temizle
+        (new SchedulePublishService())->cleanEmptySchedules();
 
         $view_data = [
             "scheduleController" => new ScheduleController(),

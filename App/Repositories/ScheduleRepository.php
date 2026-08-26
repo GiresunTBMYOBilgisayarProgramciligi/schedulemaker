@@ -163,4 +163,38 @@ class ScheduleRepository extends BaseRepository
         $schedule = new $this->modelClass;
         return $schedule->where($conditions)->first();
     }
+
+    /**
+     * İçerisinde hiçbir schedule_item bulunmayan boş schedule kayıtlarını siler.
+     * 
+     * @param string|null $semester
+     * @param string|null $academicYear
+     * @param string|null $type
+     * @return int Silinen boş schedule sayısı
+     */
+    public function deleteEmptySchedules(?string $semester = null, ?string $academicYear = null, ?string $type = null): int
+    {
+        $sql = "DELETE s FROM schedules s LEFT JOIN schedule_items si ON s.id = si.schedule_id WHERE si.id IS NULL";
+        $params = [];
+
+        if ($semester !== null) {
+            $sql .= " AND s.semester = :semester";
+            $params[':semester'] = $semester;
+        }
+
+        if ($academicYear !== null) {
+            $sql .= " AND s.academic_year = :academic_year";
+            $params[':academic_year'] = $academicYear;
+        }
+
+        if ($type !== null) {
+            $sql .= " AND s.type = :type";
+            $params[':type'] = $type;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
+    }
 }
