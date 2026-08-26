@@ -2,7 +2,9 @@
 
 namespace App\Services\Export\Excel;
 
+use App\Core\Gate;
 use App\Enums\ExamType;
+use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -70,6 +72,10 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 ->first();
 
             if (!$schedule || empty($schedule->items)) {
+                continue;
+            }
+
+            if (!Gate::check(PermissionType::VIEW->value, $schedule)) {
                 continue;
             }
 

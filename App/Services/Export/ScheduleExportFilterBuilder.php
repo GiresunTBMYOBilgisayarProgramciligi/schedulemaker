@@ -7,6 +7,11 @@ use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Models\Department;
 use App\Models\Unit;
 use App\Models\Building;
+use App\Models\Program;
+use App\Models\User;
+use App\Models\Classroom;
+use App\Models\Lesson;
+use App\Middlewares\AuthMiddleware;
 
 use App\Enums\OwnerType;
 use App\Repositories\UnitRepository;
@@ -107,12 +112,19 @@ class ScheduleExportFilterBuilder
     private function buildForProgram(array $filters, array $semesterNumbers, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
-            $programs  = (new ProgramRepository())->getAuthorized('view', ['id' => $filters['owner_id'], 'active' => true]);
+            /** @var Program|null $program */
+            $program = (new ProgramRepository())->find($filters['owner_id']);
+            $programs = ($program && $program->active) ? [$program] : [];
             $fileTitle = !empty($programs) ? $programs[0]->name . ' ' . $typeLabel : "Program " . $typeLabel;
         } else {
-            $programs  = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
+            if ($user && $user->role !== 'admin') {
+                $programs = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
+            } else {
+                $programs = (new ProgramRepository())->findBy(['active' => true]);
+            }
             $fileTitle = "Tüm Programlar " . $typeLabel;
         }
 
@@ -133,12 +145,17 @@ class ScheduleExportFilterBuilder
     private function buildForDepartment(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
             /** @var Department|null $department */
             $department = (new DepartmentRepository())->find($filters['owner_id']);
             $fileTitle  = $department ? $department->name . ' ' . $typeLabel : "Bölüm " . $typeLabel;
-            $programs   = (new ProgramRepository())->getAuthorized('view', ['department_id' => $filters['owner_id'], 'active' => true]);
+            if ($user && $user->role !== 'admin') {
+                $programs = (new ProgramRepository())->getAuthorized('view', ['department_id' => $filters['owner_id'], 'active' => true]);
+            } else {
+                $programs = (new ProgramRepository())->findBy(['department_id' => $filters['owner_id'], 'active' => true]);
+            }
             
             foreach ($programs as $program) {
                 $subFilters = $this->buildForProgram(
@@ -153,7 +170,11 @@ class ScheduleExportFilterBuilder
                 $result = array_merge($result, $subFilters);
             }
         } else {
-            $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
+            if ($user && $user->role !== 'admin') {
+                $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
+            } else {
+                $departments = (new DepartmentRepository())->findBy(['active' => true]);
+            }
             $fileTitle   = "Tüm Bölümler " . $typeLabel;
 
             foreach ($departments as $department) {
@@ -175,12 +196,17 @@ class ScheduleExportFilterBuilder
     private function buildForUnit(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
             /** @var Unit|null $unit */
             $unit        = (new UnitRepository())->find($filters['owner_id']);
             $fileTitle   = $unit ? $unit->name . ' ' . $typeLabel : "Birim " . $typeLabel;
-            $departments = (new DepartmentRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id'], 'active' => true]);
+            if ($user && $user->role !== 'admin') {
+                $departments = (new DepartmentRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id'], 'active' => true]);
+            } else {
+                $departments = (new DepartmentRepository())->findBy(['unit_id' => $filters['owner_id'], 'active' => true]);
+            }
 
             foreach ($departments as $department) {
                 $subFilters = $this->buildForDepartment(
@@ -194,7 +220,11 @@ class ScheduleExportFilterBuilder
                 $result = array_merge($result, $subFilters);
             }
         } else {
-            $units     = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+            if ($user && $user->role !== 'admin') {
+                $units     = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+            } else {
+                $units     = (new UnitRepository())->findBy(['active' => true]);
+            }
             $fileTitle = "Tüm Birimler " . $typeLabel;
 
             foreach ($units as $unit) {
@@ -216,12 +246,19 @@ class ScheduleExportFilterBuilder
     private function buildForUser(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
-            $lecturers = (new UserRepository())->getAuthorized('view', ['id' => $filters['owner_id'], '!role' => ['in' => ['admin', 'user']]]);
-            $fileTitle = !empty($lecturers) ? $lecturers[0]->getFullName(true) . " " . $typeLabel : "Hoca " . $typeLabel;
+            /** @var User|null $lecturer */
+            $lecturer = (new UserRepository())->find($filters['owner_id']);
+            $lecturers = ($lecturer && !in_array($lecturer->role, ['admin', 'user'])) ? [$lecturer] : [];
+            $fileTitle = !empty($lecturers) ? $lecturers[0]->getFullName() . " " . $typeLabel : "Hoca " . $typeLabel;
         } else {
-            $lecturers = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+            if ($user && $user->role !== 'admin') {
+                $lecturers = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+            } else {
+                $lecturers = (new UserRepository())->findBy(['!role' => ['in' => ['admin', 'user']]]);
+            }
             $fileTitle = "Tüm Hocalar " . $typeLabel;
         }
 
@@ -240,12 +277,19 @@ class ScheduleExportFilterBuilder
     private function buildForClassroom(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
-            $classrooms = (new ClassroomRepository())->getAuthorized('view', ['id' => $filters['owner_id']]);
+            /** @var Classroom|null $classroom */
+            $classroom = (new ClassroomRepository())->find($filters['owner_id']);
+            $classrooms = $classroom ? [$classroom] : [];
             $fileTitle  = !empty($classrooms) ? $classrooms[0]->name . " " . $typeLabel : "Derslik " . $typeLabel;
         } else {
-            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            if ($user && $user->role !== 'admin') {
+                $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            } else {
+                $classrooms = (new ClassroomRepository())->findBy([]);
+            }
             $fileTitle  = "Tüm Derslikler " . $typeLabel;
         }
 
@@ -264,15 +308,24 @@ class ScheduleExportFilterBuilder
     private function buildForBuilding(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
             /** @var Building|null $building */
             $building = (new BuildingRepository())->find($filters['owner_id']);
             $fileTitle  = $building ? $building->name . ' Derslikleri ' . $typeLabel : "Bina " . $typeLabel;
-            $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => $filters['owner_id']]);
+            if ($user && $user->role !== 'admin') {
+                $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => $filters['owner_id']]);
+            } else {
+                $classrooms = (new ClassroomRepository())->findBy(['building_id' => $filters['owner_id']]);
+            }
         } else {
             $fileTitle  = "Tüm Binaların Derslikleri " . $typeLabel;
-            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            if ($user && $user->role !== 'admin') {
+                $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            } else {
+                $classrooms = (new ClassroomRepository())->findBy([]);
+            }
         }
 
         foreach ($classrooms as $classroom) {
@@ -290,22 +343,35 @@ class ScheduleExportFilterBuilder
     private function buildForClassroomUnit(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
             /** @var Unit|null $unit */
             $unit        = (new UnitRepository())->find($filters['owner_id']);
             $fileTitle   = $unit ? $unit->name . ' Derslikleri ' . $typeLabel : "Birim Derslikleri " . $typeLabel;
-            $buildings   = (new BuildingRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id']]);
+            if ($user && $user->role !== 'admin') {
+                $buildings = (new BuildingRepository())->getAuthorized('view', ['unit_id' => $filters['owner_id']]);
+            } else {
+                $buildings = (new BuildingRepository())->findBy(['unit_id' => $filters['owner_id']]);
+            }
             $buildingIds = array_column($buildings, 'id');
 
             if (!empty($buildingIds)) {
-                $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => ['in' => $buildingIds]]);
+                if ($user && $user->role !== 'admin') {
+                    $classrooms = (new ClassroomRepository())->getAuthorized('view', ['building_id' => ['in' => $buildingIds]]);
+                } else {
+                    $classrooms = (new ClassroomRepository())->findBy(['building_id' => ['in' => $buildingIds]]);
+                }
             } else {
                 $classrooms = [];
             }
         } else {
             $fileTitle  = "Tüm Birim Derslikleri " . $typeLabel;
-            $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            if ($user && $user->role !== 'admin') {
+                $classrooms = (new ClassroomRepository())->getAuthorized('view');
+            } else {
+                $classrooms = (new ClassroomRepository())->findBy([]);
+            }
         }
 
         foreach ($classrooms as $classroom) {
@@ -324,12 +390,19 @@ class ScheduleExportFilterBuilder
     private function buildForLesson(array $filters, string $typeKey, string $typeLabel): array
     {
         $result = [];
+        $user = AuthMiddleware::user();
 
         if (!empty($filters["owner_id"])) {
-            $lessons   = (new LessonRepository())->getAuthorized('view', ['id' => $filters['owner_id']]);
+            /** @var Lesson|null $lesson */
+            $lesson = (new LessonRepository())->find($filters['owner_id']);
+            $lessons = $lesson ? [$lesson] : [];
             $fileTitle = !empty($lessons) ? $lessons[0]->getFullName(true) . " " . $typeLabel : "Ders " . $typeLabel;
         } else {
-            $lessons   = (new LessonRepository())->getAuthorized('view');
+            if ($user && $user->role !== 'admin') {
+                $lessons = (new LessonRepository())->getAuthorized('view');
+            } else {
+                $lessons = (new LessonRepository())->findBy([]);
+            }
             $fileTitle = "Tüm Dersler " . $typeLabel;
         }
 

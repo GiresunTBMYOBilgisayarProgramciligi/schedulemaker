@@ -2,7 +2,9 @@
 
 namespace App\Services\Export\Ics;
 
+use App\Core\Gate;
 use App\Enums\ExamType;
+use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 
@@ -54,6 +56,8 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                 ->first();
 
             if (!$schedule || empty($schedule->items)) continue;
+
+            if (!Gate::check(PermissionType::VIEW->value, $schedule)) continue;
 
             foreach ($schedule->items as $scheduleItem) {
                 // Tercih/müsait değil item'lerini dışa aktarma
