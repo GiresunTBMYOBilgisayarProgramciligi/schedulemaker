@@ -83,7 +83,7 @@ create table if not exists buildings
     name    VARCHAR(150) NOT NULL,
     unit_id INT          NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE (name),
+    UNIQUE (unit_id, name),
     CONSTRAINT fk_buildings_unit_id foreign key (unit_id) references units (id) on delete restrict on update cascade
 ) ENGINE = INNODB;
 
@@ -143,7 +143,7 @@ create table if not exists classrooms
     exam_size   int default 0,
     building_id int,
     primary key (id),
-    unique (name),
+    unique (building_id, name),
     CONSTRAINT fk_classrooms_building_id foreign key (building_id) references buildings (id) on delete set null on update cascade
 ) ENGINE = INNODB;
 

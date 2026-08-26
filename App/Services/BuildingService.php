@@ -35,7 +35,7 @@ class BuildingService extends BaseService
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                throw new Exception("Bu isimde bir bina zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                throw new Exception("Bu birimde bu isimde bir bina zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
@@ -60,7 +60,7 @@ class BuildingService extends BaseService
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                throw new Exception("Bu isimde bir bina zaten kayıtlı. Lütfen farklı bir isim giriniz.");
+                throw new Exception("Bu birimde bu isimde bir bina zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
