@@ -75,9 +75,32 @@ class ScheduleExportFilterBuilderTest extends BaseTestCase
         $result = $builder->build($filters);
 
         $this->assertNotEmpty($result, 'Misafir kullanıcı program filtrelerini alabilmeli');
+        $this->assertCount(2, $result, 'Güz dönemi için tüm dönemler (1 ve 3) getirilmelidir');
         $this->assertStringContainsString('Test Program', $result[0]['title']);
         $this->assertEquals($this->programId, $result[0]['filter']['owner_id']);
         $this->assertEquals('program', $result[0]['filter']['owner_type']);
+        $this->assertEquals(1, $result[0]['filter']['semester_no']);
+        $this->assertEquals(3, $result[1]['filter']['semester_no']);
+    }
+
+    public function testCanBuildFiltersForSpecificSemesterNo(): void
+    {
+        $builder = new ScheduleExportFilterBuilder();
+        $filters = [
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => $this->programId,
+            'semester_no' => 1,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ];
+
+        $result = $builder->build($filters);
+
+        $this->assertCount(1, $result, 'Sadece belirtilen dönem numarası (1) için filtre üretilmelidir');
+        $this->assertEquals(1, $result[0]['filter']['semester_no']);
+        $this->assertStringContainsString('Test Program', $result[0]['file_title']);
+        $this->assertStringContainsString('1', $result[0]['file_title']);
     }
 
     public function testGuestCanBuildFiltersForLecturer(): void

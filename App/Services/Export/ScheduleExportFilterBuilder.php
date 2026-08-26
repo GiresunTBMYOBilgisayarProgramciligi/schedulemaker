@@ -47,7 +47,7 @@ class ScheduleExportFilterBuilder
     {
         $filters         = (new ScheduleExportFilterValidator())->sanitize($filters, "generateScheduleFilters");
         $scheduleFilters = [];
-        $semesterNumbers = getSemesterNumbers($filters["semester"]);
+        $semesterNumbers = !empty($filters["semester_no"]) ? [(int)$filters["semester_no"]] : getSemesterNumbers($filters["semester"]);
         $typeKey         = $filters["type"];
         $typeLabel       = $this->getTypeLabel($typeKey);
 
@@ -118,7 +118,11 @@ class ScheduleExportFilterBuilder
             /** @var Program|null $program */
             $program = (new ProgramRepository())->find($filters['owner_id']);
             $programs = ($program && $program->active) ? [$program] : [];
-            $fileTitle = !empty($programs) ? $programs[0]->name . ' ' . $typeLabel : "Program " . $typeLabel;
+            if (!empty($filters['semester_no'])) {
+                $fileTitle = !empty($programs) ? $programs[0]->name . ' ' . getClassFromSemesterNo((int)$filters['semester_no']) . ' ' . $typeLabel : "Program " . $typeLabel;
+            } else {
+                $fileTitle = !empty($programs) ? $programs[0]->name . ' ' . $typeLabel : "Program " . $typeLabel;
+            }
         } else {
             if ($user && $user->role !== 'admin') {
                 $programs = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
@@ -146,6 +150,7 @@ class ScheduleExportFilterBuilder
     {
         $result = [];
         $user = AuthMiddleware::user();
+        $semesterNumbers = !empty($filters["semester_no"]) ? [(int)$filters["semester_no"]] : getSemesterNumbers($filters["semester"]);
 
         if (!empty($filters["owner_id"])) {
             /** @var Department|null $department */
@@ -160,7 +165,7 @@ class ScheduleExportFilterBuilder
             foreach ($programs as $program) {
                 $subFilters = $this->buildForProgram(
                     array_merge($filters, ['owner_type' => OwnerType::PROGRAM->value, 'owner_id' => $program->id]),
-                    getSemesterNumbers($filters["semester"]),
+                    $semesterNumbers,
                     $typeKey,
                     $typeLabel
                 );

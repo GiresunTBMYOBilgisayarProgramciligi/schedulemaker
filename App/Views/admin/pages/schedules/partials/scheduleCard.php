@@ -25,6 +25,7 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
             data-week-count="<?= $weekCount ?? 1 ?>" data-type="<?= $schedule->type ?>"
+            data-semester-no="<?= $schedule->semester_no ?? '' ?>"
             data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
             <div class="<?= $headerClasses ?>">
                 <?php if (!$no_card): ?>
@@ -51,12 +52,12 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                 <div class="d-flex ms-auto <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
                     <div class="btn-group btn-group-sm shadow-xs" role="group" aria-label="Dışa aktarma">
                         <button id="singlePageExport" type="button" class="btn btn-outline-success d-inline-flex align-items-center gap-1"
-                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" title="Excel Olarak İndir">
+                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Excel Olarak İndir">
                             <i class="bi bi-file-earmark-excel"></i>
                             <span class="d-none d-sm-inline">Excel'e aktar</span>
                         </button>
                         <button id="singlePageCalendar" type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-1"
-                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" title="Telefon Takvimine (iCal) Kaydet">
+                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Telefon Takvimine (iCal) Kaydet">
                             <i class="bi bi-calendar-plus"></i>
                             <span class="d-none d-sm-inline">Takvime kaydet</span>
                         </button>

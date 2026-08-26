@@ -11,6 +11,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const classroomBuildingSelect = document.getElementById("classroom_building_id");
     const classroomSelect = document.getElementById("classroom_id");
 
+    /**
+     * Yarıyıl numarasına göre kullanıcı dostu etiket döner (örn: "1. Sınıf (1. Yarıyıl)")
+     */
+    function getSemesterLabel(semesterNo) {
+        const no = parseInt(semesterNo, 10);
+        if (!no) return "";
+        const classNo = Math.ceil(no / 2);
+        return `${classNo}. Sınıf (${no}. Yarıyıl)`;
+    }
+
     // Tüm click eventlerini tek noktadan yakala
     document.addEventListener("click", async function (event) {
         const button = event.target.closest("button"); // En yakın button'u bul
@@ -22,6 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
         
         const scheduleTypeSelect = document.getElementById("schedule_type");
         const scheduleType = cardScheduleType || scheduleTypeSelect?.value || "lesson";
+        const semesterNo = button.dataset.semesterNo || scheduleCard?.dataset.semesterNo || null;
 
         // Sadece Excel dışa aktarma butonları için (id sonunda Export olanlar)
         if (button.id.endsWith("Export")) {
@@ -36,15 +47,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 (departmentSelect && departmentSelect.value > 0) ? "department" :
                 (unitSelect && unitSelect.value > 0) ? "unit" : "program";
 
-            showExportOptionsModal(ownerType, scheduleType, async (options) => {
+            showExportOptionsModal(ownerType, scheduleType, semesterNo, async (options) => {
                 let data = new FormData();
                 data.append("type", scheduleType);
                 data.append("semester", document.getElementById("semester")?.value || "");
                 data.append("academic_year", document.getElementById("academic_year")?.value || "");
                 data.append("owner_type", ownerType);
 
+                if (options.semester_no) {
+                    data.append("semester_no", options.semester_no);
+                }
+
                 // Seçenekleri ekle
-                Object.keys(options).forEach(key => data.append(key, options[key] ? 1 : 0));
+                Object.keys(options).forEach(key => {
+                    if (key !== "semester_no") {
+                        data.append(key, options[key] ? 1 : 0);
+                    }
+                });
 
                 if (button.id === "singlePageExport") {
                     data.append("owner_id", button.dataset.ownerId);
@@ -84,55 +103,74 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // ICS (Takvim) butonları için mevcut mantık devam ediyor
+        // ICS (Takvim) butonları için
         if (button.id.endsWith("Calendar")) {
-            let data = new FormData();
-            data.append("type", scheduleType);
-            data.append("semester", document.getElementById("semester")?.value || "");
-            data.append("academic_year", document.getElementById("academic_year")?.value || "");
+            const ownerType = button.id === "singlePageCalendar" ? button.dataset.ownerType :
+                button.id === "lecturerCalendar" ? "user" :
+                button.id === "classroomCalendar" ? (
+                    (classroomSelect && classroomSelect.value > 0) ? "classroom" :
+                    (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? "building" :
+                    (classroomUnitSelect && classroomUnitSelect.value > 0) ? "classroom_unit" : "classroom"
+                ) :
+                (programSelect && programSelect.value > 0) ? "program" :
+                (departmentSelect && departmentSelect.value > 0) ? "department" :
+                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
 
-            if (button.id === "singlePageCalendar") {
-                data.append("owner_type", button.dataset.ownerType);
-                data.append("owner_id", button.dataset.ownerId);
-            } else {
-                if (button.id === "lecturerCalendar") {
-                    data.append("owner_type", "user");
-                    if (lecturerSelect && lecturerSelect.value > 0) data.append("owner_id", lecturerSelect.value);
+            const executeCalendarExport = async (selectedSemesterNo = null) => {
+                let data = new FormData();
+                data.append("type", scheduleType);
+                data.append("semester", document.getElementById("semester")?.value || "");
+                data.append("academic_year", document.getElementById("academic_year")?.value || "");
+                data.append("owner_type", ownerType);
+
+                if (selectedSemesterNo) {
+                    data.append("semester_no", selectedSemesterNo);
+                }
+
+                if (button.id === "singlePageCalendar") {
+                    data.append("owner_id", button.dataset.ownerId);
                 } else if (button.id === "classroomCalendar") {
-                    if (classroomSelect && classroomSelect.value > 0) {
-                        data.append("owner_type", "classroom");
-                        data.append("owner_id", classroomSelect.value);
-                    } else if (classroomBuildingSelect && classroomBuildingSelect.value > 0) {
-                        data.append("owner_type", "building");
-                        data.append("owner_id", classroomBuildingSelect.value);
-                    } else if (classroomUnitSelect && classroomUnitSelect.value > 0) {
-                        data.append("owner_type", "classroom_unit");
-                        data.append("owner_id", classroomUnitSelect.value);
-                    } else {
-                        data.append("owner_type", "classroom");
+                    let ownerId = (classroomSelect && classroomSelect.value > 0) ? classroomSelect.value :
+                        (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? classroomBuildingSelect.value :
+                        (classroomUnitSelect && classroomUnitSelect.value > 0) ? classroomUnitSelect.value : "";
+                    if (ownerId) {
+                        data.append("owner_id", ownerId);
                     }
-                } else if (button.id === "departmentAndProgramCalendar") {
-                    if (programSelect && programSelect.value > 0) {
-                        data.append("owner_type", "program");
-                        data.append("owner_id", programSelect.value);
-                    } else if (departmentSelect && departmentSelect.value > 0) {
-                        data.append("owner_type", "department");
-                        data.append("owner_id", departmentSelect.value);
-                    } else if (unitSelect && unitSelect.value > 0) {
-                        data.append("owner_type", "unit");
-                        data.append("owner_id", unitSelect.value);
-                    } else {
-                        data.append("owner_type", "program");
+                } else {
+                    const selectId = button.id === "lecturerCalendar" ? "lecturer_id" :
+                        button.id === "departmentAndProgramCalendar" ? (
+                            programSelect && programSelect.value > 0 ? "program_id" :
+                                departmentSelect && departmentSelect.value > 0 ? "department_id" :
+                                    unitSelect && unitSelect.value > 0 ? "unit_id" : ""
+                        ) : "";
+
+                    if (selectId) {
+                        const selectElement = document.getElementById(selectId);
+                        if (selectElement && selectElement.value > 0) {
+                            if (selectId === "department_id") data.set("owner_type", "department");
+                            else if (selectId === "unit_id") data.set("owner_type", "unit");
+                            data.append("owner_id", selectElement.value);
+                        }
                     }
                 }
+
+                // Spinner container belirle
+                let spinnerContainer = document.getElementById("schedule_container");
+                if (!spinnerContainer) {
+                    spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
+                }
+                spinner.showSpinner(spinnerContainer);
+                await fetchExportIcs(data);
+            };
+
+            if (ownerType === "program" && semesterNo) {
+                showCalendarOptionsModal(ownerType, scheduleType, semesterNo, async (options) => {
+                    await executeCalendarExport(options.semester_no);
+                });
+            } else {
+                await executeCalendarExport();
             }
-            // Spinner container belirle
-            let spinnerContainer = document.getElementById("schedule_container");
-            if (!spinnerContainer) {
-                spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
-            }
-            spinner.showSpinner(spinnerContainer);
-            await fetchExportIcs(data);
+            return;
         }
     });
 
@@ -140,12 +178,30 @@ document.addEventListener("DOMContentLoaded", function () {
     /**
      * Dışa aktarma seçeneklerini soran modalı gösterir
      */
-    function showExportOptionsModal(ownerType, scheduleType, onConfirm) {
+    function showExportOptionsModal(ownerType, scheduleType, semesterNo, onConfirm) {
         const modal = new Modal();
         const isExam = scheduleType !== "lesson";
         const typeLabel = isExam ? "Sınav" : "Ders";
 
+        let semesterSection = "";
+        if (ownerType === "program" && semesterNo) {
+            const semLabel = getSemesterLabel(semesterNo);
+            semesterSection = `
+            <div class="mb-3 border-bottom pb-2">
+                <label class="form-label fw-semibold mb-2">Çıktı Alınacak Dönem:</label>
+                <div class="form-check mb-1">
+                    <input class="form-check-input" type="radio" name="export_scope" id="scope_single" value="single" checked>
+                    <label class="form-check-label" for="scope_single">Sadece bu dönem (${semLabel})</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="export_scope" id="scope_all" value="all">
+                    <label class="form-check-label" for="scope_all">Tüm dönemler</label>
+                </div>
+            </div>`;
+        }
+
         let content = `<div class="p-2">
+            ${semesterSection}
             <p class="mb-3 border-bottom pb-2">Excel tablosunda görünmesini istediğiniz alanları seçin:</p>
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_code" checked>
@@ -182,11 +238,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modal.confirmButton.addEventListener("click", () => {
             const options = {};
+            if (document.getElementById("scope_single")) {
+                if (document.getElementById("scope_single").checked) {
+                    options.semester_no = semesterNo;
+                }
+            }
             if (document.getElementById("show_code")) options.show_code = document.getElementById("show_code").checked;
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
             if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
             if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
 
+            modal.closeModal();
+            onConfirm(options);
+        });
+    }
+
+    /**
+     * Takvim (ICS) dışa aktarma seçeneklerini soran modalı gösterir
+     */
+    function showCalendarOptionsModal(ownerType, scheduleType, semesterNo, onConfirm) {
+        const modal = new Modal();
+        const isExam = scheduleType !== "lesson";
+        const typeLabel = isExam ? "Sınav" : "Ders";
+        const semLabel = getSemesterLabel(semesterNo);
+
+        let content = `<div class="p-2">
+            <p class="mb-3 border-bottom pb-2">Takvime kaydetmek istediğiniz dönem kapsamını seçin:</p>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="cal_export_scope" id="cal_scope_single" value="single" checked>
+                <label class="form-check-label" for="cal_scope_single">Sadece bu dönem (${semLabel})</label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="cal_export_scope" id="cal_scope_all" value="all">
+                <label class="form-check-label" for="cal_scope_all">Tüm dönemler</label>
+            </div>
+        </div>`;
+
+        modal.prepareModal(typeLabel + " Takvime Kaydetme Seçenekleri", content, true, true, "md");
+        modal.confirmButton.textContent = "Takvime Kaydet";
+        modal.showModal();
+
+        modal.confirmButton.addEventListener("click", () => {
+            const options = {};
+            if (document.getElementById("cal_scope_single")?.checked) {
+                options.semester_no = semesterNo;
+            }
             modal.closeModal();
             onConfirm(options);
         });
