@@ -58,7 +58,7 @@ abstract class Mailer
     {
         // Simülasyon / Test modu kontrolü (mail_driver !== 'smtp' ise test modunda çalışır)
         $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
-        if ($mailDriver === 'log' || $mailDriver === 'file' || (bool)getSettingValue('mail_simulation', 'mail', true)) {
+        if ($mailDriver !== 'smtp') {
             $result = $this->logEmailToFile();
             $this->resetMailerState();
             return $result;

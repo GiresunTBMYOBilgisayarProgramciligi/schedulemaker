@@ -259,6 +259,7 @@ CREATE TABLE `password_resets` (
 
 -- Mail Ayarları
 INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
+('mail', 'mail_driver', 'log', 'string'),
 ('mail', 'smtp_host', 'localhost', 'string'),
 ('mail', 'smtp_port', '587', 'integer'),
 ('mail', 'smtp_user', '', 'string'),
