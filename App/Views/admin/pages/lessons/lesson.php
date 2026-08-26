@@ -100,7 +100,7 @@ use App\Core\Gate;
                                         <span class="text-muted">Görevlendirme kaydı yok</span>
                                     <?php endif; ?>
                                 </dd>
-                                <dt class="col-sm-2">Mevcudu</dt>
+                                <dt class="col-sm-2">Mevcut / Kontenjan</dt>
                                 <dd class="col-sm-4"><?= $lesson->size ?></dd>
 
                                 <?php

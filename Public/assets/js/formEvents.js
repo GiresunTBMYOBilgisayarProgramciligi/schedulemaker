@@ -130,6 +130,79 @@ document.addEventListener("DOMContentLoaded", function () {
     const departmentSelect = document.getElementById("department_id");
     const programSelect = document.getElementById("program_id");
     const chairpersonSelect = document.getElementById("chairperson_id");
+    const buildingSelect = document.getElementById("building_id");
+
+    if (unitSelect && buildingSelect) {
+        unitSelect.addEventListener("change", function () {
+            const unitId = this.value;
+
+            if (buildingSelect.tomselect) {
+                buildingSelect.tomselect.clear();
+                buildingSelect.tomselect.clearOptions();
+                buildingSelect.tomselect.addOption({value: "", text: "Bina Seçiniz"});
+                buildingSelect.tomselect.setValue("", true);
+                buildingSelect.tomselect.refreshOptions(false);
+            } else {
+                buildingSelect.innerHTML = "<option value=''>Bina Seçiniz</option>";
+            }
+
+            if (!unitId || unitId === "0" || unitId === "") return;
+
+            // AJAX isteği gönder
+            const actionParam = unitSelect.dataset.action ? `?action=${unitSelect.dataset.action}` : '';
+            fetch(`/ajax/getBuildingsList/${unitId}${actionParam}`, {
+                method: "POST",
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const bldgList = data['buildings'] || [];
+                if (buildingSelect.tomselect) {
+                    buildingSelect.tomselect.clearOptions();
+                    buildingSelect.tomselect.addOption({value: "", text: "Bina Seçiniz"});
+                    bldgList.forEach(bldg => {
+                        buildingSelect.tomselect.addOption({value: bldg.id, text: bldg.name});
+                    });
+
+                    if (bldgList.length === 1) {
+                        buildingSelect.tomselect.setValue(bldgList[0].id, true);
+                    } else {
+                        buildingSelect.tomselect.setValue("", true);
+                    }
+                    buildingSelect.tomselect.refreshOptions(false);
+                } else {
+                    buildingSelect.innerHTML = "<option value=''>Bina Seçiniz</option>";
+                    bldgList.forEach(bldg => {
+                        const option = document.createElement("option");
+                        option.value = bldg.id;
+                        option.textContent = bldg.name;
+                        if (bldgList.length === 1) {
+                            option.selected = true;
+                        }
+                        buildingSelect.appendChild(option);
+                    });
+                }
+
+                const selectedBuildingId = buildingSelect.getAttribute('data-selected');
+                if (selectedBuildingId && selectedBuildingId !== "0" && selectedBuildingId !== "") {
+                    if (buildingSelect.tomselect) {
+                        buildingSelect.tomselect.setValue(selectedBuildingId, true);
+                    } else {
+                        buildingSelect.value = selectedBuildingId;
+                    }
+                    buildingSelect.removeAttribute('data-selected');
+                }
+
+                buildingSelect.dispatchEvent(new Event("change"));
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Binaları alırken hata oluştu.", "danger");
+                console.error(error);
+            });
+        });
+    }
 
     if (unitSelect && chairpersonSelect) {
         unitSelect.addEventListener("change", function () {
@@ -699,11 +772,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Eğer sayfa yüklendiğinde birim seçili gelmişse ve bölüm seçili değilse (Yönlendirme ile gelmişse)
+    // Eğer sayfa yüklendiğinde birim seçili gelmişse ve bölüm, hoca veya bina seçili değilse / data-selected varsa
     if (unitSelect && unitSelect.value !== "0" && unitSelect.value !== "") {
         if (departmentSelect && (!departmentSelect.value || departmentSelect.value === "0")) {
             unitSelect.dispatchEvent(new Event("change"));
         } else if (chairpersonSelect && (!chairpersonSelect.value || chairpersonSelect.value === "0" || chairpersonSelect.value === "")) {
+            unitSelect.dispatchEvent(new Event("change"));
+        } else if (buildingSelect && (!buildingSelect.value || buildingSelect.value === "0" || buildingSelect.value === "" || buildingSelect.getAttribute('data-selected'))) {
             unitSelect.dispatchEvent(new Event("change"));
         }
     }

@@ -425,9 +425,10 @@ class AdminPageController extends Controller
         ];
         $view_data['lecturers'] = [];
         if ($program_id) {
-            $program = (new Program())->find($program_id);
+            $program = (new ProgramRepository())->findProgramWithDetails($program_id);
             if ($program) {
                 $view_data['department_id'] = $program->department_id;
+                $view_data['unit_id'] = $program->department->unit_id ?? null;
             }
         }
         return $view_data;

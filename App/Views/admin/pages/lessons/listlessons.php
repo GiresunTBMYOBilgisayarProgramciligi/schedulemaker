@@ -76,7 +76,7 @@ use App\Models\Lesson;
                                         <th scope="col">Kodu</th>
                                         <th scope="col" class="filterable">Adı</th>
                                         <th scope="col" class="filterable">Türü</th>
-                                        <th scope="col">Mevcudu</th>
+                                        <th scope="col">Mevcut / Kontenjan</th>
                                         <th scope="col">Saati</th>
                                         <th scope="col" class="filterable">Yarıyılı</th>
                                         <th scope="col" class="filterable">Hocası</th>

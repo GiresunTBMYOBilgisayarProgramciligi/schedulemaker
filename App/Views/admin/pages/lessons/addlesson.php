@@ -99,47 +99,18 @@ use function App\Helpers\getSettingValue;
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="mb-3">
-                                            <label class="form-label" for="building_id">Bina Seçimi</label>
-                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
-                                                <option value="">Bina seçiniz...</option>
-                                                <?php foreach ($buildings as $building): ?>
-                                                    <option value="<?= $building->id ?>"><?= htmlspecialchars($building->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3">
-                                            <label class="form-label" for="classroom_type">Sınıf Türü</label>
-                                            <select class="form-select" id="classroom_type" name="classroom_type"
-                                                required>
-                                                <?php foreach ($classroomTypes as $id => $classroomType): ?>
-                                                    <option value="<?= $id ?>"><?= $classroomType ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-1">
-                                        <div class="mb-3">
-                                            <label class="form-label" for="size">Mevcut</label>
-                                            <input type="number" class="form-control" id="size" name="size"
-                                                placeholder="Mevcut" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="unit_id">Üst Birim</label>
                                             <select class="form-select tom-select" id="unit_id" name="unit_id" required>
                                                 <option value="">Birim Seçiniz</option>
                                                 <?php foreach ($units as $unit): ?>
-                                                    <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                    <option value="<?= $unit->id ?>" <?= ($unit_id ?? '') == $unit->id ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id"
@@ -148,13 +119,41 @@ use function App\Helpers\getSettingValue;
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id" required
                                                 data-selected="<?= $program_id ?? '' ?>">
                                                 <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="building_id">Bina Seçimi</label>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required>
+                                                <option value="">İlk olarak Birim Seçiniz</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="classroom_type">Derslik Türü</label>
+                                            <select class="form-select" id="classroom_type" name="classroom_type"
+                                                required>
+                                                <?php foreach ($classroomTypes as $id => $classroomType): ?>
+                                                    <option value="<?= $id ?>"><?= $classroomType ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="size">Mevcut / Kontenjan</label>
+                                            <input type="number" class="form-control" id="size" name="size"
+                                                placeholder="Mevcut / Kontenjan" required>
                                         </div>
                                     </div>
                                 </div>
