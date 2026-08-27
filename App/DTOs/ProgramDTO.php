@@ -2,17 +2,16 @@
 
 namespace App\DTOs;
 
-class ProgramDTO
+/**
+ * Program verisi için kesin tipli DTO.
+ */
+readonly class ProgramDTO
 {
-    public ?string $name;
-    public ?int $department_id;
-    public ?bool $active;
-
-    public function __construct(?string $name, ?int $department_id, ?bool $active)
-    {
-        $this->name = $name;
-        $this->department_id = $department_id;
-        $this->active = $active;
+    public function __construct(
+        public ?string $name = null,
+        public ?int $department_id = null,
+        public ?bool $active = null
+    ) {
     }
 
     public static function fromArray(array $data): self
@@ -23,23 +22,22 @@ class ProgramDTO
                 $active = true;
             }
         } else {
-            // Checkbox işaretli değilken form active anahtarını göndermez, bu durumda false olmalı
             $active = false;
         }
 
         return new self(
-            $data['name'] ?? null,
-            isset($data['department_id']) && $data['department_id'] !== '' ? (int)$data['department_id'] : null,
-            $active
+            name: $data['name'] ?? null,
+            department_id: isset($data['department_id']) && $data['department_id'] !== '' ? (int)$data['department_id'] : null,
+            active: $active
         );
     }
 
     public function toArray(): array
     {
         return [
-            'name' => $this->name,
+            'name'          => $this->name,
             'department_id' => $this->department_id,
-            'active' => $this->active
+            'active'        => $this->active,
         ];
     }
 }

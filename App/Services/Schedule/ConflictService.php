@@ -5,6 +5,7 @@ namespace App\Services\Schedule;
 use App\Services\BaseService;
 use App\Models\Lesson;
 use App\Models\Schedule;
+use App\DTOs\ConflictFilterDTO;
 use Exception;
 
 /**
@@ -19,14 +20,19 @@ class ConflictService extends BaseService
     /**
      * Programa eklenmek istenen item(lar) için çakışma kontrolü yapar.
      *
-     * @param array $filters ['items' => JSON string, ...]
+     * @param ConflictFilterDTO|array $filters
      * @return bool Çakışma yoksa true döner; varsa Exception fırlatır
      * @throws Exception
      */
-    public function checkScheduleCrash(array $filters = []): bool
+    public function checkScheduleCrash(ConflictFilterDTO|array $filters = []): bool
     {
-        $items = json_decode($filters['items'] ?? '[]', true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
+        $dto = $filters instanceof ConflictFilterDTO ? $filters : ConflictFilterDTO::fromArray($filters);
+
+        $items = is_string($dto->items) 
+            ? json_decode($dto->items, true) 
+            : (is_array($dto->items) ? $dto->items : []);
+
+        if (is_string($dto->items) && json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception("Geçersiz JSON verisi");
         }
 
@@ -90,139 +96,76 @@ class ConflictService extends BaseService
             $lesson = null;
             $owners = [
                 [
-                    'type' => $targetSchedule->owner_type,
-                    'id' => $targetSchedule->owner_id,
+                    'type'           => $targetSchedule->owner_type,
+                    'id'             => $targetSchedule->owner_id,
                     'lesson_context' => null
                 ]
             ];
         }
 
         $conflictResolver = new ConflictResolver();
-        $conflictErrors = $conflictResolver->checkConflicts($itemData, $owners, $targetSchedule, $lesson);
+        $conflicts = $conflictResolver->checkConflicts(
+            $itemData,
+            $owners,
+            $targetSchedule,
+            $lesson
+        );
 
-        $errors = array_merge($errors, $conflictErrors);
+        if (!empty($conflicts)) {
+            $resolved = $conflictResolver->resolveConflict($conflicts, $status, $targetSchedule);
+            if ($resolved['action'] === 'error') {
+                $errors[] = $resolved['message'];
+            }
+        }
     }
 
     /**
-     * Item için owner listesini belirler.
+     * Item için çakışma kontrolü yapılacak tüm kaynakları (hoca, derslik, program, çocuk dersler) belirler.
      *
-     * - Eğer item'ın detail.assignments değeri varsa → sınav item'ı (gözetmen+derslik owner'ları)
-     * - Yoksa → normal ders item'ı (hoca+derslik+program+ders owner'ları)
-     *
-     * @param array               $itemData    Item verisi
-     * @param Lesson              $lesson      İlgili ders
-     * @param int|string|null     $lecturerId  Hoca ID (ders için)
-     * @param int|string|null     $classroomId Derslik ID (ders için)
-     * @return array Owner listesi [['type' => 'user|classroom|program|lesson', 'id' => int], ...]
+     * @param array $itemData
+     * @param Lesson $lesson
+     * @param int|null $lecturerId
+     * @param int|null $classroomId
+     * @return array
      */
-    private function determineOwners(
-        array $itemData,
-        Lesson $lesson,
-        int|string|null $lecturerId = null,
-        int|string|null $classroomId = null
-    ): array {
-        $lecturerId = ($lecturerId !== null && $lecturerId !== '') ? (int)$lecturerId : null;
-        $classroomId = ($classroomId !== null && $classroomId !== '') ? (int)$classroomId : null;
-
+    private function determineOwners(array $itemData, Lesson $lesson, ?int $lecturerId, ?int $classroomId): array
+    {
         $owners = [];
-        $examAssignments = $itemData['detail']['assignments'] ?? null;
 
-        if ($examAssignments) {
-            // Sınav → program + ders + her atama için gözetmen ve derslik
+        // Hoca
+        if ($lecturerId) {
             $owners[] = [
-                'type' => 'program',
-                'id' => $lesson->program_id,
-                'semester_no' => $lesson->semester_no,
+                'type'           => 'user',
+                'id'             => $lecturerId,
                 'lesson_context' => $lesson
-            ];
-            $owners[] = [
-                'type' => 'lesson',
-                'id' => $lesson->id,
-                'lesson_context' => $lesson
-            ];
-
-            foreach ($examAssignments as $assignment) {
-                if (!empty($assignment['classroom_id'])) {
-                    $owners[] = [
-                        'type' => 'classroom',
-                        'id' => (int)$assignment['classroom_id'],
-                        'lesson_context' => $lesson
-                    ];
-                }
-                if (!empty($assignment['observer_id'])) {
-                    $owners[] = [
-                        'type' => 'user',
-                        'id' => (int)$assignment['observer_id'],
-                        'lesson_context' => $lesson
-                    ];
-                }
-            }
-
-            // Sınav programında aynı koda sahip diğer grupları da dahil et (Kullanıcı Talebi: Tek ders olarak işleme girme)
-            if ($lesson->group_no > 0) {
-                $siblings = (new Lesson())->get()->where([
-                    'code' => $lesson->code,
-                    'program_id' => $lesson->program_id,
-                    'semester_no' => $lesson->semester_no,
-                    'group_no' => ['>' => 0],
-                    'id' => ['!=' => $lesson->id]
-                ])->all();
-
-
-                foreach ($siblings as $sibling) {
-                    $owners[] = [
-                        'type' => 'program',
-                        'id' => $sibling->program_id,
-                        'semester_no' => $sibling->semester_no,
-                        'lesson_context' => $sibling
-                    ];
-                    $owners[] = [
-                        'type' => 'lesson',
-                        'id' => $sibling->id,
-                        'lesson_context' => $sibling
-                    ];
-                }
-            }
-        } else {
-            // Normal ders → hoca + derslik + program + ders
-            $owners = [
-                [
-                    'type' => 'user',
-                    'id' => $lecturerId,
-                    'lesson_context' => $lesson
-                ],
-                [
-                    'type' => 'classroom',
-                    'id' => ($lesson->classroom_type == 3) ? null : $classroomId,
-                    'lesson_context' => $lesson
-                ],
-                [
-                    'type' => 'program',
-                    'id' => $lesson->program_id,
-                    'semester_no' => $lesson->semester_no,
-                    'lesson_context' => $lesson
-                ],
-                [
-                    'type' => 'lesson',
-                    'id' => $lesson->id,
-                    'lesson_context' => $lesson
-                ],
             ];
         }
 
-        // Child lesson'lar için de owner ekle
+        // Derslik
+        if ($classroomId) {
+            $owners[] = [
+                'type'           => 'classroom',
+                'id'             => $classroomId,
+                'lesson_context' => $lesson
+            ];
+        }
+
+        // Program
+        if ($lesson->program_id) {
+            $owners[] = [
+                'type'           => 'program',
+                'id'             => $lesson->program_id,
+                'lesson_context' => $lesson
+            ];
+        }
+
+        // Çocuk dersler
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
-                $owners[] = [
-                    'type' => 'lesson',
-                    'id' => $childLesson->id,
-                    'lesson_context' => $childLesson
-                ];
                 if ($childLesson->program_id) {
                     $owners[] = [
-                        'type' => 'program',
-                        'id' => $childLesson->program_id,
-                        'semester_no' => $childLesson->semester_no,
+                        'type'           => 'program',
+                        'id'             => $childLesson->program_id,
                         'lesson_context' => $childLesson
                     ];
                 }

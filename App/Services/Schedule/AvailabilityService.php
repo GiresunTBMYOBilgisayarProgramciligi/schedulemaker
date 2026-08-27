@@ -14,15 +14,12 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
 use App\Models\LessonAssignment;
-
-
+use App\DTOs\AvailabilityFilterDTO;
 use Exception;
 use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
-
 use App\Repositories\ScheduleRepository;
 use App\Repositories\LessonAssignmentRepository;
-
 
 /**
  * Ders ve Sınav programlarında müsait derslik ve gözetmen sorgulama servisi.
@@ -48,20 +45,29 @@ class AvailabilityService extends BaseService
      * Ders programı → dersin classroom_type değerine uygun sınıflar.
      * Sınav programı → UZEM (type=3) hariç tüm sınıflar.
      *
-     * @param array $filters Validated filtreler:
-     *   schedule_id, lesson_id, day_index, week_index, items (JSON)
+     * @param AvailabilityFilterDTO|array $filters Validated filtreler
      * @return Classroom[] Müsait derslik nesneleri
      * @throws Exception
      */
-    public function availableClassrooms(array $filters = []): array
+    public function availableClassrooms(AvailabilityFilterDTO|array $filters = []): array
     {
+        $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
+
+        if (!$dto->schedule_id) {
+            throw new Exception("Uygun derslikleri belirlemek için Program ID belirtilmelidir");
+        }
+
         $schedule = (new Schedule())
-            ->where(["id" => $filters['schedule_id']])
+            ->where(["id" => $dto->schedule_id])
             ->with("items")
             ->first()
             ?: throw new Exception("Uygun derslikleri belirlemek için Program bulunamadı");
 
-        $lesson = (new Lesson())->find($filters['lesson_id'])
+        if (!$dto->lesson_id) {
+            throw new Exception("Derslik türünü belirlemek için ders ID belirtilmelidir");
+        }
+
+        $lesson = (new Lesson())->find($dto->lesson_id)
             ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
 
         $whereConditions = [];
@@ -80,7 +86,7 @@ class AvailabilityService extends BaseService
             $classrooms = (new Classroom())->get()->where($whereConditions)->all();
         }
 
-        $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];
+        $itemsToCheck = is_string($dto->items) ? (json_decode($dto->items, true) ?: []) : (is_array($dto->items) ? $dto->items : []);
         $availableClassrooms = [];
 
         foreach ($classrooms as $classroom) {
@@ -95,8 +101,8 @@ class AvailabilityService extends BaseService
 
             $existingItems = $classroomSchedule ? (new ScheduleItem())->get()->where([
                 'schedule_id' => $classroomSchedule->id,
-                'day_index' => $filters['day_index'],
-                'week_index' => $filters['week_index'],
+                'day_index'   => $dto->day_index,
+                'week_index'  => $dto->week_index ?? 0,
             ])->all() : [];
 
             $isAvailable = true;
@@ -142,22 +148,22 @@ class AvailabilityService extends BaseService
             // Sadece tercih modunda Preferred ve Unavailable kartlarını döndür
             return [
                 (object) [
-                    'id' => 'dummy-preferred',
-                    'name' => '',
-                    'code' => 'PREF',
-                    'status' => ScheduleItemStatus::PREFERRED->value,
-                    'hours' => 1,
+                    'id'          => 'dummy-preferred',
+                    'name'        => '',
+                    'code'        => 'PREF',
+                    'status'      => ScheduleItemStatus::PREFERRED->value,
+                    'hours'       => 1,
                     'lecturer_id' => $schedule->owner_id, // Context hoca ise hoca ID'si
-                    'is_dummy' => true
+                    'is_dummy'    => true
                 ],
                 (object) [
-                    'id' => 'dummy-unavailable',
-                    'name' => '',
-                    'code' => 'UNAV',
-                    'status' => ScheduleItemStatus::UNAVAILABLE->value,
-                    'hours' => 1,
+                    'id'          => 'dummy-unavailable',
+                    'name'        => '',
+                    'code'        => 'UNAV',
+                    'status'      => ScheduleItemStatus::UNAVAILABLE->value,
+                    'hours'       => 1,
                     'lecturer_id' => $schedule->owner_id,
-                    'is_dummy' => true
+                    'is_dummy'    => true
                 ]
             ];
         }
@@ -166,13 +172,13 @@ class AvailabilityService extends BaseService
 
         // Aktif dönem ve akademik yılda ataması bulunan derslerin ID'leri
         $periodAssignments = (new LessonAssignment())->get()->where([
-            'semester' => $schedule->semester,
+            'semester'      => $schedule->semester,
             'academic_year' => $schedule->academic_year
         ])->all();
         $periodLessonIds = array_unique(array_filter(array_column($periodAssignments, 'lesson_id')));
 
         $lessonFilters = [
-            'id' => ['in' => !empty($periodLessonIds) ? $periodLessonIds : [-1]],
+            'id'    => ['in' => !empty($periodLessonIds) ? $periodLessonIds : [-1]],
             '!type' => 4 // staj dersleri dahil değil
         ];
 
@@ -191,8 +197,7 @@ class AvailabilityService extends BaseService
             $lessonFilters = array_merge($lessonFilters, [
                 'id' => ['in' => !empty($assignedLessonIds) ? $assignedLessonIds : [-1]],
             ]);
-            //todo schedule type için enum kullanılmalı
-            if($schedule->type == 'lesson') {
+            if ($schedule->type === 'lesson') {
                 unset($lessonFilters["!type"]); // staj derslerini dahil et
             }
         } elseif ($schedule->owner_type == OwnerType::LESSON->value) {
@@ -206,15 +211,15 @@ class AvailabilityService extends BaseService
             $lessonFilters['semester_no'] = $schedule->semester_no;
         }
         $relationOptions = [
-            'with' => ['program'],
-            'semester' => $schedule->semester,
+            'with'          => ['program'],
+            'semester'      => $schedule->semester,
             'academic_year' => $schedule->academic_year
         ];
         $lessonsList = (new LessonRepository())->getAuthorized('update', $lessonFilters, [
-            'lecturer' => $relationOptions, 
+            'lecturer'         => $relationOptions, 
             'program', 
-            'parentLesson' => $relationOptions, 
-            'childLessons' => $relationOptions, 
+            'parentLesson'     => $relationOptions, 
+            'childLessons'     => $relationOptions, 
             'examParentLesson' => $relationOptions, 
             'examChildLessons' => $relationOptions
         ]);
@@ -228,7 +233,6 @@ class AvailabilityService extends BaseService
             $isComplete = $lesson->IsScheduleComplete($schedule->type);
             if (!$isComplete) {
                 // Ders Programı tamamlanmamışsa
-
                 if ($schedule->type == 'lesson') {
                     $lesson->hours -= $lesson->placed_hours; // kalan saat dersin saati olarak güncelleniyor
                 } elseif (ExamType::isExamType($schedule->type)) {
@@ -240,14 +244,6 @@ class AvailabilityService extends BaseService
         }
         // uygun dersler belirlendikten sonra sınav programında gruplu dersleri birleştirmek için yapılan işlem
         if (ExamType::isExamType($schedule->type)) {
-            // NOT: exam_parent_lesson_id olan dersler listeden çıkarılmaz.
-            // Ders programındaki parent_lesson_id davranışı gibi, gri renk ve
-            // popover ile gösterilirler (ScheduleViewHelper + _availableLessonCard.php).
-
-            // NOT: Exam child'ların mevcutları IsScheduleComplete tarafından
-            // getExamLinkedLessonIds() üzerinden targetSize'a zaten dahil edilmektedir.
-            // Burada tekrar eklenmez — aksi halde çift sayım olur.
-
             $available_lessons = array_values($available_lessons);
             $available_lessons = $this->groupExamLessons($available_lessons, $schedule->type);
         }
@@ -257,8 +253,6 @@ class AvailabilityService extends BaseService
 
     /**
      * Sınav programı için gruplu dersleri (aynı kod, farklı grup) tek bir ders olarak birleştirir.
-     * Çocuk dersleri (parent-child/birleştirilmiş) olan ana derslerin mevcutları,
-     * çocuk derslerin kalan mevcutlarıyla toplanarak doğru toplam üzerinden gözetmen ataması sağlanır.
      *
      * @param array $lessons
      * @param string $scheduleType Sınav tipi (midterm-exam, final-exam, makeup-exam)
@@ -289,12 +283,10 @@ class AvailabilityService extends BaseService
             $groupLetters = [];
 
             foreach ($groupLessons as $l) {
-                // Grup numarasını harfe çevir: chr(64+1)='A', chr(64+2)='B', ..., chr(64+26)='Z'
                 $groupLetters[] = chr(64 + $l->group_no);
             }
 
             sort($groupLetters);
-            // İsim güncelleme (Sadece gösterim amaçlı)
             $representative->name .= " (Grup " . implode(", ", $groupLetters) . ")";
 
             $result[] = $representative;
@@ -309,18 +301,19 @@ class AvailabilityService extends BaseService
      * Gözetmen havuzu: lecturer, department_head, manager, submanager
      * Belirtilen gün/hafta/zaman aralığında çakışan gözetmenler filtrelenir.
      *
-     * @param array $filters Validated filtreler:
-     *   type, semester, academic_year, day_index, week_index, items (JSON)
+     * @param AvailabilityFilterDTO|array $filters Validated filtreler
      * @return User[] Müsait gözetmenler
      * @throws Exception
      */
-    public function availableObservers(array $filters = []): array
+    public function availableObservers(AvailabilityFilterDTO|array $filters = []): array
     {
+        $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
+
         $observerFilters = [
             'role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]
         ];
         $observers = (new UserRepository())->findBy($observerFilters);
-        $itemsToCheck = json_decode($filters['items'] ?? '[]', true) ?: [];
+        $itemsToCheck = is_string($dto->items) ? (json_decode($dto->items, true) ?: []) : (is_array($dto->items) ? $dto->items : []);
 
         $availableObservers = [];
 
@@ -328,16 +321,16 @@ class AvailabilityService extends BaseService
             $userSchedule = $this->scheduleRepo->findByOwnerAndPeriod(
                 OwnerType::USER->value,
                 $observer->id,
-                $filters['academic_year'],
-                $filters['semester'],
-                $filters['type'],
+                $dto->academic_year,
+                $dto->semester,
+                $dto->type,
                 null
             );
 
             $existingItems = $userSchedule ? (new ScheduleItem())->get()->where([
                 'schedule_id' => $userSchedule->id,
-                'day_index' => $filters['day_index'],
-                'week_index' => $filters['week_index'],
+                'day_index'   => $dto->day_index,
+                'week_index'  => $dto->week_index ?? 0,
             ])->all() : [];
 
             $isAvailable = true;
@@ -372,33 +365,38 @@ class AvailabilityService extends BaseService
     /**
      * Hocanın tercih ettiği ve engellediği saat bilgilerini döner
      *
-     * @param array $filters Validated filtreler:
-     *   lesson_id, type, semester, academic_year, week_index
+     * @param AvailabilityFilterDTO|array $filters Validated filtreler
      * @return array [unavailableCells => ..., preferredCells => ...]
      * @throws Exception
      */
-    public function getLecturerAvailability(array $filters): array
+    public function getLecturerAvailability(AvailabilityFilterDTO|array $filters): array
     {
-        $lesson = (new Lesson())->where(['id' => $filters['lesson_id']])->with(['lecturer'])->first()
+        $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
+
+        if (!$dto->lesson_id) {
+            throw new Exception("Hoca müsaitliğini kontrol etmek için ders ID gereklidir");
+        }
+
+        $lesson = (new Lesson())->where(['id' => $dto->lesson_id])->with(['lecturer'])->first()
             ?: throw new Exception("Ders bulunamadı");
         $lecturer = $lesson->lecturer;
 
-        $slots = $this->timelineManager->getTimeSlots($filters['type']);
+        $slots = $this->timelineManager->getTimeSlots($dto->type);
         $unavailableCells = [];
         $preferredCells = [];
 
         $schedules = (new Schedule())->get()->where([
-            'owner_type' => OwnerType::USER->value,
-            'owner_id' => $lecturer->id,
-            'type' => $filters['type'],
-            'semester' => $filters['semester'],
-            'academic_year' => $filters['academic_year'],
+            'owner_type'    => OwnerType::USER->value,
+            'owner_id'      => $lecturer->id,
+            'type'          => $dto->type,
+            'semester'      => $dto->semester,
+            'academic_year' => $dto->academic_year,
         ])->with(['items'])->all();
 
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $schedule->id,
-                'week_index' => $filters['week_index']
+                'week_index'  => $dto->week_index ?? 0
             ])->all();
 
             foreach ($items as $item) {
@@ -416,26 +414,31 @@ class AvailabilityService extends BaseService
 
         return [
             "unavailableCells" => $unavailableCells,
-            "preferredCells" => $preferredCells
+            "preferredCells"   => $preferredCells
         ];
     }
 
     /**
      * Dersliklerin doluluk durumuna göre müsait olmayan hücreleri döner.
      *
-     * @param array $filters Validated filtreler:
-     *   lesson_id, type, semester, academic_year, week_index
+     * @param AvailabilityFilterDTO|array $filters Validated filtreler
      * @return array [unavailableCells => ...]
      * @throws Exception
      */
-    public function getClassroomAvailability(array $filters): array
+    public function getClassroomAvailability(AvailabilityFilterDTO|array $filters): array
     {
-        $lesson = (new Lesson())->find($filters['lesson_id']) ?: throw new Exception("Ders bulunamadı");
+        $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
+
+        if (!$dto->lesson_id) {
+            throw new Exception("Derslik müsaitliğini kontrol etmek için ders ID gereklidir");
+        }
+
+        $lesson = (new Lesson())->find($dto->lesson_id) ?: throw new Exception("Ders bulunamadı");
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
 
-        $slots = $this->timelineManager->getTimeSlots($filters['type']);
-        $type = ExamType::isExamType($filters['type']) ? 'exam' : 'lesson';
+        $slots = $this->timelineManager->getTimeSlots($dto->type);
+        $type = ExamType::isExamType($dto->type) ? 'exam' : 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
 
         $classroomOccupancy = [];
@@ -446,17 +449,17 @@ class AvailabilityService extends BaseService
         }
 
         $schedules = (new Schedule())->get()->where([
-            'owner_type' => OwnerType::CLASSROOM->value,
-            'owner_id' => ['in' => $classroomIds],
-            'type' => $filters['type'],
-            'semester' => $filters['semester'],
-            'academic_year' => $filters['academic_year'],
+            'owner_type'    => OwnerType::CLASSROOM->value,
+            'owner_id'      => ['in' => $classroomIds],
+            'type'          => $dto->type,
+            'semester'      => $dto->semester,
+            'academic_year' => $dto->academic_year,
         ])->all();
 
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $schedule->id,
-                'week_index' => $filters['week_index']
+                'week_index'  => $dto->week_index ?? 0
             ])->all();
 
             foreach ($items as $item) {
@@ -500,36 +503,38 @@ class AvailabilityService extends BaseService
     /**
      * Program bazlı çakışmaları kontrol eder.
      *
-     * @param array $filters Validated filtreler:
-     *   lesson_id, type, semester, academic_year, week_index
+     * @param AvailabilityFilterDTO|array $filters Validated filtreler
      * @return array [unavailableCells => ...]
      * @throws Exception
-     * todo array değil dto almalı diğer Availability metodlar da incelenmeli
      */
-    public function getProgramAvailability(array $filters): array
+    public function getProgramAvailability(AvailabilityFilterDTO|array $filters): array
     {
+        $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
+
+        if (!$dto->lesson_id) {
+            throw new Exception("Program müsaitliğini kontrol etmek için ders ID gereklidir");
+        }
+
         $lesson = (new Lesson())->where([
-            'id' => $filters['lesson_id'],
+            'id' => $dto->lesson_id,
         ])->with(['program', 'childLessons'])->first() ?: throw new Exception("Ders bulunamadı");
         $program = $lesson->program;
 
-        $slots = $this->timelineManager->getTimeSlots($filters['type']);
+        $slots = $this->timelineManager->getTimeSlots($dto->type);
         $unavailableCells = [];
 
         $schedules = [];
 
-        // owner_type 'program' ise mevcut programın kendi çakışmalarını zaten tabloda görüyoruz,
-        // sadece bağlı çocuk derslerin programlarını kontrol etmemiz yeterli.
-        $ownerType = $filters['owner_type'] ?? null;
+        $ownerType = $dto->owner_type;
 
         if ($ownerType !== OwnerType::PROGRAM->value) {
             $schedules = (new Schedule())->get()->where([
-                'owner_type' => OwnerType::PROGRAM->value,
-                'owner_id' => $program->id,
-                'type' => $filters['type'],
-                'semester' => $filters['semester'],
-                'academic_year' => $filters['academic_year'],
-                'semester_no' => $lesson->semester_no
+                'owner_type'    => OwnerType::PROGRAM->value,
+                'owner_id'      => $program->id,
+                'type'          => $dto->type,
+                'semester'      => $dto->semester,
+                'academic_year' => $dto->academic_year,
+                'semester_no'   => $lesson->semester_no
             ])->all();
         }
 
@@ -537,18 +542,16 @@ class AvailabilityService extends BaseService
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
                 if ($childLesson->program_id) {
-                    // program owner_type'ta kendi programımızı zaten hariç tuttuk,
-                    // çocuk ders kendi programımızla aynıysa onu da atla
                     if ($ownerType === OwnerType::PROGRAM->value && $childLesson->program_id == $program->id) {
                         continue;
                     }
                     $childSchedules = (new Schedule())->get()->where([
-                        'owner_type' => OwnerType::PROGRAM->value,
-                        'owner_id' => $childLesson->program_id,
-                        'type' => $filters['type'],
-                        'semester' => $filters['semester'],
-                        'academic_year' => $filters['academic_year'],
-                        'semester_no' => $childLesson->semester_no
+                        'owner_type'    => OwnerType::PROGRAM->value,
+                        'owner_id'      => $childLesson->program_id,
+                        'type'          => $dto->type,
+                        'semester'      => $dto->semester,
+                        'academic_year' => $dto->academic_year,
+                        'semester_no'   => $childLesson->semester_no
                     ])->all();
                     $schedules = array_merge($schedules, $childSchedules);
                 }
@@ -558,19 +561,16 @@ class AvailabilityService extends BaseService
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $schedule->id,
-                'week_index' => $filters['week_index']
+                'week_index'  => $dto->week_index ?? 0
             ])->all();
 
             foreach ($items as $item) {
-                $overlap = false;
                 foreach ($slots as $rowIndex => $slot) {
                     if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
                         if ($lesson->group_no > 0 && $item->status === ScheduleItemStatus::GROUP->value && !empty($item->data)) {
                             $sameGroupExists = false;
                             foreach ($item->data as $slotData) {
-                                // $slotData içerisinde ders bilgisi alınmalı. 
-                                // ScheduleItem modelindeki getSlotDatas() mantığına benzer bir kontrol
                                 if (isset($slotData['lesson_id'])) {
                                     $itemLesson = (new Lesson())->find($slotData['lesson_id']);
                                     if ($itemLesson && $itemLesson->group_no == $lesson->group_no) {
@@ -581,7 +581,7 @@ class AvailabilityService extends BaseService
                             }
                             
                             if (!$sameGroupExists) {
-                                continue; // Farklı gruplar çakışabilir, bu item'ı atla
+                                continue;
                             }
                         }
 

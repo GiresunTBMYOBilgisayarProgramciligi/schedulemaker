@@ -4,20 +4,36 @@ namespace App\DTOs;
 
 use function App\Helpers\getSettingValue;
 
-class CombineExamLessonDTO
+/**
+ * Sınav birleştirme verisi için kesin tipli DTO.
+ */
+readonly class CombineExamLessonDTO
 {
-    public int $parentId;
-    public int $childId;
-    public string $semester;
-    public string $academicYear;
+    public function __construct(
+        public int $parentId,
+        public int $childId,
+        public string $semester,
+        public string $academicYear
+    ) {
+    }
 
     public static function fromArray(array $data): self
     {
-        $dto = new self();
-        $dto->parentId = (int) ($data['parent_lesson_id'] ?? 0);
-        $dto->childId = (int) ($data['child_lesson_id'] ?? 0);
-        $dto->semester = $data['semester'] ?? getSettingValue('semester');
-        $dto->academicYear = $data['academic_year'] ?? getSettingValue('academic_year');
-        return $dto;
+        return new self(
+            parentId: (int) ($data['parent_lesson_id'] ?? 0),
+            childId: (int) ($data['child_lesson_id'] ?? 0),
+            semester: (string) ($data['semester'] ?? getSettingValue('semester')),
+            academicYear: (string) ($data['academic_year'] ?? getSettingValue('academic_year'))
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'parent_lesson_id' => $this->parentId,
+            'child_lesson_id'  => $this->childId,
+            'semester'         => $this->semester,
+            'academic_year'    => $this->academicYear,
+        ];
     }
 }

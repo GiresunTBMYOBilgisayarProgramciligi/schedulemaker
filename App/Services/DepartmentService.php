@@ -3,17 +3,21 @@
 namespace App\Services;
 
 use App\Models\Department;
-use App\Models\Program;
-use App\Models\Lesson;
 use App\DTOs\DepartmentDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
+use App\Models\Program;
+use App\Models\User;
 use App\Core\Database;
-use App\Core\EventDispatcher;
-use App\Events\ChairpersonChangedEvent;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
+/**
+ * Bölüm yönetimi iş mantığı servisi.
+ */
 class DepartmentService extends BaseService
 {
     /**
@@ -28,66 +32,51 @@ class DepartmentService extends BaseService
         $this->logger->debug('Yeni bölüm ekleniyor', ['name' => $dto->name ?? null]);
 
         try {
-            $departmentId = Database::transaction(function () use ($dto) {
+            return Database::transaction(function () use ($dto) {
                 $department = new Department();
                 $department->fill($dto->toArray());
                 $department->create();
+
+                if (!empty($dto->chairperson_id)) {
+                    $user = (new User())->find($dto->chairperson_id);
+                    if ($user) {
+                        $user->department_id = $department->id;
+                        (new UserService())->updateUser($user);
+                    }
+                }
 
                 $this->logger->info('Bölüm eklendi', ['id' => $department->id]);
                 return $department->id;
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                    throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-                } else {
-                    $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
-                    throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");
-                }
+                throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
-
-        // Bölüm başkanı rol senkronizasyonu (sadece bölüm başarıyla oluşturulduysa)
-        if ($dto->chairperson_id !== null) {
-            EventDispatcher::getInstance()->dispatch(
-                new ChairpersonChangedEvent(null, $dto->chairperson_id)
-            );
-        }
-
-        return $departmentId;
     }
 
     /**
      * Mevcut bölümü günceller.
-     * Eğer bölüm pasif duruma çekiliyorsa, altındaki programları da pasif yapar.
      *
-     * @param Department $department Güncellenmiş Department nesnesi (Veritabanındaki eski haliyle karşılaştırmak için id'si üzerinden eski kayıt okunur)
+     * @param Department $department Güncellenmiş Department nesnesi
      * @return int Bölümün ID'si
-     * @throws Exception
+     * @throws Exception Duplicate isim veya güncelleme hatası
      */
     public function updateDepartment(Department $department): int
     {
         $this->logger->debug('Bölüm güncelleniyor', ['id' => $department->id]);
 
-        // Başkan değişikliğini tespit etmek için eski kaydı transaction öncesinde oku
-        $oldDepartment = (new Department())->get()->where(['id' => $department->id])->first();
-        $oldChairpersonId = $oldDepartment?->chairperson_id;
-
         try {
-            $departmentId = Database::transaction(function () use ($department, $oldDepartment) {
-                $wasActive = $oldDepartment?->active ?? false;
-
+            return Database::transaction(function () use ($department) {
                 $department->update();
 
-                // Eğer güncelleme başarılıysa ve bölüm aktiften pasife çekildiyse
-                if ($wasActive && ($department->active === null || $department->active === false || $department->active === 0)) {
-                    $programs = (new Program())->get()->where(['department_id' => $department->id])->all();
-                    foreach ($programs as $program) {
-                        $program->active = 0; // Pasife al
-                        $program->update();
+                if (!empty($department->chairperson_id)) {
+                    $user = (new User())->find($department->chairperson_id);
+                    if ($user) {
+                        $user->department_id = $department->id;
+                        (new UserService())->updateUser($user);
                     }
-                    $this->logger->info('Bölüm pasife alındığı için alt programları da pasife çekildi', ['department_id' => $department->id, 'affected_programs' => count($programs)]);
                 }
 
                 $this->logger->info('Bölüm güncellendi', ['id' => $department->id]);
@@ -95,30 +84,14 @@ class DepartmentService extends BaseService
             });
         } catch (PDOException $e) {
             if ($e->getCode() == '23000') {
-                if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                    throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
-                } else {
-                    $this->logger->error('Veritabanı bütünlük hatası: ' . $e->getMessage());
-                    throw new Exception("Geçersiz veya eksik bir bilgi girdiniz. Lütfen seçimlerinizi kontrol edin.");
-                }
+                throw new Exception("Bu birimde bu isimde bir bölüm zaten kayıtlı. Lütfen farklı bir isim giriniz.");
             }
             throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
         }
-
-        // Başkan değiştiyse rol senkronizasyonu tetikle (sadece güncelleme başarılıysa)
-        if ($oldChairpersonId !== $department->chairperson_id) {
-            EventDispatcher::getInstance()->dispatch(
-                new ChairpersonChangedEvent($oldChairpersonId, $department->chairperson_id)
-            );
-        }
-
-        return $departmentId;
     }
 
     /**
      * Bölümü sistemden siler.
-     * Silme işleminden önce, bölüme bağlı programları ve program bağımsız dersleri temizler.
-     * Bu orkestrasyon sayesinde Model, İş Mantığından (Business Logic) bağımsız hale getirilmiştir.
      *
      * @param Department $department Silinecek bölüm nesnesi
      * @throws Exception
@@ -127,24 +100,23 @@ class DepartmentService extends BaseService
     {
         $this->logger->debug('Bölüm siliniyor', ['id' => $department->id]);
 
-        // Silme öncesi başkan ID'sini sakla (silme sonrası erişilemez olacak)
-        $oldChairpersonId = $department->chairperson_id;
+        $programs = (new Program())->get()->where(['department_id' => $department->id])->all();
+        if (!empty($programs)) {
+            $programNames = array_map(fn($p) => $p->name, $programs);
+            throw new Exception(
+                "Bu bölüme bağlı programlar (" . implode(', ', $programNames) .
+                ") bulunmaktadır. Bölümü silmek için önce bu programları silmeli veya başka bir bölüme taşımalısınız."
+            );
+        }
 
         try {
             Database::transaction(function () use ($department) {
-                // 1. Önce bağlı programları sil (Bu işlem programların beforeDelete hooklarını da tetikler)
-                $programs = (new Program())->get()->where(['department_id' => $department->id])->all();
-                foreach ($programs as $program) {
-                    $program->delete();
+                $users = (new User())->get()->where(['department_id' => $department->id])->all();
+                foreach ($users as $user) {
+                    $user->department_id = null;
+                    $user->update();
                 }
 
-                // 2. Program bağımsız dersleri sil (Eğer herhangi bir programa bağlı olmayan dersler varsa)
-                $lessons = (new Lesson())->get()->where(['department_id' => $department->id, 'program_id' => null])->all();
-                foreach ($lessons as $lesson) {
-                    $lesson->delete();
-                }
-
-                // Sonra bölümü veritabanından sil
                 $department->delete();
             });
 
@@ -156,29 +128,23 @@ class DepartmentService extends BaseService
             ]);
             throw new Exception("Bölüm silinirken bir hata oluştu: " . $e->getMessage());
         }
-
-        // Eski başkanın rolünü düşür (sadece silme başarılıysa)
-        if ($oldChairpersonId !== null) {
-            EventDispatcher::getInstance()->dispatch(
-                new ChairpersonChangedEvent($oldChairpersonId, null)
-            );
-        }
     }
 
     /**
      * Birden fazla bölümü toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu bölüm silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
+        $this->logger->debug('Toplu bölüm silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $department = (new Department())->find($id);
                 if (!$department) {
@@ -200,27 +166,31 @@ class DepartmentService extends BaseService
 
         $this->logger->info('Toplu bölüm silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla bölümü toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu bölüm güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO
+            ? $dtoOrIds
+            : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu bölüm güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $department = clone (new Department())->find($id);
                 if (!$department) {
@@ -233,12 +203,8 @@ class DepartmentService extends BaseService
                     continue;
                 }
 
-                foreach ($fields as $fieldName => $fieldValue) {
-                    if ($fieldName === 'active') {
-                        $department->active = filter_var($fieldValue, FILTER_VALIDATE_BOOLEAN);
-                    } else {
-                        $department->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
-                    }
+                foreach ($dto->fields as $fieldName => $fieldValue) {
+                    $department->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
                 }
 
                 $this->updateDepartment($department);
@@ -250,9 +216,9 @@ class DepartmentService extends BaseService
 
         $this->logger->info('Toplu bölüm güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }

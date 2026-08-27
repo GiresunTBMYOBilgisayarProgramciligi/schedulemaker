@@ -4,11 +4,17 @@ namespace App\DTOs;
 
 use App\Enums\UnitType;
 
-class UnitDTO
+/**
+ * Birim verisi için kesin tipli DTO.
+ */
+readonly class UnitDTO
 {
-    public ?string $name = null;
-    public ?UnitType $type = null;
-    public ?bool $active = null;
+    public function __construct(
+        public ?string $name = null,
+        public ?UnitType $type = null,
+        public ?bool $active = null
+    ) {
+    }
 
     /**
      * @param array $data
@@ -16,20 +22,23 @@ class UnitDTO
      */
     public static function fromArray(array $data): self
     {
-        $dto = new self();
-        $dto->name   = $data['name'] ?? null;
-
+        $type = null;
         if (isset($data['type'])) {
-            $dto->type = UnitType::tryFrom($data['type']);
+            $type = $data['type'] instanceof UnitType
+                ? $data['type']
+                : UnitType::tryFrom($data['type']);
         }
 
+        $active = false;
         if (isset($data['active'])) {
-            $dto->active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);
-        } else {
-            $dto->active = false;
+            $active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);
         }
 
-        return $dto;
+        return new self(
+            name: $data['name'] ?? null,
+            type: $type,
+            active: $active
+        );
     }
 
     /**

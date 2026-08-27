@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\DTOs\BuildingDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Enums\PermissionType;
@@ -102,17 +105,18 @@ class BuildingService extends BaseService
     /**
      * Birden fazla binayı toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu bina silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', $dtoOrIds));
+        $this->logger->debug('Toplu bina silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $building = (new Building())->find($id);
                 if (!$building) {
@@ -134,27 +138,31 @@ class BuildingService extends BaseService
 
         $this->logger->info('Toplu bina silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla binayı toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu bina güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO 
+            ? $dtoOrIds 
+            : new BulkUpdateDTO(ids: array_map('intval', $dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu bina güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $building = clone (new Building())->find($id);
                 if (!$building) {
@@ -167,7 +175,7 @@ class BuildingService extends BaseService
                     continue;
                 }
 
-                foreach ($fields as $fieldName => $fieldValue) {
+                foreach ($dto->fields as $fieldName => $fieldValue) {
                     $building->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
                 }
 
@@ -180,9 +188,9 @@ class BuildingService extends BaseService
 
         $this->logger->info('Toplu bina güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }

@@ -9,17 +9,11 @@ use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
 use App\Controllers\Auth\PasswordResetController;
+use App\Validators\Auth\LoginValidator;
 
 /**
  * AuthRouter Sınıfı
  * Kullanıcı giriş, kayıt ve çıkış işlemlerini yönetir.
- * 
- * Not: Projenin genelinde (örneğin AdminRouter ve AjaxRouter) "Single Responsibility Principle" 
- * (Tek Sorumluluk Prensibi) gereği business logic (iş kuralları) Controller'lara taşınmış olsa da, 
- * bu router içerisindeki işlemlerin az olması ve sadece kimlik doğrulama ile ilgili kısa görevler 
- * içermesi sebebiyle buradaki kodlar (şimdilik) refactor edilmeden bırakılmıştır. 
- * İlerleyen aşamalarda bir AuthController oluşturularak LogoutAction ve ajaxloginAction içindeki 
- * business logic oraya taşınabilir.
  */
 class AuthRouter extends Router
 {
@@ -62,8 +56,8 @@ class AuthRouter extends Router
         // Çerezleri sil (remember me varsa)
         if (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
             setcookie($_ENV["COOKIE_KEY"], "", [
-                'expires' => time() - 3600,
-                'path' => '/',
+                'expires'  => time() - 3600,
+                'path'     => '/',
                 'httponly' => true,
                 'samesite' => 'Strict',
             ]);
@@ -80,13 +74,9 @@ class AuthRouter extends Router
                 isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
                 strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
             ) {
-                $loginData = $_POST;
+                $dto = (new LoginValidator())->getDTO($_POST);
                 $userService = new UserService();
-                $userService->login([
-                    'mail' => $loginData['mail'],
-                    'password' => $loginData['password'],
-                    "remember_me" => isset($loginData['remember_me'])
-                ]);
+                $userService->login($dto);
 
                 $redirect = "/admin";
                 if (isset($_SESSION['redirect_url'])) {
@@ -95,9 +85,9 @@ class AuthRouter extends Router
                 }
 
                 $response = array(
-                    "msg" => "Kullanıcı başarıyla Giriş yaptı. Yönlendiriliyor...",
+                    "msg"      => "Kullanıcı başarıyla Giriş yaptı. Yönlendiriliyor...",
                     "redirect" => $redirect,
-                    "status" => "success"
+                    "status"   => "success"
                 );
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode($response);
@@ -105,8 +95,8 @@ class AuthRouter extends Router
 
         } catch (Exception $e) {
             $response = [
-                "msg" => $e->getMessage(),
-                "trace" => $e->getTraceAsString(),
+                "msg"    => $e->getMessage(),
+                "trace"  => $e->getTraceAsString(),
                 "status" => "error"
             ];
             header('Content-Type: application/json; charset=utf-8');
@@ -126,13 +116,10 @@ class AuthRouter extends Router
     {
         GuestMiddleware::handle();
         $this->view_data["page_title"] = "Şifre Sıfırlama";
-        // Token ve email kontrolü view içinde veya controller'da yapılabilir.
-        // Form'a datayı taşıyoruz.
         $this->view_data["token"] = $_GET['token'] ?? '';
         $this->view_data["email"] = $_GET['email'] ?? '';
         
         $this->assetManager->loadPageAssets('loginpage');
         $this->callView("auth/passwords/reset");
     }
-
 }

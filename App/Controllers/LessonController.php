@@ -99,9 +99,9 @@ class LessonController extends Controller
                 && $currentUser
                 && $lessonFromDb->lecturer_id == $currentUser->id;
 
-            (new LessonValidator($isLecturerOwnLesson))->getDTO($requestData);
+            $dto = (new LessonValidator($isLecturerOwnLesson))->getDTO($requestData);
 
-            (new LessonService())->updateLessonData($lessonFromDb->id, $requestData, $isLecturerOwnLesson);
+            (new LessonService())->updateLessonData($lessonFromDb->id, $dto, $isLecturerOwnLesson);
 
             return [
                 "status" => "success",

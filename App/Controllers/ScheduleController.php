@@ -522,7 +522,7 @@ class ScheduleController extends Controller
             Gate::authorizeRole("department_head", false, "Uygun derslik listesini almak için yetkiniz yok");
         }
         $service = new AvailabilityService();
-        $classrooms = $service->availableClassrooms($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        $classrooms = $service->availableClassrooms($dto);
         return [
             'status' => 'success',
             'classrooms' => $classrooms
@@ -547,7 +547,7 @@ class ScheduleController extends Controller
             Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
         }
         $service = new AvailabilityService();
-        $observers = $service->availableObservers($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        $observers = $service->availableObservers($dto);
         return [
             'status' => 'success',
             'observers' => $observers
@@ -563,7 +563,7 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleConflictFilterValidator())->getDTO($requestData, "checkScheduleCrash");
         $service = new ConflictService();
-        $service->checkScheduleCrash($dto->toArray()); // Servis güncellendiğinde toArray kalkacak
+        $service->checkScheduleCrash($dto);
 
         return ['status' => 'success'];
     }
@@ -605,7 +605,7 @@ class ScheduleController extends Controller
     public function checkLecturerSchedule(array $requestData): array
     {
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkLecturerScheduleAction");
-        $availability = (new AvailabilityService())->getLecturerAvailability($dto->toArray());
+        $availability = (new AvailabilityService())->getLecturerAvailability($dto);
 
         return [
             "status" => "success",
@@ -623,7 +623,7 @@ class ScheduleController extends Controller
     public function checkClassroomSchedule(array $requestData): array
     {
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkClassroomScheduleAction");
-        $availability = (new AvailabilityService())->getClassroomAvailability($dto->toArray());
+        $availability = (new AvailabilityService())->getClassroomAvailability($dto);
 
         return [
             "status" => "success",
@@ -640,7 +640,7 @@ class ScheduleController extends Controller
     public function checkProgramSchedule(array $requestData): array
     {
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "checkProgramScheduleAction");
-        $availability = (new AvailabilityService())->getProgramAvailability($dto->toArray());
+        $availability = (new AvailabilityService())->getProgramAvailability($dto);
 
         return [
             "status" => "success",
@@ -665,8 +665,8 @@ class ScheduleController extends Controller
             'show_observer' => $dto->show_observer ?? true,
         ];
 
-        $exporter = ExporterFactory::create($dto->toArray(), 'excel');
-        $exporter->export($dto->toArray(), $showOptions);
+        $exporter = ExporterFactory::create($dto, 'excel');
+        $exporter->export($dto, $showOptions);
     }
 
     /**
@@ -682,8 +682,8 @@ class ScheduleController extends Controller
             'show_observer' => $dto->show_observer ?? true,
         ];
 
-        $exporter = ExporterFactory::create($dto->toArray(), 'ics');
-        $exporter->export($dto->toArray(), $showOptions);
+        $exporter = ExporterFactory::create($dto, 'ics');
+        $exporter->export($dto, $showOptions);
     }
 
     /**

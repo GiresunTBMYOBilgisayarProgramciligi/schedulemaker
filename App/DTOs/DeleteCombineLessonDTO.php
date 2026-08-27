@@ -4,20 +4,36 @@ namespace App\DTOs;
 
 use function App\Helpers\getSettingValue;
 
-class DeleteCombineLessonDTO
+/**
+ * Birleştirilmiş ders/sınav bağlantısını silme verisi için kesin tipli DTO.
+ */
+readonly class DeleteCombineLessonDTO
 {
-    public int $id;
-    public string $type; // 'lesson' or 'exam'
-    public string $semester;
-    public string $academicYear;
+    public function __construct(
+        public int $id,
+        public string $type = 'lesson', // 'lesson' or 'exam'
+        public string $semester = '',
+        public string $academicYear = ''
+    ) {
+    }
 
     public static function fromArray(array $data): self
     {
-        $dto = new self();
-        $dto->id = (int) ($data['id'] ?? 0);
-        $dto->type = $data['type'] ?? 'lesson';
-        $dto->semester = $data['semester'] ?? getSettingValue('semester');
-        $dto->academicYear = $data['academic_year'] ?? getSettingValue('academic_year');
-        return $dto;
+        return new self(
+            id: (int) ($data['id'] ?? 0),
+            type: (string) ($data['type'] ?? 'lesson'),
+            semester: (string) ($data['semester'] ?? getSettingValue('semester')),
+            academicYear: (string) ($data['academic_year'] ?? getSettingValue('academic_year'))
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id'            => $this->id,
+            'type'          => $this->type,
+            'semester'      => $this->semester,
+            'academic_year' => $this->academicYear,
+        ];
     }
 }

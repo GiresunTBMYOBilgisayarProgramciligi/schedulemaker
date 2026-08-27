@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\Classroom;
 use App\DTOs\ClassroomDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
 use App\Services\Schedule\ScheduleService;
 use App\Core\Database;
 use App\Core\Gate;
@@ -13,9 +16,6 @@ use PDOException;
 
 /**
  * Derslik yönetimi iş mantığı servisi.
- *
- * Sorumluluklar:
- * - Derslik CRUD işlemleri (saveNew, updateClassroom)
  */
 class ClassroomService extends BaseService
 {
@@ -74,8 +74,6 @@ class ClassroomService extends BaseService
 
     /**
      * Dersliği sistemden siler.
-     * Silme işleminden önce, dersliğin ilişkili ders programlarını temizler.
-     * Bu orkestrasyon sayesinde Model, Servis katmanından bağımsız hale getirilmiştir.
      *
      * @param Classroom $classroom Silinecek derslik nesnesi
      * @throws Exception
@@ -106,17 +104,18 @@ class ClassroomService extends BaseService
     /**
      * Birden fazla dersliği toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu derslik silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
+        $this->logger->debug('Toplu derslik silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $classroom = (new Classroom())->find($id);
                 if (!$classroom) {
@@ -138,27 +137,31 @@ class ClassroomService extends BaseService
 
         $this->logger->info('Toplu derslik silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla dersliği toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu derslik güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO
+            ? $dtoOrIds
+            : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu derslik güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $classroom = clone (new Classroom())->find($id);
                 if (!$classroom) {
@@ -171,7 +174,7 @@ class ClassroomService extends BaseService
                     continue;
                 }
 
-                foreach ($fields as $fieldName => $fieldValue) {
+                foreach ($dto->fields as $fieldName => $fieldValue) {
                     $classroom->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
                 }
 
@@ -184,9 +187,9 @@ class ClassroomService extends BaseService
 
         $this->logger->info('Toplu derslik güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }

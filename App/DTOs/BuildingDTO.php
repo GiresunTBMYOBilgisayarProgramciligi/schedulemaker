@@ -2,10 +2,16 @@
 
 namespace App\DTOs;
 
-class BuildingDTO
+/**
+ * Bina verisi için kesin tipli DTO.
+ */
+readonly class BuildingDTO
 {
-    public ?string $name = null;
-    public ?int $unit_id = null;
+    public function __construct(
+        public ?string $name = null,
+        public ?int $unit_id = null
+    ) {
+    }
 
     /**
      * @param array $data
@@ -13,10 +19,10 @@ class BuildingDTO
      */
     public static function fromArray(array $data): self
     {
-        $dto = new self();
-        $dto->name = $data['name'] ?? null;
-        $dto->unit_id = isset($data['unit_id']) && is_numeric($data['unit_id']) ? (int)$data['unit_id'] : null;
-        return $dto;
+        return new self(
+            name: $data['name'] ?? null,
+            unit_id: isset($data['unit_id']) && is_numeric($data['unit_id']) ? (int)$data['unit_id'] : null
+        );
     }
 
     /**

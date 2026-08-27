@@ -2,32 +2,26 @@
 
 namespace App\DTOs;
 
-class SettingDTO
+/**
+ * Sistem ayarı verisi için kesin tipli DTO.
+ */
+readonly class SettingDTO
 {
-    public ?string $group;
-    public ?string $key;
-    public ?string $value;
-    public ?string $type;
-
     public function __construct(
-        ?string $group,
-        ?string $key,
-        ?string $value,
-        ?string $type
+        public ?string $group = null,
+        public ?string $key = null,
+        public ?string $value = null,
+        public ?string $type = null
     ) {
-        $this->group = $group;
-        $this->key = $key;
-        $this->value = $value;
-        $this->type = $type;
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            $data['group'] ?? null,
-            $data['key'] ?? null,
-            $data['value'] ?? null,
-            $data['type'] ?? null
+            group: $data['group'] ?? null,
+            key: $data['key'] ?? null,
+            value: isset($data['value']) ? (string)$data['value'] : null,
+            type: $data['type'] ?? null
         );
     }
 
@@ -35,9 +29,9 @@ class SettingDTO
     {
         return [
             'group' => $this->group,
-            'key' => $this->key,
+            'key'   => $this->key,
             'value' => $this->value,
-            'type' => $this->type,
+            'type'  => $this->type,
         ];
     }
 }

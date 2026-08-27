@@ -2,12 +2,18 @@
 
 namespace App\DTOs;
 
-class DepartmentDTO
+/**
+ * Bölüm verisi için kesin tipli DTO.
+ */
+readonly class DepartmentDTO
 {
-    public ?string $name = null;
-    public ?int $chairperson_id = null;
-    public ?int $unit_id = null;
-    public ?bool $active = null;
+    public function __construct(
+        public ?string $name = null,
+        public ?int $chairperson_id = null,
+        public ?int $unit_id = null,
+        public ?bool $active = null
+    ) {
+    }
 
     /**
      * Dizi verisinden DTO nesnesi oluşturur.
@@ -16,18 +22,17 @@ class DepartmentDTO
      */
     public static function fromArray(array $data): self
     {
-        $dto = new self();
-        $dto->name           = $data['name'] ?? null;
-        $dto->chairperson_id = isset($data['chairperson_id']) && $data['chairperson_id'] !== '' && $data['chairperson_id'] !== '0' && $data['chairperson_id'] !== 0 ? (int)$data['chairperson_id'] : null;
-        $dto->unit_id        = isset($data['unit_id']) && $data['unit_id'] !== '' && $data['unit_id'] !== '0' && $data['unit_id'] !== 0 ? (int)$data['unit_id'] : null;
-
+        $active = false;
         if (isset($data['active'])) {
-            $dto->active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);
-        } else {
-            $dto->active = false;
+            $active = filter_var($data['active'], FILTER_VALIDATE_BOOLEAN);
         }
 
-        return $dto;
+        return new self(
+            name: $data['name'] ?? null,
+            chairperson_id: isset($data['chairperson_id']) && $data['chairperson_id'] !== '' && $data['chairperson_id'] !== '0' && $data['chairperson_id'] !== 0 ? (int)$data['chairperson_id'] : null,
+            unit_id: isset($data['unit_id']) && $data['unit_id'] !== '' && $data['unit_id'] !== '0' && $data['unit_id'] !== 0 ? (int)$data['unit_id'] : null,
+            active: $active
+        );
     }
 
     /**

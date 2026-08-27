@@ -23,7 +23,7 @@ use App\Helpers\ScheduleViewHelper;
 class LessonScheduleExcelExporter extends BaseExcelExporter
 {
     /**
-     * @param array $filters    Doğrulanmış filtre dizisi todo dto alması gerekmez mi?
+     * @param array $filters     Doğrulanmış filtre dizisi
      * @param array $showOptions ['show_code', 'show_lecturer', 'show_program']
      */
     protected function buildSpreadsheet(array $filters, array $showOptions): void

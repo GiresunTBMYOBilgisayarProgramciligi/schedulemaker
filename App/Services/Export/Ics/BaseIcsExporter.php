@@ -3,17 +3,19 @@
 namespace App\Services\Export\Ics;
 
 use App\Core\Log;
-use App\Enums\ExamType;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleExportFilterBuilder;
-use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
-
 use function App\Helpers\getSettingValue;
 
 /**
- * ICS takvim export sınıfları için ortak altyapı.
+ * ICS dışa aktarma sınıfları için ortak altyapı:
+ * - Tarih çözme ve takvim ayarları
+ * - ICS formatı string kaçırma (escape)
+ * - Dosyayı tarayıcıya indirme olarak gönderme
  */
 abstract class BaseIcsExporter implements ScheduleExporterInterface
 {
@@ -35,11 +37,103 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     }
 
     /**
-     * ICS metinlerini RFC 5545 uyumlu şekilde kaçırır.
+     * İlgili program türü için başlangıç ve bitiş tarihlerini ayarlardan çeker.
+     *
+     * @param \DateTimeZone $timezone
+     * @param string $type
+     * @return array{startDate: ?\DateTime, endDate: ?\DateTime}
+     */
+    protected function getScheduleDates(\DateTimeZone $timezone, string $type = 'lesson'): array
+    {
+        $startDateStr = getSettingValue('startDate', $type, '');
+        $endDateStr   = getSettingValue('endDate', $type, '');
+
+        $startDate = !empty($startDateStr) ? new \DateTime($startDateStr, $timezone) : null;
+        $endDate   = !empty($endDateStr)   ? new \DateTime($endDateStr, $timezone)   : null;
+
+        return [
+            'startDate' => $startDate,
+            'endDate'   => $endDate,
+        ];
+    }
+
+    /**
+     * ICS formatı için metin kaçırma (escape) işlemi.
      */
     protected function escapeIcsText(string $text): string
     {
-        return str_replace(["\\", ",", ";", "\n", "\r"], ["\\\\", "\\,", "\\;", "\\n", ""], $text);
+        $text = str_replace('\\', '\\\\', $text);
+        $text = str_replace(';', '\;', $text);
+        $text = str_replace(',', '\,', $text);
+        $text = str_replace("\n", '\n', $text);
+        $text = str_replace("\r", '', $text);
+        return $text;
+    }
+
+    /**
+     * Dosya adını üretir.
+     */
+    public function getFileName(ScheduleExportFilterDTO|array $filters): string
+    {
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $scheduleFilters = $this->filterBuilder->build($filterArr);
+        $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
+        $academicYear = $filterArr['academic_year'] ?? '';
+        $semester = $filterArr['semester'] ?? '';
+        $baseName = $academicYear . "-" . $semester . "-" . $fileTitle;
+
+        return $this->slugify($baseName) . ".ics";
+    }
+
+    /**
+     * Dosyayı tarayıcıya indirme olarak gönderir.
+     */
+    #[NoReturn]
+    public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void
+    {
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+
+        $raw = $this->buildIcs($filterArr, $optionsArr);
+        $content = is_array($raw) ? implode("\r\n", $raw) . "\r\n" : (string)$raw;
+        $fileName = $this->getFileName($filters);
+
+        $this->download($fileName, $content);
+    }
+
+    /**
+     * Dışa aktarılan ICS dosyasının ham metin içeriğini string olarak döndürür.
+     */
+    public function getRawContent(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): string
+    {
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+
+        $raw = $this->buildIcs($filterArr, $optionsArr);
+        return is_array($raw) ? implode("\r\n", $raw) . "\r\n" : (string)$raw;
+    }
+
+    /**
+     * ICS içeriğini derler.
+     *
+     * @param array $filters
+     * @param array $showOptions
+     * @return array|string
+     */
+    abstract protected function buildIcs(array $filters, array $showOptions): array|string;
+
+    /**
+     * Dosyayı HTTP yanıtı olarak indirir.
+     */
+    #[NoReturn]
+    protected function download(string $fileName, string $content): void
+    {
+        header('Content-Type: text/calendar; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        echo $content;
+        exit;
     }
 
     /**
@@ -56,93 +150,5 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
         $text = trim($text, '-');
         $text = preg_replace('~-+~', '-', $text);
         return strtolower($text);
-    }
-
-    /**
-     * ICS satırlarını derler.
-     * @return array
-     */
-    abstract protected function buildIcs(array $filters, array $showOptions): array;
-
-    /**
-     * Dosya adını üretir.
-     */
-    public function getFileName(array $filters): string
-    {
-        $scheduleFilters = $this->filterBuilder->build($filters);
-        $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
-        $baseName = $filters['academic_year'] . "-" . $filters['semester'] . "-" . $fileTitle;
-        
-        return $this->slugify($baseName) . ".ics";
-    }
-
-    /**
-     * ICS içeriğini tarayıcıya indirme olarak gönderir.
-     */
-    #[NoReturn]
-    public function export(array $filters, array $showOptions): void
-    {
-        $lines = $this->buildIcs($filters, $showOptions);
-        $this->sendIcsResponse($lines, $this->getFileName($filters));
-    }
-
-    /**
-     * ICS dosya içeriğini metin (string) olarak döner.
-     */
-    public function getRawContent(array $filters, array $showOptions): string
-    {
-        $lines = $this->buildIcs($filters, $showOptions);
-        return implode("\r\n", $lines) . "\r\n";
-    }
-
-    /**
-     * ICS içeriğini tarayıcıya indirilecek dosya olarak gönderir.
-     */
-    #[NoReturn]
-    protected function sendIcsResponse(array $lines, string $fileName): void
-    {
-        $content = implode("\r\n", $lines) . "\r\n";
-        header('Content-Type: text/calendar; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        header('Cache-Control: max-age=0');
-        echo $content;
-        exit;
-    }
-
-    /**
-     * İlgili program türüne (ders veya sınav) göre başlangıç ve bitiş tarihlerini ayarlardan alır.
-     * @return array{startDate: \DateTime|null, endDate: \DateTime|null}
-     */
-    protected function getScheduleDates(\DateTimeZone $timezone, string $type = 'lesson'): array
-    {
-        if (ExamType::isExamType($type)) {
-            $settingKey = ExamType::tryFrom($type)->startDateSettingKey();
-            $startDateStr = getSettingValue($settingKey, 'exam');
-            $endDateStr   = null;
-        } else {
-            $startDateStr = getSettingValue('lesson_start_date', 'lesson');
-            $endDateStr   = getSettingValue('lesson_end_date', 'lesson');
-        }
-
-        $startDate = null;
-        $endDate   = null;
-
-        if (!empty($startDateStr)) {
-            try {
-                $startDate = new \DateTime($startDateStr, $timezone);
-            } catch (\Throwable) {
-                // Tarihler ayarlanmamışsa null kalır
-            }
-        }
-        
-        if (!empty($endDateStr)) {
-            try {
-                $endDate = new \DateTime($endDateStr, $timezone);
-            } catch (\Throwable) {
-                // Tarihler ayarlanmamışsa null kalır
-            }
-        }
-
-        return ['startDate' => $startDate, 'endDate' => $endDate];
     }
 }

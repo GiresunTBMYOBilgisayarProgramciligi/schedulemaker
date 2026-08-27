@@ -7,6 +7,8 @@ use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Models\Classroom;
 use App\Models\Unit;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Repositories\BuildingRepository;
 use App\Repositories\ClassroomRepository;
 use App\Repositories\DepartmentRepository;
@@ -99,44 +101,50 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     }
 
     /**
-     * Belge üst başlığını yazar (üniversite adı + birim adı + dönem satırı).
-     * @return int Başlık sonrası ilk boş satır numarası
+     * Excel başlık satırlarını yazar (Üniversite / Birim / Dönem bilgisi).
+     *
+     * @param array $filters
+     * @return int Verilerin başlayacağı bir sonraki satır numarası
      */
     protected function writeFileTitle(array $filters): int
     {
-        $scheduleType = ExamType::isExamType($filters['type'] ?? '') ? 'exam' : 'lesson';
-        $maxDayIndex  = getSettingValue('maxDayIndex', $scheduleType, 4);
-        $colsPerDay   = ($scheduleType === 'exam' || $filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
-        $totalCols    = ($maxDayIndex + 1) * $colsPerDay + 1;
-        $lastCol      = Coordinate::stringFromColumnIndex($totalCols);
+        $type        = $filters['type'] ?? 'lesson';
+        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
+        $colsPerDay  = ($filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
+        $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
+        $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
-        $unitName = $this->resolveUnitName($filters);
-        $headerTitle = 'GİRESUN ÜNİVERSİTESİ';
-        if (!empty($unitName)) {
-            $unitNameUpper = strtr($unitName, ['i' => 'İ', 'ı' => 'I', 'ğ' => 'Ğ', 'ü' => 'Ü', 'ş' => 'Ş', 'ö' => 'Ö', 'ç' => 'Ç']);
-            $headerTitle .= ' ' . mb_strtoupper($unitNameUpper, 'UTF-8');
-        }
+        $universityName = getSettingValue('university_name', 'general', 'Giresun Üniversitesi');
+        $unitName       = $this->resolveUnitName($filters);
+        $periodLabel    = $this->getPeriodLabel($type);
 
-        $this->sheet->setCellValue('A2', $headerTitle);
+        $academicYear = $filters['academic_year'] ?? getSettingValue('academic_year');
+        $semester     = $filters['semester'] ?? getSettingValue('semester');
+
+        $upperUniversity = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $universityName), 'UTF-8');
+        $upperUnit = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $unitName), 'UTF-8');
+        $titleLine1 = trim("{$upperUniversity} {$upperUnit}");
+        $titleLine2 = trim("{$academicYear} {$semester} YARIYILI {$periodLabel}");
+
+        $this->sheet->setCellValue("A2", $titleLine1);
         $this->sheet->mergeCells("A2:{$lastCol}2");
-        $this->sheet->getStyle("A2:{$lastCol}2")->getAlignment()
+        $this->sheet->getStyle("A2")->getFont()->setBold(true)->setSize(11);
+        $this->sheet->getStyle("A2")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setVertical(Alignment::VERTICAL_CENTER);
-        $this->sheet->getStyle("A2:{$lastCol}2")->getFont()->setBold(true)->setSize(12);
 
-        $periodLabel = $this->getPeriodLabel($filters['type'] ?? 'lesson');
-        $this->sheet->setCellValue('A3', $filters['academic_year'] . ' AKADEMİK YILI ' . mb_strtoupper($filters['semester']) . ' DÖNEMİ ' . $periodLabel);
+        $this->sheet->setCellValue("A3", $titleLine2);
         $this->sheet->mergeCells("A3:{$lastCol}3");
-        $this->sheet->getStyle("A3:{$lastCol}3")->getAlignment()
+        $this->sheet->getStyle("A3")->getFont()->setBold(true)->setSize(11);
+        $this->sheet->getStyle("A3")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setVertical(Alignment::VERTICAL_CENTER);
-        $this->sheet->getStyle("A3:{$lastCol}3")->getFont()->setBold(true)->setSize(12);
 
-        return 6;
+        return 5;
     }
 
     /**
-     * Program türüne göre belge başlık etiketi
+     * Program tipine göre dönem başlığı metnini döndürür.
      */
     protected function getPeriodLabel(string $type): string
     {
@@ -144,7 +152,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
             ExamType::MIDTERM->value => 'ARA SINAV PROGRAMI',
             ExamType::FINAL->value   => 'FİNAL SINAV PROGRAMI',
             ExamType::MAKEUP->value  => 'BÜTÜNLEME SINAV PROGRAMI',
-            default        => 'HAFTALIK DERS PROGRAMI',
+            default                  => 'HAFTALIK DERS PROGRAMI',
         };
     }
 
@@ -156,11 +164,14 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     /**
      * Dosya adını üretir.
      */
-    public function getFileName(array $filters): string
+    public function getFileName(ScheduleExportFilterDTO|array $filters): string
     {
-        $scheduleFilters = $this->filterBuilder->build($filters);
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $scheduleFilters = $this->filterBuilder->build($filterArr);
         $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
-        $baseName = $filters['academic_year'] . "-" . $filters['semester'] . "-" . $fileTitle;
+        $academicYear = $filterArr['academic_year'] ?? '';
+        $semester = $filterArr['semester'] ?? '';
+        $baseName = $academicYear . "-" . $semester . "-" . $fileTitle;
         
         return $this->slugify($baseName) . ".xlsx";
     }
@@ -185,18 +196,24 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
      * Dosyayı tarayıcıya indirme olarak gönderir.
      */
     #[NoReturn]
-    public function export(array $filters, array $showOptions): void
+    public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void
     {
-        $this->buildSpreadsheet($filters, $showOptions);
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+
+        $this->buildSpreadsheet($filterArr, $optionsArr);
         $this->download($this->getFileName($filters));
     }
 
     /**
      * Dışa aktarılan Excel dosyasının ham binary içeriğini string olarak döndürür.
      */
-    public function getRawContent(array $filters, array $showOptions): string
+    public function getRawContent(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): string
     {
-        $this->buildSpreadsheet($filters, $showOptions);
+        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+
+        $this->buildSpreadsheet($filterArr, $optionsArr);
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
         ob_start();
         $writer->save('php://output');

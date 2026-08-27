@@ -3,60 +3,50 @@
 namespace App\DTOs;
 
 /**
- * Schedule Item Silme İşlemi Sonucu
- * 
- * Multi-schedule delete işlemlerinde silinen ve oluşturulan item'ları takip eder.
- * 
- * **Kullanım:**
- * ```php
- * // Basit silme
- * $result = DeleteScheduleResult::success([45, 46, 47, 48]);
- * 
- * // Partial delete (yeni item'lar oluşturuldu)
- * $result = DeleteScheduleResult::success([45, 46], [101, 102]);
- * 
- * // Hata
- * $result = DeleteScheduleResult::failure("Item bulunamadı");
- * ```
+ * Schedule Item Silme İşlemi Sonucu DTO
  */
-class DeleteScheduleResult
+readonly class DeleteScheduleResult
 {
-    public bool $success;
-
-    /** @var array Silinen schedule item ID'leri */
-    public array $deletedIds;
-
-    /** @var array Partial delete sonucu oluşturulan item ID'leri */
-    public array $createdIds;
-
-    /** @var array Hata mesajları */
-    public array $errors;
-
-    /** @var int Toplam silinen item sayısı */
-    public int $totalDeleted;
-
-    /** @var int Toplam oluşturulan item sayısı */
-    public int $totalCreated;
+    /**
+     * @param bool $success İşlem başarılı mı?
+     * @param int[] $deletedIds Silinen schedule item ID'leri
+     * @param int[] $createdIds Partial delete sonucu oluşturulan item ID'leri
+     * @param string[] $errors Hata mesajları
+     * @param int $totalDeleted Toplam silinen item sayısı
+     * @param int $totalCreated Toplam oluşturulan item sayısı
+     */
+    public function __construct(
+        public bool $success = true,
+        public array $deletedIds = [],
+        public array $createdIds = [],
+        public array $errors = [],
+        public int $totalDeleted = 0,
+        public int $totalCreated = 0
+    ) {
+    }
 
     /**
      * Başarılı silme sonucu
      * 
-     * @param array $deletedIds Silinen item ID'leri
-     * @param array $createdIds Oluşturulan item ID'leri (partial delete için)
+     * @param int[] $deletedIds Silinen item ID'leri
+     * @param int[] $createdIds Oluşturulan item ID'leri (partial delete için)
      * @return self
      */
     public static function success(
         array $deletedIds,
         array $createdIds = []
     ): self {
-        $result = new self();
-        $result->success = true;
-        $result->deletedIds = array_values(array_unique($deletedIds));
-        $result->createdIds = array_values(array_unique($createdIds));
-        $result->errors = [];
-        $result->totalDeleted = count($result->deletedIds);
-        $result->totalCreated = count($result->createdIds);
-        return $result;
+        $uniqueDeleted = array_values(array_unique($deletedIds));
+        $uniqueCreated = array_values(array_unique($createdIds));
+
+        return new self(
+            success: true,
+            deletedIds: $uniqueDeleted,
+            createdIds: $uniqueCreated,
+            errors: [],
+            totalDeleted: count($uniqueDeleted),
+            totalCreated: count($uniqueCreated)
+        );
     }
 
     /**
@@ -67,14 +57,14 @@ class DeleteScheduleResult
      */
     public static function failure(string $error): self
     {
-        $result = new self();
-        $result->success = false;
-        $result->deletedIds = [];
-        $result->createdIds = [];
-        $result->errors = [$error];
-        $result->totalDeleted = 0;
-        $result->totalCreated = 0;
-        return $result;
+        return new self(
+            success: false,
+            deletedIds: [],
+            createdIds: [],
+            errors: [$error],
+            totalDeleted: 0,
+            totalCreated: 0
+        );
     }
 
     /**
@@ -85,12 +75,12 @@ class DeleteScheduleResult
     public function toArray(): array
     {
         return [
-            'status' => $this->success ? 'success' : 'error',
-            'deletedIds' => $this->deletedIds,
+            'status'       => $this->success ? 'success' : 'error',
+            'deletedIds'   => $this->deletedIds,
             'createdItems' => $this->createdIds,
-            'errors' => $this->errors,
+            'errors'       => $this->errors,
             'totalDeleted' => $this->totalDeleted,
-            'totalCreated' => $this->totalCreated
+            'totalCreated' => $this->totalCreated,
         ];
     }
 }

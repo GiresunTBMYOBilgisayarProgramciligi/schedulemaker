@@ -3,6 +3,7 @@
 namespace App\Services\Export;
 
 use App\Enums\ExamType;
+use App\DTOs\ScheduleExportFilterDTO;
 use App\Services\Export\Excel\ExamScheduleExcelExporter;
 use App\Services\Export\Excel\LessonScheduleExcelExporter;
 use App\Services\Export\Ics\ExamScheduleIcsExporter;
@@ -13,20 +14,23 @@ use Exception;
  * İstek parametrelerine göre doğru exporter sınıfını üretir.
  *
  * Kullanım:
- *   $exporter = ExporterFactory::create($filters, 'excel');
- *   $exporter->export($filters, $showOptions);
+ *   $exporter = ExporterFactory::create($dto, 'excel');
+ *   $exporter->export($dto, $showOptions);
  */
 class ExporterFactory
 {
     /**
-     * @param array  $filters Doğrulanmış filtre dizisi (type alanı zorunlu)
-     * @param string $format  'excel' veya 'ics'
+     * @param ScheduleExportFilterDTO|array $filters Doğrulanmış filtre DTO veya dizisi (type alanı zorunlu)
+     * @param string $format 'excel' veya 'ics'
      * @return ScheduleExporterInterface
      * @throws Exception
      */
-    public static function create(array $filters, string $format): ScheduleExporterInterface
+    public static function create(ScheduleExportFilterDTO|array $filters, string $format): ScheduleExporterInterface
     {
-        $type   = $filters['type'] ?? 'lesson';
+        $type = $filters instanceof ScheduleExportFilterDTO 
+            ? $filters->type 
+            : ($filters['type'] ?? 'lesson');
+
         $isExam = ExamType::isExamType($type);
 
         return match ($format) {

@@ -2,31 +2,34 @@
 
 namespace App\Services\Export;
 
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
+
 /**
  * Tüm program dışa aktarma (Excel, ICS) sınıfları bu arayüzü uygular.
  */
 interface ScheduleExporterInterface
 {
     /**
-     * @param array $filters    Doğrulanmış filtre dizisi (type, owner_type, owner_id, semester, academic_year vb.)
-     * @param array $showOptions Gösterim seçenekleri (show_code, show_lecturer, show_program, show_observer)
+     * @param ScheduleExportFilterDTO|array $filters Doğrulanmış filtre DTO veya dizisi
+     * @param ScheduleExportOptionsDTO|array $showOptions Gösterim seçenekleri
      */
-    public function export(array $filters, array $showOptions): void;
+    public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void;
 
     /**
      * Dışa aktarılacak dosyanın adını üretir.
      *
-     * @param array $filters
+     * @param ScheduleExportFilterDTO|array $filters
      * @return string
      */
-    public function getFileName(array $filters): string;
+    public function getFileName(ScheduleExportFilterDTO|array $filters): string;
 
     /**
      * Dışa aktarılan dosyanın ham içeriğini (binary Excel veya ICS metni) string olarak döner.
      *
-     * @param array $filters
-     * @param array $showOptions
+     * @param ScheduleExportFilterDTO|array $filters
+     * @param ScheduleExportOptionsDTO|array $showOptions
      * @return string
      */
-    public function getRawContent(array $filters, array $showOptions): string;
+    public function getRawContent(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): string;
 }

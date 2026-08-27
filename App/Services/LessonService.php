@@ -22,6 +22,9 @@ use App\Repositories\LessonAssignmentRepository;
 use App\Repositories\LessonCombinationRepository;
 use App\Core\Gate;
 use App\DTOs\LessonDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
 use App\Enums\OwnerType;
 use Exception;
 
@@ -98,12 +101,12 @@ class LessonService extends BaseService
      * Hoca sadece kontenjan ve derslik tipi güncelleyebilir.
      *
      * @param int $id Ders ID'si
-     * @param array $requestData Güncellenecek veri
+     * @param LessonDTO|array $dtoOrData Güncellenecek veri
      * @param bool $isLecturerOwnLesson İşlemi yapanın kendi dersi olup olmadığı
      * @return int Güncellenen dersin ID'si
      * @throws Exception
      */
-    public function updateLessonData(int $id, array $requestData, bool $isLecturerOwnLesson): int
+    public function updateLessonData(int $id, LessonDTO|array $dtoOrData, bool $isLecturerOwnLesson): int
     {
         /** @var Lesson $lessonFromDb */
         $lessonFromDb = (new LessonRepository())->find($id);
@@ -111,17 +114,18 @@ class LessonService extends BaseService
             throw new Exception("Güncellenecek ders bulunamadı.");
         }
 
+        $dto = $dtoOrData instanceof LessonDTO ? $dtoOrData : LessonDTO::fromArray($dtoOrData);
+        $requestData = $dtoOrData instanceof LessonDTO ? $dtoOrData->toArray() : $dtoOrData;
+
         if ($isLecturerOwnLesson) {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
 
-            $lessonFromDb->size = (int) ($requestData['size'] ?? 0);
-            if (isset($requestData['classroom_type']) && $requestData['classroom_type'] !== '') {
-                $lessonFromDb->classroom_type = (int) $requestData['classroom_type'];
+            $lessonFromDb->size = (int) ($dto->size ?? $lessonFromDb->size ?? 0);
+            if ($dto->classroom_type !== null) {
+                $lessonFromDb->classroom_type = (int) $dto->classroom_type;
             }
         } else {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
-
-            $dto = LessonDTO::fromArray($requestData);
 
             // program_id değişiyorsa, hedef programda aynı code+group_no kombinasyonu var mı kontrol et
             if (!empty($dto->program_id) && $dto->program_id !== $lessonFromDb->program_id) {
@@ -142,19 +146,19 @@ class LessonService extends BaseService
 
             $lessonFromDb->fill($dto->toArray());
 
-            if (!empty($requestData['lecturer_id'])) {
-                $semester = $requestData['semester'] ?? getSettingValue('semester');
-                $academicYear = $requestData['academic_year'] ?? getSettingValue('academic_year');
+            if (!empty($dto->lecturer_id)) {
+                $semester = $dto->semester ?? getSettingValue('semester');
+                $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
                 (new LessonAssignmentRepository())->upsert(
                     $lessonFromDb->id,
-                    (int) $requestData['lecturer_id'],
+                    (int) $dto->lecturer_id,
                     $semester,
                     $academicYear
                 );
                 $this->logger->info('Ders hoca ataması güncellendi', [
-                    'lesson_id' => $lessonFromDb->id,
-                    'lecturer_id' => $requestData['lecturer_id'],
-                    'semester' => $semester,
+                    'lesson_id'     => $lessonFromDb->id,
+                    'lecturer_id'   => $dto->lecturer_id,
+                    'semester'      => $semester,
                     'academic_year' => $academicYear
                 ]);
             }
@@ -695,17 +699,18 @@ class LessonService extends BaseService
     /**
      * Birden fazla dersi toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu ders silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
+        $this->logger->debug('Toplu ders silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $lesson = (new Lesson())->find($id);
                 if (!$lesson) {
@@ -727,31 +732,35 @@ class LessonService extends BaseService
 
         $this->logger->info('Toplu ders silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla dersi toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu ders güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO
+            ? $dtoOrIds
+            : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu ders güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 // Toplu düzenlemede tüm yetki ve ilişkili tablo (LessonAssignment vb) kontrollerini 
                 // tekil güncelleme yapan updateLessonData metodu üzerinden yürüt.
-                $this->updateLessonData($id, $fields, false);
+                $this->updateLessonData($id, $dto->fields, false);
                 $success[] = $id;
             } catch (Exception $e) {
                 $failed[$id] = $e->getMessage();
@@ -760,9 +769,9 @@ class LessonService extends BaseService
 
         $this->logger->info('Toplu ders güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }

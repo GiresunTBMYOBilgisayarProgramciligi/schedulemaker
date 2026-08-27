@@ -6,7 +6,10 @@ use App\Core\Log;
 use App\Models\User;
 use App\Services\Schedule\ScheduleService;
 use App\DTOs\UserDTO;
-use App\DTOs\SettingDTO;
+use App\DTOs\LoginDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
 use App\Repositories\UserRepository;
 use App\Core\Database;
 use App\Core\Gate;
@@ -44,14 +47,12 @@ class UserService extends BaseService
         $userData['password'] = password_hash($password, PASSWORD_DEFAULT);
 
         try {
-            return Database::transaction(function () use ($userData, $dto) {
+            return Database::transaction(function () use ($userData) {
                 $user = new User();
                 $user->fill($userData);
                 $user->create();
 
                 $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
-
-
 
                 return $user->id;
             });
@@ -82,8 +83,6 @@ class UserService extends BaseService
         // Mevcut modele DTO verilerini dolduruyoruz
         $user->fill(array_merge(['id' => $id], $dto->toArray()));
 
-        // Model::fill() null değerleri (isset == false olduğu için) atladığından,
-        // DTO'daki null olabilecek alanları (ve özellikle şifreyi) manuel olarak eziyoruz.
         if ($dto->password === null) {
             $user->password = null;
         }
@@ -100,11 +99,7 @@ class UserService extends BaseService
             $user->unit_id = null;
         }
 
-        $userId = $this->updateUser($user);
-
-
-
-        return $userId;
+        return $this->updateUser($user);
     }
 
     /**
@@ -144,7 +139,6 @@ class UserService extends BaseService
     /**
      * Kullanıcıyı sistemden siler.
      * Silme işleminden önce, kullanıcının ilişkili ders programlarını temizler.
-     * Bu orkestrasyon sayesinde Model, Servis katmanından bağımsız hale getirilmiştir.
      * 
      * @param User $user Silinecek kullanıcı nesnesi
      * @throws Exception
@@ -155,7 +149,7 @@ class UserService extends BaseService
 
         try {
             Database::transaction(function () use ($user) {
-                // Önce kullanıcıya ait ders programı kayıtlarını (çakışmaları önlemek için) temizle
+                // Önce kullanıcıya ait ders programı kayıtlarını temizle
                 (new ScheduleService())->wipeResourceSchedules('user', $user->id);
                 
                 // Sonra kullanıcıyı veritabanından sil
@@ -181,30 +175,31 @@ class UserService extends BaseService
      * Giriş başarılıysa session veya cookie'ye kullanıcı ID'si yazılır,
      * last_login alanı güncellenir.
      *
-     * @param array $loginData ['mail', 'password', 'remember_me']
+     * @param LoginDTO|array $loginData ['mail', 'password', 'remember_me'] ya da LoginDTO
      * @throws Exception Yanlış şifre veya kullanıcı bulunamadı
      */
-    public function login(array $loginData): void
+    public function login(LoginDTO|array $loginData): void
     {
-        $loginData = (object) $loginData;
+        $dto = $loginData instanceof LoginDTO ? $loginData : LoginDTO::fromArray((array)$loginData);
+
         $userRepository = new UserRepository();
-        $user = $userRepository->findByEmail($loginData->mail);
+        $user = $userRepository->findByEmail($dto->mail);
 
         if (!$user) {
             throw new Exception("Kullanıcı kayıtlı değil");
         }
 
-        if (!password_verify($loginData->password, $user->password)) {
+        if (!password_verify($dto->password, $user->password)) {
             throw new Exception("Şifre Yanlış");
         }
 
         // Session veya Cookie yaz
-        if (!$loginData->remember_me) {
+        if (!$dto->rememberMe) {
             $_SESSION[$_ENV['SESSION_KEY']] = $user->id;
         } else {
-            setcookie($_ENV['COOKIE_KEY'], $user->id, [
-                'expires' => time() + (86400 * 30),
-                'path' => '/',
+            setcookie($_ENV['COOKIE_KEY'], (string)$user->id, [
+                'expires'  => time() + (86400 * 30),
+                'path'     => '/',
                 'httponly' => true,
                 'samesite' => 'Strict',
             ]);
@@ -212,7 +207,7 @@ class UserService extends BaseService
 
         // Log giriş
         $this->logger->info($user->getFullName() . ' giriş yaptı.', Log::context($this, [
-            'user_id' => $user->id,
+            'user_id'  => $user->id,
             'username' => $user->getFullName(),
         ]));
 
@@ -229,17 +224,18 @@ class UserService extends BaseService
     /**
      * Birden fazla kullanıcıyı toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu kullanıcı silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
+        $this->logger->debug('Toplu kullanıcı silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $user = (new User())->find($id);
                 if (!$user) {
@@ -261,27 +257,31 @@ class UserService extends BaseService
 
         $this->logger->info('Toplu kullanıcı silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla kullanıcıyı toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO
+            ? $dtoOrIds
+            : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $user = clone (new User())->find($id);
                 if (!$user) {
@@ -294,7 +294,7 @@ class UserService extends BaseService
                     continue;
                 }
 
-                foreach ($fields as $fieldName => $fieldValue) {
+                foreach ($dto->fields as $fieldName => $fieldValue) {
                     $user->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
                 }
 
@@ -309,9 +309,9 @@ class UserService extends BaseService
 
         $this->logger->info('Toplu kullanıcı güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }

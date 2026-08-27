@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\DTOs\BulkActionResultDTO;
 use App\Validators\BulkActionValidator;
 use App\Services\ProgramService;
 use App\Services\LessonService;
@@ -33,17 +34,17 @@ class BulkActionController extends Controller
     }
 
     /**
-     * Sonuç dizisinden standart AJAX yanıtı oluşturur.
+     * DTO'dan standart AJAX yanıtı oluşturur.
      *
-     * @param array{success: int[], failed: array<int, string>} $result
+     * @param BulkActionResultDTO $result
      * @param string $entityLabel Entity'nin Türkçe adı
      * @param string $actionLabel İşlemin Türkçe adı (silindi, güncellendi)
      * @return array
      */
-    private function buildResponse(array $result, string $entityLabel, string $actionLabel): array
+    private function buildResponse(BulkActionResultDTO $result, string $entityLabel, string $actionLabel): array
     {
-        $successCount = count($result['success']);
-        $failedCount = count($result['failed']);
+        $successCount = $result->getSuccessCount();
+        $failedCount  = $result->getFailedCount();
 
         $messages = [];
         $messages[] = "{$successCount} adet {$entityLabel} başarıyla {$actionLabel}.";
@@ -53,11 +54,11 @@ class BulkActionController extends Controller
         }
 
         return [
-            'status' => $failedCount === 0 && $successCount > 0 ? 'success' : ($successCount === 0 ? 'error' : 'warning'),
-            'msg' => implode(' ', $messages),
+            'status'  => $failedCount === 0 && $successCount > 0 ? 'success' : ($successCount === 0 ? 'error' : 'warning'),
+            'msg'     => implode(' ', $messages),
             'details' => [
-                'success' => $result['success'],
-                'failed' => $result['failed'],
+                'success' => $result->success,
+                'failed'  => $result->failed,
             ],
         ];
     }
@@ -70,7 +71,7 @@ class BulkActionController extends Controller
     public function bulkDeletePrograms(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new ProgramService())->bulkDelete($dto->ids);
+        $result = (new ProgramService())->bulkDelete($dto);
         return $this->buildResponse($result, 'program', 'silindi');
     }
 
@@ -78,7 +79,7 @@ class BulkActionController extends Controller
     public function bulkUpdatePrograms(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'program');
-        $result = (new ProgramService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new ProgramService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'program', 'güncellendi');
     }
 
@@ -90,7 +91,7 @@ class BulkActionController extends Controller
     public function bulkDeleteLessons(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new LessonService())->bulkDelete($dto->ids);
+        $result = (new LessonService())->bulkDelete($dto);
         return $this->buildResponse($result, 'ders', 'silindi');
     }
 
@@ -98,7 +99,7 @@ class BulkActionController extends Controller
     public function bulkUpdateLessons(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'lesson');
-        $result = (new LessonService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new LessonService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'ders', 'güncellendi');
     }
 
@@ -110,7 +111,7 @@ class BulkActionController extends Controller
     public function bulkDeleteUsers(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new UserService())->bulkDelete($dto->ids);
+        $result = (new UserService())->bulkDelete($dto);
         return $this->buildResponse($result, 'kullanıcı', 'silindi');
     }
 
@@ -118,7 +119,7 @@ class BulkActionController extends Controller
     public function bulkUpdateUsers(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'user');
-        $result = (new UserService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new UserService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'kullanıcı', 'güncellendi');
     }
 
@@ -130,7 +131,7 @@ class BulkActionController extends Controller
     public function bulkDeleteClassrooms(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new ClassroomService())->bulkDelete($dto->ids);
+        $result = (new ClassroomService())->bulkDelete($dto);
         return $this->buildResponse($result, 'derslik', 'silindi');
     }
 
@@ -138,7 +139,7 @@ class BulkActionController extends Controller
     public function bulkUpdateClassrooms(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'classroom');
-        $result = (new ClassroomService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new ClassroomService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'derslik', 'güncellendi');
     }
 
@@ -150,7 +151,7 @@ class BulkActionController extends Controller
     public function bulkDeleteDepartments(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new DepartmentService())->bulkDelete($dto->ids);
+        $result = (new DepartmentService())->bulkDelete($dto);
         return $this->buildResponse($result, 'bölüm', 'silindi');
     }
 
@@ -158,7 +159,7 @@ class BulkActionController extends Controller
     public function bulkUpdateDepartments(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'department');
-        $result = (new DepartmentService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new DepartmentService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'bölüm', 'güncellendi');
     }
 
@@ -170,7 +171,7 @@ class BulkActionController extends Controller
     public function bulkDeleteUnits(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new UnitService())->bulkDelete($dto->ids);
+        $result = (new UnitService())->bulkDelete($dto);
         return $this->buildResponse($result, 'birim', 'silindi');
     }
 
@@ -178,7 +179,7 @@ class BulkActionController extends Controller
     public function bulkUpdateUnits(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'unit');
-        $result = (new UnitService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new UnitService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'birim', 'güncellendi');
     }
 
@@ -190,7 +191,7 @@ class BulkActionController extends Controller
     public function bulkDeleteBuildings(array $requestData): array
     {
         $dto = $this->validator->getDeleteDTO($requestData);
-        $result = (new BuildingService())->bulkDelete($dto->ids);
+        $result = (new BuildingService())->bulkDelete($dto);
         return $this->buildResponse($result, 'bina', 'silindi');
     }
 
@@ -198,7 +199,7 @@ class BulkActionController extends Controller
     public function bulkUpdateBuildings(array $requestData): array
     {
         $dto = $this->validator->getUpdateDTO($requestData, 'building');
-        $result = (new BuildingService())->bulkUpdate($dto->ids, $dto->fields);
+        $result = (new BuildingService())->bulkUpdate($dto);
         return $this->buildResponse($result, 'bina', 'güncellendi');
     }
 }

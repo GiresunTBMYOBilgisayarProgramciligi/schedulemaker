@@ -2,17 +2,17 @@
 
 namespace App\DTOs;
 
-class BulkDeleteDTO
+/**
+ * Toplu silme isteği verilerini taşıyan kesin tipli DTO.
+ */
+readonly class BulkDeleteDTO
 {
-    /** @var int[] Silinecek kayıt ID'leri */
-    public array $ids;
-
     /**
-     * @param int[] $ids
+     * @param int[] $ids Silinecek kayıt ID'leri
      */
-    public function __construct(array $ids)
-    {
-        $this->ids = $ids;
+    public function __construct(
+        public array $ids = []
+    ) {
     }
 
     /**
@@ -21,7 +21,14 @@ class BulkDeleteDTO
      */
     public static function fromArray(array $data): self
     {
-        $ids = array_map('intval', $data['ids'] ?? []);
-        return new self($ids);
+        $ids = array_map('intval', (array)($data['ids'] ?? []));
+        return new self(ids: $ids);
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'ids' => $this->ids,
+        ];
     }
 }

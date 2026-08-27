@@ -5,6 +5,8 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Setting;
 use App\Core\Gate;
+use App\Validators\PermissionValidator;
+use Exception;
 
 class PermissionController extends Controller
 {
@@ -25,7 +27,7 @@ class PermissionController extends Controller
         }
 
         return [
-            "status" => "success",
+            "status"      => "success",
             "permissions" => $permissions
         ];
     }
@@ -33,30 +35,16 @@ class PermissionController extends Controller
     /**
      * @param array $requestData
      * @return array
+     * @throws Exception
      */
     public function savePermissions(array $requestData): array
     {
         Gate::authorizeRole("submanager", false, "Yetki düzenleme yetkiniz yok");
 
-        $userId = $requestData['user_id'] ?? null;
-        $scope = $requestData['scope'] ?? null; // 'units', 'departments', 'programs'
-        $targetId = $requestData['target_id'] ?? null;
-        $permissionsJson = $requestData['permissions'] ?? '[]';
-
-        if (!$userId || !$scope || !$targetId) {
-            return [
-                "status" => "error",
-                "msg" => "Eksik parametreler"
-            ];
-        }
-
-        $newPermissions = json_decode($permissionsJson, true);
-        if (!is_array($newPermissions)) {
-            $newPermissions = [];
-        }
+        $dto = (new PermissionValidator())->getDTO($requestData);
 
         $settingModel = new Setting();
-        $setting = $settingModel->get()->where(["key" => "user_{$userId}", "group" => "permissions"])->first();
+        $setting = $settingModel->get()->where(["key" => "user_{$dto->userId}", "group" => "permissions"])->first();
 
         $currentPermissions = [];
         if ($setting) {
@@ -64,32 +52,28 @@ class PermissionController extends Controller
         }
 
         // Initialize scope array if it doesn't exist
-        if (!isset($currentPermissions[$scope])) {
-            $currentPermissions[$scope] = [];
+        if (!isset($currentPermissions[$dto->scope])) {
+            $currentPermissions[$dto->scope] = [];
         }
 
         // Update permissions for the target
-        if (empty($newPermissions)) {
-            // Remove target id if permissions are empty
-            if (isset($currentPermissions[$scope][$targetId])) {
-                unset($currentPermissions[$scope][$targetId]);
+        if (empty($dto->permissions)) {
+            if (isset($currentPermissions[$dto->scope][$dto->targetId])) {
+                unset($currentPermissions[$dto->scope][$dto->targetId]);
             }
         } else {
-            // Replace with new permissions
-            $currentPermissions[$scope][$targetId] = $newPermissions;
+            $currentPermissions[$dto->scope][$dto->targetId] = $dto->permissions;
         }
 
         $encodedPermissions = json_encode($currentPermissions);
 
         if ($setting) {
-            // Update existing
             $setting->value = $encodedPermissions;
             $setting->type = 'json';
             $setting->update();
         } else {
-            // Create new
             $settingModel->group = 'permissions';
-            $settingModel->key = "user_{$userId}";
+            $settingModel->key = "user_{$dto->userId}";
             $settingModel->value = $encodedPermissions;
             $settingModel->type = 'json';
             $settingModel->create();
@@ -97,7 +81,7 @@ class PermissionController extends Controller
 
         return [
             "status" => "success",
-            "msg" => "Yetkiler başarıyla güncellendi"
+            "msg"    => "Yetkiler başarıyla güncellendi"
         ];
     }
 }

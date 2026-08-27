@@ -2,22 +2,19 @@
 
 namespace App\DTOs;
 
-class BulkUpdateDTO
+/**
+ * Toplu güncelleme isteği verilerini taşıyan kesin tipli DTO.
+ */
+readonly class BulkUpdateDTO
 {
-    /** @var int[] Güncellenecek kayıt ID'leri */
-    public array $ids;
-
-    /** @var array<string, mixed> Güncellenecek alanlar (alan_adı => yeni_değer) */
-    public array $fields;
-
     /**
-     * @param int[] $ids
-     * @param array<string, mixed> $fields
+     * @param int[] $ids Güncellenecek kayıt ID'leri
+     * @param array<string, mixed> $fields Güncellenecek alanlar ve yeni değerleri
      */
-    public function __construct(array $ids, array $fields)
-    {
-        $this->ids = $ids;
-        $this->fields = $fields;
+    public function __construct(
+        public array $ids = [],
+        public array $fields = []
+    ) {
     }
 
     /**
@@ -26,9 +23,16 @@ class BulkUpdateDTO
      */
     public static function fromArray(array $data): self
     {
-        $ids = array_map('intval', $data['ids'] ?? []);
-        $fields = $data['fields'] ?? [];
+        $ids = array_map('intval', (array)($data['ids'] ?? []));
+        $fields = (array)($data['fields'] ?? []);
+        return new self(ids: $ids, fields: $fields);
+    }
 
-        return new self($ids, $fields);
+    public function toArray(): array
+    {
+        return [
+            'ids' => $this->ids,
+            'fields' => $this->fields,
+        ];
     }
 }

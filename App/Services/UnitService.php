@@ -3,14 +3,21 @@
 namespace App\Services;
 
 use App\Models\Unit;
-use App\Models\Department;
 use App\DTOs\UnitDTO;
+use App\DTOs\BulkDeleteDTO;
+use App\DTOs\BulkUpdateDTO;
+use App\DTOs\BulkActionResultDTO;
+use App\Models\Department;
+use App\Models\Building;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 use Exception;
 use PDOException;
 
+/**
+ * Birim yönetimi iş mantığı servisi.
+ */
 class UnitService extends BaseService
 {
     /**
@@ -68,7 +75,6 @@ class UnitService extends BaseService
 
     /**
      * Birimi sistemden siler.
-     * Silmeden önce bağlı bölümlerin unit_id'si NULL yapılır.
      *
      * @param Unit $unit
      * @throws Exception
@@ -77,52 +83,54 @@ class UnitService extends BaseService
     {
         $this->logger->debug('Birim siliniyor', ['id' => $unit->id]);
 
+        $departments = (new Department())->get()->where(['unit_id' => $unit->id])->all();
+        if (!empty($departments)) {
+            $deptNames = array_map(fn($d) => $d->name, $departments);
+            throw new Exception(
+                "Bu birime bağlı bölümler (" . implode(', ', $deptNames) .
+                ") bulunmaktadır. Birimi silmek için önce bu bölümleri silmeli veya başka bir birime taşımalısınız."
+            );
+        }
+
+        $buildings = (new Building())->get()->where(['unit_id' => $unit->id])->all();
+        if (!empty($buildings)) {
+            $bldNames = array_map(fn($b) => $b->name, $buildings);
+            throw new Exception(
+                "Bu birime bağlı binalar (" . implode(', ', $bldNames) .
+                ") bulunmaktadır. Birimi silmek için önce bu binaları silmeli veya başka bir birime taşımalısınız."
+            );
+        }
+
         try {
             Database::transaction(function () use ($unit) {
-                // Bağlı bölümlerin unit_id'sini temizle
-                $departments = (new Department())->get()->where(['unit_id' => $unit->id])->all();
-                foreach ($departments as $department) {
-                    $department->unit_id = null;
-                    $department->active = false;
-                    $department->update();
-                }
-
                 $unit->delete();
             });
 
             $this->logger->info('Birim başarıyla silindi', ['id' => $unit->id]);
-        } catch (PDOException $e) {
-            $this->logger->error('Birim silinirken hata oluştu', [
-                'id'    => $unit->id,
-                'error' => $e->getMessage()
-            ]);
-            if ($e->getCode() == '23000') {
-                throw new Exception("Bu birimi silmek için öncelikle altındaki tüm binaları silmeli ya da başka bir birime taşımalısınız.");
-            }
-            throw new Exception("Birim silinirken bir hata oluştu.");
         } catch (Exception $e) {
             $this->logger->error('Birim silinirken hata oluştu', [
-                'id'    => $unit->id,
+                'id' => $unit->id,
                 'error' => $e->getMessage()
             ]);
-            throw new Exception("Birim silinirken bir hata oluştu.");
+            throw new Exception("Birim silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
 
     /**
      * Birden fazla birimi toplu siler.
      *
-     * @param int[] $ids
-     * @return array{success: int[], failed: array<int, string>}
+     * @param BulkDeleteDTO|array $dtoOrIds
+     * @return BulkActionResultDTO
      */
-    public function bulkDelete(array $ids): array
+    public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu birim silme başlatıldı', ['ids' => $ids]);
+        $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
+        $this->logger->debug('Toplu birim silme başlatıldı', ['ids' => $dto->ids]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $unit = (new Unit())->find($id);
                 if (!$unit) {
@@ -144,27 +152,31 @@ class UnitService extends BaseService
 
         $this->logger->info('Toplu birim silme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 
     /**
      * Birden fazla birimi toplu günceller.
      *
-     * @param int[] $ids
+     * @param BulkUpdateDTO|array $dtoOrIds
      * @param array<string, mixed> $fields
-     * @return array{success: int[], failed: array<int, string>}
+     * @return BulkActionResultDTO
      */
-    public function bulkUpdate(array $ids, array $fields): array
+    public function bulkUpdate(BulkUpdateDTO|array $dtoOrIds, array $fields = []): BulkActionResultDTO
     {
-        $this->logger->debug('Toplu birim güncelleme başlatıldı', ['ids' => $ids, 'fields' => $fields]);
+        $dto = $dtoOrIds instanceof BulkUpdateDTO
+            ? $dtoOrIds
+            : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
+
+        $this->logger->debug('Toplu birim güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
 
-        foreach ($ids as $id) {
+        foreach ($dto->ids as $id) {
             try {
                 $unit = clone (new Unit())->find($id);
                 if (!$unit) {
@@ -177,12 +189,8 @@ class UnitService extends BaseService
                     continue;
                 }
 
-                foreach ($fields as $fieldName => $fieldValue) {
-                    if ($fieldName === 'active') {
-                        $unit->active = filter_var($fieldValue, FILTER_VALIDATE_BOOLEAN);
-                    } else {
-                        $unit->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
-                    }
+                foreach ($dto->fields as $fieldName => $fieldValue) {
+                    $unit->{$fieldName} = $fieldValue === '' ? null : $fieldValue;
                 }
 
                 $this->updateUnit($unit);
@@ -194,9 +202,9 @@ class UnitService extends BaseService
 
         $this->logger->info('Toplu birim güncelleme tamamlandı', [
             'success_count' => count($success),
-            'failed_count' => count($failed)
+            'failed_count'  => count($failed)
         ]);
 
-        return ['success' => $success, 'failed' => $failed];
+        return new BulkActionResultDTO(success: $success, failed: $failed);
     }
 }
