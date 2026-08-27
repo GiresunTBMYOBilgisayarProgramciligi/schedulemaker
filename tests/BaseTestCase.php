@@ -18,6 +18,7 @@ abstract class BaseTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->resetAuth();
         // Veritabanı bağlantısı al ve her test başında transaction başlat
         $this->getDb()->beginTransaction();
     }
@@ -28,7 +29,25 @@ abstract class BaseTestCase extends TestCase
         if (self::$db && self::$db->inTransaction()) {
             self::$db->rollBack();
         }
+        $this->resetAuth();
         parent::tearDown();
+    }
+
+    protected function resetAuth(): void
+    {
+        $_SESSION = [];
+        $_COOKIE = [];
+        if (class_exists(\App\Middlewares\AuthMiddleware::class)) {
+            $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+            if ($ref->hasProperty('isResolved')) {
+                $propResolved = $ref->getProperty('isResolved');
+                $propResolved->setValue(null, false);
+            }
+            if ($ref->hasProperty('currentUser')) {
+                $propUser = $ref->getProperty('currentUser');
+                $propUser->setValue(null, null);
+            }
+        }
     }
 
     protected function getDb()

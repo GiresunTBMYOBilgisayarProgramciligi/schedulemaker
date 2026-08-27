@@ -71,10 +71,46 @@ class ScheduleServiceIntegrationTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_identifies_conflicts_correctly()
+    public function it_wipes_resource_schedules_and_items_completely()
     {
-        // Bu test için ConflictService ve ConflictResolver entegrasyonu sonrası 
-        // daha detaylı senaryolar eklenebilir.
-        $this->assertTrue(true);
+        $rand = rand(1000, 9999);
+        $deptId = $this->insert('departments', ['name' => 'Wipe Dept ' . $rand]);
+        $progId = $this->insert('programs', ['name' => 'Wipe Prog ' . rand(1000, 9999), 'department_id' => $deptId]);
+        $lessonId = $this->insert('lessons', [
+            'code' => 'WIP' . $rand,
+            'name' => 'Wipe Lesson',
+            'program_id' => $progId,
+            'department_id' => $deptId,
+            'hours' => 2,
+            'semester_no' => 1
+        ]);
+        $scheduleId = $this->insert('schedules', [
+            'type' => 'lesson',
+            'owner_type' => 'lesson',
+            'owner_id' => $lessonId,
+            'semester' => 'Güz',
+            'academic_year' => '2025-2026'
+        ]);
+        $this->insert('schedule_items', [
+            'schedule_id' => $scheduleId,
+            'day_index' => 1,
+            'week_index' => 0,
+            'start_time' => '09:00:00',
+            'end_time' => '11:00:00',
+            'status' => 'single',
+            'data' => serialize([['lesson_id' => $lessonId]])
+        ]);
+
+        // wipeResourceSchedules çağır
+        $this->service->wipeResourceSchedules('lesson', $lessonId);
+
+        // Hem schedule hem de schedule_items silinmiş olmalı
+        $stmt = $this->getDb()->prepare("SELECT * FROM schedules WHERE owner_type = 'lesson' AND owner_id = ?");
+        $stmt->execute([$lessonId]);
+        $this->assertEmpty($stmt->fetchAll());
+
+        $stmtItems = $this->getDb()->prepare("SELECT * FROM schedule_items WHERE schedule_id = ?");
+        $stmtItems->execute([$scheduleId]);
+        $this->assertEmpty($stmtItems->fetchAll());
     }
 }

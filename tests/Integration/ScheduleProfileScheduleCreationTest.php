@@ -31,10 +31,8 @@ class ScheduleProfileScheduleCreationTest extends BaseTestCase
         // Reset AuthMiddleware cache
         $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
         $propResolved = $ref->getProperty('isResolved');
-        $propResolved->setAccessible(true);
         $propResolved->setValue(null, false);
         $propUser = $ref->getProperty('currentUser');
-        $propUser->setAccessible(true);
         $propUser->setValue(null, null);
 
         $user = (new User())->find($userId);
@@ -149,10 +147,8 @@ class ScheduleProfileScheduleCreationTest extends BaseTestCase
         // Reset AuthMiddleware cache
         $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
         $propResolved = $ref->getProperty('isResolved');
-        $propResolved->setAccessible(true);
         $propResolved->setValue(null, false);
         $propUser = $ref->getProperty('currentUser');
-        $propUser->setAccessible(true);
         $propUser->setValue(null, null);
 
         // 1. Boş schedule oluştur (içinde item yok)
