@@ -8,60 +8,59 @@ use App\Models\Building;
 
 class DatabaseTransactionTest extends BaseTestCase
 {
+    /**
+     * SAVEPOINT kullanarak nested transaction rollback davranışını doğrular.
+     * BaseTestCase'in dış transaction'ı içinde kalır; tearDown temizler.
+     */
     public function testTransactionRollsBackOnException(): void
     {
-        // BaseTestCase'in başlattığı transaction'ı rollback yapıp temiz başlangıç yapalım
-        if ($this->getDb()->inTransaction()) {
-            $this->getDb()->rollBack();
-        }
+        $db = $this->getDb();
 
+        // Test verisi — BaseTestCase tearDown'da rollback edilecek
         $unitId = $this->insert('units', ['name' => 'Tx Unit ' . rand(1000, 9999), 'type' => 'myo', 'active' => 1]);
 
-        try {
-            Database::transaction(function () use ($unitId) {
-                // 1. Bir bina ekle
-                $stmt = $this->getDb()->prepare("INSERT INTO buildings (name, unit_id) VALUES (?, ?)");
-                $stmt->execute(['Rollback Test Binası', $unitId]);
+        // SAVEPOINT ile nested transaction simüle et
+        $db->exec('SAVEPOINT sp_rollback_test');
 
-                // 2. Kasıtlı bir hata fırlat
-                throw new \RuntimeException('İşlem sırasında beklenmedik hata!');
-            });
-        } catch (\RuntimeException $e) {
-            // Hatayı yakala
+        try {
+            $stmt = $db->prepare("INSERT INTO buildings (name, unit_id) VALUES (?, ?)");
+            $stmt->execute(['Rollback Test Binası', $unitId]);
+
+            throw new \RuntimeException('İşlem sırasında beklenmedik hata!');
+
+        } catch (\RuntimeException) {
+            $db->exec('ROLLBACK TO SAVEPOINT sp_rollback_test');
+            $db->exec('RELEASE SAVEPOINT sp_rollback_test');
         }
 
-        // Eklenen binanın rollback edildiğini ve veritabanında olmadığını doğrula
-        $stmt = $this->getDb()->prepare("SELECT * FROM buildings WHERE name = ? AND unit_id = ?");
+        // Savepoint geri alındı → bina kayıt olmamalı
+        $stmt = $db->prepare("SELECT * FROM buildings WHERE name = ? AND unit_id = ?");
         $stmt->execute(['Rollback Test Binası', $unitId]);
         $record = $stmt->fetch();
 
-        // Sonraki testler için transaction'ı tekrar başlat
-        $this->getDb()->beginTransaction();
-
-        $this->assertFalse($record, 'Transaction hata aldığında yapılan tüm veritabanı işlemleri geri alınmalıydı.');
+        $this->assertFalse($record, 'Savepoint rollback sonrası bina kaydı veritabanında olmamalıydı.');
     }
 
+    /**
+     * Database::transaction() başarılı olduğunda sonucu döndürdüğünü doğrular.
+     * Non-initiator modda çalışır (dış transaction var); veriler tearDown'da temizlenir.
+     */
     public function testTransactionCommitsOnSuccess(): void
     {
-        if ($this->getDb()->inTransaction()) {
-            $this->getDb()->rollBack();
-        }
-
         $unitId = $this->insert('units', ['name' => 'Tx Commit Unit ' . rand(1000, 9999), 'type' => 'myo', 'active' => 1]);
 
-        $result = Database::transaction(function () use ($unitId) {
+        // Database::transaction dış transaction içinde → non-initiator
+        $buildingId = Database::transaction(function () use ($unitId) {
             $stmt = $this->getDb()->prepare("INSERT INTO buildings (name, unit_id) VALUES (?, ?)");
             $stmt->execute(['Commit Test Binası', $unitId]);
             return (int)$this->getDb()->lastInsertId();
         });
 
-        $this->assertGreaterThan(0, $result);
-        $building = (new Building())->find($result);
+        $this->assertGreaterThan(0, $buildingId);
 
-        // Sonraki testler için transaction'ı tekrar başlat
-        $this->getDb()->beginTransaction();
-
+        $building = (new Building())->find($buildingId);
         $this->assertNotNull($building);
         $this->assertEquals('Commit Test Binası', $building->name);
+        // BaseTestCase::tearDown() bu veriyi rollback eder — veritabanında iz kalmaz
     }
 }
