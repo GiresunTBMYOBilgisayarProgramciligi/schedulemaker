@@ -133,3 +133,14 @@ Logs/*
 .phpunit.cache/*
 .phpunit.cache/test-results
 Public/mail_log.html
+
+### Node.js / Playwright ###
+node_modules/
+package-lock.json
+
+# Playwright üretilen çıktılar (kaynak değil)
+playwright-report/
+test-results/
+
+### Scratch (geçici dosyalar) ###
+scratch/

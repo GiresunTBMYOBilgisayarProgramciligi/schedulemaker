@@ -1,0 +1,27 @@
+{
+  "name": "schedulemaker",
+  "version": "1.0.0",
+  "description": "## Gereksinimler",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GiresunTBMYOBilgisayarProgramciligi/schedulemaker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GiresunTBMYOBilgisayarProgramciligi/schedulemaker/issues"
+  },
+  "homepage": "https://github.com/GiresunTBMYOBilgisayarProgramciligi/schedulemaker#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

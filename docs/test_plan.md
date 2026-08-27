@@ -1,92 +1,22 @@
-# Test Uygulama Planı
+# E2E ve Arayüz Testleri (Playwright Checklist)
 
-Bu doküman, "Ders Programı Düzenleme Sistemi" için test altyapısının kurulması ve sürdürülebilir bir test stratejisinin uygulanması için yol haritasını içerir.
-##Kalan işler dokümanından aktarılanlar :
-Tüm servisler için test yazılmalı:
+Aşağıdaki tüm uçtan uca (E2E) senaryolar `tests/e2e/` altındaki Playwright test paketleriyle **otomasyona bağlanmış ve %100 başarılı** olarak doğrulanmıştır:
 
-| Servis | Test Tipi | Notlar |
-|--------|-----------|--------|
-| `ScheduleService` | Unit + Integration | `saveScheduleItems`, `deleteScheduleItems`, `wipeResourceSchedules` |
-| `ExamService` | Unit + Integration | `saveExamScheduleItems`, `availableObservers` |
-| `ConflictService` | Unit | `checkScheduleCrash` |
-| `AvailabilityService` | Unit | `availableClassrooms` |
-| `LessonService` | Unit | `combineLesson` (karmaşık — schedule sync) |
-| `UserService` | Unit | `login`, `saveNew` (password hash) |
-| `ClassroomService` | Unit | `saveNew`, `updateClassroom` |
-
-**Araç önerisi:** PHPUnit — `tests/Unit/Services/` ve `tests/Integration/` dizinleri oluşturulmalı.
-
----
-## 1. Test Stratejisi
-
-Proje için üç katmanlı bir test yaklaşımı benimsenecektir:
-
-- **Unit Tests (Birim Testler)**: Harici bağımlılığı olmayan (DB, Dosya Sistemi vb.) yardımcı sınıfların ve iş mantığının test edilmesi.
-- **Integration Tests (Entegrasyon Testleri)**: Birden fazla bileşenin (Servis + Repository + Database) birlikte çalışmasının test edilmesi.
-
-## 2. Test Ortamı ve Araçlar
-
-- **Test Framework**: PHPUnit 10+
-- **Database**: 
-    - Testler için ayrı bir MySQL veritabanı (`schedulemaker_test`) veya SQLite (InMemory) kullanılacaktır.
-    - Her test öncesinde veritabanı "Clean State" (temiz durum) haline getirilecektir.
-- **Configuration**: `.env.test` dosyası aracılığıyla test ortamı ayarları yönetilecektir.
-
-## 3. Öncelikli Test Alanları
-
-### 3.1. Yardımcı Sınıflar (Unit Tests)
-- `App\Helpers\TimeHelper`: Zaman hesaplamaları, aşım kontrolleri, çakışma mantığı.
-- `App\Services\TimelineService`: Zaman çizelgesi düzleştirme (flattening), dilim birleştirme.
-- `App\Validators\ScheduleItemValidator`: Veri giriş validasyonları.
-
-### 3.2. Servis Katmanı (Integration Tests)
-- `App\Services\ScheduleService`:
-    - `saveScheduleItems`: Başarılı kayıt, çakışma durumunda hata yönetimi.
-    - `processItemDeletion`: Parçalı silme ve zaman kayması kontrolleri.
-    - `mergeGroupItems`: Gruplu derslerin doğru birleştirilmesi.
-- `App\Services\AvailabilityService`: Müsait hoca ve derslik sorgularının doğruluğu.
-- `App\Services\ConflictService`: Karmaşık çakışma kurallarının (Grup dersi, hoca çakışması vb.) kontrolü.
-
-## 4. Uygulama Adımları
-
-1. **Hazırlık**:
-    - `composer require --dev phpunit/phpunit` komutu ile PHPUnit kurulur.
-    - `phpunit.xml` konfigürasyon dosyası oluşturulur.
-    - `tests/` dizini altında `Unit` ve `Integration` klasörleri oluşturulur.
-
-2. **Temel Testlerin Yazılması**:
-    - İlk olarak `TimeHelperTest.php` yazılarak altyapı doğrulanır.
-    - BaseTestCase oluşturularak DB transaction yönetimi ve setup/teardown işlemleri standardize edilir.
-
-3. **Otomatikleştirme**:
-    - Git push öncesi testlerin çalışması sağlanır (İsteğe bağlı).
-
-## 6. İleri Seviye Test Teknikleri ve Varyasyonlar
-
-Testlerin kalitesini ve kapsama alanını artırmak için aşağıdaki yaklaşımlar uygulanmalıdır:
-
-### 6.1. Data Providers (Veri Sağlayıcılar)
-Aynı mantığı farklı veri setleriyle test etmek için kullanılır.
-- **Kullanım**: Bir metodun farklı girdi kombinasyonları (doğru format, yanlış format, sınır değerler) için nasıl davrandığını tek bir test metoduyla kontrol edin.
-- **Örnek**: `TimeHelper::isOverlapping` için çakışan, çakışmayan, ucu ucuna değen tüm senaryoları bir dizi içinde tanımlayın.
-
-### 6.2. Sınır Değer Analizi (Edge Cases)
-Hataların en sık görüldüğü uç noktaları hedefleyin:
-- **Zaman**: Günün başlangıcı (00:00) ve bitişi (23:59).
-- **Miktar**: 0 saatlik ders, hoca sınırı tam dolmuş hoca, boş sınıf mevcudu.
-- **Veri Tipleri**: Beklenen dizi yerine null veya boş string gelmesi durumu.
-
-### 6.3. Negatif Testler
-Sistemin sadece doğru veriyi işlemesi değil, yanlış veriyi de güvenli bir şekilde reddetmesi gerekir:
-- Geçersiz bir email ile kullanıcı kaydı denemesi.
-- Bitiş saati başlangıç saatinden önce olan bir ders öğesi kaydı.
-- Beklenen hata fırlatıldığının (`expectException`) doğrulanması.
-
-### 6.4. Entegrasyon Varyasyonları (Senaryo Bazlı)
-Gerçek dünya senaryolarını simüle edin:
-- **Çakışma Senaryosu**: Aynı hocaya aynı saatte iki farklı programda ders atanması durumunda sistemin engelleme yapması.
-- **Kapasite Senaryosu**: Laboratuvar kapasitesinin üzerinde öğrenci içeren bir dersin atanması durumunda uyarı verilmesi.
-- **Transaction Testi**: Çoklu kayıt sırasında bir adımda hata oluştuğunda, o ana kadar yapılmış tüm veritabanı işlemlerinin geri alınması (Rollback).
-
-### 6.5. Mocking (Taklit Etme)
-Ağır veya dışa bağımlı işlemler (E-posta gönderimi, dış API çağrıları) `createMock()` kullanılarak taklit edilmeli, böylece testler hızlı ve izole kalmalıdır.
+| Test Paketi | Kapsanan Kontroller & Fonksiyonel Akışlar | Durum |
+| :--- | :--- | :---: |
+| [`schedule-lifecycle.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/schedule-lifecycle.spec.ts) | **Canlı Yaşam Döngüsü (Tam E2E):** Birim/Bölüm/Program seçimi, sol listeden takvime **Sürükle-Bırak**, Sınıf Seçim Modalı, Takvime Yerleştirme, **Sağ Tık -> Dersliği Düzenle**, Başka Slota **Taşıma (Table->Table)** ve Takvimden **Silme (Table->List)**. | ✅ Geçti |
+| [`schedule-full-flow.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/schedule-full-flow.spec.ts) | **Ders Programı Akışı:** Hiyerarşik seçimler, Takvim tablosu ve ders listesi doğrulaması, Context Menü tetiklemeleri. | ✅ Geçti |
+| [`exam-schedule-flow.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/exam-schedule-flow.spec.ts) | **Sınav Programı Akışı:** Sınav türü seçimi (Ara Sınav / Final / Bütünleme), 2. Hafta / 1. Hafta navigasyonu ve sınav takvim yüklemesi. | ✅ Geçti |
+| [`schedule-drag-drop.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/schedule-drag-drop.spec.ts) | **Takvim Düzenleyici:** Program, Hoca ve Derslik sekmeleri arası geçiş, Yıl/Dönem seçimi, Notlar & Bildirim butonları. | ✅ Geçti |
+| [`home-extended.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/home-extended.spec.ts) | **Ana Sayfa Detay:** Program türü geçişleri (Ders, Ara Sınav, Final, Bütünleme), Hoca/Derslik sekmeleri, Excel/iCal butonları. | ✅ Geçti |
+| [`user-crud.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/user-crud.spec.ts) | **Kullanıcı İşlemleri:** DataTable arama/filtreleme, HTML5 `required` validasyon kontrolü, yeni kullanıcı ekleme ve anlık arama. | ✅ Geçti |
+| [`lesson-crud.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/lesson-crud.spec.ts) | **Ders İşlemleri:** Ders listesi, Ders Ekleme formu açılışı, validasyonlar ve bağımlı seçimler. | ✅ Geçti |
+| [`classroom-building-crud.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/classroom-building-crud.spec.ts) | **Derslik & Bölüm & Program:** Yeni derslik ekleme, yeni bölüm ekleme ve yeni program ekleme form kontrolleri. | ✅ Geçti |
+| [`profile-preferences.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/profile-preferences.spec.ts) | **Profilim & Tercihler:** Bilgi formu, ders yükü istatistikleri, parola notu ve tercih takvim kartları. | ✅ Geçti |
+| [`role-permissions.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/role-permissions.spec.ts) | **RBAC Yetkilendirme:** Öğretim Görevlisi, Bölüm Başkanı ve Admin rolleri ile arayüz erişim doğrulamaları. | ✅ Geçti |
+| [`admin-crud.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/admin-crud.spec.ts) | **Yönetim Paneli:** Dashboard bileşenleri, Sidebar listeleri ve Çıkış yapma akışı. | ✅ Geçti |
+| [`schedule-editor.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/schedule-editor.spec.ts) | **Program Yönetimi:** Sınav programı düzenleme, Dışa aktarma, Yayınlama, Sistem ayarları ve Log takip sayfaları. | ✅ Geçti |
+| [`home-page.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/home-page.spec.ts) | **Ana Sayfa & Navigasyon:** Başlık, filtreler ve giriş yönlendirmesi. | ✅ Geçti |
+| [`auth.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/auth.spec.ts) | **Kimlik Doğrulama:** Geçersiz giriş uyarıları ve form validasyonları. | ✅ Geçti |
+| [`admin-navigation.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/admin-navigation.spec.ts) | **Erişim Koruması:** Misafir kullanıcıların yönetim sayfalarına erişim engeli. | ✅ Geçti |
+| [`schedule-view.spec.ts`](file:///home/sametatabasch/PhpstormProjects/schedulemaker/tests/e2e/schedule-view.spec.ts) | **Program Gösterimi:** Takvim tablosu yükleme ve export butonları. | ✅ Geçti |
