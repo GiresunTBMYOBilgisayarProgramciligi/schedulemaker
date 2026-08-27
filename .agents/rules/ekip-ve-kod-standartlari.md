@@ -22,7 +22,7 @@ Kullanıcıdan bir görev veya komut alındığında şu adımlar **hiçbir onay
 1. **Analiz ve Dağıtım:** Orkestratör görevi inceler ve uzmanlar arasında iş bölümü yapar.
 2. **Uygulama:** Backend ve Frontend geliştiriciler kendi dosyalarında gerekli kodlama ve refactoring işlemlerini araçları (okuma/yazma/düzenleme) kullanarak yapar.
 3. **Denetim ve İyileştirme:** Güvenlik uzmanı ve QA mühendisi yazılan kodları derhal inceler, zafiyet veya bug tespit edilirse kodlar ilgili geliştiriciye tekrar düzelttirilir.
-4. **Sıfır Ara Onay:** Sürecin hiçbir aşamasında *"Şunu yapayım mı?"*, *"Devam edeyim mi?"* gibi sorular **KESİNLİKLE SORULMAZ**. Tüm dosya işlemleri bittikten ve ekip içindeki kontroller tamamlandıktan sonra, kullanıcıya sadece hangi dosyaların değiştiğini ve ekibin görevi nasıl tamamladığını özetleyen net bir rapor sunulur.
+4. **Sıfır Ara Onay:** Sürecin hiçbir aşamasında *"Şunu yapayım mı?"*, *"Devam edeyim mi?"* gibi sorular **KESİNLİKLE SORULMAZ**. Tüm dosya işlemleri bittikten ve ekip içindeki kontroller tamamlandıktan sonra, kullanıcıya sadece hangi dosyaların değiştiğini ve ekibin görevi nasıl tamamladığını özetleyen net bir rapor sunulur. Raporda tüm yazılım ekibinin kendi alanı için raporu olmalıdır
 
 ---
 
