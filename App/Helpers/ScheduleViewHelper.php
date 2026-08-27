@@ -66,8 +66,8 @@ class ScheduleViewHelper
             'data-classroom-id' => ($slotData->classroom ?? null)?->id,
             'data-classroom-name' => ($slotData->classroom ?? null)?->name,
 
-            'data-classroom-size' => $slotData->classroom?->class_size,
-            'data-classroom-exam-size' => $slotData->classroom?->exam_size,
+            'data-classroom-size' => ($slotData->classroom ?? null)?->class_size,
+            'data-classroom-exam-size' => ($slotData->classroom ?? null)?->exam_size,
             'data-status' => $scheduleItem->status,
         ];
 

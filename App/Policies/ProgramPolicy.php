@@ -8,6 +8,8 @@ use App\Models\Department;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
+use App\Enums\UserRole;
+
 class ProgramPolicy extends BasePolicy
 {
     /**
@@ -15,9 +17,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || 
-               $user->role === 'submanager' || 
-               $user->role === 'department_head' ||
+        return $this->hasRole($user, UserRole::DepartmentHead) || 
                $this->hasAnyPermission($user, PermissionType::MANAGE_PROGRAM->value);
     }
 
@@ -26,7 +26,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function view(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
@@ -34,7 +34,7 @@ class ProgramPolicy extends BasePolicy
         }
 
         // Programın bağlı olduğu bölümün başkanı
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             return $user->department_id === $program->department_id;
         }
 
@@ -51,7 +51,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function create(User $user, $model = null, $programData = null): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             return true;
         }
 
@@ -67,7 +67,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function update(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
@@ -75,7 +75,7 @@ class ProgramPolicy extends BasePolicy
         }
 
         // Bölüm başkanı kendi programlarını güncelleyebilir
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             return $user->department_id === $program->department_id;
         }
 
@@ -87,7 +87,7 @@ class ProgramPolicy extends BasePolicy
      */
     public function delete(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
@@ -102,14 +102,14 @@ class ProgramPolicy extends BasePolicy
      */
     public function manage_schedule(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
             }
         }
 
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             return $user->department_id === $program->department_id;
         }
 
@@ -121,14 +121,14 @@ class ProgramPolicy extends BasePolicy
      */
     public function manage_lessons(User $user, Program $program): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
             if (!is_null($user->unit_id) && $user->unit_id == $programUnitId) {
                 return true;
             }
         }
 
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             return $user->department_id === $program->department_id;
         }
 

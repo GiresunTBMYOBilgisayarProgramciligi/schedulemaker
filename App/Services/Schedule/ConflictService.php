@@ -112,10 +112,7 @@ class ConflictService extends BaseService
         );
 
         if (!empty($conflicts)) {
-            $resolved = $conflictResolver->resolveConflict($conflicts, $status, $targetSchedule);
-            if ($resolved['action'] === 'error') {
-                $errors[] = $resolved['message'];
-            }
+            $errors = array_merge($errors, $conflicts);
         }
     }
 

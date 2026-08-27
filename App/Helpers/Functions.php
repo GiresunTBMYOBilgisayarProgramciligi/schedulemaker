@@ -181,3 +181,16 @@ function formatLessonName(?string $name): string
     }
     return implode(' ', $words);
 }
+
+/**
+ * Belirtilen kullanıcının veya aktif oturumdaki kullanıcının rol seviyesini kontrol eder.
+ *
+ * @param string|\App\Enums\UserRole $role Gereken minimum rol (örn. 'secretary' veya UserRole::Secretary)
+ * @param \App\Models\User|null $user Belirli bir kullanıcı (null ise aktif oturumdaki kullanıcı)
+ * @param bool $reverse true ise belirtilen rolden daha düşük/eşit roller
+ * @return bool
+ */
+function hasRole(string|\App\Enums\UserRole $role, ?\App\Models\User $user = null, bool $reverse = false): bool
+{
+    return \App\Core\Gate::hasRole($user, $role, $reverse);
+}

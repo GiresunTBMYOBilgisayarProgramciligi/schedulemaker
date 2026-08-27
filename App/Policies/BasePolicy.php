@@ -32,6 +32,29 @@ abstract class BasePolicy
     }
 
     /**
+     * Kullanıcının belirtilen rol seviyesine sahip olup olmadığını kontrol eder.
+     */
+    protected function hasRole(User $user, string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    {
+        return \App\Core\Gate::hasRole($user, $role, $reverse);
+    }
+
+    /**
+     * Kullanıcının belirtilen rollerden herhangi birine tam olarak sahip olup olmadığını kontrol eder.
+     */
+    protected function hasExactRole(User $user, string|\App\Enums\UserRole ...$roles): bool
+    {
+        $userRole = $user->role instanceof \App\Enums\UserRole ? $user->role->value : $user->role;
+        foreach ($roles as $r) {
+            $roleValue = $r instanceof \App\Enums\UserRole ? $r->value : $r;
+            if ($userRole === $roleValue) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Sınıfta tanımlanmamış yetki istekleri (örn. manage_* eylemleri) için sihirli metod.
      * Politikada spesifik bir metod yoksa kaskad JSON yetki kontrolüne devreder.
      *

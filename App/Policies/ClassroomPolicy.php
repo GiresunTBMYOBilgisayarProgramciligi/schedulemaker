@@ -7,16 +7,16 @@ use App\Models\Classroom;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
+use App\Enums\UserRole;
+
 class ClassroomPolicy extends BasePolicy
 {
-
-
     /**
      * Derslik listesini görme yetkisi
      */
     public function list(User $user): bool
     {
-        if (Gate::allowsRole('secretary')) {
+        if ($this->hasRole($user, UserRole::Secretary)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
@@ -28,7 +28,7 @@ class ClassroomPolicy extends BasePolicy
     public function view(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
@@ -41,13 +41,13 @@ class ClassroomPolicy extends BasePolicy
     {
         if ($classroom) {
             $unit = $classroom->getUnit();
-            if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
+            if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
                 return true;
             }
             return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
         }
         
-        if (Gate::allowsRole('secretary')) {
+        if ($this->hasRole($user, UserRole::Secretary)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
@@ -59,7 +59,7 @@ class ClassroomPolicy extends BasePolicy
     public function update(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
@@ -71,7 +71,7 @@ class ClassroomPolicy extends BasePolicy
     public function delete(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);

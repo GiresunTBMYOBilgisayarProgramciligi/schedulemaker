@@ -7,6 +7,8 @@ use App\Models\Building;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
+use App\Enums\UserRole;
+
 class BuildingPolicy extends BasePolicy
 {
     /**
@@ -14,8 +16,7 @@ class BuildingPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-
-        if (Gate::allowsRole('secretary')) {
+        if ($this->hasRole($user, UserRole::Secretary)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value);
@@ -26,8 +27,7 @@ class BuildingPolicy extends BasePolicy
      */
     public function view(User $user, Building $building): bool
     {
-
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
 
@@ -44,8 +44,7 @@ class BuildingPolicy extends BasePolicy
      */
     public function create(User $user, $model = null, $building = null): bool
     {
-
-        if ($building && Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
+        if ($building && $this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
 
@@ -57,9 +56,10 @@ class BuildingPolicy extends BasePolicy
      */
     public function update(User $user, Building $building): bool
     {
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
+
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 
@@ -68,9 +68,10 @@ class BuildingPolicy extends BasePolicy
      */
     public function delete(User $user, Building $building): bool
     {
-        if (Gate::allowsRole('secretary') && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
+        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === $building->unit_id) {
             return true;
         }
+
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $building);
     }
 }

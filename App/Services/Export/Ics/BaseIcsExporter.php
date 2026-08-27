@@ -77,7 +77,8 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     {
         $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
         $scheduleFilters = $this->filterBuilder->build($filterArr);
-        $fileTitle = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Program';
+        $lastKey = !empty($scheduleFilters) && is_array($scheduleFilters) ? array_key_last($scheduleFilters) : null;
+        $fileTitle = ($lastKey !== null && isset($scheduleFilters[$lastKey]['file_title'])) ? $scheduleFilters[$lastKey]['file_title'] : 'Program';
         $academicYear = $filterArr['academic_year'] ?? '';
         $semester = $filterArr['semester'] ?? '';
         $baseName = $academicYear . "-" . $semester . "-" . $fileTitle;

@@ -7,6 +7,8 @@ use App\Models\Unit;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
+use App\Enums\UserRole;
+
 class UnitPolicy extends BasePolicy
 {
     /**
@@ -14,8 +16,7 @@ class UnitPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || 
-               $user->role === 'submanager' ||
+        return $this->hasRole($user, UserRole::SubManager) ||
                $this->hasAnyPermission($user, PermissionType::MANAGE_UNIT->value);
     }
 
@@ -24,7 +25,7 @@ class UnitPolicy extends BasePolicy
      */
     public function view(User $user, Unit $unit): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
                 return true;
             }
@@ -50,7 +51,7 @@ class UnitPolicy extends BasePolicy
      */
     public function update(User $user, Unit $unit): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
                 return true;
             }
@@ -72,7 +73,7 @@ class UnitPolicy extends BasePolicy
      */
     public function manage_schedule(User $user, Unit $unit): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
                 return true;
             }

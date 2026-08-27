@@ -402,4 +402,16 @@ class User extends Model
         }
         return array_unique($ids);
     }
+
+    /**
+     * Kullanıcının belirtilen rol seviyesine sahip olup olmadığını kontrol eder.
+     *
+     * @param string|\App\Enums\UserRole $role
+     * @param bool $reverse
+     * @return bool
+     */
+    public function hasRole(string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    {
+        return \App\Core\Gate::hasRole($this, $role, $reverse);
+    }
 }

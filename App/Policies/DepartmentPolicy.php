@@ -7,6 +7,8 @@ use App\Models\Department;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 
+use App\Enums\UserRole;
+
 class DepartmentPolicy extends BasePolicy
 {
     /**
@@ -14,9 +16,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $user->role === 'manager' || 
-               $user->role === 'submanager' || 
-               $user->role === 'department_head' ||
+        return $this->hasRole($user, UserRole::DepartmentHead) || 
                $this->hasAnyPermission($user, PermissionType::MANAGE_DEPARTMENT->value);
     }
 
@@ -25,7 +25,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function view(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
                 return true;
             }
@@ -44,7 +44,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function create(User $user, $model = null, $departmentData = null): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (isset($departmentData->unit_id)) {
                 return !is_null($user->unit_id) && $user->unit_id == $departmentData->unit_id;
             }
@@ -65,13 +65,11 @@ class DepartmentPolicy extends BasePolicy
      */
     public function update(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
                 return true;
             }
         }
-
-
 
         return $this->hasCascadePermission($user, PermissionType::MANAGE_DEPARTMENT->value, $department);
     }
@@ -81,7 +79,7 @@ class DepartmentPolicy extends BasePolicy
      */
     public function delete(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
                 return true;
             }
@@ -95,13 +93,13 @@ class DepartmentPolicy extends BasePolicy
      */
     public function manage_schedule(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
                 return true;
             }
         }
 
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             if ($user->department_id === $department->id || $department->chairperson_id === $user->id) {
                 return true;
             }
@@ -115,13 +113,13 @@ class DepartmentPolicy extends BasePolicy
      */
     public function manage_lessons(User $user, Department $department): bool
     {
-        if ($user->role === 'manager' || $user->role === 'submanager') {
+        if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $department->unit_id) {
                 return true;
             }
         }
 
-        if ($user->role === 'department_head') {
+        if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             if ($user->department_id === $department->id || $department->chairperson_id === $user->id) {
                 return true;
             }
