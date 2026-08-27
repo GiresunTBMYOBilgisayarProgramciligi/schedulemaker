@@ -390,6 +390,16 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    public function getAllBuildingsListAction(): void
+    {
+        $this->response = (new BuildingController())->getAllBuildingsListResponse();
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[PublicAction]
     public function getClassroomsListAction($building_id): void
     {
         $this->response = (new ClassroomController())->getClassroomsListResponse((int)$building_id);

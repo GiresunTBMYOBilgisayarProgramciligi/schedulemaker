@@ -132,7 +132,12 @@ use function App\Helpers\getSettingValue;
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label" for="building_id">Bina Seçimi</label>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="col-form-label mb-0" for="building_id">Bina Seçimi</label>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-load-all-buildings" title="Tüm Birimlerden Bina Seç"><i class="bi bi-globe"></i> Tüm Binalar</button>
+                                                </div>
+                                            </div>
                                             <select class="form-select tom-select" id="building_id" name="building_id" required>
                                                 <option value="">İlk olarak Birim Seçiniz</option>
                                             </select>

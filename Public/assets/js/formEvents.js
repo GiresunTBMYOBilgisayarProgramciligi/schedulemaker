@@ -204,6 +204,49 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    const btnLoadAllBuildings = document.getElementById("btn-load-all-buildings");
+    if (btnLoadAllBuildings && buildingSelect) {
+        btnLoadAllBuildings.addEventListener("click", function () {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Yükleniyor...';
+            this.disabled = true;
+
+            fetch(`/ajax/getAllBuildingsList`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const bldgList = data['buildings'] || [];
+                if (buildingSelect.tomselect) {
+                    buildingSelect.tomselect.clearOptions();
+                    buildingSelect.tomselect.addOption({value: "", text: "Bina Seçiniz"});
+                    bldgList.forEach(bldg => {
+                        buildingSelect.tomselect.addOption({value: bldg.id, text: bldg.name});
+                    });
+                    buildingSelect.tomselect.refreshOptions(false);
+                } else {
+                    buildingSelect.innerHTML = "<option value=''>Bina Seçiniz</option>";
+                    bldgList.forEach(bldg => {
+                        const option = document.createElement("option");
+                        option.value = bldg.id;
+                        option.textContent = bldg.name;
+                        buildingSelect.appendChild(option);
+                    });
+                }
+                new Toast().prepareToast("Başarılı", "Tüm binalar listeye eklendi.", "success");
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Tüm binaları alırken hata oluştu.", "danger");
+                console.error(error);
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    }
+
     if (unitSelect && chairpersonSelect) {
         unitSelect.addEventListener("change", function () {
             const unitId = this.value;

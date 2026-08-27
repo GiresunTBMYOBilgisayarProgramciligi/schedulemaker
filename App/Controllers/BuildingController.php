@@ -48,6 +48,28 @@ class BuildingController extends Controller
         ];
     }
 
+    /**
+     * AjaxRouter için tüm binaların listesini döndürür (Birim adıyla birlikte).
+     */
+    public function getAllBuildingsListResponse(): array
+    {
+        $buildings = (new Building())->get()->with(['unit'])->all();
+
+        $buildingsList = [];
+        foreach ($buildings as $building) {
+            $unitName = $building->unit ? $building->unit->name : 'Birim Yok';
+            $buildingsList[] = [
+                'id'   => $building->id,
+                'name' => $building->name . " ($unitName)"
+            ];
+        }
+
+        return [
+            'status'    => 'success',
+            'buildings' => $buildingsList
+        ];
+    }
+
 
     /**
      * Yeni bina oluşturur (POST /ajax/building/add)
