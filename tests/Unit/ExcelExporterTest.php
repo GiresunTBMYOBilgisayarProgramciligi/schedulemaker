@@ -71,4 +71,43 @@ class ExcelExporterTest extends BaseTestCase
         $this->assertStringContainsString('GİRESUN ÜNİVERSİTESİ', $headerValue);
         $this->assertStringContainsString('GÖRELE GÜZEL SANATLAR FAKÜLTESİ', $headerValue);
     }
+
+    public function testGetFileNameIncludesSpecificNames(): void
+    {
+        $exporter = new LessonScheduleExcelExporter();
+
+        // Program bazlı
+        $filters = [
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => $this->programId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ];
+        $fileName = $exporter->getFileName($filters);
+        $this->assertStringContainsString('grafik', $fileName);
+        $this->assertStringContainsString('ders-programi', $fileName);
+
+        // Bölüm bazlı
+        $deptFilters = [
+            'type' => 'lesson',
+            'owner_type' => 'department',
+            'owner_id' => $this->deptId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ];
+        $deptFileName = $exporter->getFileName($deptFilters);
+        $this->assertStringContainsString('grafik-tasarimi', $deptFileName);
+
+        // Birim bazlı
+        $unitFilters = [
+            'type' => 'lesson',
+            'owner_type' => 'unit',
+            'owner_id' => $this->unitId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ];
+        $unitFileName = $exporter->getFileName($unitFilters);
+        $this->assertStringContainsString('gorele-guzel-sanatlar-fakultesi', $unitFileName);
+    }
 }

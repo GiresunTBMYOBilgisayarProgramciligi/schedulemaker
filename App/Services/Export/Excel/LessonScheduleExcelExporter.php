@@ -7,7 +7,6 @@ use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
-use JetBrains\PhpStorm\NoReturn;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -29,10 +28,11 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
      */
     protected function buildSpreadsheet(array $filters, array $showOptions): void
     {
-        $username  = $this->logContext()['username'] ?? "Sistem";
-        $ownerType = $filters['owner_type'] ?? 'bilinmeyen';
+        $scheduleFilters = $this->filterBuilder->build($filters);
+        $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Ders Programı';
+        $username        = $this->logContext()['username'] ?? "Misafir";
         $this->logger()->info(
-            "{$username} {$ownerType} bazlı ders programı çıktısı aldı.",
+            "{$username} {$fileTitle} çıktısı aldı.",
             $this->logContext()
         );
 
@@ -42,8 +42,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
-        $row            = $this->writeFileTitle($filters);
-        $scheduleFilters = $this->filterBuilder->build($filters);
+        $row         = $this->writeFileTitle($filters);
 
         foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new Schedule())->get()
