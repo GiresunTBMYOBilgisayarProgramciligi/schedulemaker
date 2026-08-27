@@ -621,11 +621,31 @@ class AdminPageController extends Controller
             throw new Exception("Bölüm bulunamadı");
         }
         $assetManager->loadPageAssets('formpages');
+        $lecturers = [];
+        if (!empty($department->unit_id)) {
+            $lecturers = (new UserRepository())->findBy(['unit_id' => $department->unit_id, 'active' => true]);
+        }
+        if (!empty($department->chairperson_id)) {
+            $chairpersonExists = false;
+            foreach ($lecturers as $l) {
+                if ($l->id == $department->chairperson_id) {
+                    $chairpersonExists = true;
+                    break;
+                }
+            }
+            if (!$chairpersonExists) {
+                $chairperson = (new UserRepository())->find($department->chairperson_id);
+                if ($chairperson) {
+                    $lecturers[] = $chairperson;
+                }
+            }
+        }
         return [
             "departmentController" => new DepartmentController(),
             "department"           => $department,
             "page_title"           => ($department->name ?? '') . ' Düzenle',
             "units"                => (new UnitRepository())->getAuthorized('view'),
+            "lecturers"            => $lecturers,
         ];
     }
 

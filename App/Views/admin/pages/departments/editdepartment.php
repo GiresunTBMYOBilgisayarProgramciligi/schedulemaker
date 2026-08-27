@@ -63,10 +63,22 @@
                                     </div>
                                     <div class="col-md-5">
                                         <div class="mb-3">
-                                            <label class="form-label" for="chairperson_id">Bölüm Başkanı</label>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <label class="col-form-label mb-0" for="chairperson_id">Bölüm Başkanı</label>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-load-all-chairpersons" title="Tüm Birimlerden Seç"><i class="bi bi-globe"></i> Tüm Hocalar</button>
+                                                </div>
+                                            </div>
                                             <select class="form-select tom-select" id="chairperson_id"
                                                     name="chairperson_id" data-selected="<?= $department->chairperson_id ?? '' ?>">
                                                 <option value="0">İlk olarak Birim Seçiniz</option>
+                                                <?php if (isset($lecturers)): ?>
+                                                    <?php foreach ($lecturers as $lecturer): ?>
+                                                        <option value="<?= $lecturer->id ?>" <?= ($department->chairperson_id ?? 0) == $lecturer->id ? 'selected' : '' ?>>
+                                                            <?= $lecturer->getFullName() ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
                                             </select>
                                         </div>
                                     </div>

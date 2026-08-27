@@ -211,11 +211,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (chairpersonSelect.tomselect) {
                 chairpersonSelect.tomselect.clear();
                 chairpersonSelect.tomselect.clearOptions();
-                chairpersonSelect.tomselect.addOption({value: "", text: "Hoca Seçiniz"});
-                chairpersonSelect.tomselect.setValue("", true);
+                chairpersonSelect.tomselect.addOption({value: 0, text: "Bölüm Başkanı Seçiniz"});
+                chairpersonSelect.tomselect.setValue(0, true);
                 chairpersonSelect.tomselect.refreshOptions(false);
             } else {
-                chairpersonSelect.innerHTML = "<option value=''>Hoca Seçiniz</option>";
+                chairpersonSelect.innerHTML = "<option value='0'>Bölüm Başkanı Seçiniz</option>";
             }
 
             if (!unitId || unitId === "0" || unitId === "") return;
@@ -231,7 +231,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 if (chairpersonSelect.tomselect) {
                     chairpersonSelect.tomselect.clearOptions();
-                    chairpersonSelect.tomselect.addOption({value: "", text: "Hoca Seçiniz"});
+                    chairpersonSelect.tomselect.addOption({value: 0, text: "Bölüm Başkanı Seçiniz"});
                     if (data['lecturers'] && data['lecturers'].length > 0) {
                         data['lecturers'].forEach(lecturer => {
                             chairpersonSelect.tomselect.addOption({value: lecturer.id, text: lecturer.name});
@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     chairpersonSelect.tomselect.refreshOptions(false);
                 } else {
-                    chairpersonSelect.innerHTML = "<option value=''>Hoca Seçiniz</option>";
+                    chairpersonSelect.innerHTML = "<option value='0'>Bölüm Başkanı Seçiniz</option>";
                     if (data['lecturers'] && data['lecturers'].length > 0) {
                         data['lecturers'].forEach(lecturer => {
                             const option = document.createElement("option");
@@ -268,6 +268,50 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    const btnLoadAllChairpersons = document.getElementById("btn-load-all-chairpersons");
+    if (btnLoadAllChairpersons && chairpersonSelect) {
+        btnLoadAllChairpersons.addEventListener("click", function () {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Yükleniyor...';
+            this.disabled = true;
+
+            fetch(`/ajax/getAllLecturersList`, {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const lectList = data['lecturers'] || [];
+                if (chairpersonSelect.tomselect) {
+                    chairpersonSelect.tomselect.clearOptions();
+                    chairpersonSelect.tomselect.addOption({value: 0, text: "Bölüm Başkanı Seçiniz"});
+                    lectList.forEach(lect => {
+                        chairpersonSelect.tomselect.addOption({value: lect.id, text: lect.name});
+                    });
+                    chairpersonSelect.tomselect.refreshOptions(false);
+                } else {
+                    chairpersonSelect.innerHTML = "<option value='0'>Bölüm Başkanı Seçiniz</option>";
+                    lectList.forEach(lect => {
+                        const option = document.createElement("option");
+                        option.value = lect.id;
+                        option.textContent = lect.name;
+                        chairpersonSelect.appendChild(option);
+                    });
+                }
+                new Toast().prepareToast("Başarılı", "Tüm üniversite hocaları listeye eklendi.", "success");
+            })
+            .catch(error => {
+                new Toast().prepareToast("Hata", "Tüm hocaları alırken hata oluştu.", "danger");
+                console.error(error);
+            })
+            .finally(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    }
+
 
     if (unitSelect && departmentSelect) {
         unitSelect.addEventListener("change", function () {
