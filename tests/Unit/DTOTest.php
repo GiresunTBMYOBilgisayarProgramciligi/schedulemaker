@@ -157,14 +157,22 @@ class DTOTest extends BaseTestCase
     public function testUnitDTO(): void
     {
         $dto = UnitDTO::fromArray([
-            'name'   => 'Teknik Bilimler MYO',
-            'type'   => UnitType::Vocational->value,
-            'active' => true
+            'name'       => 'Teknik Bilimler MYO',
+            'type'       => UnitType::Vocational->value,
+            'manager_id' => '12',
+            'active'     => true
         ]);
 
         $this->assertEquals('Teknik Bilimler MYO', $dto->name);
         $this->assertEquals(UnitType::Vocational, $dto->type);
+        $this->assertEquals(12, $dto->manager_id);
         $this->assertTrue($dto->active);
+        $this->assertEquals([
+            'name'       => 'Teknik Bilimler MYO',
+            'type'       => UnitType::Vocational->value,
+            'manager_id' => 12,
+            'active'     => true,
+        ], $dto->toArray());
     }
 
     public function testLessonDTO(): void

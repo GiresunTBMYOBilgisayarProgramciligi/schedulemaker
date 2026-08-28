@@ -31,6 +31,10 @@ class UnitValidator extends BaseValidator
             $errors['type'] = 'Geçersiz birim türü seçildi.';
         }
 
+        if (!empty($data['manager_id']) && (!is_numeric($data['manager_id']) || (int)$data['manager_id'] < 0)) {
+            $errors['manager_id'] = 'Geçersiz birim yöneticisi seçildi.';
+        }
+
         if (!empty($errors)) {
             throw new ValidationException('Veri doğrulama hatası.', $errors);
         }

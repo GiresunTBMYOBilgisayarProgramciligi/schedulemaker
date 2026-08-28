@@ -66,6 +66,7 @@ use App\Models\Unit;
                                         <th>#</th>
                                         <th>Ad</th>
                                         <th>Tür</th>
+                                        <th>Müdür / Dekan</th>
                                         <th>Durum</th>
                                         <th class="text-center no-export">İşlemler</th>
                                     </tr>
@@ -79,6 +80,7 @@ use App\Models\Unit;
                                             <td><?= $unit->id ?></td>
                                             <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
                                             <td><?= $unit->getTypeName() ?></td>
+                                            <td><?= $unit->manager ? htmlspecialchars($unit->manager->getFullName()) : '<span class="text-muted fst-italic">Atanmamış</span>' ?></td>
                                             <td>
                                                 <?php if ($unit->active): ?>
                                                     <span class="badge bg-success">Aktif</span>

@@ -1032,7 +1032,7 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Unit::class, 'Birim listesini görme yetkiniz yok');
         $assetManager->loadPageAssets('listpages');
         return [
-            'units'      => (new UnitRepository())->getAuthorized('view'),
+            'units'      => (new UnitRepository())->getAuthorized('view', [], ['manager']),
             'unitTypes'  => UnitType::toArray(),
             'page_title' => 'Birim Listesi',
         ];
@@ -1045,6 +1045,7 @@ class AdminPageController extends Controller
         return [
             'page_title' => 'Birim Ekle',
             'unitTypes'  => UnitType::toArray(),
+            'lecturers'  => (new UserRepository())->getSortedAcademicStaff(),
         ];
     }
 
@@ -1082,6 +1083,7 @@ class AdminPageController extends Controller
         return [
             'unit'       => $unit,
             'unitTypes'  => UnitType::toArray(),
+            'lecturers'  => (new UserRepository())->getSortedAcademicStaff(),
             'page_title' => ($unit->name ?? '') . ' Düzenle',
         ];
     }

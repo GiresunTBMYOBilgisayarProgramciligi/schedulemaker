@@ -292,4 +292,32 @@ class UserRepository extends BaseRepository
         $user->lessons = $userOrLessons;
         return $user->getLessonCount($withChild);
     }
+
+    /**
+     * Akademik personeli akademik unvan kıdemine (Prof > Doç > Dr. Öğr. Üyesi ...)
+     * ve ardından alfabetik ada göre sıralanmış olarak döndürür.
+     *
+     * @return User[]
+     * @throws Exception
+     */
+    public function getSortedAcademicStaff(): array
+    {
+        $lecturers = (new User())->get()->where([
+            '!role' => ['in' => [UserRole::User->value, UserRole::Admin->value]]
+        ])->with(['unit'])->all();
+
+        usort($lecturers, function (User $a, User $b) {
+            $rankA = UserTitle::tryFrom((string)$a->title)?->getHierarchyRank() ?? 0;
+            $rankB = UserTitle::tryFrom((string)$b->title)?->getHierarchyRank() ?? 0;
+            if ($rankA !== $rankB) {
+                return $rankB <=> $rankA; // Yüksek unvan önce (azalan)
+            }
+            return strcmp(
+                mb_strtolower($a->name . ' ' . $a->last_name, 'UTF-8'),
+                mb_strtolower($b->name . ' ' . $b->last_name, 'UTF-8')
+            );
+        });
+
+        return $lecturers;
+    }
 }

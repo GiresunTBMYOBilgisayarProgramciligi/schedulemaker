@@ -38,13 +38,30 @@ use App\Models\Department;
                             </div>
                         </div>
                         <div class="card-body">
-                            <p><strong>Durum:</strong>
-                                <?php if ($unit->active): ?>
-                                    <span class="badge bg-success">Aktif</span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary">Pasif</span>
-                                <?php endif; ?>
-                            </p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class="mb-2"><strong><?= $unit->getManagerTitle() ?>:</strong> <?= $unit->manager ? htmlspecialchars($unit->manager->getFullName()) : '<span class="text-muted fst-italic">Atanmamış</span>' ?></p>
+                                </div>
+                                <div class="col-md-5">
+                                    <p class="mb-2">
+                                        <strong><?= $unit->getSubManagerTitle(count($unit->submanagers) > 1) ?>:</strong>
+                                        <?php if (!empty($unit->submanagers)): ?>
+                                            <?= implode(', ', array_map(fn($sm) => htmlspecialchars($sm->getFullName()), $unit->submanagers)) ?>
+                                        <?php else: ?>
+                                            <span class="text-muted fst-italic">Atanmamış</span>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="mb-0"><strong>Durum:</strong>
+                                        <?php if ($unit->active): ?>
+                                            <span class="badge bg-success">Aktif</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Pasif</span>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

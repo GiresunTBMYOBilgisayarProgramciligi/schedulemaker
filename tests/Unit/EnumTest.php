@@ -53,6 +53,12 @@ class EnumTest extends BaseTestCase
         $this->assertIsArray($sorted);
         $this->assertGreaterThan(0, count($sorted));
         $this->assertEquals('Dr. Öğr. Üyesi', $sorted[0]);
+
+        $this->assertGreaterThan(UserTitle::AssocProf->getHierarchyRank(), UserTitle::Prof->getHierarchyRank());
+        $this->assertGreaterThan(UserTitle::AsstProf->getHierarchyRank(), UserTitle::AssocProf->getHierarchyRank());
+        $this->assertGreaterThan(UserTitle::DrLecturer->getHierarchyRank(), UserTitle::AsstProf->getHierarchyRank());
+        $this->assertGreaterThan(UserTitle::Lecturer->getHierarchyRank(), UserTitle::DrLecturer->getHierarchyRank());
+        $this->assertGreaterThan(UserTitle::ResAssist->getHierarchyRank(), UserTitle::Lecturer->getHierarchyRank());
     }
 
     public function testUnitType(): void
@@ -62,6 +68,23 @@ class EnumTest extends BaseTestCase
         $this->assertEquals('Enstitü', UnitType::Institute->getLabel());
         $this->assertEquals('Yüksekokul', UnitType::School->getLabel());
         $this->assertEquals('Rektörlük', UnitType::Rectorate->getLabel());
+
+        // Manager / SubManager Titles per UnitType
+        $this->assertEquals('Dekan', UnitType::Faculty->getManagerTitle());
+        $this->assertEquals('Dekan Yardımcısı', UnitType::Faculty->getSubManagerTitle());
+        $this->assertEquals('Dekan Yardımcıları', UnitType::Faculty->getSubManagerTitle(true));
+        $this->assertEquals('Müdür', UnitType::Vocational->getManagerTitle());
+        $this->assertEquals('Müdür Yardımcısı', UnitType::Vocational->getSubManagerTitle());
+        $this->assertEquals('Müdür Yardımcıları', UnitType::Vocational->getSubManagerTitle(true));
+        $this->assertEquals('Müdür', UnitType::Institute->getManagerTitle());
+        $this->assertEquals('Müdür Yardımcısı', UnitType::Institute->getSubManagerTitle());
+        $this->assertEquals('Müdür Yardımcıları', UnitType::Institute->getSubManagerTitle(true));
+        $this->assertEquals('Müdür', UnitType::School->getManagerTitle());
+        $this->assertEquals('Müdür Yardımcısı', UnitType::School->getSubManagerTitle());
+        $this->assertEquals('Müdür Yardımcıları', UnitType::School->getSubManagerTitle(true));
+        $this->assertEquals('Rektör', UnitType::Rectorate->getManagerTitle());
+        $this->assertEquals('Rektör Yardımcısı', UnitType::Rectorate->getSubManagerTitle());
+        $this->assertEquals('Rektör Yardımcıları', UnitType::Rectorate->getSubManagerTitle(true));
 
         $this->assertEquals(UnitType::Vocational, UnitType::fromLabel('Meslek Yüksekokulu'));
         $this->assertNull(UnitType::fromLabel('Geçersiz'));

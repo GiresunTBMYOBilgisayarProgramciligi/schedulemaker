@@ -20,18 +20,31 @@ class UnitServiceTest extends BaseTestCase
 
     public function testSaveNewUnit(): void
     {
+        $userId = $this->insert('users', [
+            'name'      => 'Prof. Dr. Ahmet',
+            'last_name' => 'Yılmaz',
+            'mail'      => 'ahmet' . rand(1000, 9999) . '@test.com',
+            'password'  => password_hash('123456', PASSWORD_DEFAULT),
+            'role'      => 'lecturer',
+            'title'     => 'Prof. Dr.'
+        ]);
+
         $dto = UnitDTO::fromArray([
-            'name' => 'Eğitim Fakültesi ' . rand(1000, 9999),
-            'type' => UnitType::Faculty->value,
-            'active' => 1
+            'name'       => 'Eğitim Fakültesi ' . rand(1000, 9999),
+            'type'       => UnitType::Faculty->value,
+            'manager_id' => $userId,
+            'active'     => 1
         ]);
 
         $unitId = $this->service->saveNew($dto);
         $this->assertGreaterThan(0, $unitId);
 
-        $unit = (new Unit())->find($unitId);
+        $unit = (new Unit())->get()->where(['id' => $unitId])->with(['manager'])->first();
         $this->assertEquals($dto->name, $unit->name);
         $this->assertEquals(UnitType::Faculty->value, $unit->type);
+        $this->assertEquals($userId, $unit->manager_id);
+        $this->assertNotNull($unit->manager);
+        $this->assertEquals($userId, $unit->manager->id);
     }
 
     public function testUpdateUnit(): void
@@ -64,5 +77,31 @@ class UnitServiceTest extends BaseTestCase
         $this->service->deleteUnit($unit);
 
         $this->assertNull((new Unit())->find($unitId));
+    }
+
+    public function testUnitWithSubmanagersRelation(): void
+    {
+        $dto = UnitDTO::fromArray([
+            'name'   => 'Mühendislik Fakültesi ' . rand(1000, 9999),
+            'type'   => UnitType::Faculty->value,
+            'active' => 1
+        ]);
+        $unitId = $this->service->saveNew($dto);
+
+        $subManagerId = $this->insert('users', [
+            'name'      => 'Doç. Dr. Ayşe',
+            'last_name' => 'Kaya',
+            'mail'      => 'ayse' . rand(1000, 9999) . '@test.com',
+            'password'  => password_hash('123456', PASSWORD_DEFAULT),
+            'role'      => 'submanager',
+            'unit_id'   => $unitId,
+            'title'     => 'Doç. Dr.'
+        ]);
+
+        $unit = (new Unit())->get()->where(['id' => $unitId])->with(['submanagers'])->first();
+        $this->assertEquals('Dekan', $unit->getManagerTitle());
+        $this->assertEquals('Dekan Yardımcısı', $unit->getSubManagerTitle());
+        $this->assertNotEmpty($unit->submanagers);
+        $this->assertEquals($subManagerId, $unit->submanagers[0]->id);
     }
 }

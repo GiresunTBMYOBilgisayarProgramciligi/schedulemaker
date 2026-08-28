@@ -119,15 +119,17 @@ class CoreEntityValidatorsTest extends BaseTestCase
     {
         $validator = new UnitValidator();
         $data = [
-            'name' => 'Teknik Bilimler MYO',
-            'type' => UnitType::Vocational->value,
-            'active' => 1
+            'name'       => 'Teknik Bilimler MYO',
+            'type'       => UnitType::Vocational->value,
+            'manager_id' => 5,
+            'active'     => 1
         ];
 
         $dto = $validator->getDTO($data);
         $this->assertInstanceOf(UnitDTO::class, $dto);
         $this->assertEquals('Teknik Bilimler MYO', $dto->name);
         $this->assertEquals(UnitType::Vocational, $dto->type);
+        $this->assertEquals(5, $dto->manager_id);
     }
 
     public function testUnitValidatorInvalidData(): void
@@ -135,7 +137,7 @@ class CoreEntityValidatorsTest extends BaseTestCase
         $validator = new UnitValidator();
 
         $this->expectException(ValidationException::class);
-        $validator->validate(['name' => '', 'type' => 'gecersiz_tur']);
+        $validator->validate(['name' => 'A', 'type' => 'invalid_type']);
     }
 
     public function testUserValidatorValidData(): void

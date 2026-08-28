@@ -47,7 +47,7 @@ class UnitRepository extends BaseRepository
         $model = new $this->modelClass;
         return $model->get()
             ->where(['id' => $id])
-            ->with(['departments' => ['with' => ['chairperson', 'programs']]])
+            ->with(['manager', 'submanagers', 'departments' => ['with' => ['chairperson', 'programs']]])
             ->first();
     }
 

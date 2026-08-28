@@ -30,14 +30,14 @@
                             <input type="hidden" name="id" value="<?= $unit->id ?>">
                             <div class="card-body pb-0">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-5">
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Birim Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
                                                    value="<?= htmlspecialchars($unit->name ?? '') ?>" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="type">Birim Türü</label>
                                             <select class="form-select" id="type" name="type" required>
@@ -50,7 +50,22 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="manager_id">Birim Müdürü / Dekanı</label>
+                                            <select class="form-select tom-select" id="manager_id" name="manager_id">
+                                                <option value="">Yönetici Seçiniz (İsteğe bağlı)</option>
+                                                <?php if (isset($lecturers)): ?>
+                                                    <?php foreach ($lecturers as $lecturer): ?>
+                                                        <option value="<?= $lecturer->id ?>" <?= ($unit->manager_id ?? 0) == $lecturer->id ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($lecturer->getFullName()) ?><?= $lecturer->unit ? ' (' . htmlspecialchars($lecturer->unit->name) . ')' : '' ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
                                         <div class="mb-3">
                                             <span class="form-label d-block">&nbsp;</span>
                                             <div class="form-check form-switch">

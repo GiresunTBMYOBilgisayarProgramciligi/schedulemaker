@@ -29,6 +29,31 @@ enum UnitType: string
     }
 
     /**
+     * Birim türüne uygun yönetici unvanını (Dekan, Müdür, Rektör) döndürür.
+     */
+    public function getManagerTitle(): string
+    {
+        return match ($this) {
+            self::Faculty   => 'Dekan',
+            self::Rectorate => 'Rektör',
+            self::Institute, self::Vocational, self::School => 'Müdür',
+        };
+    }
+
+    /**
+     * Birim türüne uygun yönetici yardımcısı unvanını (Dekan Yardımcısı / Dekan Yardımcıları vb.) döndürür.
+     */
+    public function getSubManagerTitle(bool $plural = false): string
+    {
+        $suffix = $plural ? 'Yardımcıları' : 'Yardımcısı';
+        return match ($this) {
+            self::Faculty   => 'Dekan ' . $suffix,
+            self::Rectorate => 'Rektör ' . $suffix,
+            self::Institute, self::Vocational, self::School => 'Müdür ' . $suffix,
+        };
+    }
+
+    /**
      * Tüm tipleri value => label formatında dizi olarak döndürür (form select için).
      */
     public static function toArray(): array

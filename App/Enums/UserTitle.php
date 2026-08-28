@@ -16,6 +16,25 @@ enum UserTitle: string
     case Prof = 'Prof. Dr.';
 
     /**
+     * Akademik unvan kıdem ağırlığını döndürür (büyükten küçüğe sıralama için).
+     * Prof. Dr. > Doç. Dr. > Dr. Öğr. Üyesi > Öğr. Gör. Dr. > Öğr. Gör. > Arş. Gör. Dr. > Arş. Gör.
+     * 
+     * @return int
+     */
+    public function getHierarchyRank(): int
+    {
+        return match ($this) {
+            self::Prof => 70,
+            self::AssocProf => 60,
+            self::AsstProf => 50,
+            self::DrLecturer => 40,
+            self::Lecturer => 30,
+            self::DrResAssist => 20,
+            self::ResAssist => 10,
+        };
+    }
+
+    /**
      * Tüm ünvanları uzunluklarına göre azalan (en uzundan en kısaya) şekilde sıralı olarak döndürür.
      * Bu işlem parseAcademicName metodu içerisinde uzun ünvanların ("Öğr. Gör. Dr." gibi) kısa olanlardan ("Öğr. Gör." gibi)
      * önce kontrol edilerek daha doğru ayıklanmasını sağlar.

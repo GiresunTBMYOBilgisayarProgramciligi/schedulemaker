@@ -68,12 +68,14 @@ create table if not exists schedule_items
 # Üst birim tablosu (Fakülte, Enstitü, MYO, Yüksekokul vb.)
 create table if not exists units
 (
-    id     INT AUTO_INCREMENT,
-    name   VARCHAR(150) NOT NULL,
-    type   VARCHAR(30)  NOT NULL,
-    active TINYINT(1) DEFAULT 1,
+    id         INT AUTO_INCREMENT,
+    name       VARCHAR(150) NOT NULL,
+    type       VARCHAR(30)  NOT NULL,
+    manager_id INT          NULL DEFAULT NULL,
+    active     TINYINT(1) DEFAULT 1,
     PRIMARY KEY (id),
-    UNIQUE (name)
+    UNIQUE (name),
+    CONSTRAINT fk_units_manager FOREIGN KEY (manager_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE = INNODB;
 
 # Bina tablosu (kampüsteki binalar)
