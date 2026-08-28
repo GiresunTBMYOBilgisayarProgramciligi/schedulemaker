@@ -12,6 +12,8 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
@@ -23,10 +25,10 @@ use App\Helpers\ScheduleViewHelper;
 class LessonScheduleExcelExporter extends BaseExcelExporter
 {
     /**
-     * @param array $filters     Doğrulanmış filtre dizisi
-     * @param array $showOptions ['show_code', 'show_lecturer', 'show_program']
+     * @param ScheduleExportFilterDTO $filters     Doğrulanmış filtre DTO'su
+     * @param ScheduleExportOptionsDTO $showOptions Gösterim seçenekleri DTO'su
      */
-    protected function buildSpreadsheet(array $filters, array $showOptions): void
+    protected function buildSpreadsheet(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): void
     {
         $scheduleFilters = $this->filterBuilder->build($filters);
         $lastFilterKey   = !empty($scheduleFilters) ? array_key_last($scheduleFilters) : null;
@@ -41,7 +43,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
         $type        = 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $colsPerDay  = ($filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
+        $colsPerDay  = ($filters->owner_type === OwnerType::CLASSROOM->value) ? 1 : 2;
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
@@ -283,7 +285,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
     private function formatItem(
         ScheduleItem $item,
         string $scheduleType,
-        array $options,
+        ScheduleExportOptionsDTO $options,
         RichText &$richContent,
         RichText &$richClassroom,
         bool $addSeparator = false
@@ -299,18 +301,18 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
             // Ders Adı
             $lessonName = $data->lesson->getFullName(addGroup: true);
-            if ($options['show_code'] && !empty($data->lesson->code)) {
+            if ($options->showCode && !empty($data->lesson->code)) {
                 $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
             }
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
             // Hoca Adı
-            if ($options['show_lecturer'] && $scheduleType !== 'user' && $data->lecturer) {
+            if ($options->showLecturer && $scheduleType !== 'user' && $data->lecturer) {
                 $richContent->createText("\n(" . $data->lecturer->getFullName() . ")");
             }
 
             // Program / Bölüm Adı
-            if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
+            if ($options->showProgram && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
                 $programNames = [];
                 if ($data->lesson->program) {
                     $programNames[] = $data->lesson->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);

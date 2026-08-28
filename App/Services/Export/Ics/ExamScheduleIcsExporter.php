@@ -3,6 +3,8 @@
 namespace App\Services\Export\Ics;
 
 use App\Core\Gate;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Enums\ExamType;
 use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
@@ -19,13 +21,13 @@ use App\Models\Schedule;
 class ExamScheduleIcsExporter extends BaseIcsExporter
 {
     /**
-     * @param array $filters
-     * @param array $showOptions
+     * @param ScheduleExportFilterDTO $filters
+     * @param ScheduleExportOptionsDTO $showOptions
      * @return array
      */
-    protected function buildIcs(array $filters, array $showOptions): array
+    protected function buildIcs(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): array
     {
-        $type     = $filters['type'];
+        $type     = $filters->type;
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now      = new \DateTime('now', $timezone);
 
@@ -56,7 +58,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
             'PRODID:-//schedulemaker//TR MBMYO Sinav Programi//TR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:' . $this->escapeIcsText($filters['academic_year'] . ' ' . $filters['semester'] . ' ' . $typeLabel . ' Programı'),
+            'X-WR-CALNAME:' . $this->escapeIcsText(($filters->academic_year ?? '') . ' ' . ($filters->semester ?? '') . ' ' . $typeLabel . ' Programı'),
             'X-WR-TIMEZONE:Europe/Istanbul',
         ];
 
@@ -138,8 +140,8 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                         $descriptionParts[] = "Program: " . $lesson->program->name;
                     }
                     $descriptionParts[] = 'Sınav Türü: ' . $typeLabel;
-                    $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
-                    $descriptionParts[] = 'Dönem: ' . $filters['semester'];
+                    $descriptionParts[] = 'Akademik Yıl: ' . ($filters->academic_year ?? '');
+                    $descriptionParts[] = 'Dönem: ' . ($filters->semester ?? '');
 
                     $uid     = uniqid('sm-exam-', true) . '@schedulemaker.local';
                     $dtstamp = $now->format('Ymd\THis');

@@ -15,6 +15,8 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 use App\Helpers\ScheduleViewHelper;
@@ -30,10 +32,10 @@ use App\Helpers\ScheduleViewHelper;
 class ExamScheduleExcelExporter extends BaseExcelExporter
 {
     /**
-     * @param array $filters    Doğrulanmış filtre dizisi
-     * @param array $showOptions ['show_code', 'show_lecturer', 'show_program', 'show_observer']
+     * @param ScheduleExportFilterDTO $filters    Doğrulanmış filtre DTO'su
+     * @param ScheduleExportOptionsDTO $showOptions Gösterim seçenekleri DTO'su
      */
-    protected function buildSpreadsheet(array $filters, array $showOptions): void
+    protected function buildSpreadsheet(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): void
     {
         $scheduleFilters = $this->filterBuilder->build($filters);
         $lastFilterKey   = !empty($scheduleFilters) ? array_key_last($scheduleFilters) : null;
@@ -41,7 +43,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             ? $scheduleFilters[$lastFilterKey]['file_title']
             : 'Sınav Programı';
         $username        = $this->logContext()['username'] ?? "Sistem";
-        $type            = $filters['type'] ?? 'exam';
+        $type            = $filters->type ?? 'exam';
         $this->logger()->info(
             "{$username} {$fileTitle} Excel çıktısı aldı.",
             $this->logContext()
@@ -83,7 +85,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             }
 
             // Final programı 2 haftalık olabilir
-            $weekCount   = ($filters['type'] === ExamType::FINAL->value) ? 2 : 1;
+            $weekCount   = ($filters->type === ExamType::FINAL->value) ? 2 : 1;
             $maxDayIndex = getSettingValue('maxDayIndex', 'exam', 4);
             $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
 
@@ -260,18 +262,28 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
     /**
      * Sınav programı item'ini RichText olarak formatlar.
      *
-     * Veri yapısı iki farklı şekilde gelebilir:
-     *   A) Program/Ders bazlı kayit:
-     *      - data: [{lesson_id, lecturer_id: null, classroom_id: null}]
-     *      - detail: {assignments: [{observer_id, observer_name, classroom_id, classroom_name}, ...]}
-     *   B) Gözetmen/Derslik bazlı kayit:
+     * @param ScheduleItem $item
+     * @param string $scheduleType 'program'|'user'|'classroom'
+     * @param ScheduleExportOptionsDTO $options
+     * @param RichText $richContent
+     * @param bool $addSeparator
+     *
+     * Item içindeki yapılar:
+     *   1) Program bazlı (normal) item:
+     *      - data: [{lesson_id, lecturer_id: X, classroom_id: null}]
+     *      - detail: {assignments: [{classroom_id, observer_id, classroom_name, observer_name}]}
+     *   2) Hoca bazlı item:
+     *      - data: [{lesson_id, lecturer_id: X, classroom_id: null}]
+     *      - detail: {assignments: [...]}  (eğer dersin asıl hocası ise)
+     *      - data: [{lesson_id, lecturer_id: Y (gözetmen), classroom_id: Z}] (gözetmenlik ise)
+     *   3) Derslik bazlı item:
      *      - data: [{lesson_id, lecturer_id: Y, classroom_id: Z}]
      *      - detail: {program_item_id: ..., reference_type: 'exam_assignment'}
      */
     private function formatItem(
         ScheduleItem $item,
         string $scheduleType,
-        array $options,
+        ScheduleExportOptionsDTO $options,
         RichText &$richContent,
         bool $addSeparator = false
     ): void {
@@ -286,19 +298,19 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
 
             // Ders Adı
             $lessonName = $data->lesson->getFullName(addGroup: true);
-            if ($options['show_code'] && !empty($data->lesson->code)) {
+            if ($options->showCode && !empty($data->lesson->code)) {
                 $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
             }
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
             // Hoca Adı (Daima dersin asıl hocası)
-            if ($options['show_lecturer'] && $data->lesson?->lecturer) {
+            if ($options->showLecturer && $data->lesson?->lecturer) {
                 $richContent->createText("\n(" . $data->lesson->lecturer->getFullName() . ")");
             }
 
 
             // Program / Bölüm Adı
-            if ($options['show_program'] && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
+            if ($options->showProgram && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
                 $programNames = [];
                 if ($data->lesson->program) {
                     $programNames[] = $data->lesson->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
@@ -322,7 +334,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 //    derslik ve gözetmenler detail['assignments']'tan gelir.
 
                 // Gözetmen ve Derslik birleştirilmesi
-                if ($options['show_observer'] ?? false) {
+                if ($options->showObserver) {
                     $assignmentLines = [];
                     foreach ($assignments as $assignment) {
                         $observerName = $assignment['observer_name'] ?? '';
@@ -330,9 +342,6 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                         
                         // İkisi de varsa "Gözetmen - Derslik(Kalın)", sadece derslik varsa "Derslik(Kalın)", sadece gözetmen varsa "Gözetmen"
                         if (!empty($observerName) && !empty($classroomName)) {
-                            // Sadece derslik kısmını bold yapmak için RichText kullanılacak ama şu an TextRun objesi oluşturmamız gerek.
-                            // PHPSpreadsheet RichText append mantığında createText ve createTextRun kullanılır.
-                            // Bu fonksiyon zaten tek bir element içinde olduğundan, richContent'e ekleyeceğiz.
                             $richContent->createText("\n{$observerName} - ");
                             $richContent->createTextRun($classroomName)->getFont()->setBold(true);
                         } elseif (!empty($classroomName)) {
@@ -363,7 +372,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 }
                 
                 // Derslik programında gözetmen gösterilmesi istenmişse (gözetmen data->lecturer içindedir)
-                if ($scheduleType === 'classroom' && ($options['show_observer'] ?? false) && $data->lecturer) {
+                if ($scheduleType === 'classroom' && $options->showObserver && $data->lecturer) {
                     $richContent->createText("\n" . $data->lecturer->getFullName());
                 }
             }

@@ -64,14 +64,15 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     /**
      * Filtre bilgilerinden veya sistemdeki aktif birimlerden birim adını çözümler.
      */
-    protected function resolveUnitName(array $filters): string
+    protected function resolveUnitName(ScheduleExportFilterDTO|array $filters): string
     {
-        $ownerType = $filters['owner_type'] ?? '';
-        $ownerId   = !empty($filters['owner_id']) ? (int) $filters['owner_id'] : null;
+        $ownerType = $filters instanceof ScheduleExportFilterDTO ? ($filters->owner_type ?? '') : ($filters['owner_type'] ?? '');
+        $ownerId   = $filters instanceof ScheduleExportFilterDTO ? $filters->owner_id : (!empty($filters['owner_id']) ? (int) $filters['owner_id'] : null);
+        $unitIdFilter = $filters instanceof ScheduleExportFilterDTO ? null : (!empty($filters['unit_id']) ? (int) $filters['unit_id'] : null);
 
-        if (!empty($filters['unit_id'])) {
+        if (!empty($unitIdFilter)) {
             /** @var Unit|null $unit */
-            $unit = (new UnitRepository())->find((int) $filters['unit_id']);
+            $unit = (new UnitRepository())->find($unitIdFilter);
             return $unit?->name ?? '';
         }
 
@@ -103,23 +104,24 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     /**
      * Excel başlık satırlarını yazar (Üniversite / Birim / Dönem bilgisi).
      *
-     * @param array $filters
+     * @param ScheduleExportFilterDTO|array $filters
      * @return int Verilerin başlayacağı bir sonraki satır numarası
      */
-    protected function writeFileTitle(array $filters): int
+    protected function writeFileTitle(ScheduleExportFilterDTO|array $filters): int
     {
-        $type        = $filters['type'] ?? 'lesson';
+        $filtersDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $type        = $filtersDTO->type ?? 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $colsPerDay  = ($filters['owner_type'] === OwnerType::CLASSROOM->value) ? 1 : 2;
+        $colsPerDay  = ($filtersDTO->owner_type === OwnerType::CLASSROOM->value) ? 1 : 2;
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 
         $universityName = getSettingValue('university_name', 'general', 'Giresun Üniversitesi');
-        $unitName       = $this->resolveUnitName($filters);
+        $unitName       = $this->resolveUnitName($filtersDTO);
         $periodLabel    = $this->getPeriodLabel($type);
 
-        $academicYear = $filters['academic_year'] ?? getSettingValue('academic_year');
-        $semester     = $filters['semester'] ?? getSettingValue('semester');
+        $academicYear = $filtersDTO->academic_year ?? getSettingValue('academic_year');
+        $semester     = $filtersDTO->semester ?? getSettingValue('semester');
 
         $upperUniversity = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $universityName), 'UTF-8');
         $upperUnit = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $unitName), 'UTF-8');
@@ -159,20 +161,20 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     /**
      * Spreadsheet içeriğini derler.
      */
-    abstract protected function buildSpreadsheet(array $filters, array $showOptions): void;
+    abstract protected function buildSpreadsheet(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): void;
 
     /**
      * Dosya adını üretir.
      */
     public function getFileName(ScheduleExportFilterDTO|array $filters): string
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $scheduleFilters = $this->filterBuilder->build($filterArr);
-        $lastKey = !empty($scheduleFilters) && is_array($scheduleFilters) ? array_key_last($scheduleFilters) : null;
-        $fileTitle = ($lastKey !== null && isset($scheduleFilters[$lastKey]['file_title'])) ? $scheduleFilters[$lastKey]['file_title'] : 'Program';
-        $academicYear = $filterArr['academic_year'] ?? '';
-        $semester = $filterArr['semester'] ?? '';
-        $baseName = $academicYear . "-" . $semester . "-" . $fileTitle;
+        $filterDTO       = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $scheduleFilters = $this->filterBuilder->build($filterDTO);
+        $lastKey         = !empty($scheduleFilters) && is_array($scheduleFilters) ? array_key_last($scheduleFilters) : null;
+        $fileTitle       = ($lastKey !== null && isset($scheduleFilters[$lastKey]['file_title'])) ? $scheduleFilters[$lastKey]['file_title'] : 'Program';
+        $academicYear    = $filterDTO->academic_year ?? '';
+        $semester        = $filterDTO->semester ?? '';
+        $baseName        = $academicYear . "-" . $semester . "-" . $fileTitle;
         
         return $this->slugify($baseName) . ".xlsx";
     }
@@ -199,11 +201,11 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     #[NoReturn]
     public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+        $filterDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
-        $this->buildSpreadsheet($filterArr, $optionsArr);
-        $this->download($this->getFileName($filters));
+        $this->buildSpreadsheet($filterDTO, $optionsDTO);
+        $this->download($this->getFileName($filterDTO));
     }
 
     /**
@@ -211,10 +213,10 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
      */
     public function getRawContent(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): string
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+        $filterDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
-        $this->buildSpreadsheet($filterArr, $optionsArr);
+        $this->buildSpreadsheet($filterDTO, $optionsDTO);
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
         ob_start();
         $writer->save('php://output');

@@ -3,6 +3,8 @@
 namespace App\Services\Export\Ics;
 
 use App\Core\Gate;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
@@ -14,16 +16,16 @@ use JetBrains\PhpStorm\NoReturn;
 class LessonScheduleIcsExporter extends BaseIcsExporter
 {
     /**
-     * @param array $filters
-     * @param array $showOptions
+     * @param ScheduleExportFilterDTO $filters
+     * @param ScheduleExportOptionsDTO $showOptions
      * @return array
      */
-    protected function buildIcs(array $filters, array $showOptions): array
+    protected function buildIcs(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): array
     {
         $timezone = new \DateTimeZone('Europe/Istanbul');
         $now      = new \DateTime('now', $timezone);
 
-        ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $filters['type'] ?? 'lesson');
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $filters->type ?? 'lesson');
 
         $scheduleFilters = $this->filterBuilder->build($filters);
         $lastFilterKey   = !empty($scheduleFilters) ? array_key_last($scheduleFilters) : null;
@@ -84,8 +86,8 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
                     if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
                         $descriptionParts[] = "Program: " . $lesson->program->name;
                     }
-                    $descriptionParts[] = 'Akademik Yıl: ' . $filters['academic_year'];
-                    $descriptionParts[] = 'Dönem: ' . $filters['semester'];
+                    $descriptionParts[] = 'Akademik Yıl: ' . ($filters->academic_year ?? '');
+                    $descriptionParts[] = 'Dönem: ' . ($filters->semester ?? '');
 
                     $lines = array_merge($lines, $this->buildVevent(
                         $dtStart, $dtEnd, $summaryText, $locationText,
@@ -100,7 +102,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
         return $lines;
     }
 
-    private function buildCalendarHeader(array $filters): array
+    private function buildCalendarHeader(ScheduleExportFilterDTO $filters): array
     {
         return [
             'BEGIN:VCALENDAR',
@@ -108,7 +110,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
             'PRODID:-//schedulemaker//TR MBMYO Ders Programı//TR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:' . $this->escapeIcsText($filters['academic_year'] . ' ' . $filters['semester'] . ' Ders Programı'),
+            'X-WR-CALNAME:' . $this->escapeIcsText(($filters->academic_year ?? '') . ' ' . ($filters->semester ?? '') . ' Ders Programı'),
             'X-WR-TIMEZONE:Europe/Istanbul',
         ];
     }

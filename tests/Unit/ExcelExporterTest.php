@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use Tests\BaseTestCase;
+use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Services\Export\Excel\LessonScheduleExcelExporter;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
@@ -38,7 +40,7 @@ class ExcelExporterTest extends BaseTestCase
     public function testHeaderIncludesResolvedUnitName(): void
     {
         $exporter = new class extends LessonScheduleExcelExporter {
-            public function testResolveUnitName(array $filters): string
+            public function testResolveUnitName(ScheduleExportFilterDTO|array $filters): string
             {
                 return $this->resolveUnitName($filters);
             }
@@ -48,24 +50,24 @@ class ExcelExporterTest extends BaseTestCase
                 return $this->sheet->getCell($cell)->getValue();
             }
 
-            public function testWriteFileTitle(array $filters): int
+            public function testWriteFileTitle(ScheduleExportFilterDTO|array $filters): int
             {
                 return $this->writeFileTitle($filters);
             }
         };
 
-        $filters = [
+        $dto = ScheduleExportFilterDTO::fromArray([
             'type' => 'lesson',
             'owner_type' => 'program',
             'owner_id' => $this->programId,
             'semester' => 'Güz',
             'academic_year' => '2025 - 2026',
-        ];
+        ]);
 
-        $unitName = $exporter->testResolveUnitName($filters);
+        $unitName = $exporter->testResolveUnitName($dto);
         $this->assertEquals('Görele Güzel Sanatlar Fakültesi', $unitName);
 
-        $exporter->testWriteFileTitle($filters);
+        $exporter->testWriteFileTitle($dto);
         $headerValue = $exporter->getSheetCellValue('A2');
 
         $this->assertStringContainsString('GİRESUN ÜNİVERSİTESİ', $headerValue);

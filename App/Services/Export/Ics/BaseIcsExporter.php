@@ -75,13 +75,13 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
      */
     public function getFileName(ScheduleExportFilterDTO|array $filters): string
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $scheduleFilters = $this->filterBuilder->build($filterArr);
-        $lastKey = !empty($scheduleFilters) && is_array($scheduleFilters) ? array_key_last($scheduleFilters) : null;
-        $fileTitle = ($lastKey !== null && isset($scheduleFilters[$lastKey]['file_title'])) ? $scheduleFilters[$lastKey]['file_title'] : 'Program';
-        $academicYear = $filterArr['academic_year'] ?? '';
-        $semester = $filterArr['semester'] ?? '';
-        $baseName = $academicYear . "-" . $semester . "-" . $fileTitle;
+        $filterDTO       = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $scheduleFilters = $this->filterBuilder->build($filterDTO);
+        $lastKey         = !empty($scheduleFilters) && is_array($scheduleFilters) ? array_key_last($scheduleFilters) : null;
+        $fileTitle       = ($lastKey !== null && isset($scheduleFilters[$lastKey]['file_title'])) ? $scheduleFilters[$lastKey]['file_title'] : 'Program';
+        $academicYear    = $filterDTO->academic_year ?? '';
+        $semester        = $filterDTO->semester ?? '';
+        $baseName        = $academicYear . "-" . $semester . "-" . $fileTitle;
 
         return $this->slugify($baseName) . ".ics";
     }
@@ -92,12 +92,12 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     #[NoReturn]
     public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+        $filterDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
-        $raw = $this->buildIcs($filterArr, $optionsArr);
-        $content = is_array($raw) ? implode("\r\n", $raw) . "\r\n" : (string)$raw;
-        $fileName = $this->getFileName($filters);
+        $raw      = $this->buildIcs($filterDTO, $optionsDTO);
+        $content  = is_array($raw) ? implode("\r\n", $raw) . "\r\n" : (string)$raw;
+        $fileName = $this->getFileName($filterDTO);
 
         $this->download($fileName, $content);
     }
@@ -107,21 +107,21 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
      */
     public function getRawContent(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): string
     {
-        $filterArr = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
-        $optionsArr = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions->toArray() : $showOptions;
+        $filterDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
+        $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
-        $raw = $this->buildIcs($filterArr, $optionsArr);
+        $raw = $this->buildIcs($filterDTO, $optionsDTO);
         return is_array($raw) ? implode("\r\n", $raw) . "\r\n" : (string)$raw;
     }
 
     /**
      * ICS içeriğini derler.
      *
-     * @param array $filters
-     * @param array $showOptions
+     * @param ScheduleExportFilterDTO $filters
+     * @param ScheduleExportOptionsDTO $showOptions
      * @return array|string
      */
-    abstract protected function buildIcs(array $filters, array $showOptions): array|string;
+    abstract protected function buildIcs(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $showOptions): array|string;
 
     /**
      * Dosyayı HTTP yanıtı olarak indirir.

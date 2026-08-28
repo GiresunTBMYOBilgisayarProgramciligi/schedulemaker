@@ -2,6 +2,7 @@
 
 namespace App\Services\Export;
 
+use App\DTOs\ScheduleExportFilterDTO;
 use App\Enums\ExamType;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Models\Department;
@@ -39,53 +40,54 @@ use function App\Helpers\getSemesterNumbers;
 class ScheduleExportFilterBuilder
 {
     /**
-     * @param array $filters Doğrulanmış filtre dizisi (ScheduleExportFilterValidator'dan geçmiş)
+     * @param ScheduleExportFilterDTO|array $filters Doğrulanmış filtre DTO veya dizisi
      * @return array Filtre listesi
      * @throws Exception
      */
-    public function build(array $filters): array
+    public function build(ScheduleExportFilterDTO|array $filters): array
     {
-        $filters         = (new ScheduleExportFilterValidator())->sanitize($filters, "generateScheduleFilters");
+        $filterArr       = $filters instanceof ScheduleExportFilterDTO ? $filters->toArray() : $filters;
+        $filterArr       = (new ScheduleExportFilterValidator())->sanitize($filterArr, "generateScheduleFilters");
         $scheduleFilters = [];
-        $semesterNumbers = !empty($filters["semester_no"]) ? [(int)$filters["semester_no"]] : getSemesterNumbers($filters["semester"]);
-        $typeKey         = $filters["type"];
+        $semesterNumbers = !empty($filterArr["semester_no"]) ? [(int)$filterArr["semester_no"]] : getSemesterNumbers($filterArr["semester"]);
+        $typeKey         = $filterArr["type"];
         $typeLabel       = $this->getTypeLabel($typeKey);
 
-        switch ($filters["owner_type"]) {
+        switch ($filterArr["owner_type"]) {
             case OwnerType::PROGRAM->value:
-                $scheduleFilters = $this->buildForProgram($filters, $semesterNumbers, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForProgram($filterArr, $semesterNumbers, $typeKey, $typeLabel);
                 break;
 
             case "department":
-                $scheduleFilters = $this->buildForDepartment($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForDepartment($filterArr, $typeKey, $typeLabel);
                 break;
 
             case "unit":
-                $scheduleFilters = $this->buildForUnit($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForUnit($filterArr, $typeKey, $typeLabel);
                 break;
 
             case "building":
-                $scheduleFilters = $this->buildForBuilding($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForBuilding($filterArr, $typeKey, $typeLabel);
                 break;
 
             case "classroom_unit":
-                $scheduleFilters = $this->buildForClassroomUnit($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForClassroomUnit($filterArr, $typeKey, $typeLabel);
                 break;
 
             case OwnerType::USER->value:
-                $scheduleFilters = $this->buildForUser($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForUser($filterArr, $typeKey, $typeLabel);
                 break;
 
             case OwnerType::CLASSROOM->value:
-                $scheduleFilters = $this->buildForClassroom($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForClassroom($filterArr, $typeKey, $typeLabel);
                 break;
 
             case OwnerType::LESSON->value:
-                $scheduleFilters = $this->buildForLesson($filters, $typeKey, $typeLabel);
+                $scheduleFilters = $this->buildForLesson($filterArr, $typeKey, $typeLabel);
                 break;
 
             default:
-                throw new Exception("owner_type belirtilmemiş veya geçersiz: " . ($filters["owner_type"] ?? 'null'));
+                throw new Exception("owner_type belirtilmemiş veya geçersiz: " . ($filterArr["owner_type"] ?? 'null'));
         }
 
         return $scheduleFilters;

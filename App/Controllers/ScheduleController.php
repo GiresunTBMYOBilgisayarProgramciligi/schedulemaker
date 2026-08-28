@@ -19,6 +19,7 @@ use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
 use App\DTOs\ScheduleFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\DTOs\SaveScheduleResult;
 use App\DTOs\ScheduleItemDTO;
 use App\Services\Schedule\LessonScheduleService;
@@ -658,12 +659,12 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
 
-        $showOptions = [
+        $showOptions = ScheduleExportOptionsDTO::fromArray([
             'show_code'     => $dto->show_code ?? true,
             'show_lecturer' => $dto->show_lecturer ?? true,
             'show_program'  => $dto->show_program ?? true,
             'show_observer' => $dto->show_observer ?? true,
-        ];
+        ]);
 
         $exporter = ExporterFactory::create($dto, 'excel');
         $exporter->export($dto, $showOptions);
@@ -678,9 +679,9 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleIcsAction");
 
-        $showOptions = [
+        $showOptions = ScheduleExportOptionsDTO::fromArray([
             'show_observer' => $dto->show_observer ?? true,
-        ];
+        ]);
 
         $exporter = ExporterFactory::create($dto, 'ics');
         $exporter->export($dto, $showOptions);

@@ -22,8 +22,11 @@ readonly class ScheduleExportFilterDTO extends ScheduleFilterDTO
         parent::__construct($type, $semester, $academic_year, $semester_no, $owner_type, $owner_id);
     }
 
-    public static function fromArray(array $data): self
+    public static function fromArray(array|self $data): self
     {
+        if ($data instanceof self) {
+            return $data;
+        }
         return new self(
             type: $data['type'] ?? 'lesson',
             semester: $data['semester'] ?? null,
