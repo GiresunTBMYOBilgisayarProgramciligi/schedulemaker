@@ -33,6 +33,7 @@ use App\Enums\UnitType;
 use App\Enums\UserRole;
 use App\Enums\PermissionType;
 use App\Services\Schedule\SchedulePublishService;
+use App\Services\MailQueueService;
 use App\Controllers\SettingsController;
 use function App\Helpers\getSettingValue;
 use Exception;
@@ -979,6 +980,44 @@ class AdminPageController extends Controller
         return [
             "page_title" => "Kayıtlar",
             "logs"       => $logs,
+        ];
+    }
+
+    /**
+     * E-posta kuyruğu ve Crontab yönetim sayfası verilerini hazırlar
+     * @param User $currentUser
+     * @param AssetManager $assetManager
+     * @return array
+     * @throws Exception
+     */
+    public function getMailQueuePageData(User $currentUser, AssetManager $assetManager): array
+    {
+        Gate::authorizeRole("submanager", false, "Bu sayfayı görüntüleme yetkiniz yok");
+        $assetManager->loadPageAssets('listpages');
+
+        $mailQueueService = new MailQueueService();
+        $stats = $mailQueueService->getQueueStats();
+        $items = $mailQueueService->getItems(null, 200);
+
+        // Sunucu Crontab komutu oluşturma
+        $phpBin = PHP_BINARY ?: 'php';
+        $scriptPath = dirname(__DIR__, 2) . '/bin/queue_runner.php';
+        $logPath = dirname(__DIR__, 2) . '/Logs/queue.log';
+        $cronCommand = "* * * * * {$phpBin} {$scriptPath} >> {$logPath} 2>&1";
+
+        $batchSize = (int)getSettingValue('mail_batch_size', 'mail', 10);
+        $maxAttempts = (int)getSettingValue('mail_max_attempts', 'mail', 3);
+
+        return [
+            "page_title"   => "E-posta Kuyruğu & Crontab Yönetimi",
+            "stats"        => $stats,
+            "items"        => $items,
+            "cronCommand"  => $cronCommand,
+            "scriptPath"   => $scriptPath,
+            "logPath"      => $logPath,
+            "phpBin"       => $phpBin,
+            "batchSize"    => $batchSize,
+            "maxAttempts"  => $maxAttempts
         ];
     }
 

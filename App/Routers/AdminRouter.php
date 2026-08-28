@@ -281,6 +281,12 @@ class AdminRouter extends Router
         $this->callView("admin/settings/logs");
     }
 
+    public function mailQueueAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getMailQueuePageData($this->currentUser, $this->assetManager));
+        $this->callView("admin/settings/mailqueue");
+    }
+
     /**
      * @throws Exception
      */

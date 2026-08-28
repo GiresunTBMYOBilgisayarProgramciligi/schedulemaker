@@ -58,10 +58,11 @@ class AjaxRouter extends Router
      */
     public function checkAjax(): bool
     {
-        if (
-            isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-            strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0
-        ) {
+        $isAjaxHeader = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'], 'xmlhttprequest') == 0;
+        $isJsonAccept = isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
+        $isJsonContent = isset($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json');
+
+        if ($isAjaxHeader || $isJsonAccept || $isJsonContent) {
             $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
             if (str_contains($contentType, 'application/json')) {
                 // JSON body — $_POST boş gelir, php://input'tan oku
@@ -72,8 +73,9 @@ class AjaxRouter extends Router
             }
             $this->files = $_FILES;
             return true;
-        } else
+        } else {
             return false;
+        }
     }
 
     private function sendResponse(): void
@@ -856,6 +858,34 @@ class AjaxRouter extends Router
     public function clearMailLogsAction(): void
     {
         $this->response = (new SettingsController())->clearMailLogs();
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function processMailQueueAction(): void
+    {
+        $this->response = (new SettingsController())->processMailQueue($this->data);
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function retryFailedMailQueueAction(): void
+    {
+        $this->response = (new SettingsController())->retryFailedMailQueue();
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function clearSentMailQueueAction(): void
+    {
+        $this->response = (new SettingsController())->clearSentMailQueue();
+        $this->sendResponse();
+    }
+
+    /** @throws Exception */
+    public function deleteMailQueueItemAction(): void
+    {
+        $this->response = (new SettingsController())->deleteMailQueueItem($this->data);
         $this->sendResponse();
     }
 }

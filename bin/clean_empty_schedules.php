@@ -6,17 +6,19 @@
  * boş `schedules` kayıtlarını tespit edip veritabanından temizler.
  * 
  * Kullanım (CLI):
- * php clean_empty_schedules.php
+ * php bin/clean_empty_schedules.php
  */
 
-require __DIR__ . '/vendor/autoload.php';
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Dotenv\Dotenv;
 use App\Services\Schedule\SchedulePublishService;
 
 // Ortam değişkenlerini yükle
-$dotenv = Dotenv::createImmutable(__DIR__ . "/App");
-$dotenv->load();
+if (file_exists(dirname(__DIR__) . '/App/.env')) {
+    $dotenv = Dotenv::createImmutable(dirname(__DIR__) . '/App');
+    $dotenv->load();
+}
 
 $isCli = (php_sapi_name() === 'cli');
 

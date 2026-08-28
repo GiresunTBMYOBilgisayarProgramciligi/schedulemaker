@@ -384,13 +384,18 @@
                                     <?php $isTestMailMode = (@$settings['mail']['mail_driver'] !== 'smtp'); ?>
                                     <div class="tab-pane fade" id="mail" role="tabpanel">
                                         <div class="card">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div class="card-header">
                                                 <h3 class="card-title">Mail Ayarları</h3>
-                                                <?php if ($isTestMailMode): ?>
-                                                <a href="/mail_log.html" target="_blank" class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-envelope-paper"></i> Simülasyon Loglarını Aç (/mail_log.html)
-                                                </a>
-                                                <?php endif; ?>
+                                                <div class="card-tools">
+                                                    <a href="/admin/mailqueue" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-envelope-paper me-1"></i> E-posta Kuyruğu & Crontab
+                                                    </a>
+                                                    <?php if ($isTestMailMode): ?>
+                                                    <a href="/mail_log.html" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-file-earmark-text"></i> Simülasyon Logları (/mail_log.html)
+                                                    </a>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                             <div class="card-body">
                                                 <div class="row mb-3">
@@ -456,6 +461,22 @@
                                                         <label class="col-form-label" for="settings[mail][mail_from_name][value]">Gönderen Adı</label>
                                                         <input type="hidden" name="settings[mail][mail_from_name][type]" value="string">
                                                         <input type="text" class="form-control" id="settings[mail][mail_from_name][value]" name="settings[mail][mail_from_name][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_from_name'] ?? 'Schedule Maker') ?>">
+                                                    </div>
+                                                </div>
+                                                <hr>
+                                                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-clock-history me-1"></i>Kuyruk & Performans Ayarları</h6>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="col-form-label" for="settings[mail][mail_batch_size][value]">Tek Seferde Gönderilecek E-posta Sayısı (Batch Boyutu)</label>
+                                                        <input type="hidden" name="settings[mail][mail_batch_size][type]" value="integer">
+                                                        <input type="number" min="1" max="100" class="form-control" id="settings[mail][mail_batch_size][value]" name="settings[mail][mail_batch_size][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_batch_size'] ?? 10) ?>">
+                                                        <div class="form-text">Cron veya manuel tetiklemede tek seferde sunucuyu yormadan gönderilecek maksimum mail sayısı. Varsayılan: 10</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="col-form-label" for="settings[mail][mail_max_attempts][value]">Maksimum Yeniden Deneme Hakkı</label>
+                                                        <input type="hidden" name="settings[mail][mail_max_attempts][type]" value="integer">
+                                                        <input type="number" min="1" max="10" class="form-control" id="settings[mail][mail_max_attempts][value]" name="settings[mail][mail_max_attempts][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_max_attempts'] ?? 3) ?>">
+                                                        <div class="form-text">Hata alan bir e-postanın kaç defa otomatik tekrar deneneceğini belirler. Varsayılan: 3</div>
                                                     </div>
                                                 </div>
                                                 <div class="text-end mt-3">

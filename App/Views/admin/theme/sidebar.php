@@ -249,6 +249,12 @@ use App\Enums\PermissionType;
                                     <p>Kayıtlar</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="/admin/mailqueue" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'mailqueue')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-envelope-paper"></i>
+                                    <p>E-posta Kuyruğu</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 <?php endif; ?>
