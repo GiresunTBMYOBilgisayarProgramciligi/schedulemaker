@@ -268,7 +268,9 @@ INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
 ('mail', 'smtp_pass', '', 'string'),
 ('mail', 'smtp_secure', 'tls', 'string'),
 ('mail', 'mail_from', 'noreply@localhost', 'string'),
-('mail', 'mail_from_name', 'Schedule Maker', 'string');
+('mail', 'mail_from_name', 'Schedule Maker', 'string'),
+('mail', 'mail_batch_size', '10', 'integer'),
+('mail', 'mail_max_attempts', '3', 'integer');
 
 CREATE TABLE IF NOT EXISTS schedule_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -304,4 +306,21 @@ CREATE TABLE IF NOT EXISTS schedule_changes_queue (
     CONSTRAINT fk_schedule_changes_queue_lecturer FOREIGN KEY (lecturer_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_schedule_changes_queue_schedule (schedule_id),
     INDEX idx_schedule_changes_queue_lecturer (lecturer_id)
+) ENGINE = INNODB;
+
+CREATE TABLE IF NOT EXISTS mail_queue (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    to_email VARCHAR(150) NOT NULL,
+    to_name VARCHAR(150) NULL,
+    subject VARCHAR(255) NOT NULL,
+    body LONGTEXT NOT NULL,
+    alt_body TEXT NULL,
+    attachments JSON NULL,
+    status ENUM('pending', 'processing', 'sent', 'failed') DEFAULT 'pending',
+    attempts INT DEFAULT 0,
+    error_message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    sent_at DATETIME NULL,
+    INDEX idx_mail_queue_status (status),
+    INDEX idx_mail_queue_created (created_at)
 ) ENGINE = INNODB;

@@ -59,16 +59,17 @@ class SendSchedulePublishedEmailListener
             $icsFileName   = $icsExporter->getFileName($filters);
 
             $mailer = new ScheduleMailer();
-            $sent = $mailer->sendSchedulePublishedNotification($lecturer, $schedule, $excelContent, $excelFileName, $icsContent, $icsFileName);
+            $queueId = $mailer->queueSchedulePublishedNotification($lecturer, $schedule, $excelContent, $excelFileName, $icsContent, $icsFileName);
 
-            if ($sent) {
-                Log::logger()->info("Ders programı yayınlama bildirimi e-posta ile iletildi.", [
+            if ($queueId > 0) {
+                Log::logger()->info("Ders programı yayınlama bildirimi e-posta kuyruğuna eklendi.", [
+                    'queue_id'    => $queueId,
                     'schedule_id' => $schedule->id,
                     'user_id'     => $lecturer->id,
                     'email'       => $lecturer->mail
                 ]);
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             Log::logger()->error("SendSchedulePublishedEmailListener hatası: " . $e->getMessage(), [
                 'schedule_id' => $event->scheduleId,
                 'exception'   => $e

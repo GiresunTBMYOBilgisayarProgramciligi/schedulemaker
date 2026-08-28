@@ -193,6 +193,152 @@ class ScheduleMailer extends Mailer
     }
 
     /**
+     * @param User $lecturer
+     * @param Schedule $schedule
+     * @param string $excelContent
+     * @param string $excelFileName
+     * @param string $icsContent
+     * @param string $icsFileName
+     * @param array $scopeInfo
+     * @return int Eklenen kuyruk ID'si veya 0
+     */
+    public function queueSchedulePublishedNotification(
+        User $lecturer,
+        Schedule $schedule,
+        string $excelContent,
+        string $excelFileName,
+        string $icsContent,
+        string $icsFileName,
+        array $scopeInfo = []
+    ): int {
+        try {
+            if (empty($lecturer->mail)) {
+                return 0;
+            }
+
+            $academicYear = htmlspecialchars($schedule->academic_year ?? '');
+            $semester     = htmlspecialchars($schedule->semester ?? '');
+            $typeLabel    = $schedule->getScheduleTypeName();
+
+            if (empty($scopeInfo)) {
+                $scopeInfo = $this->resolveUserScopeInfo($lecturer, $schedule);
+            }
+
+            $unitPrefix = !empty($scopeInfo['unitName']) ? "{$scopeInfo['unitName']} " : "";
+            $subject    = "{$academicYear} {$semester} Dönemi {$unitPrefix}{$typeLabel} Programınız Yayınlandı";
+
+            $attachments = [];
+            if (!empty($excelContent)) {
+                $attachments[] = [
+                    'name'     => $excelFileName,
+                    'content'  => base64_encode($excelContent),
+                    'encoding' => 'base64',
+                    'type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                ];
+            }
+
+            if (!empty($icsContent)) {
+                $attachments[] = [
+                    'name'     => $icsFileName,
+                    'content'  => base64_encode($icsContent),
+                    'encoding' => 'base64',
+                    'type'     => 'text/calendar; charset=utf-8'
+                ];
+            }
+
+            $body = View::renderEmail('schedule_published', [
+                'lecturer'       => $lecturer,
+                'schedule'       => $schedule,
+                'unitName'       => $scopeInfo['unitName'] ?? null,
+                'departmentName' => $scopeInfo['departmentName'] ?? null,
+                'programName'    => $scopeInfo['programName'] ?? null,
+                'appUrl'         => $this->getAppUrl()
+            ]);
+
+            $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>', '</tr>'], "\n", $body));
+
+            return (new \App\Services\MailQueueService())->enqueue(
+                toEmail: $lecturer->mail,
+                toName: $lecturer->getFullName(),
+                subject: $subject,
+                body: $body,
+                altBody: $altBody,
+                attachments: $attachments
+            );
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * @param User $lecturer
+     * @param string $unitName
+     * @param string $scheduleType
+     * @param string $semester
+     * @param string $academicYear
+     * @param string|null $departmentName
+     * @param string|null $programName
+     * @param array $lessonNames
+     * @return int Eklenen kuyruk ID'si veya 0
+     */
+    public function queueCrossUnitNotification(
+        User $lecturer,
+        string $unitName,
+        string $scheduleType,
+        string $semester,
+        string $academicYear,
+        ?string $departmentName = null,
+        ?string $programName = null,
+        array $lessonNames = []
+    ): int {
+        try {
+            if (empty($lecturer->mail)) {
+                return 0;
+            }
+
+            $subject = "{$academicYear} {$semester} Dönemi {$unitName} {$scheduleType} Yayınlandı";
+
+            $ownAffNames = [];
+            if ($lecturer->program_id) {
+                $p = (new Program())->find($lecturer->program_id);
+                if ($p) $ownAffNames[] = $p->name . " Programı";
+            } elseif ($lecturer->department_id) {
+                $d = (new Department())->find($lecturer->department_id);
+                if ($d) $ownAffNames[] = $d->name . " Bölümü";
+            } elseif ($lecturer->unit_id) {
+                $u = (new Unit())->find($lecturer->unit_id);
+                if ($u) $ownAffNames[] = $u->name;
+            }
+            $ownAffiliationName = !empty($ownAffNames) ? implode(', ', array_unique($ownAffNames)) : null;
+
+            $body = View::renderEmail('schedule_cross_unit_published', [
+                'lecturer'           => $lecturer,
+                'unitName'           => $unitName,
+                'scheduleType'       => $scheduleType,
+                'semester'           => $semester,
+                'academicYear'       => $academicYear,
+                'departmentName'     => $departmentName,
+                'programName'        => $programName,
+                'lessonNames'        => $lessonNames,
+                'ownAffiliationName' => $ownAffiliationName,
+                'appUrl'             => $this->getAppUrl()
+            ]);
+
+            $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>'], "\n", $body));
+
+            return (new \App\Services\MailQueueService())->enqueue(
+                toEmail: $lecturer->mail,
+                toName: $lecturer->getFullName(),
+                subject: $subject,
+                body: $body,
+                altBody: $altBody
+            );
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
      * Hoca ve program verisinden Birim, Bölüm ve Program isimlerini çözümler
      */
     public function resolveUserScopeInfo(User $lecturer, Schedule $schedule): array

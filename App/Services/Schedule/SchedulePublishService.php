@@ -411,7 +411,7 @@ class SchedulePublishService extends BaseService
                     $lessonNames = array_map(fn($l) => ($l->code ? "{$l->code} - " : "") . $l->name, $lessons);
                 }
 
-                $sent = $mailer->sendCrossUnitNotification(
+                $queueId = $mailer->queueCrossUnitNotification(
                     $lecturer,
                     $unitName,
                     $typeLabel,
@@ -421,7 +421,7 @@ class SchedulePublishService extends BaseService
                     $programName ?: null,
                     $lessonNames
                 );
-                if ($sent) {
+                if ($queueId > 0) {
                     $count++;
                 }
             }
