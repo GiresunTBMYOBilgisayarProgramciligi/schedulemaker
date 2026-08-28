@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.3.2] - 2026-08-28
+
+### Added
+- **Veritabanı Tabanlı E-Posta Kuyruk (Mail Queue) Sistemi (#106)**:
+  - Ders programı yayınlama ve görevlendirme bildirimlerinde toplu e-posta gönderimlerini arka planda asenkron işleyen `mail_queue` tablosu, `MailQueue` modeli, `MailQueueRepository` ve `MailQueueService` mimarisi kuruldu.
+  - Sunucu crontab otomasyonu için CLI üzerinden çalışan `bin/queue_runner.php` ve parametrik batch kontrolü eklendi.
+  - Eşzamanlı cron veya web isteklerinde mükerrer gönderimleri engelleyen atomik kilit (`atomicLockItem`) mekanizması geliştirildi.
+- **E-Posta Kuyruğu & Crontab Yönetim Paneli**:
+  - `/admin/mailqueue` yönetim sayfası eklenerek canlı istatistik kartları (Bekleyen, İşlenen, Başarılı, Hatalı), filtreli kuyruk tablosu, modal üzerinden hata detayları görüntüleme, tekil silme, toplu başarılı temizleme ve hatalıları yeniden deneme özellikleri sunuldu.
+  - Sunucuya özel otomatik crontab komutu oluşturucu ve HTTP/HTTPS uyumlu güvenli panoya kopyalama aracı eklendi.
+- **Kapsam Bazlı Hiyerarşik Program Yayınlama Sistemi**:
+  - Program yayınlama süreci; Birim, Bölüm, Program, Derslik ve Öğretim Elemanı bazlı hiyerarşik kapsam filtresi ile yayınlama ve yayından kaldırma desteğine kavuşturuldu.
+  - Yayınlama esnasında ilgili birim dışından görevlendirilen akademisyenlere otomatik çapraz görevlendirme e-posta bildirimi (`schedule_cross_unit_published`) gönderimi eklendi.
+- **Boş Program Kayıtlarını Temizleme Altyapısı**:
+  - İçerisinde hiçbir ders/sınav öğesi bulunmayan atıl `schedules` kayıtlarını tespit edip temizleyen servis ve `bin/clean_empty_schedules.php` CLI betiği eklendi; yayınlama ekranına temizleme seçeneği entegre edildi.
+- **Birim Yöneticisi / Müdürü Desteği (#113)**:
+  - `units` tablosuna `manager_id` alanı eklendi; birim ekleme/düzenleme formlarına birim yöneticisi/müdürü seçimi, unvan çoğul eki desteği ("Yardımcıları") ve admin dashboard'da müdür yardımcıları gösterimi sağlandı.
+- **Dışa Aktarma (Export) Geliştirmeleri**:
+  - Program kartlarına dönem bazlı hızlı dışa aktarma butonları eklendi. Excel ve ICS çıktılarında başlığa birim ve program adları dinamik olarak entegre edildi.
+- **Public Portal & Karşılama Sayfası**:
+  - Ziyaretçiler için modern, responsive public ana sayfa tasarımı ve optimize edilmiş logo/tab yapısı geliştirildi.
+
+### Changed
+- **DTO & Katı Tip Güvenliği Refactoring**:
+  - Schedule dışa aktarma (`ScheduleExportFilterDTO`, `ScheduleExportOptionsDTO`) ve tüm DTO katmanında `readonly class` ve katı tip (`strict types`) standardına geçildi.
+- **Rol ve Yetkilendirme Standardizasyonu**:
+  - Rol kontrolleri `Gate::hasRole()` ve `Gate::authorizeRole()` ile merkezi hale getirildi.
+- **Katmanlı Mimari ve Temiz Kod (Clean Code)**:
+  - `MailQueueRepository` katmanı projeye kazandırıldı; veri erişim mantığı servislerden repository'ye devredildi.
+  - Proje genelindeki tüm PHP dosyalarında yer alan kullanılmayan `use` import tanımlamaları ve satır içi (inline) namespace referansları temizlendi.
+- **Test ve Geliştirici Ortamı İyileştirmeleri**:
+  - Test ortamında veritabanı ayarlarının `App/.env` üzerinden izole okunması için PHPUnit bootstrap altyapısı kuruldu; test sırasında veritabanı log kirliliği kapatıldı.
+
+### Fixed
+- **Bina ve Derslik Benzersizlik (UNIQUE) Kısıtlamaları (#105)**:
+  - `buildings` tablosunda isim kısıtlaması `(unit_id, name)`, `classrooms` tablosunda ise `(building_id, name)` bileşik anahtarına dönüştürülerek farklı birim/binalarda aynı isimli derslik ve bina oluşturulabilmesi sağlandı.
+- **Bölüm Başkanı ve Bina Seçimi (#108, #109)**:
+  - Bölüm başkanı seçiminde kadrosu farklı birimde olup ilgili bölüme bağlı tüm hocaların listelenmesi sağlandı. Binasız birimlerde ders eklerken tüm binaların seçilebilmesi özelliği getirildi.
+- **Gereksiz Schedule Oluşumu**:
+  - Kullanıcı profil ve müsaitlik sayfalarında sorgulama yaparken veritabanında boş `schedules` kaydı oluşması engellendi.
+- **Misafir Dışa Aktarma & CSS Düzeltmeleri**:
+  - Oturum açmamış ziyaretçilerin yayınlanmış programları Excel/ICS olarak indirebilmesi sağlandı. Dark mode, hücre genişlikleri ve AdminLTE `.card-tools` kart başlığı hizalama sorunları giderildi.
+- **Simülasyon / Canlı E-Posta Modu**:
+  - `mail_driver` ayarının SMTP canlı moduna geçişi ve ayarlar sayfasından yapılandırılması güvenceye alındı.
+
 ## [0.3.1] - 2026-08-23
 
 ### Added
