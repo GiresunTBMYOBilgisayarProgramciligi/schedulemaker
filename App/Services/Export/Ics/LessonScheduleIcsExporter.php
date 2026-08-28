@@ -25,9 +25,17 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
 
         ['startDate' => $startDate, 'endDate' => $endDate] = $this->getScheduleDates($timezone, $filters['type'] ?? 'lesson');
 
+        $scheduleFilters = $this->filterBuilder->build($filters);
+        $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Ders Programı';
+        $username        = $this->logContext()['username'] ?? "Misafir";
+        $this->logger()->info(
+            "{$username} {$fileTitle} takvim çıktısı aldı.",
+            $this->logContext()
+        );
+
         $lines   = $this->buildCalendarHeader($filters);
 
-        foreach ($this->filterBuilder->build($filters) as $scheduleFilter) {
+        foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new Schedule())->get()
                 ->where($scheduleFilter['filter'])
                 ->with("items")

@@ -32,7 +32,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
         $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Ders Programı';
         $username        = $this->logContext()['username'] ?? "Misafir";
         $this->logger()->info(
-            "{$username} {$fileTitle} çıktısı aldı.",
+            "{$username} {$fileTitle} Excel çıktısı aldı.",
             $this->logContext()
         );
 

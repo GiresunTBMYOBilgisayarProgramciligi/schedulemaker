@@ -39,6 +39,14 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
         ];
         $typeLabel = $typeLabels[$type] ?? 'Sınav';
 
+        $scheduleFilters = $this->filterBuilder->build($filters);
+        $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Sınav Programı';
+        $username        = $this->logContext()['username'] ?? "Sistem";
+        $this->logger()->info(
+            "{$username} {$fileTitle} takvim çıktısı aldı.",
+            $this->logContext()
+        );
+
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
@@ -49,7 +57,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
             'X-WR-TIMEZONE:Europe/Istanbul',
         ];
 
-        foreach ($this->filterBuilder->build($filters) as $scheduleFilter) {
+        foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new Schedule())->get()
                 ->where($scheduleFilter['filter'])
                 ->with("items")

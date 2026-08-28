@@ -40,7 +40,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
         $username        = $this->logContext()['username'] ?? "Sistem";
         $type            = $filters['type'] ?? 'exam';
         $this->logger()->info(
-            "{$username} {$fileTitle} çıktısı aldı.",
+            "{$username} {$fileTitle} Excel çıktısı aldı.",
             $this->logContext()
         );
 
