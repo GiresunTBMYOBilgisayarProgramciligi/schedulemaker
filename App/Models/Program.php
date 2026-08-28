@@ -6,7 +6,6 @@ use App\Core\Model;
 use App\Enums\OwnerType;
 
 use Exception;
-use PDO;
 
 class Program extends Model
 {

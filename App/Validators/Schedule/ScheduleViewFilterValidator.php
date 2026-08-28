@@ -2,7 +2,6 @@
 
 namespace App\Validators\Schedule;
 
-use App\DTOs\ScheduleFilterDTO;
 
 /**
  * Schedule görüntüleme işlemleri için filtre doğrulayıcı

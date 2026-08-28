@@ -4,26 +4,16 @@ namespace Tests\Unit;
 
 use Tests\BaseTestCase;
 use App\Models\User;
-use App\Models\Unit;
 use App\Models\Department;
-use App\Models\Program;
 use App\Models\Building;
-use App\Models\Classroom;
-use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleNote;
 use App\Policies\BuildingPolicy;
-use App\Policies\ClassroomPolicy;
 use App\Policies\DepartmentPolicy;
-use App\Policies\ProgramPolicy;
-use App\Policies\UnitPolicy;
-use App\Policies\UserPolicy;
-use App\Policies\LessonPolicy;
 use App\Policies\SettingPolicy;
 use App\Policies\ScheduleNotePolicy;
 use App\Policies\SchedulePolicy;
 use App\DTOs\ScheduleNoteDTO;
-use App\Enums\ScheduleNoteStatus;
 
 class PolicyTest extends BaseTestCase
 {

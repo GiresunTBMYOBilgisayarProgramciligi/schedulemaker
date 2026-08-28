@@ -4,9 +4,7 @@ namespace Tests\Unit;
 
 use Tests\BaseTestCase;
 use App\DTOs\ScheduleExportFilterDTO;
-use App\DTOs\ScheduleExportOptionsDTO;
 use App\Services\Export\Excel\LessonScheduleExcelExporter;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExcelExporterTest extends BaseTestCase
 {

@@ -1,8 +1,6 @@
 <?php
 use App\Models\Schedule;
 use App\Helpers\ScheduleViewHelper;
-use function App\Helpers\getClassFromSemesterNo;
-use function App\Helpers\getSettingValue;
 use App\Enums\ScheduleItemStatus;
 
 /**

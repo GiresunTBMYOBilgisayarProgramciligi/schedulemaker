@@ -11,7 +11,6 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\DTOs\SaveScheduleResult;
 use App\Enums\ScheduleItemStatus;
-use App\Enums\OwnerType;
 use App\Services\Schedule\ConflictService;
 use Exception;
 use function App\Helpers\getSettingValue;

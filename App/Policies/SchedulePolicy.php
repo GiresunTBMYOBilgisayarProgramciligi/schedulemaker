@@ -8,7 +8,6 @@ use App\Models\Program;
 use App\Models\Lesson;
 use App\Models\Department;
 use App\Models\Classroom;
-use App\Core\Gate;
 use App\Enums\PermissionType;
 use App\Enums\UserRole;
 

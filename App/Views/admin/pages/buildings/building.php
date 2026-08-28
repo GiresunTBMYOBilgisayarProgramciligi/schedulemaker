@@ -4,7 +4,6 @@
  * @var \App\Models\Building $building
  */
 use App\Core\Gate;
-use App\Models\Classroom;
 ?>
 <!--begin::App Main-->
 <main class="app-main">

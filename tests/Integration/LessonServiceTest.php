@@ -7,7 +7,6 @@ use App\Services\LessonService;
 use App\DTOs\LessonDTO;
 use App\DTOs\CombineLessonDTO;
 use App\Models\Lesson;
-use App\Models\LessonAssignment;
 
 class LessonServiceTest extends BaseTestCase
 {

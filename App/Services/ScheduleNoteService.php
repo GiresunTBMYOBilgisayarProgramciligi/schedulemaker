@@ -10,7 +10,6 @@ use App\Models\ScheduleNote;
 use App\Models\User;
 use App\Events\ScheduleNoteStatusUpdatedEvent;
 use App\Core\EventDispatcher;
-use Exception;
 
 class ScheduleNoteService extends BaseService
 {

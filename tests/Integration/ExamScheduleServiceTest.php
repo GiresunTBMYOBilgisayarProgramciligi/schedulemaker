@@ -5,10 +5,8 @@ namespace Tests\Integration;
 use Tests\BaseTestCase;
 use App\Services\Schedule\ExamScheduleService;
 use App\DTOs\ScheduleItemDTO;
-use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
-use App\Enums\ExamType;
 use App\Enums\ClassroomType;
 
 class ExamScheduleServiceTest extends BaseTestCase

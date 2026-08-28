@@ -19,10 +19,7 @@ use App\Services\BaseService;
 use App\Repositories\BaseRepository;
 use App\Validators\BaseValidator;
 use App\Validators\ValidationResult;
-use App\Exceptions\AppException;
 use App\Exceptions\ValidationException;
-use App\Exceptions\ScheduleConflictException;
-use App\Exceptions\LessonHourExceededException;
 
 echo "🧪 Namespace Autoloading Test\n";
 echo str_repeat("=", 50) . "\n\n";

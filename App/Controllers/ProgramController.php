@@ -7,13 +7,8 @@ use App\Enums\PermissionType;
 use App\Core\Controller;
 use App\Models\Program;
 use App\Repositories\ProgramRepository;
-use App\Models\Schedule;
 use Exception;
-use App\Exceptions\ValidationException;
-use PDO;
-use PDOException;
 use App\Core\Gate;
-use App\DTOs\ProgramDTO;
 use App\Validators\ProgramValidator;
 use App\Services\ProgramService;
 class ProgramController extends Controller

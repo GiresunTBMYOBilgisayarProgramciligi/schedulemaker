@@ -16,7 +16,6 @@ use App\Models\LessonAssignment;
 use App\Models\Unit;
 use App\Models\Building;
 use App\Models\Classroom;
-use App\Models\UserAffiliation;
 use App\Enums\OwnerType;
 use App\Core\Gate;
 use App\Enums\PermissionType;

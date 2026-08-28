@@ -8,7 +8,6 @@ use App\DTOs\ScheduleExportOptionsDTO;
 use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
-use JetBrains\PhpStorm\NoReturn;
 
 /**
  * Ders programını ICS takvim formatında dışa aktarır.

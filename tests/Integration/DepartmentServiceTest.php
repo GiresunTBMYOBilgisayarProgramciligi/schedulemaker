@@ -6,7 +6,6 @@ use Tests\BaseTestCase;
 use App\Services\DepartmentService;
 use App\DTOs\DepartmentDTO;
 use App\Models\Department;
-use App\Models\Program;
 
 class DepartmentServiceTest extends BaseTestCase
 {

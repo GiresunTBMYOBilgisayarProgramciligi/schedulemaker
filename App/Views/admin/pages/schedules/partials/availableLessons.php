@@ -2,7 +2,6 @@
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Core\View;
-use App\Models\Lesson;
 use App\Models\Schedule;
 
 /**

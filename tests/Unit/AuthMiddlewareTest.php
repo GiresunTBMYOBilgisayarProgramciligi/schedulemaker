@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use Tests\BaseTestCase;
 use App\Middlewares\AuthMiddleware;
-use App\Middlewares\GuestMiddleware;
 
 class AuthMiddlewareTest extends BaseTestCase
 {

@@ -3,17 +3,11 @@
 namespace Tests\Unit;
 
 use Tests\BaseTestCase;
-use App\Validators\ScheduleItemValidator;
-use App\Validators\ScheduleNoteValidator;
 use App\Validators\ToggleLockScheduleItemValidator;
-use App\Validators\Schedule\ScheduleAvailabilityFilterValidator;
-use App\Validators\Schedule\ScheduleConflictFilterValidator;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Validators\Schedule\ScheduleMutationFilterValidator;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
 use App\Exceptions\ValidationException;
-use App\DTOs\ScheduleItemDTO;
-use App\DTOs\ScheduleNoteDTO;
 use App\DTOs\ToggleLockScheduleItemDTO;
 use App\DTOs\ScheduleExportFilterDTO;
 

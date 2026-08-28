@@ -5,7 +5,6 @@ namespace App\Core;
 
 use Exception;
 use PDO;
-use App\Controllers\ProgramController;
 use Monolog\Logger;
 
 class Model

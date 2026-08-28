@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use Tests\BaseTestCase;
 use App\Services\Export\ScheduleExportFilterBuilder;
-use App\Middlewares\AuthMiddleware;
 
 class ScheduleExportFilterBuilderTest extends BaseTestCase
 {

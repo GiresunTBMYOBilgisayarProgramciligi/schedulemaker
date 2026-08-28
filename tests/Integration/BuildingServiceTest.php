@@ -5,8 +5,6 @@ namespace Tests\Integration;
 use Tests\BaseTestCase;
 use App\Services\BuildingService;
 use App\DTOs\BuildingDTO;
-use App\DTOs\BulkDeleteDTO;
-use App\DTOs\BulkUpdateDTO;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Enums\ClassroomType;

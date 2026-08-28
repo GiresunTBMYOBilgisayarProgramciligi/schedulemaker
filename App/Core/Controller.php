@@ -2,8 +2,6 @@
 
 namespace App\Core;
 
-use App\Controllers\UserController;
-use Exception;
 use PDO;
 use Monolog\Logger;
 

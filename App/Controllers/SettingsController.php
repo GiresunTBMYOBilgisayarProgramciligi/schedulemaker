@@ -5,11 +5,9 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Setting;
 use App\Core\Gate;
-use App\DTOs\SettingDTO;
 use App\Validators\SettingsValidator;
 use App\Services\SettingsService;
 use Exception;
-use App\Exceptions\ValidationException;
 
 class SettingsController extends Controller
 {

@@ -5,7 +5,6 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Program;
 use App\Models\Department;
-use App\Core\Gate;
 use App\Enums\PermissionType;
 
 use App\Enums\UserRole;

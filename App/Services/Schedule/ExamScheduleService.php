@@ -2,7 +2,6 @@
 
 namespace App\Services\Schedule;
 
-use App\Services\BaseService;
 use App\Core\Database;
 use App\Enums\ExamType;
 use App\Models\Lesson;

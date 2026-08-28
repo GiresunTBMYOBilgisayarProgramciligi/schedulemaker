@@ -4,11 +4,8 @@ namespace Tests\Unit;
 
 use Tests\BaseTestCase;
 use App\Validators\LessonValidator;
-use App\Validators\SettingsValidator;
 use App\Validators\BulkActionValidator;
 use App\Validators\CombineLessonValidator;
-use App\Validators\CombineExamLessonValidator;
-use App\Validators\DeleteCombineLessonValidator;
 use App\Validators\Auth\ForgotPasswordValidator;
 use App\Validators\Auth\ResetPasswordValidator;
 use App\Exceptions\ValidationException;

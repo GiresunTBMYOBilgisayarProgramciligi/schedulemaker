@@ -5,7 +5,6 @@ namespace App\Mailers;
 use App\Core\Mailer;
 use App\Core\View;
 use App\Models\User;
-use Exception;
 
 class PasswordResetMailer extends Mailer
 {

@@ -7,7 +7,6 @@ use App\Services\Schedule\AvailabilityService;
 use App\DTOs\AvailabilityFilterDTO;
 use App\Models\Schedule;
 use App\Models\Classroom;
-use App\Models\Lesson;
 use App\Enums\ClassroomType;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;

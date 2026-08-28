@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Controllers\LessonController;
 use App\Core\Model;
 use App\Enums\ClassroomType;
 use App\Enums\ExamType;

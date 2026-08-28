@@ -3,8 +3,6 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Department;
-use App\Core\Gate;
 use App\Enums\PermissionType;
 
 class UserPolicy extends BasePolicy

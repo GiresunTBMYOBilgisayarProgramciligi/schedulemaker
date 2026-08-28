@@ -2,7 +2,6 @@
 use App\Models\Schedule;
 use App\Core\Gate;
 use App\Enums\PermissionType;
-use function App\Helpers\getSettingValue;
 /**
  * @var Schedule $schedule
  * @var string $cardTitle

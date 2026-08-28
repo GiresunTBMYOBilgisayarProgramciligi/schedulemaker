@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
-use function App\Helpers\getSettingValue;
 
 class Schedule extends Model
 {

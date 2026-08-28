@@ -4,7 +4,6 @@
  * @var \App\Models\Unit $unit
  */
 use App\Core\Gate;
-use App\Models\Department;
 ?>
 <!--begin::App Main-->
 <main class="app-main">

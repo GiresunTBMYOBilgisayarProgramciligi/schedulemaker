@@ -10,19 +10,16 @@ use App\Repositories\LessonRepository;
 use App\Repositories\LessonAssignmentRepository;
 use App\Core\Gate;
 
-use App\DTOs\LessonDTO;
 use App\Validators\LessonValidator;
 use App\Services\LessonService;
 use App\Middlewares\AuthMiddleware;
 use App\Enums\LessonType;
-use App\DTOs\CombineLessonDTO;
 use App\Validators\CombineLessonValidator;
 use App\Validators\CombineExamLessonValidator;
 use App\Validators\DeleteCombineLessonValidator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\LessonImporter;
 use Exception;
-use App\Exceptions\ValidationException;
 
 class LessonController extends Controller
 {

@@ -10,12 +10,10 @@ use App\Models\User;
 use App\Core\Gate;
 use App\Services\UserService;
 use App\Validators\UserValidator;
-use App\DTOs\UserDTO;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\UserImporter;
 use App\Repositories\UserRepository;
 use Exception;
-use App\Exceptions\ValidationException;
 
 class UserController extends Controller
 {

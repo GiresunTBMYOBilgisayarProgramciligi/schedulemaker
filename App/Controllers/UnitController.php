@@ -6,8 +6,6 @@ use App\Enums\PermissionType;
 
 use App\Core\Controller;
 use App\Core\Gate;
-use App\DTOs\UnitDTO;
-use App\Enums\UnitType;
 use App\Models\Unit;
 use App\Repositories\UnitRepository;
 use App\Services\UnitService;

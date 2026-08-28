@@ -8,7 +8,6 @@ use App\Middlewares\GuestMiddleware;
 use App\Middlewares\AuthMiddleware;
 use App\Core\Router;
 use Exception;
-use App\Controllers\Auth\PasswordResetController;
 use App\Validators\Auth\LoginValidator;
 
 /**

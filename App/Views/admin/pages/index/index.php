@@ -9,9 +9,6 @@
  * @var \App\Models\Department $department  Bölüm detayı (sadece dept_head)
  * @var string           $scheduleHTML   Ders programı HTML (dept_head / lecturer)
  * @var array            $myLessons      Kullanıcının dersleri (sadece lecturer)
- */
-use App\Core\Gate;
-use App\Enums\PermissionType;
 ?>
 <!--begin::App Main-->
 <main class="app-main">

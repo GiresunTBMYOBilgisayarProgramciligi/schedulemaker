@@ -4,10 +4,7 @@ namespace Tests\Integration;
 
 use Tests\BaseTestCase;
 use App\Core\Gate;
-use App\Models\User;
 use App\Models\Building;
-use App\Models\Department;
-use App\Models\Program;
 use App\Exceptions\AuthorizationException;
 
 class SecurityAuthorizationTest extends BaseTestCase
