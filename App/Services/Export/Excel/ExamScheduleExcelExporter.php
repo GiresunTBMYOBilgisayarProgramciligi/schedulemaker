@@ -36,7 +36,10 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
     protected function buildSpreadsheet(array $filters, array $showOptions): void
     {
         $scheduleFilters = $this->filterBuilder->build($filters);
-        $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Sınav Programı';
+        $lastFilterKey   = !empty($scheduleFilters) ? array_key_last($scheduleFilters) : null;
+        $fileTitle       = ($lastFilterKey !== null && isset($scheduleFilters[$lastFilterKey]['file_title']))
+            ? $scheduleFilters[$lastFilterKey]['file_title']
+            : 'Sınav Programı';
         $username        = $this->logContext()['username'] ?? "Sistem";
         $type            = $filters['type'] ?? 'exam';
         $this->logger()->info(

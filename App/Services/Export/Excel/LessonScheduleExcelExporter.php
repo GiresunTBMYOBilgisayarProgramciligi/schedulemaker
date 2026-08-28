@@ -29,7 +29,10 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
     protected function buildSpreadsheet(array $filters, array $showOptions): void
     {
         $scheduleFilters = $this->filterBuilder->build($filters);
-        $fileTitle       = $scheduleFilters[array_key_last($scheduleFilters)]['file_title'] ?? 'Ders Programı';
+        $lastFilterKey   = !empty($scheduleFilters) ? array_key_last($scheduleFilters) : null;
+        $fileTitle       = ($lastFilterKey !== null && isset($scheduleFilters[$lastFilterKey]['file_title']))
+            ? $scheduleFilters[$lastFilterKey]['file_title']
+            : 'Ders Programı';
         $username        = $this->logContext()['username'] ?? "Misafir";
         $this->logger()->info(
             "{$username} {$fileTitle} Excel çıktısı aldı.",

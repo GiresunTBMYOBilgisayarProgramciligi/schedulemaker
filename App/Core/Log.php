@@ -4,6 +4,7 @@ namespace App\Core;
 
 use App\Middlewares\AuthMiddleware;
 use Monolog\Handler\FilterHandler;
+use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
@@ -18,6 +19,22 @@ class Log
     private static ?Logger $logger = null;
 
     /**
+     * Set a custom logger instance (e.g. for testing).
+     */
+    public static function setLogger(?Logger $logger): void
+    {
+        self::$logger = $logger;
+    }
+
+    /**
+     * Reset the shared logger instance.
+     */
+    public static function reset(): void
+    {
+        self::$logger = null;
+    }
+
+    /**
      * Get the shared Monolog logger instance.
      */
     public static function logger(): Logger
@@ -29,6 +46,13 @@ class Log
         // Build the logger here so the project doesn't depend on LoggerFactory
         $channel = 'app';
         $logger = new Logger($channel);
+
+        // Test ortamında logları devre dışı bırak (NullHandler)
+        if (($_ENV['APP_ENV'] ?? '') === 'testing' || defined('PHPUNIT_RUNNING')) {
+            $logger->pushHandler(new NullHandler());
+            self::$logger = $logger;
+            return self::$logger;
+        }
 
         // DB handler: write everything from Debug and above
         $dbLevel = ($_ENV['DEBUG'] ?? 'false') === 'true' ? Level::Debug : Level::Info;

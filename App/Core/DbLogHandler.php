@@ -46,6 +46,10 @@ class DbLogHandler extends AbstractProcessingHandler
 
     protected function write(LogRecord $record): void
     {
+        if (($_ENV['APP_ENV'] ?? '') === 'testing' || defined('PHPUNIT_RUNNING')) {
+            return;
+        }
+
         try {
             $pdo = $this->getPdo();
             if (!$pdo) {
