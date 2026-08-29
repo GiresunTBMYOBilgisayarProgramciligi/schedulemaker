@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PermissionType;
 
 use App\Enums\ExamType;
+use App\Enums\ScheduleItemStatus;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -362,13 +363,22 @@ class LessonService extends BaseService
             );
 
             // Child'ın alt child'larını da parent'a bağla
+            $reparentedChildren = [];
             foreach ($childLesson->childLessons as $grandChild) {
                 $this->scheduleService->wipeResourceSchedules('lesson', $grandChild->id);
                 $combinationRepo->reparentChild($grandChild->id, $parentLesson->id, $dto->semester, $dto->academicYear);
+                $reparentedChildren[] = $grandChild;
             }
 
-            // Parent'ın mevcut schedule'ı varsa child için item kopyala (seçilen slotlar hariç)
-            (new ScheduleSyncService())->syncChildScheduleFromParent($parentLesson, $childLesson, $slotsToSkip);
+            // Parent'ın mevcut schedule'ı varsa child ve tüm reparent edilen dersler için kopyala
+            $syncService = new ScheduleSyncService();
+            $syncService->syncChildScheduleFromParent($parentLesson, $childLesson, $slotsToSkip);
+            $syncService->syncExamChildFromParent($parentLesson, $childLesson);
+
+            foreach ($reparentedChildren as $grandChild) {
+                $syncService->syncChildScheduleFromParent($parentLesson, $grandChild, $slotsToSkip);
+                $syncService->syncExamChildFromParent($parentLesson, $grandChild);
+            }
 
             $this->logger->info('Ders birleştirildi', [
                 'parent_id' => $parentLesson->id,
@@ -424,8 +434,8 @@ class LessonService extends BaseService
             throw new Exception("Ders bulunamadı");
         }
 
-        $semester = $currentLesson->semester ?? getSettingValue('semester');
-        $academicYear = $currentLesson->academic_year ?? getSettingValue('academic_year');
+        $semester = getSettingValue('semester');
+        $academicYear = getSettingValue('academic_year');
 
         // Aynı akademik yıl ve dönemdeki dersleri al
         $lessons = (new LessonRepository())->getExamCombineLessonList(
@@ -621,12 +631,34 @@ class LessonService extends BaseService
             return ['needs_confirmation' => false];
         }
 
+        $semester = $dto->semester !== '' ? $dto->semester : getSettingValue('semester');
+        $academicYear = $dto->academicYear !== '' ? $dto->academicYear : getSettingValue('academic_year');
+
         // Parent'ın ders programı var mı?
         $parentSchedule = (new Schedule())
             ->get()
-            ->where(['owner_type' => OwnerType::LESSON->value, 'owner_id' => $dto->parentId])
+            ->where([
+                'owner_type' => OwnerType::LESSON->value,
+                'owner_id' => $parentLesson->id,
+                'type' => 'lesson',
+                'semester' => $semester,
+                'academic_year' => $academicYear,
+            ])
             ->with(['items'])
             ->first();
+
+        // Dönem bazlı bulunamazsa genel lesson schedule'ı dene
+        if (!$parentSchedule) {
+            $parentSchedule = (new Schedule())
+                ->get()
+                ->where([
+                    'owner_type' => OwnerType::LESSON->value,
+                    'owner_id' => $parentLesson->id,
+                    'type' => 'lesson',
+                ])
+                ->with(['items'])
+                ->first();
+        }
 
         if (!$parentSchedule || empty($parentSchedule->items)) {
             return ['needs_confirmation' => false];
@@ -640,7 +672,7 @@ class LessonService extends BaseService
 
         $slots = [];
         foreach ($parentSchedule->items as $item) {
-            if (in_array($item->status, ['unavailable', 'preferred'])) {
+            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
                 continue;
             }
             $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
@@ -680,8 +712,19 @@ class LessonService extends BaseService
             }
         }
 
+        if (empty($slots)) {
+            return ['needs_confirmation' => false];
+        }
+
         // Gün ve saate göre sırala
         usort($slots, fn($a, $b) => $a['day_index'] <=> $b['day_index'] ?: $a['start_time'] <=> $b['start_time']);
+
+        // Sıralanmış slotlara saat numarası ver
+        foreach ($slots as $index => &$slot) {
+            $slot['slot_number'] = $index + 1;
+            $slot['slot_name'] = "{$slot['day_name']} {$slot['start_time']} – {$slot['end_time']}";
+        }
+        unset($slot);
 
         return [
             'needs_confirmation' => true,

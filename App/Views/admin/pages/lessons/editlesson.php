@@ -189,8 +189,12 @@ use function App\Helpers\getSettingValue;
                                             <div class="input-group ">
                                                 <select class="form-select" id="academic_year" name="academic_year"
                                                     <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                    <?php 
+                                                    $currentAcademicYear = $lesson->assignments[0]->academic_year ?? getSettingValue('academic_year');
+                                                    $currentSemester = $lesson->assignments[0]->semester ?? getSettingValue('semester');
+                                                    ?>
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= ($lesson->academic_year ?? getSettingValue('academic_year')) == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
+                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $currentAcademicYear == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
                                                             <?= $year . ' - ' . $year + 1 ?>
                                                         </option>
                                                     <?php endfor; ?>
@@ -198,9 +202,9 @@ use function App\Helpers\getSettingValue;
                                                 <span class="input-group-text"> - </span>
                                                 <select class="form-select" id="semester" name="semester"
                                                     <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                    <option value="Güz" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Güz' ? 'selected' : '' ?>>Güz</option>
-                                                    <option value="Bahar" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
-                                                    <option value="Yaz" <?= ($lesson->semester ?? getSettingValue('semester')) == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
+                                                    <option value="Güz" <?= $currentSemester == 'Güz' ? 'selected' : '' ?>>Güz</option>
+                                                    <option value="Bahar" <?= $currentSemester == 'Bahar' ? 'selected' : '' ?>>Bahar</option>
+                                                    <option value="Yaz" <?= $currentSemester == 'Yaz' ? 'selected' : '' ?>>Yaz</option>
                                                 </select>
                                             </div>
                                         </div>

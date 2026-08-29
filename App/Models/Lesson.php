@@ -25,21 +25,14 @@ class Lesson extends Model
      */
     public ?int $type = null;
     public ?int $semester_no = null;
-    public ?int $lecturer_id = null;
     public ?int $department_id = null;
     public ?int $program_id = null;
-    /**
-     * Güz, Bahar, Yaz
-     * @var string|null
-     */
-    public ?string $semester = null;
     /**
      *
      * @var int|null
      * @see ClassroomType
      */
     public ?int $classroom_type = null;
-    public ?string $academic_year = null;
     public ?int $building_id = null;
     /**
      * Ders programına eklemeye uygun olmayan saat miktarı. Bu saatler zaten programa eklenmiş
@@ -65,7 +58,7 @@ class Lesson extends Model
     public array $schedules = [];
     public array $assignments = [];
     protected string $table_name = "lessons";
-    protected array $excludeFromDb = ['lecturer_id', 'semester', 'academic_year', 'lecturer', 'department', 'program', 'building', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'assignments', 'placed_hours', 'placed_size', 'remaining_size'];
+    protected array $excludeFromDb = ['lecturer', 'department', 'program', 'building', 'parentLesson', 'childLessons', 'examParentLesson', 'examChildLessons', 'schedules', 'assignments', 'placed_hours', 'placed_size', 'remaining_size'];
 
 
 
@@ -190,14 +183,10 @@ class Lesson extends Model
         }
 
         foreach ($results as &$row) {
-            $row['semester'] = $row['semester'] ?? $semester;
-            $row['academic_year'] = $row['academic_year'] ?? $academicYear;
             $assignment = $assignmentByLesson[$row['id']] ?? null;
             if ($assignment && isset($usersKeyed[$assignment->lecturer_id])) {
-                $row['lecturer_id'] = $assignment->lecturer_id;
                 $row['lecturer'] = $usersKeyed[$assignment->lecturer_id];
             } else {
-                $row['lecturer_id'] = null;
                 $row['lecturer'] = null;
             }
         }
@@ -370,12 +359,7 @@ class Lesson extends Model
         ])->all();
 
         $childIds = array_unique(array_column($combinations, 'child_lesson_id'));
-        $this->logger()->debug('getChildLessonsRelation combinations', $this->logContext([
-            'parentIds' => $parentIds,
-            'semester' => $semester,
-            'academicYear' => $academicYear,
-            'childIds' => $childIds
-        ]));
+        
         
         if (empty($childIds)) {
             foreach ($results as &$row) $row['childLessons'] = [];
@@ -572,9 +556,12 @@ class Lesson extends Model
      * @return bool true if complete
      * @throws Exception
      */
-    public function IsScheduleComplete(string $type = "lesson"): bool
+    public function IsScheduleComplete(string $type = "lesson", ?string $semester = null, ?string $academicYear = null): bool
     {
         $isExam = ExamType::isExamType($type);
+
+        $semester = $semester ?? getSettingValue('semester');
+        $academicYear = $academicYear ?? getSettingValue('academic_year');
 
         if ($isExam) {
             $linkedIds = $this->getExamLinkedLessonIds();
@@ -601,8 +588,8 @@ class Lesson extends Model
                 'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => ['in' => $linkedIds],
                 'type' => $type,
-                'semester' => $this->semester,
-                'academic_year' => $this->academic_year
+                'semester' => $semester,
+                'academic_year' => $academicYear
             ])->with('items')->all();
         } else {
             $targetSize = isset($this->hours) ? $this->hours : 0;
@@ -610,8 +597,8 @@ class Lesson extends Model
                 'owner_type' => OwnerType::LESSON->value,
                 'owner_id' => $this->id,
                 'type' => $type,
-                'semester' => $this->semester,
-                'academic_year' => $this->academic_year
+                'semester' => $semester,
+                'academic_year' => $academicYear
             ])->with('items')->all();
         }
 
@@ -664,8 +651,8 @@ class Lesson extends Model
                     'owner_type' => OwnerType::CLASSROOM->value,
                     'owner_id' => $slot['classroom_id'],
                     'type' => $type,
-                    'semester' => $this->semester,
-                    'academic_year' => $this->academic_year
+                    'semester' => $semester,
+                    'academic_year' => $academicYear
                 ])->first();
 
                 if ($classroomSchedule) {

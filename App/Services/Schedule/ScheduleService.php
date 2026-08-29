@@ -12,6 +12,7 @@ use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Lesson;
+use App\Models\LessonCombination;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Repositories\ScheduleItemRepository;
@@ -55,6 +56,9 @@ class ScheduleService extends BaseService
      */
     protected function checkLessonHourLimits(array $lessonIds, string $scheduleType): void
     {
+        $semester = getSettingValue('semester');
+        $academicYear = getSettingValue('academic_year');
+
         foreach ($lessonIds as $lessonId) {
             $lesson = (new Lesson())->find($lessonId);
             if (!$lesson) {
@@ -62,20 +66,26 @@ class ScheduleService extends BaseService
             }
 
             // IsScheduleComplete metodunu çalıştırarak remaining_size hesaplatıyoruz
-            $lesson->IsScheduleComplete($scheduleType);
+            $lesson->IsScheduleComplete($scheduleType, $semester, $academicYear);
 
             if ($lesson->remaining_size < 0) {
-                // Child lesson kontrolü
-                if ($lesson->parent_id !== null) {
+                // Child lesson kontrolü (lesson_combinations tablosu üzerinden)
+                $hasParent = (new LessonCombination())->get()->where([
+                    'child_lesson_id' => $lesson->id,
+                    'type' => $scheduleType === 'lesson' ? 'lesson' : 'exam',
+                    'semester' => $semester,
+                    'academic_year' => $academicYear
+                ])->first() !== null;
+
+                if ($hasParent) {
                     // Child lesson → Fazla saatleri otomatik temizle
                     $this->logger->debug("Child lesson hour limit exceeded, cleaning up", $this->logContext([
                         'lesson_id' => $lesson->id,
                         'lesson_name' => $lesson->getFullName(true,true,true,true),
-                        'parent_id' => $lesson->parent_id,
                         'excess_hours' => abs($lesson->remaining_size)
                     ]));
 
-                    $this->cleanupExcessChildHours($lesson, $scheduleType);
+                    $this->cleanupExcessChildHours($lesson, $scheduleType, $semester, $academicYear);
                 } else {
                     // Normal lesson → Exception fırlat (mevcut davranış)
                     $errorMsg = ($scheduleType === 'lesson')
@@ -101,18 +111,13 @@ class ScheduleService extends BaseService
      * - Eğer son item fazlaysa → Item kısaltılır (end_time güncellenir)
      * - Tam slot silme gerekiyorsa → Item silinir
      * 
-     * **Örnek:**
-     * - Parent: 4 saat/hafta
-     * - Child: 2 saat/hafta
-     * - Parent'a 4 saatlik item eklendi → Child'a da 4 saat eklendi
-     * - Child fazla: 2 saat (2 slot)
-     * → Son eklenen item'ları 2 slot azalt
-     * 
      * @param Lesson $childLesson Child lesson entity'si
      * @param string $scheduleType Schedule tipi ('lesson', 'midterm-exam', etc.)
+     * @param string|null $semester Dönem
+     * @param string|null $academicYear Akademik yıl
      * @return void
      */
-    private function cleanupExcessChildHours(Lesson $childLesson, string $scheduleType): void
+    private function cleanupExcessChildHours(Lesson $childLesson, string $scheduleType, ?string $semester = null, ?string $academicYear = null): void
     {
         $excessSlots = abs($childLesson->remaining_size);
 
@@ -126,16 +131,20 @@ class ScheduleService extends BaseService
             ])
         );
 
-        // Bu child lesson'a ait lesson schedule'ları bul
-        // (Sadece owner_type='lesson' schedule'ları - program schedule'lara dokunma)
-        $childSchedules = $this->scheduleRepo->findBy([
-            'owner_type' => OwnerType::LESSON->value,
-            'owner_id' => $childLesson->id,
-            'type' => $scheduleType
-        ]);
+        $semester = $semester ?? getSettingValue('semester');
+        $academicYear = $academicYear ?? getSettingValue('academic_year');
+
+        // Bu child lesson'a ait lesson ve program schedule'ları bul
+        $childSchedules = (new Schedule())->get()->where([
+            'owner_type' => ['in' => [OwnerType::LESSON->value, OwnerType::PROGRAM->value]],
+            'owner_id' => ['in' => array_filter([$childLesson->id, $childLesson->program_id])],
+            'type' => $scheduleType,
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+        ])->all();
 
         if (empty($childSchedules)) {
-            $this->logger->error("No lesson schedules found for child lesson", $this->logContext([
+            $this->logger->error("No schedules found for child lesson cleanup", $this->logContext([
                 'lesson_id' => $childLesson->id
             ]));
             return;
@@ -150,12 +159,9 @@ class ScheduleService extends BaseService
         // Her schedule'dan fazla slot'ları sil/kısalt
         $totalDeleted = 0;
         $totalShortened = 0;
-        $slotsToRemove = $excessSlots;
 
         foreach ($childSchedules as $schedule) {
-            if ($slotsToRemove <= 0) {
-                break;
-            }
+            $slotsToRemove = $excessSlots;
 
             // En son eklenen item'ları bul (id DESC)
             $items = (new ScheduleItem())
@@ -167,6 +173,19 @@ class ScheduleService extends BaseService
             foreach ($items as $item) {
                 if ($slotsToRemove <= 0) {
                     break;
+                }
+
+                // Sadece child dersi içeren item'ları kontrol et
+                $itemData = is_array($item->data) ? $item->data : (unserialize($item->data) ?: []);
+                $hasChild = false;
+                foreach ($itemData as $d) {
+                    if (($d['lesson_id'] ?? null) == $childLesson->id) {
+                        $hasChild = true;
+                        break;
+                    }
+                }
+                if (!$hasChild && $schedule->owner_type === OwnerType::PROGRAM->value) {
+                    continue;
                 }
 
                 // Item'ın kaç slot olduğunu hesapla
@@ -191,7 +210,6 @@ class ScheduleService extends BaseService
                     $item->end_time = $newEndTime;
                     $item->update();
                     $totalShortened++;
-
                     $this->logger->debug("Shortened excess child lesson item", $this->logContext([
                         'item_id' => $item->id,
                         'old_slots' => $itemSlots,

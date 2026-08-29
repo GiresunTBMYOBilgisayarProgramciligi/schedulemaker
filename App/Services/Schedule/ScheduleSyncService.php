@@ -20,12 +20,14 @@ class ScheduleSyncService extends BaseService
 {
     private ScheduleService $scheduleService;
     private ScheduleRepository $scheduleRepo;
+    private TimelineService $timelineService;
 
     public function __construct()
     {
         parent::__construct();
         $this->scheduleService = new ScheduleService();
         $this->scheduleRepo = new ScheduleRepository();
+        $this->timelineService = new TimelineService();
     }
 
     /**
@@ -124,14 +126,36 @@ class ScheduleSyncService extends BaseService
      */
     public function syncChildScheduleFromParent(Lesson $parentLesson, Lesson $childLesson, array $slotsToSkip = []): void
     {
+        $semester = getSettingValue('semester');
+        $academicYear = getSettingValue('academic_year');
+
         /** @var Schedule $parentSchedule */
         $parentSchedule = (new Schedule())
             ->get()
-            ->where(['owner_type' => OwnerType::LESSON->value, 'owner_id' => $parentLesson->id])
+            ->where([
+                'owner_type' => OwnerType::LESSON->value,
+                'owner_id' => $parentLesson->id,
+                'type' => 'lesson',
+                'semester' => $semester,
+                'academic_year' => $academicYear,
+            ])
             ->with(['items'])
             ->first();
 
+        // Dönem bazlı bulunamazsa genel schedule'ı dene
         if (!$parentSchedule) {
+            $parentSchedule = (new Schedule())
+                ->get()
+                ->where([
+                    'owner_type' => OwnerType::LESSON->value,
+                    'owner_id' => $parentLesson->id,
+                    'type' => 'lesson',
+                ])
+                ->with(['items'])
+                ->first();
+        }
+
+        if (!$parentSchedule || empty($parentSchedule->items)) {
             return;
         }
 
@@ -139,10 +163,14 @@ class ScheduleSyncService extends BaseService
         $break    = (int) getSettingValue('break', 'lesson', 10);
 
         foreach ($parentSchedule->items as $item) {
+            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
+                continue;
+            }
+
             $skippedSlots = $slotsToSkip[$item->id] ?? [];
 
             if (empty($skippedSlots)) {
-                // Hiç slot silinmiyor — item'ı olduğu gibi kopyala (mevcut davranış)
+                // Hiç slot silinmiyor — item'ı olduğu gibi kopyala
                 $this->copyItemToOwners($parentSchedule, $item, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson);
                 continue;
             }
@@ -189,6 +217,18 @@ class ScheduleSyncService extends BaseService
             ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no],
         ];
 
+        $lecturerId = $itemData[0]['lecturer_id'] ?? null;
+        $classroomId = $itemData[0]['classroom_id'] ?? null;
+
+        if ($lecturerId) {
+            $owners[] = ['type' => 'user', 'id' => $lecturerId, 'semester_no' => null];
+        }
+        if ($classroomId && $childLesson->classroom_type != 3) {
+            $owners[] = ['type' => 'classroom', 'id' => $classroomId, 'semester_no' => null];
+        }
+
+        $breakMinutes = (int) getSettingValue('break', 'lesson', 10);
+
         foreach ($owners as $owner) {
             if (!$owner['id']) {
                 continue;
@@ -205,18 +245,33 @@ class ScheduleSyncService extends BaseService
 
             $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
 
-            $existingItem = (new ScheduleItem())->get()->where([
+            $existingItems = (new ScheduleItem())->get()->where([
                 'schedule_id' => $childSchedule->id,
                 'day_index'   => $item->day_index,
                 'week_index'  => $item->week_index,
-                'start_time'  => $item->start_time,
-                'end_time'    => $item->end_time
-            ])->first();
+            ])->all();
 
-            if ($existingItem) {
-                $existingData = is_array($existingItem->data) ? $existingItem->data : [];
+            $matchedItem = null;
+            $itemStart = substr($item->start_time, 0, 5);
+            $itemEnd   = substr($item->end_time, 0, 5);
+
+            foreach ($existingItems as $exItem) {
+                if (in_array($exItem->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
+                    continue;
+                }
+                $exStart = substr($exItem->start_time, 0, 5);
+                $exEnd   = substr($exItem->end_time, 0, 5);
+
+                if ($itemStart >= $exStart && $itemEnd <= $exEnd) {
+                    $matchedItem = $exItem;
+                    break;
+                }
+            }
+
+            if ($matchedItem) {
+                $existingData = is_array($matchedItem->data) ? $matchedItem->data : (unserialize($matchedItem->data) ?: []);
                 $existingData = array_merge($existingData, $itemData);
-                
+
                 $uniqueData = [];
                 $seen = [];
                 foreach ($existingData as $d) {
@@ -228,12 +283,13 @@ class ScheduleSyncService extends BaseService
                         $uniqueData[] = $d;
                     }
                 }
-                
-                $existingItem->data = $uniqueData;
-                if (count($uniqueData) > 1 && $existingItem->status !== 'group') {
-                    $existingItem->status = 'group';
+
+                $matchedItem->data = $uniqueData;
+                if (count($uniqueData) > 1 && $matchedItem->status !== ScheduleItemStatus::GROUP->value) {
+                    $matchedItem->status = ScheduleItemStatus::GROUP->value;
                 }
-                $existingItem->update();
+                $matchedItem->update();
+                $this->timelineService->mergeAdjacentItems($matchedItem, $breakMinutes);
             } else {
                 $newItem = new ScheduleItem();
                 $newItem->schedule_id = $childSchedule->id;
@@ -245,6 +301,7 @@ class ScheduleSyncService extends BaseService
                 $newItem->data        = $itemData;
                 $newItem->detail      = $item->detail;
                 $newItem->create();
+                $this->timelineService->mergeAdjacentItems($newItem, $breakMinutes);
             }
         }
     }
@@ -260,29 +317,32 @@ class ScheduleSyncService extends BaseService
      */
     private function buildChildItemData(ScheduleItem $item, Lesson $parentLesson, Lesson $childLesson): array
     {
-        $itemData = [['lesson_id' => null, 'lecturer_id' => null, 'classroom_id' => null]];
+        $classroomId = null;
+        $lecturerId = null;
+        $rawDatas = is_array($item->data) ? $item->data : (unserialize($item->data) ?: []);
 
-        if ($item->status === ScheduleItemStatus::GROUP->value) {
-            foreach ($item->getSlotDatas() as $slotData) {
-                if ($slotData->lesson_id == $parentLesson->id) {
-                    $itemData[0] = [
-                        'lesson_id' => $childLesson->id,
-                        'lecturer_id' => $childLesson->lecturer?->id,
-
-                        'classroom_id' => $slotData->classroom->id,
-                    ];
-                    break;
-                }
+        foreach ($rawDatas as $d) {
+            if (($d['lesson_id'] ?? null) == $parentLesson->id) {
+                $classroomId = $d['classroom_id'] ?? null;
+                $lecturerId = $d['lecturer_id'] ?? null;
+                break;
             }
-        } else {
-            $slotData = $item->getSlotDatas()[0];
-            $itemData[0] = [
-                'lesson_id' => $childLesson->id,
-                'lecturer_id' => $childLesson->lecturer_id,
-                'classroom_id' => $slotData->classroom->id,
-            ];
+        }
+        if ($classroomId === null && !empty($rawDatas)) {
+            $classroomId = $rawDatas[0]['classroom_id'] ?? null;
+        }
+        if ($lecturerId === null && !empty($rawDatas)) {
+            $lecturerId = $rawDatas[0]['lecturer_id'] ?? null;
         }
 
-        return $itemData;
+        if (!$lecturerId) {
+            $lecturerId = $parentLesson->lecturer?->id ?? $childLesson->lecturer?->id ?? null;
+        }
+
+        return [[
+            'lesson_id' => $childLesson->id,
+            'lecturer_id' => $lecturerId ? (int)$lecturerId : null,
+            'classroom_id' => $classroomId ? (int)$classroomId : null,
+        ]];
     }
 }

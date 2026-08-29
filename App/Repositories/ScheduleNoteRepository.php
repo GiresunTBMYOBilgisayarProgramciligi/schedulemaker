@@ -65,13 +65,6 @@ class ScheduleNoteRepository extends BaseRepository
             }
         }
 
-        $lessons = (new Lesson())->get()->where(['program_id' => $programId])->all();
-        foreach ($lessons as $l) {
-            if (!empty($l->lecturer_id)) {
-                $lecturerIds[] = (int)$l->lecturer_id;
-            }
-        }
-
         $users = (new User())->get()->where(['program_id' => $programId])->all();
         foreach ($users as $u) {
             $lecturerIds[] = (int)$u->id;

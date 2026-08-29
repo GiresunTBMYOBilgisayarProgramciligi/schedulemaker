@@ -88,9 +88,14 @@ class LessonScheduleService extends ScheduleService
                         'is_group' => $isGroup
                     ]));
 
-                    // Etkilenen ders ID'lerini kaydet
+                    // Etkilenen ders ID'lerini kaydet (child lessons dahil)
                     if (!$isDummy && $lesson) {
                         $affectedLessonIds[] = $lesson->id;
+                        if (!empty($lesson->childLessons)) {
+                            foreach ($lesson->childLessons as $cl) {
+                                $affectedLessonIds[] = $cl->id;
+                            }
+                        }
                     }
                 }
 
@@ -201,7 +206,7 @@ class LessonScheduleService extends ScheduleService
             }
             $childLesson = (new Lesson())->find($childLessonId);
             if ($childLesson) {
-                $childLesson->IsScheduleComplete($sourceSchedule->type);
+                $childLesson->IsScheduleComplete($sourceSchedule->type, $sourceSchedule->semester, $sourceSchedule->academic_year);
                 $childLessonRemaining[$childLessonId] = [
                     'lesson' => $childLesson,
                     'remaining' => (int) ($childLesson->remaining_size ?? 0),
@@ -323,7 +328,7 @@ class LessonScheduleService extends ScheduleService
             if (!isset($childLessonRemaining[$clId])) {
                 $childLesson = (new Lesson())->find($clId);
                 if ($childLesson) {
-                    $childLesson->IsScheduleComplete($sourceSchedule->type);
+                    $childLesson->IsScheduleComplete($sourceSchedule->type, $sourceSchedule->semester, $sourceSchedule->academic_year);
                     $childLessonRemaining[$clId] = [
                         'lesson' => $childLesson,
                         'remaining' => (int) ($childLesson->remaining_size ?? 0),
