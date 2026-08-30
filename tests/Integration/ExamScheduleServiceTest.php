@@ -8,6 +8,7 @@ use App\DTOs\ScheduleItemDTO;
 use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
 use App\Enums\ClassroomType;
+use App\Repositories\ScheduleRepository;
 
 class ExamScheduleServiceTest extends BaseTestCase
 {
@@ -100,5 +101,136 @@ class ExamScheduleServiceTest extends BaseTestCase
         ])->all();
 
         $this->assertNotEmpty($items);
+    }
+
+    public function testSaveExamScheduleItemsWithMultipleObservers(): void
+    {
+        $secondLecturerId = $this->insert('users', [
+            'name' => 'Second',
+            'last_name' => 'Observer',
+            'mail' => 'second_obs_' . rand(1000, 9999) . '@test.com',
+            'role' => 'lecturer',
+            'department_id' => $this->deptId,
+            'unit_id' => $this->unitId
+        ]);
+
+        $dto = ScheduleItemDTO::fromArray([
+            'schedule_id' => $this->programScheduleId,
+            'day_index' => 3,
+            'week_index' => 0,
+            'start_time' => '13:00:00',
+            'end_time' => '14:30:00',
+            'status' => 'single',
+            'data' => [
+                [
+                    'lesson_id' => $this->lessonId,
+                ]
+            ],
+            'detail' => [
+                'assignments' => [
+                    [
+                        'classroom_id' => $this->classroomId,
+                        'classroom_name' => 'Amfi 1',
+                        'classroom_exam_size' => 80,
+                        'observers' => [
+                            ['id' => $this->lecturerId, 'name' => 'Exam Lecturer'],
+                            ['id' => $secondLecturerId, 'name' => 'Second Observer']
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+
+        $created = $this->service->saveExamScheduleItems([$dto]);
+        $this->assertNotEmpty($created);
+
+        // 1. Program takviminde 1 adet item oluşmuş olmalı
+        $programItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $this->programScheduleId,
+            'day_index' => 3
+        ])->all();
+        $this->assertCount(1, $programItems);
+        $primaryItem = $programItems[0];
+
+        // 2. Her iki gözetmenin kendi takvimlerinde item oluşmuş olmalı
+        $firstObsSchedule = (new ScheduleRepository())->findByOwnerAndPeriod(
+            OwnerType::USER->value,
+            $this->lecturerId,
+            '2025 - 2026',
+            'Güz',
+            'final-exam',
+            null
+        );
+        $this->assertNotNull($firstObsSchedule);
+        $firstObsItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $firstObsSchedule->id,
+            'day_index' => 3
+        ])->all();
+        $this->assertCount(1, $firstObsItems);
+
+        $secondObsSchedule = (new ScheduleRepository())->findByOwnerAndPeriod(
+            OwnerType::USER->value,
+            $secondLecturerId,
+            '2025 - 2026',
+            'Güz',
+            'final-exam',
+            null
+        );
+        $this->assertNotNull($secondObsSchedule);
+        $secondObsItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $secondObsSchedule->id,
+            'day_index' => 3
+        ])->all();
+        $this->assertCount(1, $secondObsItems);
+
+        // 3. Derslik takviminde YALNIZCA 1 adet item oluşmuş olmalı (unique kısıt ihlali olmamalı)
+        $classroomSchedule = (new ScheduleRepository())->findByOwnerAndPeriod(
+            OwnerType::CLASSROOM->value,
+            $this->classroomId,
+            '2025 - 2026',
+            'Güz',
+            'final-exam',
+            null
+        );
+        $this->assertNotNull($classroomSchedule);
+        $classroomItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $classroomSchedule->id,
+            'day_index' => 3
+        ])->all();
+        $this->assertCount(1, $classroomItems);
+
+        // 4. Sibling items kontrolü (Program, Ders, Derslik, Gözetmen 1, Gözetmen 2 bulunmalı)
+        $siblings = $this->service->findExamSiblingItems($primaryItem);
+        // Debug siblings
+        // echo "Primary ID: {$primaryItem->id}\n";
+        // echo "Siblings count: " . count($siblings) . "\n";
+        // foreach ($siblings as $s) { echo "Sibling ID: {$s->id}, ScheduleID: {$s->schedule_id}\n"; }
+        
+        $deleteResult = $this->service->deleteScheduleItems([
+            ScheduleItemDTO::fromArray([
+                'id' => $primaryItem->id,
+                'schedule_id' => $this->programScheduleId,
+                'day_index' => 3,
+                'week_index' => 0,
+                'start_time' => '13:00:00',
+                'end_time' => '14:30:00',
+                'data' => [
+                    ['lesson_id' => $this->lessonId]
+                ]
+            ])
+        ]);
+        $this->assertTrue($deleteResult->success);
+
+        $remainingFirstObs = (new ScheduleItem())->get()->where([
+            'schedule_id' => $firstObsSchedule->id,
+            'day_index' => 3
+        ])->all();
+        $this->assertEmpty($remainingFirstObs);
+
+        $remainingSecondObs = (new ScheduleItem())->get()->where([
+            'schedule_id' => $secondObsSchedule->id,
+            'day_index' => 3
+        ])->all();
+        $this->assertEmpty($remainingSecondObs);
     }
 }

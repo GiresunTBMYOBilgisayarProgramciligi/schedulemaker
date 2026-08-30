@@ -520,6 +520,12 @@
         margin-bottom: 2px;
     }
 
+    .lesson-observer-item .lesson-lecturer {
+        display: block;
+        min-width: 0;
+        line-height: 1.25;
+    }
+
     /* 1. Ders Türleri (Base Types) */
 
     /* Normal Ders */

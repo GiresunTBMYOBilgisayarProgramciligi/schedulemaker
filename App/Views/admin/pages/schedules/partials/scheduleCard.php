@@ -24,6 +24,9 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
             data-week-count="<?= $weekCount ?? 1 ?>" data-type="<?= $schedule->type ?>"
+            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>"
+            data-academic-year="<?= htmlspecialchars($schedule->academic_year ?? '') ?>"
+            data-semester="<?= htmlspecialchars($schedule->semester ?? '') ?>"
             data-semester-no="<?= $schedule->semester_no ?? '' ?>"
             data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
             <div class="<?= $headerClasses ?>">

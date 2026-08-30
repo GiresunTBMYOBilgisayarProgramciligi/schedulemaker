@@ -3,6 +3,7 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
+use App\DTOs\DeleteScheduleResult;
 use App\DTOs\ScheduleItemDTO;
 use App\Exceptions\ValidationException;
 use App\Helpers\TimeHelper;
@@ -533,6 +534,297 @@ class LessonScheduleService extends ScheduleService
         }
 
         return $displacedIntervals;
+    }
+
+    /**
+     * Ders programı öğelerini siler, zaman çizelgesini dilimler ve kalan parçaları korur.
+     *
+     * @param ScheduleItemDTO[] $dtos Silinecek item DTO'ları
+     * @param bool $expandGroup Grup derslerinin tüm şubelerini kapsasın mı
+     * @return DeleteScheduleResult
+     * @throws Exception
+     */
+    public function deleteScheduleItems(
+        array $dtos,
+        bool $expandGroup = true
+    ): DeleteScheduleResult {
+        $this->logger->debug("LessonScheduleService::deleteScheduleItems START", $this->logContext(['count' => count($dtos)]));
+
+        try {
+            return Database::transaction(function () use ($dtos, $expandGroup) {
+                $processedSiblingIds = [];
+                $deletedIds = [];
+                $createdItemIds = [];
+
+                $duration = (int) getSettingValue('duration', 'lesson', 50);
+                $break = (int) getSettingValue('break', 'lesson', 10);
+
+                foreach ($dtos as $dto) {
+                    $id = (int) ($dto->id ?? 0);
+                    if (!$id || in_array($id, $processedSiblingIds)) {
+                        continue;
+                    }
+
+                    $scheduleItem = (new ScheduleItem())
+                        ->where(['id' => $id])
+                        ->with('schedule')
+                        ->first();
+
+                    if (!$scheduleItem) {
+                        continue;
+                    }
+
+                    if (!empty($scheduleItem->detail['is_locked'])) {
+                        throw new Exception("Kilitli olan öğeler üzerinde değişiklik yapılamaz.");
+                    }
+
+                    $baseLessonIds = [];
+                    foreach ($scheduleItem->getSlotDatas() as $sd) {
+                        if ($sd->lesson) {
+                            $baseLessonIds[] = (int) $sd->lesson->id;
+                        }
+                    }
+
+                    $siblings = $this->findSiblingItems($scheduleItem, $baseLessonIds);
+                    $siblingIds = array_map(fn($s) => (int) $s->id, $siblings);
+
+                    $rawIntervals = [];
+                    $targetLessonIds = [];
+
+                    foreach ($dtos as $reqDto) {
+                        if (in_array((int) $reqDto->id, $siblingIds)) {
+                            $rawIntervals[] = [
+                                'start' => substr($reqDto->startTime ?? $scheduleItem->start_time, 0, 5),
+                                'end' => substr($reqDto->endTime ?? $scheduleItem->end_time, 0, 5)
+                            ];
+
+                            if (!empty($reqDto->data)) {
+                                foreach ($reqDto->data as $d) {
+                                    if (isset($d['lesson_id'])) {
+                                        $lId = (int) $d['lesson_id'];
+                                        if (!in_array($lId, $targetLessonIds)) {
+                                            $targetLessonIds[] = $lId;
+
+                                            if ($expandGroup) {
+                                                $lObj = (new Lesson())
+                                                    ->where(['id' => $lId])
+                                                    ->with(['childLessons', 'parentLesson'])
+                                                    ->first();
+
+                                                if ($lObj) {
+                                                    if (!empty($lObj->parentLesson)) {
+                                                        $parentLessonId = (int) $lObj->parentLesson->id;
+                                                        if (!in_array($parentLessonId, $targetLessonIds)) {
+                                                            $targetLessonIds[] = $parentLessonId;
+                                                        }
+
+                                                        $parentObj = (new Lesson())
+                                                            ->where(['id' => $parentLessonId])
+                                                            ->with(['childLessons'])
+                                                            ->first();
+
+                                                        if ($parentObj) {
+                                                            foreach ($parentObj->childLessons as $cl) {
+                                                                if (!in_array((int) $cl->id, $targetLessonIds)) {
+                                                                    $targetLessonIds[] = (int) $cl->id;
+                                                                }
+                                                            }
+                                                        }
+                                                    } elseif (!empty($lObj->childLessons)) {
+                                                        foreach ($lObj->childLessons as $cl) {
+                                                            if (!in_array((int) $cl->id, $targetLessonIds)) {
+                                                                $targetLessonIds[] = (int) $cl->id;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    usort($rawIntervals, fn($a, $b) => strcmp($a['start'], $b['start']));
+                    $mergedIntervals = [];
+
+                    foreach ($rawIntervals as $interval) {
+                        if (empty($mergedIntervals)) {
+                            $mergedIntervals[] = $interval;
+                        } else {
+                            $lastIdx = count($mergedIntervals) - 1;
+                            $lastEnd = $mergedIntervals[$lastIdx]['end'];
+                            $gapMinutes = (strtotime($interval['start']) - strtotime($lastEnd)) / 60;
+
+                            if ($gapMinutes >= 0 && $gapMinutes <= $break) {
+                                $mergedIntervals[$lastIdx]['end'] = max($mergedIntervals[$lastIdx]['end'], $interval['end']);
+                            } else {
+                                $mergedIntervals[] = $interval;
+                            }
+                        }
+                    }
+
+                    if (empty($mergedIntervals)) {
+                        continue;
+                    }
+
+                    foreach ($siblings as $sibling) {
+                        $sibling->delete();
+                        $deletedIds[] = $sibling->id;
+                    }
+
+                    foreach ($siblings as $sibling) {
+                        $result = $this->processItemDeletion(
+                            $sibling,
+                            $mergedIntervals,
+                            $targetLessonIds,
+                            $duration,
+                            $break,
+                            false
+                        );
+
+                        if (!empty($result['created'])) {
+                            foreach ($result['created'] as $createdItem) {
+                                $createdItemIds[] = $createdItem->id;
+                            }
+                        }
+                    }
+
+                    $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
+                }
+
+                $this->logger->debug(
+                    "LessonScheduleService::deleteScheduleItems SUCCESS: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
+                    $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
+                );
+
+                return DeleteScheduleResult::success($deletedIds, $createdItemIds);
+            });
+        } catch (Exception $e) {
+            $this->logger->error(
+                "LessonScheduleService::deleteScheduleItems ERROR: " . $e->getMessage(),
+                $this->logContext(['exception' => $e])
+            );
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Item parçalama (flatten timeline logic)
+     *
+     * @param ScheduleItem $item Item
+     * @param array $deleteIntervals Silme aralıkları [['start' => '09:00', 'end' => '10:00'], ...]
+     * @param array $targetLessonIds Silinecek ders ID'leri (boşsa tümü)
+     * @param int $duration Ders süresi (dakika)
+     * @param int $break Teneffüs süresi (dakika)
+     * @param bool $deleteOriginal Original item'ı sil mi?
+     * @return array ['deleted' => bool, 'created' => ScheduleItem[]]
+     */
+    protected function processItemDeletion(
+        ScheduleItem $item,
+        array $deleteIntervals,
+        array $targetLessonIds = [],
+        int $duration = 50,
+        int $break = 10,
+        bool $deleteOriginal = true
+    ): array {
+        $startStr = $item->getShortStartTime();
+        $endStr = $item->getShortEndTime();
+
+        // 1. Kritik noktaları topla (Zaman çizelgesini düzleştir)
+        $internalPoints = [];
+        foreach ($deleteIntervals as $del) {
+            $internalPoints[] = $del['start'];
+            $internalPoints[] = $del['end'];
+        }
+
+        $points = $this->timelineService->getCriticalPoints($startStr, $endStr, $internalPoints, $duration, $break);
+
+        $dataList = $item->data ?: [];
+
+        // 2. Dilimler (segments) üzerinden geç
+        $segments = [];
+        for ($i = 0; $i < count($points) - 1; $i++) {
+            $pStart = $points[$i];
+            $pEnd = $points[$i + 1];
+
+            // Bu dilim silinecek mi?
+            $isDeleteZone = false;
+            foreach ($deleteIntervals as $del) {
+                if ($del['start'] <= $pStart && $del['end'] >= $pEnd) {
+                    $isDeleteZone = true;
+                    break;
+                }
+            }
+
+            $currentData = $dataList;
+            if ($isDeleteZone) {
+                if (!empty($targetLessonIds)) {
+                    $currentData = array_values(array_filter($dataList, function ($l) use ($targetLessonIds) {
+                        return !in_array((int) $l['lesson_id'], $targetLessonIds);
+                    }));
+                } else {
+                    $currentData = [];
+                }
+            }
+
+            $isSpecial = in_array($item->status, ['preferred', 'unavailable']);
+            $wasPreferred = ($item->detail['preferred'] ?? false);
+
+            $shouldKeep = true;
+            if (empty($currentData)) {
+                $shouldKeep = $isSpecial ? !$isDeleteZone : ($wasPreferred && $isDeleteZone);
+            }
+
+            $segments[] = [
+                'start' => $pStart,
+                'end' => $pEnd,
+                'data' => $currentData,
+                'detail' => $item->detail,
+                'isBreak' => (TimeHelper::getDurationMinutes($pStart, $pEnd) == $break),
+                'shouldKeep' => $shouldKeep
+            ];
+        }
+
+        // 3. & 4. Birleştirme ve Temizlik
+        $newSegments = $this->timelineService->mergeContiguousSegments($segments, $break);
+
+        // 5. Veritabanı güncelleme
+        if ($deleteOriginal) {
+            $item->delete();
+        }
+
+        $createdItems = [];
+        if (!empty($newSegments)) {
+            foreach ($newSegments as $seg) {
+                $newItem = new ScheduleItem();
+                $newItem->schedule_id = $item->schedule_id;
+                $newItem->day_index = $item->day_index;
+                $newItem->week_index = $item->week_index;
+                $newItem->start_time = $seg['start'];
+                $newItem->end_time = $seg['end'];
+
+                $newItem->status = $this->timelineService->determineStatus(
+                    $seg['data'],
+                    $item->status,
+                    $item->detail['preferred'] ?? false
+                );
+
+                $newItem->data = $seg['data'];
+                $segDetail = is_array($item->detail) ? $item->detail : [];
+                unset($segDetail['displaced_preferred']);
+                $newItem->detail = !empty($segDetail) ? $segDetail : null;
+                $newItem->create();
+                $createdItems[] = $newItem;
+            }
+        }
+
+        return [
+            'deleted' => $deleteOriginal,
+            'created' => $createdItems
+        ];
     }
 }
 

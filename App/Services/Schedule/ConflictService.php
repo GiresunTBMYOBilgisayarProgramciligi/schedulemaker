@@ -147,6 +147,40 @@ class ConflictService extends BaseService
             ];
         }
 
+        // Sınav atamaları (Çoklu derslik ve çoklu gözetmen kontrolü)
+        if (!empty($itemData['detail'])) {
+            $detail = is_string($itemData['detail']) ? json_decode($itemData['detail'], true) : $itemData['detail'];
+            if (!empty($detail['assignments']) && is_array($detail['assignments'])) {
+                foreach ($detail['assignments'] as $assignment) {
+                    if (!empty($assignment['classroom_id'])) {
+                        $owners[] = [
+                            'type'           => 'classroom',
+                            'id'             => (int)$assignment['classroom_id'],
+                            'lesson_context' => $lesson
+                        ];
+                    }
+                    if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                        foreach ($assignment['observers'] as $obs) {
+                            $obsId = is_array($obs) ? ($obs['id'] ?? null) : $obs;
+                            if ($obsId) {
+                                $owners[] = [
+                                    'type'           => 'user',
+                                    'id'             => (int)$obsId,
+                                    'lesson_context' => $lesson
+                                ];
+                            }
+                        }
+                    } elseif (!empty($assignment['observer_id'])) {
+                        $owners[] = [
+                            'type'           => 'user',
+                            'id'             => (int)$assignment['observer_id'],
+                            'lesson_context' => $lesson
+                        ];
+                    }
+                }
+            }
+        }
+
         // Program
         if ($lesson->program_id) {
             $owners[] = [

@@ -53,7 +53,17 @@ class ExamScheduleCard extends ScheduleCard {
 
         if (assignments.length > 0) {
             assignments.forEach(asgn => {
-                if (asgn.observer_id) {
+                if (Array.isArray(asgn.observers) && asgn.observers.length > 0) {
+                    asgn.observers.forEach(obs => {
+                        if (obs.id) {
+                            menuItems.push({
+                                text: `${obs.name || 'Gözetmen'} programını göster`,
+                                icon: 'bi-person-badge',
+                                onClick: () => this.showScheduleInModal('user', obs.id, `${obs.name || 'Gözetmen'} Programı`)
+                            });
+                        }
+                    });
+                } else if (asgn.observer_id) {
                     menuItems.push({
                         text: `${asgn.observer_name} programını göster`,
                         icon: 'bi-person-badge',
@@ -383,43 +393,63 @@ class ExamScheduleCard extends ScheduleCard {
                 const classroomSelects = Array.from(rowsContainer.querySelectorAll(".classroom-select"));
                 const observerSelects = Array.from(rowsContainer.querySelectorAll(".observer-select"));
                 
-                const selectedClassrooms = classroomSelects.map(s => s.value).filter(v => v);
-                const selectedObservers = observerSelects.map(s => s.value).filter(v => v);
-
-                const updateSelectOptions = (selects, selectedValues) => {
-                    selects.forEach(select => {
-                        const ts = tomSelectInstances.get(select);
-                        const currentValue = select.value;
-
-                        if (ts) {
-                            Object.keys(ts.options).forEach(optValue => {
-                                if (optValue && optValue !== currentValue && selectedValues.includes(optValue)) {
-                                    ts.getOption(optValue)?.classList.add('d-none');
-                                } else if (optValue) {
-                                    ts.getOption(optValue)?.classList.remove('d-none');
-                                }
-                            });
-                        } else if (select && select.options) {
-                            Array.from(select.options).forEach(option => {
-                                if (option.value && option.value !== currentValue && selectedValues.includes(option.value)) {
-                                    option.classList.add('d-none');
-                                } else if (option.value) {
-                                    option.classList.remove('d-none');
-                                }
-                            });
+                const selectedClassrooms = classroomSelects.map(s => s.value).filter(Boolean);
+                
+                // Tüm satırlarda seçilmiş gözetmen ID'lerini topla
+                const allSelectedObservers = [];
+                observerSelects.forEach(select => {
+                    const ts = tomSelectInstances.get(select);
+                    let vals = [];
+                    if (ts) {
+                        const rawVal = ts.getValue();
+                        vals = Array.isArray(rawVal) ? rawVal : (rawVal ? [rawVal] : []);
+                    } else if (select && select.selectedOptions) {
+                        vals = Array.from(select.selectedOptions).map(o => o.value);
+                    }
+                    vals.forEach(v => {
+                        if (v !== null && v !== undefined && String(v).trim() !== "") {
+                            allSelectedObservers.push(String(v));
                         }
                     });
-                };
+                });
 
-                updateSelectOptions(classroomSelects, selectedClassrooms);
-                updateSelectOptions(observerSelects, selectedObservers);
+                // Derslik filtrelemesi
+                classroomSelects.forEach(select => {
+                    const currentValue = select.value;
+                    if (select && select.options) {
+                        Array.from(select.options).forEach(option => {
+                            if (option.value && option.value !== currentValue && selectedClassrooms.includes(option.value)) {
+                                option.classList.add('d-none');
+                            } else if (option.value) {
+                                option.classList.remove('d-none');
+                            }
+                        });
+                    }
+                });
+
+                // Gözetmen filtrelemesi (başka satırda seçilen gözetmenleri gizle)
+                observerSelects.forEach(select => {
+                    const ts = tomSelectInstances.get(select);
+                    if (!ts || !ts.options) return;
+                    const rawVal = ts.getValue();
+                    const currentVals = Array.isArray(rawVal) ? rawVal.map(String) : (rawVal ? [String(rawVal)] : []);
+
+                    Object.keys(ts.options).forEach(optValue => {
+                        if (optValue && !currentVals.includes(optValue) && allSelectedObservers.includes(optValue)) {
+                            ts.getOption(optValue)?.classList.add('d-none');
+                        } else if (optValue) {
+                            ts.getOption(optValue)?.classList.remove('d-none');
+                        }
+                    });
+                });
             };
 
             const initTomSelect = (selectElement, placeholder) => {
                 const ts = new TomSelect(selectElement, {
                     placeholder: placeholder,
-                    allowEmptyOption: true,
+                    allowEmptyOption: false,
                     dropdownParent: 'body',
+                    maxItems: null,
                 });
                 tomSelectInstances.set(selectElement, ts);
                 return ts;
@@ -435,8 +465,8 @@ class ExamScheduleCard extends ScheduleCard {
                         <select class="form-select classroom-select" required></select>
                     </div>
                     <div class="col-md-7">
-                        <label class="form-label small mb-1">Gözetmen</label>
-                        <select class="form-select observer-select" required></select>
+                        <label class="form-label small mb-1">Gözetmen(ler)</label>
+                        <select class="form-select observer-select" multiple required></select>
                     </div>
                     <div class="col-md-1 text-end">
                         ${!isFirst ? `<button type="button" class="btn btn-outline-danger btn-sm remove-row-btn"><i class="bi bi-trash"></i></button>` : ''}
@@ -456,7 +486,7 @@ class ExamScheduleCard extends ScheduleCard {
                     this.fetchAvailableObservers(observerSelect, hoursInput.value)
                 ]);
 
-                const observerTS = initTomSelect(observerSelect, 'Gözetmen seçmek için yazmaya başlayın...');
+                const observerTS = initTomSelect(observerSelect, 'Gözetmen(ler) seçmek için yazmaya başlayın...');
 
                 if (initialAssignment) {
                     if (initialAssignment.classroom_id) {
@@ -470,30 +500,43 @@ class ExamScheduleCard extends ScheduleCard {
                         }
                         classroomSelect.value = initialAssignment.classroom_id;
                     }
-                    if (initialAssignment.observer_id) {
+                    
+                    if (Array.isArray(initialAssignment.observers) && initialAssignment.observers.length > 0) {
+                        initialAssignment.observers.forEach(obs => {
+                            if (obs.id) {
+                                if (!observerTS.options[obs.id]) {
+                                    observerTS.addOption({
+                                        value: obs.id,
+                                        text: obs.name || 'Mevcut Gözetmen'
+                                    });
+                                }
+                                observerTS.addItem(obs.id);
+                            }
+                        });
+                    } else if (initialAssignment.observer_id) {
                         if (!observerTS.options[initialAssignment.observer_id]) {
                             observerTS.addOption({
                                 value: initialAssignment.observer_id,
                                 text: initialAssignment.observer_name || 'Mevcut Gözetmen'
                             });
                         }
-                        observerTS.setValue(initialAssignment.observer_id);
+                        observerTS.addItem(initialAssignment.observer_id);
                     }
                 } else if (isFirst && this.draggedLesson.lecturer_id) {
-                    observerTS.setValue(this.draggedLesson.lecturer_id);
+                    observerTS.addItem(this.draggedLesson.lecturer_id);
                 }
 
                 classroomSelect.addEventListener("change", () => {
                     updateCapacity();
                     updateOptionsVisibility();
                 });
-                observerSelect.addEventListener("change", updateOptionsVisibility);
+                observerTS.on("change", () => {
+                    updateOptionsVisibility();
+                });
 
                 if (!isFirst) {
                     rowElement.querySelector(".remove-row-btn").addEventListener("click", () => {
-                        const cTS = tomSelectInstances.get(classroomSelect);
                         const oTS = tomSelectInstances.get(observerSelect);
-                        if (cTS) { cTS.destroy(); tomSelectInstances.delete(classroomSelect); }
                         if (oTS) { oTS.destroy(); tomSelectInstances.delete(observerSelect); }
                         rowElement.remove();
                         updateCapacity();
@@ -529,21 +572,37 @@ class ExamScheduleCard extends ScheduleCard {
                 rows.forEach(row => {
                     let classroomSelect = row.querySelector(".classroom-select");
                     let observerSelect = row.querySelector(".observer-select");
-                    if (!classroomSelect.value || !observerSelect.value) {
+                    let observerTS = tomSelectInstances.get(observerSelect);
+                    
+                    let rawObserverVal = observerTS ? observerTS.getValue() : Array.from(observerSelect.selectedOptions).map(o => o.value);
+                    let selectedObserverIds = Array.isArray(rawObserverVal) ? rawObserverVal : (rawObserverVal ? [rawObserverVal] : []);
+                    selectedObserverIds = selectedObserverIds.filter(v => v);
+
+                    if (!classroomSelect.value || selectedObserverIds.length === 0) {
                         isValid = false;
                     } else {
+                        let observersList = selectedObserverIds.map(id => {
+                            let text = observerTS ? (observerTS.options[id]?.text || '') : '';
+                            return {
+                                id: parseInt(id),
+                                name: text
+                            };
+                        });
+
                         selectedData.assignments.push({
                             classroom_id: parseInt(classroomSelect.value),
                             classroom_name: classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, ""),
                             classroom_exam_size: parseInt(classroomSelect.selectedOptions[0].dataset.examSize || 0),
-                            observer_id: parseInt(observerSelect.value),
-                            observer_name: observerSelect.selectedOptions[0].innerText
+                            observers: observersList,
+                            observer_id: observersList[0]?.id || null,
+                            observer_name: observersList[0]?.name || ''
                         });
                     }
                 });
 
                 if (!isValid) {
-                    console.error("Exam assignment error: Fields missing"); new Toast().prepareToast("Hata", "Lütfen tüm alanları doldurun.", "warning");
+                    console.error("Exam assignment error: Fields missing");
+                    new Toast().prepareToast("Hata", "Lütfen tüm derslikleri ve en az birer gözetmeni seçin.", "warning");
                     return;
                 }
 

@@ -3,6 +3,7 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
+use App\DTOs\DeleteScheduleResult;
 use App\Enums\ExamType;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -161,16 +162,37 @@ class ExamScheduleService extends ScheduleService
 
                 // ── 4. Gözetmen ve Derslik Kayıtları (tam veri + referans) ───────
                 $assignments = $dto->detail['assignments'] ?? [];
-                foreach ($assignments as $assignment) {
-                    $assignmentOwners = [
-                        ['type' => 'user', 'id' => $assignment['observer_id'], 'classroom_id' => $assignment['classroom_id']],
-                        ['type' => 'classroom', 'id' => $assignment['classroom_id'], 'observer_id' => $assignment['observer_id']],
-                    ];
+                $processedClassroomIds = [];
 
-                    foreach ($assignmentOwners as $ao) {
+                foreach ($assignments as $assignment) {
+                    $classroomId = (int)($assignment['classroom_id'] ?? 0);
+
+                    // Gözetmenleri topla
+                    $observers = [];
+                    if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                        foreach ($assignment['observers'] as $obs) {
+                            $obsId = is_array($obs) ? ($obs['id'] ?? null) : $obs;
+                            $obsName = is_array($obs) ? ($obs['name'] ?? '') : '';
+                            if ($obsId) {
+                                $observers[] = ['id' => (int)$obsId, 'name' => $obsName];
+                            }
+                        }
+                    } elseif (!empty($assignment['observer_id'])) {
+                        $observers[] = [
+                            'id' => (int)$assignment['observer_id'],
+                            'name' => $assignment['observer_name'] ?? ''
+                        ];
+                    }
+
+                    $firstObserverId = !empty($observers) ? $observers[0]['id'] : null;
+
+                    // A) Derslik Kaydı (Her derslik için tek bir ScheduleItem)
+                    if ($classroomId && !in_array($classroomId, $processedClassroomIds)) {
+                        $processedClassroomIds[] = $classroomId;
+
                         $scheduleFilters = [
-                            'owner_type' => $ao['type'],
-                            'owner_id' => $ao['id'],
+                            'owner_type' => 'classroom',
+                            'owner_id' => $classroomId,
                             'semester' => $semester,
                             'academic_year' => $academicYear,
                             'type' => $targetSchedule->type,
@@ -181,8 +203,47 @@ class ExamScheduleService extends ScheduleService
                         $fullData = [
                             [
                                 'lesson_id' => $lessonId,
-                                'lecturer_id' => ($ao['type'] === 'user') ? $ao['id'] : $ao['observer_id'],
-                                'classroom_id' => ($ao['type'] === 'classroom') ? $ao['id'] : $ao['classroom_id'],
+                                'lecturer_id' => $firstObserverId,
+                                'classroom_id' => $classroomId,
+                            ]
+                        ];
+
+                        $newItem = new ScheduleItem();
+                        $newItem->schedule_id = $relSchedule->id;
+                        $newItem->day_index = $dayIndex;
+                        $newItem->week_index = $weekIndex;
+                        $newItem->start_time = $startTime;
+                        $newItem->end_time = $endTime;
+                        $newItem->status = 'single';
+                        $newItem->data = $fullData;
+                        $newItem->detail = [
+                            'program_item_id' => $primaryProgramItemId,
+                            'reference_type' => 'exam_assignment',
+                            'observers' => $observers
+                        ];
+                        $newItem->create();
+
+                        $itemGroupedIds['classroom'][] = $newItem->id;
+                    }
+
+                    // B) Her bir gözetmen için User Kaydı
+                    foreach ($observers as $obs) {
+                        $observerId = $obs['id'];
+                        $scheduleFilters = [
+                            'owner_type' => 'user',
+                            'owner_id' => $observerId,
+                            'semester' => $semester,
+                            'academic_year' => $academicYear,
+                            'type' => $targetSchedule->type,
+                            'semester_no' => null,
+                        ];
+                        $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
+
+                        $fullData = [
+                            [
+                                'lesson_id' => $lessonId,
+                                'lecturer_id' => $observerId,
+                                'classroom_id' => $classroomId,
                             ]
                         ];
 
@@ -200,7 +261,7 @@ class ExamScheduleService extends ScheduleService
                         ];
                         $newItem->create();
 
-                        $itemGroupedIds[$ao['type']][] = $newItem->id;
+                        $itemGroupedIds['user'][] = $newItem->id;
                     }
                 }
 
@@ -227,6 +288,71 @@ class ExamScheduleService extends ScheduleService
 
             return $this->saveExamScheduleItems($dtos);
         });
+    }
+
+    /**
+     * Sınav programı öğelerini ve ilişkili tüm kardeş kayıtları (gözetmenler, derslikler, program, ders) siler.
+     * Sınavlarda parçalı dilim silme veya yeniden segment oluşturma yoktur; sınav bütünüyle kaldırılır.
+     *
+     * @param ScheduleItemDTO[] $dtos Silinecek sınav item DTO'ları
+     * @param bool $expandGroup Sınavlar için geçerli değildir
+     * @return DeleteScheduleResult
+     */
+    public function deleteScheduleItems(array $dtos, bool $expandGroup = true): DeleteScheduleResult
+    {
+        $this->logger->debug("ExamScheduleService::deleteScheduleItems START", $this->logContext(['count' => count($dtos)]));
+
+        try {
+            return Database::transaction(function () use ($dtos) {
+                $processedSiblingIds = [];
+                $deletedIds = [];
+
+                foreach ($dtos as $dto) {
+                    $id = (int) ($dto->id ?? 0);
+                    if (!$id || in_array($id, $processedSiblingIds)) {
+                        continue;
+                    }
+
+                    $scheduleItem = (new ScheduleItem())
+                        ->where(['id' => $id])
+                        ->with('schedule')
+                        ->first();
+
+                    if (!$scheduleItem) {
+                        continue;
+                    }
+
+                    if (!empty($scheduleItem->detail['is_locked'])) {
+                        throw new Exception("Kilitli olan öğeler üzerinde değişiklik yapılamaz.");
+                    }
+
+                    // Sınava bağlı tüm kardeş kayıtları (Program, Ders, Derslikler, Gözetmenler) bul
+                    $siblings = $this->findExamSiblingItems($scheduleItem);
+
+                    foreach ($siblings as $sibling) {
+                        $siblingId = (int) $sibling->id;
+                        if (!in_array($siblingId, $deletedIds)) {
+                            $sibling->delete();
+                            $deletedIds[] = $siblingId;
+                            $processedSiblingIds[] = $siblingId;
+                        }
+                    }
+                }
+
+                $this->logger->debug(
+                    "ExamScheduleService::deleteScheduleItems SUCCESS. Silinen item sayısı: " . count($deletedIds),
+                    $this->logContext(['deletedIds' => $deletedIds])
+                );
+
+                return DeleteScheduleResult::success($deletedIds, []);
+            });
+        } catch (Exception $e) {
+            $this->logger->error(
+                "ExamScheduleService::deleteScheduleItems ERROR: " . $e->getMessage(),
+                $this->logContext(['exception' => $e])
+            );
+            return DeleteScheduleResult::failure([$e->getMessage()]);
+        }
     }
     // ─────────────────────────────────────────────────────────────────────────
     // Sınav Sibling
@@ -374,8 +500,19 @@ class ExamScheduleService extends ScheduleService
         ];
 
         foreach ($examAssignments as $assignment) {
-            $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
-            $owners[] = ['type' => 'user', 'id' => $assignment['observer_id']];
+            if (!empty($assignment['classroom_id'])) {
+                $owners[] = ['type' => 'classroom', 'id' => $assignment['classroom_id']];
+            }
+            if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                foreach ($assignment['observers'] as $obs) {
+                    $obsId = is_array($obs) ? ($obs['id'] ?? null) : $obs;
+                    if ($obsId) {
+                        $owners[] = ['type' => 'user', 'id' => (int)$obsId];
+                    }
+                }
+            } elseif (!empty($assignment['observer_id'])) {
+                $owners[] = ['type' => 'user', 'id' => (int)$assignment['observer_id']];
+            }
         }
 
         return $owners;

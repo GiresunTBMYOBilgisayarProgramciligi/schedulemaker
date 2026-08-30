@@ -84,14 +84,30 @@ $lessonName = ($type === 'exam')
     <div class="lesson-meta flex-wrap w-100">
         <?php if ($type === 'exam' && isset($scheduleItem->detail['assignments']) && is_array($scheduleItem->detail['assignments'])): ?>
             <div class="lesson-observers-list w-100 d-flex flex-column gap-1">
-                <?php foreach ($scheduleItem->detail['assignments'] as $assignment): ?>
-                    <div class="lesson-observer-item small d-flex align-items-center justify-content-between w-100">
-                        <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= htmlspecialchars($assignment['observer_name']) ?>">
-                            <i class="bi bi-person-badge me-1 opacity-75"></i><?= $assignment['observer_name'] ?>
-                        </span>
-                        <span class="lesson-classroom lesson-classroom-badge ms-1" title="Sınav Salonu">
-                            <?= $assignment['classroom_name'] ?>
-                        </span>
+                <?php foreach ($scheduleItem->detail['assignments'] as $assignment): 
+                    $observerNamesList = [];
+                    if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                        $observerNamesList = array_values(array_filter(array_map(fn($o) => is_array($o) ? ($o['name'] ?? '') : (is_string($o) ? $o : ''), $assignment['observers'])));
+                    } elseif (!empty($assignment['observer_name'])) {
+                        $observerNamesList = [$assignment['observer_name']];
+                    }
+                    if (empty($observerNamesList)) {
+                        $observerNamesList = ['Gözetmen atanmadı'];
+                    }
+                ?>
+                    <div class="lesson-observer-item small d-flex align-items-center justify-content-between w-100 gap-1">
+                        <div class="d-flex flex-column flex-grow-1 min-w-0">
+                            <?php foreach ($observerNamesList as $obsName): ?>
+                                <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= htmlspecialchars($obsName) ?>">
+                                    <i class="bi bi-person-badge me-1 opacity-75"></i><?= htmlspecialchars($obsName) ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if (!empty($assignment['classroom_name'])): ?>
+                            <span class="lesson-classroom lesson-classroom-badge ms-1 align-self-center flex-shrink-0" title="Sınav Salonu: <?= htmlspecialchars($assignment['classroom_name']) ?>">
+                                <?= htmlspecialchars($assignment['classroom_name']) ?>
+                            </span>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

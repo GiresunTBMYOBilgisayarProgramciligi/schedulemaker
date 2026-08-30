@@ -57,6 +57,8 @@ class ScheduleCard {
         this.duration = parseInt(this.card.dataset.duration) || 50;
         this.breakDuration = parseInt(this.card.dataset.break) || 0;
         this.academic_year = this.card.dataset.academicYear || null;
+        this.owner_type = this.card.dataset.ownerType || null;
+        this.owner_id = this.card.dataset.ownerId || null;
         this.type = this.card.dataset.type || null;
         this.preference_mode = this.card.dataset.preferenceMode === 'true' || this.card.dataset.preferenceMode === '1';
 

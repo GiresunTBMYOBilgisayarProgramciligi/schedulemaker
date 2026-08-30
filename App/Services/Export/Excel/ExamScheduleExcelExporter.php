@@ -335,7 +335,14 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                 if ($options->showObserver) {
                     $assignmentLines = [];
                     foreach ($assignments as $assignment) {
-                        $observerName = $assignment['observer_name'] ?? '';
+                        $observerName = '';
+                        if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                            $names = array_filter(array_map(fn($o) => is_array($o) ? ($o['name'] ?? '') : '', $assignment['observers']));
+                            $observerName = implode(', ', $names);
+                        } elseif (!empty($assignment['observer_name'])) {
+                            $observerName = $assignment['observer_name'];
+                        }
+
                         $classroomName = $assignment['classroom_name'] ?? '';
                         
                         // İkisi de varsa "Gözetmen - Derslik(Kalın)", sadece derslik varsa "Derslik(Kalın)", sadece gözetmen varsa "Gözetmen"

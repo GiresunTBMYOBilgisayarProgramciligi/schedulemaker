@@ -115,7 +115,18 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
                         // Gözetmen bilgisi
                         if ($showOptions['show_observer'] ?? false) {
-                            $observerNames = array_filter(array_column($assignments, 'observer_name'));
+                            $observerNames = [];
+                            foreach ($assignments as $asgn) {
+                                if (!empty($asgn['observers']) && is_array($asgn['observers'])) {
+                                    foreach ($asgn['observers'] as $obs) {
+                                        $name = is_array($obs) ? ($obs['name'] ?? '') : '';
+                                        if ($name) $observerNames[] = $name;
+                                    }
+                                } elseif (!empty($asgn['observer_name'])) {
+                                    $observerNames[] = $asgn['observer_name'];
+                                }
+                            }
+                            $observerNames = array_unique(array_filter($observerNames));
                             if (!empty($observerNames)) {
                                 $descriptionParts[] = "Gözetmenler:\n" . implode('\n', $observerNames);
                             }

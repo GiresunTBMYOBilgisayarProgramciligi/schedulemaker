@@ -11,9 +11,9 @@ Sistemde üç ana sınav tipi tanımlıdır:
 Bu tiplerdeki programlar `ExamService` üzerinden yönetilir ve normal ders programı (`lesson`) mantığından ayrıştırılır. Ancak, sınav süresi hesaplamaları ve çakışma kontrollerinde `App\Helpers\TimeHelper` ve `App\Services\TimelineService` yardımcı sınıfları ortaklaşa kullanılır.
 
 ## 2. Çoklu Atama (Assignments) Yapısı
-Normal derslerin aksine, bir sınav aynı anda **birden fazla derslikte** ve **birden fazla gözetmenle** gerçekleştirilebilir. 
-- Bir sınav item'ı kaydedilirken `detail.assignments` dizisi içerisinde hangi gözetmenin hangi derslikte görevli olduğu tutulur.
-- Her bir atama, hem Gözetmen hem de Derslik programlarına ayrı birer `ScheduleItem` olarak yansıtılır.
+Normal derslerin aksine, bir sınav aynı anda **birden fazla derslikte** ve büyük salonlarda (amfiler vb.) **aynı derslikte birden fazla gözetmenle** gerçekleştirilebilir. 
+- Bir sınav item'ı kaydedilirken `detail.assignments` dizisi içerisinde hangi derslikte hangi gözetmenlerin (`observers: [{id, name}, ...]`) görevli olduğu tutulur.
+- Her bir derslik için dersliğin kendi programına tek bir `ScheduleItem` kaydı açılırken, derslikte görevli olan her bir gözetmen için kendi `user` programına bağımsız birer `ScheduleItem` yansıtılır.
 
 ## 3. Veri Kayıt ve Referans Mantığı
 Sınav item'ları kaydedilirken (`saveExamScheduleItems`) şu hiyerarşi izlenir:
@@ -21,12 +21,12 @@ Sınav item'ları kaydedilirken (`saveExamScheduleItems`) şu hiyerarşi izlenir
 ### A. Program ve Ders Kayıtları
 - İlgili program (Bölüm/Sınıf) ve dersin kendi programına kayıt atılır.
 - Bu kayıtlarda `lecturer_id` ve `classroom_id` sütunları **null** bırakılır (Çünkü tek bir hoca veya derslik yoktur).
-- Veri (`data`) kısmında sadece `lesson_id` saklanır.
+- Veri (`data`) kısmında sadece `lesson_id` saklanır. `detail` alanında ise tüm derslikler ve atanmış gözetmenler (`assignments`) JSON formatında tutulur.
 
 ### B. Gözetmen ve Derslik Kayıtları
-- Her bir atama için gözetmen (user) ve derslik (classroom) programlarına kayıt atılır.
-- Bu kayıtlarda tam veri (hoca + derslik + ders) saklanır.
-- **Kritik Detay:** Bu kayıtların `detail` alanında `program_item_id` referansı tutulur. Bu referans, yukarıdaki (A) maddesinde oluşturulan ana program kaydını işaret eder. Böylece tüm parçalar birbirine bağlanır.
+- **Derslik Kayıtları:** Her benzersiz derslik (`classroom_id`) için ilgili derslik takvimine 1 adet kayıt oluşturulur (`unique` kısıt ihlallerini önlemek için).
+- **Gözetmen Kayıtları:** Her derslikte görevlendirilen tüm gözetmenlerin (`observers`) kendi kullanıcı takvimlerine (`owner_type = 'user'`) tam veriyle (hoca + derslik + ders) bağımsız kayıtlar atılır.
+- **Kritik Detay:** Bu kayıtların `detail` alanında `program_item_id` referansı tutulur. Bu referans, yukarıdaki (A) maddesinde oluşturulan ana program kaydını işaret eder. Böylece ana kayıt silindiğinde veya taşındığında tüm gözetmen ve derslik kayıtları senkronize olarak temizlenir/taşınır.
 
 ## 4. Çakışma Kontrolü (ConflictService)
 Sınav çakışmaları şu prensiplere göre denetlenir:

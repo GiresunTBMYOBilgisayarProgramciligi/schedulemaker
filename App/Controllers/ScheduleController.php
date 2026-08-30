@@ -26,12 +26,14 @@ use App\Validators\ScheduleItemValidator;
 use App\Validators\ToggleLockScheduleItemValidator;
 use App\Exceptions\ValidationException;
 use App\Repositories\ScheduleRepository;
+use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Helpers\ScheduleViewHelper;
 use App\Helpers\ScheduleLogHelper;
 use App\Core\Gate;
 use App\Middlewares\AuthMiddleware;
 use App\Exceptions\AuthorizationException;
+use App\Enums\ExamType;
 use App\Enums\OwnerType;
 
 class ScheduleController extends Controller
@@ -372,8 +374,17 @@ class ScheduleController extends Controller
 
         $this->authorizeScheduleItemChanges($dtos);
 
-        $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
-        $service = new LessonScheduleService();
+        $firstSchedule = !empty($dtos) ? (new Schedule())->find($dtos[0]->scheduleId) : null;
+        $isExam = $firstSchedule && ExamType::isExamType($firstSchedule->type);
+
+        if ($isExam) {
+            $this->logger()->debug("Using ExamScheduleService::deleteScheduleItems", $this->logContext());
+            $service = new ExamScheduleService();
+        } else {
+            $this->logger()->debug("Using LessonScheduleService::deleteScheduleItems", $this->logContext());
+            $service = new LessonScheduleService();
+        }
+
         $result = $service->deleteScheduleItems($dtos);
         
         if (!$result->success) {

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.3] - 2026-08-30
+
+### Added
+- **Büyük Sınıflar ve Amfiler İçin Çoklu Gözetmen Atama Desteği**:
+  - Sınav programı düzenleme modalında (`ExamScheduleCard.js`) her bir derslik için birden fazla gözetmen seçebilme (TomSelect `multiple`) desteği eklendi.
+  - Sınav takviminde tek bir salona birden fazla gözetmen atandığında derslik takviminde mükerrer kayıt oluşmasını engelleyen, her bir gözetmenin kendi kullanıcı programına bağımsız atama yansıtan servis altyapısı (`ExamScheduleService::saveExamScheduleItems`) kuruldu.
+  - Çakışma kontrol servisi (`ConflictService` / `ConflictResolver`), sınav atamasındaki tüm derslik ve gözetmenleri otomatik olarak çakışma taramasına dahil edecek şekilde genişletildi.
+  - Ders kartlarında (`_lessonCard.php`) ve sağ tık menüsünde (`showContextMenu`) bir derslikte görevli tüm gözetmenlerin isimleri ve programlarına hızlı erişim bağlantıları listelendi.
+  - Excel (`ExamScheduleExcelExporter`) ve ICS takvim (`ExamScheduleIcsExporter`) dışa aktarma motorlarına çoklu gözetmen formatlaması entegre edildi.
+  - Çoklu gözetmen atama, derslik tekilleştirme, sibling eşleme ve sınav silme işlemlerini doğrulayan kapsamlı entegrasyon testleri (`ExamScheduleServiceTest`) yazıldı.
+
 ## [0.3.2] - 2026-08-28
 
 ### Added
