@@ -9,6 +9,7 @@ use App\DTOs\ScheduleNoteStatusDTO;
 use App\Models\ScheduleNote;
 use App\Models\User;
 use App\Events\ScheduleNoteStatusUpdatedEvent;
+use App\Events\ScheduleNoteDeletedEvent;
 use App\Core\EventDispatcher;
 
 class ScheduleNoteService extends BaseService
@@ -150,7 +151,9 @@ class ScheduleNoteService extends BaseService
             ]));
 
             if ($lecturer) {
-                (new \App\Mailers\ScheduleNoteMailer())->sendNoteDeletedEmail($note, $lecturer, $user);
+                EventDispatcher::getInstance()->dispatch(
+                    new ScheduleNoteDeletedEvent($note, $lecturer, $user)
+                );
             }
         }
         return $deleted;

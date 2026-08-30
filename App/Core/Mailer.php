@@ -14,10 +14,103 @@ abstract class Mailer
 {
     protected PHPMailer $mailer;
 
+    /**
+     * Testlerde sahte modun aktif olup olmadığını belirtir.
+     */
+    protected static bool $fake = false;
+
+    /**
+     * Gönderilen sahte e-postaların listesi.
+     * @var array<int, array{to: array, subject: string, body: string, altBody: string, attachments: array, mailer: string}>
+     */
+    protected static array $sentMails = [];
+
     public function __construct()
     {
         $this->mailer = new PHPMailer(true);
         $this->setup();
+    }
+
+    /**
+     * Test ortamında veya sahte modda olunup olunmadığını döner.
+     */
+    public static function isTesting(): bool
+    {
+        return self::$fake 
+            || defined('PHPUNIT_RUNNING') 
+            || (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'testing')
+            || (isset($_SERVER['APP_ENV']) && $_SERVER['APP_ENV'] === 'testing');
+    }
+
+    /**
+     * Mailer'ı test/sahte moda geçirir ve hafızayı temizler.
+     */
+    public static function fake(): void
+    {
+        self::$fake = true;
+        self::$sentMails = [];
+    }
+
+    /**
+     * Sahte moddan çıkarır.
+     */
+    public static function restore(): void
+    {
+        self::$fake = false;
+        self::$sentMails = [];
+    }
+
+    /**
+     * Gönderilen (yakalanan) tüm e-postaları döner.
+     */
+    public static function getSentMails(): array
+    {
+        return self::$sentMails;
+    }
+
+    /**
+     * Gönderilen e-posta geçmişini temizler.
+     */
+    public static function clearSentMails(): void
+    {
+        self::$sentMails = [];
+    }
+
+    /**
+     * Belirtilen filtreye uygun bir e-posta gönderilip gönderilmediğini doğrular.
+     */
+    public static function hasSent(string|callable $subjectOrCallback, ?string $toEmail = null): bool
+    {
+        foreach (self::$sentMails as $mail) {
+            if (is_callable($subjectOrCallback)) {
+                if ($subjectOrCallback($mail)) {
+                    return true;
+                }
+                continue;
+            }
+
+            $subjectMatch = str_contains((string)($mail['subject'] ?? ''), $subjectOrCallback);
+            if (!$subjectMatch) {
+                continue;
+            }
+
+            if ($toEmail !== null) {
+                $recipientFound = false;
+                foreach ($mail['to'] ?? [] as $to) {
+                    if (($to[0] ?? '') === $toEmail) {
+                        $recipientFound = true;
+                        break;
+                    }
+                }
+                if (!$recipientFound) {
+                    continue;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -56,7 +149,21 @@ abstract class Mailer
      */
     public function send(): bool
     {
-        // Simülasyon / Test modu kontrolü (mail_driver !== 'smtp' ise test modunda çalışır)
+        // 1. Test veya Fake mod kontrolü (Kesinlikle gerçek SMTP'ye çıkmaz)
+        if (self::isTesting()) {
+            self::$sentMails[] = [
+                'to'          => $this->mailer->getToAddresses(),
+                'subject'     => $this->mailer->Subject ?? '',
+                'body'        => $this->mailer->Body ?? '',
+                'altBody'     => $this->mailer->AltBody ?? '',
+                'attachments' => $this->mailer->getAttachments(),
+                'mailer'      => static::class,
+            ];
+            $this->resetMailerState();
+            return true;
+        }
+
+        // 2. Simülasyon / Geliştirme modu kontrolü (mail_driver !== 'smtp' ise HTML kütüğüne yazar)
         $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
         if ($mailDriver !== 'smtp') {
             $result = $this->logEmailToFile();
@@ -64,6 +171,7 @@ abstract class Mailer
             return $result;
         }
 
+        // 3. Canlı SMTP Gönderimi
         try {
             $result = $this->mailer->send();
             $this->resetMailerState();

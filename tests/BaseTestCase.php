@@ -4,6 +4,7 @@ namespace Tests;
 
 use PHPUnit\Framework\TestCase;
 use App\Core\Database;
+use App\Core\Mailer;
 
 abstract class BaseTestCase extends TestCase
 {
@@ -18,6 +19,7 @@ abstract class BaseTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Mailer::fake();
         $this->resetAuth();
         // Veritabanı bağlantısı al ve her test başında transaction başlat
         $this->getDb()->beginTransaction();
@@ -29,6 +31,7 @@ abstract class BaseTestCase extends TestCase
         if (self::$db && self::$db->inTransaction()) {
             self::$db->rollBack();
         }
+        Mailer::clearSentMails();
         $this->resetAuth();
         parent::tearDown();
     }

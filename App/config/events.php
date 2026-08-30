@@ -14,6 +14,9 @@ use App\Listeners\SendSchedulePublishedEmailListener;
 use App\Events\LessonAssignedEvent;
 use App\Listeners\SyncLecturerAffiliationsListener;
 
+use App\Events\ScheduleNoteDeletedEvent;
+use App\Listeners\SendScheduleNoteDeletedEmailListener;
+
 $dispatcher = EventDispatcher::getInstance();
 
 // Tüm olay (event) ve dinleyici (listener) kayıtlarını buraya ekleyebilirsiniz.
@@ -26,6 +29,11 @@ $dispatcher->listen(
 $dispatcher->listen(
     ScheduleNoteStatusUpdatedEvent::class,
     SendScheduleNoteFeedbackEmailListener::class
+);
+
+$dispatcher->listen(
+    ScheduleNoteDeletedEvent::class,
+    SendScheduleNoteDeletedEmailListener::class
 );
 
 $dispatcher->listen(
@@ -47,3 +55,4 @@ $dispatcher->listen(
     LessonAssignedEvent::class,
     SyncLecturerAffiliationsListener::class
 );
+
