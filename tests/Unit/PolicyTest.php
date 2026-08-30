@@ -172,4 +172,29 @@ class PolicyTest extends BaseTestCase
         // 3. Güncelleme (Update) yetkisi: Düz akademisyen sınıf takvimini güncelleyemez (güvenlik kontrolü)
         $this->assertFalse($policy->update($lecturer, $unpublishedClassroomSchedule));
     }
+
+    public function testLecturerCanPublishOwnSchedule(): void
+    {
+        $policy = new SchedulePolicy();
+        $lecturer = $this->createMockUser('lecturer', 1, 1);
+
+        $ownSchedule = new Schedule();
+        $ownSchedule->id = 100;
+        $ownSchedule->owner_type = 'user';
+        $ownSchedule->owner_id = $lecturer->id;
+        $ownSchedule->is_published = false;
+
+        $otherLecturerSchedule = new Schedule();
+        $otherLecturerSchedule->id = 101;
+        $otherLecturerSchedule->owner_type = 'user';
+        $otherLecturerSchedule->owner_id = $lecturer->id + 999;
+        $otherLecturerSchedule->is_published = false;
+
+        // Hoca kendi programını yayınlayabilir
+        $this->assertTrue($policy->publish_schedule($lecturer, $ownSchedule));
+
+        // Hoca başka bir hocanın programını yayınlayamaz
+        $this->assertFalse($policy->publish_schedule($lecturer, $otherLecturerSchedule));
+    }
 }
+

@@ -203,6 +203,9 @@ class SchedulePolicy extends BasePolicy
                 break;
 
             case 'user':
+                if ((int)$schedule->owner_id === (int)$user->id) {
+                    return true;
+                }
                 $scheduleUser = (new User())->where(["id" => $schedule->owner_id])->with(['department'])->first();
                 if ($scheduleUser) {
                     $affiliations = $scheduleUser->getAffiliations();

@@ -247,6 +247,13 @@ class SchedulePublishService extends BaseService
             // Sadece bu programa kadrolu olan hocalar (users.program_id)
             $progUsers = (new User())->get()->where(['program_id' => $scopeId])->all();
             $userIds = array_map(fn($u) => $u->id, $progUsers);
+        } elseif ($scope === 'user' || $scope === 'user_single') {
+            $userIds = [$scopeId];
+        } elseif ($scope === 'classroom' || $scope === 'classroom_single') {
+            $classroomIds = [$scopeId];
+        } elseif ($scope === 'building') {
+            $classrooms = (new Classroom())->get()->where(['building_id' => $scopeId])->all();
+            $classroomIds = array_map(fn($c) => $c->id, $classrooms);
         }
         
         $userIds = array_values(array_unique(array_filter($userIds)));

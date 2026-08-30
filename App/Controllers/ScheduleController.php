@@ -749,7 +749,7 @@ class ScheduleController extends Controller
             return ["status" => "error", "msg" => "Program bulunamadı"];
         }
 
-        Gate::authorize(PermissionType::UPDATE->value, clone $schedule, "Programı yayınlama yetkiniz yok");
+        Gate::authorize(PermissionType::PUBLISH_SCHEDULE->value, clone $schedule, "Programı yayınlama yetkiniz yok");
 
         return (new SchedulePublishService())->togglePublish($requestData['id']);
     }
@@ -797,9 +797,13 @@ class ScheduleController extends Controller
             $msg .= " (Farklı birimden $crossUnitCount hocaya bilgilendirme e-postası gönderildi)";
         }
 
+        $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
+
         return [
             "status" => "success",
-            "msg" => $msg
+            "msg" => $msg,
+            "action" => $action ? 'publish' : 'unpublish',
+            "is_test_mode" => ($mailDriver !== 'smtp')
         ];
     }
 

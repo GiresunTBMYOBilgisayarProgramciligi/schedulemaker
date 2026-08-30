@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
             scope = getVal('lecturer_id') ? 'user_single' : (getVal('lecturer_unit_id') ? 'unit' : null);
         } else if (activeTab === 'classroom') {
             scopeId = getVal('classroom_id') || getVal('classroom_building_id') || getVal('classroom_unit_id');
-            scope = (getVal('classroom_id') || getVal('classroom_building_id')) ? 'classroom_single' : (getVal('classroom_unit_id') ? 'unit' : null);
+            scope = getVal('classroom_id') ? 'classroom_single' : (getVal('classroom_building_id') ? 'building' : (getVal('classroom_unit_id') ? 'unit' : null));
         }
 
         return {
@@ -121,18 +121,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const btnPublish = activePane.querySelector('.btn-publish');
         const btnUnpublish = activePane.querySelector('.btn-unpublish');
 
-        if (!scope || !scopeId || scope === 'user_single' || scope === 'classroom_single') {
+        if (!scope || !scopeId) {
             if (btnPublish) btnPublish.disabled = true;
             if (btnUnpublish) btnUnpublish.disabled = true;
             if (statsLabel) statsLabel.classList.add('d-none');
-            
-            if (scope === 'user_single' || scope === 'classroom_single') {
-                if (statsLabel) {
-                    statsLabel.classList.remove('d-none', 'text-bg-info', 'text-bg-success');
-                    statsLabel.classList.add('text-bg-warning');
-                    statsLabel.textContent = "Tekil yayınlama için düzenleme sayfasını kullanın.";
-                }
-            }
             return;
         }
 
@@ -266,11 +258,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             resultText.innerHTML = response.msg;
                         }
 
+                        const isPublishAction = action === 'publish' || (response.action && response.action === 'publish');
+                        const isTestMode = response.is_test_mode === true || (response.is_test_mode !== false && document.querySelector('.app-main')?.getAttribute('data-is-test-mode') === 'true');
+                        const testMailInfoHtml = (isPublishAction && isTestMode)
+                            ? `<div class="mt-3 text-muted small">Gönderilen veya yakalanan e-postaları <a href="/mail_log.html" target="_blank" class="fw-bold text-decoration-underline">Test Mail Logları</a> sayfasından inceleyebilirsiniz.</div>`
+                            : '';
+
                         const successModal = new Modal();
                         successModal.prepareModal(
                             'İşlem Başarılı',
-                            `<div class="text-success mb-2"><i class="bi bi-check-circle-fill me-2 fs-5"></i> ${response.msg}</div>
-                             <div class="mt-3 text-muted small">Gönderilen veya yakalanan e-postaları <a href="/mail_log.html" target="_blank" class="fw-bold text-decoration-underline">Test Mail Logları</a> sayfasından inceleyebilirsiniz.</div>`,
+                            `<div class="text-success mb-2"><i class="bi bi-check-circle-fill me-2 fs-5"></i> ${response.msg}</div>${testMailInfoHtml}`,
                             false,
                             true,
                             'md'

@@ -49,6 +49,8 @@ class AdminPageController extends Controller
     {
         $assetManager->addCss("/assets/css/schedule.css");
         $assetManager->addJs("/assets/js/exportSchedule.js");
+        $assetManager->addJs("/assets/js/admin/ScheduleCard.js");
+        $assetManager->addJs("/assets/js/admin/initializeScheduleCards.js");
 
         $dashboardRole = match(true) {
             Gate::allowsRole('submanager')                                                                         => 'admin',

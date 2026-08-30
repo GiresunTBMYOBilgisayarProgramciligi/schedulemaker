@@ -65,8 +65,14 @@ $typeLabel    = htmlspecialchars($schedule->getScheduleTypeName());
         <?= View::renderEmail('partials/schedule_table', ['schedule' => $schedule]) ?>
     </div>
 
-    <div style="background-color: #f8f9fa; border-left: 4px solid #17a2b8; padding: 12px 15px; margin: 20px 0; border-radius: 0 4px 4px 0; font-size: 13px; color: #495057; line-height: 1.5;">
-        <strong>Önemli Not:</strong> Programda herhangi bir değişiklik yapılması durumunda tarafınıza e-posta ile bilgilendirme yapılacaktır.
+    <div style="background-color: #f8f9fa; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; padding: 14px 18px; margin: 22px 0; border-radius: 4px; font-size: 13px; color: #334155; line-height: 1.6;">
+        <strong style="color: #1e293b; display: block; margin-bottom: 6px;">💡 Yayın Yönetimi ve Bilgilendirme:</strong>
+        <p style="margin: 0 0 6px 0;">
+            Dilerseniz sisteme giriş yaparak <strong>Profilim &gt; Ders Programım</strong> sayfasından haftalık ders programınızın yayın durumunu dilediğiniz zaman yönetebilir ve düzenleyebilirsiniz.
+        </p>
+        <p style="margin: 0; font-size: 12px; color: #64748b;">
+            <em>Not: Programınızda herhangi bir değişiklik veya güncelleme yapılması durumunda tarafınıza e-posta ile otomatik bilgilendirme yapılacaktır.</em>
+        </p>
     </div>
 
     <p style="margin-top: 25px;">

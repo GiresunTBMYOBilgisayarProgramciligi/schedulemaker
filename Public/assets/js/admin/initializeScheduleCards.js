@@ -66,6 +66,54 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
+    // Global Publish Schedule Switch Event Delegation
+    document.addEventListener('change', async function (e) {
+        const toggle = e.target.closest('.publish-schedule-toggle');
+        if (!toggle) return;
+
+        const scheduleId = toggle.dataset.scheduleId || toggle.closest('.schedule-card')?.dataset.scheduleId;
+        if (!scheduleId) return;
+
+        let formData = new FormData();
+        formData.append('id', scheduleId);
+        
+        toggle.disabled = true;
+        try {
+            const response = await fetch('/ajax/togglePublishSchedule', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            toggle.disabled = false;
+            if (data.status === 'success') {
+                if (typeof Toast !== 'undefined') {
+                    new Toast().prepareToast("Başarılı", data.msg, "success");
+                }
+                const label = toggle.nextElementSibling;
+                if (label && label.classList.contains('form-check-label')) {
+                    label.innerText = data.is_published ? 'Yayında' : 'Yayınla';
+                }
+                if (typeof window.updateBulkPublishButtonState === 'function') {
+                    window.updateBulkPublishButtonState();
+                }
+            } else {
+                if (typeof Toast !== 'undefined') {
+                    new Toast().prepareToast("Hata", data.msg || 'Hata oluştu', "danger");
+                }
+                toggle.checked = !toggle.checked; // Revert change
+            }
+        } catch (error) {
+            toggle.disabled = false;
+            if (typeof Toast !== 'undefined') {
+                new Toast().prepareToast("Hata", 'Bir hata oluştu.', "danger");
+            }
+            toggle.checked = !toggle.checked; // Revert change
+        }
+    });
+
     const btnNotifyChanges = document.getElementById('btn-notify-changes');
     if (btnNotifyChanges) {
         btnNotifyChanges.addEventListener('click', async function () {

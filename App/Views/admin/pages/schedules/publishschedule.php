@@ -14,7 +14,7 @@ $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
 $isTestMode = ($mailDriver !== 'smtp');
 ?>
 <!--begin::App Main-->
-<main class="app-main">
+<main class="app-main" data-is-test-mode="<?= $isTestMode ? 'true' : 'false' ?>">
     <!--begin::App Content Header-->
     <div class="app-content-header">
         <!--begin::Container-->
