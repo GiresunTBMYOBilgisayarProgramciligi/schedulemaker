@@ -324,3 +324,15 @@ CREATE TABLE IF NOT EXISTS mail_queue (
     INDEX idx_mail_queue_status (status),
     INDEX idx_mail_queue_created (created_at)
 ) ENGINE = INNODB;
+
+CREATE TABLE IF NOT EXISTS user_consents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    consent_type VARCHAR(50) NOT NULL,
+    version VARCHAR(20) NOT NULL DEFAULT 'v1.0',
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent VARCHAR(255) NULL,
+    accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_consents_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_consent_lookup (user_id, consent_type, version)
+) ENGINE = INNODB;

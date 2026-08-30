@@ -17,6 +17,7 @@ use App\Controllers\Auth\PasswordResetController;
 use App\Controllers\SettingsController;
 use App\Controllers\ScheduleNoteController;
 use App\Controllers\BulkActionController;
+use App\Controllers\LegalController;
 use App\Core\Router;
 use App\Models\User;
 use Exception;
@@ -886,6 +887,24 @@ class AjaxRouter extends Router
     public function deleteMailQueueItemAction(): void
     {
         $this->response = (new SettingsController())->deleteMailQueueItem($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * Yasal metin (KVKK ve Gizlilik) onayını kaydeder
+     */
+    public function acceptConsentAction(): void
+    {
+        $this->response = (new LegalController())->acceptConsent($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * Oturum açmış kullanıcının onay durumunu kontrol eder
+     */
+    public function checkConsentStatusAction(): void
+    {
+        $this->response = (new LegalController())->checkConsentStatus();
         $this->sendResponse();
     }
 }

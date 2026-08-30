@@ -3,7 +3,7 @@
     <div class="container-fluid px-3 px-lg-4">
         <div class="row gy-3 align-items-center">
             <!-- Left: University Branding & Info -->
-            <div class="col-12 col-md-5 text-center text-md-start">
+            <div class="col-12 col-md-4 text-center text-md-start">
                 <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-1">
                     <img src="/assets/images/gru_logo_xs.png" alt="GRÜ Logo" width="28" height="28" class="img-fluid" />
                     <span class="fw-bold text-body">Giresun Üniversitesi</span>
@@ -13,14 +13,23 @@
                 </p>
             </div>
 
-            <!-- Center: Fast Academic Links -->
-            <div class="col-12 col-md-3 text-center">
-                <div class="d-flex justify-content-center gap-3 small">
+            <!-- Center: Fast Academic & Legal Links -->
+            <div class="col-12 col-md-4 text-center">
+                <div class="d-flex flex-wrap justify-content-center gap-3 small mb-1">
                     <a href="https://giresun.edu.tr" target="_blank" rel="noopener noreferrer" class="text-secondary text-decoration-none hover-primary">
                         <i class="bi bi-globe me-1"></i>giresun.edu.tr
                     </a>
                     <a href="/admin" class="text-secondary text-decoration-none hover-primary">
                         <i class="bi bi-speedometer2 me-1"></i>Yönetim
+                    </a>
+                </div>
+                <div class="d-flex flex-wrap justify-content-center gap-2 small text-muted">
+                    <a href="/legal/kvkk" class="text-secondary text-decoration-none hover-primary">
+                        <i class="bi bi-shield-lock me-1"></i>KVKK Aydınlatma Metni
+                    </a>
+                    <span>&bull;</span>
+                    <a href="/legal/privacy" class="text-secondary text-decoration-none hover-primary">
+                        <i class="bi bi-shield-check me-1"></i>Gizlilik & Çerezler
                     </a>
                 </div>
             </div>

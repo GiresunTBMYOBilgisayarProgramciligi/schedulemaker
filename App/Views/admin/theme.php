@@ -13,7 +13,9 @@ include "theme/head.php";
         include "theme/navbar.php";
         include "theme/sidebar.php";
         include $filePath;
-        include "theme/footer.php" ?>
+        include "theme/footer.php";
+        include "theme/consent_modal.php";
+        ?>
 
     </div>
     <!--end::App Wrapper-->
