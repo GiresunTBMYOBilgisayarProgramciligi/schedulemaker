@@ -32,6 +32,13 @@ class ProgramPolicy extends BasePolicy
             }
         }
 
+        if ($user->role === UserRole::PayrollOfficer->value) {
+            $programUnitId = $program->department ? $program->department->unit_id : (new Department())->find($program->department_id)?->unit_id;
+            if (is_null($user->unit_id) || $user->unit_id == $programUnitId) {
+                return true;
+            }
+        }
+
         // Programın bağlı olduğu bölümün başkanı
         if ($this->hasExactRole($user, UserRole::DepartmentHead)) {
             return $user->department_id === $program->department_id;

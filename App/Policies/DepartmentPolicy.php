@@ -30,6 +30,12 @@ class DepartmentPolicy extends BasePolicy
             }
         }
 
+        if ($user->role === UserRole::PayrollOfficer->value) {
+            if (is_null($user->unit_id) || $user->unit_id == $department->unit_id) {
+                return true;
+            }
+        }
+
         // Kullanıcı kendi bölümünü görebilir
         if ($user->department_id === $department->id) {
             return true;

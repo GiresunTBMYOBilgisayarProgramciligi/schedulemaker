@@ -31,6 +31,13 @@ class LessonPolicy extends BasePolicy
             }
         }
 
+        if ($user->role === UserRole::PayrollOfficer->value) {
+            $lessonUnitId = $lesson->department ? $lesson->department->unit_id : (new Department())->find($lesson->department_id)?->unit_id;
+            if (is_null($user->unit_id) || $user->unit_id == $lessonUnitId) {
+                return true;
+            }
+        }
+
         // Dersi veren akademisyen
         if ($user->id === $lesson->lecturer?->id) {
             return true;

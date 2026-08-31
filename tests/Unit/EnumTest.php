@@ -24,10 +24,12 @@ class EnumTest extends BaseTestCase
         $this->assertEquals('Müdür', UserRole::Manager->getLabel());
         $this->assertEquals('Müdür Yardımcısı', UserRole::SubManager->getLabel());
         $this->assertEquals('Sekreter', UserRole::Secretary->getLabel());
+        $this->assertEquals('Mutemet', UserRole::PayrollOfficer->getLabel());
         $this->assertEquals('Araştırma Görevlisi', UserRole::ResearchAssistant->getLabel());
         $this->assertEquals('Kullanıcı', UserRole::User->getLabel());
 
         $this->assertEquals(UserRole::Admin, UserRole::fromLabel('Yönetici'));
+        $this->assertEquals(UserRole::PayrollOfficer, UserRole::fromLabel('Mutemet'));
         $this->assertEquals(UserRole::Lecturer, UserRole::fromLabel('Akademisyen'));
         $this->assertNull(UserRole::fromLabel('Bilinmeyen Rol'));
     }

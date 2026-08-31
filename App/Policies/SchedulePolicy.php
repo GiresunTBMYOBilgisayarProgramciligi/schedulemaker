@@ -18,7 +18,7 @@ class SchedulePolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
-        return $this->hasRole($user, UserRole::SubManager);
+        return $this->hasRole($user, UserRole::DepartmentHead);
     }
 
     public function update(User $user, Schedule $schedule): bool

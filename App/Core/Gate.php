@@ -37,6 +37,7 @@ class Gate
         "manager" => 90,
         "submanager" => 80,
         "secretary" => 75,
+        "payroll_officer" => 72,
         "department_head" => 70,
         "research_assistant" => 65,
         "lecturer" => 60,

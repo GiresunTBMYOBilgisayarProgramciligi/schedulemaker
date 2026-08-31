@@ -13,6 +13,7 @@ enum UserRole: string
     case Manager = 'manager';
     case SubManager = 'submanager';
     case Secretary = 'secretary';
+    case PayrollOfficer = 'payroll_officer';
     case DepartmentHead = 'department_head';
     case ResearchAssistant = 'research_assistant';
     case Lecturer = 'lecturer';
@@ -29,6 +30,7 @@ enum UserRole: string
             self::Manager => 'Müdür',
             self::SubManager => 'Müdür Yardımcısı',
             self::Secretary => 'Sekreter',
+            self::PayrollOfficer => 'Mutemet',
             self::DepartmentHead => 'Bölüm Başkanı',
             self::ResearchAssistant => 'Araştırma Görevlisi',
             self::Lecturer => 'Akademisyen',
@@ -47,17 +49,17 @@ enum UserRole: string
         if (Gate::allowsRole("admin")) {
             $roles = array_merge(
                 $roles,
-                [self::DepartmentHead, self::Secretary, self::SubManager, self::Manager, self::Admin]
+                [self::DepartmentHead, self::PayrollOfficer, self::Secretary, self::SubManager, self::Manager, self::Admin]
             );
         } elseif (Gate::allowsRole("manager")) {
             $roles = array_merge(
                 $roles,
-                [self::DepartmentHead, self::Secretary, self::SubManager, self::Manager]
+                [self::DepartmentHead, self::PayrollOfficer, self::Secretary, self::SubManager, self::Manager]
             );
         } elseif (Gate::allowsRole("submanager")) {
             $roles = array_merge(
                 $roles,
-                [self::DepartmentHead, self::Secretary]
+                [self::DepartmentHead, self::PayrollOfficer, self::Secretary]
             );
         }
         

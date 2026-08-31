@@ -55,6 +55,7 @@ class AdminPageController extends Controller
         $dashboardRole = match(true) {
             Gate::allowsRole('submanager')                                                                         => 'admin',
             Gate::allowsRole('secretary')                                                                          => 'secretary',
+            $currentUser->role === UserRole::PayrollOfficer->value                                                 => 'payroll_officer',
             $currentUser->role === UserRole::DepartmentHead->value && !is_null($currentUser->department_id)        => 'dept_head',
             Gate::allowsRole('lecturer', true)                                                                     => 'lecturer',
             default                                                                                                => 'user',
@@ -93,6 +94,23 @@ class AdminPageController extends Controller
                 'classrooms' => $unitId ? (new ClassroomRepository())->count(['unit_id' => $unitId]) : (new ClassroomRepository())->count(),
                 'buildings'  => $unitId ? (new BuildingRepository())->count(['unit_id' => $unitId]) : (new BuildingRepository())->count(),
             ];
+
+        // --- Mutemet (Payroll Officer) ---
+        } elseif ($currentUser->role === UserRole::PayrollOfficer->value) {
+            $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
+            $programs    = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
+            $academics   = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+            $lessons     = (new LessonRepository())->getAuthorized('view');
+
+            $view_data['stats'] = [
+                'departments' => count($departments),
+                'programs'    => count($programs),
+                'academics'   => count($academics),
+                'lessons'     => count($lessons),
+            ];
+            $view_data['departments'] = $departments;
+            $view_data['programs']    = $programs;
+            $view_data['units']       = (new UnitRepository())->getAuthorized('view', ['active' => true]);
 
         // --- Bölüm Başkanı (sadece department_head rolü) ---
         } elseif ($currentUser->role === UserRole::DepartmentHead->value && !is_null($currentUser->department_id)) {

@@ -16,6 +16,7 @@ class UnitPolicy extends BasePolicy
     public function list(User $user): bool
     {
         return $this->hasRole($user, UserRole::SubManager) ||
+               $user->role === UserRole::PayrollOfficer->value ||
                $this->hasAnyPermission($user, PermissionType::MANAGE_UNIT->value);
     }
 
@@ -26,6 +27,12 @@ class UnitPolicy extends BasePolicy
     {
         if ($this->hasRole($user, UserRole::SubManager)) {
             if (!is_null($user->unit_id) && $user->unit_id == $unit->id) {
+                return true;
+            }
+        }
+
+        if ($user->role === UserRole::PayrollOfficer->value) {
+            if (is_null($user->unit_id) || $user->unit_id == $unit->id) {
                 return true;
             }
         }

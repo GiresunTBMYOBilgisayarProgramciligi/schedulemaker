@@ -102,6 +102,7 @@ class GateTest extends BaseTestCase
         $user->role = 'secretary';
 
         $this->assertTrue(Gate::hasRole($user, \App\Enums\UserRole::Secretary));
+        $this->assertTrue(Gate::hasRole($user, \App\Enums\UserRole::PayrollOfficer));
         $this->assertTrue(Gate::hasRole($user, \App\Enums\UserRole::DepartmentHead));
         $this->assertTrue(Gate::hasRole($user, \App\Enums\UserRole::Lecturer));
         $this->assertFalse(Gate::hasRole($user, \App\Enums\UserRole::SubManager));
@@ -109,10 +110,20 @@ class GateTest extends BaseTestCase
 
         // User model metodu testi
         $this->assertTrue($user->hasRole(\App\Enums\UserRole::Secretary));
+        $this->assertTrue($user->hasRole(\App\Enums\UserRole::PayrollOfficer));
         $this->assertFalse($user->hasRole(\App\Enums\UserRole::Admin));
 
         // Global helper fonksiyonu testi
         $this->assertTrue(hasRole(\App\Enums\UserRole::Secretary, $user));
+        $this->assertTrue(hasRole(\App\Enums\UserRole::PayrollOfficer, $user));
         $this->assertFalse(hasRole(\App\Enums\UserRole::Admin, $user));
+
+        // PayrollOfficer rolü ile test
+        $payrollUser = new User();
+        $payrollUser->role = 'payroll_officer';
+        $this->assertTrue(Gate::hasRole($payrollUser, \App\Enums\UserRole::PayrollOfficer));
+        $this->assertTrue(Gate::hasRole($payrollUser, \App\Enums\UserRole::DepartmentHead));
+        $this->assertFalse(Gate::hasRole($payrollUser, \App\Enums\UserRole::Secretary));
+        $this->assertFalse(Gate::hasRole($payrollUser, \App\Enums\UserRole::SubManager));
     }
 }

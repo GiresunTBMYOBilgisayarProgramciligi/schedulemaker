@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Enums\PermissionType;
+use App\Enums\UserRole;
 
 class UserPolicy extends BasePolicy
 {
@@ -52,6 +53,15 @@ class UserPolicy extends BasePolicy
                 foreach ($targetUser->getAffiliations() as $aff) {
                     if ($aff->unit_id == $user->unit_id) return true;
                 }
+            }
+        }
+
+        if ($user->role === UserRole::PayrollOfficer->value) {
+            if (is_null($user->unit_id)) return true;
+            if ($user->unit_id == $targetUser->unit_id) return true;
+            if ($targetUser->department && $targetUser->department->unit_id == $user->unit_id) return true;
+            foreach ($targetUser->getAffiliations() as $aff) {
+                if ($aff->unit_id == $user->unit_id) return true;
             }
         }
 

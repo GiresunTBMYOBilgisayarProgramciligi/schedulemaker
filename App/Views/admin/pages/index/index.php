@@ -64,11 +64,12 @@
             <?php
             // Role göre ilgili partial'ı yükle
             $partialMap = [
-                'admin'     => 'dashboard_admin.php',
-                'secretary' => 'dashboard_secretary.php',
-                'dept_head' => 'dashboard_dept_head.php',
-                'lecturer'  => 'dashboard_lecturer.php',
-                'user'      => 'dashboard_user.php',
+                'admin'           => 'dashboard_admin.php',
+                'secretary'       => 'dashboard_secretary.php',
+                'payroll_officer' => 'dashboard_payroll_officer.php',
+                'dept_head'       => 'dashboard_dept_head.php',
+                'lecturer'        => 'dashboard_lecturer.php',
+                'user'            => 'dashboard_user.php',
             ];
             $partialFile = $partialMap[$dashboardRole] ?? 'dashboard_user.php';
             $partialPath = __DIR__ . '/partials/' . $partialFile;

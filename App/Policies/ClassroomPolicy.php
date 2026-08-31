@@ -27,7 +27,7 @@ class ClassroomPolicy extends BasePolicy
     public function view(User $user, Classroom $classroom): bool
     {
         $unit = $classroom->getUnit();
-        if ($this->hasRole($user, UserRole::Secretary) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
+        if (($this->hasRole($user, UserRole::Secretary) || $user->role === UserRole::PayrollOfficer->value) && !is_null($user->unit_id) && $user->unit_id === ($unit ? $unit->id : null)) {
             return true;
         }
         return $this->hasCascadePermission($user, PermissionType::MANAGE_BUILDINGS->value, $unit);
