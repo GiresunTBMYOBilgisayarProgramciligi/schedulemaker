@@ -123,4 +123,26 @@ class ExcelExporterTest extends BaseTestCase
 
         $this->assertTrue($dto->show_internship);
     }
+
+    public function testGuestExportDoesNotIncludeInternshipSummary(): void
+    {
+        unset($_SESSION['user_id']);
+
+        $exporter = new LessonScheduleExcelExporter();
+        $filterDto = ScheduleExportFilterDTO::fromArray([
+            'type'            => 'lesson',
+            'owner_type'      => 'program',
+            'owner_id'        => $this->programId,
+            'semester'        => 'Güz',
+            'academic_year'   => '2025 - 2026',
+        ]);
+        $optionsDto = \App\DTOs\ScheduleExportOptionsDTO::fromArray([
+            'show_internship' => true,
+        ]);
+
+        $content = $exporter->getRawContent($filterDto, $optionsDto);
+        $this->assertNotEmpty($content);
+        // Misafir kullanıcı için staj tablosu Excel içeriğine eklenmemeli
+        $this->assertStringNotContainsString('STAJ / İŞLETMEDE MESLEKİ EĞİTİM BİLGİLERİ', $content);
+    }
 }

@@ -231,8 +231,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Bölüm/Program ders programları için staj tablosu seçeneği (Birim, Bölüm veya Program seçildiğinde)
+        // Public (öğrenci/misafir) sayfasında staj programı seçeneği gösterilmez
+        const isPublicPage = !!document.querySelector(".app-public-wrapper") || !!document.querySelector("[data-action='public']");
         const isProgramScheduleExport = ownerType === "program" || ownerType === "department" || ownerType === "unit";
-        if (!isExam && isProgramScheduleExport) {
+        if (!isExam && isProgramScheduleExport && !isPublicPage) {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_internship" checked>
                 <label class="form-check-label" for="show_internship">Staj / İşletmede Mesleki Eğitim Tablosu</label>
@@ -256,7 +258,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
             if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
             if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
-            if (document.getElementById("show_internship")) options.show_internship = document.getElementById("show_internship").checked;
+            if (document.getElementById("show_internship")) {
+                options.show_internship = document.getElementById("show_internship").checked;
+            } else if (isPublicPage) {
+                options.show_internship = false;
+            }
 
             modal.closeModal();
             onConfirm(options);

@@ -7,6 +7,7 @@ use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Middlewares\AuthMiddleware;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -64,8 +65,13 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 continue;
             }
 
-            // Staj dersleri özeti (ana ızgarayı şişirmemek için alt tablo olarak yazılır)
-            $internshipSummary = ScheduleViewHelper::getInternshipSummary($schedule);
+            // Staj dersleri özeti (ana ızgarayı şişirmemek için alt tablo olarak yazılır, misafir/public kullanıcılara gösterilmez)
+            $currentUser = AuthMiddleware::user();
+            $canViewInternship = ($currentUser !== null) && (
+                Gate::check(PermissionType::UPDATE->value, $schedule) || 
+                Gate::check(PermissionType::VIEW->value, $schedule)
+            );
+            $internshipSummary = ($canViewInternship && $showOptions->showInternship) ? ScheduleViewHelper::getInternshipSummary($schedule) : [];
 
             $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
             $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
@@ -461,7 +467,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
             // Hoca Adı
             if ($options->showLecturer && $scheduleType !== 'user' && !empty($data->lecturer)) {
-                $richContent->createText("\n(" . $data->lecturer->getFullName() . ")");
+                $richContent->createText("\n(" . $data->lecturer?->getFullName() . ")");
             }
 
             // Program / Bölüm Adı
@@ -472,7 +478,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 }
                 if (!empty($data->lesson->childLessons)) {
                     foreach ($data->lesson->childLessons as $child) {
-                        if ($child->program) {
+                        if ($child?->program) {
                             $programNames[] = $child->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
                         }
                     }
@@ -485,7 +491,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
             // Derslik
             if ($scheduleType !== 'classroom' && !empty($data->classroom?->name)) {
-                $richClassroom->createText($data->classroom->name);
+                $richClassroom->createText($data->classroom?->name ?? '');
             }
         }
     }
