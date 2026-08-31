@@ -5,6 +5,7 @@ namespace App\Services\Schedule;
 use App\Services\BaseService;
 use App\Enums\ExamType;
 use App\Models\Lesson;
+use App\Models\LessonAssignment;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
@@ -337,6 +338,24 @@ class ScheduleSyncService extends BaseService
 
         if (!$lecturerId) {
             $lecturerId = $parentLesson->lecturer?->id ?? $childLesson->lecturer?->id ?? null;
+        }
+
+        if (!$lecturerId) {
+            $semester = getSettingValue('semester');
+            $academicYear = getSettingValue('academic_year');
+
+            /** @var LessonAssignment|null $assignment */
+            $assignment = (new LessonAssignment())->get()->where([
+                'lesson_id' => $parentLesson->id,
+                'semester' => $semester,
+                'academic_year' => $academicYear
+            ])->first() ?? (new LessonAssignment())->get()->where([
+                'lesson_id' => $childLesson->id,
+                'semester' => $semester,
+                'academic_year' => $academicYear
+            ])->first();
+
+            $lecturerId = $assignment?->lecturer_id;
         }
 
         return [[

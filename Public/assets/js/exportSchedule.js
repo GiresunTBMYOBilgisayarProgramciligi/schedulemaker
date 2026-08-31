@@ -230,6 +230,15 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>`;
         }
 
+        // Bölüm/Program ders programları için staj tablosu seçeneği (Birim, Bölüm veya Program seçildiğinde)
+        const isProgramScheduleExport = ownerType === "program" || ownerType === "department" || ownerType === "unit";
+        if (!isExam && isProgramScheduleExport) {
+            content += `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="show_internship" checked>
+                <label class="form-check-label" for="show_internship">Staj / İşletmede Mesleki Eğitim Tablosu</label>
+            </div>`;
+        }
+
         content += `</div>`;
 
         modal.prepareModal(typeLabel + " Programı Dışa Aktarma Seçenekleri", content, true, true, "md");
@@ -247,6 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
             if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
             if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
+            if (document.getElementById("show_internship")) options.show_internship = document.getElementById("show_internship").checked;
 
             modal.closeModal();
             onConfirm(options);

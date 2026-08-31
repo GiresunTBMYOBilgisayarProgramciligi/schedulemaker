@@ -5,6 +5,7 @@ namespace App\Services\Export\Ics;
 use App\Core\Gate;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
+use App\Enums\LessonType;
 use App\Enums\PermissionType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
@@ -64,6 +65,11 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
                 foreach ($slotDatas as $data) {
                     $lesson = $data->lesson;
                     if (!$lesson) continue;
+
+                    // Staj derslerini takvim çıktısından hariç tut
+                    if ((int)$lesson->type === LessonType::INTERNSHIP->value) {
+                        continue;
+                    }
 
                     $lecturer  = $data->lecturer;
                     $classroom = $data->classroom;

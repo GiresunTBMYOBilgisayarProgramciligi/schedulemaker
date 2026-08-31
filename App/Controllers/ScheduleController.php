@@ -663,10 +663,11 @@ class ScheduleController extends Controller
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
 
         $showOptions = ScheduleExportOptionsDTO::fromArray([
-            'show_code'     => $dto->show_code ?? true,
-            'show_lecturer' => $dto->show_lecturer ?? true,
-            'show_program'  => $dto->show_program ?? true,
-            'show_observer' => $dto->show_observer ?? true,
+            'show_code'       => $dto->show_code ?? true,
+            'show_lecturer'   => $dto->show_lecturer ?? true,
+            'show_program'    => $dto->show_program ?? true,
+            'show_observer'   => $dto->show_observer ?? true,
+            'show_internship' => $dto->show_internship ?? true,
         ]);
 
         $exporter = ExporterFactory::create($dto, 'excel');

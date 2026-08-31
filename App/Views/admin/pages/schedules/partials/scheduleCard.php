@@ -2,6 +2,7 @@
 use App\Models\Schedule;
 use App\Core\Gate;
 use App\Enums\PermissionType;
+use App\Helpers\ScheduleViewHelper;
 /**
  * @var Schedule $schedule
  * @var string $cardTitle
@@ -76,6 +77,65 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                         <?= $scheduleTableHTML ?>
                     </div><!--end::schedule-table-wrapper-->
                 </div><!--end::Row-->
+
+                <?php 
+                $currentUser = \App\Middlewares\AuthMiddleware::user();
+                $isProgramSchedule = ($schedule->owner_type === \App\Enums\OwnerType::PROGRAM->value);
+                $canViewInternship = $isProgramSchedule && $currentUser !== null && (
+                    Gate::check(PermissionType::UPDATE->value, $schedule) || 
+                    Gate::check(PermissionType::VIEW->value, $schedule)
+                );
+
+                $internshipGroups = $canViewInternship ? ScheduleViewHelper::getInternshipSummary($schedule) : [];
+                if (!empty($internshipGroups)): 
+                    $collapseId = 'internshipCollapse-' . $schedule->id;
+                ?>
+                <div class="internship-info-card mt-3 border rounded-3 bg-body-tertiary shadow-none overflow-hidden small">
+                    <div class="d-flex align-items-center justify-content-between p-2 cursor-pointer bg-body-secondary bg-opacity-50" 
+                         data-bs-toggle="collapse" 
+                         data-bs-target="#<?= $collapseId ?>" 
+                         aria-expanded="true" 
+                         aria-controls="<?= $collapseId ?>"
+                         role="button">
+                        <div class="d-flex align-items-center gap-2 text-primary fw-semibold" style="font-size: 0.875rem;">
+                            <i class="bi bi-briefcase-fill"></i>
+                            <span>Staj / İşletmede Mesleki Eğitim Bilgileri</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 0.75rem;"><?= count($internshipGroups) ?> Kayıt</span>
+                        </div>
+                        <button class="btn btn-sm btn-link text-secondary p-0 text-decoration-none" type="button" aria-label="Daralt/Genişlet">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="collapse show" id="<?= $collapseId ?>">
+                        <div class="p-2 pt-2">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle mb-0 bg-body" style="font-size: 0.825rem;">
+                                    <thead class="table-light text-muted">
+                                        <tr>
+                                            <th style="width: 14%;">Ders Kodu</th>
+                                            <th>Ders Adı</th>
+                                            <th style="width: 10%;" class="text-center">Grup</th>
+                                            <th style="width: 26%;">Sorumlu Öğretim Elemanı</th>
+                                            <th style="width: 32%;">Gün / Saat Aralığı</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($internshipGroups as $group): ?>
+                                            <tr>
+                                                <td class="font-monospace text-secondary"><?= htmlspecialchars($group['code']) ?></td>
+                                                <td class="text-body"><?= htmlspecialchars($group['name']) ?></td>
+                                                <td class="text-center"><span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size: 0.75rem;"><?= htmlspecialchars($group['group']) ?></span></td>
+                                                <td class="text-body"><?= htmlspecialchars($group['lecturer']) ?></td>
+                                                <td><span class="text-primary"><?= htmlspecialchars($group['slots']) ?></span></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div><!--end::card-body-->
             <?php if (!$no_card): ?>
             <div class="card-footer bg-body-tertiary border-top py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">

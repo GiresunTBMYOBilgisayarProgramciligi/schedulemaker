@@ -205,7 +205,9 @@ class LessonScheduleService extends ScheduleService
             if (isset($childLessonRemaining[$childLessonId])) {
                 continue;
             }
-            $childLesson = (new Lesson())->find($childLessonId);
+            $childLesson = (new Lesson())->where(['id' => $childLessonId])->with([
+                'lecturer' => ['semester' => $sourceSchedule->semester, 'academic_year' => $sourceSchedule->academic_year]
+            ])->first();
             if ($childLesson) {
                 $childLesson->IsScheduleComplete($sourceSchedule->type, $sourceSchedule->semester, $sourceSchedule->academic_year);
                 $childLessonRemaining[$childLessonId] = [
@@ -263,9 +265,12 @@ class LessonScheduleService extends ScheduleService
 
                 $childLessonHoursAdded[$trackingKey] = ($childLessonHoursAdded[$trackingKey] ?? 0) + $slotsToAdd;
 
-                $item->data = array_map(function ($d) use ($childLessonId) {
+                $item->data = array_map(function ($d) use ($childLessonId, $childLesson, $lesson) {
                     $childData = $d;
                     $childData['lesson_id'] = $childLessonId;
+                    if (empty($childData['lecturer_id'])) {
+                        $childData['lecturer_id'] = $childLesson->lecturer?->id ?? $lesson?->lecturer?->id ?? null;
+                    }
                     return $childData;
                 }, $dto->data);
 
@@ -327,7 +332,9 @@ class LessonScheduleService extends ScheduleService
             }
             $clId = $owner['child_lesson_id'];
             if (!isset($childLessonRemaining[$clId])) {
-                $childLesson = (new Lesson())->find($clId);
+                $childLesson = (new Lesson())->where(['id' => $clId])->with([
+                    'lecturer' => ['semester' => $sourceSchedule->semester, 'academic_year' => $sourceSchedule->academic_year]
+                ])->first();
                 if ($childLesson) {
                     $childLesson->IsScheduleComplete($sourceSchedule->type, $sourceSchedule->semester, $sourceSchedule->academic_year);
                     $childLessonRemaining[$clId] = [
@@ -360,6 +367,7 @@ class LessonScheduleService extends ScheduleService
                     continue;
                 }
 
+                $childLessonObj = $childLessonRemaining[$childLessonId]['lesson'] ?? null;
                 $baseRemaining = $childLessonRemaining[$childLessonId]['remaining'];
                 $trackingKey = "{$childLessonId}_{$owner['type']}";
                 $alreadyAdded = $childSlotsAdded[$trackingKey] ?? 0;
@@ -381,9 +389,12 @@ class LessonScheduleService extends ScheduleService
 
                 $childSlotsAdded[$trackingKey] = $alreadyAdded + $slotsToAdd;
 
-                $data = array_map(function ($d) use ($childLessonId) {
+                $data = array_map(function ($d) use ($childLessonId, $childLessonObj, $lesson) {
                     $childData = $d;
                     $childData['lesson_id'] = $childLessonId;
+                    if (empty($childData['lecturer_id'])) {
+                        $childData['lecturer_id'] = $childLessonObj?->lecturer?->id ?? $lesson?->lecturer?->id ?? null;
+                    }
                     return $childData;
                 }, $dto->data);
             }

@@ -18,6 +18,7 @@ use App\DTOs\AvailabilityFilterDTO;
 use Exception;
 use App\Helpers\TimeHelper;
 use function App\Helpers\getSettingValue;
+use App\Enums\LessonType;
 use App\Repositories\ScheduleRepository;
 use App\Repositories\LessonAssignmentRepository;
 
@@ -69,6 +70,10 @@ class AvailabilityService extends BaseService
 
         $lesson = (new Lesson())->find($dto->lesson_id)
             ?: throw new Exception("Derslik türünü belirlemek için ders bulunamadı");
+
+        if ((int)$lesson->type === LessonType::INTERNSHIP->value) {
+            return [];
+        }
 
         $whereConditions = [];
         if (!empty($lesson->building_id)) {
@@ -434,6 +439,10 @@ class AvailabilityService extends BaseService
         }
 
         $lesson = (new Lesson())->find($dto->lesson_id) ?: throw new Exception("Ders bulunamadı");
+        if ((int)$lesson->type === LessonType::INTERNSHIP->value) {
+            return ["unavailableCells" => []];
+        }
+
         $classroom_type = $lesson->classroom_type == 4 ? [1, 2] : [$lesson->classroom_type];
         $classrooms = (new Classroom())->get()->where(['type' => ['in' => $classroom_type]])->all();
 
@@ -518,7 +527,7 @@ class AvailabilityService extends BaseService
         $lesson = (new Lesson())->where([
             'id' => $dto->lesson_id,
         ])->with(['program', 'childLessons'])->first() ?: throw new Exception("Ders bulunamadı");
-        $program = $lesson->program;
+        $program = $lesson->program ?: ($lesson->program_id ? (new \App\Models\Program())->find($lesson->program_id) : null);
 
         $slots = $this->timelineManager->getTimeSlots($dto->type);
         $unavailableCells = [];
@@ -527,7 +536,7 @@ class AvailabilityService extends BaseService
 
         $ownerType = $dto->owner_type;
 
-        if ($ownerType !== OwnerType::PROGRAM->value) {
+        if ($ownerType !== OwnerType::PROGRAM->value && $program) {
             $schedules = (new Schedule())->get()->where([
                 'owner_type'    => OwnerType::PROGRAM->value,
                 'owner_id'      => $program->id,
@@ -542,7 +551,7 @@ class AvailabilityService extends BaseService
         if (!empty($lesson->childLessons)) {
             foreach ($lesson->childLessons as $childLesson) {
                 if ($childLesson->program_id) {
-                    if ($ownerType === OwnerType::PROGRAM->value && $childLesson->program_id == $program->id) {
+                    if ($ownerType === OwnerType::PROGRAM->value && $program && $childLesson->program_id == $program->id) {
                         continue;
                     }
                     $childSchedules = (new Schedule())->get()->where([
@@ -558,6 +567,15 @@ class AvailabilityService extends BaseService
             }
         }
 
+        $lessonCache = [];
+        $getLesson = function (int|string $id) use (&$lessonCache): ?Lesson {
+            $key = (int) $id;
+            if (!array_key_exists($key, $lessonCache)) {
+                $lessonCache[$key] = (new Lesson())->find($key);
+            }
+            return $lessonCache[$key];
+        };
+
         foreach ($schedules as $schedule) {
             $items = (new ScheduleItem())->get()->where([
                 'schedule_id' => $schedule->id,
@@ -565,26 +583,68 @@ class AvailabilityService extends BaseService
             ])->all();
 
             foreach ($items as $item) {
-                foreach ($slots as $rowIndex => $slot) {
-                    if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
-                        // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
-                        if ($lesson->group_no > 0 && $item->status === ScheduleItemStatus::GROUP->value && !empty($item->data)) {
-                            $sameGroupExists = false;
-                            foreach ($item->data as $slotData) {
-                                if (isset($slotData['lesson_id'])) {
-                                    $itemLesson = (new Lesson())->find($slotData['lesson_id']);
-                                    if ($itemLesson && $itemLesson->group_no == $lesson->group_no) {
-                                        $sameGroupExists = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (!$sameGroupExists) {
-                                continue;
+                $isDraggedInternship = ((int)$lesson->type === LessonType::INTERNSHIP->value);
+
+                // İtem içindeki dersleri topla
+                $itemLessons = [];
+                if (!empty($item->data)) {
+                    foreach ($item->data as $slotData) {
+                        if (isset($slotData['lesson_id'])) {
+                            $l = $getLesson($slotData['lesson_id']);
+                            if ($l) {
+                                $itemLessons[] = $l;
                             }
                         }
+                    }
+                }
 
+                $hasNormalLesson = false;
+                $hasInternshipLesson = false;
+                $sameInternshipGroupExists = false;
+
+                foreach ($itemLessons as $iLesson) {
+                    if ((int)$iLesson->type === LessonType::INTERNSHIP->value) {
+                        $hasInternshipLesson = true;
+                        if ($iLesson->group_no == $lesson->group_no) {
+                            $sameInternshipGroupExists = true;
+                        }
+                    } else {
+                        $hasNormalLesson = true;
+                    }
+                }
+
+                // 1) Sürüklenen ders staj dersi ise:
+                if ($isDraggedInternship) {
+                    // Normal dersler staj dersini engellemez (çakışma sayılmaz)
+                    // Sadece aynı staj grubu varsa çakışma sayılır
+                    if (!$sameInternshipGroupExists) {
+                        continue;
+                    }
+                } else {
+                    // 2) Sürüklenen ders normal ders ise:
+                    // Programdaki staj dersleri normal dersi engellemez
+                    if (!$hasNormalLesson) {
+                        continue;
+                    }
+                }
+
+                // Eğer mevcut ders gruplu ise ve çakışan item da gruplu ise grup numaralarını kontrol et
+                if (!$isDraggedInternship && $lesson->group_no > 0 && $item->status === ScheduleItemStatus::GROUP->value) {
+                    $sameGroupExists = false;
+                    foreach ($itemLessons as $iLesson) {
+                        if ($iLesson->group_no == $lesson->group_no) {
+                            $sameGroupExists = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$sameGroupExists) {
+                        continue;
+                    }
+                }
+
+                foreach ($slots as $rowIndex => $slot) {
+                    if (TimeHelper::isOverlapping($item->start_time, $item->end_time, $slot['start'], $slot['end'])) {
                         $unavailableCells[$rowIndex + 1][$item->day_index + 1] = true;
                     }
                 }

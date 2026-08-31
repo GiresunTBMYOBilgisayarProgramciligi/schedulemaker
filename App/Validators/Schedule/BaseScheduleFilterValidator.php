@@ -48,12 +48,13 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         'startTime'     => ['type' => 'string'],
         'items'         => ['type' => 'string'],
         'week_index'    => ['type' => 'int'],
-        'show_code'     => ['type' => 'bool|int'],
-        'show_lecturer' => ['type' => 'bool|int'],
-        'show_program'  => ['type' => 'bool|int'],
-        'show_observer' => ['type' => 'bool|int'],
-        'start_time'    => ['type' => 'string'],
-        'end_time'      => ['type' => 'string'],
+        'show_code'       => ['type' => 'bool|int'],
+        'show_lecturer'   => ['type' => 'bool|int'],
+        'show_program'    => ['type' => 'bool|int'],
+        'show_observer'   => ['type' => 'bool|int'],
+        'show_internship' => ['type' => 'bool|int'],
+        'start_time'      => ['type' => 'string'],
+        'end_time'        => ['type' => 'string'],
     ];
 
     /**

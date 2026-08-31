@@ -2,6 +2,7 @@
 
 namespace App\Services\Schedule;
 
+use App\Enums\LessonType;
 use App\Models\Lesson;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
@@ -57,7 +58,7 @@ class ConflictResolver
             ];
 
             if ($ownerType == 'program') {
-                $scheduleFilters['semester_no'] = $owner['semester_no'] ?? $lessonContext->semester_no;
+                $scheduleFilters['semester_no'] = $owner['semester_no'] ?? $lessonContext?->semester_no;
             } else {
                 $scheduleFilters['semester_no'] = null;
             }
@@ -128,6 +129,38 @@ class ConflictResolver
         }
 
         // Status kontrolü
+        $isProgramOwner = ($currentSchedule->owner_type === 'program');
+        $newIsInternship = $newLesson && ((int)$newLesson->type === LessonType::INTERNSHIP->value);
+
+        if ($isProgramOwner && in_array($existingItem->status, ['single', 'group'])) {
+            $existingSlotDatas = $existingItem->getSlotDatas();
+            $existingIsInternship = false;
+            foreach ($existingSlotDatas as $sd) {
+                if ($sd->lesson && (int)$sd->lesson->type === LessonType::INTERNSHIP->value) {
+                    $existingIsInternship = true;
+                    break;
+                }
+            }
+
+            // Çakışan iki dersten biri staj biri normal ders ise çakışma kontrolü yapılmaz
+            if ($newIsInternship !== $existingIsInternship) {
+                return null;
+            }
+
+            // İki ders de staj dersi ise grup kontrolü yapılır
+            if ($newIsInternship && $existingIsInternship) {
+                if ($newLesson && $newLesson->group_no > 0) {
+                    foreach ($existingSlotDatas as $sd) {
+                        if ($sd->lesson && $sd->lesson->group_no == $newLesson->group_no) {
+                            return "{$crashInfo}: Aynı staj grubu ({$newLesson->group_no}. Grup) için aynı saatte birden fazla staj dersi eklenemez.";
+                        }
+                    }
+                    return null;
+                }
+                return "{$crashInfo}: Bu saatte zaten bir staj dersi mevcut.";
+            }
+        }
+
         switch ($existingItem->status) {
             case 'unavailable':
                 return "{$crashInfo}: Bu saat aralığı uygun değil.";
@@ -139,7 +172,7 @@ class ConflictResolver
 
             case 'group':
                 // Grup mantığı
-                return $this->checkGroupConflict($newItemData, $existingItem, $newLesson, $crashInfo);
+                return $this->checkGroupConflict($newItemData, $existingItem, $newLesson, $crashInfo, $currentSchedule);
 
             case 'preferred':
                 // Tercih edilen saat, çakışma yok
@@ -163,16 +196,21 @@ class ConflictResolver
      * @param ScheduleItem $existingItem Mevcut group item
      * @param Lesson $newLesson Yeni ders
      * @param string $crashInfo Hata mesajı prefix'i
+     * @param Schedule|null $currentSchedule İlgili schedule
      * @return string|null Hata mesajı veya null
      */
     private function checkGroupConflict(
         array $newItemData,
         ScheduleItem $existingItem,
         ?Lesson $newLesson,
-        string $crashInfo
+        string $crashInfo,
+        ?Schedule $currentSchedule = null
     ): ?string {
-        // Yeni ders aynı zamanda grup dersi olmalı
-        if (!$newLesson || $newLesson->group_no < 1) {
+        $isProgramOwner = ($currentSchedule?->owner_type === 'program');
+        $newIsInternship = $newLesson && ((int)$newLesson->type === LessonType::INTERNSHIP->value);
+
+        // Yeni ders aynı zamanda grup dersi olmalı (staj dersleri hariç)
+        if (!$newLesson || ($newLesson->group_no < 1 && !$newIsInternship)) {
             return "{$crashInfo}: Grup dersi üzerine normal ders (veya durum) eklenemez.";
         }
 
@@ -180,6 +218,13 @@ class ConflictResolver
         $slotDatas = $existingItem->getSlotDatas();
         foreach ($slotDatas as $sd) {
             if (!$sd->lesson) {
+                continue;
+            }
+
+            $existingIsInternship = ((int)$sd->lesson->type === LessonType::INTERNSHIP->value);
+
+            // Program schedule'ında staj ile normal ders çakışmaz
+            if ($isProgramOwner && $newIsInternship !== $existingIsInternship) {
                 continue;
             }
 
@@ -196,8 +241,8 @@ class ConflictResolver
 
             // Hoca aynı olmamalı
             $newLecturerId = $newItemData['data'][0]['lecturer_id'] ?? null;
-            if ($sd->lecturer && $newLecturerId && $sd->lecturer->id == $newLecturerId) {
-                return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer->getFullName();
+            if (!empty($sd->lecturer) && !empty($newLecturerId) && $sd->lecturer->id == $newLecturerId) {
+                return "{$crashInfo}: Hoca aynı anda iki farklı derse giremez: " . $sd->lecturer?->getFullName();
             }
 
             // Grup numaraları farklı olmalı
@@ -207,7 +252,7 @@ class ConflictResolver
 
             // Derslik aynı olmamalı (farklı gruplar aynı dersliği aynı anda kullanamaz)
             $newClassroomId = $newItemData['data'][0]['classroom_id'] ?? null;
-            if ($sd->classroom && $newClassroomId && $sd->classroom->id == $newClassroomId) {
+            if (!empty($sd->classroom) && !empty($newClassroomId) && $sd->classroom->id == $newClassroomId) {
                 return "{$crashInfo}: Bu derslik bu saatte zaten başka bir grup tarafından kullanılıyor: " . $sd->classroom->name;
             }
         }

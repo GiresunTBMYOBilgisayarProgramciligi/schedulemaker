@@ -13,17 +13,20 @@ class ScheduleExportOptionsDTO implements ArrayAccess
     public bool $show_lecturer;
     public bool $show_program;
     public bool $show_observer;
+    public bool $show_internship;
 
     public function __construct(
         public bool $showCode = true,
         public bool $showLecturer = true,
         public bool $showProgram = true,
-        public bool $showObserver = true
+        public bool $showObserver = true,
+        public bool $showInternship = true
     ) {
-        $this->show_code     = $this->showCode;
-        $this->show_lecturer = $this->showLecturer;
-        $this->show_program  = $this->showProgram;
-        $this->show_observer = $this->showObserver;
+        $this->show_code       = $this->showCode;
+        $this->show_lecturer   = $this->showLecturer;
+        $this->show_program    = $this->showProgram;
+        $this->show_observer   = $this->showObserver;
+        $this->show_internship = $this->showInternship;
     }
 
     public static function fromArray(array|self $data): self
@@ -36,17 +39,19 @@ class ScheduleExportOptionsDTO implements ArrayAccess
             showCode: isset($data['show_code']) ? filter_var($data['show_code'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showCode']) ? (bool)$data['showCode'] : true),
             showLecturer: isset($data['show_lecturer']) ? filter_var($data['show_lecturer'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showLecturer']) ? (bool)$data['showLecturer'] : true),
             showProgram: isset($data['show_program']) ? filter_var($data['show_program'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showProgram']) ? (bool)$data['showProgram'] : true),
-            showObserver: isset($data['show_observer']) ? filter_var($data['show_observer'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showObserver']) ? (bool)$data['showObserver'] : true)
+            showObserver: isset($data['show_observer']) ? filter_var($data['show_observer'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showObserver']) ? (bool)$data['showObserver'] : true),
+            showInternship: isset($data['show_internship']) ? filter_var($data['show_internship'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showInternship']) ? (bool)$data['showInternship'] : true)
         );
     }
 
     public function toArray(): array
     {
         return [
-            'show_code'     => $this->showCode,
-            'show_lecturer' => $this->showLecturer,
-            'show_program'  => $this->showProgram,
-            'show_observer' => $this->showObserver,
+            'show_code'       => $this->showCode,
+            'show_lecturer'   => $this->showLecturer,
+            'show_program'    => $this->showProgram,
+            'show_observer'   => $this->showObserver,
+            'show_internship' => $this->showInternship,
         ];
     }
 

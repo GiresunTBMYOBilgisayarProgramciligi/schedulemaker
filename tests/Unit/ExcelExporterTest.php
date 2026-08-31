@@ -110,4 +110,17 @@ class ExcelExporterTest extends BaseTestCase
         $unitFileName = $exporter->getFileName($unitFilters);
         $this->assertStringContainsString('gorele-guzel-sanatlar-fakultesi', $unitFileName);
     }
+
+    public function testScheduleExportFilterValidatorSupportsShowInternship(): void
+    {
+        $validator = new \App\Validators\Schedule\ScheduleExportFilterValidator();
+        $dto = $validator->getDTO([
+            'type'            => 'lesson',
+            'owner_type'      => 'program',
+            'owner_id'        => $this->programId,
+            'show_internship' => 'true',
+        ], 'exportScheduleAction');
+
+        $this->assertTrue($dto->show_internship);
+    }
 }

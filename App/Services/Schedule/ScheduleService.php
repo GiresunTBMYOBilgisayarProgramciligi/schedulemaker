@@ -9,6 +9,7 @@ use App\DTOs\ScheduleFilterDTO;
 use App\Helpers\TimeHelper;
 use App\Core\Database;
 use App\Enums\ExamType;
+use App\Enums\LessonType;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Lesson;
@@ -339,8 +340,8 @@ class ScheduleService extends BaseService
         // Lesson owner (her zaman var)
         $owners[] = ['type' => 'lesson', 'id' => $lesson->id];
 
-        // Program owner (varsa)
-        if ($lesson->program_id) {
+        // Program owner (varsa - staj dersleri program schedule_items tablosuna girmez)
+        if ($lesson->program_id && (int)$lesson->type !== LessonType::INTERNSHIP->value) {
             $owners[] = [
                 'type' => 'program',
                 'id' => $lesson->program_id,
@@ -526,7 +527,7 @@ class ScheduleService extends BaseService
             // Lesson ve program owner'ları
             $owners[] = ['type' => 'lesson', 'id' => $lesson->id, 'semester_no' => null];
 
-            if ($lesson->program_id) {
+            if ($lesson->program_id && (int)$lesson->type !== LessonType::INTERNSHIP->value) {
                 $owners[] = [
                     'type' => 'program',
                     'id' => $lesson->program_id,

@@ -23,6 +23,7 @@ class ScheduleCard {
             'lesson_id': null,
             'lesson_code': null,
             'lesson_name': null,
+            'lesson_type': null,
             'lecturer_id': null,
             'group_no': null,
             'day_index': null,
@@ -555,13 +556,12 @@ class ScheduleCard {
             return str.replace(/[A-Z]/g, letter => "_" + letter.toLowerCase());
         }
 
-        Object.keys(setObject).forEach(key => {
+        if (getObject && getObject.dataset) {
             for (let dataKey in getObject.dataset) {
-                if (toSnakeCase(dataKey) === key) {
-                    setObject[key] = getObject.dataset[dataKey];
-                }
+                const snakeKey = toSnakeCase(dataKey);
+                setObject[snakeKey] = getObject.dataset[dataKey];
             }
-        });
+        }
     }
 
     setDraggedLesson(lessonElement, dragEvent) {

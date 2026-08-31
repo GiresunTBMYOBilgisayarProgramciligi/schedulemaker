@@ -46,17 +46,27 @@ use App\Enums\ScheduleItemStatus;
                             </td>
                             <?php foreach ($scheduleRow['days'] as $dayIndex => $scheduleItem): ?>
                                 <?php if ($scheduleItem):
-                                    $dropZone = ($scheduleItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
+                                    $items = is_array($scheduleItem) ? $scheduleItem : [$scheduleItem];
+                                    $firstItem = $items[0];
+                                    $hasGroup = false;
+                                    foreach ($items as $it) {
+                                        if ($it->status === ScheduleItemStatus::GROUP->value) {
+                                            $hasGroup = true;
+                                            break;
+                                        }
+                                    }
+                                    $dropZone = ($firstItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
-                                        data-schedule-item-id="<?= $scheduleItem->id ?>"
+                                        data-schedule-item-id="<?= $firstItem->id ?>"
                                         data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
-                                        <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
+                                        <?php if ($hasGroup): ?>
                                             <div class="lesson-group-container">
-                                            <?php endif; ?>
+                                        <?php endif; ?>
 
-                                            <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
-                                                <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                        <?php foreach ($items as $item): ?>
+                                            <?php if (count($item->getSlotDatas()) > 0): ?>
+                                                <?php foreach ($item->getSlotDatas() as $slotData):
                                                     $isChild = !empty($slotData->lesson->parentLesson);
                                                     $draggable = ScheduleViewHelper::isDraggable(
                                                         $slotData,
@@ -65,7 +75,7 @@ use App\Enums\ScheduleItemStatus;
                                                         isset($preference_mode) && $preference_mode
                                                     );
                                                     echo \App\Core\View::renderComponent('schedules/_lessonCard', [
-                                                        'scheduleItem' => $scheduleItem,
+                                                        'scheduleItem' => $item,
                                                         'slotData' => $slotData,
                                                         'schedule' => $schedule,
                                                         'draggable' => $draggable,
@@ -76,12 +86,13 @@ use App\Enums\ScheduleItemStatus;
                                                 endforeach; ?>
                                             <?php else: ?>
                                                 <?= \App\Core\View::renderComponent('schedules/_emptySlotDummy', [
-                                                    'scheduleItem' => $scheduleItem,
+                                                    'scheduleItem' => $item,
                                                     'preference_mode' => $preference_mode ?? false
                                                 ]) ?>
                                             <?php endif; ?>
+                                        <?php endforeach; ?>
 
-                                            <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
+                                        <?php if ($hasGroup): ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>

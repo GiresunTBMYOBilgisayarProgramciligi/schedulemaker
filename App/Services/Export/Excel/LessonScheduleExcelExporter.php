@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
+use App\Enums\LessonType;
 use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
@@ -62,6 +63,9 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
             if (!Gate::check(PermissionType::VIEW->value, $schedule)) {
                 continue;
             }
+
+            // Staj dersleri özeti (ana ızgarayı şişirmemek için alt tablo olarak yazılır)
+            $internshipSummary = ScheduleViewHelper::getInternshipSummary($schedule);
 
             $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
             $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
@@ -178,24 +182,40 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                         }
 
                         if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
-                            $items = is_array($slot['days'][$dayKey]) ? $slot['days'][$dayKey] : [$slot['days'][$dayKey]];
+                            $cellData = $slot['days'][$dayKey];
+                            $items = is_array($cellData) ? $cellData : [$cellData];
 
-                            // Tercih/müsait değil item'lerini dışa aktarma
-                            $items = array_filter($items, fn($item) => !in_array($item->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value]));
-                            $items = array_values($items);
-
-                            if (empty($items)) {
-                                continue;
-                            }
-
-                            // Rowspan hesapla
+                            // Satır birleştirme hesaplama
                             $rowSpan = 1;
-                            $firstItemId = $items[0]->id;
+                            $firstItem = $items[0];
+                            $itemEndTime = $firstItem->getShortEndTime();
+
                             for ($j = $rowIndex + 1; $j < $totalRows; $j++) {
-                                $nextSlotItem = $slots[$j]['days'][$dayKey] ?? null;
-                                if ($nextSlotItem) {
-                                    $nextItems = is_array($nextSlotItem) ? $nextSlotItem : [$nextSlotItem];
-                                    if ($nextItems[0]->id === $firstItemId) {
+                                $nextSlot = $slots[$j];
+                                $nextSlotStart = $nextSlot['slotStartTime']->format('H:i');
+
+                                if ($nextSlotStart < $itemEndTime) {
+                                    $nextCellData = $nextSlot['days'][$dayKey] ?? null;
+                                    $isSame = false;
+                                    if ($nextCellData) {
+                                        $nextItems = is_array($nextCellData) ? $nextCellData : [$nextCellData];
+                                        if (count($nextItems) === count($items)) {
+                                            $sameCount = 0;
+                                            foreach ($items as $it) {
+                                                foreach ($nextItems as $nit) {
+                                                    if ($it->id === $nit->id) {
+                                                        $sameCount++;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if ($sameCount === count($items)) {
+                                                $isSame = true;
+                                            }
+                                        }
+                                    }
+
+                                    if ($isSame) {
                                         $rowSpan++;
                                         $coveredCells[$weekIndex][$j][$i] = true;
                                     } else {
@@ -243,9 +263,9 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                                 }
                             }
                             
-                            // Yükseklik hesaplaması (Merge edilmiş hücrelerde Excel AutoFit çalışmaz)
+                            // Yükseklik hesaplaması
                             $lines = substr_count($combinedContent->getPlainText(), "\n") + 1;
-                            $requiredHeight = $lines * 14; // Satır başı ortalama 14pt
+                            $requiredHeight = $lines * 14; 
                             $heightPerRow = ceil($requiredHeight / $rowSpan);
                             
                             if ($heightPerRow > 15) {
@@ -272,11 +292,144 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 // Kenarlıklar
                 $this->sheet->getStyle($firstCell . ":" . $lastCol . ($row - 1))
                     ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+                // Staj dersleri varsa ve seçeneklerde aktifse alt tablo olarak ekle
+                if ($showOptions->showInternship && !empty($internshipSummary)) {
+                    $row = $this->writeInternshipTable($internshipSummary, $row, $lastCol);
+                }
+
                 $row += 2;
             }
         }
 
         $this->autoSizeColumns('A', $lastCol);
+    }
+
+    /**
+     * Staj derslerini haftalık tablonun altına özet tablo olarak yazar.
+     */
+    private function writeInternshipTable(
+        array $groups,
+        int $startRow,
+        string $lastCol
+    ): int {
+        $row = $startRow + 1;
+
+        // Staj Başlık Çubuğu
+        $this->sheet->setCellValue("A{$row}", "STAJ / İŞLETMEDE MESLEKİ EĞİTİM BİLGİLERİ");
+        $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true)->setSize(10);
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D9E1F2');
+
+        $tableStartCell = "A{$row}";
+        $row++;
+
+        if (empty($groups)) {
+            return $row;
+        }
+
+        $totalCols = Coordinate::columnIndexFromString($lastCol);
+
+        $codeCol = 'A';
+        if ($totalCols >= 9) {
+            $nameStartCol = 'B';
+            $nameEndCol = 'D';
+            $groupStartCol = 'E';
+            $groupEndCol = 'E';
+            $lecturerStartCol = 'F';
+            $lecturerEndCol = 'H';
+            $slotStartCol = 'I';
+            $slotEndCol = $lastCol;
+        } elseif ($totalCols >= 6) {
+            $nameStartCol = 'B';
+            $nameEndCol = 'B';
+            $groupStartCol = 'C';
+            $groupEndCol = 'C';
+            $lecturerStartCol = 'D';
+            $lecturerEndCol = 'E';
+            $slotStartCol = 'F';
+            $slotEndCol = $lastCol;
+        } else {
+            $nameStartCol = 'B';
+            $nameEndCol = 'B';
+            $groupStartCol = 'C';
+            $groupEndCol = 'C';
+            $lecturerStartCol = 'D';
+            $lecturerEndCol = 'D';
+            $slotStartCol = 'E';
+            $slotEndCol = $lastCol;
+        }
+
+        // Başlık satırı
+        $this->sheet->setCellValue("{$codeCol}{$row}", "Ders Kodu");
+        $this->sheet->setCellValue("{$nameStartCol}{$row}", "Ders Adı");
+        if ($nameStartCol !== $nameEndCol) {
+            $this->sheet->mergeCells("{$nameStartCol}{$row}:{$nameEndCol}{$row}");
+        }
+
+        $this->sheet->setCellValue("{$groupStartCol}{$row}", "Grup");
+        if ($groupStartCol !== $groupEndCol) {
+            $this->sheet->mergeCells("{$groupStartCol}{$row}:{$groupEndCol}{$row}");
+        }
+
+        $this->sheet->setCellValue("{$lecturerStartCol}{$row}", "Sorumlu Öğretim Elemanı");
+        if ($lecturerStartCol !== $lecturerEndCol) {
+            $this->sheet->mergeCells("{$lecturerStartCol}{$row}:{$lecturerEndCol}{$row}");
+        }
+
+        $this->sheet->setCellValue("{$slotStartCol}{$row}", "Gün / Saat Aralığı");
+        if ($slotStartCol !== $slotEndCol) {
+            $this->sheet->mergeCells("{$slotStartCol}{$row}:{$slotEndCol}{$row}");
+        }
+
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+        $row++;
+
+        // Satırları yaz
+        foreach ($groups as $g) {
+            $this->sheet->setCellValue("{$codeCol}{$row}", $g['code']);
+            $this->sheet->getStyle("{$codeCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $this->sheet->setCellValue("{$nameStartCol}{$row}", $g['name']);
+            if ($nameStartCol !== $nameEndCol) {
+                $this->sheet->mergeCells("{$nameStartCol}{$row}:{$nameEndCol}{$row}");
+            }
+
+            $this->sheet->setCellValue("{$groupStartCol}{$row}", $g['group']);
+            if ($groupStartCol !== $groupEndCol) {
+                $this->sheet->mergeCells("{$groupStartCol}{$row}:{$groupEndCol}{$row}");
+            }
+            $this->sheet->getStyle("{$groupStartCol}{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $this->sheet->setCellValue("{$lecturerStartCol}{$row}", $g['lecturer']);
+            if ($lecturerStartCol !== $lecturerEndCol) {
+                $this->sheet->mergeCells("{$lecturerStartCol}{$row}:{$lecturerEndCol}{$row}");
+            }
+
+            $slotsStr = is_array($g['slots'] ?? null) ? implode(', ', array_unique($g['slots'])) : ($g['slots'] ?? '');
+            $this->sheet->setCellValue("{$slotStartCol}{$row}", $slotsStr);
+            if ($slotStartCol !== $slotEndCol) {
+                $this->sheet->mergeCells("{$slotStartCol}{$row}:{$slotEndCol}{$row}");
+            }
+
+            $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $this->sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        $this->sheet->getStyle("{$tableStartCell}:{$lastCol}" . ($row - 1))
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        return $row;
     }
 
     /**
@@ -300,19 +453,19 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
             }
 
             // Ders Adı
-            $lessonName = $data->lesson->getFullName(addGroup: true);
-            if ($options->showCode && !empty($data->lesson->code)) {
+            $lessonName = $data->lesson?->getFullName(addGroup: true) ?? '';
+            if ($options->showCode && !empty($data->lesson?->code)) {
                 $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
             }
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
             // Hoca Adı
-            if ($options->showLecturer && $scheduleType !== 'user' && $data->lecturer) {
+            if ($options->showLecturer && $scheduleType !== 'user' && !empty($data->lecturer)) {
                 $richContent->createText("\n(" . $data->lecturer->getFullName() . ")");
             }
 
             // Program / Bölüm Adı
-            if ($options->showProgram && ($scheduleType === 'user' || $scheduleType === 'classroom')) {
+            if ($options->showProgram && ($scheduleType === 'user' || $scheduleType === 'classroom') && !empty($data->lesson)) {
                 $programNames = [];
                 if ($data->lesson->program) {
                     $programNames[] = $data->lesson->program->name . "-" . getClassFromSemesterNo($data->lesson->semester_no);
@@ -331,7 +484,7 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
             }
 
             // Derslik
-            if ($scheduleType !== 'classroom' && $data->classroom) {
+            if ($scheduleType !== 'classroom' && !empty($data->classroom?->name)) {
                 $richClassroom->createText($data->classroom->name);
             }
         }

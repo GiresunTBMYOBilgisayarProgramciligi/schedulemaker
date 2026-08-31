@@ -89,10 +89,11 @@ class LessonScheduleCard extends ScheduleCard {
             }
         });
 
-        // Dersliği Düzenle seçeneği
+        // Dersliği Düzenle seçeneği (Staj derslerinde derslik düzenleme olmaz)
         const scheduleItemId = lessonCard.dataset.scheduleItemId;
         const isLocked = lessonCard.dataset.isLocked === 'true';
-        if (scheduleItemId) {
+        const isInternship = (lessonCard.dataset.lessonType == '4');
+        if (scheduleItemId && !isInternship) {
             menuItems.push({
                 text: 'Dersliği Düzenle',
                 icon: 'bi-door-open-fill',
@@ -319,16 +320,27 @@ class LessonScheduleCard extends ScheduleCard {
         try {
             let classroomData = null, programData = null, lecturerData = null;
 
+            const isInternship = (parseInt(this.draggedLesson.lesson_type) === 4);
+
             switch (this.owner_type) {
                 case 'user': {
-                    const [classroomRes, programRes, lecturerRes] = await Promise.all([
-                        fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
-                        fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
-                    ]);
-                    classroomData = await classroomRes.json();
-                    programData = await programRes.json();
-                    lecturerData = await lecturerRes.json();
+                    if (isInternship) {
+                        const [programRes, lecturerRes] = await Promise.all([
+                            fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                            fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
+                        ]);
+                        programData = await programRes.json();
+                        lecturerData = await lecturerRes.json();
+                    } else {
+                        const [classroomRes, programRes, lecturerRes] = await Promise.all([
+                            fetch("/ajax/checkClassroomSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                            fetch("/ajax/checkProgramSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data }),
+                            fetch("/ajax/checkLecturerSchedule", { method: "POST", headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: data })
+                        ]);
+                        classroomData = await classroomRes.json();
+                        programData = await programRes.json();
+                        lecturerData = await lecturerRes.json();
+                    }
                     break;
                 }
                 case 'program': {
@@ -651,6 +663,7 @@ class LessonScheduleCard extends ScheduleCard {
             this.draggedLesson.lesson_id = this.draggedLesson.lesson_id || firstEl.dataset.lessonId;
             this.draggedLesson.lesson_name = this.draggedLesson.lesson_name || firstEl.dataset.lessonName;
             this.draggedLesson.lesson_code = this.draggedLesson.lesson_code || firstEl.dataset.lessonCode;
+            this.draggedLesson.lesson_type = this.draggedLesson.lesson_type || firstEl.dataset.lessonType;
             this.draggedLesson.lecturer_id = this.draggedLesson.lecturer_id || firstEl.dataset.lecturerId;
             this.draggedLesson.size = this.draggedLesson.size || firstEl.dataset.size;
             this.draggedLesson.group_no = this.draggedLesson.group_no || firstEl.dataset.groupNo;
@@ -706,6 +719,13 @@ class LessonScheduleCard extends ScheduleCard {
             let hoursToUse = parseInt(initialHours || this.draggedLesson.lesson_hours || 1);
             let maxHours = this.draggedLesson.lesson_hours ? Math.max(parseInt(this.draggedLesson.lesson_hours), hoursToUse) : hoursToUse;
             let sizeString = this.draggedLesson.size > 0 ? this.draggedLesson.size + " Öğrenci için " : "";
+            
+            const lessonType = parseInt(this.draggedLesson?.lesson_type || this.draggedLesson?.HTMLElement?.dataset?.lessonType || 0);
+            const isInternship = (lessonType === 4);
+
+            if (isInternship && title === "Sınıf ve Saat Seçimi") {
+                title = "Saat Seçimi";
+            }
 
             let modalContentHTML = `
             <form>
@@ -715,10 +735,12 @@ class LessonScheduleCard extends ScheduleCard {
                            min=1 max=${maxHours}>
                     <label for="selected_hours">Süre (Saat)</label>
                 </div>
+                ${isInternship ? '' : `
                 <div class="mb-3">
                     <label class="form-label">${sizeString}Derslik Seçin</label>
                     <select id="classroom" class="form-select" required></select>
                 </div>
+                `}
             </form>`;
 
             scheduleModal.prepareModal(title, modalContentHTML, true, false);
@@ -728,6 +750,7 @@ class LessonScheduleCard extends ScheduleCard {
             let classroomSelect = scheduleModal.body.querySelector("#classroom");
 
             const updateLists = async () => {
+                if (isInternship || !classroomSelect) return;
                 await this.fetchAvailableClassrooms(classroomSelect, selectedHoursInput.value);
                 if (initialClassroom && initialClassroom.id) {
                     let opt = Array.from(classroomSelect.options).find(o => o.value == initialClassroom.id);
@@ -754,22 +777,25 @@ class LessonScheduleCard extends ScheduleCard {
             formEl.addEventListener("submit", (event) => {
                 event.preventDefault();
 
-                if (!classroomSelect.value) {
-                    console.error("Ders atama hatası: Derslik seçilmedi.");
-                    new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
-                    return;
+                let selectedClassroom = null;
+                if (!isInternship) {
+                    if (!classroomSelect || !classroomSelect.value) {
+                        console.error("Ders atama hatası: Derslik seçilmedi.");
+                        new Toast().prepareToast("Dikkat", "Bir derslik seçmelisiniz.", "danger");
+                        return;
+                    }
+
+                    const classroomName = classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, "");
+                    const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
+                    const size = parseInt(classroomSelect.selectedOptions[0].dataset.size || '0');
+
+                    selectedClassroom = {
+                        id: classroomSelect.value,
+                        name: classroomName,
+                        exam_size: examSize,
+                        size: size
+                    };
                 }
-
-                const classroomName = classroomSelect.selectedOptions[0].innerText.replace(/\s*\(.*\)$/, "");
-                const examSize = parseInt(classroomSelect.selectedOptions[0].dataset.examSize || '0');
-                const size = parseInt(classroomSelect.selectedOptions[0].dataset.size || '0');
-
-                const selectedClassroom = {
-                    id: classroomSelect.value,
-                    name: classroomName,
-                    exam_size: examSize,
-                    size: size
-                };
 
                 const result = {
                     classroom: selectedClassroom,

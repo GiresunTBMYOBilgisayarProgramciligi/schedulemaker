@@ -311,14 +311,24 @@ class LessonService extends BaseService
             /** @var Lesson $parentLesson */
             $parentLesson = (new Lesson())
                 ->where(['id' => $parentLessonId])
-                ->with(['parentLesson' => ['with' => ['program']], 'childLessons', 'program'])
+                ->with([
+                    'parentLesson' => ['with' => ['program']],
+                    'childLessons',
+                    'program',
+                    'lecturer' => ['semester' => $dto->semester, 'academic_year' => $dto->academicYear]
+                ])
                 ->first()
                 ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
 
             /** @var Lesson $childLesson */
             $childLesson = (new Lesson())
                 ->where(['id' => $childLessonId])
-                ->with(['parentLesson' => ['with' => ['program']], 'childLessons', 'program'])
+                ->with([
+                    'parentLesson' => ['with' => ['program']],
+                    'childLessons',
+                    'program',
+                    'lecturer' => ['semester' => $dto->semester, 'academic_year' => $dto->academicYear]
+                ])
                 ->first()
                 ?: throw new Exception("Birleştirilecek ders bulunamadı");
 

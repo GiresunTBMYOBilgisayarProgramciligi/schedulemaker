@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Enums\ExamType;
+use App\Enums\LessonType;
 use App\Enums\OwnerType;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -69,6 +70,7 @@ class ScheduleViewHelper
             'data-classroom-size' => ($slotData->classroom ?? null)?->class_size,
             'data-classroom-exam-size' => ($slotData->classroom ?? null)?->exam_size,
             'data-status' => $scheduleItem->status,
+            'data-lesson-type' => (int)($slotData->lesson->type ?? 0),
         ];
 
         $isLocked = !empty($scheduleItem->detail['is_locked']);
@@ -189,6 +191,7 @@ class ScheduleViewHelper
             'data-lecturer-id' => ($lesson->lecturer ?? null)?->id,
 
             'data-status' => $isDummy ? ($lesson->status ?? '') : '',
+            'data-lesson-type' => $isDummy ? null : (int)($lesson->type ?? 0),
             'data-program-id' => $isDummy ? null : $lesson->program_id,
             'data-size' => $isDummy ? null : ($lesson->size ?? 0),
             // Sağ-tık menü için isimler
@@ -387,6 +390,25 @@ class ScheduleViewHelper
         }
 
         foreach ($schedule->items as $scheduleItem) {
+            // Program programında staj dersleri ana ızgara yerine alt bilgi tablosunda gösterilir
+            if ($schedule->owner_type === OwnerType::PROGRAM->value) {
+                $isInternshipOnly = true;
+                $slotDatas = $scheduleItem->getSlotDatas();
+                if (empty($slotDatas)) {
+                    $isInternshipOnly = false;
+                } else {
+                    foreach ($slotDatas as $sd) {
+                        if (!$sd->lesson || (int)$sd->lesson->type !== LessonType::INTERNSHIP->value) {
+                            $isInternshipOnly = false;
+                            break;
+                        }
+                    }
+                }
+                if ($isInternshipOnly) {
+                    continue;
+                }
+            }
+
             $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
             $itemEnd = \DateTime::createFromFormat('H:i:s', $scheduleItem->end_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->end_time);
 
@@ -535,5 +557,80 @@ class ScheduleViewHelper
             'weekCount' => count($scheduleRows),
             'no_card' => $no_card
         ]);
+    }
+
+    /**
+     * Sadece Bölüm/Program programına ait staj derslerinin özetini döner.
+     * @param Schedule $schedule
+     * @return array
+     */
+    public static function getInternshipSummary(Schedule $schedule): array
+    {
+        if ($schedule->owner_type !== OwnerType::PROGRAM->value) {
+            return [];
+        }
+
+        $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+        $groups = [];
+        $items = [];
+
+        $internshipLessons = (new Lesson())->get()->where([
+            'program_id'  => $schedule->owner_id,
+            'semester_no' => $schedule->semester_no,
+            'type'        => LessonType::INTERNSHIP->value
+        ])->with(['lecturer'])->all();
+
+        if (empty($internshipLessons)) {
+            return [];
+        }
+
+        $lessonIds = array_column($internshipLessons, 'id');
+        $lessonSchedules = (new Schedule())->get()->where([
+            'owner_type'    => OwnerType::LESSON->value,
+            'owner_id'      => ['in' => $lessonIds],
+            'type'          => $schedule->type,
+            'semester'      => $schedule->semester,
+            'academic_year' => $schedule->academic_year
+        ])->with(['items'])->all();
+
+        foreach ($lessonSchedules as $ls) {
+            if (!empty($ls->items)) {
+                $items = array_merge($items, $ls->items);
+            }
+        }
+
+        if (empty($items)) {
+            return [];
+        }
+
+        foreach ($items as $item) {
+            $slotDatas = $item->getSlotDatas();
+            foreach ($slotDatas as $sd) {
+                if (!$sd->lesson || (int)$sd->lesson->type !== LessonType::INTERNSHIP->value) {
+                    continue;
+                }
+                $key = $sd->lesson->id . '_' . $sd->lesson->group_no;
+                if (!isset($groups[$key])) {
+                    $groups[$key] = [
+                        'code' => $sd->lesson->code ?: '-',
+                        'name' => $sd->lesson->name,
+                        'group' => ($sd->lesson->group_no > 0 ? "{$sd->lesson->group_no}. Grup" : "Tek Grup"),
+                        'lecturer' => !empty($sd->lecturer) ? $sd->lecturer->getFullName() : (!empty($sd->lesson->lecturer) ? $sd->lesson->lecturer->getFullName() : "-"),
+                        'slots_arr' => []
+                    ];
+                }
+                $dayIndex = (int) ($item->day_index ?? 0);
+                $dayName = $days[$dayIndex] ?? '';
+                $timeStr = $item->getShortStartTime() . ' - ' . $item->getShortEndTime();
+                $groups[$key]['slots_arr'][] = "{$dayName} ({$timeStr})";
+            }
+        }
+
+        foreach ($groups as &$g) {
+            $g['slots'] = implode(', ', array_unique($g['slots_arr']));
+            unset($g['slots_arr']);
+        }
+
+        return array_values($groups);
     }
 }
