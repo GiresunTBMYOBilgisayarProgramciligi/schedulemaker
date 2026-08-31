@@ -32,7 +32,10 @@ document.addEventListener("DOMContentLoaded", function () {
         
         const scheduleTypeSelect = document.getElementById("schedule_type");
         const scheduleType = cardScheduleType || scheduleTypeSelect?.value || "lesson";
-        const semesterNo = button.dataset.semesterNo || scheduleCard?.dataset.semesterNo || null;
+        const semesterNoSelect = document.getElementById("semester_no");
+        const semesterNo = (button.dataset.semesterNo !== undefined && button.dataset.semesterNo !== null) 
+            ? (button.dataset.semesterNo ? button.dataset.semesterNo : null) 
+            : (scheduleCard?.dataset.semesterNo || (semesterNoSelect && semesterNoSelect.value ? semesterNoSelect.value : null));
 
         // Sadece Excel dışa aktarma butonları için (id sonunda Export olanlar)
         if (button.id.endsWith("Export")) {
@@ -163,13 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 await fetchExportIcs(data);
             };
 
-            if (ownerType === "program" && semesterNo) {
-                showCalendarOptionsModal(ownerType, scheduleType, semesterNo, async (options) => {
-                    await executeCalendarExport(options.semester_no);
-                });
-            } else {
-                await executeCalendarExport();
-            }
+            await executeCalendarExport(semesterNo);
             return;
         }
     });
@@ -183,25 +180,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const isExam = scheduleType !== "lesson";
         const typeLabel = isExam ? "Sınav" : "Ders";
 
-        let semesterSection = "";
-        if (ownerType === "program" && semesterNo) {
-            const semLabel = getSemesterLabel(semesterNo);
-            semesterSection = `
-            <div class="mb-3 border-bottom pb-2">
-                <label class="form-label fw-semibold mb-2">Çıktı Alınacak Dönem:</label>
-                <div class="form-check mb-1">
-                    <input class="form-check-input" type="radio" name="export_scope" id="scope_single" value="single" checked>
-                    <label class="form-check-label" for="scope_single">Sadece bu dönem (${semLabel})</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="export_scope" id="scope_all" value="all">
-                    <label class="form-check-label" for="scope_all">Tüm dönemler</label>
-                </div>
-            </div>`;
-        }
-
         let content = `<div class="p-2">
-            ${semesterSection}
             <p class="mb-3 border-bottom pb-2">Excel tablosunda görünmesini istediğiniz alanları seçin:</p>
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_code" checked>
@@ -249,10 +228,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modal.confirmButton.addEventListener("click", () => {
             const options = {};
-            if (document.getElementById("scope_single")) {
-                if (document.getElementById("scope_single").checked) {
-                    options.semester_no = semesterNo;
-                }
+            if (semesterNo) {
+                options.semester_no = semesterNo;
             }
             if (document.getElementById("show_code")) options.show_code = document.getElementById("show_code").checked;
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
@@ -264,41 +241,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 options.show_internship = false;
             }
 
-            modal.closeModal();
-            onConfirm(options);
-        });
-    }
-
-    /**
-     * Takvim (ICS) dışa aktarma seçeneklerini soran modalı gösterir
-     */
-    function showCalendarOptionsModal(ownerType, scheduleType, semesterNo, onConfirm) {
-        const modal = new Modal();
-        const isExam = scheduleType !== "lesson";
-        const typeLabel = isExam ? "Sınav" : "Ders";
-        const semLabel = getSemesterLabel(semesterNo);
-
-        let content = `<div class="p-2">
-            <p class="mb-3 border-bottom pb-2">Takvime kaydetmek istediğiniz dönem kapsamını seçin:</p>
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="radio" name="cal_export_scope" id="cal_scope_single" value="single" checked>
-                <label class="form-check-label" for="cal_scope_single">Sadece bu dönem (${semLabel})</label>
-            </div>
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="radio" name="cal_export_scope" id="cal_scope_all" value="all">
-                <label class="form-check-label" for="cal_scope_all">Tüm dönemler</label>
-            </div>
-        </div>`;
-
-        modal.prepareModal(typeLabel + " Takvime Kaydetme Seçenekleri", content, true, true, "md");
-        modal.confirmButton.textContent = "Takvime Kaydet";
-        modal.showModal();
-
-        modal.confirmButton.addEventListener("click", () => {
-            const options = {};
-            if (document.getElementById("cal_scope_single")?.checked) {
-                options.semester_no = semesterNo;
-            }
             modal.closeModal();
             onConfirm(options);
         });

@@ -11,6 +11,8 @@ use Exception;
 use App\Core\Gate;
 use App\Validators\DepartmentValidator;
 use App\Services\DepartmentService;
+use function App\Helpers\getMaxSemesterNo;
+
 class DepartmentController extends Controller
 {
     protected string $table_name = "departments";
@@ -29,8 +31,14 @@ class DepartmentController extends Controller
             $departments = (new DepartmentRepository())->getAuthorized($action, ['unit_id' => $unit_id, 'active' => true]);
         }
 
+        $unitMaxSemester = getMaxSemesterNo(null, null, $unit_id);
+        foreach ($departments as $dept) {
+            $dept->max_semester = getMaxSemesterNo(null, $dept->id, $unit_id);
+        }
+
         return [
             'status' => "success",
+            'unit_max_semester' => $unitMaxSemester,
             'departments' => $departments
         ];
     }

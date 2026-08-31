@@ -9,6 +9,7 @@ use App\Core\View;
 use App\Services\Schedule\AvailabilityService;
 use App\Services\Schedule\ScheduleService;
 use Exception;
+use function App\Helpers\getMaxSemesterNo;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSettingValue;
 use App\Validators\Schedule\ScheduleViewFilterValidator;
@@ -145,7 +146,12 @@ class ScheduleController extends Controller
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
             $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
         } else {
-            $currentSemesters = getSemesterNumbers($dto->semester);
+            $maxSemester = ($dto->owner_type === OwnerType::PROGRAM->value && $dto->owner_id) 
+                ? getMaxSemesterNo($dto->owner_id) 
+                : null;
+            $currentSemesters = getSemesterNumbers($dto->semester, $maxSemester);
+            $cardsHTML = "";
+            $renderedCount = 0;
             foreach ($currentSemesters as $semester_no) {
                 if ($is_published_only) {
                     $sch = (new ScheduleRepository())->findByOwnerAndPeriod(
@@ -164,10 +170,47 @@ class ScheduleController extends Controller
                 $data = $dto->toArray();
                 $data['semester_no'] = $semester_no;
                 $specificDto = ScheduleFilterDTO::fromArray($data);
-                $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
+                $cardsHTML .= ScheduleViewHelper::prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
+                $renderedCount++;
             }
-            if ($is_published_only && empty($HTMLOut)) {
+            if ($is_published_only && empty($cardsHTML)) {
                 $HTMLOut = "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>";
+            } elseif ($renderedCount > 1 && !$no_card && !$preference_mode) {
+                $toolbarHTML = '
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 rounded-4 bg-body-tertiary">
+                            <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 text-secondary fw-semibold">
+                                    <i class="bi bi-layers text-primary fs-5"></i>
+                                    <span>Tüm Yarıyıllar / Sınıflar</span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">' . $renderedCount . ' Dönem</span>
+                                </div>
+                                <div class="btn-group btn-group-sm shadow-xs ms-auto" role="group" aria-label="Tüm Dönemleri Dışa Aktarma">
+                                    <button id="singlePageExport" type="button" class="btn btn-success d-inline-flex align-items-center gap-1"
+                                        data-owner-type="' . htmlspecialchars((string)$dto->owner_type) . '" 
+                                        data-owner-id="' . htmlspecialchars((string)$dto->owner_id) . '" 
+                                        data-semester-no="" 
+                                        title="Tüm Dönemleri Tek Excel Dosyası Olarak İndir">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                        <span>Tüm Dönemleri Excel\'e Aktar</span>
+                                    </button>
+                                    <button id="singlePageCalendar" type="button" class="btn btn-primary d-inline-flex align-items-center gap-1"
+                                        data-owner-type="' . htmlspecialchars((string)$dto->owner_type) . '" 
+                                        data-owner-id="' . htmlspecialchars((string)$dto->owner_id) . '" 
+                                        data-semester-no="" 
+                                        title="Tüm Dönemleri Telefon Takvimine (iCal) Kaydet">
+                                        <i class="bi bi-calendar-plus"></i>
+                                        <span>Tüm Dönemleri Takvime Kaydet</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+                $HTMLOut = $toolbarHTML . $cardsHTML;
+            } else {
+                $HTMLOut = $cardsHTML;
             }
         }
 

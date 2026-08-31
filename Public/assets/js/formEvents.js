@@ -490,7 +490,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         programSelect.tomselect.clearOptions();
                         programSelect.tomselect.addOption({value: 0, text: "Program Seçiniz"});
                         progList.forEach(program => {
-                            programSelect.tomselect.addOption({value: program.id, text: program.name});
+                            programSelect.tomselect.addOption({
+                                value: program.id, 
+                                text: program.name,
+                                max_semester: program.max_semester
+                            });
                         });
 
                         if (progList.length === 1) {
@@ -510,6 +514,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             const option = document.createElement("option");
                             option.value = program.id;
                             option.textContent = program.name;
+                            if (program.max_semester) {
+                                option.dataset.maxSemester = program.max_semester;
+                            }
                             if (progList.length === 1) {
                                 option.selected = true; // Tek seçenek varsa otomatik seç
                             }
@@ -878,6 +885,139 @@ document.addEventListener("DOMContentLoaded", function () {
     if (lecturerUnitSelect && lecturerUnitSelect.value !== "0" && lecturerUnitSelect.value !== "") {
         if (lecturerSelect && (!lecturerSelect.value || lecturerSelect.value === "0" || lecturerSelect.value === "")) {
             lecturerUnitSelect.dispatchEvent(new Event("change"));
+        }
+    }
+
+    const semesterSelect = document.getElementById("semester");
+    const semesterNoSelect = document.getElementById("semester_no");
+
+    function resolveCurrentMaxSemester() {
+        // 1. Program select
+        if (programSelect && programSelect.value && programSelect.value !== "0" && programSelect.value !== "") {
+            if (programSelect.tomselect && programSelect.tomselect.options[programSelect.value]) {
+                const opt = programSelect.tomselect.options[programSelect.value];
+                if (opt.max_semester) {
+                    return parseInt(opt.max_semester, 10);
+                }
+            }
+            const selectedProgOption = programSelect.querySelector(`option[value="${programSelect.value}"]`);
+            if (selectedProgOption && selectedProgOption.dataset.maxSemester) {
+                return parseInt(selectedProgOption.dataset.maxSemester, 10);
+            }
+        }
+
+        // 2. Unit select
+        if (unitSelect && unitSelect.value && unitSelect.value !== "0" && unitSelect.value !== "") {
+            if (unitSelect.tomselect && unitSelect.tomselect.options[unitSelect.value]) {
+                const opt = unitSelect.tomselect.options[unitSelect.value];
+                if (opt.max_semester) return parseInt(opt.max_semester, 10);
+                if (opt.type === 'myo') return 4;
+            }
+            const unitOption = unitSelect.querySelector(`option[value="${unitSelect.value}"]`);
+            if (unitOption) {
+                if (unitOption.dataset.maxSemester) {
+                    return parseInt(unitOption.dataset.maxSemester, 10);
+                }
+                if (unitOption.dataset.type === 'myo') {
+                    return 4;
+                }
+            }
+        }
+
+        // 3. semesterNoSelect dataset attribute
+        if (semesterNoSelect && semesterNoSelect.dataset.maxSemester) {
+            return parseInt(semesterNoSelect.dataset.maxSemester, 10);
+        }
+
+        return 12;
+    }
+
+    function updateSemesterNoOptions(selectedSemester, selectedValue = "", maxSemester = null) {
+        if (!semesterNoSelect) return;
+
+        const hasProgram = programSelect && programSelect.value && programSelect.value !== "0" && programSelect.value !== "";
+        const isExportOrPublishPage = document.getElementById("departmentAndProgramExport") || document.querySelector(".btn-publish");
+        const hasUnit = unitSelect && unitSelect.value && unitSelect.value !== "0" && unitSelect.value !== "";
+
+        if (!hasProgram && (!isExportOrPublishPage || !hasUnit)) {
+            semesterNoSelect.innerHTML = "<option value=''>İlk olarak Program seçiniz</option>";
+            semesterNoSelect.dataset.maxSemester = "";
+            return;
+        }
+
+        if (maxSemester === null || maxSemester === undefined || !maxSemester) {
+            maxSemester = resolveCurrentMaxSemester();
+        }
+
+        semesterNoSelect.dataset.maxSemester = maxSemester;
+
+        if (selectedValue === "" && semesterNoSelect.value) {
+            selectedValue = semesterNoSelect.value;
+        }
+
+        if (selectedValue && parseInt(selectedValue, 10) > maxSemester) {
+            selectedValue = "";
+        }
+
+        semesterNoSelect.innerHTML = "";
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "Tüm Yarıyıllar / Sınıflar";
+        semesterNoSelect.appendChild(defaultOption);
+
+        const term = selectedSemester || (semesterSelect ? semesterSelect.value : "Güz") || "Güz";
+        for (let i = 1; i <= maxSemester; i++) {
+            let matches = false;
+            if (term === 'Güz') {
+                matches = (i % 2 === 1);
+            } else if (term === 'Bahar') {
+                matches = (i % 2 === 0);
+            } else {
+                matches = true;
+            }
+
+            if (matches) {
+                const classNo = Math.ceil(i / 2);
+                const option = document.createElement("option");
+                option.value = i;
+                option.textContent = `${classNo}. Sınıf (${i}. Yarıyıl)`;
+                if (String(selectedValue) === String(i)) {
+                    option.selected = true;
+                }
+                semesterNoSelect.appendChild(option);
+            }
+        }
+    }
+
+    if (semesterSelect && semesterNoSelect) {
+        semesterSelect.addEventListener("change", function () {
+            updateSemesterNoOptions(this.value);
+        });
+
+        if (unitSelect) {
+            unitSelect.addEventListener("change", function () {
+                updateSemesterNoOptions(semesterSelect.value);
+            });
+        }
+
+        if (departmentSelect) {
+            departmentSelect.addEventListener("change", function () {
+                if (!departmentSelect.value || departmentSelect.value === "0" || departmentSelect.value === "") {
+                    updateSemesterNoOptions(semesterSelect.value);
+                }
+            });
+        }
+
+        if (programSelect) {
+            programSelect.addEventListener("change", function () {
+                updateSemesterNoOptions(semesterSelect.value);
+            });
+        }
+
+        const initialSelectedSemesterNo = semesterNoSelect.getAttribute('data-selected');
+        if (initialSelectedSemesterNo) {
+            updateSemesterNoOptions(semesterSelect.value, initialSelectedSemesterNo);
+            semesterNoSelect.removeAttribute('data-selected');
         }
     }
 

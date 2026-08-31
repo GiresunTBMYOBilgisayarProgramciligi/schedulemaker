@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Selectors change events (formEvents.js handles cascading options population and dispatches change events)
     const selectorIds = [
-        'unit_id', 'department_id', 'program_id',
+        'unit_id', 'department_id', 'program_id', 'semester_no',
         'lecturer_unit_id', 'lecturer_id',
         'classroom_unit_id', 'classroom_building_id', 'classroom_id',
         'schedule_type', 'academic_year', 'semester'

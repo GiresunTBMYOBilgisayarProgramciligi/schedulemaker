@@ -787,6 +787,7 @@ class AdminPageController extends Controller
         $selectedUnitId = $_GET['unit_id'] ?? null;
         $selectedDepartmentId = $_GET['department_id'] ?? null;
         $selectedProgramId = $_GET['program_id'] ?? null;
+        $selectedSemesterNo = $_GET['semester_no'] ?? null;
         $selectedLecturerId = $_GET['lecturer_id'] ?? null;
         $selectedLecturerUnitId = null;
 
@@ -829,6 +830,7 @@ class AdminPageController extends Controller
             "selected_unit_id" => $selectedUnitId,
             "selected_department_id" => $selectedDepartmentId,
             "selected_program_id" => $selectedProgramId,
+            "selected_semester_no" => $selectedSemesterNo,
             "selected_lecturer_id" => $selectedLecturerId,
             "selected_lecturer_unit_id" => $selectedLecturerUnitId,
             "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',
@@ -852,6 +854,7 @@ class AdminPageController extends Controller
         $selectedUnitId = $_GET['unit_id'] ?? null;
         $selectedDepartmentId = $_GET['department_id'] ?? null;
         $selectedProgramId = $_GET['program_id'] ?? null;
+        $selectedSemesterNo = $_GET['semester_no'] ?? null;
         $selectedLecturerId = $_GET['lecturer_id'] ?? null;
         $selectedLecturerUnitId = null;
 
@@ -894,6 +897,7 @@ class AdminPageController extends Controller
             "selected_unit_id" => $selectedUnitId,
             "selected_department_id" => $selectedDepartmentId,
             "selected_program_id" => $selectedProgramId,
+            "selected_semester_no" => $selectedSemesterNo,
             "selected_lecturer_id" => $selectedLecturerId,
             "selected_lecturer_unit_id" => $selectedLecturerUnitId,
             "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',

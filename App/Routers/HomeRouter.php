@@ -50,6 +50,7 @@ class HomeRouter extends Router
             "selected_unit_id" => $_GET['unit_id'] ?? $_GET['unit'] ?? '',
             "selected_department_id" => $_GET['department_id'] ?? $_GET['department'] ?? '',
             "selected_program_id" => $_GET['program_id'] ?? $_GET['program'] ?? '',
+            "selected_semester_no" => $_GET['semester_no'] ?? $_GET['semesterNo'] ?? '',
             "page_title" => "Anasayfa"]);
         $this->callView("home/index");
     }

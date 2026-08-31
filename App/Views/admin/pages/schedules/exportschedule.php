@@ -121,6 +121,8 @@ use function App\Helpers\getSettingValue;
                                                 'selectedUnitId' => $selected_unit_id ?? '',
                                                 'selectedDepartmentId' => $selected_department_id ?? '',
                                                 'selectedProgramId' => $selected_program_id ?? '',
+                                                'selectedSemesterNo' => $selected_semester_no ?? '',
+                                                'selectedSemester' => getSettingValue("semester") ?? 'Güz',
                                                 'showFormText' => true,
                                                 'customButtonHtml' => '<div class="btn-group" role="group" aria-label="Birim/Bölüm/Program dışa aktarma">'
                                                     . '<button class="btn btn-primary" type="button" id="departmentAndProgramExport">'

@@ -129,6 +129,8 @@ use function App\Helpers\getSettingValue;
                                                  'selectedUnitId' => $selected_unit_id ?? '',
                                                  'selectedDepartmentId' => $selected_department_id ?? '',
                                                  'selectedProgramId' => $selected_program_id ?? '',
+                                                 'selectedSemesterNo' => $selected_semester_no ?? '',
+                                                 'selectedSemester' => getSettingValue("semester") ?? 'Güz',
                                                  'buttonId' => 'departmentAndProgramScheduleButton',
                                                  'buttonText' => 'Düzenle',
                                                  'dataOnlyTable' => 'false'

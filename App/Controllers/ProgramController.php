@@ -11,6 +11,8 @@ use Exception;
 use App\Core\Gate;
 use App\Validators\ProgramValidator;
 use App\Services\ProgramService;
+use function App\Helpers\getMaxSemesterNo;
+
 class ProgramController extends Controller
 {
     protected string $table_name = "programs";
@@ -28,6 +30,11 @@ class ProgramController extends Controller
         } else {
             $programs = (new ProgramRepository())->getAuthorized($action, ['department_id' => $department_id, 'active' => true]);
         }
+
+        foreach ($programs as $program) {
+            $program->max_semester = getMaxSemesterNo($program->id, $department_id);
+        }
+
         return [
             'status' => "success",
             'programs' => $programs

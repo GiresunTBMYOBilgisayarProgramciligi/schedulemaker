@@ -49,7 +49,7 @@ include "theme/head.php";
                             <div class="text-success fs-4"><i class="bi bi-filter-circle"></i></div>
                             <div>
                                 <h6 class="fw-bold mb-1">2. Birim ve Programınızı Bulun</h6>
-                                <p class="text-muted small mb-0">Fakülte/MYO, Bölüm ve Programınızı sırayla seçerek <strong>Programı Göster</strong> butonuna tıklayın.</p>
+                                <p class="text-muted small mb-0">Fakülte/MYO, Bölüm ve Programınızı sırayla seçerek <strong>Göster</strong> butonuna tıklayın.</p>
                             </div>
                         </div>
                         <div class="d-flex gap-3">

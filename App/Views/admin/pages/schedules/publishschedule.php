@@ -128,6 +128,8 @@ $isTestMode = ($mailDriver !== 'smtp');
                                                 'selectedUnitId' => $selected_unit_id ?? '',
                                                 'selectedDepartmentId' => $selected_department_id ?? '',
                                                 'selectedProgramId' => $selected_program_id ?? '',
+                                                'selectedSemesterNo' => $selected_semester_no ?? '',
+                                                'selectedSemester' => getSettingValue("semester") ?? 'Güz',
                                                 'showFormText' => true,
                                                 'customButtonHtml' => '<div class="d-flex align-items-center gap-3">'
                                                     . '<div class="btn-group publish-btn-group" role="group" aria-label="Birim/Bölüm/Program yayınlama">'

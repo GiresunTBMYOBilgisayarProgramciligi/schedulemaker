@@ -63,6 +63,25 @@ class ScheduleValidatorsTest extends BaseTestCase
         $this->assertEquals(10, $sanitized['owner_id']);
     }
 
+    public function testScheduleViewFilterValidatorWithSemesterNo(): void
+    {
+        $validator = new ScheduleViewFilterValidator();
+
+        $dto = $validator->getDTO([
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => 10,
+            'semester_no' => '3',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ], 'getSchedulesHTML');
+
+        $this->assertEquals('lesson', $dto->type);
+        $this->assertEquals('program', $dto->owner_type);
+        $this->assertEquals(10, $dto->owner_id);
+        $this->assertEquals(3, $dto->semester_no);
+    }
+
     public function testScheduleMutationFilterValidatorMissingFieldThrowsException(): void
     {
         $validator = new ScheduleMutationFilterValidator();

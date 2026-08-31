@@ -164,7 +164,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
             <div class="tab-content pt-2" id="scheduleTabsContent">
                 <!-- Tab 1: Birim / Bölüm / Program (Öğrenci Odaklı) -->
                 <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel" aria-labelledby="program-tab" tabindex="0">
-                    <div class="p-3 p-md-4 rounded-4 bg-body-tertiary border">
+                    <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row align-items-end gy-3">
                             <div class="col-12">
                                 <?= View::renderComponent('schedules/_programSelector', [
@@ -172,24 +172,26 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                     'selectedUnitId' => $selected_unit_id ?? '',
                                     'selectedDepartmentId' => $selected_department_id ?? '',
                                     'selectedProgramId' => $selected_program_id ?? '',
+                                    'selectedSemesterNo' => $selected_semester_no ?? '',
+                                    'selectedSemester' => $currentSemester ?? 'Bahar',
                                     'dataAction' => 'public',
                                     'buttonId' => 'departmentAndProgramScheduleButton',
-                                    'buttonText' => 'Programı Göster',
+                                    'buttonText' => 'Göster',
                                     'dataOnlyTable' => 'true',
-                                    'customButtonHtml' => '<button type="button" class="btn btn-primary px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="departmentAndProgramScheduleButton" data-only-table="true"><i class="bi bi-calendar-check"></i><span>Programı Göster</span></button>'
+                                    'customButtonHtml' => '<button type="button" class="btn btn-primary px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="departmentAndProgramScheduleButton" data-only-table="true"><i class="bi bi-calendar-check"></i><span>Göster</span></button>'
                                 ]) ?>
                             </div>
                         </div>
                         <div class="form-text mt-2 text-muted small d-flex align-items-center gap-1">
                             <i class="bi bi-info-circle"></i>
-                            <span>Fakülte/MYO, Bölüm ve Programınızı sırayla seçerek ders veya sınav çizelgenizi listeleyebilirsiniz.</span>
+                            <span>Fakülte/MYO, Bölüm, Program ve Dönem/Sınıf seçerek ders veya sınav çizelgenizi listeleyebilirsiniz.</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tab 2: Hoca / Öğretim Görevlisi -->
                 <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel" aria-labelledby="lecturer-tab" tabindex="0">
-                    <div class="p-3 p-md-4 rounded-4 bg-body-tertiary border">
+                    <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row gy-3">
                             <div class="col-12 col-md-5">
                                 <label class="form-label small fw-semibold text-muted mb-1">Akademik Birim</label>
@@ -208,7 +210,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                     </select>
                                     <button class="btn btn-primary px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" type="button" id="lecturerScheduleButton" data-only-table="true">
                                         <i class="bi bi-calendar-check"></i>
-                                        <span>Programı Göster</span>
+                                        <span>Göster</span>
                                     </button>
                                 </div>
                             </div>
@@ -222,7 +224,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
 
                 <!-- Tab 3: Derslik / Amfi / Laboratuvar -->
                 <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel" aria-labelledby="classroom-tab" tabindex="0">
-                    <div class="p-3 p-md-4 rounded-4 bg-body-tertiary border">
+                    <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row gy-3">
                             <div class="col-12 col-md-4">
                                 <label class="form-label small fw-semibold text-muted mb-1">Akademik Birim</label>
@@ -276,7 +278,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                 <h3 class="fw-bold text-body mb-2 fs-4">Görüntülenecek Programı Seçiniz</h3>
                 <p class="text-muted small mx-auto mb-4" style="max-width: 520px;">
                     Yukarıdaki arama stüdyosundan birim/bölüm, öğretim elemanı veya derslik seçimi yaptıktan sonra 
-                    <strong class="text-body">Programı Göster</strong> butonuna tıklayarak haftalık çizelgenizi anında listeleyebilirsiniz.
+                    <strong class="text-body">Göster</strong> butonuna tıklayarak haftalık çizelgenizi anında listeleyebilirsiniz.
                 </p>
                 <div class="d-inline-flex flex-wrap justify-content-center gap-2">
                     <span class="badge bg-body-secondary text-secondary border px-3 py-2 rounded-pill">

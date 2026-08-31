@@ -27,6 +27,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (programSelect.value > 0) {
                 data.append("owner_type", "program");
                 data.append("owner_id", programSelect.value);
+
+                const semesterNoSelect = document.getElementById("semester_no");
+                if (semesterNoSelect && semesterNoSelect.value && semesterNoSelect.value !== "0" && semesterNoSelect.value !== "") {
+                    data.append("semester_no", semesterNoSelect.value);
+                }
+
                 toast.prepareToast("Yükleniyor", "Ders Programı Yükleniyor...", "info", false)
                 await getSchedulesHTML(data);
             } else {

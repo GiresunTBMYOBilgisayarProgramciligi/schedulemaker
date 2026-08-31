@@ -2,8 +2,14 @@
 
 namespace App\Helpers;
 
-use App\Models\Lesson;
 use App\Controllers\SettingsController;
+use App\Core\Gate;
+use App\Enums\UserRole;
+use App\Models\Department;
+use App\Models\Lesson;
+use App\Models\Program;
+use App\Models\Unit;
+use App\Models\User;
 use Exception;
 
 /**
@@ -39,18 +45,24 @@ function getCurrentYearAndSemester(): bool|string
 }
 
 /**
- * Belirtilen döneme göre uygun dönem numaraları listesini döner
+ * Belirtilen döneme ve maksimum yarıyıla göre uygun dönem numaraları listesini döner
  * @param string|null $semester
+ * @param int|null $maxSemester
  * @return array
  * @throws Exception
  */
-function getSemesterNumbers(?string $semester = null): array
+function getSemesterNumbers(?string $semester = null, ?int $maxSemester = null): array
 {
     // Eğer parametre verilmemişse ayarlar tablosundan al
     $semester = $semester ?? getSettingValue('semester');
 
     // Geçerli dönem sayısını al
-    $semester_count = (new Lesson())->get()->max('semester_no') ?? 4;
+    if ($maxSemester === null) {
+        $maxInDb = (new Lesson())->get()->max('semester_no');
+        $semester_count = max(4, min(12, (int)$maxInDb));
+    } else {
+        $semester_count = max(1, $maxSemester);
+    }
 
     // Güz döneminde **tek**, Bahar döneminde **çift** sayılar seçilmeli
     return array_values(array_filter(range(1, $semester_count), function ($semester_no) use ($semester) {
@@ -60,20 +72,110 @@ function getSemesterNumbers(?string $semester = null): array
             default => true, // Varsayılan: Tüm dönemleri döndür
         };
     }));
-
 }
 
+/**
+ * Yarıyıl numarasına karşılık gelen sınıf numarasını döner (örn: 1, 2 -> '1', 3, 4 -> '2')
+ * @param int|string $semesterNo
+ * @return string
+ */
 function getClassFromSemesterNo($semesterNo): string
 {
-    return match (true) {
-        $semesterNo < 3 => 1,
-        $semesterNo < 5 => 2,
-        $semesterNo < 7 => 3,
-        $semesterNo < 9 => 4,
-        $semesterNo < 11 => 5,
-        $semesterNo < 13 => 6,
-        $semesterNo > 13 => 6,
-    };
+    return (string) max(1, (int) ceil((int) $semesterNo / 2));
+}
+
+/**
+ * Verilen Program, Bölüm veya Birim için kayıtlı derslerin en yüksek semester_no değerini hesaplar.
+ *
+ * @param int|null $programId
+ * @param int|null $departmentId
+ * @param int|null $unitId
+ * @return int Maksimum yarıyıl sayısı
+ */
+function getMaxSemesterNo(?int $programId = null, ?int $departmentId = null, ?int $unitId = null): int
+{
+    // 1. Program ID verilmişse: Program derslerinin maksimum semester_no değeri
+    if (!empty($programId)) {
+        $lessonMax = (new Lesson())->get()->where(['program_id' => $programId])->max('semester_no');
+        if (!empty($lessonMax) && (int)$lessonMax > 0) {
+            return (int)$lessonMax;
+        }
+
+        // Programda ders yoksa bağlı olduğu bölüm üzerinden bak
+        if (empty($departmentId)) {
+            $program = (new Program())->find($programId);
+            if ($program && $program->department_id) {
+                $departmentId = (int)$program->department_id;
+            }
+        }
+    }
+
+    // 2. Bölüm ID verilmişse: Bölüm derslerinin maksimum semester_no değeri
+    if (!empty($departmentId)) {
+        $lessonMax = (new Lesson())->get()->where(['department_id' => $departmentId])->max('semester_no');
+        if (!empty($lessonMax) && (int)$lessonMax > 0) {
+            return (int)$lessonMax;
+        }
+
+        // Bölümde ders yoksa bağlı olduğu birim üzerinden bak
+        if (empty($unitId)) {
+            $department = (new Department())->find($departmentId);
+            if ($department && $department->unit_id) {
+                $unitId = (int)$department->unit_id;
+            }
+        }
+    }
+
+    // 3. Birim ID verilmişse: Birime ait bölümlerdeki derslerin maksimum semester_no değeri
+    if (!empty($unitId)) {
+        $departments = (new Department())->get()->where(['unit_id' => $unitId])->all();
+        $deptIds = array_column($departments, 'id');
+        if (!empty($deptIds)) {
+            $lessonMax = (new Lesson())->get()->where(['department_id' => ['in' => $deptIds]])->max('semester_no');
+            if (!empty($lessonMax) && (int)$lessonMax > 0) {
+                return (int)$lessonMax;
+            }
+        }
+
+        // Birimde henüz ders tanımlanmamışsa birim tipine göre varsayılan
+        $unit = (new Unit())->find($unitId);
+        if ($unit && $unit->type === 'myo') {
+            return 4;
+        }
+    }
+
+    // 4. Genel veritabanındaki maksimum ders yarıyılı veya varsayılan 8
+    $maxInDb = (new Lesson())->get()->max('semester_no');
+    return (!empty($maxInDb) && (int)$maxInDb > 0) ? (int)$maxInDb : 8;
+}
+
+/**
+ * Yarıyıl/Sınıf seçimi için uygun dönem listesini döner.
+ *
+ * @param string|null $semester Güz, Bahar, Yaz veya null
+ * @param int|null $maxSemester Maksimum yarıyıl sayısı (varsayılan 12)
+ * @return array<int, string> [semester_no => 'X. Sınıf (Y. Yarıyıl)']
+ */
+function getSemesterSelectOptions(?string $semester = null, ?int $maxSemester = null): array
+{
+    $semester = $semester ?? getSettingValue('semester') ?? 'Güz';
+    $maxSemester = $maxSemester ?? 12;
+    $options = [];
+
+    for ($i = 1; $i <= $maxSemester; $i++) {
+        $matches = match ($semester) {
+            'Güz' => $i % 2 === 1,
+            'Bahar' => $i % 2 === 0,
+            default => true,
+        };
+
+        if ($matches) {
+            $classNo = getClassFromSemesterNo($i);
+            $options[$i] = "{$classNo}. Sınıf ({$i}. Yarıyıl)";
+        }
+    }
+
+    return $options;
 }
 
 
@@ -185,12 +287,12 @@ function formatLessonName(?string $name): string
 /**
  * Belirtilen kullanıcının veya aktif oturumdaki kullanıcının rol seviyesini kontrol eder.
  *
- * @param string|\App\Enums\UserRole $role Gereken minimum rol (örn. 'secretary' veya UserRole::Secretary)
- * @param \App\Models\User|null $user Belirli bir kullanıcı (null ise aktif oturumdaki kullanıcı)
+ * @param string|UserRole $role Gereken minimum rol (örn. 'secretary' veya UserRole::Secretary)
+ * @param User|null $user Belirli bir kullanıcı (null ise aktif oturumdaki kullanıcı)
  * @param bool $reverse true ise belirtilen rolden daha düşük/eşit roller
  * @return bool
  */
-function hasRole(string|\App\Enums\UserRole $role, ?\App\Models\User $user = null, bool $reverse = false): bool
+function hasRole(string|UserRole $role, ?User $user = null, bool $reverse = false): bool
 {
-    return \App\Core\Gate::hasRole($user, $role, $reverse);
+    return Gate::hasRole($user, $role, $reverse);
 }

@@ -524,16 +524,23 @@ class ScheduleViewHelper
         ]);
 
         $ownerName = match ($dto->owner_type) {
-            OwnerType::USER->value => (new User())->find($dto->owner_id)->getFullName(),
-            OwnerType::PROGRAM->value => (new Program())->find($dto->owner_id)->name,
-            OwnerType::CLASSROOM->value => (new Classroom())->find($dto->owner_id)->name,
-            OwnerType::LESSON->value => (new Lesson())->find($dto->owner_id)->getFullName(true),
+            OwnerType::USER->value => (new User())->find($dto->owner_id)?->getFullName() ?? "",
+            OwnerType::PROGRAM->value => (new Program())->find($dto->owner_id)?->name ?? "",
+            OwnerType::CLASSROOM->value => (new Classroom())->find($dto->owner_id)?->name ?? "",
+            OwnerType::LESSON->value => (new Lesson())->find($dto->owner_id)?->getFullName(true) ?? "",
             default => ""
         };
 
-        //Semester No dizi ise dönemler birleştirilmiş demektir. Birleştirilmişse Başlık olarak Ders programı yazar
-        $cardTitle = $dto->semester_no . " Yarıyıl Programı";
-        $dataSemesterNo = 'data-semester-no="' . $dto->semester_no . '"';
+        $typeLabel = $schedule->getScheduleTypeName();
+        if ($dto->owner_type === OwnerType::PROGRAM->value && $dto->semester_no !== null) {
+            $classNo = getClassFromSemesterNo($dto->semester_no);
+            $cardTitle = "{$classNo}. Sınıf ({$dto->semester_no}. Yarıyıl) {$typeLabel} Programı";
+        } elseif ($dto->owner_type === OwnerType::PROGRAM->value) {
+            $cardTitle = "{$ownerName} {$typeLabel} Programı";
+        } else {
+            $cardTitle = $schedule->getScheduleScreenName();
+        }
+        $dataSemesterNo = 'data-semester-no="' . ($dto->semester_no ?? '') . '"';
 
         if (ExamType::isExamType($dto->type)) {
             $duration = getSettingValue('duration', 'exam', 30);
