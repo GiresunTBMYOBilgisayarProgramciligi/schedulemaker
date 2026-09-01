@@ -126,6 +126,7 @@ class Schedule extends Model
 
         return $instance;
     }
+
     public function getScheduleTypeName(): string
     {
         return match ($this->type) {

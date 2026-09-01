@@ -8,6 +8,8 @@ use App\Models\Department;
 use App\Models\Program;
 use App\Middlewares\AuthMiddleware;
 use App\Enums\PermissionType;
+use App\Enums\UserRole;
+use App\Core\Gate;
 use function App\Helpers\getSettingValue;
 
 /**
@@ -34,19 +36,19 @@ abstract class BasePolicy
     /**
      * Kullanıcının belirtilen rol seviyesine sahip olup olmadığını kontrol eder.
      */
-    protected function hasRole(User $user, string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    protected function hasRole(User $user, string|UserRole $role, bool $reverse = false): bool
     {
-        return \App\Core\Gate::hasRole($user, $role, $reverse);
+        return Gate::hasRole($user, $role, $reverse);
     }
 
     /**
      * Kullanıcının belirtilen rollerden herhangi birine tam olarak sahip olup olmadığını kontrol eder.
      */
-    protected function hasExactRole(User $user, string|\App\Enums\UserRole ...$roles): bool
+    protected function hasExactRole(User $user, string|UserRole ...$roles): bool
     {
-        $userRole = $user->role instanceof \App\Enums\UserRole ? $user->role->value : $user->role;
+        $userRole = $user->role instanceof UserRole ? $user->role->value : $user->role;
         foreach ($roles as $r) {
-            $roleValue = $r instanceof \App\Enums\UserRole ? $r->value : $r;
+            $roleValue = $r instanceof UserRole ? $r->value : $r;
             if ($userRole === $roleValue) {
                 return true;
             }

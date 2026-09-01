@@ -197,4 +197,31 @@ class ScheduleRepository extends BaseRepository
 
         return $stmt->rowCount();
     }
+
+    /**
+     * Belirtilen Schedule ID'lerinin updated_at zaman damgasını günceller.
+     *
+     * @param int|array<int> $scheduleIds Tek bir ID veya ID dizisi
+     * @param string|null $timestamp İsteğe bağlı özel tarih (varsayılan: şimdiki zaman)
+     * @return int Güncellenen kayıt sayısı
+     */
+    public function touch(int|array $scheduleIds, ?string $timestamp = null): int
+    {
+        $ids = is_array($scheduleIds) ? $scheduleIds : [$scheduleIds];
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $timestamp = $timestamp ?? date('Y-m-d H:i:s');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $sql = "UPDATE schedules SET updated_at = ? WHERE id IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$timestamp], $ids));
+
+        return $stmt->rowCount();
+    }
 }
+

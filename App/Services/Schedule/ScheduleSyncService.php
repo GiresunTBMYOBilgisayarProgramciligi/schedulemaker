@@ -10,6 +10,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;
+use DateTime;
 use Exception;
 use function App\Helpers\getSettingValue;
 use App\Repositories\ScheduleRepository;
@@ -56,6 +57,8 @@ class ScheduleSyncService extends BaseService
             return;
         }
 
+        $affectedScheduleIds = [];
+
         foreach ($parentExamSchedules as $parentSchedule) {
             if (empty($parentSchedule->items)) {
                 continue;
@@ -89,6 +92,7 @@ class ScheduleSyncService extends BaseService
                     ];
 
                     $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
+                    $affectedScheduleIds[] = (int) $childSchedule->id;
 
                     $newItem = new ScheduleItem();
                     $newItem->schedule_id = $childSchedule->id;
@@ -110,9 +114,14 @@ class ScheduleSyncService extends BaseService
             }
         }
 
+        if (!empty($affectedScheduleIds)) {
+            $this->scheduleRepo->touch($affectedScheduleIds);
+        }
+
         $this->logger->info('Sınav programı child\'a kopyalandı', [
             'parent_id' => $parentLesson->id,
             'child_id' => $childLesson->id,
+            'affected_schedules' => count(array_unique($affectedScheduleIds))
         ]);
     }
 
@@ -162,6 +171,7 @@ class ScheduleSyncService extends BaseService
 
         $duration = (int) getSettingValue('duration', 'lesson', 50);
         $break    = (int) getSettingValue('break', 'lesson', 10);
+        $affectedScheduleIds = [];
 
         foreach ($parentSchedule->items as $item) {
             if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
@@ -172,13 +182,13 @@ class ScheduleSyncService extends BaseService
 
             if (empty($skippedSlots)) {
                 // Hiç slot silinmiyor — item'ı olduğu gibi kopyala
-                $this->copyItemToOwners($parentSchedule, $item, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson);
+                $this->copyItemToOwners($parentSchedule, $item, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson, $affectedScheduleIds);
                 continue;
             }
 
             // Bazı slotlar silinecek — item'ı bireysel 1-saatlik parçalara ayır, seçilenleri atla
-            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
-                  ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            $start = DateTime::createFromFormat('H:i:s', $item->start_time)
+                  ?: DateTime::createFromFormat('H:i', $item->start_time);
             if (!$start) continue;
 
             $slotStart = clone $start;
@@ -194,24 +204,34 @@ class ScheduleSyncService extends BaseService
                     $partialItem->id         = null; // yeni kayıt
                     $partialItem->start_time = $slotStart->format('H:i:s');
                     $partialItem->end_time   = $slotEnd->format('H:i:s');
-                    $this->copyItemToOwners($parentSchedule, $partialItem, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson);
+                    $this->copyItemToOwners($parentSchedule, $partialItem, $this->buildChildItemData($item, $parentLesson, $childLesson), $childLesson, $affectedScheduleIds);
                 }
 
                 $slotStart = clone $slotEnd;
                 $slotStart->modify("+{$break} minutes");
                 $slotIndex++;
 
-                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
-                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                $itemEnd = DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: DateTime::createFromFormat('H:i', $item->end_time);
                 if (!$itemEnd || $slotStart >= $itemEnd) break;
             }
+        }
+
+        if (!empty($affectedScheduleIds)) {
+            $this->scheduleRepo->touch($affectedScheduleIds);
         }
     }
 
     /**
      * Tek bir schedule item'ı child ders için gerekli owner'lara kopyalar.
      */
-    private function copyItemToOwners(Schedule $parentSchedule, ScheduleItem $item, array $itemData, Lesson $childLesson): void
+    private function copyItemToOwners(
+        Schedule $parentSchedule,
+        ScheduleItem $item,
+        array $itemData,
+        Lesson $childLesson,
+        array &$affectedScheduleIds = []
+    ): void
     {
         $owners = [
             ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
@@ -245,6 +265,7 @@ class ScheduleSyncService extends BaseService
             ];
 
             $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
+            $affectedScheduleIds[] = (int) $childSchedule->id;
 
             $existingItems = (new ScheduleItem())->get()->where([
                 'schedule_id' => $childSchedule->id,

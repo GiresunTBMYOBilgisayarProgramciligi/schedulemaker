@@ -485,6 +485,18 @@ class ScheduleService extends BaseService
     }
 
     /**
+     * İlgili schedule kayıtlarının updated_at tarihini günceller.
+     *
+     * @param int|array<int> $scheduleIds
+     * @param string|null $timestamp
+     * @return int
+     */
+    public function touchSchedules(int|array $scheduleIds, ?string $timestamp = null): int
+    {
+        return $this->scheduleRepo->touch($scheduleIds, $timestamp);
+    }
+
+    /**
      * DTO'ya göre Schedule bulur veya oluşturur.
      */
     public function getOrCreateSchedule(ScheduleFilterDTO $dto): Schedule
@@ -590,12 +602,12 @@ class ScheduleService extends BaseService
             }
 
             // Lecturer (User) owner
-            if ($slotData->lecturer) {
+            if (!empty($slotData->lecturer) && isset($slotData->lecturer->id)) {
                 $owners[] = ['type' => 'user', 'id' => $slotData->lecturer->id, 'semester_no' => null];
             }
 
             // Classroom owner (UZEM değilse)
-            if ($slotData->classroom && $lesson->classroom_type != 3) {
+            if (!empty($slotData->classroom) && isset($slotData->classroom->id) && (!$lesson || $lesson->classroom_type != 3)) {
                 $owners[] = ['type' => 'classroom', 'id' => $slotData->classroom->id, 'semester_no' => null];
             }
         }
@@ -729,6 +741,7 @@ class ScheduleService extends BaseService
 
         Database::transaction(function () use ($dto, &$successCount, &$finalState) {
             $processedSiblingIds = [];
+            $affectedScheduleIds = [];
 
             foreach ($dto->ids as $id) {
                 if (in_array($id, $processedSiblingIds)) {
@@ -744,6 +757,10 @@ class ScheduleService extends BaseService
                 if (!$item) {
                     $this->logger->warning("toggleLockScheduleItems failed: Item not found", $this->logContext(['item_id' => $id]));
                     continue;
+                }
+
+                if ($item->schedule_id) {
+                    $affectedScheduleIds[] = (int) $item->schedule_id;
                 }
 
                 $detail = $item->detail ?? [];
@@ -781,6 +798,10 @@ class ScheduleService extends BaseService
                         continue;
                     }
 
+                    if ($sibling->schedule_id) {
+                        $affectedScheduleIds[] = (int) $sibling->schedule_id;
+                    }
+
                     $siblingDetail = $sibling->detail ?? [];
                     $siblingDetail['is_locked'] = $newState;
                     $sibling->detail = $siblingDetail;
@@ -795,6 +816,10 @@ class ScheduleService extends BaseService
                         'is_sibling' => ($sibling->id !== $item->id)
                     ]));
                 }
+            }
+
+            if (!empty($affectedScheduleIds)) {
+                $this->touchSchedules($affectedScheduleIds);
             }
         });
 

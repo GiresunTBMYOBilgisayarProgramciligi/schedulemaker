@@ -47,8 +47,10 @@ class ExamScheduleService extends ScheduleService
         return Database::transaction(function () use ($dtos) {
             $createdIds = [];
             $affectedLessonIds = [];
+            $affectedScheduleIds = [];
 
             foreach ($dtos as $dto) {
+                $affectedScheduleIds[] = (int) $dto->scheduleId;
                 $dayIndex = $dto->dayIndex;
                 $startTime = $dto->startTime;
                 $endTime = $dto->endTime;
@@ -132,6 +134,7 @@ class ExamScheduleService extends ScheduleService
                         'semester_no' => ($owner['type'] === 'program') ? $owner['semester_no'] : null,
                     ];
                     $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
+                    $affectedScheduleIds[] = (int) $relSchedule->id;
 
                     // Sınav program/ders kaydında yalnızca lesson_id
                     $filteredData = [
@@ -199,6 +202,7 @@ class ExamScheduleService extends ScheduleService
                             'semester_no' => null,
                         ];
                         $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
+                        $affectedScheduleIds[] = (int) $relSchedule->id;
 
                         $fullData = [
                             [
@@ -238,6 +242,7 @@ class ExamScheduleService extends ScheduleService
                             'semester_no' => null,
                         ];
                         $relSchedule = $this->scheduleRepo->findOrCreate($scheduleFilters);
+                        $affectedScheduleIds[] = (int) $relSchedule->id;
 
                         $fullData = [
                             [
@@ -267,6 +272,11 @@ class ExamScheduleService extends ScheduleService
 
                 $createdIds[] = $itemGroupedIds;
                 $affectedLessonIds[] = $mainLesson->id;
+            }
+
+            // Etkilenen tüm schedule'ların updated_at zamanını güncelle
+            if (!empty($affectedScheduleIds)) {
+                $this->touchSchedules($affectedScheduleIds);
             }
 
             $this->logSaveSuccess(array_map(fn($d) => $d->toArray(), $dtos));
@@ -306,6 +316,7 @@ class ExamScheduleService extends ScheduleService
             return Database::transaction(function () use ($dtos) {
                 $processedSiblingIds = [];
                 $deletedIds = [];
+                $affectedScheduleIds = [];
 
                 foreach ($dtos as $dto) {
                     $id = (int) ($dto->id ?? 0);
@@ -322,6 +333,10 @@ class ExamScheduleService extends ScheduleService
                         continue;
                     }
 
+                    if ($scheduleItem->schedule_id) {
+                        $affectedScheduleIds[] = (int) $scheduleItem->schedule_id;
+                    }
+
                     if (!empty($scheduleItem->detail['is_locked'])) {
                         throw new Exception("Kilitli olan öğeler üzerinde değişiklik yapılamaz.");
                     }
@@ -332,6 +347,9 @@ class ExamScheduleService extends ScheduleService
                     foreach ($siblings as $sibling) {
                         $siblingId = (int) $sibling->id;
                         if (!in_array($siblingId, $deletedIds)) {
+                            if ($sibling->schedule_id) {
+                                $affectedScheduleIds[] = (int) $sibling->schedule_id;
+                            }
                             $sibling->delete();
                             $deletedIds[] = $siblingId;
                             $processedSiblingIds[] = $siblingId;
@@ -339,9 +357,14 @@ class ExamScheduleService extends ScheduleService
                     }
                 }
 
+                // Etkilenen tüm schedule'ların updated_at zamanını güncelle
+                if (!empty($affectedScheduleIds)) {
+                    $this->touchSchedules($affectedScheduleIds);
+                }
+
                 $this->logger->debug(
                     "ExamScheduleService::deleteScheduleItems SUCCESS. Silinen item sayısı: " . count($deletedIds),
-                    $this->logContext(['deletedIds' => $deletedIds])
+                    $this->logContext(['deletedIds' => $deletedIds, 'affected_schedule_count' => count(array_unique($affectedScheduleIds))])
                 );
 
                 return DeleteScheduleResult::success($deletedIds, []);
@@ -351,7 +374,7 @@ class ExamScheduleService extends ScheduleService
                 "ExamScheduleService::deleteScheduleItems ERROR: " . $e->getMessage(),
                 $this->logContext(['exception' => $e])
             );
-            return DeleteScheduleResult::failure([$e->getMessage()]);
+            return DeleteScheduleResult::failure($e->getMessage());
         }
     }
     // ─────────────────────────────────────────────────────────────────────────

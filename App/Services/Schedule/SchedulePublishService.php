@@ -552,8 +552,7 @@ class SchedulePublishService extends BaseService
     {
         $schedule = (new Schedule())->find($scheduleId);
         if ($schedule) {
-            $schedule->updated_at = date('Y-m-d H:i:s');
-            $schedule->update();
+            (new ScheduleRepository())->touch($scheduleId);
 
             if ($schedule->is_published) {
                 $queue = new ScheduleChangeQueue();

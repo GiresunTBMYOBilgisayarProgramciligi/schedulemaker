@@ -18,6 +18,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\ScheduleNoteController;
 use App\Controllers\BulkActionController;
 use App\Controllers\LegalController;
+use App\Controllers\PermissionController;
 use App\Core\Router;
 use App\Models\User;
 use Exception;
@@ -147,7 +148,7 @@ class AjaxRouter extends Router
      */
     public function getUserPermissionsAction(): void
     {
-        $this->response = (new \App\Controllers\PermissionController())->getUserPermissions((int)($this->data['user_id'] ?? 0));
+        $this->response = (new PermissionController())->getUserPermissions((int)($this->data['user_id'] ?? 0));
         $this->sendResponse();
     }
 
@@ -156,7 +157,7 @@ class AjaxRouter extends Router
      */
     public function savePermissionsAction(): void
     {
-        $this->response = (new \App\Controllers\PermissionController())->savePermissions($this->data);
+        $this->response = (new PermissionController())->savePermissions($this->data);
         $this->sendResponse();
     }
 

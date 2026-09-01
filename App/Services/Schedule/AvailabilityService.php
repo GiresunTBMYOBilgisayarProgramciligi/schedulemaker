@@ -10,6 +10,7 @@ use App\Repositories\UserRepository;
 use App\Repositories\LessonRepository;
 use App\Models\Classroom;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Models\User;
@@ -527,7 +528,7 @@ class AvailabilityService extends BaseService
         $lesson = (new Lesson())->where([
             'id' => $dto->lesson_id,
         ])->with(['program', 'childLessons'])->first() ?: throw new Exception("Ders bulunamadı");
-        $program = $lesson->program ?: ($lesson->program_id ? (new \App\Models\Program())->find($lesson->program_id) : null);
+        $program = $lesson->program ?: ($lesson->program_id ? (new Program())->find($lesson->program_id) : null);
 
         $slots = $this->timelineManager->getTimeSlots($dto->type);
         $unavailableCells = [];

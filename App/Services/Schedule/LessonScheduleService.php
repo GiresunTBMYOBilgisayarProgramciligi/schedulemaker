@@ -41,6 +41,7 @@ class LessonScheduleService extends ScheduleService
             return Database::transaction(function () use ($dtos) {
                 $createdIds = [];
                 $affectedLessonIds = [];
+                $affectedScheduleIds = [];
                 $this->logger->debug("Starting transaction for saving schedule items", $this->logContext(['dtos_count' => count($dtos)]));
                 foreach ($dtos as $index => $dto) {
                     $this->logger->debug("Processing item #$index", $this->logContext(['itemData' => $dto->toArray()]));
@@ -51,6 +52,7 @@ class LessonScheduleService extends ScheduleService
                     if (!$schedule) {
                         throw new Exception("Schedule not found: {$dto->scheduleId}");
                     }
+                    $affectedScheduleIds[] = (int) $schedule->id;
 
                     $isDummy = $dto->isDummy();
                     $isGroup = ($dto->status === ScheduleItemStatus::GROUP->value);
@@ -75,11 +77,11 @@ class LessonScheduleService extends ScheduleService
 
                     if ($isGroup) {
                         // GROUP ITEM: mergeGroupItems kullanarak multi-schedule'a kaydet
-                        $itemIds = $this->saveGroupItemToSchedules($dto, $lesson, $schedule);
+                        $itemIds = $this->saveGroupItemToSchedules($dto, $lesson, $schedule, $affectedScheduleIds);
                     } else {
                         // SINGLE/DUMMY ITEM
                         // MULTI-SCHEDULE KAYDETME: Tüm ilgili schedule'lara kaydet
-                        $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule);
+                        $itemIds = $this->saveToMultipleSchedules($dto, $lesson, $schedule, $affectedScheduleIds);
                     }
 
                     $createdIds = array_merge($createdIds, $itemIds);
@@ -105,9 +107,15 @@ class LessonScheduleService extends ScheduleService
                     $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type);
                 }
 
+                // Etkilenen tüm schedule'ların updated_at zamanını güncelle
+                if (!empty($affectedScheduleIds)) {
+                    $this->touchSchedules($affectedScheduleIds);
+                }
+
                 $this->logger->debug("Schedule items saved successfully", $this->logContext([
                     'created_count' => count($createdIds),
-                    'schedule_id' => $dtos[0]->scheduleId ?? null
+                    'schedule_id' => $dtos[0]->scheduleId ?? null,
+                    'affected_schedule_count' => count(array_unique($affectedScheduleIds))
                 ]));
 
                 return SaveScheduleResult::success($createdIds, count($dtos));
@@ -164,7 +172,8 @@ class LessonScheduleService extends ScheduleService
     protected function saveToMultipleSchedules(
         ScheduleItemDTO $dto,
         ?Lesson $lesson,
-        Schedule $sourceSchedule
+        Schedule $sourceSchedule,
+        array &$affectedScheduleIds = []
     ): array {
         $owners = array_map(function ($o) use ($lesson) {
             if (!isset($o['is_child']) || !$o['is_child']) {
@@ -227,6 +236,7 @@ class LessonScheduleService extends ScheduleService
                 $sourceSchedule->semester,
                 $sourceSchedule->type
             );
+            $affectedScheduleIds[] = (int) $targetSchedule->id;
 
             $item = new ScheduleItem();
             $item->schedule_id = $targetSchedule->id;
@@ -315,7 +325,8 @@ class LessonScheduleService extends ScheduleService
     protected function saveGroupItemToSchedules(
         ScheduleItemDTO $dto,
         ?Lesson $lesson,
-        Schedule $sourceSchedule
+        Schedule $sourceSchedule,
+        array &$affectedScheduleIds = []
     ): array {
         $owners = array_map(function ($o) use ($lesson) {
             if (!isset($o['is_child']) || !$o['is_child']) {
@@ -355,6 +366,7 @@ class LessonScheduleService extends ScheduleService
                 $sourceSchedule->semester,
                 $sourceSchedule->type
             );
+            $affectedScheduleIds[] = (int) $targetSchedule->id;
 
             $data = $dto->data;
             $startTime = $dto->startTime;
@@ -566,6 +578,7 @@ class LessonScheduleService extends ScheduleService
                 $processedSiblingIds = [];
                 $deletedIds = [];
                 $createdItemIds = [];
+                $affectedScheduleIds = [];
 
                 $duration = (int) getSettingValue('duration', 'lesson', 50);
                 $break = (int) getSettingValue('break', 'lesson', 10);
@@ -583,6 +596,10 @@ class LessonScheduleService extends ScheduleService
 
                     if (!$scheduleItem) {
                         continue;
+                    }
+
+                    if ($scheduleItem->schedule_id) {
+                        $affectedScheduleIds[] = (int) $scheduleItem->schedule_id;
                     }
 
                     if (!empty($scheduleItem->detail['is_locked'])) {
@@ -681,6 +698,9 @@ class LessonScheduleService extends ScheduleService
                     }
 
                     foreach ($siblings as $sibling) {
+                        if ($sibling->schedule_id) {
+                            $affectedScheduleIds[] = (int) $sibling->schedule_id;
+                        }
                         $sibling->delete();
                         $deletedIds[] = $sibling->id;
                     }
@@ -698,6 +718,9 @@ class LessonScheduleService extends ScheduleService
                         if (!empty($result['created'])) {
                             foreach ($result['created'] as $createdItem) {
                                 $createdItemIds[] = $createdItem->id;
+                                if ($createdItem->schedule_id) {
+                                    $affectedScheduleIds[] = (int) $createdItem->schedule_id;
+                                }
                             }
                         }
                     }
@@ -705,9 +728,14 @@ class LessonScheduleService extends ScheduleService
                     $processedSiblingIds = array_unique(array_merge($processedSiblingIds, $siblingIds));
                 }
 
+                // Etkilenen tüm schedule'ların updated_at zamanını güncelle
+                if (!empty($affectedScheduleIds)) {
+                    $this->touchSchedules($affectedScheduleIds);
+                }
+
                 $this->logger->debug(
                     "LessonScheduleService::deleteScheduleItems SUCCESS: " . count($deletedIds) . " silindi, " . count($createdItemIds) . " oluşturuldu",
-                    $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds])
+                    $this->logContext(['deletedIds' => $deletedIds, 'createdIds' => $createdItemIds, 'affected_schedule_count' => count(array_unique($affectedScheduleIds))])
                 );
 
                 return DeleteScheduleResult::success($deletedIds, $createdItemIds);
