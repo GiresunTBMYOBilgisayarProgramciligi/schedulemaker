@@ -106,6 +106,140 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        // Liste Formatı (satır bazlı) dışa aktarma butonları için
+        if (button.id.endsWith("List")) {
+            const ownerType = button.id === "singlePageList" ? button.dataset.ownerType :
+                button.id === "lecturerList" ? "user" :
+                button.id === "classroomList" ? (
+                    (classroomSelect && classroomSelect.value > 0) ? "classroom" :
+                    (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? "building" :
+                    (classroomUnitSelect && classroomUnitSelect.value > 0) ? "classroom_unit" : "classroom"
+                ) :
+                (programSelect && programSelect.value > 0) ? "program" :
+                (departmentSelect && departmentSelect.value > 0) ? "department" :
+                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
+
+            showExportOptionsModal(ownerType, scheduleType, semesterNo, async (options) => {
+                let data = new FormData();
+                data.append("type", scheduleType);
+                data.append("semester", document.getElementById("semester")?.value || "");
+                data.append("academic_year", document.getElementById("academic_year")?.value || "");
+                data.append("owner_type", ownerType);
+
+                if (options.semester_no) {
+                    data.append("semester_no", options.semester_no);
+                }
+
+                Object.keys(options).forEach(key => {
+                    if (key !== "semester_no") {
+                        data.append(key, options[key] ? 1 : 0);
+                    }
+                });
+
+                if (button.id === "singlePageList") {
+                    data.append("owner_id", button.dataset.ownerId);
+                } else if (button.id === "classroomList") {
+                    let ownerId = (classroomSelect && classroomSelect.value > 0) ? classroomSelect.value :
+                        (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? classroomBuildingSelect.value :
+                        (classroomUnitSelect && classroomUnitSelect.value > 0) ? classroomUnitSelect.value : "";
+                    if (ownerId) {
+                        data.append("owner_id", ownerId);
+                    }
+                } else {
+                    const selectId = button.id === "lecturerList" ? "lecturer_id" :
+                        button.id === "departmentAndProgramList" ? (
+                            programSelect && programSelect.value > 0 ? "program_id" :
+                                departmentSelect && departmentSelect.value > 0 ? "department_id" :
+                                    unitSelect && unitSelect.value > 0 ? "unit_id" : ""
+                        ) : "";
+
+                    if (selectId) {
+                        const selectElement = document.getElementById(selectId);
+                        if (selectElement && selectElement.value > 0) {
+                            if (selectId === "department_id") data.set("owner_type", "department");
+                            else if (selectId === "unit_id") data.set("owner_type", "unit");
+                            data.append("owner_id", selectElement.value);
+                        }
+                    }
+                }
+
+                let spinnerContainer = document.getElementById("schedule_container");
+                if (!spinnerContainer) {
+                    spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
+                }
+                spinner.showSpinner(spinnerContainer);
+                await fetchExportScheduleList(data);
+            });
+            return;
+        }
+
+        // JSON formatı dışa aktarma butonları için
+        if (button.id.endsWith("Json")) {
+            const ownerType = button.id === "singlePageJson" ? button.dataset.ownerType :
+                button.id === "lecturerJson" ? "user" :
+                button.id === "classroomJson" ? (
+                    (classroomSelect && classroomSelect.value > 0) ? "classroom" :
+                    (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? "building" :
+                    (classroomUnitSelect && classroomUnitSelect.value > 0) ? "classroom_unit" : "classroom"
+                ) :
+                (programSelect && programSelect.value > 0) ? "program" :
+                (departmentSelect && departmentSelect.value > 0) ? "department" :
+                (unitSelect && unitSelect.value > 0) ? "unit" : "program";
+
+            showExportOptionsModal(ownerType, scheduleType, semesterNo, async (options) => {
+                let data = new FormData();
+                data.append("type", scheduleType);
+                data.append("semester", document.getElementById("semester")?.value || "");
+                data.append("academic_year", document.getElementById("academic_year")?.value || "");
+                data.append("owner_type", ownerType);
+
+                if (options.semester_no) {
+                    data.append("semester_no", options.semester_no);
+                }
+
+                Object.keys(options).forEach(key => {
+                    if (key !== "semester_no") {
+                        data.append(key, options[key] ? 1 : 0);
+                    }
+                });
+
+                if (button.id === "singlePageJson") {
+                    data.append("owner_id", button.dataset.ownerId);
+                } else if (button.id === "classroomJson") {
+                    let ownerId = (classroomSelect && classroomSelect.value > 0) ? classroomSelect.value :
+                        (classroomBuildingSelect && classroomBuildingSelect.value > 0) ? classroomBuildingSelect.value :
+                        (classroomUnitSelect && classroomUnitSelect.value > 0) ? classroomUnitSelect.value : "";
+                    if (ownerId) {
+                        data.append("owner_id", ownerId);
+                    }
+                } else {
+                    const selectId = button.id === "lecturerJson" ? "lecturer_id" :
+                        button.id === "departmentAndProgramJson" ? (
+                            programSelect && programSelect.value > 0 ? "program_id" :
+                                departmentSelect && departmentSelect.value > 0 ? "department_id" :
+                                    unitSelect && unitSelect.value > 0 ? "unit_id" : ""
+                        ) : "";
+
+                    if (selectId) {
+                        const selectElement = document.getElementById(selectId);
+                        if (selectElement && selectElement.value > 0) {
+                            if (selectId === "department_id") data.set("owner_type", "department");
+                            else if (selectId === "unit_id") data.set("owner_type", "unit");
+                            data.append("owner_id", selectElement.value);
+                        }
+                    }
+                }
+
+                let spinnerContainer = document.getElementById("schedule_container");
+                if (!spinnerContainer) {
+                    spinnerContainer = button.closest(".card")?.querySelector(".card-body") || document.body;
+                }
+                spinner.showSpinner(spinnerContainer);
+                await fetchExportScheduleJson(data);
+            });
+            return;
+        }
+
         // ICS (Takvim) butonları için
         if (button.id.endsWith("Calendar")) {
             const ownerType = button.id === "singlePageCalendar" ? button.dataset.ownerType :
@@ -385,6 +519,149 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast(
                     "Hata",
                     "Takvime kaydederken hata oluştu. Detaylar için geliştirici konsoluna bakın",
+                    "danger"
+                );
+                console.error(error);
+            });
+    }
+    // Liste Formatı Export isteği gönderme ve indirme işlemi
+    function fetchExportScheduleList(data) {
+        return fetch("/ajax/exportScheduleList", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: data,
+        })
+            .then((response) => {
+                const contentType = response.headers.get("Content-Type") || "";
+
+                if (contentType.includes("application/json")) {
+                    return response.json().then((json) => {
+                        spinner.removeSpinner();
+                        if (json.status === "debug") {
+                            new Toast().prepareToast(
+                                "Debug Modu",
+                                json.message + " | Tür: " + json.type + " | Sahip: " + json.owner_type + " | Filtre Sayısı: " + json.filter_count,
+                                "info"
+                            );
+                            console.log("List Export Debug Response:", json);
+                        } else {
+                            new Toast().prepareToast("Hata", json.message || "Beklenmeyen yanıt", "danger");
+                        }
+                        return null;
+                    });
+                }
+
+                const disposition = response.headers.get("Content-Disposition");
+                let filename = "Ders Programı Liste.xlsx";
+
+                if (disposition && disposition.includes("filename=")) {
+                    let matches = disposition.match(/filename=\"?(.+?)\"?(;|$)/);
+                    if (matches && matches[1]) {
+                        try {
+                            const decoder = new TextDecoder("utf-8");
+                            const bytes = new Uint8Array(
+                                matches[1].split("").map((c) => c.charCodeAt(0))
+                            );
+                            filename = decoder.decode(bytes);
+                        } catch (e) {
+                            filename = matches[1];
+                        }
+                    }
+                }
+                return response.blob().then((blob) => ({ blob, filename }));
+            })
+            .then((result) => {
+                if (!result) return;
+                const { blob, filename } = result;
+                spinner.removeSpinner();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch((error) => {
+                spinner.removeSpinner();
+                new Toast().prepareToast(
+                    "Hata",
+                    "Liste formatı dışa aktarma sırasında hata oluştu. Detaylar için geliştirici konsoluna bakın",
+                    "danger"
+                );
+                console.error(error);
+            });
+    }
+    // JSON Format Export isteği gönderme ve indirme işlemi
+    function fetchExportScheduleJson(data) {
+        return fetch("/ajax/exportScheduleJson", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: data,
+        })
+            .then((response) => {
+                const contentType = response.headers.get("Content-Type") || "";
+
+                if (contentType.includes("application/json") && !contentType.includes("charset")) {
+                    // Hata durumunda JSON yanıtı — charset yoksa hata mesajı
+                    return response.json().then((json) => {
+                        spinner.removeSpinner();
+                        if (json.status === "debug") {
+                            new Toast().prepareToast(
+                                "Debug Modu",
+                                json.message + " | Tür: " + json.type + " | Sahip: " + json.owner_type,
+                                "info"
+                            );
+                            console.log("JSON Export Debug Response:", json);
+                        } else {
+                            new Toast().prepareToast("Hata", json.message || "Beklenmeyen yanıt", "danger");
+                        }
+                        return null;
+                    });
+                }
+
+                const disposition = response.headers.get("Content-Disposition");
+                let filename = "Ders Programı Liste.json";
+
+                if (disposition && disposition.includes("filename=")) {
+                    let matches = disposition.match(/filename=\"?(.+?)\"?(;|$)/);
+                    if (matches && matches[1]) {
+                        try {
+                            const decoder = new TextDecoder("utf-8");
+                            const bytes = new Uint8Array(
+                                matches[1].split("").map((c) => c.charCodeAt(0))
+                            );
+                            filename = decoder.decode(bytes);
+                        } catch (e) {
+                            filename = matches[1];
+                        }
+                    }
+                }
+                return response.blob().then((blob) => ({ blob, filename }));
+            })
+            .then((result) => {
+                if (!result) return;
+                const { blob, filename } = result;
+                spinner.removeSpinner();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch((error) => {
+                spinner.removeSpinner();
+                new Toast().prepareToast(
+                    "Hata",
+                    "JSON dışa aktarma sırasında hata oluştu. Detaylar için geliştirici konsoluna bakın",
                     "danger"
                 );
                 console.error(error);

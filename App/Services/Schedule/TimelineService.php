@@ -369,17 +369,19 @@ class TimelineService extends BaseService
         }
 
         // Detail karşılaştırması (displaced_preferred ve is_locked hariç)
-        $detail1 = $item1->detail ?? [];
-        $detail2 = $item2->detail ?? [];
+        $detail1 = (array) ($item1->detail ?? []);
+        $detail2 = (array) ($item2->detail ?? []);
         unset($detail1['displaced_preferred'], $detail1['is_locked']);
         unset($detail2['displaced_preferred'], $detail2['is_locked']);
 
-        if (serialize($detail1) !== serialize($detail2)) {
-            $this->logger->debug("Merge engel (Detail uyuşmazlığı)", $this->logContext([
-                'item1_id' => $item1->id, 'detail1' => $detail1,
-                'item2_id' => $item2->id, 'detail2' => $detail2
-            ]));
-            return false;
+        if (!empty($detail1) || !empty($detail2)) {
+            if (serialize($detail1) !== serialize($detail2)) {
+                $this->logger->debug("Merge engel (Detail uyuşmazlığı)", $this->logContext([
+                    'item1_id' => $item1->id, 'detail1' => $detail1,
+                    'item2_id' => $item2->id, 'detail2' => $detail2
+                ]));
+                return false;
+            }
         }
 
         return true;
@@ -400,8 +402,16 @@ class TimelineService extends BaseService
         $normalized = [];
         foreach ($data as $item) {
             if (is_array($item)) {
-                ksort($item);
-                $normalized[] = $item;
+                $cleanItem = [];
+                foreach ($item as $k => $v) {
+                    if (in_array($k, ['lesson_id', 'lecturer_id', 'classroom_id'])) {
+                        $cleanItem[$k] = ($v !== null && $v !== '') ? (int) $v : null;
+                    } else {
+                        $cleanItem[$k] = $v;
+                    }
+                }
+                ksort($cleanItem);
+                $normalized[] = $cleanItem;
             }
         }
 
@@ -413,7 +423,12 @@ class TimelineService extends BaseService
             }
             $u1 = (int)($a['lecturer_id'] ?? 0);
             $u2 = (int)($b['lecturer_id'] ?? 0);
-            return $u1 <=> $u2;
+            if ($u1 !== $u2) {
+                return $u1 <=> $u2;
+            }
+            $c1 = (int)($a['classroom_id'] ?? 0);
+            $c2 = (int)($b['classroom_id'] ?? 0);
+            return $c1 <=> $c2;
         });
 
         return $normalized;

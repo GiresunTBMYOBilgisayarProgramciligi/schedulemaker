@@ -650,6 +650,26 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Liste formatı Excel program dışa aktarma — ExporterFactory üzerinden çalışır.
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function exportScheduleListAction(): void
+    {
+        (new ScheduleController())->exportScheduleList($this->data);
+    }
+
+    /**
+     * JSON formatı program dışa aktarma — ExporterFactory üzerinden çalışır.
+     * @throws Exception
+     */
+    #[PublicAction]
+    public function exportScheduleJsonAction(): void
+    {
+        (new ScheduleController())->exportScheduleJson($this->data);
+    }
+
+    /**
      * @throws Exception
      */
     #[PublicAction]

@@ -168,6 +168,19 @@ class TimelineServiceTest extends TestCase
         $item2->status = 'single';
         $item1->detail = ['is_locked' => true];
         $this->assertFalse($this->service->areItemsMergeable($item1, $item2));
+
+        // Grup dersleri aynı veriye sahipse birleştirilebilir olmalı
+        $groupItem1 = new ScheduleItem();
+        $groupItem1->status = 'group';
+        $groupItem1->data = [['lesson_id' => '759', 'lecturer_id' => '153', 'classroom_id' => '14']];
+        $groupItem1->detail = null;
+
+        $groupItem2 = new ScheduleItem();
+        $groupItem2->status = 'group';
+        $groupItem2->data = [['lesson_id' => 759, 'lecturer_id' => 153, 'classroom_id' => 14]];
+        $groupItem2->detail = [];
+
+        $this->assertTrue($this->service->areItemsMergeable($groupItem1, $groupItem2));
     }
 
     /**

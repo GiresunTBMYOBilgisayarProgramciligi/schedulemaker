@@ -735,6 +735,48 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Liste formatı Excel program dışa aktarma
+     * @param array $requestData
+     * @throws Exception
+     */
+    public function exportScheduleList(array $requestData): void
+    {
+        $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
+
+        $showOptions = ScheduleExportOptionsDTO::fromArray([
+            'show_code'       => $dto->show_code ?? true,
+            'show_lecturer'   => $dto->show_lecturer ?? true,
+            'show_program'    => $dto->show_program ?? true,
+            'show_observer'   => $dto->show_observer ?? true,
+            'show_internship' => $dto->show_internship ?? false,
+        ]);
+
+        $exporter = ExporterFactory::create($dto, 'list');
+        $exporter->export($dto, $showOptions);
+    }
+
+    /**
+     * JSON formatı program dışa aktarma
+     * @param array $requestData
+     * @throws Exception
+     */
+    public function exportScheduleJson(array $requestData): void
+    {
+        $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
+
+        $showOptions = ScheduleExportOptionsDTO::fromArray([
+            'show_code'       => $dto->show_code ?? true,
+            'show_lecturer'   => $dto->show_lecturer ?? true,
+            'show_program'    => $dto->show_program ?? true,
+            'show_observer'   => $dto->show_observer ?? true,
+            'show_internship' => $dto->show_internship ?? false,
+        ]);
+
+        $exporter = ExporterFactory::create($dto, 'json');
+        $exporter->export($dto, $showOptions);
+    }
+
+    /**
      * Program öğesini kilitler veya kilidini açar.
      */
     public function toggleLockScheduleItem(array $requestData): array

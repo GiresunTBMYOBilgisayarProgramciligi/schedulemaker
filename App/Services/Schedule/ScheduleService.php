@@ -964,7 +964,12 @@ class ScheduleService extends BaseService
             );
         });
 
-        // Eğer hiç çakışma yoksa direkt oluştur
+        // Sistem parametrelerini al
+        $lessonType = 'lesson'; // Group itemlar genelde ders programı içindir
+        $duration = (int) getSettingValue('duration', $lessonType, 50);
+        $break = (int) getSettingValue('break', $lessonType, 10);
+
+        // Eğer hiç çakışma yoksa direkt oluştur ve komşu öğelerle birleştir
         if (empty($involvedItems)) {
             $newItem = new ScheduleItem();
             $newItem->schedule_id = $scheduleId;
@@ -976,7 +981,9 @@ class ScheduleService extends BaseService
             $newItem->data = $newData;
             $newItem->detail = $newDetail;
             $newItem->create();
-            return [$newItem->id];
+
+            $mergedItem = $this->timelineService->mergeAdjacentItems($newItem, $break);
+            return [$mergedItem->id];
         }
 
         // 2. Zaman çizelgesini düzleştir (Flatten Timeline)
@@ -1004,11 +1011,6 @@ class ScheduleService extends BaseService
             $internalPoints[] = $item->getShortStartTime();
             $internalPoints[] = $item->getShortEndTime();
         }
-
-        // Sistem parametrelerini al
-        $lessonType = 'lesson'; // Group itemlar genelde ders programı içindir
-        $duration = (int) getSettingValue('duration', $lessonType, 50);
-        $break = (int) getSettingValue('break', $lessonType, 10);
 
         $points = $this->timelineService->getCriticalPoints($startStr, $endStr, $internalPoints, $duration, $break);
 

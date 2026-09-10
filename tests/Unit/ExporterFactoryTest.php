@@ -53,6 +53,52 @@ class ExporterFactoryTest extends BaseTestCase
         $this->assertInstanceOf(ExamScheduleIcsExporter::class, ExporterFactory::create($examDto, 'ics'));
     }
 
+    public function testCreateListExporters(): void
+    {
+        $lessonDto = ScheduleExportFilterDTO::fromArray([
+            'type' => 'lesson',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->assertInstanceOf(
+            \App\Services\Export\Excel\LessonScheduleListExcelExporter::class,
+            ExporterFactory::create($lessonDto, 'list')
+        );
+
+        $examDto = ScheduleExportFilterDTO::fromArray([
+            'type' => 'midterm-exam',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->assertInstanceOf(
+            \App\Services\Export\Excel\ExamScheduleListExcelExporter::class,
+            ExporterFactory::create($examDto, 'list')
+        );
+    }
+
+    public function testCreateJsonExporters(): void
+    {
+        $lessonDto = ScheduleExportFilterDTO::fromArray([
+            'type' => 'lesson',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->assertInstanceOf(
+            \App\Services\Export\Json\LessonScheduleJsonExporter::class,
+            ExporterFactory::create($lessonDto, 'json')
+        );
+
+        $examDto = ScheduleExportFilterDTO::fromArray([
+            'type' => 'final-exam',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->assertInstanceOf(
+            \App\Services\Export\Json\ExamScheduleJsonExporter::class,
+            ExporterFactory::create($examDto, 'json')
+        );
+    }
+
     public function testUnsupportedFormatThrowsException(): void
     {
         $dto = ScheduleExportFilterDTO::fromArray([
