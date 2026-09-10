@@ -150,7 +150,7 @@ class ScheduleItem extends Model
 
             $classroom = null;
             if (!empty($dayData['classroom_id'])) {
-                $classroom = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->first();
+                $classroom = (new Classroom())->get()->where(['id' => $dayData['classroom_id']])->with(['building'])->first();
                 if ($classroom === null) {
                     throw new \Exception("ScheduleItem ID: {$this->id} için derslik (ID: {$dayData['classroom_id']}) bulunamadı.");
                 }

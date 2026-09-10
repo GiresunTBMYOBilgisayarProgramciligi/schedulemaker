@@ -21,7 +21,7 @@ use function App\Helpers\getClassFromSemesterNo;
  * Ders programını JSON formatında dışa aktarır.
  *
  * Her kayıt:
- *   ders_kodu, ders_adi, program, derslik, hoca, gun, baslangic_saati, bitis_saati
+ *   ders_kodu, ders_adi, program, bina, derslik, hoca, gun, baslangic_saati, bitis_saati
  */
 class LessonScheduleJsonExporter implements ScheduleExporterInterface
 {
@@ -128,8 +128,10 @@ class LessonScheduleJsonExporter implements ScheduleExporterInterface
                     }
 
                     $classroomName = '';
-                    if ($scheduleFilter['type'] !== 'classroom' && !empty($data->classroom)) {
+                    $buildingName  = '';
+                    if (!empty($data->classroom)) {
                         $classroomName = $data->classroom->name;
+                        $buildingName  = $data->classroom->building?->name ?? '';
                     }
 
                     $lecturerName = '';
@@ -141,6 +143,7 @@ class LessonScheduleJsonExporter implements ScheduleExporterInterface
                         'ders_kodu'       => $code,
                         'ders_adi'        => $lessonName,
                         'program'         => $programName,
+                        'bina'            => $buildingName,
                         'derslik'         => $classroomName,
                         'hoca'            => $lecturerName,
                         'gun'             => $dayName,
