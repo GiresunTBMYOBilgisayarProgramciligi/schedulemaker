@@ -5,6 +5,7 @@ namespace App\Services\Export\Ics;
 use App\Core\Log;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
+use App\Enums\ExamType;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleExportFilterBuilder;
 use JetBrains\PhpStorm\NoReturn;
@@ -39,14 +40,35 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     /**
      * İlgili program türü için başlangıç ve bitiş tarihlerini ayarlardan çeker.
      *
+     * Veritabanındaki ayar key'leri:
+     *  - Ders programı : lesson_start_date / lesson_end_date  (group: lesson)
+     *  - Sınav programı: {type}_start_date / {type}_end_date  (group: exam)
+     *    Örnek: midterm_start_date, final_start_date, makeup_start_date
+     *
+     * Not: ExamType enum değerleri 'midterm-exam' gibi tire içerir;
+     *      bu metod ExamType::startDateSettingKey() üzerinden doğru key'i türetir.
+     *
      * @param \DateTimeZone $timezone
-     * @param string $type
+     * @param string $type  'lesson' | ExamType değeri ('midterm-exam', 'final-exam', 'makeup-exam')
      * @return array{startDate: ?\DateTime, endDate: ?\DateTime}
      */
     protected function getScheduleDates(\DateTimeZone $timezone, string $type = 'lesson'): array
     {
-        $startDateStr = getSettingValue('startDate', $type, '');
-        $endDateStr   = getSettingValue('endDate', $type, '');
+        if ($type === 'lesson') {
+            $group        = 'lesson';
+            $startDateKey = 'lesson_start_date';
+            $endDateKey   = 'lesson_end_date';
+        } else {
+            // ExamType enum'dan doğru setting key'lerini al
+            $examType     = ExamType::tryFrom($type);
+            $group        = 'exam';
+            $startDateKey = $examType?->startDateSettingKey() ?? "{$type}_start_date";
+            // Bitiş tarihi key'i: 'midterm_start_date' → 'midterm_end_date'
+            $endDateKey   = str_replace('_start_date', '_end_date', $startDateKey);
+        }
+
+        $startDateStr = getSettingValue($startDateKey, $group, '');
+        $endDateStr   = getSettingValue($endDateKey, $group, '');
 
         $startDate = !empty($startDateStr) ? new \DateTime($startDateStr, $timezone) : null;
         $endDate   = !empty($endDateStr)   ? new \DateTime($endDateStr, $timezone)   : null;
