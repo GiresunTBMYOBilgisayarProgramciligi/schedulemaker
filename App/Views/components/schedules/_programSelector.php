@@ -33,6 +33,8 @@ $dataOnlyTable = isset($dataOnlyTable) ? (string)$dataOnlyTable : null;
 $dataScheduleType = $dataScheduleType ?? null;
 $customButtonHtml = $customButtonHtml ?? null;
 $showFormText = $showFormText ?? false;
+$showButton = $showButton ?? true;
+$buttonPosition = $buttonPosition ?? 'inline';
 
 $hasProgramSelected = !empty($selectedProgramId) && (string)$selectedProgramId !== '0';
 $hasUnitSelected = !empty($selectedUnitId) && (string)$selectedUnitId !== '0';
@@ -47,6 +49,19 @@ if ($hasProgramSelected || ($showFormText && $hasUnitSelected)) {
         $hasUnitSelected ? (int)$selectedUnitId : null
     );
     $semesterOptions = getSemesterSelectOptions($selectedSemester, $maxSemester);
+}
+$renderedButtonHtml = '';
+if ($showButton) {
+    if (!empty($customButtonHtml)) {
+        $renderedButtonHtml = $customButtonHtml;
+    } else {
+        $onlyTableAttr = $dataOnlyTable !== null ? ' data-only-table="' . htmlspecialchars($dataOnlyTable) . '"' : '';
+        $scheduleTypeAttr = !empty($dataScheduleType) ? ' data-schedule-type="' . htmlspecialchars($dataScheduleType) . '"' : '';
+        $renderedButtonHtml = '<button type="button" class="btn btn-primary" id="' . htmlspecialchars($buttonId) . '"'
+            . $onlyTableAttr . $scheduleTypeAttr . '>'
+            . htmlspecialchars($buttonText)
+            . '</button>';
+    }
 }
 ?>
 <div class="row g-2 g-md-3">
@@ -89,27 +104,30 @@ if ($hasProgramSelected || ($showFormText && $hasUnitSelected)) {
         <?php endif; ?>
     </div>
     <div class="col-12 col-md-3">
-        <div class="input-group">
-            <select class="form-select" id="semester_no" name="semester_no" data-selected="<?= htmlspecialchars((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . $maxSemester . '"' : '' ?>>
-                <option value=""><?= !empty($semesterOptions) ? 'Tüm Yarıyıllar / Sınıflar' : 'İlk olarak Program seçiniz' ?></option>
-                <?php foreach ($semesterOptions as $semNo => $semLabel): ?>
-                    <option value="<?= $semNo ?>" <?= ((string)$selectedSemesterNo !== '' && (string)$selectedSemesterNo === (string)$semNo) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($semLabel) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <?php if (!empty($customButtonHtml)): ?>
-                <?= $customButtonHtml ?>
-            <?php else: ?>
-                <button type="button" class="btn btn-primary" id="<?= htmlspecialchars($buttonId) ?>"<?= $dataOnlyTable !== null ? ' data-only-table="' . htmlspecialchars($dataOnlyTable) . '"' : '' ?><?= !empty($dataScheduleType) ? ' data-schedule-type="' . htmlspecialchars($dataScheduleType) . '"' : '' ?>>
-                    <?= htmlspecialchars($buttonText) ?>
-                </button>
-            <?php endif; ?>
-        </div>
+        <?php if ($showButton && $buttonPosition === 'inline'): ?>
+            <div class="input-group">
+        <?php endif; ?>
+                <select class="form-select" id="semester_no" name="semester_no" data-selected="<?= htmlspecialchars((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . $maxSemester . '"' : '' ?>>
+                    <option value=""><?= !empty($semesterOptions) ? 'Tüm Yarıyıllar / Sınıflar' : 'İlk olarak Program seçiniz' ?></option>
+                    <?php foreach ($semesterOptions as $semNo => $semLabel): ?>
+                        <option value="<?= $semNo ?>" <?= ((string)$selectedSemesterNo !== '' && (string)$selectedSemesterNo === (string)$semNo) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($semLabel) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+        <?php if ($showButton && $buttonPosition === 'inline'): ?>
+                <?= $renderedButtonHtml ?>
+            </div>
+        <?php endif; ?>
         <?php if ($showFormText): ?>
             <div class="form-text">
                 Dönem seçilmezse tüm dönemler dışa aktarılır
             </div>
         <?php endif; ?>
     </div>
+    <?php if ($showButton && $buttonPosition === 'bottom'): ?>
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <?= $renderedButtonHtml ?>
+        </div>
+    <?php endif; ?>
 </div>

@@ -124,7 +124,8 @@ use function App\Helpers\getSettingValue;
                                                 'selectedSemesterNo' => $selected_semester_no ?? '',
                                                 'selectedSemester' => getSettingValue("semester") ?? 'Güz',
                                                 'showFormText' => true,
-                                                 'customButtonHtml' => '<div class="btn-group" role="group" aria-label="Birim/Bölüm/Program dışa aktarma">'
+                                                'buttonPosition' => 'bottom',
+                                                'customButtonHtml' => '<div class="btn-group" role="group" aria-label="Birim/Bölüm/Program dışa aktarma">'
                                                     . '<button class="btn btn-primary" type="button" id="departmentAndProgramExport">'
                                                     . '<i class="bi bi-file-earmark-excel me-1"></i>Excel\'e aktar'
                                                     . '</button>'
@@ -162,28 +163,28 @@ use function App\Helpers\getSettingValue;
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-6">
-                                                    <div class="input-group">
-                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
-                                                            <option value="0">İlk olarak Birim Seçiniz</option>
-                                                        </select>
-                                                        <div class="btn-group" role="group" aria-label="Hoca dışa aktarma">
-                                                            <button class="btn btn-primary" type="button" id="lecturerExport">
-                                                                <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
-                                                            </button>
-                                                            <button class="btn btn-outline-info" type="button" id="lecturerList">
-                                                                <i class="bi bi-list-ul me-1"></i>Liste Formatı
-                                                            </button>
-                                                            <button class="btn btn-outline-warning" type="button" id="lecturerJson">
-                                                                <i class="bi bi-filetype-json me-1"></i>JSON'e aktar
-                                                            </button>
-                                                            <button class="btn btn-outline-secondary" type="button" id="lecturerCalendar">
-                                                                <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                    <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
+                                                        <option value="0">İlk olarak Birim Seçiniz</option>
+                                                    </select>
                                                     <div class="form-text">
                                                         Hoca seçilmezse birime ait tüm hoca programları dışa aktarılır
                                                     </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 d-flex justify-content-end">
+                                                <div class="btn-group" role="group" aria-label="Hoca dışa aktarma">
+                                                    <button class="btn btn-primary" type="button" id="lecturerExport">
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-info" type="button" id="lecturerList">
+                                                        <i class="bi bi-list-ul me-1"></i>Liste Formatı
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" type="button" id="lecturerJson">
+                                                        <i class="bi bi-filetype-json me-1"></i>JSON'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" type="button" id="lecturerCalendar">
+                                                        <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -217,28 +218,28 @@ use function App\Helpers\getSettingValue;
                                                     </div>
                                                 </div>
                                                 <div class="col-12 col-md-4">
-                                                    <div class="input-group">
-                                                        <select class="form-select" id="classroom_id" name="classroom_id">
-                                                            <option value="0">İlk olarak Bina Seçiniz</option>
-                                                        </select>
-                                                        <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
-                                                             <button class="btn btn-primary" type="button" id="classroomExport">
-                                                                 <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
-                                                             </button>
-                                                             <button class="btn btn-outline-info" type="button" id="classroomList">
-                                                                 <i class="bi bi-list-ul me-1"></i>Liste Formatı
-                                                             </button>
-                                                             <button class="btn btn-outline-warning" type="button" id="classroomJson">
-                                                                 <i class="bi bi-filetype-json me-1"></i>JSON'e aktar
-                                                             </button>
-                                                             <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
-                                                                 <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
-                                                             </button>
-                                                         </div>
-                                                    </div>
+                                                    <select class="form-select" id="classroom_id" name="classroom_id">
+                                                        <option value="0">İlk olarak Bina Seçiniz</option>
+                                                    </select>
                                                     <div class="form-text">
                                                         Derslik seçilmezse binaya ait tüm derslikler dışa aktarılır
                                                     </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 d-flex justify-content-end">
+                                                <div class="btn-group" role="group" aria-label="Derslik dışa aktarma">
+                                                    <button class="btn btn-primary" type="button" id="classroomExport">
+                                                        <i class="bi bi-file-earmark-excel me-1"></i>Excel'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-info" type="button" id="classroomList">
+                                                        <i class="bi bi-list-ul me-1"></i>Liste Formatı
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" type="button" id="classroomJson">
+                                                        <i class="bi bi-filetype-json me-1"></i>JSON'e aktar
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" type="button" id="classroomCalendar">
+                                                        <i class="bi bi-calendar-event me-1"></i>Takvime kaydet
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
