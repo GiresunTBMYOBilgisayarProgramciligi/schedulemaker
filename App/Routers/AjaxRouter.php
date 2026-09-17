@@ -215,6 +215,33 @@ class AjaxRouter extends Router
     /**
      * @throws Exception
      */
+    public function getProgramLessonsForAssignmentAction(): void
+    {
+        $this->response = (new LessonController())->getProgramLessonsForAssignment($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function updateLessonAssignmentAction(): void
+    {
+        $this->response = (new LessonController())->updateAssignment($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function bulkUpdateLessonAssignmentsAction(): void
+    {
+        $this->response = (new LessonController())->bulkUpdateAssignments($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * @throws Exception
+     */
     public function deleteLessonAction(): void
     {
         $this->response = (new LessonController())->destroy($this->data);

@@ -10,6 +10,7 @@ use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSemesterNumbers;
 use function App\Helpers\getSemesterSelectOptions;
 use function App\Helpers\getMaxSemesterNo;
+use function App\Helpers\getSuggestedSemesterNo;
 
 class FunctionsTest extends BaseTestCase
 {
@@ -60,6 +61,65 @@ class FunctionsTest extends BaseTestCase
 
         $baharFaculty = getSemesterNumbers('Bahar', 8);
         $this->assertEquals([2, 4, 6, 8], $baharFaculty);
+    }
+
+    public function testGetSemesterNumbersFor3Plus1And7Plus1Systems(): void
+    {
+        // 3+1 Sistemi (MYO: 4 yarıyıl)
+        // Güz döneminde: 1. yarıyıl (tek) + son iki yarıyıl (3 ve 4)
+        $guzMyo = getSemesterNumbers('Güz', 4, true);
+        $this->assertEquals([1, 3, 4], $guzMyo);
+
+        // Bahar döneminde: 2. yarıyıl (çift) + son iki yarıyıl (3 ve 4)
+        $baharMyo = getSemesterNumbers('Bahar', 4, true);
+        $this->assertEquals([2, 3, 4], $baharMyo);
+
+        // 7+1 Sistemi (Fakülte: 8 yarıyıl)
+        // Güz döneminde: 1, 3, 5 (tek) + son iki yarıyıl (7 ve 8)
+        $guzFaculty = getSemesterNumbers('Güz', 8, true);
+        $this->assertEquals([1, 3, 5, 7, 8], $guzFaculty);
+
+        // Bahar döneminde: 2, 4, 6 (çift) + son iki yarıyıl (7 ve 8)
+        $baharFaculty = getSemesterNumbers('Bahar', 8, true);
+        $this->assertEquals([2, 4, 6, 7, 8], $baharFaculty);
+    }
+
+    public function testGetSuggestedSemesterNoForInternshipSemesters(): void
+    {
+        // 3+1 MYO (4 yarıyıl):
+        // Bahar seçildiğinde 3. yarıyıl dersi 4 olarak önerilir
+        $this->assertEquals(4, getSuggestedSemesterNo(3, 'Bahar', 4));
+        $this->assertEquals(2, getSuggestedSemesterNo(2, 'Bahar', 4));
+        $this->assertEquals(4, getSuggestedSemesterNo(4, 'Bahar', 4));
+
+        // Güz seçildiğinde 4. yarıyıl dersi 3 olarak önerilir
+        $this->assertEquals(3, getSuggestedSemesterNo(4, 'Güz', 4));
+        $this->assertEquals(1, getSuggestedSemesterNo(1, 'Güz', 4));
+        $this->assertEquals(3, getSuggestedSemesterNo(3, 'Güz', 4));
+
+        // 7+1 Fakülte (8 yarıyıl):
+        // Bahar seçildiğinde 7. yarıyıl dersi 8 olarak önerilir
+        $this->assertEquals(8, getSuggestedSemesterNo(7, 'Bahar', 8));
+        $this->assertEquals(6, getSuggestedSemesterNo(6, 'Bahar', 8));
+
+        // Güz seçildiğinde 8. yarıyıl dersi 7 olarak önerilir
+        $this->assertEquals(7, getSuggestedSemesterNo(8, 'Güz', 8));
+        $this->assertEquals(5, getSuggestedSemesterNo(5, 'Güz', 8));
+    }
+
+    public function testGetSemesterSelectOptionsWithInternshipSemesters(): void
+    {
+        $guzOptions = getSemesterSelectOptions('Güz', 4, true);
+        $this->assertArrayHasKey(1, $guzOptions);
+        $this->assertArrayHasKey(3, $guzOptions);
+        $this->assertArrayHasKey(4, $guzOptions);
+        $this->assertArrayNotHasKey(2, $guzOptions);
+
+        $baharOptions = getSemesterSelectOptions('Bahar', 4, true);
+        $this->assertArrayHasKey(2, $baharOptions);
+        $this->assertArrayHasKey(3, $baharOptions);
+        $this->assertArrayHasKey(4, $baharOptions);
+        $this->assertArrayNotHasKey(1, $baharOptions);
     }
 
     public function testGetSemesterSelectOptionsForGuz(): void

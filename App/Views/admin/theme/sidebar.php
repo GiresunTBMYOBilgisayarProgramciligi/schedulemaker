@@ -77,6 +77,13 @@ use App\Enums\PermissionType;
                                 </a>
                             </li>
 
+                            <li class="nav-item">
+                                <a href="/admin/assignlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'assignlessons')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-person-check"></i>
+                                    <p>Ders Atama</p>
+                                </a>
+                            </li>
+
                             <?php if ($currentUser->role !== \App\Enums\UserRole::PayrollOfficer->value): ?>
                             <li class="nav-item">
                                 <a href="/admin/importlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importlessons')) ? 'active' : ''; ?>">

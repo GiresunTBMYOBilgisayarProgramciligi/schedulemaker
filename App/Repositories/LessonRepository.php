@@ -142,5 +142,32 @@ class LessonRepository extends BaseRepository
     }
 
 
+    /**
+     * Belirtilen programa ve yarıyıllara ait dersleri ilişkileriyle birlikte getirir.
+     *
+     * @param int $programId
+     * @param array $semesters
+     * @param string $semester
+     * @param string $academicYear
+     * @return Lesson[]
+     * @throws \Exception
+     */
+    public function getLessonsByProgramAndSemesters(int $programId, array $semesters, string $semester, string $academicYear): array
+    {
+        $where = ['program_id' => $programId];
+        if (!empty($semesters)) {
+            $where['semester_no'] = ['in' => $semesters];
+        }
+
+        /** @var Lesson $model */
+        $model = new $this->modelClass;
+        return $model->get()->where($where)->with([
+            'program',
+            'department',
+            'building',
+            'lecturer' => ['semester' => $semester, 'academic_year' => $academicYear],
+            'parentLesson' => ['with' => ['program']]
+        ])->all();
+    }
 }
 

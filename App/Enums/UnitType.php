@@ -54,6 +54,17 @@ enum UnitType: string
     }
 
     /**
+     * Birim türüne göre varsayılan toplam yarıyıl sayısını döndürür (Fakülte/Yüksekokul: 8, MYO/Enstitü: 4).
+     */
+    public function getDefaultSemesterCount(): int
+    {
+        return match ($this) {
+            self::Faculty, self::School => 8,
+            default => 4,
+        };
+    }
+
+    /**
      * Tüm tipleri value => label formatında dizi olarak döndürür (form select için).
      */
     public static function toArray(): array

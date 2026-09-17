@@ -3,10 +3,13 @@
 namespace App\Controllers;
 
 use App\Enums\PermissionType;
+use App\Enums\UserRole;
 
 use App\Core\Controller;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Repositories\LessonRepository;
+use App\Repositories\ProgramRepository;
 use App\Repositories\LessonAssignmentRepository;
 use App\Core\Gate;
 
@@ -19,6 +22,10 @@ use App\Validators\CombineExamLessonValidator;
 use App\Validators\DeleteCombineLessonValidator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\LessonImporter;
+use App\Services\Export\Excel\LessonAssignmentExcelExporter;
+use function App\Helpers\getSettingValue;
+use function App\Helpers\getSemesterNumbers;
+use function App\Helpers\getSuggestedSemesterNo;
 use Exception;
 
 class LessonController extends Controller
@@ -92,9 +99,11 @@ class LessonController extends Controller
             }
 
             $currentUser = AuthMiddleware::user();
+            $activeAssignment = (new LessonAssignmentRepository())->findActiveAssignmentForLesson($lessonFromDb->id);
             $isLecturerOwnLesson = Gate::allowsRole("lecturer", true)
                 && $currentUser
-                && $lessonFromDb->lecturer_id == $currentUser->id;
+                && $activeAssignment
+                && $activeAssignment->lecturer_id == $currentUser->id;
 
             $dto = (new LessonValidator($isLecturerOwnLesson))->getDTO($requestData);
 
@@ -273,5 +282,213 @@ class LessonController extends Controller
                 'addedLessons'   => $result['addedLessons'],
                 'updatedLessons' => $result['updatedLessons']
             ];
+    }
+
+    /**
+     * Seçilen programa ve döneme ait dersleri hoca atamalarıyla birlikte döner.
+     *
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function getProgramLessonsForAssignment(array $requestData): array
+    {
+        $programId = (int)($requestData['program_id'] ?? 0);
+        $semester = trim((string)($requestData['semester'] ?? ''));
+        $academicYear = trim((string)($requestData['academic_year'] ?? ''));
+
+        if ($programId <= 0 || empty($semester) || empty($academicYear)) {
+            throw new Exception("Program, dönem ve akademik yıl seçilmelidir.");
+        }
+
+        /** @var Program|null $program */
+        $program = (new ProgramRepository())->find($programId);
+        if (!$program) {
+            throw new Exception("Program bulunamadı.");
+        }
+
+        Gate::authorize(PermissionType::VIEW->value, $program, "Bu programın derslerini görme yetkiniz yok.");
+
+        $programRepo   = new ProgramRepository();
+        $totalSemesters = $programRepo->getProgramTotalSemesters($programId);
+        $validSemesters = getSemesterNumbers($semester, $totalSemesters, true);
+
+        $lessons = (new LessonService())->getLessonsByProgramAndPeriod($programId, $semester, $academicYear, $totalSemesters);
+
+        $data = array_map(function (Lesson $lesson) use ($semester, $totalSemesters) {
+            $suggestedSemesterNo = getSuggestedSemesterNo((int)$lesson->semester_no, $semester, $totalSemesters);
+
+            return [
+                'id'                   => $lesson->id,
+                'code'                 => $lesson->code,
+                'group_no'             => $lesson->group_no,
+                'name'                 => $lesson->name,
+                'semester_no'          => $suggestedSemesterNo,
+                'type'                 => $lesson->type,
+                'type_name'            => $lesson->getTypeName(),
+                'size'                 => $lesson->size ?? 0,
+                'hours'                => $lesson->hours,
+                'lecturer_id'          => $lesson->lecturer?->id ?? null,
+                'lecturer_name'        => $lesson->lecturer?->getFullName() ?? null,
+                'classroom_type'       => $lesson->classroom_type,
+                'classroom_type_name'  => $lesson->getClassroomTypeName(),
+                'building_id'          => $lesson->building_id,
+                'building_name'        => $lesson->building?->name ?? '—'
+            ];
+        }, $lessons);
+
+        usort($data, function ($a, $b) {
+            if ($a['semester_no'] !== $b['semester_no']) {
+                return $a['semester_no'] <=> $b['semester_no'];
+            }
+            return strcmp((string)$a['code'], (string)$b['code']);
+        });
+
+        return [
+            'status'          => 'success',
+            'lessons'         => $data,
+            'valid_semesters' => $validSemesters
+        ];
+    }
+
+    /**
+     * Program derslerini Excel olarak dışa aktarır.
+     *
+     * @param array $requestData
+     * @return void
+     * @throws Exception
+     */
+    public function exportLessonAssignments(array $requestData): void
+    {
+        $programId = (int)($requestData['program_id'] ?? 0);
+        $semester = trim((string)($requestData['semester'] ?? ''));
+        $academicYear = trim((string)($requestData['academic_year'] ?? ''));
+
+        if ($programId <= 0 || empty($semester) || empty($academicYear)) {
+            throw new Exception("Program, dönem ve akademik yıl seçilmelidir.");
+        }
+
+        /** @var Program|null $program */
+        $program = (new ProgramRepository())->find($programId);
+        if (!$program) {
+            throw new Exception("Program bulunamadı.");
+        }
+
+        Gate::authorize(PermissionType::VIEW->value, $program, "Bu programın derslerini dışa aktarma yetkiniz yok.");
+
+        $showClassroomType = filter_var($requestData['show_classroom_type'] ?? $requestData['include_classroom_type'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showBuilding = filter_var($requestData['show_building'] ?? $requestData['include_building'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        (new LessonAssignmentExcelExporter())->export(
+            $programId,
+            $semester,
+            $academicYear,
+            $showClassroomType,
+            $showBuilding
+        );
+    }
+
+    /**
+     * Kullanıcının yetkili olduğu tüm programların ders görevlendirmelerini tek bir Excel dosyasında dışa aktarır.
+     *
+     * @param array $requestData
+     * @return void
+     * @throws Exception
+     */
+    public function exportAllLessonAssignments(array $requestData): void
+    {
+        $semester = trim((string)($requestData['semester'] ?? ''));
+        $academicYear = trim((string)($requestData['academic_year'] ?? ''));
+
+        if (empty($semester) || empty($academicYear)) {
+            throw new Exception("Dönem ve akademik yıl seçilmelidir.");
+        }
+
+        Gate::authorizeRole(UserRole::DepartmentHead->value, false, "Tüm programların ders atamalarını dışa aktarma yetkiniz yok.");
+
+        $currentUser = AuthMiddleware::user();
+        if (!$currentUser) {
+            throw new Exception("Oturum açmış kullanıcı bulunamadı.");
+        }
+
+        $programRepo = new ProgramRepository();
+        if ($currentUser->role === UserRole::DepartmentHead->value && !empty($currentUser->department_id)) {
+            $programs = $programRepo->getAuthorized('view', ['department_id' => $currentUser->department_id, 'active' => true], ['department']);
+        } else {
+            $programs = $programRepo->getAuthorized('view', ['active' => true], ['department']);
+        }
+
+        if (empty($programs)) {
+            throw new Exception("Dışa aktarılacak yetkili program bulunamadı.");
+        }
+
+        $programIds = array_map(fn(Program $p) => (int)$p->id, $programs);
+
+        $showClassroomType = filter_var($requestData['show_classroom_type'] ?? $requestData['include_classroom_type'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showBuilding = filter_var($requestData['show_building'] ?? $requestData['include_building'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        $customFileName = null;
+        if ($currentUser->role === UserRole::DepartmentHead->value && !empty($programs[0]->department?->name)) {
+            $customFileName = sprintf('%s_%s_%s_Tum_Programlar_Ders_Görevlendirme_Listesi.xlsx', $academicYear, $semester, $programs[0]->department->name);
+        }
+
+        (new LessonAssignmentExcelExporter())->exportMultiple(
+            $programIds,
+            $semester,
+            $academicYear,
+            $showClassroomType,
+            $showBuilding,
+            $customFileName
+        );
+    }
+
+    /**
+     * Tek bir dersin mevcudunu, saatini ve hoca atamasını günceller.
+     *
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function updateAssignment(array $requestData): array
+    {
+        $dto = (new LessonValidator(isAssignmentUpdate: true))->getDTO($requestData);
+
+        (new LessonService())->updateLessonData((int)$dto->id, $dto, false);
+
+        return [
+            'status' => 'success',
+            'msg' => 'Ders ataması başarıyla kaydedildi.'
+        ];
+    }
+
+    /**
+     * Birden fazla dersin atamasını toplu kaydeder.
+     *
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function bulkUpdateAssignments(array $requestData): array
+    {
+        $assignments = $requestData['assignments'] ?? [];
+        if (!is_array($assignments)) {
+            throw new Exception("Geçersiz veri formatı.");
+        }
+
+        $semester = trim((string)($requestData['semester'] ?? getSettingValue('semester')));
+        $academicYear = trim((string)($requestData['academic_year'] ?? getSettingValue('academic_year')));
+
+        $updatedCount = 0;
+        foreach ($assignments as $item) {
+            $item['semester'] = $semester;
+            $item['academic_year'] = $academicYear;
+            $this->updateAssignment($item);
+            $updatedCount++;
+        }
+
+        return [
+            'status' => 'success',
+            'msg' => "{$updatedCount} ders ataması başarıyla kaydedildi."
+        ];
     }
 }

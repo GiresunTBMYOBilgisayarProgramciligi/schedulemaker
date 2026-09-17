@@ -11,6 +11,7 @@
 namespace App\Routers;
 
 use App\Controllers\AdminPageController;
+use App\Controllers\LessonController;
 use App\Middlewares\AuthMiddleware;
 use App\Attributes\AuthRequired;
 use App\Core\Router;
@@ -103,6 +104,22 @@ class AdminRouter extends Router
     {
         $this->view_data = array_merge($this->view_data, $this->pageController->getListLessonsPageData($this->currentUser, $this->assetManager));
         $this->callView("admin/lessons/listlessons");
+    }
+
+    public function AssignLessonsAction(?int $program_id = null)
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getAssignLessonsPageData($this->currentUser, $this->assetManager, $program_id));
+        $this->callView("admin/lessons/assignlessons");
+    }
+
+    public function ExportLessonAssignmentsAction(): void
+    {
+        (new LessonController())->exportLessonAssignments($_GET);
+    }
+
+    public function ExportAllLessonAssignmentsAction(): void
+    {
+        (new LessonController())->exportAllLessonAssignments($_GET);
     }
 
     public function AddLessonAction(?int $program_id = null)

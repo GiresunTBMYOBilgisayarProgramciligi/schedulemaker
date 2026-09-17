@@ -18,7 +18,9 @@ use App\DTOs\DeleteCombineLessonDTO;
 
 use App\DTOs\ScheduleItemDTO;
 use function App\Helpers\getSettingValue;
+use function App\Helpers\getSemesterNumbers;
 use App\Repositories\LessonRepository;
+use App\Repositories\ProgramRepository;
 use App\Repositories\LessonAssignmentRepository;
 use App\Repositories\LessonCombinationRepository;
 use App\Core\Gate;
@@ -101,22 +103,19 @@ class LessonService extends BaseService
      * Controller'dan gelen verilerle dersi günceller (Business logic).
      * Hoca sadece kontenjan ve derslik tipi güncelleyebilir.
      *
-     * @param int $id Ders ID'si
-     * @param LessonDTO|array $dtoOrData Güncellenecek veri
-     * @param bool $isLecturerOwnLesson İşlemi yapanın kendi dersi olup olmadığı
+     * @param int $id Güncellenecek ders ID'si
+     * @param LessonDTO $dto Güncelleme verilerini taşıyan DTO
+     * @param bool $isLecturerOwnLesson Hoca kendi dersini mi güncelliyor?
      * @return int Güncellenen dersin ID'si
      * @throws Exception
      */
-    public function updateLessonData(int $id, LessonDTO|array $dtoOrData, bool $isLecturerOwnLesson): int
+    public function updateLessonData(int $id, LessonDTO $dto, bool $isLecturerOwnLesson): int
     {
         /** @var Lesson $lessonFromDb */
         $lessonFromDb = (new LessonRepository())->find($id);
         if (!$lessonFromDb) {
             throw new Exception("Güncellenecek ders bulunamadı.");
         }
-
-        $dto = $dtoOrData instanceof LessonDTO ? $dtoOrData : LessonDTO::fromArray($dtoOrData);
-        $requestData = $dtoOrData instanceof LessonDTO ? $dtoOrData->toArray() : $dtoOrData;
 
         if ($isLecturerOwnLesson) {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
@@ -162,6 +161,21 @@ class LessonService extends BaseService
                     'semester'      => $semester,
                     'academic_year' => $academicYear
                 ]);
+            } elseif ($dto->unassign_lecturer) {
+                $semester = $dto->semester ?? getSettingValue('semester');
+                $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
+                if (!empty($semester) && !empty($academicYear)) {
+                    (new LessonAssignmentRepository())->deleteAssignment(
+                        $lessonFromDb->id,
+                        $semester,
+                        $academicYear
+                    );
+                    $this->logger->info('Ders hoca ataması kaldırıldı', [
+                        'lesson_id'     => $lessonFromDb->id,
+                        'semester'      => $semester,
+                        'academic_year' => $academicYear
+                    ]);
+                }
             }
         }
 
@@ -813,7 +827,8 @@ class LessonService extends BaseService
             try {
                 // Toplu düzenlemede tüm yetki ve ilişkili tablo (LessonAssignment vb) kontrollerini 
                 // tekil güncelleme yapan updateLessonData metodu üzerinden yürüt.
-                $this->updateLessonData($id, $dto->fields, false);
+                $lessonDto = LessonDTO::fromArray($dto->fields);
+                $this->updateLessonData($id, $lessonDto, false);
                 $success[] = $id;
             } catch (Exception $e) {
                 $failed[$id] = $e->getMessage();
@@ -826,5 +841,22 @@ class LessonService extends BaseService
         ]);
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
+    }
+
+    /**
+     * Seçilen programa, döneme ve akademik yıla ait dersleri hoca atamalarıyla birlikte getirir.
+     *
+     * @param int $programId
+     * @param string $semester
+     * @param string $academicYear
+     * @return Lesson[]
+     * @throws Exception
+     */
+    public function getLessonsByProgramAndPeriod(int $programId, string $semester, string $academicYear, ?int $totalSemesters = null): array
+    {
+        $totalSemesters ??= (new ProgramRepository())->getProgramTotalSemesters($programId);
+        $validSemesters = getSemesterNumbers($semester, $totalSemesters, true);
+
+        return (new LessonRepository())->getLessonsByProgramAndSemesters($programId, $validSemesters, $semester, $academicYear);
     }
 }

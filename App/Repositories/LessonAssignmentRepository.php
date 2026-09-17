@@ -51,6 +51,31 @@ class LessonAssignmentRepository extends BaseRepository
     }
 
     /**
+     * Belirli bir ders, dönem ve akademik yıl için mevcut atamayı siler.
+     *
+     * @param int $lessonId
+     * @param string $semester
+     * @param string $academicYear
+     * @return bool
+     */
+    public function deleteAssignment(int $lessonId, string $semester, string $academicYear): bool
+    {
+        /** @var LessonAssignment $model */
+        $model = new $this->modelClass;
+        $existing = $model->get()->where([
+            'lesson_id' => $lessonId,
+            'semester' => $semester,
+            'academic_year' => $academicYear
+        ])->first();
+
+        if ($existing) {
+            return $existing->delete();
+        }
+
+        return false;
+    }
+
+    /**
      * Belirli dönem ve yıldaki ders atamasını getirir.
      */
     public function findByLessonAndPeriod(int $lessonId, string $semester, string $academicYear): ?LessonAssignment

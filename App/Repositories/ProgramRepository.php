@@ -2,7 +2,9 @@
 
 namespace App\Repositories;
 
+use App\Enums\UnitType;
 use App\Models\Program;
+use function App\Helpers\getMaxSemesterNo;
 use Exception;
 
 class ProgramRepository extends BaseRepository
@@ -69,4 +71,32 @@ class ProgramRepository extends BaseRepository
             ])
             ->first();
     }
+
+    /**
+     * Programın birim türüne göre toplam yarıyıl sayısını hesaplar (MYO için 4, Fakülte/Yüksekokul için 8).
+     *
+     * @param int $programId
+     * @return int
+     * @throws Exception
+     */
+    public function getProgramTotalSemesters(int $programId): int
+    {
+        /** @var Program $model */
+        $model = new $this->modelClass;
+        $program = $model->get()->where(['id' => $programId])
+            ->with(['department' => ['with' => ['unit']]])
+            ->first();
+
+        $unitTypeStr = $program?->department?->unit?->type ?? '';
+        $unitType = UnitType::tryFrom($unitTypeStr);
+        $defaultSemesters = $unitType ? $unitType->getDefaultSemesterCount() : 4;
+
+        $maxRegistered = getMaxSemesterNo($programId);
+        if ($maxRegistered > 4 && $defaultSemesters < 8) {
+            $defaultSemesters = 8;
+        }
+
+        return max($defaultSemesters, $maxRegistered);
+    }
 }
+

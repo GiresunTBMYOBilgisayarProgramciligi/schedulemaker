@@ -27,6 +27,7 @@ use App\Repositories\LogRepository;
 use App\Repositories\LessonAssignmentRepository;
 
 use App\Enums\ClassroomType;
+use App\Enums\LessonType;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\UnitType;
@@ -419,6 +420,38 @@ class AdminPageController extends Controller
 
         }
         return $view_data;
+    }
+
+    public function getAssignLessonsPageData(User $currentUser, AssetManager $assetManager, ?int $program_id = null): array
+    {
+        Gate::authorize(PermissionType::LIST->value, Lesson::class, "Ders atama sayfasını görme yetkiniz yok.");
+        $assetManager->loadPageAssets('formpages');
+        $assetManager->addJs('/assets/js/admin/assignLessons.js');
+
+        $programRepo = new ProgramRepository();
+        if ($currentUser->role == "department_head" && !empty($currentUser->department_id)) {
+            $programs = $programRepo->getAuthorized('view', ['department_id' => $currentUser->department_id, 'active' => true], ['department']);
+        } else {
+            $programs = $programRepo->getAuthorized('view', ['active' => true], ['department']);
+        }
+
+        $selectedProgramId = $program_id ?? (!empty($programs) ? $programs[0]->id : null);
+
+        $lecturers = (new UserRepository())->getAuthorized('view', [], ['department']);
+        usort($lecturers, fn($a, $b) => strcmp($a->getFullName(), $b->getFullName()));
+
+        return [
+            "page_title" => "Ders Atama",
+            "programs" => $programs,
+            "selected_program_id" => $selectedProgramId,
+            "lecturers" => $lecturers,
+            "buildings" => (new BuildingRepository())->findAll(),
+            "classroomTypes" => ClassroomType::toArray(),
+            "lessonTypes" => LessonType::toArray(),
+            "semesterNoList" => array_combine(range(1, 12), array_map(fn($i) => "$i. Yarıyıl", range(1, 12))),
+            "current_academic_year" => getSettingValue('academic_year'),
+            "current_semester" => getSettingValue('semester')
+        ];
     }
 
     public function getAddLessonPageData(User $currentUser, AssetManager $assetManager, ?int $program_id = null): array
