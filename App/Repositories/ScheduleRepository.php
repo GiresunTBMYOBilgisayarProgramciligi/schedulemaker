@@ -159,9 +159,13 @@ class ScheduleRepository extends BaseRepository
         }
 
 
-        /** @var Schedule $schedule */
-        $schedule = new $this->modelClass;
-        return $schedule->where($conditions)->first();
+        /** @var Schedule|null $schedule */
+        $schedule = (new $this->modelClass)->where($conditions)->first();
+        if ($schedule && $ownerType !== 'program' && (int)$schedule->semester_no !== 0) {
+            $schedule->semester_no = 0;
+            $schedule->update();
+        }
+        return $schedule;
     }
 
     /**

@@ -57,10 +57,8 @@ class ConflictResolver
                 'type' => $targetSchedule->type
             ];
 
-            if ($ownerType == 'program') {
+            if ($ownerType === 'program') {
                 $scheduleFilters['semester_no'] = $owner['semester_no'] ?? $lessonContext?->semester_no;
-            } else {
-                $scheduleFilters['semester_no'] = null;
             }
 
             $relatedSchedules = (new Schedule())->get()->where($scheduleFilters)->all();

@@ -39,14 +39,14 @@ create table if not exists schedules
     type          ENUM('lesson','midterm-exam','final-exam','makeup-exam') NOT NULL,
     owner_type    ENUM('user','lesson','program','classroom') NOT NULL,
     owner_id      int,
-    semester_no   int,
+    semester_no   int NOT NULL DEFAULT 0,
     semester      ENUM('Güz','Bahar','Yaz') NOT NULL,
     academic_year varchar(12),
     is_published  BOOLEAN DEFAULT false,
     published_at  TIMESTAMP NULL,
     updated_at    TIMESTAMP NULL,
     primary key (id),
-    unique (owner_type, owner_id, semester_no, semester, academic_year, type)
+    unique key uk_schedules_owner_period (owner_type, owner_id, semester_no, semester, academic_year, type)
 ) ENGINE = INNODB;
 
 create table if not exists schedule_items

@@ -29,6 +29,8 @@ use App\DTOs\BulkDeleteDTO;
 use App\DTOs\BulkUpdateDTO;
 use App\DTOs\BulkActionResultDTO;
 use App\Enums\OwnerType;
+use App\Helpers\TimeHelper;
+use App\Exceptions\ScheduleConflictException;
 use Exception;
 
 
@@ -374,6 +376,12 @@ class LessonService extends BaseService
                 );
             }
 
+            // Çakışma kontrolü (Parent'ın kopyalanacak slotları child veya alt child'ların programlarında başka bir dersle çakışıyor mu?)
+            $this->validateCombinationSlots($parentLesson, $childLesson, $slotsToSkip, $dto->semester, $dto->academicYear);
+            foreach ($childLesson->childLessons as $grandChild) {
+                $this->validateCombinationSlots($parentLesson, $grandChild, $slotsToSkip, $dto->semester, $dto->academicYear);
+            }
+
             // Child'ın mevcut schedule'larını sil (bağlamadan ÖNCE — parent korunur)
             $this->scheduleService->wipeResourceSchedules('lesson', $childLesson->id);
 
@@ -648,13 +656,6 @@ class LessonService extends BaseService
             ?: throw new Exception("Üst ders bulunamadı");
         $childLesson = (new Lesson())->find($dto->childId)
             ?: throw new Exception("Bağlanacak ders bulunamadı");
-
-        $hoursDiff = $parentLesson->hours - $childLesson->hours;
-
-        if ($hoursDiff <= 0) {
-            return ['needs_confirmation' => false];
-        }
-
         $semester = $dto->semester !== '' ? $dto->semester : getSettingValue('semester');
         $academicYear = $dto->academicYear !== '' ? $dto->academicYear : getSettingValue('academic_year');
 
@@ -684,56 +685,101 @@ class LessonService extends BaseService
                 ->first();
         }
 
-        if (!$parentSchedule || empty($parentSchedule->items)) {
-            return ['needs_confirmation' => false];
-        }
-
-        // Ayarlardan ders süresi ve mola bilgisini al
         $duration = (int) getSettingValue('duration', 'lesson', 50); // dakika
         $break = (int) getSettingValue('break', 'lesson', 10);    // dakika
 
-        $dayNames = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-
         $slots = [];
-        foreach ($parentSchedule->items as $item) {
-            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
-                continue;
+        if ($parentSchedule && !empty($parentSchedule->items)) {
+            foreach ($parentSchedule->items as $item) {
+                if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
+                    continue;
+                }
+                $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                    ?: \DateTime::createFromFormat('H:i', $item->start_time);
+                if (!$start)
+                    continue;
+
+                // İtem kaç saat içeriyor?
+                $slotStart = clone $start;
+                $slotIndex = 0;
+
+                // Saatleri tek tek üret: süre+mola adımlarıyla
+                while (true) {
+                    $slotEnd = clone $slotStart;
+                    $slotEnd->modify("+{$duration} minutes");
+
+                    $slots[] = [
+                        'id' => "{$item->id}_{$slotIndex}",
+                        'item_id' => $item->id,
+                        'slot_index' => $slotIndex,
+                        'day_name' => Schedule::getdayName("day{$item->day_index}"),
+                        'day_index' => $item->day_index,
+                        'start_time' => $slotStart->format('H:i'),
+                        'end_time' => $slotEnd->format('H:i'),
+                    ];
+
+                    // Bir sonraki slot başlangıcı: mola ekle
+                    $slotStart = clone $slotEnd;
+                    $slotStart->modify("+{$break} minutes");
+                    $slotIndex++;
+
+                    // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
+                    $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                        ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                    if (!$itemEnd || $slotStart >= $itemEnd)
+                        break;
+                }
             }
-            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
-                ?: \DateTime::createFromFormat('H:i', $item->start_time);
-            if (!$start)
-                continue;
+        }
 
-            // İtem kaç saat içeriyor?
-            $slotStart = clone $start;
-            $slotIndex = 0;
-
-            // Saatleri tek tek üret: süre+mola adımlarıyla
-            while (true) {
-                $slotEnd = clone $slotStart;
-                $slotEnd->modify("+{$duration} minutes");
-
-                $slots[] = [
-                    'id' => "{$item->id}_{$slotIndex}",
-                    'item_id' => $item->id,
-                    'slot_index' => $slotIndex,
-                    'day_name' => $dayNames[$item->day_index] ?? "Gün {$item->day_index}",
-                    'day_index' => $item->day_index,
-                    'start_time' => $slotStart->format('H:i'),
-                    'end_time' => $slotEnd->format('H:i'),
-                ];
-
-                // Bir sonraki slot başlangıcı: mola ekle
-                $slotStart = clone $slotEnd;
-                $slotStart->modify("+{$break} minutes");
-                $slotIndex++;
-
-                // Item'in bitiş saatini geçti mi? (mola süresini tolere et)
-                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
-                    ?: \DateTime::createFromFormat('H:i', $item->end_time);
-                if (!$itemEnd || $slotStart >= $itemEnd)
-                    break;
+        // Çakışmaları denetle (child dersin programında bu slotlarda başka ders var mı?)
+        $conflictingSlots = [];
+        foreach ($slots as &$slot) {
+            $conflict = $this->checkProgramScheduleConflict(
+                $childLesson,
+                $semester,
+                $academicYear,
+                $slot['day_index'],
+                $slot['start_time'],
+                $slot['end_time']
+            );
+            if ($conflict) {
+                $slot['has_conflict'] = true;
+                $slot['conflict_reason'] = "'{$conflict['lesson_name']}' dersi ile çakışıyor";
+                $conflictingSlots[] = $slot;
+            } else {
+                $slot['has_conflict'] = false;
             }
+        }
+        unset($slot);
+
+        $hoursDiff = $parentLesson->hours - $childLesson->hours;
+
+        // Eğer saat farkı yoksa (tüm slotlar aktarılacaksa) ve en az bir slot çakışıyorsa birleştirmeyi engelle
+        if ($hoursDiff <= 0) {
+            if (!empty($conflictingSlots)) {
+                $c = $conflictingSlots[0];
+                throw new ScheduleConflictException(
+                    "Ders programında çakışma tespit edildi: " .
+                    ($childLesson->program?->name ?? 'Program') . " programında " .
+                    "{$c['day_name']} {$c['start_time']}–{$c['end_time']} saatlerinde {$c['conflict_reason']}. " .
+                    "Dersler birleştirilemez."
+                );
+            }
+            return ['needs_confirmation' => false];
+        }
+
+        // Saat farkı varsa: Kullanıcı $hoursDiff kadar slot seçecek (kopyalanmayacak olanlar).
+        // Eğer çakışmayan slot sayısı child dersin saati için yetersizse kaçınılmaz çakışma vardır!
+        $nonConflictingCount = count($slots) - count($conflictingSlots);
+        if ($nonConflictingCount < $childLesson->hours && !empty($conflictingSlots)) {
+            $c = $conflictingSlots[0];
+            throw new ScheduleConflictException(
+                "Ders programında çakışma tespit edildi: " .
+                ($childLesson->program?->name ?? 'Program') . " programında " .
+                "{$c['day_name']} {$c['start_time']}–{$c['end_time']} saatlerinde {$c['conflict_reason']}. " .
+                "Kalan uygun saatler bağlanacak dersin süresini ({$childLesson->hours} saat) karşılamadığından dersler birleştirilemez."
+            );
         }
 
         if (empty($slots)) {
@@ -747,6 +793,9 @@ class LessonService extends BaseService
         foreach ($slots as $index => &$slot) {
             $slot['slot_number'] = $index + 1;
             $slot['slot_name'] = "{$slot['day_name']} {$slot['start_time']} – {$slot['end_time']}";
+            if (!empty($slot['has_conflict'])) {
+                $slot['slot_name'] .= " ({$slot['conflict_reason']})";
+            }
         }
         unset($slot);
 
@@ -757,6 +806,200 @@ class LessonService extends BaseService
             'child_hours' => $childLesson->hours,
             'items' => $slots,
         ];
+    }
+
+    /**
+     * Bağlanacak dersin bölüm ders programında belirtilen gün ve saat diliminde başka bir ders olup olmadığını denetler.
+     *
+     * @param Lesson $childLesson
+     * @param string $semester
+     * @param string $academicYear
+     * @param int $dayIndex
+     * @param string $startTime
+     * @param string $endTime
+     * @return array|null Çakışma bilgisi veya null
+     */
+    public function checkProgramScheduleConflict(
+        Lesson $childLesson,
+        string $semester,
+        string $academicYear,
+        int $dayIndex,
+        string $startTime,
+        string $endTime
+    ): ?array {
+        if (!$childLesson->program_id || !$childLesson->semester_no) {
+            return null;
+        }
+
+        $conditions = [
+            'owner_type'    => OwnerType::PROGRAM->value,
+            'owner_id'      => $childLesson->program_id,
+            'semester_no'   => $childLesson->semester_no,
+            'semester'      => $semester,
+            'academic_year' => $academicYear,
+            'type'          => 'lesson',
+        ];
+
+        /** @var Schedule|null $programSchedule */
+        $programSchedule = (new Schedule())->get()->where($conditions)->with(['items'])->first();
+        if (!$programSchedule || empty($programSchedule->items)) {
+            return null;
+        }
+
+        $startTimeStr = substr($startTime, 0, 5);
+        $endTimeStr = substr($endTime, 0, 5);
+
+        foreach ($programSchedule->items as $item) {
+            if ((int)$item->day_index !== $dayIndex) {
+                continue;
+            }
+            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
+                continue;
+            }
+
+            $exStart = substr($item->start_time, 0, 5);
+            $exEnd = substr($item->end_time, 0, 5);
+
+            if (TimeHelper::isOverlapping($startTimeStr, $endTimeStr, $exStart, $exEnd)) {
+                $data = is_array($item->data) ? $item->data : (unserialize($item->data) ?: []);
+                $lessonIds = array_filter(array_column($data, 'lesson_id'));
+
+                // Eğer tek ders varsa ve o da bağlanacak child ders ise, birleştirme sırasında zaten wipe edilecek; çakışma sayılmaz
+                if (!empty($lessonIds) && in_array($childLesson->id, $lessonIds) && count($lessonIds) === 1) {
+                    continue;
+                }
+
+                $conflictingLessonId = null;
+                foreach ($lessonIds as $lid) {
+                    if ($lid != $childLesson->id) {
+                        $conflictingLessonId = $lid;
+                        break;
+                    }
+                }
+
+                $conflictingLesson = $conflictingLessonId ? (new Lesson())->find($conflictingLessonId) : null;
+                $conflictingName = $conflictingLesson ? $conflictingLesson->getFullName(true) : "Başka bir ders";
+
+                return [
+                    'conflicting_item'     => $item,
+                    'conflicting_schedule' => $programSchedule,
+                    'lesson_name'          => $conflictingName,
+                    'start_time'           => $exStart,
+                    'end_time'             => $exEnd,
+                    'day_index'            => $dayIndex,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Parent dersten child derse aktarılacak slotların child programında çakışma yaratıp yaratmadığını doğrular.
+     * Çakışma varsa ScheduleConflictException fırlatır.
+     *
+     * @param Lesson $parentLesson
+     * @param Lesson $childLesson
+     * @param array $slotsToSkip
+     * @param string $semester
+     * @param string $academicYear
+     * @throws ScheduleConflictException
+     */
+    public function validateCombinationSlots(
+        Lesson $parentLesson,
+        Lesson $childLesson,
+        array $slotsToSkip,
+        string $semester,
+        string $academicYear
+    ): void {
+        $parentSchedule = (new Schedule())
+            ->get()
+            ->where([
+                'owner_type'    => OwnerType::LESSON->value,
+                'owner_id'      => $parentLesson->id,
+                'type'          => 'lesson',
+                'semester'      => $semester,
+                'academic_year' => $academicYear,
+            ])
+            ->with(['items'])
+            ->first();
+
+        if (!$parentSchedule) {
+            $parentSchedule = (new Schedule())
+                ->get()
+                ->where([
+                    'owner_type' => OwnerType::LESSON->value,
+                    'owner_id'   => $parentLesson->id,
+                    'type'       => 'lesson',
+                ])
+                ->with(['items'])
+                ->first();
+        }
+
+        if (!$parentSchedule || empty($parentSchedule->items)) {
+            return;
+        }
+
+        $duration = (int) getSettingValue('duration', 'lesson', 50);
+        $break = (int) getSettingValue('break', 'lesson', 10);
+
+        foreach ($parentSchedule->items as $item) {
+            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
+                continue;
+            }
+
+            $skippedSlots = $slotsToSkip[$item->id] ?? [];
+
+            $start = \DateTime::createFromFormat('H:i:s', $item->start_time)
+                ?: \DateTime::createFromFormat('H:i', $item->start_time);
+            if (!$start) {
+                continue;
+            }
+
+            $slotStart = clone $start;
+            $slotIndex = 0;
+
+            while (true) {
+                $slotEnd = clone $slotStart;
+                $slotEnd->modify("+{$duration} minutes");
+
+                if (!in_array($slotIndex, $skippedSlots)) {
+                    $startTime = $slotStart->format('H:i');
+                    $endTime = $slotEnd->format('H:i');
+
+                    $conflict = $this->checkProgramScheduleConflict(
+                        $childLesson,
+                        $semester,
+                        $academicYear,
+                        $item->day_index,
+                        $startTime,
+                        $endTime
+                    );
+
+                    if ($conflict) {
+                        $dayName = Schedule::getdayName("day{$item->day_index}");
+                        throw new ScheduleConflictException(
+                            "Ders programında çakışma tespit edildi: " .
+                            ($conflict['conflicting_schedule']?->getScheduleScreenName() ?? 'Program') . " programında " .
+                            "{$dayName} {$startTime}–{$endTime} saatlerinde '{$conflict['lesson_name']}' dersi bulunmaktadır. " .
+                            "Dersler birleştirilemez.",
+                            $conflict['conflicting_item'] ?? null,
+                            $conflict['conflicting_schedule'] ?? null
+                        );
+                    }
+                }
+
+                $slotStart = clone $slotEnd;
+                $slotStart->modify("+{$break} minutes");
+                $slotIndex++;
+
+                $itemEnd = \DateTime::createFromFormat('H:i:s', $item->end_time)
+                    ?: \DateTime::createFromFormat('H:i', $item->end_time);
+                if (!$itemEnd || $slotStart >= $itemEnd) {
+                    break;
+                }
+            }
+        }
     }
 
     // ──────────────────────────────────────────

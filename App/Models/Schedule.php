@@ -80,7 +80,7 @@ class Schedule extends Model
         return $results;
     }
 
-    public function getdayName($dayString): string
+    public static function getdayName($dayString): string
     {
         $days = [
             "day0" => "Pazartesi",
@@ -89,8 +89,9 @@ class Schedule extends Model
             "day3" => "Perşembe",
             "day4" => "Cuma",
             "day5" => "Cumartesi",
+            "day6" => "Pazar",
         ];
-        return $days[$dayString];
+        return $days[$dayString] ?? (string) $dayString;
     }
 
     public function getOwnerTypeScreenName(): string
@@ -112,19 +113,52 @@ class Schedule extends Model
      */
     public function firstOrCreate(array $attributes): Schedule
     {
+        $searchAttributes = $attributes;
+        $isProgram = isset($attributes['owner_type']) && $attributes['owner_type'] === OwnerType::PROGRAM->value;
+
+        if (!$isProgram) {
+            unset($searchAttributes['semester_no']);
+            $attributes['semester_no'] = 0;
+        }
+
         // Mevcut kaydı ara
-        $instance = (new self())->get()->where($attributes)->with("items")->first();
+        /** @var Schedule|null $instance */
+        $instance = (new self())->get()->where($searchAttributes)->with("items")->first();
 
         if ($instance) {
+            // Eğer hoca/derslik/ders programında legacy olarak semester_no farklı kalmışsa auto-heal yap
+            if (!$isProgram && (int)$instance->semester_no !== 0) {
+                $instance->semester_no = 0;
+                $instance->update();
+            }
             return $instance;
         }
 
         // Yoksa yeni oluştur
         $instance = new self();
         $instance->fill($attributes);
+        if (!$isProgram) {
+            $instance->semester_no = 0;
+        }
         $instance->create();
 
         return $instance;
+    }
+
+    public function create(array $additionalExclusions = [], bool $acceptNull = true): void
+    {
+        if ($this->owner_type !== OwnerType::PROGRAM->value) {
+            $this->semester_no = 0;
+        }
+        parent::create($additionalExclusions, $acceptNull);
+    }
+
+    public function update(array $additionalExclusions = [], bool $acceptNull = true): bool
+    {
+        if ($this->owner_type !== OwnerType::PROGRAM->value) {
+            $this->semester_no = 0;
+        }
+        return parent::update($additionalExclusions, $acceptNull);
     }
 
     public function getScheduleTypeName(): string

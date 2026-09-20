@@ -11,8 +11,9 @@ use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
 use App\Enums\ScheduleItemStatus;
 use DateTime;
-use Exception;
 use function App\Helpers\getSettingValue;
+use App\Helpers\TimeHelper;
+use App\Exceptions\ScheduleConflictException;
 use App\Repositories\ScheduleRepository;
 
 /**
@@ -233,20 +234,13 @@ class ScheduleSyncService extends BaseService
         array &$affectedScheduleIds = []
     ): void
     {
+        // Birleştirilen child ders yalnızca kendi ders programına ve ait olduğu bölümün sınıf programına eklenir.
+        // Üst ders zaten hoca ve derslik programlarında yer aldığı için, hoca ve dersliğe tekrar eklenmez.
+        // Bu sayede hoca programında mükerrer ders kartları ve sahte 'grup ders' çakışmaları engellenir.
         $owners = [
             ['type' => 'lesson', 'id' => $childLesson->id, 'semester_no' => null],
             ['type' => 'program', 'id' => $childLesson->program_id, 'semester_no' => $childLesson->semester_no],
         ];
-
-        $lecturerId = $itemData[0]['lecturer_id'] ?? null;
-        $classroomId = $itemData[0]['classroom_id'] ?? null;
-
-        if ($lecturerId) {
-            $owners[] = ['type' => 'user', 'id' => $lecturerId, 'semester_no' => null];
-        }
-        if ($classroomId && $childLesson->classroom_type != 3) {
-            $owners[] = ['type' => 'classroom', 'id' => $classroomId, 'semester_no' => null];
-        }
 
         $breakMinutes = (int) getSettingValue('break', 'lesson', 10);
 
@@ -256,12 +250,12 @@ class ScheduleSyncService extends BaseService
             }
 
             $scheduleFilters = [
-                'owner_type'   => $owner['type'],
-                'owner_id'     => $owner['id'],
-                'semester'     => $parentSchedule->semester,
+                'owner_type'    => $owner['type'],
+                'owner_id'      => $owner['id'],
+                'semester'      => $parentSchedule->semester,
                 'academic_year' => $parentSchedule->academic_year,
-                'type'         => $parentSchedule->type,
-                'semester_no'  => $owner['type'] === 'program' ? $owner['semester_no'] : null,
+                'type'          => $parentSchedule->type,
+                'semester_no'   => $owner['type'] === 'program' ? $owner['semester_no'] : null,
             ];
 
             $childSchedule = clone $this->scheduleRepo->findOrCreate($scheduleFilters);
@@ -284,47 +278,42 @@ class ScheduleSyncService extends BaseService
                 $exStart = substr($exItem->start_time, 0, 5);
                 $exEnd   = substr($exItem->end_time, 0, 5);
 
-                if ($itemStart >= $exStart && $itemEnd <= $exEnd) {
-                    $matchedItem = $exItem;
-                    break;
+                if (TimeHelper::isOverlapping($itemStart, $itemEnd, $exStart, $exEnd)) {
+                    $exData = is_array($exItem->data) ? $exItem->data : (unserialize($exItem->data) ?: []);
+                    $exLessonIds = array_filter(array_column($exData, 'lesson_id'));
+
+                    if (!empty($exLessonIds) && !in_array($childLesson->id, $exLessonIds)) {
+                        throw new ScheduleConflictException(
+                            "Ders programında çakışma tespit edildi: {$childSchedule->getScheduleScreenName()} programında " .
+                            Schedule::getdayName("day{$item->day_index}") . " {$exStart}–{$exEnd} saatlerinde başka bir ders bulunmaktadır.",
+                            $exItem,
+                            $childSchedule
+                        );
+                    }
+
+                    if ($itemStart >= $exStart && $itemEnd <= $exEnd) {
+                        $matchedItem = $exItem;
+                        break;
+                    }
                 }
             }
 
             if ($matchedItem) {
-                $existingData = is_array($matchedItem->data) ? $matchedItem->data : (unserialize($matchedItem->data) ?: []);
-                $existingData = array_merge($existingData, $itemData);
-
-                $uniqueData = [];
-                $seen = [];
-                foreach ($existingData as $d) {
-                    $lid = $d['lesson_id'] ?? null;
-                    if ($lid && !in_array($lid, $seen)) {
-                        $seen[] = $lid;
-                        $uniqueData[] = $d;
-                    } elseif (!$lid) {
-                        $uniqueData[] = $d;
-                    }
-                }
-
-                $matchedItem->data = $uniqueData;
-                if (count($uniqueData) > 1 && $matchedItem->status !== ScheduleItemStatus::GROUP->value) {
-                    $matchedItem->status = ScheduleItemStatus::GROUP->value;
-                }
-                $matchedItem->update();
-                $this->timelineService->mergeAdjacentItems($matchedItem, $breakMinutes);
-            } else {
-                $newItem = new ScheduleItem();
-                $newItem->schedule_id = $childSchedule->id;
-                $newItem->day_index   = $item->day_index;
-                $newItem->week_index  = $item->week_index;
-                $newItem->start_time  = $item->start_time;
-                $newItem->end_time    = $item->end_time;
-                $newItem->status      = $item->status;
-                $newItem->data        = $itemData;
-                $newItem->detail      = $item->detail;
-                $newItem->create();
-                $this->timelineService->mergeAdjacentItems($newItem, $breakMinutes);
+                // Zaten bu dilimde child derse ait kayıt mevcut
+                continue;
             }
+
+            $newItem = new ScheduleItem();
+            $newItem->schedule_id = $childSchedule->id;
+            $newItem->day_index   = $item->day_index;
+            $newItem->week_index  = $item->week_index;
+            $newItem->start_time  = $item->start_time;
+            $newItem->end_time    = $item->end_time;
+            $newItem->status      = $item->status;
+            $newItem->data        = $itemData;
+            $newItem->detail      = $item->detail;
+            $newItem->create();
+            $this->timelineService->mergeAdjacentItems($newItem, $breakMinutes);
         }
     }
 

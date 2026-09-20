@@ -50,9 +50,9 @@ class ScheduleProfileScheduleCreationTest extends BaseTestCase
         // Toplamda her türden (lesson, midterm-exam, final-exam, makeup-exam) sadece 1'er tane olmalı (toplam 4)
         $this->assertCount(4, $schedules);
 
-        // Hiçbirinin semester_no'su dolu olmamalıdır
+        // Non-program (hoca) schedule'larında semester_no 0 olmalıdır
         foreach ($schedules as $sch) {
-            $this->assertNull($sch['semester_no'], "Hoca schedule'ında semester_no null olmalıdır, fakat {$sch['semester_no']} bulundu.");
+            $this->assertEquals(0, (int)$sch['semester_no'], "Hoca schedule'ında semester_no 0 olmalıdır, fakat {$sch['semester_no']} bulundu.");
         }
     }
 

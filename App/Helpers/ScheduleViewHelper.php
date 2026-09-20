@@ -458,7 +458,7 @@ class ScheduleViewHelper
     {
         if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             $data = $dto->toArray();
-            $data['semester_no'] = null;
+            $data['semester_no'] = 0;
             $dto = ScheduleFilterDTO::fromArray($data);
         }
 
@@ -540,7 +540,7 @@ class ScheduleViewHelper
         } else {
             $cardTitle = $schedule->getScheduleScreenName();
         }
-        $dataSemesterNo = 'data-semester-no="' . ($dto->semester_no ?? '') . '"';
+        $dataSemesterNo = 'data-semester-no="' . (($dto->owner_type === OwnerType::PROGRAM->value && $dto->semester_no) ? $dto->semester_no : '') . '"';
 
         if (ExamType::isExamType($dto->type)) {
             $duration = getSettingValue('duration', 'exam', 30);

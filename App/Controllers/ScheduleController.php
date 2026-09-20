@@ -57,10 +57,10 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "availableLessons");
 
-        // Hoca, Derslik ve Ders programları dönemden bağımsızdır
+        // Hoca, Derslik ve Ders programları dönemden bağımsızdır (semester_no = 0)
         if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             $data = $dto->toArray();
-            $data['semester_no'] = null;
+            $data['semester_no'] = 0;
             $dto = ScheduleFilterDTO::fromArray($data);
         }
 
@@ -92,11 +92,11 @@ class ScheduleController extends Controller
         $is_published_only = isset($requestData['is_published']) && $requestData['is_published'] === "true";
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
         
-        // Non-program owners (User, Classroom, Lesson) never have semester_no
+        // Non-program owners (User, Classroom, Lesson) always have semester_no = 0
         if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
-            if ($dto->semester_no !== null) {
+            if ($dto->semester_no !== 0) {
                 $data = $dto->toArray();
-                $data['semester_no'] = null;
+                $data['semester_no'] = 0;
                 $dto = ScheduleFilterDTO::fromArray($data);
             }
         }
