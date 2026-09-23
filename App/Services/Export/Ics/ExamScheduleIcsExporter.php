@@ -104,8 +104,15 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
                     $summaryText = "[{$typeLabel}] " . $lesson->name;
                     if (!empty($lesson->code)) $summaryText .= " ({$lesson->code})";
+                    if ($groupLetter = $lesson->getGroupLetter()) {
+                        $summaryText .= " (Grup {$groupLetter})";
+                    }
 
                     $descriptionParts = [];
+
+                    if ($groupLetter) {
+                        $descriptionParts[] = "Grup: " . $groupLetter;
+                    }
 
                         // Derslik ve gözetmenler assignments'tan gelir
                     if ($assignments !== null) {

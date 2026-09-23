@@ -81,10 +81,16 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
 
                     $summaryText = $lesson->name;
                     if (!empty($lesson->code)) $summaryText .= " ({$lesson->code})";
+                    if ($groupLetter = $lesson->getGroupLetter()) {
+                        $summaryText .= " (Grup {$groupLetter})";
+                    }
 
                     $locationText   = $classroom ? $classroom->name : '';
                     $descriptionParts = [];
 
+                    if ($groupLetter) {
+                        $descriptionParts[] = "Grup: " . $groupLetter;
+                    }
                     if ($scheduleFilter['type'] !== 'user' && $lecturer) {
                         $descriptionParts[] = "Hoca: " . $lecturer->getFullName();
                     }
