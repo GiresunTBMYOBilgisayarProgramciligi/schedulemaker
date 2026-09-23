@@ -561,12 +561,18 @@
     .lesson-card .lesson-name {
         color: var(--text-color-primary);
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        word-break: break-word;
     }
 
     .lesson-card .lesson-meta {
-        font-size: 0.78rem;
+        font-size: 0.76rem;
     }
 
     .lesson-card .lesson-lecturer,
@@ -576,9 +582,33 @@
         opacity: 0.9;
     }
 
-    /* Derslik ve Program Rozeti (Pill Badge) */
-    .lesson-classroom-badge,
-    .lesson-program-badge {
+    /* Derslik Programı Meta Bilgileri (Alt alta ferah ve badgesiz görünüm) */
+    .lesson-meta-classroom {
+        font-size: 0.74rem;
+        line-height: 1.35;
+        margin-top: 2px;
+    }
+
+    .lesson-meta-classroom .lesson-lecturer {
+        color: var(--text-color-primary);
+        font-weight: 500;
+        opacity: 0.92;
+        margin-right: 0;
+        display: block;
+        min-width: 0;
+    }
+
+    .lesson-meta-classroom .lesson-program {
+        color: #546e7a;
+        font-weight: 500;
+        opacity: 0.85;
+        font-size: 0.72rem;
+        display: block;
+        min-width: 0;
+    }
+
+    /* Derslik Rozeti (Pill Badge) */
+    .lesson-classroom-badge {
         font-size: 0.72rem;
         font-weight: 700;
         padding: 0.12rem 0.45rem;
