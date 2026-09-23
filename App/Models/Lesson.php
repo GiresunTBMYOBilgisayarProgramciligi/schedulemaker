@@ -488,8 +488,8 @@ class Lesson extends Model
             $name .= " (" . $this->code . ")";
         }
         if ($addGroup) {
-            // Grup numarasını harfe çevir: chr(64+1)='A', chr(64+2)='B', ..., chr(64+26)='Z'
-            $name .= ($this->group_no > 0 ? " (" . chr(64 + $this->group_no) . ")" : '');
+            $groupLetter = $this->getGroupLetter();
+            $name .= ($groupLetter !== null ? " (" . $groupLetter . ")" : '');
         }
         if ($addProgram) {
             $programName = $this->program->name ?? null;
@@ -501,6 +501,20 @@ class Lesson extends Model
             $name .= " (" . $this->size . " öğrenci)";
         }
         return trim($name);
+    }
+
+    /**
+     * Dersin grup harfini döner (örn: 1 => 'A', 2 => 'B', ...).
+     * Grup tanımlı değilse null döner.
+     *
+     * @return string|null
+     */
+    public function getGroupLetter(): ?string
+    {
+        if ($this->group_no !== null && $this->group_no > 0 && $this->group_no <= 26) {
+            return chr(64 + $this->group_no);
+        }
+        return null;
     }
 
     /**

@@ -44,4 +44,24 @@ class ScheduleViewHelperTest extends BaseTestCase
         $this->assertEquals(55, $attrs['data-lesson-id']);
         $this->assertEquals(1, $attrs['data-group-no']);
     }
+
+    public function testLessonGetGroupLetter(): void
+    {
+        $lesson = new Lesson();
+
+        $lesson->group_no = 1;
+        $this->assertEquals('A', $lesson->getGroupLetter());
+
+        $lesson->group_no = 2;
+        $this->assertEquals('B', $lesson->getGroupLetter());
+
+        $lesson->group_no = 3;
+        $this->assertEquals('C', $lesson->getGroupLetter());
+
+        $lesson->group_no = 0;
+        $this->assertNull($lesson->getGroupLetter());
+
+        $lesson->group_no = null;
+        $this->assertNull($lesson->getGroupLetter());
+    }
 }

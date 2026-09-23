@@ -63,22 +63,36 @@ if (!$isOnlyTable) {
     }
 }
 
-$lessonName = ($type === 'exam')
+$groupLetter = $slotData->lesson->getGroupLetter();
+
+$fullLessonTitle = ($type === 'exam')
     ? (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) : $slotData->lesson->getFullName())
     : (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true) : $slotData->lesson->getFullName(addGroup: true));
+
+$lessonDisplayName = ($type === 'exam')
+    ? (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) : $slotData->lesson->getFullName())
+    : (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: false) : $slotData->lesson->getFullName(addGroup: false));
 ?>
 <div <?= $attrString ?> <?= $popoverAttr ?> role="button" aria-grabbed="false" tabindex="0">
-    <div class="d-flex align-items-start justify-content-between gap-1 w-100 mb-1">
-        <?php if (!$isOnlyTable && !$isPreferenceMode && !$isLocked): ?>
-            <input type="checkbox" class="lesson-bulk-checkbox mt-1" title="Toplu işlem için seç">
-        <?php endif; ?>
-
-        <span class="lesson-name flex-grow-1" title="<?= htmlspecialchars($lessonName) ?>">
-            <?php if (!$isOnlyTable && $isLocked): ?>
-                <i class="fa fa-lock me-1 text-danger" title="Kilitli"></i>
+    <div class="d-flex align-items-center justify-content-between gap-1 w-100 mb-1 lesson-title-row">
+        <div class="d-flex align-items-center gap-1 min-w-0 flex-grow-1">
+            <?php if (!$isOnlyTable && !$isPreferenceMode && !$isLocked): ?>
+                <input type="checkbox" class="lesson-bulk-checkbox mt-0" title="Toplu işlem için seç">
             <?php endif; ?>
-            <?= $lessonName ?>
-        </span>
+
+            <span class="lesson-name text-truncate" title="<?= htmlspecialchars($fullLessonTitle) ?>">
+                <?php if (!$isOnlyTable && $isLocked): ?>
+                    <i class="fa fa-lock me-1 text-danger" title="Kilitli"></i>
+                <?php endif; ?>
+                <?= htmlspecialchars($lessonDisplayName) ?>
+            </span>
+        </div>
+
+        <?php if ($groupLetter !== null): ?>
+            <span class="badge lesson-group-badge lesson-group-badge-<?= strtolower($groupLetter) ?> flex-shrink-0" title="Grup <?= $groupLetter ?>">
+                Grup <?= $groupLetter ?>
+            </span>
+        <?php endif; ?>
     </div>
 
     <div class="lesson-meta flex-wrap w-100">
@@ -112,12 +126,12 @@ $lessonName = ($type === 'exam')
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center justify-content-between w-100 lesson-meta-row">
                 <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
                     <i class="bi bi-person me-1 opacity-75"></i><?= ($slotData->lecturer ?? null)?->getFullName() ?>
                 </span>
                 <?php if (!empty(($slotData->classroom ?? null)?->name)): ?>
-                    <span class="lesson-classroom lesson-classroom-badge ms-1" title="Derslik: <?= htmlspecialchars($slotData->classroom->name) ?>">
+                    <span class="lesson-classroom lesson-classroom-badge ms-1 flex-shrink-0" title="Derslik: <?= htmlspecialchars($slotData->classroom->name) ?>">
                         <?= $slotData->classroom->name ?>
                     </span>
                 <?php else: ?>

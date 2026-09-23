@@ -170,10 +170,16 @@
         /* Mobilde scroll olması için */
     }
 
-    .schedule-table th,
+    .schedule-table th {
+        border: 1px solid #e9ecef;
+        padding: 8px 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
     .schedule-table td {
         border: 1px solid #e9ecef;
-        padding: 12px;
+        padding: 5px;
         text-align: center;
         vertical-align: middle;
         height: 1px;
@@ -213,14 +219,14 @@
 
     /* Ders Hücresi Stilleri */
     .lesson-card {
-        padding: 8px;
+        padding: 7px 9px;
         border-radius: 6px;
         background-color: #e3f2fd;
         /* Varsayılan mavi ton */
         border-left: 4px solid #2196f3;
         text-align: left;
         transition: all 0.2s ease;
-        margin-bottom: 4px;
+        margin-bottom: 0;
         font-size: 0.9rem;
         position: relative;
         /* Checkbox için eklendi */
@@ -228,6 +234,15 @@
         box-sizing: border-box;
         word-break: break-word;
         overflow-wrap: break-word;
+    }
+
+    /* Hücre içindeki tek ders kartının dikeyde hücreyi tam doldurması ve boşluk bırakmaması için */
+    .schedule-table td > .lesson-card {
+        min-height: 54px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin-bottom: 0;
     }
 
     .lesson-card.h-100 {
@@ -410,40 +425,58 @@
     }
 
 
-    /* Gruplu Dersler İçin Ek Stiller */
+    /* Gruplu Dersler İçin Ek Stiller (Alt Alta Yerleşim) */
     .lesson-group-container {
         display: flex;
+        flex-direction: column;
         gap: 4px;
-        height: 100%;
+        min-height: 54px;
+        width: 100%;
+        justify-content: stretch;
     }
 
     .lesson-group-container .lesson-card {
-        flex: 1;
+        flex: 1 1 0;
         margin-bottom: 0;
         min-width: 0;
-        /* İçerik taşmasını önler */
+        width: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        font-size: 0.8rem;
-        padding: 6px;
+        font-size: 0.82rem;
+        padding: 5px 8px;
+    }
+
+    .lesson-group-container .lesson-title-row {
+        margin-bottom: 2px !important;
     }
 
     .lesson-group-container .lesson-name {
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     .lesson-group-container .lesson-meta {
-        font-size: 0.75rem;
-        flex-wrap: nowrap;
+        font-size: 0.76rem;
     }
 
-    .lesson-group-container .lesson-meta > .d-flex {
-        min-width: 0;
+    .lesson-meta-row {
+        display: flex;
         align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .lesson-group-container .lesson-meta-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
     }
 
     .lesson-group-container .lesson-lecturer {
@@ -452,13 +485,54 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-right: 4px;
+        line-height: 1.25;
     }
 
     .lesson-group-container .lesson-classroom {
         flex-shrink: 0;
         white-space: nowrap;
         margin-left: auto;
+        font-size: 0.72rem;
+        padding: 0.1rem 0.4rem;
+    }
+
+    /* Grup Rozeti (Badge) Stilleri */
+    .lesson-group-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        line-height: 1.15;
+        padding: 0.15rem 0.38rem;
+        border-radius: 0.3rem;
+        letter-spacing: 0.2px;
+        white-space: nowrap;
+        text-transform: uppercase;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        color: #ffffff;
+        background-color: #475569;
+    }
+
+    .lesson-group-badge-a,
+    .lesson-group-1 .lesson-group-badge {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+    }
+
+    .lesson-group-badge-b,
+    .lesson-group-2 .lesson-group-badge {
+        background-color: #db2777 !important;
+        color: #ffffff !important;
+    }
+
+    .lesson-group-badge-c,
+    .lesson-group-3 .lesson-group-badge {
+        background-color: #7c3aed !important;
+        color: #ffffff !important;
+    }
+
+    .lesson-group-badge-d,
+    .lesson-group-4 .lesson-group-badge {
+        background-color: #0891b2 !important;
+        color: #ffffff !important;
     }
 
     /* --- Ders Türü ve Renk Tanımlamaları --- */
@@ -650,6 +724,31 @@
 
     [data-bs-theme="dark"] .lesson-group-4 {
         background: linear-gradient(135deg, var(--bg-start) 0%, rgba(0, 150, 136, 0.22) 100%);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-badge {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    [data-bs-theme="dark"] .lesson-group-badge-a,
+    [data-bs-theme="dark"] .lesson-group-1 .lesson-group-badge {
+        background-color: rgba(37, 99, 235, 0.9) !important;
+    }
+
+    [data-bs-theme="dark"] .lesson-group-badge-b,
+    [data-bs-theme="dark"] .lesson-group-2 .lesson-group-badge {
+        background-color: rgba(219, 39, 119, 0.9) !important;
+    }
+
+    [data-bs-theme="dark"] .lesson-group-badge-c,
+    [data-bs-theme="dark"] .lesson-group-3 .lesson-group-badge {
+        background-color: rgba(124, 58, 237, 0.9) !important;
+    }
+
+    [data-bs-theme="dark"] .lesson-group-badge-d,
+    [data-bs-theme="dark"] .lesson-group-4 .lesson-group-badge {
+        background-color: rgba(8, 145, 178, 0.9) !important;
     }
 
     /* Context Menu Styles */
