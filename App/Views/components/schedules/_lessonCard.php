@@ -2,6 +2,7 @@
 use App\Core\View;
 use App\Enums\OwnerType;
 use App\Helpers\ScheduleViewHelper;
+use function App\Helpers\getClassFromSemesterNo;
 
 /**
  * Ders kartı (lesson-card) partial'ı
@@ -63,6 +64,10 @@ if (!$isOnlyTable) {
     }
 }
 
+$isUserSchedule = ($schedule->owner_type === OwnerType::USER->value);
+$isClassroomSchedule = ($schedule->owner_type === OwnerType::CLASSROOM->value);
+$isProgramSchedule = ($schedule->owner_type === OwnerType::PROGRAM->value);
+
 $groupLetter = $slotData->lesson->getGroupLetter();
 
 $fullLessonTitle = ($type === 'exam')
@@ -70,8 +75,15 @@ $fullLessonTitle = ($type === 'exam')
     : (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true) : $slotData->lesson->getFullName(addGroup: true));
 
 $lessonDisplayName = ($type === 'exam')
-    ? (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) : $slotData->lesson->getFullName())
-    : (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: false) : $slotData->lesson->getFullName(addGroup: false));
+    ? (($isUserSchedule || $isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName() : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true))
+    : (($isUserSchedule || $isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName(addGroup: false) : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: false));
+
+$programInfo = null;
+if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->program)) {
+    $progName = $slotData->lesson->program->name;
+    $classNo = getClassFromSemesterNo($slotData->lesson->semester_no);
+    $programInfo = $progName . ($classNo ? " - {$classNo}. Sınıf" : "");
+}
 ?>
 <div <?= $attrString ?> <?= $popoverAttr ?> role="button" aria-grabbed="false" tabindex="0">
     <div class="d-flex align-items-center justify-content-between gap-1 w-100 mb-1 lesson-title-row">
@@ -127,10 +139,21 @@ $lessonDisplayName = ($type === 'exam')
             </div>
         <?php else: ?>
             <div class="d-flex align-items-center justify-content-between w-100 lesson-meta-row">
-                <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
-                    <i class="bi bi-person me-1 opacity-75"></i><?= ($slotData->lecturer ?? null)?->getFullName() ?>
-                </span>
-                <?php if (!empty(($slotData->classroom ?? null)?->name)): ?>
+                <?php if ($isUserSchedule && !empty($programInfo)): ?>
+                    <span class="lesson-program text-truncate" title="Program: <?= htmlspecialchars($programInfo) ?>">
+                        <i class="bi bi-mortarboard me-1 opacity-75"></i><?= htmlspecialchars($programInfo) ?>
+                    </span>
+                <?php else: ?>
+                    <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
+                        <i class="bi bi-person me-1 opacity-75"></i><?= ($slotData->lecturer ?? null)?->getFullName() ?>
+                    </span>
+                <?php endif; ?>
+
+                <?php if ($isClassroomSchedule && !empty($programInfo)): ?>
+                    <span class="lesson-program lesson-program-badge ms-1 flex-shrink-0 text-truncate" style="max-width: 55%;" title="Program: <?= htmlspecialchars($programInfo) ?>">
+                        <i class="bi bi-mortarboard me-1 opacity-75"></i><?= htmlspecialchars($programInfo) ?>
+                    </span>
+                <?php elseif (!empty(($slotData->classroom ?? null)?->name)): ?>
                     <span class="lesson-classroom lesson-classroom-badge ms-1 flex-shrink-0" title="Derslik: <?= htmlspecialchars($slotData->classroom->name) ?>">
                         <?= $slotData->classroom->name ?>
                     </span>

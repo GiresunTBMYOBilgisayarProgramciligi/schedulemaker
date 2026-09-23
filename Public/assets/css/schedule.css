@@ -479,7 +479,8 @@
         gap: 4px;
     }
 
-    .lesson-group-container .lesson-lecturer {
+    .lesson-group-container .lesson-lecturer,
+    .lesson-group-container .lesson-program {
         flex: 1 1 auto;
         min-width: 0;
         white-space: nowrap;
@@ -568,14 +569,16 @@
         font-size: 0.78rem;
     }
 
-    .lesson-card .lesson-lecturer {
+    .lesson-card .lesson-lecturer,
+    .lesson-card .lesson-program {
         color: var(--text-color-primary);
         font-weight: 500;
         opacity: 0.9;
     }
 
-    /* Derslik Rozeti (Pill Badge) */
-    .lesson-classroom-badge {
+    /* Derslik ve Program Rozeti (Pill Badge) */
+    .lesson-classroom-badge,
+    .lesson-program-badge {
         font-size: 0.72rem;
         font-weight: 700;
         padding: 0.12rem 0.45rem;
