@@ -1,15 +1,63 @@
 # Changelog
 
-## [0.3.3] - 2026-08-30
+## [0.3.3] - 2026-09-26
 
 ### Added
-- **Büyük Sınıflar ve Amfiler İçin Çoklu Gözetmen Atama Desteği**:
+- **Mobil Tek Gün Görünümü (Mobile Day View) Navigasyonu**:
+  - Mobil cihazlarda (~768px altı) yatay kaydırma ihtiyacını ortadan kaldıran dinamik tek gün görünümü (`getSchedule.js`, `schedule.css`) eklendi.
+  - Günler arası geçiş için şık gün hapları (pills), önceki/sonraki gün navigasyonu ve dokunmatik sağa/sola kaydırma (touch swipe) desteği entegre edildi.
+  - Sınav haftası değişimlerinde aktif gün ve tarih etiketlerini senkronize eden `scheduleWeekChanged` event altyapısı kuruldu.
+  - Tablo başlıklarına `data-day-index`, `data-day-name` ve `data-day-date` attribute'ları eklendi.
+- **Ders Atama Modülü ve Toplu Dışa Aktarma (Assign Lessons)**:
+  - Dönemsel ders atamaları için yeni **Ders Atama Sayfası (`/admin/assignlessons`)** geliştirildi: Program seçimi, dönem filtresi, satır içi (inline) öğretim elemanı/derslik/bina ataması, tekli ve toplu kaydetme yetenekleri sunuldu.
+  - Program bazlı ders atama listesini Excel olarak indirebilme (`LessonAssignmentExcelExporter`) ve bölüm başkanı ile üst yetkililer için tüm programları tek bir Excel dosyasında ayrı sekmeler halinde toplu indirebilme (`exportMultiple`) özelliği eklendi.
+  - 3+1 ve 7+1 staj uygulayan programlar için dönem bazlı otomatik yarıyıl öneri mekanizması (`getSuggestedSemesterNo`) geliştirildi.
+- **Staj ve Mesleki Eğitim Dersleri Yönetimi Entegrasyonu (#42)**:
+  - Staj ve mesleki uygulama dersleri için derslik seçimi ve derslik çakışma kontrolleri esnetilerek normal derslerle çakışma engeli kaldırıldı.
+  - Program takvimlerinde ve Excel çıktılarında staj bilgileri tablonun altında açılır/kapanır (Bootstrap Collapse) özet kartı/tablosu olarak listelendi.
+  - Dışa aktarma modalına staj tablosunu dahil etme seçeneği (`show_internship`) eklendi ve misafir kullanıcılardan gizlendi.
+- **Büyük Sınıflar ve Amfiler İçin Çoklu Gözetmen Atama Desteği (#68)**:
   - Sınav programı düzenleme modalında (`ExamScheduleCard.js`) her bir derslik için birden fazla gözetmen seçebilme (TomSelect `multiple`) desteği eklendi.
   - Sınav takviminde tek bir salona birden fazla gözetmen atandığında derslik takviminde mükerrer kayıt oluşmasını engelleyen, her bir gözetmenin kendi kullanıcı programına bağımsız atama yansıtan servis altyapısı (`ExamScheduleService::saveExamScheduleItems`) kuruldu.
   - Çakışma kontrol servisi (`ConflictService` / `ConflictResolver`), sınav atamasındaki tüm derslik ve gözetmenleri otomatik olarak çakışma taramasına dahil edecek şekilde genişletildi.
   - Ders kartlarında (`_lessonCard.php`) ve sağ tık menüsünde (`showContextMenu`) bir derslikte görevli tüm gözetmenlerin isimleri ve programlarına hızlı erişim bağlantıları listelendi.
   - Excel (`ExamScheduleExcelExporter`) ve ICS takvim (`ExamScheduleIcsExporter`) dışa aktarma motorlarına çoklu gözetmen formatlaması entegre edildi.
   - Çoklu gözetmen atama, derslik tekilleştirme, sibling eşleme ve sınav silme işlemlerini doğrulayan kapsamlı entegrasyon testleri (`ExamScheduleServiceTest`) yazıldı.
+- **Liste ve JSON Formatında Dışa Aktarma (Export)**:
+  - Ders ve sınav programları için alternatif liste görünümünde Excel dışa aktarma servisi eklendi (`LessonScheduleListExcelExporter`, `ExamScheduleListExcelExporter`).
+  - Harici entegrasyonlar için ders/sınav programı JSON dışa aktarma servisi (`LessonScheduleJsonExporter`, `ExamScheduleJsonExporter`) eklendi ve çıktılara bina (`building`) bilgisi dahil edildi.
+- **KVKK ve Gizlilik Politikası Onay Mekanizması (#114)**:
+  - Kullanıcıların KVKK Aydınlatma Metni ve Gizlilik Politikasını onaylamalarını zorunlu kılan `user_consents` tablosu, `UserConsent` modeli ve `UserConsentRepository` mimarisi kuruldu.
+  - Oturum açan kullanıcılara ilk girişte bilgilendirme modalı, onay AJAX uçları ve yönetim/kamu footer alanlarına yasal metin bağlantıları eklendi.
+- **Mutemet (payroll_officer) Rolü**:
+  - Birim düzeyinde ders ve sınav programlarını görüntüleme ve dışa aktarma yetkilerine sahip yeni kurumsal rol tanımlandı.
+- **Program Seçicide Dönem/Sınıf Filtresi (#115)**:
+  - `_programSelector` bileşenine `semester_no` (dönem/sınıf) seçim kutusu eklendi; birim/bölüm/program bazında dinamik azami yarıyıl yükleme ve kaskad filtreleme sağlandı (`formEvents.js`).
+
+### Changed
+- **Gruplu Dersler, Derslik ve Hoca Görünümü UI/UX İyileştirmeleri**:
+  - Ders adından grup bilgisi ayrılarak belirgin bir rozet (`.lesson-group-badge`) haline getirildi; `Lesson::getGroupLetter()` metodu eklendi ve grup kartları dikey sütun (column) düzenine geçirildi.
+  - Derslik programlarında derslik adı yerine ait olduğu program bilgisi meta alanına taşındı; ders adlarının rahat sığması için 2 satıra kadar (`line-clamp: 2`) esneme desteği getirildi.
+  - Hoca takvimlerinde ders kartı meta alanına program bilgisi eklendi.
+- **Akademisyen Tekil Program Yayınlama Yetkisi**:
+  - Öğretim elemanlarının kendi ders programlarını yayınlayabilmesi/yayından kaldırabilmesi için `SchedulePolicy` ve `SchedulePublishService` yetkilendirmesi sağlandı.
+- **Dışa Aktarma Arayüzü**:
+  - Dışa aktarma ekranında (`exportschedule.php`) butonlar alt satıra ve sağa hizalanarak daha ergonomik bir yerleşim sağlandı; `_programSelector` bileşenine `buttonPosition` desteği eklendi.
+- **Çoklu Sahiplikte Güncelleme Tarihi Senkronizasyonu**:
+  - Bir derste yapılan güncellemenin bağlı tüm sahip programlarının `updated_at` tarihini otomatik senkronize etmesi sağlandı.
+- **Test ve Mailer İyileştirmeleri**:
+  - Test ortamında sahte mail desteği, `ScheduleNoteDeletedEvent` bildirim testleri ve yeni modül testleri (staj, ders atama, mobil görünüm vb.) eklendi.
+
+### Fixed
+- **Ders Birleştirme ve Çoklu Schedule Bütünlüğü (#124, #100)**:
+  - Program dışı (hoca, derslik, ders) schedule kayıtlarında `semester_no` değeri `NULL` yerine `0` olarak standartlaştırıldı ve veri tabanında deterministik tekillik sağlayan `uk_schedules_owner_period` UNIQUE indeksi oluşturuldu.
+  - Ders birleştirmede program çakışma kontrolü (`checkProgramScheduleConflict`, `validateCombinationSlots`, `TimeHelper::isOverlapping`) eklendi; child ders birleştirilirken mükerrer hoca/derslik atamaları kaldırıldı.
+  - Birleştirme kaynaklı bozuk serileştirilmiş veriler (fazladan süslü parantez) temizlendi.
+  - `Lesson` modelinden veritabanında bulunmayan alanlar (`lecturer_id`, `semester`, `academic_year`) temizlendi; parçalı ders eklemelerinde child ders saati limit aşımı giderildi.
+- **Grup Derslerinde Ardışık Saatlerin Otomatik Birleştirilmesi**:
+  - Grup derslerinde ardışık saatlerin tek blokta birleştirilmesini sağlayan `mergeAdjacentItems` ve timeline veri normalizasyonu yapıldı.
+- **ICS Takvim Çıktısında Grup Bilgisi ve Başlangıç Tarihi**:
+  - ICS dışa aktarmalarında etkinlik başlığına `(Grup X)` ve açıklamaya grup detayı eklendi; `ExamType::startDateSettingKey` kullanılarak sınav/ders ICS çıktılarındaki yanlış başlangıç tarihi hatası giderildi.
 
 ## [0.3.2] - 2026-08-28
 
