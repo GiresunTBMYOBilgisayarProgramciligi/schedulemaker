@@ -53,16 +53,16 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                 <?php endif; ?>
 
                 <div class="d-flex ms-auto <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
-                    <div class="btn-group btn-group-sm shadow-xs" role="group" aria-label="Dışa aktarma">
-                        <button id="singlePageExport" type="button" class="btn btn-outline-success d-inline-flex align-items-center gap-1"
+                    <div class="btn-group btn-group-sm shadow-xs schedule-export-btn-group" role="group" aria-label="Dışa aktarma">
+                        <button id="singlePageExport" type="button" class="btn btn-outline-success d-inline-flex align-items-center justify-content-center gap-1"
                             data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Excel Olarak İndir">
                             <i class="bi bi-file-earmark-excel"></i>
-                            <span class="d-none d-sm-inline">Excel'e aktar</span>
+                            <span>Excel'e Aktar</span>
                         </button>
-                        <button id="singlePageCalendar" type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-1"
+                        <button id="singlePageCalendar" type="button" class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center gap-1"
                             data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Telefon Takvimine (iCal) Kaydet">
                             <i class="bi bi-calendar-plus"></i>
-                            <span class="d-none d-sm-inline">Takvime kaydet</span>
+                            <span>Takvime Kaydet</span>
                         </button>
                     </div>
                 </div>

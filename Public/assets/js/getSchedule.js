@@ -115,6 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (label) label.textContent = `${weekIndex + 1}. Hafta`;
                 if (prevBtn) prevBtn.disabled = (weekIndex === 0);
                 if (nextBtn) nextBtn.disabled = (weekIndex === weekCount - 1);
+                card.dispatchEvent(new CustomEvent('scheduleWeekChanged', { detail: { weekIndex } }));
             };
 
             prevBtn.addEventListener('click', () => {
@@ -131,6 +132,200 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // İlk haftayı aktif et
             switchWeek(0);
+        });
+    }
+
+    function initMobileDayNavigation(container) {
+        const cards = container.querySelectorAll('.schedule-card');
+        cards.forEach(card => {
+            const tableWrapper = card.querySelector('.schedule-table-wrapper');
+            if (!tableWrapper) return;
+
+            // Varsa eski navigasyonu kaldır
+            const oldNav = card.querySelector('.mobile-day-navigation');
+            if (oldNav) {
+                oldNav.remove();
+            }
+
+            const tables = card.querySelectorAll('table.schedule-table');
+            if (tables.length === 0) return;
+
+            const firstTable = tables[0];
+            const dayHeaders = Array.from(firstTable.querySelectorAll('thead th[data-day-index]'));
+            if (dayHeaders.length <= 1) return;
+
+            const days = dayHeaders.map(th => {
+                const dayIndex = parseInt(th.dataset.dayIndex, 10);
+                const dayName = th.dataset.dayName || th.textContent.replace(/<[^>]*>/g, '').trim();
+                const shortName = dayName.length > 3 ? dayName.substring(0, 3) : dayName;
+                return { index: dayIndex, name: dayName, shortName: shortName };
+            });
+
+            tableWrapper.classList.add('mobile-day-view');
+
+            // Bugünün gün indeksini hesapla (Pazartesi=0, Salı=1, ..., Pazar=6)
+            const now = new Date();
+            const jsDay = now.getDay();
+            const currentWeekdayIndex = (jsDay === 0) ? 6 : (jsDay - 1);
+            let activeDayIndex = days.some(d => d.index === currentWeekdayIndex) ? currentWeekdayIndex : days[0].index;
+
+            // Mobil navigasyon DOM bileşeni
+            const nav = document.createElement('div');
+            nav.className = 'mobile-day-navigation d-md-none mb-3';
+            nav.innerHTML = `
+                <div class="mobile-day-nav-card shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <button type="button" class="btn btn-sm btn-outline-primary mobile-day-nav-btn prev-day-btn" title="Önceki Gün" aria-label="Önceki Gün">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <div class="text-center px-2 flex-grow-1 user-select-none">
+                            <div class="fw-bold text-primary fs-6 current-day-name"></div>
+                            <div class="text-muted small current-day-date d-none" style="font-size: 0.75rem;"></div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mobile-day-nav-btn next-day-btn" title="Sonraki Gün" aria-label="Sonraki Gün">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="mobile-day-pills d-flex justify-content-between gap-1 mt-2 w-100 flex-wrap">
+                        ${days.map(d => `
+                            <button type="button" class="btn btn-xs rounded-pill mobile-day-pill flex-fill btn-light border text-secondary" data-day-index="${d.index}">
+                                ${d.shortName}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            tableWrapper.parentNode.insertBefore(nav, tableWrapper);
+
+            // Mobilde tek gün görünümünde lunch-break-cell'in colspan değerini 1 yap
+            // Böylece tarayıcı tablo motoru gereksiz boş sütun alanı bırakmaz ve gün tüm genişliği kaplar!
+            const mql = window.matchMedia('(max-width: 767.98px)');
+            const updateColspans = (isMobile) => {
+                card.querySelectorAll('.lunch-break-cell').forEach(cell => {
+                    if (!cell.dataset.desktopColspan) {
+                        cell.dataset.desktopColspan = cell.getAttribute('colspan') || '5';
+                    }
+                    cell.colSpan = isMobile ? 1 : parseInt(cell.dataset.desktopColspan, 10);
+                });
+            };
+            updateColspans(mql.matches);
+            mql.addEventListener('change', (e) => updateColspans(e.matches));
+
+            const dayNameEl = nav.querySelector('.current-day-name');
+            const dayDateEl = nav.querySelector('.current-day-date');
+            const prevBtn = nav.querySelector('.prev-day-btn');
+            const nextBtn = nav.querySelector('.next-day-btn');
+            const pills = nav.querySelectorAll('.mobile-day-pill');
+
+            const updateView = (dayIndex) => {
+                activeDayIndex = dayIndex;
+
+                tables.forEach(t => {
+                    t.setAttribute('data-active-day', dayIndex);
+                });
+
+                const activeTable = card.querySelector('table.schedule-table.active') || tables[0];
+                const th = activeTable.querySelector(`thead th[data-day-index="${dayIndex}"]`);
+
+                let dayName = "";
+                let dayDate = "";
+                if (th) {
+                    dayName = th.dataset.dayName || "";
+                    dayDate = th.dataset.dayDate || "";
+                    if (!dayName) {
+                        const small = th.querySelector('small');
+                        if (small) {
+                            dayDate = small.textContent.trim();
+                            dayName = th.childNodes[0]?.textContent?.trim() || "";
+                        } else {
+                            dayName = th.textContent.trim();
+                        }
+                    }
+                } else {
+                    const found = days.find(d => d.index === dayIndex);
+                    dayName = found ? found.name : "";
+                }
+
+                dayNameEl.textContent = dayName;
+                if (dayDate) {
+                    dayDateEl.textContent = dayDate;
+                    dayDateEl.classList.remove('d-none');
+                } else {
+                    dayDateEl.classList.add('d-none');
+                }
+
+                const currentPos = days.findIndex(d => d.index === dayIndex);
+                prevBtn.disabled = (currentPos <= 0);
+                nextBtn.disabled = (currentPos >= days.length - 1);
+
+                pills.forEach(pill => {
+                    const pIndex = parseInt(pill.dataset.dayIndex, 10);
+                    if (pIndex === dayIndex) {
+                        pill.className = 'btn btn-xs rounded-pill mobile-day-pill btn-primary shadow-xs active';
+                    } else {
+                        pill.className = 'btn btn-xs rounded-pill mobile-day-pill btn-light border text-secondary';
+                    }
+                });
+            };
+
+            prevBtn.addEventListener('click', () => {
+                const currentPos = days.findIndex(d => d.index === activeDayIndex);
+                if (currentPos > 0) {
+                    updateView(days[currentPos - 1].index);
+                }
+            });
+
+            nextBtn.addEventListener('click', () => {
+                const currentPos = days.findIndex(d => d.index === activeDayIndex);
+                if (currentPos < days.length - 1) {
+                    updateView(days[currentPos + 1].index);
+                }
+            });
+
+            pills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    const targetIndex = parseInt(pill.dataset.dayIndex, 10);
+                    updateView(targetIndex);
+                });
+            });
+
+            // Sınav haftası değiştiğinde tarih etiketini güncelle
+            card.addEventListener('scheduleWeekChanged', () => {
+                updateView(activeDayIndex);
+            });
+
+            // Dokunmatik kaydırma (touch swipe) desteği
+            let touchStartX = 0;
+            let touchStartY = 0;
+            tableWrapper.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            tableWrapper.addEventListener('touchend', (e) => {
+                if (!touchStartX || !touchStartY || e.changedTouches.length === 0) return;
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+                touchStartX = 0;
+                touchStartY = 0;
+
+                if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                    const currentPos = days.findIndex(d => d.index === activeDayIndex);
+                    if (diffX < 0 && currentPos < days.length - 1) {
+                        updateView(days[currentPos + 1].index);
+                    } else if (diffX > 0 && currentPos > 0) {
+                        updateView(days[currentPos - 1].index);
+                    }
+                }
+            }, { passive: true });
+
+            // İlk açılış render'ı
+            updateView(activeDayIndex);
         });
     }
 
@@ -151,6 +346,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     // Hafta navigasyonunu aktif et (Sınav programları için)
                     initWeekNavigation(container);
+
+                    // Mobil tek gün görünümünü aktif et
+                    initMobileDayNavigation(container);
                     
                     //Cardiçerisindeki tüm tooltiplerin aktif edilmesi için
                     var tooltipTriggerList = [].slice.call(container.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -178,5 +376,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 new Toast().prepareToast("Hata", "Ders programı oluşturulurken hata oluştu. Detaylar için geliştirici konsoluna bakın", "danger");
                 console.error(error);
             });
+    }
+
+    // Halihazırda sayfada bulunan program kartları varsa ilklendir
+    const existingContainer = document.getElementById('schedule_container');
+    if (existingContainer && existingContainer.querySelector('.schedule-card')) {
+        initWeekNavigation(existingContainer);
+        initMobileDayNavigation(existingContainer);
     }
 });

@@ -498,11 +498,13 @@ class ScheduleViewHelper
             $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
             for ($i = 0; $i <= $maxDayIndex; $i++) {
                 $headerTitle = $days[$i];
+                $dateAttr = '';
                 if ($startDate) {
                     $currentDate = (clone $startDate)->modify("+" . ($weekIndex * 7 + $i) . " days");
                     $headerTitle .= '<br><small>' . $currentDate->format('d.m.Y') . '</small>';
+                    $dateAttr = ' data-day-date="' . $currentDate->format('d.m.Y') . '"';
                 }
-                $headers[] = '<th>' . $headerTitle . '</th>';
+                $headers[] = '<th data-day-index="' . $i . '" data-day-name="' . htmlspecialchars($days[$i]) . '"' . $dateAttr . '>' . $headerTitle . '</th>';
             }
             return $headers;
         };

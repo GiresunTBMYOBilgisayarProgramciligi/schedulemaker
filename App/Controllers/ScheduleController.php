@@ -186,8 +186,8 @@ class ScheduleController extends Controller
                                     <span>Tüm Yarıyıllar / Sınıflar</span>
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">' . $renderedCount . ' Dönem</span>
                                 </div>
-                                <div class="btn-group btn-group-sm shadow-xs ms-auto" role="group" aria-label="Tüm Dönemleri Dışa Aktarma">
-                                    <button id="singlePageExport" type="button" class="btn btn-success d-inline-flex align-items-center gap-1"
+                                <div class="btn-group btn-group-sm shadow-xs ms-auto schedule-export-btn-group" role="group" aria-label="Tüm Dönemleri Dışa Aktarma">
+                                    <button id="singlePageExport" type="button" class="btn btn-success d-inline-flex align-items-center justify-content-center gap-1"
                                         data-owner-type="' . htmlspecialchars((string)$dto->owner_type) . '" 
                                         data-owner-id="' . htmlspecialchars((string)$dto->owner_id) . '" 
                                         data-semester-no="" 
@@ -195,7 +195,7 @@ class ScheduleController extends Controller
                                         <i class="bi bi-file-earmark-excel"></i>
                                         <span>Tüm Dönemleri Excel\'e Aktar</span>
                                     </button>
-                                    <button id="singlePageCalendar" type="button" class="btn btn-primary d-inline-flex align-items-center gap-1"
+                                    <button id="singlePageCalendar" type="button" class="btn btn-primary d-inline-flex align-items-center justify-content-center gap-1"
                                         data-owner-type="' . htmlspecialchars((string)$dto->owner_type) . '" 
                                         data-owner-id="' . htmlspecialchars((string)$dto->owner_id) . '" 
                                         data-semester-no="" 

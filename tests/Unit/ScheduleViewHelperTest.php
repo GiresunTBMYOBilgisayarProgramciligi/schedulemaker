@@ -64,4 +64,40 @@ class ScheduleViewHelperTest extends BaseTestCase
         $lesson->group_no = null;
         $this->assertNull($lesson->getGroupLetter());
     }
+
+    public function testPrepareScheduleCardHeadersIncludeDayAttributes(): void
+    {
+        $dto = new \App\DTOs\ScheduleFilterDTO(
+            academic_year: '2025 - 2026',
+            semester: 'Güz',
+            type: 'lesson',
+            owner_type: 'program',
+            owner_id: 1,
+            semester_no: 1
+        );
+
+        $html = ScheduleViewHelper::prepareScheduleCard($dto, only_table: true);
+
+        $this->assertStringContainsString('data-day-index="0"', $html);
+        $this->assertStringContainsString('data-day-name="Pazartesi"', $html);
+        $this->assertStringContainsString('schedule-table', $html);
+    }
+
+    public function testPrepareExamScheduleCardHeadersIncludeDayAndDateAttributes(): void
+    {
+        $dto = new \App\DTOs\ScheduleFilterDTO(
+            academic_year: '2025 - 2026',
+            semester: 'Güz',
+            type: \App\Enums\ExamType::MIDTERM->value,
+            owner_type: 'program',
+            owner_id: 1,
+            semester_no: 1
+        );
+
+        $html = ScheduleViewHelper::prepareScheduleCard($dto, only_table: true);
+
+        $this->assertStringContainsString('data-day-index="0"', $html);
+        $this->assertStringContainsString('data-day-name="Pazartesi"', $html);
+        $this->assertStringContainsString('schedule-table', $html);
+    }
 }
