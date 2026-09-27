@@ -90,4 +90,25 @@ class ClassroomServiceTest extends BaseTestCase
         $deleted = (new Classroom())->find($classroomId);
         $this->assertNull($deleted);
     }
+
+    public function testCountByUnit(): void
+    {
+        $repo = new \App\Repositories\ClassroomRepository();
+        $initialCount = $repo->countByUnit($this->unitId);
+
+        $dto = ClassroomDTO::fromArray([
+            'name' => 'D-' . rand(100, 999),
+            'class_size' => 30,
+            'exam_size' => 20,
+            'building_id' => $this->buildingId,
+            'type' => ClassroomType::CLASSROOM->value
+        ]);
+        $this->service->saveNew($dto);
+
+        $newCount = $repo->countByUnit($this->unitId);
+        $this->assertEquals($initialCount + 1, $newCount);
+
+        // Var olmayan birim için 0 dönmeli
+        $this->assertEquals(0, $repo->countByUnit(99999999));
+    }
 }

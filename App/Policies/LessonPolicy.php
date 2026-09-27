@@ -15,6 +15,10 @@ class LessonPolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
+        if ($this->hasExactRole($user, UserRole::Secretary)) {
+            return $this->hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value);
+        }
+
         return $this->hasRole($user, UserRole::DepartmentHead) || 
                $this->hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value);
     }

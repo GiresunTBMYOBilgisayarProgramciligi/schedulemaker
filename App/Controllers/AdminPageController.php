@@ -92,7 +92,7 @@ class AdminPageController extends Controller
         } elseif (Gate::allowsRole('secretary')) {
             $unitId = $currentUser->unit_id;
             $view_data['stats'] = [
-                'classrooms' => $unitId ? (new ClassroomRepository())->count(['unit_id' => $unitId]) : (new ClassroomRepository())->count(),
+                'classrooms' => $unitId ? (new ClassroomRepository())->countByUnit($unitId) : (new ClassroomRepository())->count(),
                 'buildings'  => $unitId ? (new BuildingRepository())->count(['unit_id' => $unitId]) : (new BuildingRepository())->count(),
             ];
 

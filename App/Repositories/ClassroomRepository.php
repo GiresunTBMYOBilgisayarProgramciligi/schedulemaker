@@ -24,5 +24,21 @@ class ClassroomRepository extends BaseRepository
             ->first();
     }
 
-
+    /**
+     * Belirtilen birime ait toplam derslik sayısını döner.
+     *
+     * @param int $unitId Birim ID'si
+     * @return int
+     */
+    public function countByUnit(int $unitId): int
+    {
+        $sql = "SELECT COUNT(c.id) as total 
+                FROM classrooms c 
+                INNER JOIN buildings b ON c.building_id = b.id 
+                WHERE b.unit_id = :unit_id";
+        $stmt = \App\Core\Database::getConnection()->prepare($sql);
+        $stmt->execute(['unit_id' => $unitId]);
+        $row = $stmt->fetch();
+        return (int)($row['total'] ?? 0);
+    }
 }

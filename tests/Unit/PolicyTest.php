@@ -196,5 +196,19 @@ class PolicyTest extends BaseTestCase
         // Hoca başka bir hocanın programını yayınlayamaz
         $this->assertFalse($policy->publish_schedule($lecturer, $otherLecturerSchedule));
     }
+
+    public function testSecretaryPermissionsInLessonAndSchedulePolicy(): void
+    {
+        $secretary = $this->createMockUser('secretary', 1);
+        $deptHead = $this->createMockUser('department_head', 1, 1);
+
+        $lessonPolicy = new \App\Policies\LessonPolicy();
+        $this->assertFalse($lessonPolicy->list($secretary));
+        $this->assertTrue($lessonPolicy->list($deptHead));
+
+        $schedulePolicy = new SchedulePolicy();
+        $this->assertFalse($schedulePolicy->list($secretary));
+        $this->assertTrue($schedulePolicy->list($deptHead));
+    }
 }
 

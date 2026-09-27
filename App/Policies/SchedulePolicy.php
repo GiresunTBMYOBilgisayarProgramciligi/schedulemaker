@@ -18,6 +18,10 @@ class SchedulePolicy extends BasePolicy
      */
     public function list(User $user): bool
     {
+        if ($this->hasExactRole($user, UserRole::Secretary)) {
+            return false;
+        }
+
         return $this->hasRole($user, UserRole::DepartmentHead);
     }
 

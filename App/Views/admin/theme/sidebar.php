@@ -60,7 +60,7 @@ use App\Enums\PermissionType;
                 <li class="nav-header">EĞİTİM & ÖĞRETİM</li>
                 <?php endif; ?>
                 <!-- Ders İşlemleri -->
-                <?php if (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_LESSONS->value)): ?>
+                <?php if ($currentUser->role !== \App\Enums\UserRole::Secretary->value && (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_LESSONS->value))): ?>
                     <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
                         <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-journals"></i>
@@ -106,7 +106,7 @@ use App\Enums\PermissionType;
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            <?php if ($currentUser->role !== \App\Enums\UserRole::PayrollOfficer->value): ?>
+                            <?php if ($currentUser->role !== \App\Enums\UserRole::PayrollOfficer->value && $currentUser->role !== \App\Enums\UserRole::Secretary->value): ?>
                             <li class="nav-item">
                                 <a href="/admin/editschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-calendar-plus"></i>
@@ -126,7 +126,7 @@ use App\Enums\PermissionType;
                                     <p>Dışa Aktar</p>
                                 </a>
                             </li>
-                            <?php if (Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)): ?>
+                            <?php if ($currentUser->role !== \App\Enums\UserRole::Secretary->value && Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)): ?>
                             <li class="nav-item">
                                 <a href="/admin/publishschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'publishschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-globe"></i>
