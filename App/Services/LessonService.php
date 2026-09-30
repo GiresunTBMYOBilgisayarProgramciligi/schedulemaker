@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\PermissionType;
 
 use App\Enums\ExamType;
+use App\Enums\LessonType;
 use App\Enums\ScheduleItemStatus;
 use App\Models\Lesson;
 use App\Models\Schedule;
@@ -849,6 +850,8 @@ class LessonService extends BaseService
         $startTimeStr = substr($startTime, 0, 5);
         $endTimeStr = substr($endTime, 0, 5);
 
+        $childIsInternship = ((int)$childLesson->type === LessonType::INTERNSHIP->value);
+
         foreach ($programSchedule->items as $item) {
             if ((int)$item->day_index !== $dayIndex) {
                 continue;
@@ -866,6 +869,30 @@ class LessonService extends BaseService
 
                 // Eğer tek ders varsa ve o da bağlanacak child ders ise, birleştirme sırasında zaten wipe edilecek; çakışma sayılmaz
                 if (!empty($lessonIds) && in_array($childLesson->id, $lessonIds) && count($lessonIds) === 1) {
+                    continue;
+                }
+
+                // ConflictResolver ile tutarlı: Staj dersi ile normal ders çakışmaz
+                // Mevcut slottaki derslerin hepsinin staj/normal durumunu belirle
+                $allExistingAreInternship = true;
+                $anyExistingIsInternship = false;
+                foreach ($lessonIds as $lid) {
+                    if ($lid == $childLesson->id) {
+                        continue;
+                    }
+                    $existingLesson = (new Lesson())->find($lid);
+                    if ($existingLesson && (int)$existingLesson->type === LessonType::INTERNSHIP->value) {
+                        $anyExistingIsInternship = true;
+                    } else {
+                        $allExistingAreInternship = false;
+                    }
+                }
+
+                // Biri staj diğeri normal ders ise çakışma sayılmaz
+                if ($childIsInternship && !$anyExistingIsInternship) {
+                    continue;
+                }
+                if (!$childIsInternship && $allExistingAreInternship && !empty($lessonIds)) {
                     continue;
                 }
 
