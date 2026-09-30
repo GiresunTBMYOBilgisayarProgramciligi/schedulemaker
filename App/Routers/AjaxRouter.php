@@ -657,6 +657,33 @@ class AjaxRouter extends Router
     }
 
     /**
+     * Yüklenen UBS Excel dosyasını seçili program için analiz eder
+     */
+    public function parseUbsLessonsAction(): void
+    {
+        $this->response = (new LessonController())->parseUbsLessons($this->files, $this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * UBS tablosundaki tek bir dersi kaydeder veya günceller
+     */
+    public function saveUbsLessonAction(): void
+    {
+        $this->response = (new LessonController())->saveUbsLessonItem($this->data);
+        $this->sendResponse();
+    }
+
+    /**
+     * UBS tablosundaki dersleri topluca kaydeder
+     */
+    public function bulkSaveUbsLessonsAction(): void
+    {
+        $this->response = (new LessonController())->bulkSaveUbsLessons($this->data);
+        $this->sendResponse();
+    }
+
+    /**
      * Excel / ICS program dışa aktarma — ExporterFactory ve ScheduleExporterInterface üzerinden çalışır.
      * @throws Exception
      */

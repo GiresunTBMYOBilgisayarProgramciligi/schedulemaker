@@ -90,8 +90,8 @@ use App\Models\Lesson;
 
                         <!-- Aksiyon Butonları -->
                         <div class="col-xl-5 col-md-12 text-md-end d-flex flex-wrap gap-1 justify-content-md-end align-items-center">
-                            <button type="button" id="btnFetchLessons" class="btn btn-primary">
-                                <i class="bi bi-search me-1"></i> Dersleri Listele
+                            <button type="button" id="btnOpenUbsModal" class="btn btn-warning text-dark" title="UBS / ÖBS ders listesi Excel dosyasından aktar">
+                                <i class="bi bi-file-earmark-arrow-up me-1"></i> UBS'den İçe Aktar
                             </button>
                             <button type="button" id="btnExportExcel" class="btn btn-success" title="Seçili programın ders atama listesini Excel formatında indir">
                                 <i class="bi bi-file-earmark-excel me-1"></i> Excel İndir
@@ -103,6 +103,27 @@ use App\Models\Lesson;
                             <?php endif; ?>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- UBS İçe Aktarma Modu Bilgi Bandı -->
+            <div id="ubsImportBanner" class="alert alert-warning border-warning shadow-sm d-none mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h5 class="alert-heading mb-1">
+                            <i class="bi bi-file-earmark-spreadsheet-fill text-warning me-2"></i>
+                            <strong>UBS İçe Aktarma Modu:</strong> <span id="ubsProgramName" class="fw-bold"></span>
+                        </h5>
+                        <p class="mb-0 small text-secondary" id="ubsSummaryText"></p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" id="btnCancelUbsMode" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i> İptal / Normal Listeye Dön
+                        </button>
+                        <button type="button" id="btnSaveAllUbs" class="btn btn-success btn-sm fw-bold">
+                            <i class="bi bi-check-all me-1"></i> Tüm UBS Derslerini Kaydet
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -204,3 +225,49 @@ use App\Models\Lesson;
         <option value="<?= $bld->id ?>"><?= htmlspecialchars($bld->name) ?></option>
     <?php endforeach; ?>
 </template>
+
+<!-- UBS İçe Aktarma Modalı -->
+<div class="modal fade" id="ubsImportModal" tabindex="-1" aria-labelledby="ubsImportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning bg-opacity-25">
+                <h5 class="modal-title" id="ubsImportModalLabel">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> UBS'den Ders İçe Aktar
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <form id="ubsUploadForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="alert alert-light border mb-3">
+                        <div class="small text-muted mb-1">Seçili Hedef:</div>
+                        <div class="fw-bold" id="ubsModalTargetInfo">Program: - | Dönem: -</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="ubsFileInput" class="form-label fw-bold">UBS Excel Dosyası (.xlsx)</label>
+                        <input type="file" class="form-control" id="ubsFileInput" name="importFile" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <div class="form-text">
+                            Üniversite Bilgi Sistemi'nden (ÖBS / UBS) indirilen <strong>AcilanDersler.xlsx</strong> dosyasını seçiniz.
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-2 rounded small text-secondary">
+                        <ul class="mb-0 ps-3">
+                            <li>Hocası atanmamış dersler otomatik elenir.</li>
+                            <li>Tek şubeli derslerin grubu <strong>0</strong> olarak ayarlanır.</li>
+                            <li>Sistemde mevcut olanlar ve yeni eklenecekler tabloda renklerle ayrıştırılır.</li>
+                            <li>İstenmeyen dersleri tablodan tek tıkla silebilirsiniz.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" id="btnSubmitUbsFile" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i> Dosyayı Çözümle ve Listele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

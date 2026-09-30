@@ -76,6 +76,27 @@ use function App\Helpers\getSettingValue;
                             </div>
                         </form>
                     </div>
+
+                    <!-- UBS Yönlendirme Kartı -->
+                    <div class="card card-warning card-outline mt-4">
+                        <div class="card-header">
+                            <h3 class="card-title text-dark">
+                                <i class="bi bi-file-earmark-spreadsheet-fill text-warning me-2"></i>
+                                <strong>UBS (Öğrenci Bilgi Sistemi) Çıktılarını İçe Aktarma</strong>
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                Üniversite Bilgi Sistemi'nden (ÖBS / UBS) doğrudan indirilen <code>AcilanDersler.xlsx</code> dosyalarınızı bölüm ve program bazında aktarabilirsiniz.
+                            </p>
+                            <p class="mb-3 text-muted small">
+                                Bu yöntemle: Tek grup derslerin grubu otomatik <code>0</code> yapılır, hocası atanmamış dersler elenir, sistemde var olan derslerin mevcudu ve hocası güncellenirken, sistemde olmayan yeni dersler sarı renkle vurgulanarak onayınıza sunulur.
+                            </p>
+                            <a href="/admin/assignlessons" class="btn btn-warning text-dark">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Ders Atama & UBS İçe Aktarma Sayfasına Git
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Row-->
