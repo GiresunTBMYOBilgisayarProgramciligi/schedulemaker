@@ -12,6 +12,7 @@ use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Services\Schedule\ScheduleService;
 use App\Services\Schedule\ScheduleSyncService;
+use App\Services\Schedule\ConflictService;
 use App\Core\Database;
 use App\DTOs\CombineLessonDTO;
 use App\DTOs\CombineExamLessonDTO;
@@ -734,22 +735,45 @@ class LessonService extends BaseService
         }
 
         // Çakışmaları denetle (child dersin programında bu slotlarda başka ders var mı?)
+        $targetSchedule = null;
+        if ($childLesson->program_id && $childLesson->semester_no) {
+            $targetSchedule = (new Schedule())->get()->where([
+                'owner_type'    => OwnerType::PROGRAM->value,
+                'owner_id'      => $childLesson->program_id,
+                'semester_no'   => $childLesson->semester_no,
+                'semester'      => $semester,
+                'academic_year' => $academicYear,
+                'type'          => 'lesson',
+            ])->first();
+        }
+
+        $conflictService = new ConflictService();
         $conflictingSlots = [];
         foreach ($slots as &$slot) {
-            $conflict = $this->checkProgramScheduleConflict(
-                $childLesson,
-                $semester,
-                $academicYear,
-                $slot['day_index'],
-                $slot['start_time'],
-                $slot['end_time']
-            );
-            if ($conflict) {
-                $slot['has_conflict'] = true;
-                $slot['conflict_reason'] = "'{$conflict['lesson_name']}' dersi ile çakışıyor";
-                $conflictingSlots[] = $slot;
-            } else {
+            if (!$targetSchedule) {
                 $slot['has_conflict'] = false;
+                continue;
+            }
+
+            $dto = new ScheduleItemDTO(
+                scheduleId: (int)$targetSchedule->id,
+                dayIndex: (int)$slot['day_index'],
+                weekIndex: 0,
+                startTime: $slot['start_time'],
+                endTime: $slot['end_time'],
+                status: ScheduleItemStatus::SINGLE->value,
+                data: [['lesson_id' => $childLesson->id]]
+            );
+
+            try {
+                $conflictService->checkScheduleCrash([
+                    'items' => [$dto->toArray()]
+                ]);
+                $slot['has_conflict'] = false;
+            } catch (Exception $e) {
+                $slot['has_conflict'] = true;
+                $slot['conflict_reason'] = $e->getMessage();
+                $conflictingSlots[] = $slot;
             }
         }
         unset($slot);
@@ -761,10 +785,7 @@ class LessonService extends BaseService
             if (!empty($conflictingSlots)) {
                 $c = $conflictingSlots[0];
                 throw new ScheduleConflictException(
-                    "Ders programında çakışma tespit edildi: " .
-                    ($childLesson->program?->name ?? 'Program') . " programında " .
-                    "{$c['day_name']} {$c['start_time']}–{$c['end_time']} saatlerinde {$c['conflict_reason']}. " .
-                    "Dersler birleştirilemez."
+                    "Ders programında çakışma tespit edildi: " . $c['conflict_reason'] . " Dersler birleştirilemez."
                 );
             }
             return ['needs_confirmation' => false];
@@ -776,9 +797,7 @@ class LessonService extends BaseService
         if ($nonConflictingCount < $childLesson->hours && !empty($conflictingSlots)) {
             $c = $conflictingSlots[0];
             throw new ScheduleConflictException(
-                "Ders programında çakışma tespit edildi: " .
-                ($childLesson->program?->name ?? 'Program') . " programında " .
-                "{$c['day_name']} {$c['start_time']}–{$c['end_time']} saatlerinde {$c['conflict_reason']}. " .
+                "Ders programında çakışma tespit edildi: " . $c['conflict_reason'] . " " .
                 "Kalan uygun saatler bağlanacak dersin süresini ({$childLesson->hours} saat) karşılamadığından dersler birleştirilemez."
             );
         }
@@ -809,117 +828,6 @@ class LessonService extends BaseService
         ];
     }
 
-    /**
-     * Bağlanacak dersin bölüm ders programında belirtilen gün ve saat diliminde başka bir ders olup olmadığını denetler.
-     *
-     * @param Lesson $childLesson
-     * @param string $semester
-     * @param string $academicYear
-     * @param int $dayIndex
-     * @param string $startTime
-     * @param string $endTime
-     * @return array|null Çakışma bilgisi veya null
-     */
-    public function checkProgramScheduleConflict(
-        Lesson $childLesson,
-        string $semester,
-        string $academicYear,
-        int $dayIndex,
-        string $startTime,
-        string $endTime
-    ): ?array {
-        if (!$childLesson->program_id || !$childLesson->semester_no) {
-            return null;
-        }
-
-        $conditions = [
-            'owner_type'    => OwnerType::PROGRAM->value,
-            'owner_id'      => $childLesson->program_id,
-            'semester_no'   => $childLesson->semester_no,
-            'semester'      => $semester,
-            'academic_year' => $academicYear,
-            'type'          => 'lesson',
-        ];
-
-        /** @var Schedule|null $programSchedule */
-        $programSchedule = (new Schedule())->get()->where($conditions)->with(['items'])->first();
-        if (!$programSchedule || empty($programSchedule->items)) {
-            return null;
-        }
-
-        $startTimeStr = substr($startTime, 0, 5);
-        $endTimeStr = substr($endTime, 0, 5);
-
-        $childIsInternship = ((int)$childLesson->type === LessonType::INTERNSHIP->value);
-
-        foreach ($programSchedule->items as $item) {
-            if ((int)$item->day_index !== $dayIndex) {
-                continue;
-            }
-            if (in_array($item->status, [ScheduleItemStatus::UNAVAILABLE->value, ScheduleItemStatus::PREFERRED->value])) {
-                continue;
-            }
-
-            $exStart = substr($item->start_time, 0, 5);
-            $exEnd = substr($item->end_time, 0, 5);
-
-            if (TimeHelper::isOverlapping($startTimeStr, $endTimeStr, $exStart, $exEnd)) {
-                $data = is_array($item->data) ? $item->data : (unserialize($item->data) ?: []);
-                $lessonIds = array_filter(array_column($data, 'lesson_id'));
-
-                // Eğer tek ders varsa ve o da bağlanacak child ders ise, birleştirme sırasında zaten wipe edilecek; çakışma sayılmaz
-                if (!empty($lessonIds) && in_array($childLesson->id, $lessonIds) && count($lessonIds) === 1) {
-                    continue;
-                }
-
-                // ConflictResolver ile tutarlı: Staj dersi ile normal ders çakışmaz
-                // Mevcut slottaki derslerin hepsinin staj/normal durumunu belirle
-                $allExistingAreInternship = true;
-                $anyExistingIsInternship = false;
-                foreach ($lessonIds as $lid) {
-                    if ($lid == $childLesson->id) {
-                        continue;
-                    }
-                    $existingLesson = (new Lesson())->find($lid);
-                    if ($existingLesson && (int)$existingLesson->type === LessonType::INTERNSHIP->value) {
-                        $anyExistingIsInternship = true;
-                    } else {
-                        $allExistingAreInternship = false;
-                    }
-                }
-
-                // Biri staj diğeri normal ders ise çakışma sayılmaz
-                if ($childIsInternship && !$anyExistingIsInternship) {
-                    continue;
-                }
-                if (!$childIsInternship && $allExistingAreInternship && !empty($lessonIds)) {
-                    continue;
-                }
-
-                $conflictingLessonId = null;
-                foreach ($lessonIds as $lid) {
-                    if ($lid != $childLesson->id) {
-                        $conflictingLessonId = $lid;
-                        break;
-                    }
-                }
-
-                $conflictingLesson = $conflictingLessonId ? (new Lesson())->find($conflictingLessonId) : null;
-                $conflictingName = $conflictingLesson ? $conflictingLesson->getFullName(true) : "Başka bir ders";
-
-                return [
-                    'conflicting_item'     => $item,
-                    'conflicting_schedule' => $programSchedule,
-                    'lesson_name'          => $conflictingName,
-                    'start_time'           => $exStart,
-                    'end_time'             => $exEnd,
-                    'day_index'            => $dayIndex,
-                ];
-            }
-        }
-
-        return null;
-    }
 
     /**
      * Parent dersten child derse aktarılacak slotların child programında çakışma yaratıp yaratmadığını doğrular.
@@ -967,6 +875,19 @@ class LessonService extends BaseService
             return;
         }
 
+        $targetSchedule = null;
+        if ($childLesson->program_id && $childLesson->semester_no) {
+            $targetSchedule = (new Schedule())->get()->where([
+                'owner_type'    => OwnerType::PROGRAM->value,
+                'owner_id'      => $childLesson->program_id,
+                'semester_no'   => $childLesson->semester_no,
+                'semester'      => $semester,
+                'academic_year' => $academicYear,
+                'type'          => 'lesson',
+            ])->first();
+        }
+        $conflictService = new ConflictService();
+
         $duration = (int) getSettingValue('duration', 'lesson', 50);
         $break = (int) getSettingValue('break', 'lesson', 10);
 
@@ -994,25 +915,28 @@ class LessonService extends BaseService
                     $startTime = $slotStart->format('H:i');
                     $endTime = $slotEnd->format('H:i');
 
-                    $conflict = $this->checkProgramScheduleConflict(
-                        $childLesson,
-                        $semester,
-                        $academicYear,
-                        $item->day_index,
-                        $startTime,
-                        $endTime
-                    );
-
-                    if ($conflict) {
-                        $dayName = Schedule::getdayName("day{$item->day_index}");
-                        throw new ScheduleConflictException(
-                            "Ders programında çakışma tespit edildi: " .
-                            ($conflict['conflicting_schedule']?->getScheduleScreenName() ?? 'Program') . " programında " .
-                            "{$dayName} {$startTime}–{$endTime} saatlerinde '{$conflict['lesson_name']}' dersi bulunmaktadır. " .
-                            "Dersler birleştirilemez.",
-                            $conflict['conflicting_item'] ?? null,
-                            $conflict['conflicting_schedule'] ?? null
+                    if ($targetSchedule) {
+                        $dto = new ScheduleItemDTO(
+                            scheduleId: (int)$targetSchedule->id,
+                            dayIndex: (int)$item->day_index,
+                            weekIndex: 0,
+                            startTime: $startTime,
+                            endTime: $endTime,
+                            status: ScheduleItemStatus::SINGLE->value,
+                            data: [['lesson_id' => $childLesson->id]]
                         );
+
+                        try {
+                            $conflictService->checkScheduleCrash([
+                                'items' => [$dto->toArray()]
+                            ]);
+                        } catch (Exception $e) {
+                            throw new ScheduleConflictException(
+                                "Ders programında çakışma tespit edildi: " . $e->getMessage() . " Dersler birleştirilemez.",
+                                null,
+                                $targetSchedule
+                            );
+                        }
                     }
                 }
 
