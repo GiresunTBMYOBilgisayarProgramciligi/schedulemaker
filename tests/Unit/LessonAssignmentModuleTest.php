@@ -5,6 +5,12 @@ namespace Tests\Unit;
 use Tests\BaseTestCase;
 use App\Models\User;
 use App\Models\Lesson;
+use App\Models\Program;
+use App\Models\Department;
+use App\Models\Unit;
+use App\Models\Building;
+use App\Services\BuildingService;
+use App\Repositories\BuildingRepository;
 use App\DTOs\LessonDTO;
 use App\Enums\UserRole;
 use App\Enums\UnitType;
@@ -411,5 +417,491 @@ class LessonAssignmentModuleTest extends BaseTestCase
             $propUser->setValue(null, null);
         }
     }
+
+    /**
+     * Program::getFullName varsayılan olarak sadece program adını döner.
+     */
+    public function testProgramGetFullNameDefault(): void
+    {
+        $program = new Program();
+        $program->name = "Muhasebe Ve Vergi Uygulamaları";
+
+        $this->assertEquals("Muhasebe Ve Vergi Uygulamaları", $program->getFullName());
+        $this->assertEquals("Muhasebe Ve Vergi Uygulamaları", $program->getFullName(false, false));
+    }
+
+    /**
+     * Program::getFullName birim ve bölüm bilgilerini parantez içinde formatlar.
+     */
+    public function testProgramGetFullNameWithUnitAndDepartment(): void
+    {
+        $unit = new Unit();
+        $unit->name = "Tirebolu Mehmet Bayrak MYO";
+
+        $department = new Department();
+        $department->name = "Muhasebe ve Vergi";
+        $department->unit = $unit;
+
+        $program = new Program();
+        $program->name = "Muhasebe Ve Vergi Uygulamaları";
+        $program->department = $department;
+
+        $this->assertEquals(
+            "Muhasebe Ve Vergi Uygulamaları (Tirebolu Mehmet Bayrak MYO - Muhasebe ve Vergi)",
+            $program->getFullName(includeUnit: true, includeDepartment: true)
+        );
+
+        $this->assertEquals(
+            "Muhasebe Ve Vergi Uygulamaları (Tirebolu Mehmet Bayrak MYO)",
+            $program->getFullName(includeUnit: true, includeDepartment: false)
+        );
+
+        $this->assertEquals(
+            "Muhasebe Ve Vergi Uygulamaları (Muhasebe ve Vergi)",
+            $program->getFullName(includeUnit: false, includeDepartment: true)
+        );
+    }
+
+    /**
+     * Program::getFullName ilişkiler tanımlı olmadığında hata vermeden sadece mevcut veriyi formatlar.
+     */
+    public function testProgramGetFullNameWithMissingRelations(): void
+    {
+        $program = new Program();
+        $program->name = "Muhasebe Ve Vergi Uygulamaları";
+        $program->department = null;
+
+        $this->assertEquals(
+            "Muhasebe Ve Vergi Uygulamaları",
+            $program->getFullName(includeUnit: true, includeDepartment: true)
+        );
+    }
+
+    /**
+     * AdminPageController::getAssignLessonsPageData has_multiple_units alanını doğru hesaplar ve ilişkileri yükler.
+     */
+    public function testGetAssignLessonsPageDataCalculatesHasMultipleUnits(): void
+    {
+        $user = new User();
+        $user->id = 1;
+        $user->role = UserRole::Admin->value;
+
+        $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+        $propResolved = $ref->getProperty('isResolved');
+        $propResolved->setValue(null, true);
+        $propUser = $ref->getProperty('currentUser');
+        $propUser->setValue(null, $user);
+
+        try {
+            $controller = new \App\Controllers\AdminPageController();
+            $assetManager = new \App\Core\AssetManager();
+            $data = $controller->getAssignLessonsPageData($user, $assetManager);
+
+            $this->assertArrayHasKey('has_multiple_units', $data);
+            $this->assertIsBool($data['has_multiple_units']);
+            $this->assertArrayHasKey('programs', $data);
+
+            if (!empty($data['programs'])) {
+                $firstProgram = $data['programs'][0];
+                $this->assertNotNull($firstProgram->department);
+            }
+        } finally {
+            $propResolved->setValue(null, false);
+            $propUser->setValue(null, null);
+        }
+    }
+
+    /**
+     * Ders atama sayfasında birden fazla birim olduğunda programların grup başlıklarıyla (<option disabled>) ayrıldığını
+     * ve program adlarının temiz (parantezsiz) listelendiğini doğrular.
+     */
+    public function testAssignLessonsViewRendersGroupHeadersForMultipleUnits(): void
+    {
+        $user = new User();
+        $user->id = 1;
+        $user->role = UserRole::Admin->value;
+
+        $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+        $propResolved = $ref->getProperty('isResolved');
+        $propResolved->setValue(null, true);
+        $propUser = $ref->getProperty('currentUser');
+        $propUser->setValue(null, $user);
+
+        try {
+            $unit1 = new Unit();
+            $unit1->id = 1;
+            $unit1->name = "Tirebolu MYO";
+
+            $dept1 = new Department();
+            $dept1->id = 10;
+            $dept1->name = "Bilgisayar";
+            $dept1->unit_id = 1;
+            $dept1->unit = $unit1;
+
+            $prog1 = new Program();
+            $prog1->id = 100;
+            $prog1->name = "Bilgisayar Programcılığı";
+            $prog1->department_id = 10;
+            $prog1->department = $dept1;
+
+            $unit2 = new Unit();
+            $unit2->id = 2;
+            $unit2->name = "Espiye MYO";
+
+            $dept2 = new Department();
+            $dept2->id = 20;
+            $dept2->name = "Güvenlik";
+            $dept2->unit_id = 2;
+            $dept2->unit = $unit2;
+
+            $prog2 = new Program();
+            $prog2->id = 200;
+            $prog2->name = "Sivil Savunma";
+            $prog2->department_id = 20;
+            $prog2->department = $dept2;
+
+            $page_title = "Ders Atama";
+            $programs = [$prog1, $prog2];
+            $has_multiple_units = true;
+            $selected_program_id = 100;
+            $lecturers = [];
+            $buildings = [];
+            $classroomTypes = [];
+            $lessonTypes = [];
+            $semesterNoList = [];
+            $current_academic_year = '2026 - 2027';
+            $current_semester = 'Güz';
+
+            ob_start();
+            include __DIR__ . '/../../App/Views/admin/pages/lessons/assignlessons.php';
+            $output = ob_get_clean();
+
+            $this->assertStringContainsString('<optgroup label="Tirebolu MYO">', $output);
+            $this->assertStringContainsString('<option disabled>&nbsp;&nbsp;Bilgisayar</option>', $output);
+            $this->assertStringContainsString('<optgroup label="Espiye MYO">', $output);
+            $this->assertStringContainsString('<option disabled>&nbsp;&nbsp;Güvenlik</option>', $output);
+            $this->assertStringContainsString('Bilgisayar Programcılığı', $output);
+            $this->assertStringContainsString('Sivil Savunma', $output);
+            $this->assertStringNotContainsString('Bilgisayar Programcılığı (', $output);
+        } finally {
+            $propResolved->setValue(null, false);
+            $propUser->setValue(null, null);
+        }
+    }
+
+    /**
+     * Ders atama sayfasında tek birim ve tek bölüm olduğunda disabled grup başlığı çıkmadığını doğrular.
+     */
+    public function testAssignLessonsViewRendersNoHeadersWhenSingleUnitAndDepartment(): void
+    {
+        $user = new User();
+        $user->id = 1;
+        $user->role = UserRole::Admin->value;
+
+        $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+        $propResolved = $ref->getProperty('isResolved');
+        $propResolved->setValue(null, true);
+        $propUser = $ref->getProperty('currentUser');
+        $propUser->setValue(null, $user);
+
+        try {
+            $unit1 = new Unit();
+            $unit1->id = 1;
+            $unit1->name = "Tirebolu MYO";
+
+            $dept1 = new Department();
+            $dept1->id = 10;
+            $dept1->name = "Bilgisayar";
+            $dept1->unit_id = 1;
+            $dept1->unit = $unit1;
+
+            $prog1 = new Program();
+            $prog1->id = 100;
+            $prog1->name = "Bilgisayar Programcılığı";
+            $prog1->department_id = 10;
+            $prog1->department = $dept1;
+
+            $prog2 = new Program();
+            $prog2->id = 101;
+            $prog2->name = "İnternet ve Ağ Teknolojileri";
+            $prog2->department_id = 10;
+            $prog2->department = $dept1;
+
+            $page_title = "Ders Atama";
+            $programs = [$prog1, $prog2];
+            $has_multiple_units = false;
+            $selected_program_id = 100;
+            $lecturers = [];
+            $buildings = [];
+            $classroomTypes = [];
+            $lessonTypes = [];
+            $semesterNoList = [];
+            $current_academic_year = '2026 - 2027';
+            $current_semester = 'Güz';
+
+            ob_start();
+            include __DIR__ . '/../../App/Views/admin/pages/lessons/assignlessons.php';
+            $output = ob_get_clean();
+
+            $this->assertStringNotContainsString('<option disabled>', $output);
+            $this->assertStringContainsString('Bilgisayar Programcılığı', $output);
+            $this->assertStringContainsString('İnternet ve Ağ Teknolojileri', $output);
+        } finally {
+            $propResolved->setValue(null, false);
+            $propUser->setValue(null, null);
+        }
+    }
+
+    /**
+     * ProgramService::sortProgramsHierarchically ve renderProgramSelectOptions metodlarını test eder.
+     */
+    public function testProgramServiceSortAndRenderMethods(): void
+    {
+        $unitA = new Unit();
+        $unitA->name = "Birim B";
+        $deptA = new Department();
+        $deptA->name = "Bölüm B";
+        $deptA->unit = $unitA;
+        $prog1 = new Program();
+        $prog1->id = 1;
+        $prog1->name = "Prog 1";
+        $prog1->department_id = 10;
+        $prog1->department = $deptA;
+
+        $unitB = new Unit();
+        $unitB->name = "Birim A";
+        $deptB = new Department();
+        $deptB->name = "Bölüm A";
+        $deptB->unit = $unitB;
+        $prog2 = new Program();
+        $prog2->id = 2;
+        $prog2->name = "Prog 2";
+        $prog2->department_id = 20;
+        $prog2->department = $deptB;
+
+        $service = new \App\Services\ProgramService();
+        $sorted = $service->sortProgramsHierarchically([$prog1, $prog2], true);
+
+        // Birim A önce gelmeli
+        $this->assertEquals(2, $sorted[0]->id);
+        $this->assertEquals(1, $sorted[1]->id);
+
+        $html = $service->renderProgramSelectOptions($sorted, 2, true);
+        $this->assertStringContainsString('<optgroup label="Birim A">', $html);
+        $this->assertStringContainsString('<option disabled>&nbsp;&nbsp;Bölüm A</option>', $html);
+        $this->assertStringContainsString('&nbsp;&nbsp;&nbsp;&nbsp;Prog 2', $html);
+        $this->assertStringContainsString('selected', $html);
+    }
+
+    /**
+     * UserService::sortLecturersHierarchically ve renderLecturerSelectOptions metodlarını test eder.
+     */
+    public function testUserServiceSortAndRenderMethods(): void
+    {
+        $unit = new Unit();
+        $unit->name = "Tirebolu MYO";
+        $dept = new Department();
+        $dept->name = "Bilgisayar";
+        $dept->unit = $unit;
+
+        $lec1 = new User();
+        $lec1->id = 1;
+        $lec1->title = "Öğr. Gör.";
+        $lec1->name = "Ahmet";
+        $lec1->last_name = "Yılmaz";
+        $lec1->department = $dept;
+        $lec1->department_id = 10;
+
+        $lec2 = new User();
+        $lec2->id = 2;
+        $lec2->title = "Prof. Dr.";
+        $lec2->name = "Mehmet";
+        $lec2->last_name = "Kaya";
+        $lec2->department = $dept;
+        $lec2->department_id = 10;
+
+        $service = new \App\Services\UserService();
+        $sorted = $service->sortLecturersHierarchically([$lec1, $lec2], false);
+
+        // Prof. Dr. daha yüksek kıdeme sahip olduğu için önce gelmeli
+        $this->assertEquals(2, $sorted[0]->id);
+        $this->assertEquals(1, $sorted[1]->id);
+
+        $html = $service->renderLecturerSelectOptions($sorted, 2, false);
+        $this->assertStringContainsString('Prof. Dr. Mehmet Kaya', $html);
+        $this->assertStringContainsString('Öğr. Gör. Ahmet Yılmaz', $html);
+    }
+
+    /**
+     * DepartmentService::sortDepartmentsHierarchically ve renderDepartmentSelectOptions metodlarını test eder.
+     */
+    public function testDepartmentServiceSortAndRenderMethods(): void
+    {
+        $unitA = new Unit();
+        $unitA->name = "Birim A";
+        $dept1 = new Department();
+        $dept1->id = 1;
+        $dept1->name = "Bölüm 1";
+        $dept1->unit = $unitA;
+
+        $unitB = new Unit();
+        $unitB->name = "Birim B";
+        $dept2 = new Department();
+        $dept2->id = 2;
+        $dept2->name = "Bölüm 2";
+        $dept2->unit = $unitB;
+
+        $service = new \App\Services\DepartmentService();
+        $sorted = $service->sortDepartmentsHierarchically([$dept2, $dept1], true);
+
+        $this->assertEquals(1, $sorted[0]->id);
+        $this->assertEquals(2, $sorted[1]->id);
+
+        $html = $service->renderDepartmentSelectOptions($sorted, 1, true);
+        $this->assertStringContainsString('<optgroup label="Birim A">', $html);
+        $this->assertStringContainsString('Bölüm 1', $html);
+    }
+
+    /**
+     * Global helper fonksiyonlarını (App\Helpers\render*SelectOptions) doğrular.
+     */
+    public function testGlobalHelperFunctionsForSelectOptions(): void
+    {
+        $prog = new Program();
+        $prog->id = 10;
+        $prog->name = "Yazılım";
+
+        $html = \App\Helpers\renderProgramSelectOptions([$prog], 10, false);
+        $this->assertStringContainsString('Yazılım', $html);
+        $this->assertStringContainsString('selected', $html);
+
+        $lec = new User();
+        $lec->id = 20;
+        $lec->title = "Doç. Dr.";
+        $lec->name = "Ali";
+        $lec->last_name = "Demir";
+
+        $htmlLec = \App\Helpers\renderLecturerSelectOptions([$lec], 20, false);
+        $this->assertStringContainsString('Doç. Dr. Ali Demir', $htmlLec);
+
+        $bld = new Building();
+        $bld->id = 30;
+        $bld->name = "A Blok";
+
+        $htmlBld = \App\Helpers\renderBuildingSelectOptions([$bld], 30, false);
+        $this->assertStringContainsString('A Blok', $htmlBld);
+        $this->assertStringContainsString('selected', $htmlBld);
+    }
+
+    /**
+     * BuildingService::sortBuildingsHierarchically ve renderBuildingSelectOptions metodlarını test eder.
+     */
+    public function testBuildingServiceSortAndRenderMethods(): void
+    {
+        $unitA = new Unit();
+        $unitA->id = 1;
+        $unitA->name = "Birim B";
+
+        $bld1 = new Building();
+        $bld1->id = 1;
+        $bld1->name = "Z Blok";
+        $bld1->unit_id = 1;
+        $bld1->unit = $unitA;
+
+        $unitB = new Unit();
+        $unitB->id = 2;
+        $unitB->name = "Birim A";
+
+        $bld2 = new Building();
+        $bld2->id = 2;
+        $bld2->name = "A Blok";
+        $bld2->unit_id = 2;
+        $bld2->unit = $unitB;
+
+        $service = new BuildingService();
+        $sorted = $service->sortBuildingsHierarchically([$bld1, $bld2], true);
+
+        // Birim A alfabetik olarak önce gelmeli
+        $this->assertEquals(2, $sorted[0]->id);
+        $this->assertEquals(1, $sorted[1]->id);
+
+        $html = $service->renderBuildingSelectOptions($sorted, 2, true);
+        $this->assertStringContainsString('<optgroup label="Birim A">', $html);
+        $this->assertStringContainsString('<optgroup label="Birim B">', $html);
+        $this->assertStringContainsString('A Blok', $html);
+        $this->assertStringContainsString('Z Blok', $html);
+        $this->assertStringContainsString('data-unit-id="2"', $html);
+        $this->assertStringContainsString('selected', $html);
+    }
+
+    /**
+     * assignlessons.php şablonunda binaların birim optgroup'ları ile ve hocaların unit veri öznitelikleriyle render edildiğini doğrular.
+     */
+    public function testAssignLessonsViewRendersBuildingOptgroupsAndLecturerUnitAttributes(): void
+    {
+        $unit = new Unit();
+        $unit->id = 1;
+        $unit->name = "Teknik Bilimler MYO";
+
+        $dept = new Department();
+        $dept->id = 5;
+        $dept->name = "Bilgisayar Teknolojileri";
+        $dept->unit_id = 1;
+        $dept->unit = $unit;
+
+        $prog = new Program();
+        $prog->id = 10;
+        $prog->name = "Bilgisayar Programcılığı";
+        $prog->department_id = 5;
+        $prog->department = $dept;
+
+        $lec = new User();
+        $lec->id = 15;
+        $lec->role = UserRole::Lecturer->value;
+        $lec->title = "Öğr. Gör.";
+        $lec->name = "Ahmet";
+        $lec->last_name = "Yılmaz";
+        $lec->department_id = 5;
+        $lec->department = $dept;
+        $lec->unit_id = 1;
+        $lec->unit = $unit;
+
+        $bld = new Building();
+        $bld->id = 25;
+        $bld->name = "Ana Bina";
+        $bld->unit_id = 1;
+        $bld->unit = $unit;
+
+        $page_title = "Ders Atama";
+        $programs = [$prog];
+        $has_multiple_units = false;
+        $selected_program_id = 10;
+        $lecturers = [$lec];
+        $buildings = [$bld];
+        $has_multiple_building_units = true;
+        $classroomTypes = [];
+        $lessonTypes = [];
+        $semesterNoList = [];
+        $current_academic_year = '2026 - 2027';
+        $current_semester = 'Güz';
+
+        ob_start();
+        include __DIR__ . '/../../App/Views/admin/pages/lessons/assignlessons.php';
+        $output = ob_get_clean();
+
+        // buildingOptionsTemplate içinde optgroup bulunmalı
+        $this->assertStringContainsString('<template id="buildingOptionsTemplate">', $output);
+        $this->assertStringContainsString('<optgroup label="Teknik Bilimler MYO">', $output);
+        $this->assertStringContainsString('Ana Bina', $output);
+
+        // lecturerOptionsTemplate içinde data-unit-id ve data-unit-name bulunmalı
+        $this->assertStringContainsString('<template id="lecturerOptionsTemplate">', $output);
+        $this->assertStringContainsString('data-unit-id="1"', $output);
+        $this->assertStringContainsString('data-unit-name="Teknik Bilimler MYO"', $output);
+        $this->assertStringContainsString('data-department-id="5"', $output);
+        $this->assertStringContainsString('data-department-name="Bilgisayar Teknolojileri"', $output);
+        $this->assertStringContainsString('Öğr. Gör. Ahmet Yılmaz', $output);
+    }
 }
+
 
