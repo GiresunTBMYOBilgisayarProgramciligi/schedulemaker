@@ -6,6 +6,8 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use function App\Helpers\getSettingValue;
 use App\Core\Log;
+use App\Core\View;
+use App\Services\MailQueueService;
 
 /**
  * Uygulamanın e-posta gönderim işlemlerini sağlayan temel sınıf.
@@ -77,6 +79,29 @@ abstract class Mailer
     }
 
     /**
+     * Test modunda gönderilen e-postayı sahte listeye kaydeder.
+     */
+    public static function recordSentMailInFake(
+        array $toAddresses,
+        string $subject,
+        string $body,
+        string $altBody = '',
+        array $attachments = [],
+        string $mailerClass = ''
+    ): void {
+        if (self::isTesting()) {
+            self::$sentMails[] = [
+                'to'          => $toAddresses,
+                'subject'     => $subject,
+                'body'        => $body,
+                'altBody'     => $altBody,
+                'attachments' => $attachments,
+                'mailer'      => $mailerClass ?: static::class,
+            ];
+        }
+    }
+
+    /**
      * Belirtilen filtreye uygun bir e-posta gönderilip gönderilmediğini doğrular.
      */
     public static function hasSent(string|callable $subjectOrCallback, ?string $toEmail = null): bool
@@ -143,13 +168,14 @@ abstract class Mailer
     }
 
     /**
-     * E-postayı gönderir veya simülasyon modunda ise dosyaya kaydeder.
+     * E-postayı doğrudan göndermek yerine mail kuyruğuna (MailQueue) ekler.
+     * Uygulamadaki tüm e-posta gönderimleri merkezi kuyruk üzerinden yönetilir.
      * 
-     * @return bool Gönderim başarılıysa true, aksi halde false.
+     * @return bool Kuyruğa ekleme başarılıysa true, aksi halde false.
      */
     public function send(): bool
     {
-        // 1. Test veya Fake mod kontrolü (Kesinlikle gerçek SMTP'ye çıkmaz)
+        // 1. Test veya sahte mod kontrolü (Hafızaya kaydet)
         if (self::isTesting()) {
             self::$sentMails[] = [
                 'to'          => $this->mailer->getToAddresses(),
@@ -159,26 +185,79 @@ abstract class Mailer
                 'attachments' => $this->mailer->getAttachments(),
                 'mailer'      => static::class,
             ];
-            $this->resetMailerState();
-            return true;
         }
 
-        // 2. Simülasyon / Geliştirme modu kontrolü (mail_driver !== 'smtp' ise HTML kütüğüne yazar)
-        $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
-        if ($mailDriver !== 'smtp') {
-            $result = $this->logEmailToFile();
-            $this->resetMailerState();
-            return $result;
-        }
+        // 2. Merkezi mail kuyruğuna ekle
+        $result = $this->enqueueFromMailer();
+        $this->resetMailerState();
+        return $result;
+    }
 
-        // 3. Canlı SMTP Gönderimi
+    /**
+     * PHPMailer nesnesindeki alıcı ve içerik bilgilerini MailQueue tablosuna aktarır.
+     */
+    protected function enqueueFromMailer(): bool
+    {
         try {
-            $result = $this->mailer->send();
-            $this->resetMailerState();
-            return $result;
-        } catch (Exception $e) {
-            Log::logger()->error("E-posta gönderme hatası: {$this->mailer->ErrorInfo}", Log::context($this));
-            $this->resetMailerState();
+            $toAddresses = $this->mailer->getToAddresses();
+            if (empty($toAddresses)) {
+                return false;
+            }
+
+            $subject = $this->mailer->Subject ?? '';
+            $body = $this->mailer->Body ?? '';
+            $altBody = $this->mailer->AltBody ?: strip_tags(str_replace(['<br>', '</li>', '</p>', '</tr>'], "\n", $body));
+
+            $rawAttachments = $this->mailer->getAttachments();
+            $attachments = [];
+            if (!empty($rawAttachments)) {
+                foreach ($rawAttachments as $att) {
+                    $isString = $att[5] ?? false;
+                    $filename = $att[2] ?: ($att[1] ?: 'attachment');
+                    $type = $att[4] ?: 'application/octet-stream';
+
+                    if ($isString) {
+                        $content = base64_encode($att[0]);
+                    } else {
+                        $filePath = $att[0];
+                        $content = (file_exists($filePath) && is_readable($filePath)) 
+                            ? base64_encode(file_get_contents($filePath)) 
+                            : '';
+                    }
+
+                    $attachments[] = [
+                        'name'     => $filename,
+                        'content'  => $content,
+                        'encoding' => 'base64',
+                        'type'     => $type
+                    ];
+                }
+            }
+
+            $queueService = new MailQueueService();
+            $queuedCount = 0;
+
+            foreach ($toAddresses as $to) {
+                $email = $to[0] ?? '';
+                $name = $to[1] ?? null;
+                if (!empty($email)) {
+                    $queueId = $queueService->enqueue(
+                        toEmail: $email,
+                        toName: $name,
+                        subject: $subject,
+                        body: $body,
+                        altBody: $altBody,
+                        attachments: $attachments
+                    );
+                    if ($queueId > 0) {
+                        $queuedCount++;
+                    }
+                }
+            }
+
+            return $queuedCount > 0;
+        } catch (\Throwable $e) {
+            Log::logger()->error("Mailer kuyruğa ekleme hatası: {$e->getMessage()}", Log::context($this));
             return false;
         }
     }
@@ -197,29 +276,24 @@ abstract class Mailer
     }
 
     /**
-     * E-postayı gerçekte göndermek yerine Public/mail_log.html dosyasına görsel olarak kaydeder.
+     * E-postayı simülasyon modunda doğrudan Public/mail_log.html dosyasına görsel olarak kaydeder.
      */
-    protected function logEmailToFile(): bool
-    {
+    public static function logEmailToFileDirect(
+        string $toEmail,
+        ?string $toName,
+        string $subject,
+        string $body,
+        array $attachments = []
+    ): bool {
         try {
-            $toAddresses = $this->mailer->getToAddresses();
-            $recipients = [];
-            foreach ($toAddresses as $to) {
-                $email = $to[0] ?? '';
-                $name = $to[1] ?? '';
-                $recipients[] = htmlspecialchars($name ? "$name <$email>" : $email);
-            }
-            $recipientStr = !empty($recipients) ? implode(', ', $recipients) : 'Belirtilmedi';
-
-            $subject = htmlspecialchars($this->mailer->Subject ?? 'Konusuz E-posta');
-            $body = $this->mailer->Body ?? '';
+            $recipientStr = htmlspecialchars($toName ? "$toName <$toEmail>" : $toEmail);
+            $safeSubject = htmlspecialchars($subject ?: 'Konusuz E-posta');
             $dateStr = date('d.m.Y H:i:s');
 
-            $attachments = $this->mailer->getAttachments();
             $attachmentBadges = '';
             if (!empty($attachments)) {
                 foreach ($attachments as $att) {
-                    $attName = htmlspecialchars($att[2] ?? $att[1] ?? 'Ek Dosya');
+                    $attName = htmlspecialchars($att['name'] ?? $att[2] ?? $att[1] ?? 'Ek Dosya');
                     $attachmentBadges .= "<span class='badge bg-secondary me-1'><i class='bi bi-paperclip'></i> {$attName}</span>";
                 }
             } else {
@@ -229,11 +303,11 @@ abstract class Mailer
             $logFilePath = dirname(__DIR__, 2) . '/Public/mail_log.html';
 
             $newEntry = View::renderEmail('simulation/mail_card', [
-                'subject' => $subject,
-                'recipientStr' => $recipientStr,
-                'dateStr' => $dateStr,
+                'subject'          => $safeSubject,
+                'recipientStr'     => $recipientStr,
+                'dateStr'          => $dateStr,
                 'attachmentBadges' => $attachmentBadges,
-                'body' => $body
+                'body'             => $body
             ]);
 
             if (!file_exists($logFilePath) || filesize($logFilePath) === 0) {
@@ -249,14 +323,30 @@ abstract class Mailer
             }
 
             if (@file_put_contents($logFilePath, $updatedContent) === false) {
-                Log::logger()->warning("Mail log dosyasına yazılamadı: {$logFilePath}", Log::context($this));
+                Log::logger()->warning("Mail log dosyasına yazılamadı: {$logFilePath}");
             }
 
-            Log::logger()->info("E-posta simülasyon modunda yakalandı: {$recipientStr} - {$subject}", Log::context($this));
+            Log::logger()->info("E-posta simülasyon modunda yakalandı: {$recipientStr} - {$safeSubject}");
             return true;
         } catch (\Throwable $e) {
-            Log::logger()->error("E-posta loglama hatası: {$e->getMessage()}", Log::context($this));
+            Log::logger()->error("E-posta loglama hatası: {$e->getMessage()}");
             return false;
         }
+    }
+
+    /**
+     * PHPMailer içeriğini dosyaya kaydeder.
+     */
+    protected function logEmailToFile(): bool
+    {
+        $toAddresses = $this->mailer->getToAddresses();
+        $firstTo = $toAddresses[0] ?? ['', ''];
+        return self::logEmailToFileDirect(
+            $firstTo[0] ?? '',
+            $firstTo[1] ?? null,
+            $this->mailer->Subject ?? '',
+            $this->mailer->Body ?? '',
+            $this->mailer->getAttachments()
+        );
     }
 }

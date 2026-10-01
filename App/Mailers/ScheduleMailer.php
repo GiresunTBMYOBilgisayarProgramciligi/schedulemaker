@@ -257,6 +257,15 @@ class ScheduleMailer extends Mailer
 
             $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>', '</tr>'], "\n", $body));
 
+            self::recordSentMailInFake(
+                toAddresses: [[$lecturer->mail, $lecturer->getFullName()]],
+                subject: $subject,
+                body: $body,
+                altBody: $altBody,
+                attachments: $attachments,
+                mailerClass: static::class
+            );
+
             return (new \App\Services\MailQueueService())->enqueue(
                 toEmail: $lecturer->mail,
                 toName: $lecturer->getFullName(),
@@ -325,6 +334,15 @@ class ScheduleMailer extends Mailer
             ]);
 
             $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>'], "\n", $body));
+
+            self::recordSentMailInFake(
+                toAddresses: [[$lecturer->mail, $lecturer->getFullName()]],
+                subject: $subject,
+                body: $body,
+                altBody: $altBody,
+                attachments: [],
+                mailerClass: static::class
+            );
 
             return (new \App\Services\MailQueueService())->enqueue(
                 toEmail: $lecturer->mail,

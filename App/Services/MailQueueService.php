@@ -144,7 +144,12 @@ class MailQueueService extends BaseService
             $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
 
             // Simülasyon / Test modu kontrolü
-            if ($mailDriver !== 'smtp' || ($_ENV['APP_ENV'] ?? '') === 'testing' || defined('PHPUNIT_RUNNING')) {
+            $isTesting = ($_ENV['APP_ENV'] ?? '') === 'testing' || defined('PHPUNIT_RUNNING');
+            if ($mailDriver !== 'smtp' || $isTesting) {
+                if (!$isTesting) {
+                    $attachments = !empty($item->attachments) ? (json_decode($item->attachments, true) ?: []) : [];
+                    Mailer::logEmailToFileDirect($item->to_email, $item->to_name, $item->subject, $item->body, $attachments);
+                }
                 $this->logger->info("Kuyruk e-postası simülasyon modunda işlendi: {$item->to_email} - {$item->subject}", $this->logContext([
                     'queue_id' => $item->id
                 ]));

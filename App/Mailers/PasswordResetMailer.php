@@ -18,6 +18,7 @@ class PasswordResetMailer extends Mailer
     public function sendResetLink(User $user, string $token): bool
     {
         try {
+            $this->resetMailerState();
             $this->mailer->addAddress($user->mail, $user->getFullName());
             $this->mailer->Subject = 'Şifre Sıfırlama İsteği';
 

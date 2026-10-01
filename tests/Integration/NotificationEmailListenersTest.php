@@ -86,6 +86,12 @@ class NotificationEmailListenersTest extends BaseTestCase
             Mailer::hasSent('Ders/Sınav Programınızda Değişiklik Yapıldı', $lecturer->mail),
             'Değişiklik bildirim e-postası yakalanmış olmalıdır'
         );
+
+        $stmt = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$lecturer->mail]);
+        $queuedMail = $stmt->fetch();
+        $this->assertNotEmpty($queuedMail, "Değişiklik bildirimi mail_queue tablosuna eklenmiş olmalı");
+        $this->assertStringContainsString('Değişiklik Yapıldı', $queuedMail['subject']);
     }
 
     public function testScheduleNoteStatusUpdatedEventListenerSendsEmail(): void
@@ -123,6 +129,12 @@ class NotificationEmailListenersTest extends BaseTestCase
             Mailer::hasSent('Ders Programı İstek Durumu', $lecturer->mail),
             'Not durum güncelleme geri bildirim e-postası yakalanmış olmalıdır'
         );
+
+        $stmt = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$lecturer->mail]);
+        $queuedMail = $stmt->fetch();
+        $this->assertNotEmpty($queuedMail, "Not durum güncellemesi mail_queue tablosuna eklenmiş olmalı");
+        $this->assertStringContainsString('Ders Programı İstek Durumu', $queuedMail['subject']);
     }
 
     public function testScheduleNoteDeletedEventListenerSendsEmail(): void
@@ -157,6 +169,12 @@ class NotificationEmailListenersTest extends BaseTestCase
             Mailer::hasSent('Ders Programı Notunuz Silindi', $lecturer->mail),
             'Not silinme e-postası yakalanmış olmalıdır'
         );
+
+        $stmt = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$lecturer->mail]);
+        $queuedMail = $stmt->fetch();
+        $this->assertNotEmpty($queuedMail, "Not silinme bildirimi mail_queue tablosuna eklenmiş olmalı");
+        $this->assertStringContainsString('Ders Programı Notunuz Silindi', $queuedMail['subject']);
     }
 
     public function testUserForgotPasswordEventListenerSendsEmail(): void
@@ -176,5 +194,11 @@ class NotificationEmailListenersTest extends BaseTestCase
             Mailer::hasSent('Şifre Sıfırlama İsteği', $user->mail),
             'Şifre sıfırlama bağlantı e-postası yakalanmış olmalıdır'
         );
+
+        $stmt = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$user->mail]);
+        $queuedMail = $stmt->fetch();
+        $this->assertNotEmpty($queuedMail, "Şifre sıfırlama bildirimi mail_queue tablosuna eklenmiş olmalı");
+        $this->assertStringContainsString('Şifre Sıfırlama', $queuedMail['subject']);
     }
 }

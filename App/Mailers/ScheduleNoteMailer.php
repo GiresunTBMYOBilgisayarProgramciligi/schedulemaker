@@ -31,6 +31,7 @@ class ScheduleNoteMailer extends Mailer
                 return false;
             }
 
+            $this->resetMailerState();
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $this->mailer->Subject = 'Ders Programı İstek Durumu: ' . $note->getStatusEnum()->getLabel();
 
@@ -58,6 +59,7 @@ class ScheduleNoteMailer extends Mailer
                 return false;
             }
 
+            $this->resetMailerState();
             $this->mailer->addAddress($lecturer->mail, $lecturer->getFullName());
             $this->mailer->Subject = 'Ders Programı Notunuz Silindi';
 
