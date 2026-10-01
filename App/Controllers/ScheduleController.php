@@ -894,13 +894,49 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Bekleyen program değişikliklerini ve etkilenecek öğretim elemanlarını listeler.
+     *
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function getPendingScheduleChanges(array $requestData = []): array
+    {
+        $user = AuthMiddleware::user();
+        if (!$user || (!Gate::hasRole($user, 'admin') && !Gate::hasRole($user, 'department_head') && !Gate::hasAnyPermission($user, PermissionType::PUBLISH_SCHEDULE->value))) {
+            throw new AuthorizationException("Değişiklik bildirimlerini görüntüleme yetkiniz yok.");
+        }
+
+        $lecturers = (new SchedulePublishService())->getPendingChangesGroupedByLecturer();
+        $totalChanges = array_sum(array_column($lecturers, 'change_count'));
+
+        return [
+            "status"          => "success",
+            "total_lecturers" => count($lecturers),
+            "total_changes"   => $totalChanges,
+            "lecturers"       => $lecturers
+        ];
+    }
+
+    /**
      * @throws Exception
      */
     public function notifyScheduleChanges(array $requestData): array
     {
-        Gate::authorizeRole('admin', false, "Değişiklik bildirimlerini gönderme yetkiniz yok");
+        $user = AuthMiddleware::user();
+        if (!$user || (!Gate::hasRole($user, 'admin') && !Gate::hasRole($user, 'department_head') && !Gate::hasAnyPermission($user, PermissionType::PUBLISH_SCHEDULE->value))) {
+            throw new AuthorizationException("Değişiklik bildirimlerini gönderme yetkiniz yok.");
+        }
 
-        $notifiedCount = (new SchedulePublishService())->notifyChanges();
+        $lecturerIds = null;
+        if (isset($requestData['lecturer_ids']) && is_array($requestData['lecturer_ids'])) {
+            $lecturerIds = array_values(array_filter(array_map('intval', $requestData['lecturer_ids'])));
+            if (empty($lecturerIds)) {
+                return ["status" => "info", "msg" => "Bildirim gönderilecek öğretim elemanı seçilmedi."];
+            }
+        }
+
+        $notifiedCount = (new SchedulePublishService())->notifyChanges($lecturerIds);
         
         if ($notifiedCount === 0) {
             return ["status" => "info", "msg" => "Bildirilecek değişiklik bulunamadı."];
@@ -908,7 +944,7 @@ class ScheduleController extends Controller
 
         return [
             "status" => "success",
-            "msg" => "$notifiedCount hocaya bildirim e-postası gönderildi."
+            "msg"    => "$notifiedCount hocaya ait değişiklik bildirimleri e-posta kuyruğuna eklendi."
         ];
     }
 

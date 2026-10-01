@@ -158,5 +158,136 @@ class SchedulePublishServiceTest extends BaseTestCase
         $this->assertEquals(1, $statsUser['published_count']);
         $this->assertTrue($statsUser['all_published']);
     }
+
+    public function testRecordChangeAndGetPendingChangesGroupedByLecturer(): void
+    {
+        $this->getDb()->exec("DELETE FROM schedule_changes_queue");
+        $unitId = $this->insert('units', [
+            'name'   => 'Mühendislik Fakültesi ' . rand(1000, 9999),
+            'type'   => 'faculty',
+            'active' => 1
+        ]);
+
+        $deptId = $this->insert('departments', [
+            'name'    => 'Bilgisayar Mühendisliği ' . rand(1000, 9999),
+            'unit_id' => $unitId
+        ]);
+
+        $lecturerAId = $this->insert('users', [
+            'name'          => 'Ali',
+            'last_name'     => 'Veli',
+            'mail'          => 'ali_' . uniqid() . '@example.com',
+            'role'          => 'lecturer',
+            'unit_id'       => $unitId,
+            'department_id' => $deptId
+        ]);
+
+        $lecturerBId = $this->insert('users', [
+            'name'      => 'Veli',
+            'last_name' => 'Kaya',
+            'mail'      => 'veli_' . uniqid() . '@example.com',
+            'role'      => 'lecturer'
+        ]);
+
+        $scheduleId = $this->insert('schedules', [
+            'type'          => 'lesson',
+            'owner_type'    => 'user',
+            'owner_id'      => $lecturerAId,
+            'semester'      => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published'  => 1
+        ]);
+
+        // Kayıt ekle
+        $this->service->recordChange($scheduleId, 'update', 'Matematik saati değiştirildi', $lecturerAId);
+        $this->service->recordChange($scheduleId, 'add', 'Fizik dersi eklendi', $lecturerAId);
+        $this->service->recordChange($scheduleId, 'delete', 'Kimya dersi silindi', $lecturerBId);
+
+        $pending = $this->service->getPendingChangesGroupedByLecturer();
+
+        $this->assertCount(2, $pending);
+
+        // Ali Veli kontrolü
+        $aliGroup = null;
+        $veliGroup = null;
+        foreach ($pending as $p) {
+            if ($p['id'] === $lecturerAId) $aliGroup = $p;
+            if ($p['id'] === $lecturerBId) $veliGroup = $p;
+        }
+
+        $this->assertNotNull($aliGroup);
+        $this->assertEquals(2, $aliGroup['change_count']);
+        $this->assertCount(2, $aliGroup['changes']);
+        $this->assertNotNull($aliGroup['department_name']);
+        $this->assertNotNull($aliGroup['unit_name']);
+
+        $this->assertNotNull($veliGroup);
+        $this->assertEquals(1, $veliGroup['change_count']);
+        $this->assertCount(1, $veliGroup['changes']);
+    }
+
+    public function testNotifyChangesWithSpecificLecturerIdsAndQueueVerification(): void
+    {
+        $this->getDb()->exec("DELETE FROM schedule_changes_queue");
+        $lecturerAId = $this->insert('users', [
+            'name'      => 'Ahmet',
+            'last_name' => 'Test',
+            'mail'      => 'ahmet_test_' . uniqid() . '@example.com',
+            'role'      => 'lecturer'
+        ]);
+
+        $lecturerBId = $this->insert('users', [
+            'name'      => 'Mehmet',
+            'last_name' => 'Test',
+            'mail'      => 'mehmet_test_' . uniqid() . '@example.com',
+            'role'      => 'lecturer'
+        ]);
+
+        $scheduleId = $this->insert('schedules', [
+            'type'          => 'lesson',
+            'owner_type'    => 'user',
+            'owner_id'      => $lecturerAId,
+            'semester'      => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published'  => 1
+        ]);
+
+        $this->service->recordChange($scheduleId, 'update', 'Ders saati güncellendi', $lecturerAId);
+        $this->service->recordChange($scheduleId, 'update', 'Sınav tarihi güncellendi', $lecturerBId);
+
+        // 1. Boş dizi verildiğinde hiçbir işlem yapılmamalı (güvenlik kontrolü)
+        $emptyResult = $this->service->notifyChanges([]);
+        $this->assertEquals(0, $emptyResult);
+        $this->assertCount(2, $this->service->getPendingChangesGroupedByLecturer());
+
+        // 2. Sadece Lecturer A'ya bildirim gönder
+        $notifiedCount = $this->service->notifyChanges([$lecturerAId]);
+        $this->assertEquals(1, $notifiedCount);
+
+        // Lecturer A'nın bildirimi mail_queue tablosuna düşmeli
+        $stmtA = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = (SELECT mail FROM users WHERE id = ?) ORDER BY id DESC LIMIT 1");
+        $stmtA->execute([$lecturerAId]);
+        $queuedA = $stmtA->fetch();
+        $this->assertNotEmpty($queuedA, "Ahmet hocanın bildirimi mail_queue tablosuna eklenmiş olmalı");
+
+        // ScheduleChangeQueue tablosunda Lecturer A'nın kaydı silinmiş olmalı ama Lecturer B kalmalı
+        $pendingAfterA = $this->service->getPendingChangesGroupedByLecturer();
+        $this->assertCount(1, $pendingAfterA);
+        $this->assertEquals($lecturerBId, $pendingAfterA[0]['id']);
+
+        // 2. Kalan bildirimleri gönder (parametre verilmeden tümü)
+        $notifiedCountRemaining = $this->service->notifyChanges();
+        $this->assertEquals(1, $notifiedCountRemaining);
+
+        // Lecturer B'nin bildirimi de kuyruğa düşmeli
+        $stmtB = $this->getDb()->prepare("SELECT * FROM mail_queue WHERE to_email = (SELECT mail FROM users WHERE id = ?) ORDER BY id DESC LIMIT 1");
+        $stmtB->execute([$lecturerBId]);
+        $queuedB = $stmtB->fetch();
+        $this->assertNotEmpty($queuedB, "Mehmet hocanın bildirimi mail_queue tablosuna eklenmiş olmalı");
+
+        // Artık hiç bekleyen değişiklik kalmamış olmalı
+        $pendingEmpty = $this->service->getPendingChangesGroupedByLecturer();
+        $this->assertEmpty($pendingEmpty);
+    }
 }
 

@@ -509,11 +509,87 @@ class SchedulePublishService extends BaseService
     }
 
     /**
+     * Bekleyen değişiklikleri öğretim elemanlarına göre gruplayarak getirir.
+     *
+     * @return array<int, array{id: int, name: string, email: string, unit_name: ?string, department_name: ?string, program_name: ?string, change_count: int, changes: array}>
+     */
+    public function getPendingChangesGroupedByLecturer(): array
+    {
+        $queueModel = new ScheduleChangeQueue();
+        /** @var ScheduleChangeQueue[] $changes */
+        $changes = $queueModel->get()->all();
+        if (empty($changes)) {
+            return [];
+        }
+
+        $lecturerIds = array_values(array_filter(array_unique(array_map(fn($c) => $c->lecturer_id, $changes))));
+        if (empty($lecturerIds)) {
+            return [];
+        }
+
+        /** @var User[] $users */
+        $users = (new User())->get()
+            ->where(['id' => ['in' => $lecturerIds]])
+            ->with(['unit', 'department', 'program'])
+            ->all();
+
+        $usersKeyed = [];
+        foreach ($users as $user) {
+            $usersKeyed[$user->id] = $user;
+        }
+
+        $grouped = [];
+        foreach ($changes as $change) {
+            $lecturerId = $change->lecturer_id;
+            if (!$lecturerId || !isset($usersKeyed[$lecturerId])) {
+                continue;
+            }
+
+            $user = $usersKeyed[$lecturerId];
+
+            if (!isset($grouped[$lecturerId])) {
+                $grouped[$lecturerId] = [
+                    'id'              => $user->id,
+                    'name'            => $user->getFullName(),
+                    'email'           => $user->mail ?? '',
+                    'unit_name'       => $user->unit?->name,
+                    'department_name' => $user->department?->name,
+                    'program_name'    => $user->program?->name,
+                    'change_count'    => 0,
+                    'changes'         => []
+                ];
+            }
+
+            $grouped[$lecturerId]['change_count']++;
+            $grouped[$lecturerId]['changes'][] = [
+                'id'          => $change->id,
+                'action_type' => $change->action_type,
+                'detail'      => $change->detail,
+                'created_at'  => $change->created_at,
+                'schedule_id' => $change->schedule_id
+            ];
+        }
+
+        return array_values($grouped);
+    }
+
+    /**
+     * @param array<int>|null $lecturerIds Belirtilmişse sadece bu hocalara bildirim gönderilir
+     * @return int
      * @throws Exception
      */
-    public function notifyChanges(): int
+    public function notifyChanges(?array $lecturerIds = null): int
     {
-        $changes = (new ScheduleChangeQueue())->get()->all();
+        $queueModel = new ScheduleChangeQueue();
+        $query = $queueModel->get();
+        if ($lecturerIds !== null) {
+            $sanitizedIds = array_values(array_filter(array_map('intval', $lecturerIds)));
+            if (empty($sanitizedIds)) {
+                return 0;
+            }
+            $query->where(['lecturer_id' => ['in' => $sanitizedIds]]);
+        }
+        $changes = $query->all();
         if (empty($changes)) {
             return 0;
         }
@@ -534,8 +610,8 @@ class SchedulePublishService extends BaseService
             // Delete queued items for this lecturer
             $ids = array_map(fn($c) => $c->id, $lecturerChanges);
             if (!empty($ids)) {
-                $queueModel = new ScheduleChangeQueue();
-                $queueModel->get()->where(['id' => ['in' => $ids]])->delete();
+                $deleteModel = new ScheduleChangeQueue();
+                $deleteModel->get()->where(['id' => ['in' => $ids]])->delete();
             }
             $notifiedCount++;
         }
