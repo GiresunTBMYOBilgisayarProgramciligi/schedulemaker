@@ -8,11 +8,15 @@
  * @var \App\Controllers\LessonController $lessonController
  * @var string $page_title
  * @var array $lecturers
+ * @var bool|null $has_multiple_units
  * @var array $classroomTypes
  * @var \App\Models\Building[] $buildings
+ * @var bool|null $has_multiple_building_units
  */
 
 use App\Core\Gate;
+use function App\Helpers\renderBuildingSelectOptions;
+use function App\Helpers\renderLecturerSelectOptions;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -155,12 +159,7 @@ use function App\Helpers\getSettingValue;
                                                 </div>
                                             </div>
                                             <select class="form-select tom-select" id="building_id" name="building_id" required data-selected="<?= $lesson->building_id ?? '' ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <option value="">Bina seçiniz...</option>
-                                                <?php foreach ($buildings as $building): ?>
-                                                    <option value="<?= $building->id ?>" <?= $lesson->building_id == $building->id ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($building->name) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
+                                                <?= renderBuildingSelectOptions($buildings ?? [], (int)($lesson->building_id ?? 0) ?: null, $has_multiple_building_units ?? null, 'Bina seçiniz...') ?>
                                             </select>
                                         </div>
                                     </div>
@@ -222,12 +221,7 @@ use function App\Helpers\getSettingValue;
                                             </div>
                                             <select class="form-select tom-select" id="lecturer_id" name="lecturer_id"
                                                 <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <option></option>
-                                                <?php foreach ($lecturers as $lecturer): ?>
-                                                    <option value="<?= $lecturer->id ?>"
-                                                        <?= $lecturer->id == $lesson->lecturer?->id ? "selected" : "" ?>><?= $lecturer->getFullName() ?></option>
-
-                                                <?php endforeach; ?>
+                                                <?= renderLecturerSelectOptions($lecturers ?? [], $lesson->lecturer_id ?? null, $has_multiple_units ?? null, '') ?>
                                             </select>
                                         </div>
                                     </div>

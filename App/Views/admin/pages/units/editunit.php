@@ -3,7 +3,10 @@
  * @var string $page_title
  * @var \App\Models\Unit $unit
  * @var array $unitTypes
+ * @var array $lecturers
+ * @var bool|null $has_multiple_units
  */
+use function App\Helpers\renderLecturerSelectOptions;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -54,14 +57,7 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="manager_id">Birim Müdürü / Dekanı</label>
                                             <select class="form-select tom-select" id="manager_id" name="manager_id">
-                                                <option value="">Yönetici Seçiniz (İsteğe bağlı)</option>
-                                                <?php if (isset($lecturers)): ?>
-                                                    <?php foreach ($lecturers as $lecturer): ?>
-                                                        <option value="<?= $lecturer->id ?>" <?= ($unit->manager_id ?? 0) == $lecturer->id ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($lecturer->getFullName()) ?><?= $lecturer->unit ? ' (' . htmlspecialchars($lecturer->unit->name) . ')' : '' ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                <?php endif; ?>
+                                                <?= renderLecturerSelectOptions($lecturers ?? [], $unit->manager_id ?? null, $has_multiple_units ?? null, 'Yönetici Seçiniz (İsteğe bağlı)') ?>
                                             </select>
                                         </div>
                                     </div>

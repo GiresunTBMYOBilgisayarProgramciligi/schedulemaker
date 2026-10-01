@@ -462,14 +462,16 @@ class AdminPageController extends Controller
     {
         Gate::authorize(PermissionType::CREATE->value, Lesson::class, "Yeni ders ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
+        $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
         $view_data = [
-            "page_title" => "Ders Ekle",
-            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
-            "units" => (new UnitRepository())->getAuthorized('view'),
-            "lessonController" => new LessonController(),
-            "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
-            "program_id" => $program_id
+            "page_title"                  => "Ders Ekle",
+            "departments"                 => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units"                       => (new UnitRepository())->getAuthorized('view'),
+            "lessonController"            => new LessonController(),
+            "classroomTypes"              => ClassroomType::toArray(),
+            "buildings"                   => $buildingData['buildings'],
+            "has_multiple_building_units" => $buildingData['has_multiple_units'],
+            "program_id"                  => $program_id
         ];
         $view_data['lecturers'] = [];
         if ($program_id) {
@@ -494,20 +496,24 @@ class AdminPageController extends Controller
         }
         Gate::authorize(PermissionType::UPDATE->value, $lesson, "Bu dersi düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
+        $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
+        $lecturerData = (new UserService())->getAuthorizedLecturersData($currentUser);
         $view_data = [
-            "lessonController" => new LessonController(),
-            "lesson" => $lesson,
-            "page_title" => $lesson->getFullName(true) . " Düzenle",
-            "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
-            "units" => (new UnitRepository())->getAuthorized('view'),
-            "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
-            "programController" => new ProgramController(),
-            "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings']
+            "lessonController"            => new LessonController(),
+            "lesson"                      => $lesson,
+            "page_title"                  => $lesson->getFullName(true) . " Düzenle",
+            "departments"                 => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
+            "units"                       => (new UnitRepository())->getAuthorized('view'),
+            "department_programs"         => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
+            "programController"           => new ProgramController(),
+            "classroomTypes"              => ClassroomType::toArray(),
+            "buildings"                   => $buildingData['buildings'],
+            "has_multiple_building_units" => $buildingData['has_multiple_units'],
+            "has_multiple_units"          => $lecturerData['has_multiple_units'],
         ];
-        
-        $view_data['lecturers'] = $lesson->lecturer ? [$lesson->lecturer] : [];
+
         // Mevcut hocanın listede her zaman görünmesini sağla
+        $view_data['lecturers'] = $lesson->lecturer ? [$lesson->lecturer] : [];
         $currentLecturerIds = array_map(fn($l) => $l->id, $view_data['lecturers']);
         if (!empty($lesson->lecturer_id) && !in_array($lesson->lecturer_id, $currentLecturerIds)) {
             $currentLecturer = (new UserRepository())->find($lesson->lecturer_id);
@@ -597,10 +603,12 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         $currentUser = AuthMiddleware::user();
+        $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
         return [
-            "page_title"     => "Derslik Ekle",
-            "classroomTypes" => ClassroomType::toArray(),
-            "buildings"      => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
+            "page_title"                  => "Derslik Ekle",
+            "classroomTypes"              => ClassroomType::toArray(),
+            "buildings"                   => $buildingData['buildings'],
+            "has_multiple_building_units" => $buildingData['has_multiple_units'],
         ];
     }
 
@@ -617,12 +625,14 @@ class AdminPageController extends Controller
         }
         $assetManager->loadPageAssets('formpages');
         $currentUser = AuthMiddleware::user();
+        $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
         return [
-            "classroomController" => new ClassroomController(),
-            "classroom"           => $classroom,
-            "classroomTypes"      => ClassroomType::toArray(),
-            "buildings"           => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
-            "page_title"          => $classroom->name . " Düzenle",
+            "classroomController"         => new ClassroomController(),
+            "classroom"                   => $classroom,
+            "classroomTypes"              => ClassroomType::toArray(),
+            "buildings"                   => $buildingData['buildings'],
+            "has_multiple_building_units" => $buildingData['has_multiple_units'],
+            "page_title"                  => $classroom->name . " Düzenle",
         ];
     }
 
@@ -1138,14 +1148,16 @@ class AdminPageController extends Controller
         ];
     }
 
-    public function getAddUnitPageData(AssetManager $assetManager): array
+    public function getAddUnitPageData(AssetManager $assetManager, ?User $currentUser = null): array
     {
         Gate::authorize(PermissionType::CREATE->value, Unit::class, 'Yeni birim ekleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
+        $lecturerData = (new UserService())->getAuthorizedLecturersData($currentUser);
         return [
-            'page_title' => 'Birim Ekle',
-            'unitTypes'  => UnitType::toArray(),
-            'lecturers'  => (new UserRepository())->getSortedAcademicStaff(),
+            'page_title'         => 'Birim Ekle',
+            'unitTypes'          => UnitType::toArray(),
+            'lecturers'          => $lecturerData['lecturers'],
+            'has_multiple_units' => $lecturerData['has_multiple_units'],
         ];
     }
 
@@ -1172,7 +1184,7 @@ class AdminPageController extends Controller
     /**
      * @throws Exception
      */
-    public function getEditUnitPageData(AssetManager $assetManager, $id = null): array
+    public function getEditUnitPageData(AssetManager $assetManager, $id = null, ?User $currentUser = null): array
     {
         if (is_null($id)) {
             throw new Exception('Birim bulunamadı.');
@@ -1180,11 +1192,13 @@ class AdminPageController extends Controller
         $unit = (new Unit())->find($id) ?: throw new Exception('Birim bulunamadı.');
         Gate::authorize(PermissionType::UPDATE->value, $unit, 'Bu birimi düzenleme yetkiniz yok');
         $assetManager->loadPageAssets('formpages');
+        $lecturerData = (new UserService())->getAuthorizedLecturersData($currentUser);
         return [
-            'unit'       => $unit,
-            'unitTypes'  => UnitType::toArray(),
-            'lecturers'  => (new UserRepository())->getSortedAcademicStaff(),
-            'page_title' => ($unit->name ?? '') . ' Düzenle',
+            'unit'               => $unit,
+            'unitTypes'          => UnitType::toArray(),
+            'lecturers'          => $lecturerData['lecturers'],
+            'has_multiple_units' => $lecturerData['has_multiple_units'],
+            'page_title'         => ($unit->name ?? '') . ' Düzenle',
         ];
     }
 

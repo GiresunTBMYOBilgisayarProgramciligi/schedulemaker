@@ -6,7 +6,11 @@ use Tests\BaseTestCase;
 use App\Services\UnitService;
 use App\DTOs\UnitDTO;
 use App\Models\Unit;
+use App\Models\User;
 use App\Enums\UnitType;
+use App\Controllers\AdminPageController;
+use App\Core\AssetManager;
+use function App\Helpers\renderLecturerSelectOptions;
 
 class UnitServiceTest extends BaseTestCase
 {
@@ -103,5 +107,44 @@ class UnitServiceTest extends BaseTestCase
         $this->assertEquals('Dekan Yardımcısı', $unit->getSubManagerTitle());
         $this->assertNotEmpty($unit->submanagers);
         $this->assertEquals($subManagerId, $unit->submanagers[0]->id);
+    }
+
+    public function testAddUnitPageDataAndEditUnitPageDataReturnHierarchicalLecturers(): void
+    {
+        $adminId = $this->insert('users', [
+            'name'      => 'Admin',
+            'last_name' => 'User',
+            'mail'      => 'admin' . rand(1000, 9999) . '@test.com',
+            'password'  => password_hash('123456', PASSWORD_DEFAULT),
+            'role'      => 'admin',
+        ]);
+        $sessionKey = $_ENV["SESSION_KEY"] ?? 'user_id';
+        $_SESSION[$sessionKey] = $adminId;
+        $this->resetAuth();
+        $_SESSION[$sessionKey] = $adminId;
+
+        $admin = (new User())->find($adminId);
+
+        $controller = new AdminPageController();
+        $assetManager = new AssetManager();
+
+        $addData = $controller->getAddUnitPageData($assetManager, $admin);
+        $this->assertArrayHasKey('lecturers', $addData);
+        $this->assertArrayHasKey('has_multiple_units', $addData);
+
+        $dto = UnitDTO::fromArray([
+            'name'   => 'Test Fakültesi ' . rand(1000, 9999),
+            'type'   => UnitType::Faculty->value,
+            'active' => 1
+        ]);
+        $unitId = $this->service->saveNew($dto);
+
+        $editData = $controller->getEditUnitPageData($assetManager, $unitId, $admin);
+        $this->assertArrayHasKey('lecturers', $editData);
+        $this->assertArrayHasKey('has_multiple_units', $editData);
+        $this->assertEquals($unitId, $editData['unit']->id);
+
+        $html = renderLecturerSelectOptions($addData['lecturers'], null, $addData['has_multiple_units'], 'Yönetici Seçiniz (İsteğe bağlı)');
+        $this->assertStringContainsString('Yönetici Seçiniz (İsteğe bağlı)', $html);
     }
 }

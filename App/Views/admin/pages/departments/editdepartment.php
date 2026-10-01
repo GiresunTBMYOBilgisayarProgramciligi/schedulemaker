@@ -5,6 +5,7 @@
  * @var array $lecturers
  * @var \App\Models\Unit[] $units
  */
+use function App\Helpers\renderLecturerSelectOptions;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -71,14 +72,7 @@
                                             </div>
                                             <select class="form-select tom-select" id="chairperson_id"
                                                     name="chairperson_id" data-selected="<?= $department->chairperson_id ?? '' ?>">
-                                                <option value="0">İlk olarak Birim Seçiniz</option>
-                                                <?php if (isset($lecturers)): ?>
-                                                    <?php foreach ($lecturers as $lecturer): ?>
-                                                        <option value="<?= $lecturer->id ?>" <?= ($department->chairperson_id ?? 0) == $lecturer->id ? 'selected' : '' ?>>
-                                                            <?= $lecturer->getFullName() ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                <?php endif; ?>
+                                                <?= renderLecturerSelectOptions($lecturers ?? [], $department->chairperson_id ?? null, false, 'İlk olarak Birim Seçiniz') ?>
                                             </select>
                                         </div>
                                     </div>

@@ -323,7 +323,7 @@ class AdminRouter extends Router
 
     public function AddUnitAction()
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getAddUnitPageData($this->assetManager));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getAddUnitPageData($this->assetManager, $this->currentUser));
         $this->callView('admin/units/addunit');
     }
 
@@ -335,7 +335,7 @@ class AdminRouter extends Router
 
     public function editUnitAction($id = null)
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getEditUnitPageData($this->assetManager, $id));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getEditUnitPageData($this->assetManager, $id, $this->currentUser));
         $this->callView('admin/units/editunit');
     }
 

@@ -4,7 +4,9 @@
  * @var string $page_title
  * @var array $classroomTypes
  * @var \App\Models\Building[] $buildings
+ * @var bool|null $has_multiple_building_units
  */
+use function App\Helpers\renderBuildingSelectOptions;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -52,12 +54,7 @@
                                         <div class="">
                                             <label class="form-label" for="building_id">Bina</label>
                                             <select name="building_id" id="building_id" class="form-select tom-select" required>
-                                                <option value="">Bina seçiniz...</option>
-                                                <?php foreach ($buildings as $building): ?>
-                                                    <option value="<?= $building->id ?>" <?= $classroom->building_id == $building->id ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($building->name) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
+                                                <?= renderBuildingSelectOptions($buildings ?? [], (int)($classroom->building_id ?? 0) ?: null, $has_multiple_building_units ?? null, 'Bina seçiniz...') ?>
                                             </select>
                                         </div>
                                     </div>
