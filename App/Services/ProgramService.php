@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Models\Program;
+use App\Models\User;
 use App\Models\Lesson;
 use App\DTOs\ProgramDTO;
 use App\DTOs\BulkDeleteDTO;
 use App\DTOs\BulkUpdateDTO;
 use App\DTOs\BulkActionResultDTO;
+use App\Repositories\ProgramRepository;
 use App\Services\Schedule\ScheduleService;
 use App\Core\Database;
 use App\Core\Gate;
@@ -20,6 +22,164 @@ use PDOException;
  */
 class ProgramService extends BaseService
 {
+    private ProgramRepository $programRepository;
+
+    public function __construct(?ProgramRepository $programRepository = null)
+    {
+        parent::__construct();
+        $this->programRepository = $programRepository ?? new ProgramRepository();
+    }
+
+    /**
+     * Programları Birim Adı -> Bölüm Adı -> Program Adı hiyerarşisine göre sıralar.
+     *
+     * @param Program[] $programs
+     * @param bool $hasMultipleUnits
+     * @return Program[]
+     */
+    public function sortProgramsHierarchically(array $programs, bool $hasMultipleUnits = false): array
+    {
+        usort($programs, function (Program $a, Program $b) use ($hasMultipleUnits) {
+            if ($hasMultipleUnits) {
+                $unitA = $a->department?->unit?->name ?? '';
+                $unitB = $b->department?->unit?->name ?? '';
+                $unitCmp = strcmp($unitA, $unitB);
+                if ($unitCmp !== 0) {
+                    return $unitCmp;
+                }
+            }
+            $deptA = $a->department?->name ?? '';
+            $deptB = $b->department?->name ?? '';
+            $deptCmp = strcmp($deptA, $deptB);
+            if ($deptCmp !== 0) {
+                return $deptCmp;
+            }
+            return strcmp($a->name ?? '', $b->name ?? '');
+        });
+
+        return $programs;
+    }
+
+    /**
+     * Kullanıcının yetkili olduğu programları getirir, sıralar ve birden fazla birim durumunu hesaplar.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return array{programs: Program[], has_multiple_units: bool, department_count: int}
+     * @throws Exception
+     */
+    public function getAuthorizedProgramsData(?User $user = null, array $conditions = ['active' => true]): array
+    {
+        $programs = $this->programRepository->getAuthorizedProgramsWithHierarchy($user, $conditions);
+
+        $unitIds = array_unique(array_filter(array_map(
+            fn($p) => $p->department?->unit_id ?? $p->department?->unit?->id,
+            $programs
+        )));
+        $hasMultipleUnits = count($unitIds) > 1;
+
+        $departmentIds = array_unique(array_filter(array_map(
+            fn($p) => $p->department_id,
+            $programs
+        )));
+        $departmentCount = count($departmentIds);
+
+        $programs = $this->sortProgramsHierarchically($programs, $hasMultipleUnits);
+
+        return [
+            'programs' => $programs,
+            'has_multiple_units' => $hasMultipleUnits,
+            'department_count' => $departmentCount
+        ];
+    }
+
+    /**
+     * Program listesini <optgroup> (Birim), <option disabled> (Bölüm) ve <option> (Program)
+     * hiyerarşisiyle girintili HTML olarak oluşturur.
+     *
+     * @param Program[] $programs
+     * @param int|null $selectedProgramId
+     * @param bool|null $hasMultipleUnits
+     * @param string $emptyOptionLabel
+     * @return string
+     */
+    public function renderProgramSelectOptions(
+        array $programs,
+        ?int $selectedProgramId = null,
+        ?bool $hasMultipleUnits = null,
+        string $emptyOptionLabel = 'Tanımlı program bulunamadı'
+    ): string {
+        if (empty($programs)) {
+            return '<option value="">' . htmlspecialchars($emptyOptionLabel) . '</option>';
+        }
+
+        if ($hasMultipleUnits === null) {
+            $unitIds = array_unique(array_filter(array_map(
+                fn($p) => $p->department?->unit_id ?? $p->department?->unit?->id,
+                $programs
+            )));
+            $hasMultipleUnits = count($unitIds) > 1;
+        }
+
+        $departmentCount = count(array_unique(array_filter(array_map(
+            fn($p) => $p->department_id,
+            $programs
+        ))));
+
+        $html = '';
+        $currentUnit = null;
+        $currentDept = null;
+
+        foreach ($programs as $prog) {
+            if ($hasMultipleUnits) {
+                $unitName = $prog->department?->unit?->name ?? 'Diğer';
+                $deptName = $prog->department?->name ?? '';
+
+                if ($currentUnit !== $unitName) {
+                    if ($currentUnit !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentUnit = $unitName;
+                    $currentDept = null;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentUnit) . '">';
+                }
+
+                if ($deptName !== '' && $deptName !== $currentDept) {
+                    $currentDept = $deptName;
+                    $html .= '<option disabled>&nbsp;&nbsp;' . htmlspecialchars($currentDept) . '</option>';
+                }
+
+                $indent = $deptName !== '' ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;&nbsp;';
+            } elseif ($departmentCount > 1) {
+                $deptName = $prog->department?->name ?? 'Diğer';
+
+                if ($currentDept !== $deptName) {
+                    if ($currentDept !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentDept = $deptName;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentDept) . '">';
+                }
+
+                $indent = '';
+            } else {
+                $indent = '';
+            }
+
+            $selected = ($selectedProgramId !== null && (int)$selectedProgramId === (int)$prog->id) ? ' selected' : '';
+            $deptId = (int)($prog->department_id ?? 0);
+
+            $html .= '<option value="' . $prog->id . '" data-department-id="' . $deptId . '"' . $selected . '>'
+                . $indent . htmlspecialchars($prog->name ?? '')
+                . '</option>';
+        }
+
+        if ($currentUnit !== null || (!$hasMultipleUnits && $currentDept !== null)) {
+            $html .= '</optgroup>';
+        }
+
+        return $html;
+    }
     /**
      * Yeni program oluşturur.
      *

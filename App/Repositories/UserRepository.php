@@ -5,12 +5,41 @@ namespace App\Repositories;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Enums\UserTitle;
+use App\Middlewares\AuthMiddleware;
 use App\Repositories\LessonAssignmentRepository;
 use Exception;
 
 class UserRepository extends BaseRepository
 {
     protected string $modelClass = User::class;
+
+    /**
+     * Yetkilendirilmiş veya sistemdeki akademisyenleri birim ve bölüm ilişkileriyle birlikte getirir.
+     *
+     * @param User|null $currentUser
+     * @param array $conditions
+     * @param array $with
+     * @return User[]
+     * @throws Exception
+     */
+    public function getAuthorizedLecturersWithHierarchy(?User $currentUser = null, array $conditions = [], array $with = []): array
+    {
+        $currentUser = $currentUser ?? AuthMiddleware::user();
+
+        if (!isset($conditions['role'])) {
+            $conditions['role'] = ['in' => UserRole::getAcademicRoles()];
+        }
+
+        if ($currentUser && $currentUser->role === UserRole::DepartmentHead->value && !empty($currentUser->department_id)) {
+            if (!isset($conditions['department_id'])) {
+                $conditions['department_id'] = $currentUser->department_id;
+            }
+        }
+
+        $relations = array_merge(['department' => ['with' => ['unit']], 'unit'], $with);
+
+        return $this->getAuthorized('view', $conditions, $relations);
+    }
 
     /**
      * E-posta adresine göre kullanıcı bulur.

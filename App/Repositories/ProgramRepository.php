@@ -3,13 +3,36 @@
 namespace App\Repositories;
 
 use App\Enums\UnitType;
+use App\Enums\UserRole;
 use App\Models\Program;
+use App\Models\User;
+use App\Middlewares\AuthMiddleware;
 use function App\Helpers\getMaxSemesterNo;
 use Exception;
 
 class ProgramRepository extends BaseRepository
 {
     protected string $modelClass = Program::class;
+
+    /**
+     * Yetkilendirilmiş programları birim ve bölüm ilişkileriyle birlikte getirir.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return Program[]
+     * @throws Exception
+     */
+    public function getAuthorizedProgramsWithHierarchy(?User $user = null, array $conditions = ['active' => true]): array
+    {
+        $user = $user ?? AuthMiddleware::user();
+        $relations = ['department' => ['with' => ['unit']]];
+
+        if ($user && $user->role === UserRole::DepartmentHead->value && !empty($user->department_id)) {
+            $conditions['department_id'] = $user->department_id;
+        }
+
+        return $this->getAuthorized('view', $conditions, $relations);
+    }
 
     /**
      * Ada göre program bulur.

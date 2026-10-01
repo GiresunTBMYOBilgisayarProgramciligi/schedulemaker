@@ -3,12 +3,35 @@
 namespace App\Repositories;
 
 use App\Models\Department;
+use App\Models\User;
+use App\Enums\UserRole;
+use App\Middlewares\AuthMiddleware;
 use App\Repositories\ProgramRepository;
 use Exception;
 
 class DepartmentRepository extends BaseRepository
 {
     protected string $modelClass = Department::class;
+
+    /**
+     * Yetkilendirilmiş bölümleri birim ilişkisiyle birlikte getirir.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return Department[]
+     * @throws Exception
+     */
+    public function getAuthorizedDepartmentsWithHierarchy(?User $user = null, array $conditions = ['active' => true]): array
+    {
+        $user = $user ?? AuthMiddleware::user();
+        $relations = ['unit'];
+
+        if ($user && $user->role === UserRole::DepartmentHead->value && !empty($user->department_id)) {
+            $conditions['id'] = $user->department_id;
+        }
+
+        return $this->getAuthorized('view', $conditions, $relations);
+    }
 
     /**
      * Ada göre bölüm bulur.

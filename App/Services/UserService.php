@@ -14,6 +14,8 @@ use App\Repositories\UserRepository;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Enums\PermissionType;
+use App\Enums\UserRole;
+use App\Enums\UserTitle;
 use Exception;
 use PDOException;
 
@@ -26,6 +28,181 @@ use PDOException;
  */
 class UserService extends BaseService
 {
+    private UserRepository $userRepository;
+
+    public function __construct(?UserRepository $userRepository = null)
+    {
+        parent::__construct();
+        $this->userRepository = $userRepository ?? new UserRepository();
+    }
+
+    /**
+     * Akademisyen personeli Birim -> Bölüm -> Unvan Kıdemi / Ad Soyad hiyerarşisinde sıralar.
+     *
+     * @param User[] $lecturers
+     * @param bool $hasMultipleUnits
+     * @return User[]
+     */
+    public function sortLecturersHierarchically(array $lecturers, bool $hasMultipleUnits = false): array
+    {
+        usort($lecturers, function (User $a, User $b) use ($hasMultipleUnits) {
+            if ($hasMultipleUnits) {
+                $unitA = $a->department?->unit?->name ?? $a->unit?->name ?? '';
+                $unitB = $b->department?->unit?->name ?? $b->unit?->name ?? '';
+                $unitCmp = strcmp($unitA, $unitB);
+                if ($unitCmp !== 0) {
+                    return $unitCmp;
+                }
+            }
+
+            $deptA = $a->department?->name ?? '';
+            $deptB = $b->department?->name ?? '';
+            $deptCmp = strcmp($deptA, $deptB);
+            if ($deptCmp !== 0) {
+                return $deptCmp;
+            }
+
+            $rankA = UserTitle::tryFrom((string)$a->title)?->getHierarchyRank() ?? 0;
+            $rankB = UserTitle::tryFrom((string)$b->title)?->getHierarchyRank() ?? 0;
+            if ($rankA !== $rankB) {
+                return $rankB <=> $rankA;
+            }
+
+            return strcmp(
+                mb_strtolower($a->name . ' ' . $a->last_name, 'UTF-8'),
+                mb_strtolower($b->name . ' ' . $b->last_name, 'UTF-8')
+            );
+        });
+
+        return $lecturers;
+    }
+
+    /**
+     * Yetkili akademisyenleri çeker, sıralar ve birden fazla birim durumunu hesaplar.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return array{lecturers: User[], has_multiple_units: bool, department_count: int}
+     * @throws Exception
+     */
+    public function getAuthorizedLecturersData(?User $user = null, array $conditions = []): array
+    {
+        $lecturers = $this->userRepository->getAuthorizedLecturersWithHierarchy($user, $conditions);
+
+        $unitIds = array_unique(array_filter(array_map(
+            fn($u) => $u->department?->unit_id ?? $u->unit_id,
+            $lecturers
+        )));
+        $hasMultipleUnits = count($unitIds) > 1;
+
+        $departmentIds = array_unique(array_filter(array_map(
+            fn($u) => $u->department_id,
+            $lecturers
+        )));
+        $departmentCount = count($departmentIds);
+
+        $lecturers = $this->sortLecturersHierarchically($lecturers, $hasMultipleUnits);
+
+        return [
+            'lecturers' => $lecturers,
+            'has_multiple_units' => $hasMultipleUnits,
+            'department_count' => $departmentCount
+        ];
+    }
+
+    /**
+     * Hoca listesini <optgroup> (Birim), <option disabled> (Bölüm) ve <option> (Hoca)
+     * hiyerarşisiyle girintili HTML olarak oluşturur.
+     *
+     * @param User[] $lecturers
+     * @param int|null $selectedLecturerId
+     * @param bool|null $hasMultipleUnits
+     * @param string|null $emptyOptionLabel
+     * @return string
+     */
+    public function renderLecturerSelectOptions(
+        array $lecturers,
+        ?int $selectedLecturerId = null,
+        ?bool $hasMultipleUnits = null,
+        ?string $emptyOptionLabel = '-- Atanmamış --'
+    ): string {
+        $html = '';
+        if ($emptyOptionLabel !== null) {
+            $html .= '<option value="">' . htmlspecialchars($emptyOptionLabel) . '</option>';
+        }
+
+        if (empty($lecturers)) {
+            return $html;
+        }
+
+        if ($hasMultipleUnits === null) {
+            $unitIds = array_unique(array_filter(array_map(
+                fn($u) => $u->department?->unit_id ?? $u->unit_id,
+                $lecturers
+            )));
+            $hasMultipleUnits = count($unitIds) > 1;
+        }
+
+        $departmentCount = count(array_unique(array_filter(array_map(
+            fn($u) => $u->department_id,
+            $lecturers
+        ))));
+
+        $currentUnit = null;
+        $currentDept = null;
+
+        foreach ($lecturers as $lec) {
+            if ($hasMultipleUnits) {
+                $unitName = $lec->department?->unit?->name ?? $lec->unit?->name ?? 'Diğer';
+                $deptName = $lec->department?->name ?? '';
+
+                if ($currentUnit !== $unitName) {
+                    if ($currentUnit !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentUnit = $unitName;
+                    $currentDept = null;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentUnit) . '">';
+                }
+
+                if ($deptName !== '' && $deptName !== $currentDept) {
+                    $currentDept = $deptName;
+                    $html .= '<option disabled>&nbsp;&nbsp;' . htmlspecialchars($currentDept) . '</option>';
+                }
+
+                $indent = $deptName !== '' ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;&nbsp;';
+            } elseif ($departmentCount > 1) {
+                $deptName = $lec->department?->name ?? 'Diğer';
+
+                if ($currentDept !== $deptName) {
+                    if ($currentDept !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentDept = $deptName;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentDept) . '">';
+                }
+
+                $indent = '';
+            } else {
+                $indent = '';
+            }
+
+            $selected = ($selectedLecturerId !== null && (int)$selectedLecturerId === (int)$lec->id) ? ' selected' : '';
+            $deptId = (int)($lec->department_id ?? 0);
+            $deptAttr = ' data-department-id="' . $deptId . '"';
+            $deptNameAttr = ' data-department-name="' . htmlspecialchars($lec->department?->name ?? 'Diğer') . '"';
+
+            $html .= '<option value="' . $lec->id . '"' . $deptAttr . $deptNameAttr . $selected . '>'
+                . $indent . htmlspecialchars($lec->getFullName(true))
+                . '</option>';
+        }
+
+        if ($currentUnit !== null || (!$hasMultipleUnits && $currentDept !== null)) {
+            $html .= '</optgroup>';
+        }
+
+        return $html;
+    }
     // ──────────────────────────────────────────
     // CRUD
     // ──────────────────────────────────────────

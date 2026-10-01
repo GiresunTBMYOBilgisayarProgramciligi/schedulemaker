@@ -9,6 +9,7 @@ use App\DTOs\BulkUpdateDTO;
 use App\DTOs\BulkActionResultDTO;
 use App\Models\Program;
 use App\Models\User;
+use App\Repositories\DepartmentRepository;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Enums\PermissionType;
@@ -20,6 +21,126 @@ use PDOException;
  */
 class DepartmentService extends BaseService
 {
+    private DepartmentRepository $departmentRepository;
+
+    public function __construct(?DepartmentRepository $departmentRepository = null)
+    {
+        parent::__construct();
+        $this->departmentRepository = $departmentRepository ?? new DepartmentRepository();
+    }
+
+    /**
+     * Bölümleri Birim Adı -> Bölüm Adı hiyerarşisinde sıralar.
+     *
+     * @param Department[] $departments
+     * @param bool $hasMultipleUnits
+     * @return Department[]
+     */
+    public function sortDepartmentsHierarchically(array $departments, bool $hasMultipleUnits = false): array
+    {
+        usort($departments, function (Department $a, Department $b) use ($hasMultipleUnits) {
+            if ($hasMultipleUnits) {
+                $unitA = $a->unit?->name ?? '';
+                $unitB = $b->unit?->name ?? '';
+                $unitCmp = strcmp($unitA, $unitB);
+                if ($unitCmp !== 0) {
+                    return $unitCmp;
+                }
+            }
+            return strcmp($a->name ?? '', $b->name ?? '');
+        });
+
+        return $departments;
+    }
+
+    /**
+     * Yetkili bölümleri çeker, sıralar ve birden fazla birim durumunu hesaplar.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return array{departments: Department[], has_multiple_units: bool}
+     * @throws Exception
+     */
+    public function getAuthorizedDepartmentsData(?User $user = null, array $conditions = ['active' => true]): array
+    {
+        $departments = $this->departmentRepository->getAuthorizedDepartmentsWithHierarchy($user, $conditions);
+
+        $unitIds = array_unique(array_filter(array_map(
+            fn($d) => $d->unit_id,
+            $departments
+        )));
+        $hasMultipleUnits = count($unitIds) > 1;
+
+        $departments = $this->sortDepartmentsHierarchically($departments, $hasMultipleUnits);
+
+        return [
+            'departments' => $departments,
+            'has_multiple_units' => $hasMultipleUnits
+        ];
+    }
+
+    /**
+     * Bölüm listesini <optgroup> (Birim) ve <option> (Bölüm) hiyerarşisiyle HTML olarak oluşturur.
+     *
+     * @param Department[] $departments
+     * @param int|null $selectedDepartmentId
+     * @param bool|null $hasMultipleUnits
+     * @param string|null $emptyOptionLabel
+     * @return string
+     */
+    public function renderDepartmentSelectOptions(
+        array $departments,
+        ?int $selectedDepartmentId = null,
+        ?bool $hasMultipleUnits = null,
+        ?string $emptyOptionLabel = '-- Bölüm Seçiniz --'
+    ): string {
+        $html = '';
+        if ($emptyOptionLabel !== null) {
+            $html .= '<option value="">' . htmlspecialchars($emptyOptionLabel) . '</option>';
+        }
+
+        if (empty($departments)) {
+            return $html;
+        }
+
+        if ($hasMultipleUnits === null) {
+            $unitIds = array_unique(array_filter(array_map(
+                fn($d) => $d->unit_id,
+                $departments
+            )));
+            $hasMultipleUnits = count($unitIds) > 1;
+        }
+
+        $currentUnit = null;
+
+        foreach ($departments as $dept) {
+            if ($hasMultipleUnits) {
+                $unitName = $dept->unit?->name ?? 'Diğer';
+
+                if ($currentUnit !== $unitName) {
+                    if ($currentUnit !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentUnit = $unitName;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentUnit) . '">';
+                }
+            }
+
+            $selected = ($selectedDepartmentId !== null && (int)$selectedDepartmentId === (int)$dept->id) ? ' selected' : '';
+            $unitId = (int)($dept->unit_id ?? 0);
+            $unitAttr = ' data-unit-id="' . $unitId . '"';
+
+            $html .= '<option value="' . $dept->id . '"' . $unitAttr . $selected . '>'
+                . htmlspecialchars($dept->name ?? '')
+                . '</option>';
+        }
+
+        if ($hasMultipleUnits && $currentUnit !== null) {
+            $html .= '</optgroup>';
+        }
+
+        return $html;
+    }
     /**
      * Yeni bölüm oluşturur.
      *

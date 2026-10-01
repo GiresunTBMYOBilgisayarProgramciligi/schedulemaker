@@ -314,3 +314,76 @@ function hasRole(string|UserRole $role, ?User $user = null, bool $reverse = fals
 {
     return Gate::hasRole($user, $role, $reverse);
 }
+
+/**
+ * Program listesini standart hiyerarşik HTML <select> seçenekleri (<optgroup>, <option disabled>, <option>) olarak render eder.
+ *
+ * @param array $programs
+ * @param int|null $selectedProgramId
+ * @param bool|null $hasMultipleUnits
+ * @param string $emptyOptionLabel
+ * @return string
+ */
+function renderProgramSelectOptions(
+    array $programs,
+    ?int $selectedProgramId = null,
+    ?bool $hasMultipleUnits = null,
+    string $emptyOptionLabel = 'Tanımlı program bulunamadı'
+): string {
+    return (new \App\Services\ProgramService())->renderProgramSelectOptions($programs, $selectedProgramId, $hasMultipleUnits, $emptyOptionLabel);
+}
+
+/**
+ * Hoca listesini standart hiyerarşik HTML <select> seçenekleri (<optgroup>, <option disabled>, <option>) olarak render eder.
+ *
+ * @param array $lecturers
+ * @param int|null $selectedLecturerId
+ * @param bool|null $hasMultipleUnits
+ * @param string|null $emptyOptionLabel
+ * @return string
+ */
+function renderLecturerSelectOptions(
+    array $lecturers,
+    ?int $selectedLecturerId = null,
+    ?bool $hasMultipleUnits = null,
+    ?string $emptyOptionLabel = '-- Atanmamış --'
+): string {
+    return (new \App\Services\UserService())->renderLecturerSelectOptions($lecturers, $selectedLecturerId, $hasMultipleUnits, $emptyOptionLabel);
+}
+
+/**
+ * Bölüm listesini standart hiyerarşik HTML <select> seçenekleri (<optgroup>, <option>) olarak render eder.
+ *
+ * @param array $departments
+ * @param int|null $selectedDepartmentId
+ * @param bool|null $hasMultipleUnits
+ * @param string|null $emptyOptionLabel
+ * @return string
+ */
+function renderDepartmentSelectOptions(
+    array $departments,
+    ?int $selectedDepartmentId = null,
+    ?bool $hasMultipleUnits = null,
+    ?string $emptyOptionLabel = '-- Bölüm Seçiniz --'
+): string {
+    return (new \App\Services\DepartmentService())->renderDepartmentSelectOptions($departments, $selectedDepartmentId, $hasMultipleUnits, $emptyOptionLabel);
+}
+
+/**
+ * Bina listesini standart hiyerarşik HTML <select> seçenekleri (<optgroup>, <option>) olarak render eder.
+ *
+ * @param array $buildings
+ * @param int|null $selectedBuildingId
+ * @param bool|null $groupByUnit
+ * @param string $emptyOptionLabel
+ * @return string
+ */
+function renderBuildingSelectOptions(
+    array $buildings,
+    ?int $selectedBuildingId = null,
+    ?bool $groupByUnit = null,
+    string $emptyOptionLabel = '-- Seçiniz --'
+): string {
+    return (new \App\Services\BuildingService())->renderBuildingSelectOptions($buildings, $selectedBuildingId, $groupByUnit, $emptyOptionLabel);
+}
+

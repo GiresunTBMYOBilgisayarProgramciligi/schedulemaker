@@ -12,10 +12,136 @@ use App\Core\Database;
 use App\Core\Gate;
 use App\Enums\PermissionType;
 use Exception;
+use App\Models\User;
+use App\Repositories\BuildingRepository;
 use PDOException;
 
 class BuildingService extends BaseService
 {
+    private BuildingRepository $buildingRepository;
+
+    public function __construct(?BuildingRepository $buildingRepository = null)
+    {
+        parent::__construct();
+        $this->buildingRepository = $buildingRepository ?? new BuildingRepository();
+    }
+
+    /**
+     * Binaları Birim Adı -> Bina Adı hiyerarşisine göre sıralar.
+     *
+     * @param Building[] $buildings
+     * @param bool $groupByUnit
+     * @return Building[]
+     */
+    public function sortBuildingsHierarchically(array $buildings, bool $groupByUnit = true): array
+    {
+        usort($buildings, function (Building $a, Building $b) use ($groupByUnit) {
+            if ($groupByUnit) {
+                $unitA = $a->unit?->name ?? 'Diğer Birim';
+                $unitB = $b->unit?->name ?? 'Diğer Birim';
+                $unitCmp = strcmp($unitA, $unitB);
+                if ($unitCmp !== 0) {
+                    return $unitCmp;
+                }
+            }
+
+            return strcmp(
+                mb_strtolower($a->name ?? '', 'UTF-8'),
+                mb_strtolower($b->name ?? '', 'UTF-8')
+            );
+        });
+
+        return $buildings;
+    }
+
+    /**
+     * Yetkili binaları çeker, sıralar ve birim durumunu hesaplar.
+     *
+     * @param User|null $user
+     * @param array $conditions
+     * @return array{buildings: Building[], has_multiple_units: bool}
+     * @throws Exception
+     */
+    public function getAuthorizedBuildingsData(?User $user = null, array $conditions = []): array
+    {
+        $buildings = $this->buildingRepository->getAuthorizedBuildingsWithHierarchy($user, $conditions);
+
+        $unitIds = array_unique(array_filter(array_map(
+            fn($b) => $b->unit_id,
+            $buildings
+        )));
+        $hasMultipleUnits = count($unitIds) > 1;
+
+        $buildings = $this->sortBuildingsHierarchically($buildings, count($unitIds) > 0);
+
+        return [
+            'buildings' => $buildings,
+            'has_multiple_units' => $hasMultipleUnits,
+        ];
+    }
+
+    /**
+     * Bina listesini standart hiyerarşik HTML <select> seçenekleri (<optgroup>, <option>) olarak render eder.
+     *
+     * @param Building[] $buildings
+     * @param int|null $selectedBuildingId
+     * @param bool|null $groupByUnit
+     * @param string $emptyOptionLabel
+     * @return string
+     */
+    public function renderBuildingSelectOptions(
+        array $buildings,
+        ?int $selectedBuildingId = null,
+        ?bool $groupByUnit = null,
+        string $emptyOptionLabel = '-- Seçiniz --'
+    ): string {
+        $html = '';
+        if ($emptyOptionLabel !== '') {
+            $html .= '<option value="">' . htmlspecialchars($emptyOptionLabel) . '</option>';
+        }
+
+        if (empty($buildings)) {
+            return $html;
+        }
+
+        if ($groupByUnit === null) {
+            $unitIds = array_unique(array_filter(array_map(
+                fn($b) => $b->unit_id,
+                $buildings
+            )));
+            $groupByUnit = count($unitIds) > 0;
+        }
+
+        $currentUnit = null;
+
+        foreach ($buildings as $bld) {
+            if ($groupByUnit) {
+                $unitName = $bld->unit?->name ?? 'Diğer Birim';
+                if ($currentUnit !== $unitName) {
+                    if ($currentUnit !== null) {
+                        $html .= '</optgroup>';
+                    }
+                    $currentUnit = $unitName;
+                    $html .= '<optgroup label="' . htmlspecialchars($currentUnit) . '">';
+                }
+            }
+
+            $selected = ($selectedBuildingId !== null && (int)$selectedBuildingId === (int)$bld->id) ? ' selected' : '';
+            $unitId = (int)($bld->unit_id ?? 0);
+            $unitNameAttr = ' data-unit-name="' . htmlspecialchars($bld->unit?->name ?? 'Diğer Birim') . '"';
+
+            $html .= '<option value="' . $bld->id . '" data-unit-id="' . $unitId . '"' . $unitNameAttr . $selected . '>'
+                . htmlspecialchars($bld->name ?? '')
+                . '</option>';
+        }
+
+        if ($groupByUnit && $currentUnit !== null) {
+            $html .= '</optgroup>';
+        }
+
+        return $html;
+    }
+
     /**
      * Yeni bina oluşturur.
      *
