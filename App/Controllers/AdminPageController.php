@@ -690,7 +690,7 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         $lecturers = [];
         if (!empty($department->unit_id)) {
-            $lecturers = (new UserRepository())->findBy(['unit_id' => $department->unit_id, 'active' => true]);
+            $lecturers = (new UserRepository())->findBy(['unit_id' => $department->unit_id]);
         }
         if (!empty($department->chairperson_id)) {
             $chairpersonExists = false;
