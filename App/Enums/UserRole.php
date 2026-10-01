@@ -66,6 +66,42 @@ enum UserRole: string
         return $roles;
     }
 
+    public function isAcademic(): bool
+    {
+        return in_array($this->value, self::getAcademicRoles(), true);
+    }
+
+    public function isAdministrative(): bool
+    {
+        return !in_array($this->value, self::getAcademicRoles(), true);
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getAcademicRoles(): array
+    {
+        return [self::Manager->value, self::SubManager->value, self::DepartmentHead->value, self::Lecturer->value, self::ResearchAssistant->value];
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getAdministrativeRoles(): array
+    {
+        return [self::Admin->value, self::Secretary->value, self::PayrollOfficer->value, self::User->value];
+    }
+
+    public static function getAcademicRoleValues(): array
+    {
+        return self::getAcademicRoles();
+    }
+
+    public static function getAdministrativeRoleValues(): array
+    {
+        return self::getAdministrativeRoles();
+    }
+
     /**
      * Label üzerinden Enum örneğini döndürür.
      * @param string $label

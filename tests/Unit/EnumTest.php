@@ -34,6 +34,54 @@ class EnumTest extends BaseTestCase
         $this->assertNull(UserRole::fromLabel('Bilinmeyen Rol'));
     }
 
+    public function testUserRoleAcademicAndAdministrativeCategories(): void
+    {
+        // Akademik roller kontrolü
+        $academicRoles = [
+            UserRole::Manager,
+            UserRole::SubManager,
+            UserRole::DepartmentHead,
+            UserRole::Lecturer,
+            UserRole::ResearchAssistant,
+        ];
+
+        foreach ($academicRoles as $role) {
+            $this->assertTrue($role->isAcademic(), "{$role->value} akademik rol olmalıdır.");
+            $this->assertFalse($role->isAdministrative(), "{$role->value} idari rol olmamalıdır.");
+        }
+
+        // İdari roller kontrolü
+        $administrativeRoles = [
+            UserRole::Admin,
+            UserRole::Secretary,
+            UserRole::PayrollOfficer,
+            UserRole::User,
+        ];
+
+        foreach ($administrativeRoles as $role) {
+            $this->assertFalse($role->isAcademic(), "{$role->value} akademik rol olmamalıdır.");
+            $this->assertTrue($role->isAdministrative(), "{$role->value} idari rol olmalıdır.");
+        }
+
+        // Koleksiyon ve value listeleri
+        $academicRoleValues = UserRole::getAcademicRoleValues();
+        $this->assertEqualsCanonicalizing(
+            ['manager', 'submanager', 'department_head', 'lecturer', 'research_assistant'],
+            $academicRoleValues
+        );
+
+        $adminRoleValues = UserRole::getAdministrativeRoleValues();
+        $this->assertEqualsCanonicalizing(
+            ['admin', 'secretary', 'payroll_officer', 'user'],
+            $adminRoleValues
+        );
+
+        // Kesişim kümesi boş olmalı ve birleşimi tüm rolleri kapsamalı
+        $this->assertEmpty(array_intersect($academicRoleValues, $adminRoleValues));
+        $allCasesValues = array_map(fn($c) => $c->value, UserRole::cases());
+        $this->assertEqualsCanonicalizing($allCasesValues, array_merge($academicRoleValues, $adminRoleValues));
+    }
+
     public function testUserTitleParsing(): void
     {
         $parsed1 = UserTitle::parseAcademicName('Prof. Dr. Ahmet Yılmaz');

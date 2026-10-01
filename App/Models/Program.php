@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Core\Model;
 use App\Enums\OwnerType;
-
+use App\Enums\UserRole;
 use Exception;
 
 class Program extends Model
@@ -30,6 +30,41 @@ class Program extends Model
     public function getLogDetail(): string
     {
         return $this->name ?? "ID: " . $this->id;
+    }
+
+    /**
+     * Program adını döner. İsteğe bağlı olarak bağlı olduğu birim ve bölüm bilgilerini ekler.
+     *
+     * @param bool $includeUnit
+     * @param bool $includeDepartment
+     * @return string
+     */
+    public function getFullName(bool $includeUnit = false, bool $includeDepartment = false): string
+    {
+        $name = $this->name ?? '';
+        $details = [];
+
+        if ($includeDepartment && empty($this->department) && !empty($this->department_id)) {
+            $this->department = (new Department())->find($this->department_id);
+        }
+
+        if ($includeUnit && !empty($this->department) && empty($this->department->unit) && !empty($this->department->unit_id)) {
+            $this->department->unit = (new Unit())->find($this->department->unit_id);
+        }
+
+        if ($includeUnit && !empty($this->department?->unit?->name)) {
+            $details[] = $this->department->unit->name;
+        }
+
+        if ($includeDepartment && !empty($this->department?->name)) {
+            $details[] = $this->department->name;
+        }
+
+        if (!empty($details)) {
+            $name .= ' (' . implode(' - ', $details) . ')';
+        }
+
+        return $name;
     }
 
     public function getSchedulesRelation(array $results, array $options = []): array
@@ -137,7 +172,7 @@ class Program extends Model
         if (empty($progIds))
             return $results;
 
-        $query = (new User())->get()->where(['program_id' => ['in' => $progIds], '!role' => ['in' => ['user', 'admin']]]);
+        $query = (new User())->get()->where(['program_id' => ['in' => $progIds], 'role' => ['in' => UserRole::getAcademicRoles()]]);
 
         if (isset($options['with'])) {
             $query->with($options['with']);

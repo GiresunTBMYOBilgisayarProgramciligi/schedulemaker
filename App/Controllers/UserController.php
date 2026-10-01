@@ -169,9 +169,7 @@ class UserController extends Controller
      */
     public function getAllLecturersListResponse(): array
     {
-        $lecturers = (new User())->get()->where([
-            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
-        ])->with(['unit'])->all();
+        $lecturers = (new UserRepository())->getAllLecturers(['unit']);
 
         $lecturersList = [];
         foreach ($lecturers as $lecturer) {

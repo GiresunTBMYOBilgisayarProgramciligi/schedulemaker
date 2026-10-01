@@ -4,6 +4,7 @@ namespace App\Services\Export;
 
 use App\DTOs\ScheduleExportFilterDTO;
 use App\Enums\ExamType;
+use App\Enums\UserRole;
 use App\Validators\Schedule\ScheduleExportFilterValidator;
 use App\Models\Department;
 use App\Models\Unit;
@@ -258,13 +259,13 @@ class ScheduleExportFilterBuilder
         if (!empty($filters["owner_id"])) {
             /** @var User|null $lecturer */
             $lecturer = (new UserRepository())->find($filters['owner_id']);
-            $lecturers = ($lecturer && !in_array($lecturer->role, ['admin', 'user'])) ? [$lecturer] : [];
+            $lecturers = ($lecturer && $lecturer->isAcademic()) ? [$lecturer] : [];
             $fileTitle = !empty($lecturers) ? $lecturers[0]->getFullName() . " " . $typeLabel : "Hoca " . $typeLabel;
         } else {
             if ($user && $user->role !== 'admin') {
-                $lecturers = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+                $lecturers = (new UserRepository())->getAuthorized('view', ['role' => ['in' => UserRole::getAcademicRoles()]]);
             } else {
-                $lecturers = (new UserRepository())->findBy(['!role' => ['in' => ['admin', 'user']]]);
+                $lecturers = (new UserRepository())->findBy(['role' => ['in' => UserRole::getAcademicRoles()]]);
             }
             $fileTitle = "Tüm Hocalar " . $typeLabel;
         }

@@ -32,9 +32,8 @@ class UserRepository extends BaseRepository
      */
     public function getAcademicCount(): int
     {
-        // Enum kullanarak 'user' ve 'admin' olmayanları sayıyoruz
         return $this->count([
-            "!role" => ['in' => [UserRole::User->value, UserRole::Admin->value]]
+            "role" => ['in' => UserRole::getAcademicRoles()]
         ]);
     }
 
@@ -140,7 +139,7 @@ class UserRepository extends BaseRepository
         $model = new $this->modelClass;
         $users = $model->get()->where([
             'department_id' => $deptId, 
-            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+            'role' => ["in" => UserRole::getAcademicRoles()]
         ])->all();
 
         $affiliations = (new \App\Models\UserAffiliation())->get()->where(['department_id' => $deptId])->all();
@@ -149,7 +148,7 @@ class UserRepository extends BaseRepository
         if (!empty($affiliatedUserIds)) {
             $affiliatedUsers = (new $this->modelClass)->get()->where([
                 'id' => ['in' => $affiliatedUserIds],
-                '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+                'role' => ["in" => UserRole::getAcademicRoles()]
             ])->all();
 
             $userIds = array_column($users, 'id');
@@ -163,18 +162,25 @@ class UserRepository extends BaseRepository
     }
 
     /**
-     * Sistemdeki tüm akademisyenleri (role != admin/user) getirir.
+     * Sistemdeki tüm akademisyenleri getirir.
      *
+     * @param array $with Eager load edilecek ilişkiler (örn: ['unit'])
      * @return User[]
      * @throws Exception
      */
-    public function getAllLecturers(): array
+    public function getAllLecturers(array $with = []): array
     {
         /** @var User $model */
         $model = new $this->modelClass;
-        return $model->get()->where([
-            '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
-        ])->all();
+        $query = $model->get()->where([
+            'role' => ["in" => UserRole::getAcademicRoles()]
+        ]);
+
+        if (!empty($with)) {
+            $query->with($with);
+        }
+
+        return $query->all();
     }
 
     /**
@@ -198,7 +204,7 @@ class UserRepository extends BaseRepository
      */
     public function getFilteredLecturers(int $unitId, int $departmentId, int $programId): array
     {
-        $filters = ['!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]];
+        $filters = ['role' => ["in" => UserRole::getAcademicRoles()]];
         
         if ($unitId > 0) $filters['unit_id'] = $unitId;
         if ($departmentId > 0) $filters['department_id'] = $departmentId;
@@ -220,9 +226,8 @@ class UserRepository extends BaseRepository
             if (!empty($affiliatedUserIds)) {
                 $affiliatedUsers = (new $this->modelClass)->get()->where([
                     'id' => ['in' => $affiliatedUserIds],
-                    '!role' => ["in" => [UserRole::User->value, UserRole::Admin->value]]
+                    'role' => ["in" => UserRole::getAcademicRoles()]
                 ])->with(['unit', 'department'])->all();
-
                 $userIds = array_column($users, 'id');
                 foreach ($affiliatedUsers as $au) {
                     if (!in_array($au->id, $userIds)) {
@@ -303,7 +308,7 @@ class UserRepository extends BaseRepository
     public function getSortedAcademicStaff(): array
     {
         $lecturers = (new User())->get()->where([
-            '!role' => ['in' => [UserRole::User->value, UserRole::Admin->value]]
+            'role' => ['in' => UserRole::getAcademicRoles()]
         ])->with(['unit'])->all();
 
         usort($lecturers, function (User $a, User $b) {

@@ -414,4 +414,26 @@ class User extends Model
     {
         return \App\Core\Gate::hasRole($this, $role, $reverse);
     }
+
+    /**
+     * Kullanıcının akademik bir role sahip olup olmadığını kontrol eder.
+     *
+     * @return bool
+     */
+    public function isAcademic(): bool
+    {
+        $roleEnum = UserRole::tryFrom($this->role ?? '');
+        return $roleEnum?->isAcademic() ?? false;
+    }
+
+    /**
+     * Kullanıcının idari (akademik olmayan) bir role sahip olup olmadığını kontrol eder.
+     *
+     * @return bool
+     */
+    public function isAdministrative(): bool
+    {
+        $roleEnum = UserRole::tryFrom($this->role ?? '');
+        return $roleEnum?->isAdministrative() ?? true;
+    }
 }
