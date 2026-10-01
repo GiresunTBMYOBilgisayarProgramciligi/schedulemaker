@@ -35,6 +35,9 @@ use App\Enums\UserRole;
 use App\Enums\PermissionType;
 use App\Services\Schedule\SchedulePublishService;
 use App\Services\MailQueueService;
+use App\Services\ProgramService;
+use App\Services\UserService;
+use App\Services\BuildingService;
 use App\Controllers\SettingsController;
 use function App\Helpers\getSettingValue;
 use Exception;
@@ -100,7 +103,7 @@ class AdminPageController extends Controller
         } elseif ($currentUser->role === UserRole::PayrollOfficer->value) {
             $departments = (new DepartmentRepository())->getAuthorized('view', ['active' => true]);
             $programs    = (new ProgramRepository())->getAuthorized('view', ['active' => true]);
-            $academics   = (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]]);
+            $academics   = (new UserRepository())->getAuthorized('view', ['role' => ['in' => UserRole::getAcademicRoles()]]);
             $lessons     = (new LessonRepository())->getAuthorized('view');
 
             $view_data['stats'] = [
@@ -428,24 +431,25 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         $assetManager->addJs('/assets/js/admin/assignLessons.js');
 
-        $programRepo = new ProgramRepository();
-        if ($currentUser->role == "department_head" && !empty($currentUser->department_id)) {
-            $programs = $programRepo->getAuthorized('view', ['department_id' => $currentUser->department_id, 'active' => true], ['department']);
-        } else {
-            $programs = $programRepo->getAuthorized('view', ['active' => true], ['department']);
-        }
-
+        $programData = (new ProgramService())->getAuthorizedProgramsData($currentUser);
+        $programs = $programData['programs'];
+        $hasMultipleUnits = $programData['has_multiple_units'];
         $selectedProgramId = $program_id ?? (!empty($programs) ? $programs[0]->id : null);
 
-        $lecturers = (new UserRepository())->getAuthorized('view', [], ['department']);
-        usort($lecturers, fn($a, $b) => strcmp($a->getFullName(), $b->getFullName()));
+        $lecturerData = (new UserService())->getAuthorizedLecturersData($currentUser);
+        $lecturers = $lecturerData['lecturers'];
+
+        $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
+        $buildings = $buildingData['buildings'];
 
         return [
             "page_title" => "Ders Atama",
             "programs" => $programs,
+            "has_multiple_units" => $hasMultipleUnits,
             "selected_program_id" => $selectedProgramId,
             "lecturers" => $lecturers,
-            "buildings" => (new BuildingRepository())->findAll(),
+            "buildings" => $buildings,
+            "has_multiple_building_units" => $buildingData['has_multiple_units'],
             "classroomTypes" => ClassroomType::toArray(),
             "lessonTypes" => LessonType::toArray(),
             "semesterNoList" => array_combine(range(1, 12), array_map(fn($i) => "$i. Yarıyıl", range(1, 12))),
@@ -464,7 +468,7 @@ class AdminPageController extends Controller
             "units" => (new UnitRepository())->getAuthorized('view'),
             "lessonController" => new LessonController(),
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit']),
+            "buildings" => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
             "program_id" => $program_id
         ];
         $view_data['lecturers'] = [];
@@ -499,7 +503,7 @@ class AdminPageController extends Controller
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
             "programController" => new ProgramController(),
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings" => (new BuildingRepository())->getAuthorized('view', [], ['unit'])
+            "buildings" => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings']
         ];
         
         $view_data['lecturers'] = $lesson->lecturer ? [$lesson->lecturer] : [];
@@ -592,10 +596,11 @@ class AdminPageController extends Controller
     {
         Gate::authorize(PermissionType::CREATE->value, Classroom::class, "Yeni derslik ekleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
+        $currentUser = AuthMiddleware::user();
         return [
             "page_title"     => "Derslik Ekle",
             "classroomTypes" => ClassroomType::toArray(),
-            "buildings"      => (new BuildingRepository())->getAuthorized('view'),
+            "buildings"      => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
         ];
     }
 
@@ -611,11 +616,12 @@ class AdminPageController extends Controller
             throw new Exception("Derslik Bulunamadı");
         }
         $assetManager->loadPageAssets('formpages');
+        $currentUser = AuthMiddleware::user();
         return [
             "classroomController" => new ClassroomController(),
             "classroom"           => $classroom,
             "classroomTypes"      => ClassroomType::toArray(),
-            "buildings"           => (new BuildingRepository())->getAuthorized('view'),
+            "buildings"           => (new BuildingService())->getAuthorizedBuildingsData($currentUser)['buildings'],
             "page_title"          => $classroom->name . " Düzenle",
         ];
     }
@@ -868,7 +874,7 @@ class AdminPageController extends Controller
             "selected_lecturer_unit_id" => $selectedLecturerUnitId,
             "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',
         ];
-        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['!role' => ['admin', 'user']]);
+        $view_data['lecturers'] = (new UserRepository())->getAuthorized('view', ['role' => ['in' => UserRole::getAcademicRoles()]]);
         return $view_data;
     }
 
@@ -935,11 +941,12 @@ class AdminPageController extends Controller
             "selected_lecturer_unit_id" => $selectedLecturerUnitId,
             "active_tab" => !empty($selectedLecturerId) ? 'lecturer' : 'program',
         ];
-        if (Gate::allowsRole("submanager")) {
-            $view_data['lecturers'] = (new User())->get()->where(['!role' => ["in" => ['admin', 'user']]])->all();
+        $userRepository = new UserRepository();
+        if (Gate::allowsRole(UserRole::SubManager)) {
+            $view_data['lecturers'] = $userRepository->getAllLecturers();
         } else {
             $deptIds = array_column($departments, 'id');
-            $view_data['lecturers'] = (new User())->get()->where(['department_id' => ['in' => $deptIds], '!role' => ['admin', 'user']])->all();
+            $view_data['lecturers'] = $userRepository->findBy(['department_id' => ['in' => $deptIds], 'role' => ['in' => UserRole::getAcademicRoles()]]);
         }
         return $view_data;
     }
@@ -964,7 +971,7 @@ class AdminPageController extends Controller
             "departments"        => $departments,
             "page_title"         => "Program Dışa Aktar",
             "classrooms"         => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
-            "lecturers"          => (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]])
+            "lecturers"          => (new UserRepository())->getAuthorized('view', ['role' => ['in' => UserRole::getAcademicRoles()]])
         ];
 
         return $view_data;
@@ -995,7 +1002,7 @@ class AdminPageController extends Controller
             "departments"        => $departments,
             "page_title"         => "Program Yayınla",
             "classrooms"         => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
-            "lecturers"          => (new UserRepository())->getAuthorized('view', ['!role' => ['in' => ['admin', 'user']]])
+            "lecturers"          => (new UserRepository())->getAuthorized('view', ['role' => ['in' => UserRole::getAcademicRoles()]])
         ];
 
         return $view_data;
