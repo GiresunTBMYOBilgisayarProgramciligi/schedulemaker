@@ -2,6 +2,7 @@
 /**
  * @var string $page_title
  * @var array $programs
+ * @var bool|null $has_multiple_units
  * @var int|null $selected_program_id
  * @var array $lecturers
  * @var array $buildings
@@ -12,6 +13,9 @@
  */
 use App\Core\Gate;
 use App\Models\Lesson;
+use function App\Helpers\renderProgramSelectOptions;
+use function App\Helpers\renderLecturerSelectOptions;
+use function App\Helpers\renderBuildingSelectOptions;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -74,17 +78,7 @@ use App\Models\Lesson;
                         <div class="col-xl-3 col-md-6">
                             <label for="program_id" class="form-label fw-bold">Program</label>
                             <select class="form-select" id="program_id" name="program_id">
-                                <?php if (empty($programs)): ?>
-                                    <option value="">Tanımlı program bulunamadı</option>
-                                <?php else: ?>
-                                    <?php foreach ($programs as $prog): ?>
-                                        <option value="<?= $prog->id ?>" 
-                                                data-department-id="<?= (int)($prog->department_id ?? 0) ?>"
-                                                <?= (int)$selected_program_id === (int)$prog->id ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($prog->name) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <?= renderProgramSelectOptions($programs, $selected_program_id, $has_multiple_units) ?>
                             </select>
                         </div>
 
@@ -192,9 +186,18 @@ use App\Models\Lesson;
 <template id="lecturerOptionsTemplate">
     <option value="">-- Atanmamış --</option>
     <?php foreach ($lecturers as $lec): ?>
+        <?php if (!$lec->isAcademic()) continue; ?>
+        <?php
+            $unitId = (int)($lec->department?->unit_id ?? $lec->unit_id ?? 0);
+            $unitName = $lec->department?->unit?->name ?? $lec->unit?->name ?? 'Diğer Birim';
+            $deptId = (int)($lec->department_id ?? 0);
+            $deptName = $lec->department?->name ?? 'Diğer Bölüm';
+        ?>
         <option value="<?= $lec->id ?>" 
-                data-department-id="<?= (int)($lec->department_id ?? 0) ?>"
-                data-department-name="<?= htmlspecialchars($lec->department?->name ?? 'Diğer') ?>">
+                data-unit-id="<?= $unitId ?>"
+                data-unit-name="<?= htmlspecialchars($unitName) ?>"
+                data-department-id="<?= $deptId ?>"
+                data-department-name="<?= htmlspecialchars($deptName) ?>">
             <?= htmlspecialchars($lec->getFullName(true)) ?>
         </option>
     <?php endforeach; ?>
@@ -220,10 +223,7 @@ use App\Models\Lesson;
 </template>
 
 <template id="buildingOptionsTemplate">
-    <option value="">-- Seçiniz --</option>
-    <?php foreach ($buildings as $bld): ?>
-        <option value="<?= $bld->id ?>"><?= htmlspecialchars($bld->name) ?></option>
-    <?php endforeach; ?>
+    <?= renderBuildingSelectOptions($buildings, null, $has_multiple_building_units ?? null) ?>
 </template>
 
 <!-- UBS İçe Aktarma Modalı -->

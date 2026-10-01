@@ -274,11 +274,14 @@ document.addEventListener('DOMContentLoaded', function () {
         allLecturerOptions.forEach(opt => {
             if (!opt.value) return; // boş seçeneği atla
             const deptId = parseInt(opt.dataset.departmentId, 10) || 0;
+            const unitId = parseInt(opt.dataset.unitId, 10) || 0;
             const item = {
                 value: opt.value,
                 name: opt.textContent.trim(),
                 deptId: deptId,
-                deptName: opt.dataset.departmentName || 'Diğer'
+                deptName: opt.dataset.departmentName || '',
+                unitId: unitId,
+                unitName: opt.dataset.unitName || ''
             };
 
             if (currentDeptId > 0 && deptId === currentDeptId) {
@@ -290,8 +293,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const curIdStr = currentLecturerId ? String(currentLecturerId) : '';
 
-        // Eğer showAllLecturers aktifse optgroup'lar ile tümünü göster
+        // Eğer showAllLecturers aktifse optgroup'lar ve girintili hiyerarşi ile göster
         if (showAllLecturers) {
+            // 1. Bölüm hocaları en başta
             if (deptLecturers.length > 0) {
                 html += '<optgroup label="Bölüm Öğretim Elemanları">';
                 deptLecturers.forEach(l => {
@@ -301,13 +305,54 @@ document.addEventListener('DOMContentLoaded', function () {
                 html += '</optgroup>';
             }
 
+            // 2. Diğer birim ve bölüm hocaları hiyerarşik olarak
             if (otherLecturers.length > 0) {
-                html += '<optgroup label="Diğer Bölüm ve Birim Hocaları">';
+                const uniqueUnits = [...new Set(otherLecturers.map(l => l.unitName).filter(Boolean))];
+                const hasMultipleUnits = uniqueUnits.length > 1;
+
+                let currentUnit = null;
+                let currentDept = null;
+
                 otherLecturers.forEach(l => {
-                    const sel = (curIdStr === l.value) ? ' selected' : '';
-                    html += `<option value="${l.value}"${sel}>${escapeHtml(l.name)} (${escapeHtml(l.deptName)})</option>`;
+                    if (hasMultipleUnits) {
+                        const unitName = l.unitName || 'Diğer Birim';
+                        const deptName = l.deptName || '';
+
+                        if (currentUnit !== unitName) {
+                            if (currentUnit !== null) {
+                                html += '</optgroup>';
+                            }
+                            currentUnit = unitName;
+                            currentDept = null;
+                            html += `<optgroup label="${escapeHtml(currentUnit)}">`;
+                        }
+
+                        if (deptName !== '' && deptName !== currentDept) {
+                            currentDept = deptName;
+                            html += `<option disabled>&nbsp;&nbsp;${escapeHtml(currentDept)}</option>`;
+                        }
+
+                        const indent = deptName !== '' ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;&nbsp;';
+                        const sel = (curIdStr === l.value) ? ' selected' : '';
+                        html += `<option value="${l.value}"${sel}>${indent}${escapeHtml(l.name)}</option>`;
+                    } else {
+                        // Tek birim varsa doğrudan bölümlere göre grupla
+                        const deptName = l.deptName || 'Diğer Bölüm';
+                        if (currentDept !== deptName) {
+                            if (currentDept !== null) {
+                                html += '</optgroup>';
+                            }
+                            currentDept = deptName;
+                            html += `<optgroup label="${escapeHtml(currentDept)}">`;
+                        }
+                        const sel = (curIdStr === l.value) ? ' selected' : '';
+                        html += `<option value="${l.value}"${sel}>${escapeHtml(l.name)}</option>`;
+                    }
                 });
-                html += '</optgroup>';
+
+                if (currentUnit !== null || (!hasMultipleUnits && currentDept !== null)) {
+                    html += '</optgroup>';
+                }
             }
         } else {
             // Sadece Bölüm Hocaları listelenir
@@ -320,8 +365,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (curIdStr) {
                 const assignedInOther = otherLecturers.find(l => l.value === curIdStr);
                 if (assignedInOther) {
+                    const deptLabel = assignedInOther.deptName ? ` (${assignedInOther.deptName})` : '';
                     html += `<optgroup label="Atanmış Öğretim Elemanı">
-                        <option value="${assignedInOther.value}" selected>${escapeHtml(assignedInOther.name)} (${escapeHtml(assignedInOther.deptName)})</option>
+                        <option value="${assignedInOther.value}" selected>${escapeHtml(assignedInOther.name)}${escapeHtml(deptLabel)}</option>
                     </optgroup>`;
                 }
             }
