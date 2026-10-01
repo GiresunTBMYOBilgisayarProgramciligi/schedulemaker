@@ -64,7 +64,7 @@ if ($showButton) {
     }
 }
 ?>
-<div class="row g-2 g-md-3">
+<div class="row g-2 g-md-3 program-selector" data-component="program-selector">
     <div class="col-12 col-md-3">
         <select class="form-select tom-select" id="unit_id" name="unit_id"<?= !empty($dataAction) ? ' data-action="' . htmlspecialchars($dataAction) . '"' : '' ?>>
             <option value="">Birim Seçiniz</option>
@@ -107,7 +107,7 @@ if ($showButton) {
         <?php if ($showButton && $buttonPosition === 'inline'): ?>
             <div class="input-group">
         <?php endif; ?>
-                <select class="form-select" id="semester_no" name="semester_no" data-selected="<?= htmlspecialchars((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . $maxSemester . '"' : '' ?>>
+                <select class="form-select" id="semester_no" name="semester_no" data-component="program-selector-semester" data-selected="<?= htmlspecialchars((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . $maxSemester . '"' : '' ?>>
                     <option value=""><?= !empty($semesterOptions) ? 'Tüm Yarıyıllar / Sınıflar' : 'İlk olarak Program seçiniz' ?></option>
                     <?php foreach ($semesterOptions as $semNo => $semLabel): ?>
                         <option value="<?= $semNo ?>" <?= ((string)$selectedSemesterNo !== '' && (string)$selectedSemesterNo === (string)$semNo) ? 'selected' : '' ?>>

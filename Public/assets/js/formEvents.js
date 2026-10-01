@@ -889,7 +889,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const semesterSelect = document.getElementById("semester");
-    const semesterNoSelect = document.getElementById("semester_no");
+    const programSelectorContainer = document.querySelector('[data-component="program-selector"], .program-selector');
+    const semesterNoSelect = programSelectorContainer
+        ? programSelectorContainer.querySelector("#semester_no")
+        : (document.getElementById("semester_no") && !document.getElementById("semester_no").closest('form.ajaxForm, form.updateForm, form[action*="Lesson"], form[action*="lesson"], [data-field="lesson-semester"]')
+            ? document.getElementById("semester_no")
+            : null);
 
     function resolveCurrentMaxSemester() {
         // 1. Program select
@@ -934,6 +939,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateSemesterNoOptions(selectedSemester, selectedValue = "", maxSemester = null) {
         if (!semesterNoSelect) return;
+        if (semesterNoSelect.closest('form.ajaxForm, form.updateForm, form[action*="Lesson"], form[action*="lesson"]') || semesterNoSelect.dataset.field === 'lesson-semester') {
+            return;
+        }
 
         const hasProgram = programSelect && programSelect.value && programSelect.value !== "0" && programSelect.value !== "";
         const isExportOrPublishPage = document.getElementById("departmentAndProgramExport") || document.querySelector(".btn-publish");

@@ -75,7 +75,7 @@ use function App\Helpers\getSettingValue;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="semester_no">Yarıyılı</label>
-                                            <select class="form-select" id="semester_no" name="semester_no" required>
+                                            <select class="form-select" id="semester_no" name="semester_no" data-field="lesson-semester" required>
                                                 <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
                                                     <option value="<?= $key ?>"><?= $value ?></option>
                                                 <?php endforeach ?>

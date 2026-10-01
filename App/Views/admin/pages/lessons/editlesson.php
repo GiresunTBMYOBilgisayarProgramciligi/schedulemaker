@@ -88,7 +88,7 @@ use function App\Helpers\getSettingValue;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="semester_no">Yarıyılı</label>
-                                            <select class="form-select" id="semester_no" name="semester_no" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select" id="semester_no" name="semester_no" data-field="lesson-semester" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
                                                     <option value="<?= $key ?>"
                                                         <?= $key == $lesson->semester_no ? "selected" : "" ?>><?= $value ?></option>
