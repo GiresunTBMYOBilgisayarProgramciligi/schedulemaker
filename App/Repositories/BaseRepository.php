@@ -130,4 +130,30 @@ abstract class BaseRepository
         $models = $query->all();
         return array_values(array_filter($models, fn($m) => Gate::check($action, $m)));
     }
+
+    /**
+     * ID listesine göre kayıtları tek sorguda getirir (WHERE IN - Batch lookup).
+     *
+     * @param int[] $ids
+     * @param array $with Eager loading ilişkileri
+     * @return Model[]
+     * @throws Exception
+     */
+    public function findByIds(array $ids, array $with = []): array
+    {
+        $validIds = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($validIds)) {
+            return [];
+        }
+
+        /** @var Model $model */
+        $model = new $this->modelClass;
+        $query = $model->get()->where(['id' => ['in' => $validIds]]);
+
+        if (!empty($with)) {
+            $query->with($with);
+        }
+
+        return $query->all();
+    }
 }

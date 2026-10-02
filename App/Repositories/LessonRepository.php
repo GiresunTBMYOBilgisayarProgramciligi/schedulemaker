@@ -83,15 +83,22 @@ class LessonRepository extends BaseRepository
             return [];
         }
 
-        $asgns = (new LessonAssignment())->get()->where([
-            'lecturer_id' => $lecturerId,
-            'semester' => $semester,
-            'academic_year' => $academicYear,
-            '!lesson_id' => $excludeLessonId
-        ])->all();
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT lesson_id 
+            FROM lesson_assignments 
+            WHERE lecturer_id = :lecturer_id 
+              AND semester = :semester 
+              AND academic_year = :academic_year 
+              AND lesson_id != :exclude_lesson_id
+        ");
+        $stmt->execute([
+            'lecturer_id'       => $lecturerId,
+            'semester'          => $semester,
+            'academic_year'     => $academicYear,
+            'exclude_lesson_id' => $excludeLessonId,
+        ]);
+        $lessonIds = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
 
-
-        $lessonIds = array_unique(array_column($asgns, 'lesson_id'));
         if (empty($lessonIds)) {
             return [];
         }
@@ -120,13 +127,20 @@ class LessonRepository extends BaseRepository
      */
     public function getExamCombineLessonList(int $excludeLessonId, string $semester, string $academicYear): array
     {
-        $asgns = (new LessonAssignment())->get()->where([
-            'semester' => $semester,
-            'academic_year' => $academicYear,
-            '!lesson_id' => $excludeLessonId
-        ])->all();
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT lesson_id 
+            FROM lesson_assignments 
+            WHERE semester = :semester 
+              AND academic_year = :academic_year 
+              AND lesson_id != :exclude_lesson_id
+        ");
+        $stmt->execute([
+            'semester'          => $semester,
+            'academic_year'     => $academicYear,
+            'exclude_lesson_id' => $excludeLessonId,
+        ]);
+        $lessonIds = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
 
-        $lessonIds = array_unique(array_column($asgns, 'lesson_id'));
         if (empty($lessonIds)) {
             return [];
         }

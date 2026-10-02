@@ -48,9 +48,8 @@ class ScheduleNoteService extends BaseService
     public function getNotesForUserByEditor(int $userId, User $editor): array
     {
         $notes = $this->repository->getNotesByUser($userId);
-        foreach ($notes as $note) {
-            /** @var ScheduleNote $note */
-            $this->repository->markAsRead($note->id, $editor->id);
+        if (!empty($notes)) {
+            $this->repository->markMultipleAsRead(array_column($notes, 'id'), $editor->id);
         }
         return $notes;
     }
@@ -62,11 +61,8 @@ class ScheduleNoteService extends BaseService
     {
         $notes = $this->repository->getProgramNotes($programId, $academicYear, $semester, $scheduleType);
 
-        if ($markAsRead) {
-            foreach ($notes as $note) {
-                /** @var ScheduleNote $note */
-                $this->repository->markAsRead($note->id, $editor->id);
-            }
+        if ($markAsRead && !empty($notes)) {
+            $this->repository->markMultipleAsRead(array_column($notes, 'id'), $editor->id);
         }
 
         return $notes;
@@ -79,11 +75,8 @@ class ScheduleNoteService extends BaseService
     {
         $notes = $this->repository->getLecturerNotes($userId, $academicYear, $semester, $scheduleType);
 
-        if ($markAsRead) {
-            foreach ($notes as $note) {
-                /** @var ScheduleNote $note */
-                $this->repository->markAsRead($note->id, $editor->id);
-            }
+        if ($markAsRead && !empty($notes)) {
+            $this->repository->markMultipleAsRead(array_column($notes, 'id'), $editor->id);
         }
 
         return $notes;

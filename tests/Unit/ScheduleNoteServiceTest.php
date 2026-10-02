@@ -181,4 +181,43 @@ class ScheduleNoteServiceTest extends BaseTestCase
         $found = array_filter($myNotes, fn($n) => $n->id === $note->id);
         $this->assertEmpty($found);
     }
+
+    public function testMarkMultipleAsReadBatch(): void
+    {
+        $dto1 = new ScheduleNoteDTO(
+            userId: $this->userId,
+            academicYear: '2026 - 2027',
+            semester: 'Güz',
+            scheduleType: 'lesson',
+            note: 'Toplu okundu testi 1'
+        );
+        $note1 = $this->service->saveNote($dto1);
+
+        $dto2 = new ScheduleNoteDTO(
+            userId: $this->userId,
+            academicYear: '2026 - 2027',
+            semester: 'Bahar',
+            scheduleType: 'lesson',
+            note: 'Toplu okundu testi 2'
+        );
+        $note2 = $this->service->saveNote($dto2);
+
+        $editor = new User();
+        $editor->id = $this->editorId;
+
+        $notes = $this->service->getNotesForUserByEditor($this->userId, $editor);
+        $this->assertCount(2, $notes);
+
+        $repo = new \App\Repositories\ScheduleNoteRepository();
+        $updatedNote1 = $repo->find($note1->id);
+        $updatedNote2 = $repo->find($note2->id);
+
+        $this->assertEquals('read', $updatedNote1->status);
+        $this->assertEquals($this->editorId, $updatedNote1->read_by);
+        $this->assertNotNull($updatedNote1->read_at);
+
+        $this->assertEquals('read', $updatedNote2->status);
+        $this->assertEquals($this->editorId, $updatedNote2->read_by);
+        $this->assertNotNull($updatedNote2->read_at);
+    }
 }

@@ -50,20 +50,21 @@ class ScheduleNoteRepository extends BaseRepository
     public function getProgramNotes(int $programId, string $academicYear, string $semester, string $scheduleType): array
     {
         // 1. Programın derslerine atanan akademisyenlerin ve programdaki kullanıcıların ID'leri
-        $assignments = (new LessonAssignment())->get()
-            ->where([
-                'academic_year' => $academicYear,
-                'semester' => $semester
-            ])
-            ->with(['lesson'])
-            ->all();
-
-        $lecturerIds = [];
-        foreach ($assignments as $assignment) {
-            if ($assignment->lesson && (int)$assignment->lesson->program_id === $programId && !empty($assignment->lecturer_id)) {
-                $lecturerIds[] = (int)$assignment->lecturer_id;
-            }
-        }
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT la.lecturer_id 
+            FROM lesson_assignments la
+            JOIN lessons l ON l.id = la.lesson_id
+            WHERE l.program_id = :program_id
+              AND la.academic_year = :academic_year
+              AND la.semester = :semester
+              AND la.lecturer_id IS NOT NULL
+        ");
+        $stmt->execute([
+            'program_id'    => $programId,
+            'academic_year' => $academicYear,
+            'semester'      => $semester,
+        ]);
+        $lecturerIds = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
 
         $users = (new User())->get()->where(['program_id' => $programId])->all();
         foreach ($users as $u) {
@@ -202,5 +203,34 @@ class ScheduleNoteRepository extends BaseRepository
             return false;
         }
         return $note->delete();
+    }
+
+    /**
+     * Birden fazla notu tek bir SQL sorgusuyla 'Görüldü' (read) olarak işaretler (Toplu güncelleme).
+     *
+     * @param int[] $noteIds
+     * @param int $editorId
+     * @return int Güncellenen kayıt sayısı
+     */
+    public function markMultipleAsRead(array $noteIds, int $editorId): int
+    {
+        $validIds = array_values(array_unique(array_filter(array_map('intval', $noteIds))));
+        if (empty($validIds)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($validIds), '?'));
+        $sql = "UPDATE schedule_notes 
+                SET status = CASE WHEN status = 'pending' THEN 'read' ELSE status END,
+                    read_at = COALESCE(read_at, NOW()),
+                    read_by = COALESCE(read_by, ?)
+                WHERE id IN ($placeholders) 
+                  AND (read_at IS NULL OR read_by IS NULL OR status = 'pending')";
+
+        $stmt = $this->db->prepare($sql);
+        $params = array_merge([$editorId], $validIds);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
     }
 }
