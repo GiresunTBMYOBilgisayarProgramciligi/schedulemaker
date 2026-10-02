@@ -3,11 +3,13 @@
  * @var \App\Core\AssetManager $assetManager
  * @var string $page_title
  */
+use function App\Helpers\csrf_token;
 use function App\Helpers\e;
 ?>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
     <title><?= e($page_title) ?> - TMYO Ders Programı</title>
 
     <script>

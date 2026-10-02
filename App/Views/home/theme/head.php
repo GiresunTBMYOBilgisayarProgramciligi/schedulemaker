@@ -3,6 +3,7 @@
  * @var \App\Core\AssetManager $assetManager
  * @var string $page_title
  */
+use function App\Helpers\csrf_token;
 use function App\Helpers\e;
 
 $fullTitle = ($page_title ?? 'Anasayfa') . ' | Giresun Üniversitesi Ders ve Sınav Programı Bilgi Sistemi';
@@ -11,6 +12,7 @@ $themeMode = (isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark') ? 'dark'
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
     <meta name="description" content="Giresun Üniversitesi tüm fakülte, yüksekokul ve meslek yüksekokulları haftalık ders ve sınav programı yönetim ve görüntüleme sistemi.">
     <meta name="author" content="Öğr. Gör. Samet ATABAŞ">
     <title><?= e($fullTitle) ?></title>

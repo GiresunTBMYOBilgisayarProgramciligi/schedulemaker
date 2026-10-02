@@ -9,8 +9,10 @@ use Exception;
 
 use App\Exceptions\NotFoundException;
 use App\Middlewares\AuthMiddleware;
+use App\Middlewares\CsrfMiddleware;
 use App\Attributes\AuthRequired;
 use App\Attributes\PublicAction;
+use App\Attributes\WithoutCsrf;
 
 /**
  * Uygulamanın temel çalıştırma mantığını içeren sınıf.
@@ -57,6 +59,15 @@ class Application
         $reflectionMethod = method_exists($this->router, $this->action) 
             ? $reflectionClass->getMethod($this->action) 
             : null;
+
+        // CSRF muafiyeti kontrolü
+        $skipCsrf = !empty($reflectionClass->getAttributes(WithoutCsrf::class));
+        if ($reflectionMethod && !empty($reflectionMethod->getAttributes(WithoutCsrf::class))) {
+            $skipCsrf = true;
+        }
+
+        // Durum değiştiren isteklerde CSRF denetimi yap
+        CsrfMiddleware::handle($skipCsrf);
 
         // Sınıf seviyesinde AuthRequired var mı?
         $authRequired = !empty($reflectionClass->getAttributes(AuthRequired::class));

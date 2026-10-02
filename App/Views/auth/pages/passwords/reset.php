@@ -14,6 +14,7 @@ use function App\Helpers\e;
                 <p class="login-box-msg">Şifrenizi güvenli bir şekilde sıfırlayabilirsiniz.</p>
                 <form action="/ajax/resetpassword" method="post" class="ajaxForm" title="Şifre Sıfırlama" data-toast="true"
                     data-redirect-delay="2000">
+                    <?= csrf_field() ?>
                     
                     <input type="hidden" name="token" value="<?= e($token ?? '') ?>">
                     <input type="hidden" name="email" value="<?= e($email ?? '') ?>">

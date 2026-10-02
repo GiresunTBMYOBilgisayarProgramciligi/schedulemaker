@@ -5,6 +5,7 @@
  */
 
 use App\Core\AssetManager;
+use function App\Helpers\csrf_token;
 use function App\Helpers\e;
 
 $themeMode = (isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark') ? 'dark' : 'light';
@@ -12,6 +13,7 @@ $themeMode = (isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark') ? 'dark'
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
     <title><?= e($page_title) ?> - TMYO Ders Programı</title>
 
     <?= $assetManager->renderCss() ?>

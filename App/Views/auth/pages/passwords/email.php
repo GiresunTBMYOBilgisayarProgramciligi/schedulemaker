@@ -11,6 +11,7 @@
                 <p class="login-box-msg">Şifrenizi mi unuttunuz? Buradan yeni bir şifre talep edebilirsiniz.</p>
                 <form action="/ajax/forgotpassword" method="post" class="ajaxForm" title="Şifremi Unuttum" data-toast="true"
                     data-redirect-delay="3000">
+                    <?= csrf_field() ?>
                     <div class="input-group mb-3">
                         <div class="form-floating">
                             <input id="loginEmail" type="email" class="form-control" value="" placeholder="" name="email"

@@ -10,6 +10,7 @@
             <div class="card-body login-card-body">
                 <form action="/auth/ajaxlogin" method="post" class="ajaxForm" title="Giriş Yap" data-toast="true"
                     data-redirect-delay="1000">
+                    <?= csrf_field() ?>
                     <div class="input-group mb-1">
                         <div class="form-floating">
                             <input id="loginEmail" type="email" class="form-control" value="" placeholder="" name="mail"

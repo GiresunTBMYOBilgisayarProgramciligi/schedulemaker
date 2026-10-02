@@ -1,6 +1,44 @@
 /**
  * Öncesinde myHTMLElemens.js yüklenmeli
  */
+
+// CSRF koruması için global fetch interceptor
+(function () {
+    const originalFetch = window.fetch;
+    window.fetch = function (resource, init = {}) {
+        init = init || {};
+        const method = (init.method || 'GET').toUpperCase();
+
+        // Yalnızca durum değiştiren (state-changing) metodlarda CSRF belirteci ekle
+        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+            const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const token = tokenMeta ? tokenMeta.getAttribute('content') : null;
+
+            if (token) {
+                if (!init.headers) {
+                    init.headers = {};
+                }
+
+                if (init.headers instanceof Headers) {
+                    if (!init.headers.has('X-CSRF-TOKEN')) {
+                        init.headers.set('X-CSRF-TOKEN', token);
+                    }
+                } else if (Array.isArray(init.headers)) {
+                    const hasToken = init.headers.some(([k]) => k.toLowerCase() === 'x-csrf-token');
+                    if (!hasToken) {
+                        init.headers.push(['X-CSRF-TOKEN', token]);
+                    }
+                } else {
+                    if (!init.headers['X-CSRF-TOKEN'] && !init.headers['x-csrf-token']) {
+                        init.headers['X-CSRF-TOKEN'] = token;
+                    }
+                }
+            }
+        }
+
+        return originalFetch.call(this, resource, init);
+    };
+})();
 document.addEventListener("DOMContentLoaded", function () {
     //code id li bir input varsa
     const codeInput = document.querySelector("input#code");
@@ -122,6 +160,12 @@ document.addEventListener("DOMContentLoaded", function () {
             modal.prepareModal(form.getAttribute("title"), "", false, true, "lg");
             spinner.showSpinner(modal.body);
             modal.showModal();
+        }
+
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        const token = tokenMeta ? tokenMeta.getAttribute('content') : null;
+        if (data instanceof FormData && token && !data.has('_csrf_token')) {
+            data.append('_csrf_token', token);
         }
 
         return fetch(form.action, {
