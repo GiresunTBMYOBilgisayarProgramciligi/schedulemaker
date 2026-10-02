@@ -2,7 +2,11 @@
 
 namespace App\Helpers;
 
-use App\Controllers\SettingsController;
+use App\Services\SettingsService;
+use App\Services\ProgramService;
+use App\Services\UserService;
+use App\Services\DepartmentService;
+use App\Services\BuildingService;
 use App\Core\Gate;
 use App\Enums\UserRole;
 use App\Models\Department;
@@ -33,8 +37,7 @@ function e(mixed $value, bool $doubleEncode = true): string
  */
 function getSettingValue($key = null, $group = "general", $default = null)
 {
-    $settingsController = new SettingsController();
-    $setting = $settingsController->getSetting($key, $group);
+    $setting = (new SettingsService())->getSetting($key, $group);
     if (is_null($setting))
         return $default;
     return match ($setting?->type) {
@@ -345,7 +348,7 @@ function renderProgramSelectOptions(
     ?bool $hasMultipleUnits = null,
     string $emptyOptionLabel = 'Tanımlı program bulunamadı'
 ): string {
-    return (new \App\Services\ProgramService())->renderProgramSelectOptions($programs, $selectedProgramId, $hasMultipleUnits, $emptyOptionLabel);
+    return (new ProgramService())->renderProgramSelectOptions($programs, $selectedProgramId, $hasMultipleUnits, $emptyOptionLabel);
 }
 
 /**
@@ -363,7 +366,7 @@ function renderLecturerSelectOptions(
     ?bool $hasMultipleUnits = null,
     ?string $emptyOptionLabel = '-- Atanmamış --'
 ): string {
-    return (new \App\Services\UserService())->renderLecturerSelectOptions($lecturers, $selectedLecturerId, $hasMultipleUnits, $emptyOptionLabel);
+    return (new UserService())->renderLecturerSelectOptions($lecturers, $selectedLecturerId, $hasMultipleUnits, $emptyOptionLabel);
 }
 
 /**
@@ -381,7 +384,7 @@ function renderDepartmentSelectOptions(
     ?bool $hasMultipleUnits = null,
     ?string $emptyOptionLabel = '-- Bölüm Seçiniz --'
 ): string {
-    return (new \App\Services\DepartmentService())->renderDepartmentSelectOptions($departments, $selectedDepartmentId, $hasMultipleUnits, $emptyOptionLabel);
+    return (new DepartmentService())->renderDepartmentSelectOptions($departments, $selectedDepartmentId, $hasMultipleUnits, $emptyOptionLabel);
 }
 
 /**
@@ -399,6 +402,6 @@ function renderBuildingSelectOptions(
     ?bool $groupByUnit = null,
     string $emptyOptionLabel = '-- Seçiniz --'
 ): string {
-    return (new \App\Services\BuildingService())->renderBuildingSelectOptions($buildings, $selectedBuildingId, $groupByUnit, $emptyOptionLabel);
+    return (new BuildingService())->renderBuildingSelectOptions($buildings, $selectedBuildingId, $groupByUnit, $emptyOptionLabel);
 }
 

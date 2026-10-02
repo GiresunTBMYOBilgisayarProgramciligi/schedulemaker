@@ -23,11 +23,7 @@ class SettingsController extends Controller
      */
     public function getSetting($key = null, string $group = "general"): Setting|null
     {
-        if (is_null($key)) {
-            throw new Exception("Ayar için anahtar girilmelidir");
-        }
-        $settingModel = new Setting();
-        return $settingModel->get()->where(["key" => $key, "group" => $group])->first();
+        return (new SettingsService())->getSetting($key, $group);
     }
 
     /**
@@ -35,35 +31,25 @@ class SettingsController extends Controller
      */
     public function store(array $requestData): array
     {
-        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");            $settingsData = (new SettingsValidator())->getDTO($requestData);
+        Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
+        $settingsData = (new SettingsValidator())->getDTO($requestData);
 
-            (new SettingsService())->saveMultipleSettings($settingsData);
+        (new SettingsService())->saveMultipleSettings($settingsData);
 
-            return [
-                "status" => "success",
-                "msg" => "Ayarlar kaydedildi"
-            ];
+        return [
+            "status" => "success",
+            "msg" => "Ayarlar kaydedildi"
+        ];
     }
 
     /**
-     * Tüm ayarları [group][key]= value şeklinde dizi oarak döndürür
+     * Tüm ayarları [group][key]= value şeklinde dizi olarak döndürür
      * @return array
      * @throws Exception
      */
     public function getSettings(): array
     {
-        $settingModel = new Setting();
-        $settingModels = $settingModel->get()->all();
-        $settings = [];
-        foreach ($settingModels as $setting) {
-            $settings[$setting->group][$setting->key] = match ($setting->type) {
-                'integer' => (int) $setting->value,
-                'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
-                'json' => json_decode($setting->value, true),
-                default => $setting->value
-            };
-        }
-        return $settings;
+        return (new SettingsService())->getAllSettings();
     }
 
     /**

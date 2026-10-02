@@ -70,10 +70,9 @@ class PasswordResetService extends BaseService
             throw new Exception("Kullanıcı bulunamadı.");
         }
 
-        // Şifreyi güncelle (User repository veya service kullanılabilir ancak BaseService yapısına uygun update)
+        // Şifreyi güncelle
         $hashedPassword = password_hash($dto->password, PASSWORD_DEFAULT);
-        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
-        $stmt->execute([$hashedPassword, $user->id]);
+        $userRepository->updatePassword($user->id, $hashedPassword);
 
         // Kullanılmış token'ı sil
         $resetRepo->deleteByEmail($dto->email);

@@ -399,9 +399,7 @@ class UserService extends BaseService
         ]));
 
         // last_login güncelle
-        $sql = "UPDATE users SET last_login = NOW() WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$user->id]);
+        $this->userRepository->updateLastLogin($user->id);
     }
 
     // ──────────────────────────────────────────

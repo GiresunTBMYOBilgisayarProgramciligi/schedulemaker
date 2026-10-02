@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\User;
+use App\Models\UserAffiliation;
 use App\Enums\UserRole;
 use App\Enums\UserTitle;
 use App\Middlewares\AuthMiddleware;
@@ -124,7 +125,7 @@ class UserRepository extends BaseRepository
         $model = new $this->modelClass;
         $users = $model->get()->where(['department_id' => $deptId])->with(['department', 'program', 'unit'])->all();
 
-        $affiliations = (new \App\Models\UserAffiliation())->get()->where(['department_id' => $deptId])->all();
+        $affiliations = (new UserAffiliation())->get()->where(['department_id' => $deptId])->all();
         $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
 
         if (!empty($affiliatedUserIds)) {
@@ -171,7 +172,7 @@ class UserRepository extends BaseRepository
             'role' => ["in" => UserRole::getAcademicRoles()]
         ])->all();
 
-        $affiliations = (new \App\Models\UserAffiliation())->get()->where(['department_id' => $deptId])->all();
+        $affiliations = (new UserAffiliation())->get()->where(['department_id' => $deptId])->all();
         $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
 
         if (!empty($affiliatedUserIds)) {
@@ -249,7 +250,7 @@ class UserRepository extends BaseRepository
         if ($programId > 0) $affFilters['program_id'] = $programId;
 
         if (!empty($affFilters)) {
-            $affiliations = (new \App\Models\UserAffiliation())->get()->where($affFilters)->all();
+            $affiliations = (new UserAffiliation())->get()->where($affFilters)->all();
             $affiliatedUserIds = array_unique(array_column($affiliations, 'user_id'));
 
             if (!empty($affiliatedUserIds)) {
@@ -353,5 +354,30 @@ class UserRepository extends BaseRepository
         });
 
         return $lecturers;
+    }
+
+    /**
+     * Kullanıcının son giriş zamanını (last_login) günceller.
+     *
+     * @param int $userId
+     * @return bool
+     */
+    public function updateLastLogin(int $userId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+        return $stmt->execute([$userId]);
+    }
+
+    /**
+     * Kullanıcının şifresini günceller.
+     *
+     * @param int $userId
+     * @param string $hashedPassword
+     * @return bool
+     */
+    public function updatePassword(int $userId, string $hashedPassword): bool
+    {
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$hashedPassword, $userId]);
     }
 }
