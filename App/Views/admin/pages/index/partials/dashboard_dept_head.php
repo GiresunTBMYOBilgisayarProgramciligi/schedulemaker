@@ -2,11 +2,15 @@
 /**
  * Dashboard Partial: Bölüm Başkanı
  *
- * @var \App\Models\User $currentUser
- * @var \App\Models\Department|null $department
- * @var array $stats  ['programs', 'academics', 'lessons']
- * @var string $scheduleHTML
+ * @var User            $currentUser
+ * @var Department|null $department
+ * @var array           $stats  ['programs', 'academics', 'lessons']
+ * @var string          $scheduleHTML
  */
+
+use App\Models\Department;
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!-- Bölüm Özet Kartları -->
@@ -14,7 +18,7 @@
     <div class="col-12 col-sm-4">
         <div class="small-box text-bg-primary mb-0">
             <div class="inner">
-                <h3><?= $stats['programs'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['programs'] ?? 0) ?></h3>
                 <p>Program</p>
             </div>
             <div class="small-box-icon"><i class="bi bi-building"></i></div>
@@ -23,7 +27,7 @@
     <div class="col-12 col-sm-4">
         <div class="small-box text-bg-success mb-0">
             <div class="inner">
-                <h3><?= $stats['academics'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['academics'] ?? 0) ?></h3>
                 <p>Akademisyen</p>
             </div>
             <div class="small-box-icon"><i class="bi bi-person-video3"></i></div>
@@ -32,7 +36,7 @@
     <div class="col-12 col-sm-4">
         <div class="small-box text-bg-warning mb-0">
             <div class="inner">
-                <h3><?= $stats['lessons'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['lessons'] ?? 0) ?></h3>
                 <p>Ders</p>
             </div>
             <div class="small-box-icon"><i class="bi bi-book"></i></div>
@@ -48,10 +52,10 @@
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="bi bi-buildings me-1"></i>
-                    <?= htmlspecialchars($department->name ?? 'Bölümüm') ?>
+                    <?= e($department->name ?? 'Bölümüm') ?>
                 </h3>
                 <div class="card-tools">
-                    <a href="/admin/department/<?= $currentUser->department_id ?>" class="btn btn-sm btn-outline-primary">
+                    <a href="/admin/department/<?= (int)$currentUser->department_id ?>" class="btn btn-sm btn-outline-primary">
                         Bölüm Detayı
                     </a>
                 </div>
@@ -70,11 +74,11 @@
                     <tbody>
                     <?php foreach ($department->programs as $prog): ?>
                         <tr>
-                            <td class="fw-semibold"><?= htmlspecialchars($prog->name) ?></td>
+                            <td class="fw-semibold"><?= e($prog->name) ?></td>
                             <td class="text-center"><?= count($prog->lecturers ?? []) ?></td>
                             <td class="text-center"><?= count($prog->lessons ?? []) ?></td>
                             <td class="text-end">
-                                <a href="/admin/program/<?= $prog->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                                <a href="/admin/program/<?= (int)$prog->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </td>
@@ -96,7 +100,7 @@
             <div class="card-header">
                 <h3 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ders Programım</h3>
                 <div class="card-tools">
-                    <a href="/admin/editschedule<?= !empty($department?->id) ? '?department_id=' . $department->id : '' ?>" class="btn btn-sm btn-outline-info">
+                    <a href="/admin/editschedule<?= !empty($department?->id) ? '?department_id=' . (int)$department->id : '' ?>" class="btn btn-sm btn-outline-info">
                         Programı Düzenle
                     </a>
                 </div>
@@ -140,11 +144,11 @@
                     <tbody>
                     <?php foreach ($department->users as $u): ?>
                         <tr>
-                            <td><?= htmlspecialchars($u->getFullName()) ?></td>
-                            <td class="text-muted small"><?= htmlspecialchars($u->title ?? '') ?></td>
-                            <td class="text-muted small"><?= htmlspecialchars($u->program?->name ?? '-') ?></td>
+                            <td><?= e($u->getFullName()) ?></td>
+                            <td class="text-muted small"><?= e($u->title ?? '') ?></td>
+                            <td class="text-muted small"><?= e($u->program?->name ?? '-') ?></td>
                             <td class="text-end">
-                                <a href="/admin/profile/<?= $u->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                                <a href="/admin/profile/<?= (int)$u->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                                     <i class="bi bi-person"></i>
                                 </a>
                             </td>

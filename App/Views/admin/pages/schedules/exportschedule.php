@@ -8,6 +8,7 @@
 
 use App\Core\View;
 use App\Enums\ExamType;
+use function App\Helpers\e;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -20,7 +21,7 @@ use function App\Helpers\getSettingValue;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -57,9 +58,9 @@ use function App\Helpers\getSettingValue;
                                     <span class="input-group-text"> - </span>
                                     <select class="form-select" id="academic_year" name="academic_year">
                                         <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                            <option value="<?= $year . ' - ' . $year + 1 ?>"
-                                                <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                <?= $year . ' - ' . $year + 1 ?>
+                                            <option value="<?= e($year . ' - ' . ($year + 1)) ?>"
+                                                <?= getSettingValue("academic_year") == $year . ' - ' . ($year + 1) ? 'selected' : '' ?>>
+                                                <?= e($year . ' - ' . ($year + 1)) ?>
                                             </option>
                                         <?php endfor; ?>
                                     </select>
@@ -155,7 +156,7 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <div class="form-text">
@@ -202,7 +203,7 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <div class="form-text">

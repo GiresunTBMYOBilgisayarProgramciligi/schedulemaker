@@ -15,7 +15,7 @@ use function App\Helpers\renderBuildingSelectOptions;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -63,7 +63,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                                             <label class="form-label" for="type"> Türü</label>
                                             <select name="type" id="type" class="form-select">
                                                 <?php foreach ($classroomTypes as $id=>$type): ?>
-                                                <option value="<?= $id ?>"><?= $type ?></option>
+                                                <option value="<?= (int)$id ?>"><?= e($type) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

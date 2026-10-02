@@ -4,6 +4,7 @@
  * @var array $settings
  */
 
+use function App\Helpers\e;
 
 ?>
 <!--begin::App Main-->
@@ -15,7 +16,7 @@
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -77,9 +78,9 @@
                                                                 id="settings[general][academic_year][value]"
                                                                 name="settings[general][academic_year][value]">
                                                                 <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                                    <option value="<?= $year . ' - ' . $year + 1 ?>"
-                                                                        <?= $settings['general']["academic_year"] == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                                        <?= $year . ' - ' . $year + 1 ?>
+                                                                    <option value="<?= e($year . ' - ' . ($year + 1)) ?>"
+                                                                        <?= ($settings['general']["academic_year"] ?? '') == $year . ' - ' . ($year + 1) ? 'selected' : '' ?>>
+                                                                        <?= e($year . ' - ' . ($year + 1)) ?>
                                                                     </option>
                                                                 <?php endfor; ?>
                                                             </select>
@@ -140,7 +141,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[lesson][lesson_start_date][value]"
                                                             name="settings[lesson][lesson_start_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['lesson']['lesson_start_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['lesson']['lesson_start_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                     <div class="col-md-6">
@@ -152,7 +153,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[lesson][lesson_end_date][value]"
                                                             name="settings[lesson][lesson_end_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['lesson']['lesson_end_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['lesson']['lesson_end_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                 </div>
@@ -165,7 +166,7 @@
                                                         <input type="time" class="form-control"
                                                             id="settings[lesson][day_start][value]"
                                                             name="settings[lesson][day_start][value]"
-                                                            value="<?= @$settings['lesson']['day_start'] ?? '08:00' ?>">
+                                                            value="<?= e((string)($settings['lesson']['day_start'] ?? '08:00')) ?>">
                                                         <div class="form-text">Ders programı gün başlangıç saati. Varsayılan
                                                             08:00</div>
                                                     </div>
@@ -177,7 +178,7 @@
                                                         <input type="time" class="form-control"
                                                             id="settings[lesson][day_end][value]"
                                                             name="settings[lesson][day_end][value]"
-                                                            value="<?= @$settings['lesson']['day_end'] ?? '17:00' ?>">
+                                                            value="<?= e((string)($settings['lesson']['day_end'] ?? '17:00')) ?>">
                                                         <div class="form-text">Ders programı gün bitiş saati. Varsayılan 17:00
                                                         </div>
                                                     </div>
@@ -191,7 +192,7 @@
                                                         <input type="number" class="form-control"
                                                             id="settings[lesson][duration][value]"
                                                             name="settings[lesson][duration][value]"
-                                                            value="<?= @$settings['lesson']['duration'] ?? 50 ?>">
+                                                            value="<?= (int)($settings['lesson']['duration'] ?? 50) ?>">
                                                         <div class="form-text">Bir ders saatinin kaç dakika süreceğini belirler.
                                                             varsayılan 50</div>
                                                     </div>
@@ -203,7 +204,7 @@
                                                         <input type="number" class="form-control"
                                                             id="settings[lesson][break][value]"
                                                             name="settings[lesson][break][value]"
-                                                            value="<?= @$settings['lesson']['break'] ?? 10 ?>">
+                                                            value="<?= (int)($settings['lesson']['break'] ?? 10) ?>">
                                                         <div class="form-text">Dersler arası molanın kaç dakika süreceğini
                                                             belirler. Varsayılan 10</div>
                                                     </div>
@@ -232,7 +233,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][midterm_start_date][value]"
                                                             name="settings[exam][midterm_start_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['midterm_start_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['midterm_start_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                     <div class="col-md-6">
@@ -244,7 +245,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][midterm_end_date][value]"
                                                             name="settings[exam][midterm_end_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['midterm_end_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['midterm_end_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                 </div>
@@ -258,7 +259,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][final_start_date][value]"
                                                             name="settings[exam][final_start_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['final_start_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['final_start_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                     <div class="col-md-6">
@@ -270,7 +271,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][final_end_date][value]"
                                                             name="settings[exam][final_end_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['final_end_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['final_end_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                 </div>
@@ -284,7 +285,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][makeup_start_date][value]"
                                                             name="settings[exam][makeup_start_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['makeup_start_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['makeup_start_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                     <div class="col-md-6">
@@ -296,7 +297,7 @@
                                                         <input type="date" class="form-control"
                                                             id="settings[exam][makeup_end_date][value]"
                                                             name="settings[exam][makeup_end_date][value]"
-                                                            value="<?= htmlspecialchars(@$settings['exam']['makeup_end_date'] ?? '') ?>">
+                                                            value="<?= e((string)($settings['exam']['makeup_end_date'] ?? '')) ?>">
                                                         <div class="form-text">Gün/Ay/Yıl olarak seçiniz.</div>
                                                     </div>
                                                 </div>
@@ -331,7 +332,7 @@
                                                         <input type="time" class="form-control"
                                                             id="settings[exam][day_start][value]"
                                                             name="settings[exam][day_start][value]"
-                                                            value="<?= @$settings['exam']['day_start'] ?? '08:00' ?>">
+                                                            value="<?= e((string)($settings['exam']['day_start'] ?? '08:00')) ?>">
                                                         <div class="form-text">Sınav programı gün başlangıç saati. Varsayılan
                                                             08:00</div>
                                                     </div>
@@ -343,7 +344,7 @@
                                                         <input type="time" class="form-control"
                                                             id="settings[exam][day_end][value]"
                                                             name="settings[exam][day_end][value]"
-                                                            value="<?= @$settings['exam']['day_end'] ?? '17:00' ?>">
+                                                            value="<?= e((string)($settings['exam']['day_end'] ?? '17:00')) ?>">
                                                         <div class="form-text">Sınav programı gün bitiş saati. Varsayılan 17:00
                                                         </div>
                                                     </div>
@@ -357,7 +358,7 @@
                                                         <input type="number" class="form-control"
                                                             id="settings[exam][duration][value]"
                                                             name="settings[exam][duration][value]"
-                                                            value="<?= @$settings['exam']['duration'] ?? 30 ?>">
+                                                            value="<?= (int)($settings['exam']['duration'] ?? 30) ?>">
                                                         <div class="form-text">Bir sınavın kaç dakika süreceğini belirler (slot
                                                             aralığı). Varsayılan 30</div>
                                                     </div>
@@ -368,7 +369,7 @@
                                                         <input type="number" class="form-control"
                                                             id="settings[exam][break][value]"
                                                             name="settings[exam][break][value]"
-                                                            value="<?= @$settings['exam']['break'] ?? 0 ?>">
+                                                            value="<?= (int)($settings['exam']['break'] ?? 0) ?>">
                                                         <div class="form-text">Sınavlar arası molanın kaç dakika süreceğini
                                                             belirler. Varsayılan 0</div>
                                                     </div>
@@ -420,24 +421,24 @@
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][smtp_host][value]">SMTP Host</label>
                                                         <input type="hidden" name="settings[mail][smtp_host][type]" value="string">
-                                                        <input type="text" class="form-control" id="settings[mail][smtp_host][value]" name="settings[mail][smtp_host][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_host'] ?? 'localhost') ?>">
+                                                        <input type="text" class="form-control" id="settings[mail][smtp_host][value]" name="settings[mail][smtp_host][value]" value="<?= e((string)($settings['mail']['smtp_host'] ?? 'localhost')) ?>">
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][smtp_port][value]">SMTP Port</label>
                                                         <input type="hidden" name="settings[mail][smtp_port][type]" value="integer">
-                                                        <input type="number" class="form-control" id="settings[mail][smtp_port][value]" name="settings[mail][smtp_port][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_port'] ?? '587') ?>">
+                                                        <input type="number" class="form-control" id="settings[mail][smtp_port][value]" name="settings[mail][smtp_port][value]" value="<?= (int)($settings['mail']['smtp_port'] ?? 587) ?>">
                                                     </div>
                                                 </div>
                                                 <div class="row mb-3">
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][smtp_user][value]">Kullanıcı Adı (Email)</label>
                                                         <input type="hidden" name="settings[mail][smtp_user][type]" value="string">
-                                                        <input type="text" class="form-control" id="settings[mail][smtp_user][value]" name="settings[mail][smtp_user][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_user'] ?? '') ?>">
+                                                        <input type="text" class="form-control" id="settings[mail][smtp_user][value]" name="settings[mail][smtp_user][value]" value="<?= e((string)($settings['mail']['smtp_user'] ?? '')) ?>">
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][smtp_pass][value]">Parola</label>
                                                         <input type="hidden" name="settings[mail][smtp_pass][type]" value="string">
-                                                        <input type="password" class="form-control" id="settings[mail][smtp_pass][value]" name="settings[mail][smtp_pass][value]" value="<?= htmlspecialchars(@$settings['mail']['smtp_pass'] ?? '') ?>">
+                                                        <input type="password" class="form-control" id="settings[mail][smtp_pass][value]" name="settings[mail][smtp_pass][value]" value="<?= e((string)($settings['mail']['smtp_pass'] ?? '')) ?>">
                                                     </div>
                                                 </div>
                                                 <div class="row mb-3">
@@ -445,9 +446,9 @@
                                                         <label class="col-form-label" for="settings[mail][smtp_secure][value]">Güvenlik Tipi</label>
                                                         <input type="hidden" name="settings[mail][smtp_secure][type]" value="string">
                                                         <select class="form-select" id="settings[mail][smtp_secure][value]" name="settings[mail][smtp_secure][value]">
-                                                            <option value="tls" <?= (@$settings['mail']['smtp_secure'] == 'tls') ? 'selected' : '' ?>>TLS</option>
-                                                            <option value="ssl" <?= (@$settings['mail']['smtp_secure'] == 'ssl') ? 'selected' : '' ?>>SSL</option>
-                                                            <option value="" <?= (empty(@$settings['mail']['smtp_secure'])) ? 'selected' : '' ?>>Yok</option>
+                                                            <option value="tls" <?= (($settings['mail']['smtp_secure'] ?? '') == 'tls') ? 'selected' : '' ?>>TLS</option>
+                                                            <option value="ssl" <?= (($settings['mail']['smtp_secure'] ?? '') == 'ssl') ? 'selected' : '' ?>>SSL</option>
+                                                            <option value="" <?= (empty($settings['mail']['smtp_secure'])) ? 'selected' : '' ?>>Yok</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -455,12 +456,12 @@
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][mail_from][value]">Gönderen Email</label>
                                                         <input type="hidden" name="settings[mail][mail_from][type]" value="string">
-                                                        <input type="email" class="form-control" id="settings[mail][mail_from][value]" name="settings[mail][mail_from][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_from'] ?? 'noreply@localhost') ?>">
+                                                        <input type="email" class="form-control" id="settings[mail][mail_from][value]" name="settings[mail][mail_from][value]" value="<?= e((string)($settings['mail']['mail_from'] ?? 'noreply@localhost')) ?>">
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][mail_from_name][value]">Gönderen Adı</label>
                                                         <input type="hidden" name="settings[mail][mail_from_name][type]" value="string">
-                                                        <input type="text" class="form-control" id="settings[mail][mail_from_name][value]" name="settings[mail][mail_from_name][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_from_name'] ?? 'Schedule Maker') ?>">
+                                                        <input type="text" class="form-control" id="settings[mail][mail_from_name][value]" name="settings[mail][mail_from_name][value]" value="<?= e((string)($settings['mail']['mail_from_name'] ?? 'Schedule Maker')) ?>">
                                                     </div>
                                                 </div>
                                                 <hr>
@@ -469,13 +470,13 @@
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][mail_batch_size][value]">Tek Seferde Gönderilecek E-posta Sayısı (Batch Boyutu)</label>
                                                         <input type="hidden" name="settings[mail][mail_batch_size][type]" value="integer">
-                                                        <input type="number" min="1" max="100" class="form-control" id="settings[mail][mail_batch_size][value]" name="settings[mail][mail_batch_size][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_batch_size'] ?? 10) ?>">
+                                                        <input type="number" min="1" max="100" class="form-control" id="settings[mail][mail_batch_size][value]" name="settings[mail][mail_batch_size][value]" value="<?= (int)($settings['mail']['mail_batch_size'] ?? 10) ?>">
                                                         <div class="form-text">Cron veya manuel tetiklemede tek seferde sunucuyu yormadan gönderilecek maksimum mail sayısı. Varsayılan: 10</div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="col-form-label" for="settings[mail][mail_max_attempts][value]">Maksimum Yeniden Deneme Hakkı</label>
                                                         <input type="hidden" name="settings[mail][mail_max_attempts][type]" value="integer">
-                                                        <input type="number" min="1" max="10" class="form-control" id="settings[mail][mail_max_attempts][value]" name="settings[mail][mail_max_attempts][value]" value="<?= htmlspecialchars(@$settings['mail']['mail_max_attempts'] ?? 3) ?>">
+                                                        <input type="number" min="1" max="10" class="form-control" id="settings[mail][mail_max_attempts][value]" name="settings[mail][mail_max_attempts][value]" value="<?= (int)($settings['mail']['mail_max_attempts'] ?? 3) ?>">
                                                         <div class="form-text">Hata alan bir e-postanın kaç defa otomatik tekrar deneneceğini belirler. Varsayılan: 3</div>
                                                     </div>
                                                 </div>

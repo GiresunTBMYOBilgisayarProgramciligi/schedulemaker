@@ -1,3 +1,6 @@
+<?php
+use function App\Helpers\e;
+?>
 <!--begin::Body-->
 <body class="login-page bg-body-secondary" data-overlayscrollbars-initialize>
     <div class="login-box">
@@ -12,8 +15,8 @@
                 <form action="/ajax/resetpassword" method="post" class="ajaxForm" title="Şifre Sıfırlama" data-toast="true"
                     data-redirect-delay="2000">
                     
-                    <input type="hidden" name="token" value="<?= htmlspecialchars($token ?? '') ?>">
-                    <input type="hidden" name="email" value="<?= htmlspecialchars($email ?? '') ?>">
+                    <input type="hidden" name="token" value="<?= e($token ?? '') ?>">
+                    <input type="hidden" name="email" value="<?= e($email ?? '') ?>">
                     
                     <div class="input-group mb-3">
                         <div class="form-floating">

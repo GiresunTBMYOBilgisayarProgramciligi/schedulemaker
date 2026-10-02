@@ -1,10 +1,12 @@
 <?php
 /**
- * @var \App\Models\User $currentUser Oturum açmış kullanıcı
+ * @var User $currentUser Oturum açmış kullanıcı
  */
+
 use App\Core\Gate;
 use App\Enums\PermissionType;
 use App\Enums\UserRole;
+use App\Models\User;
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -170,7 +172,7 @@ use App\Enums\UserRole;
                 <!-- Bölümüm -->
                 <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->department_id)): ?>
                     <li class="nav-item">
-                        <a href="/admin/department/<?= $currentUser->department_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
+                        <a href="/admin/department/<?= (int)$currentUser->department_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-buildings"></i>
                             <p>Bölümüm</p>
                         </a>
@@ -179,7 +181,7 @@ use App\Enums\UserRole;
                 <!-- Programım -->
                 <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->program_id)): ?>
                     <li class="nav-item">
-                        <a href="/admin/program/<?= $currentUser->program_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
+                        <a href="/admin/program/<?= (int)$currentUser->program_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-building"></i>
                             <p>Programım</p>
                         </a>

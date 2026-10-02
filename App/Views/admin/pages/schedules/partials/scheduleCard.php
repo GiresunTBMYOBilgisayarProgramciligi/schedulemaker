@@ -5,6 +5,7 @@ use App\Enums\PermissionType;
 use App\Enums\OwnerType;
 use App\Middlewares\AuthMiddleware;
 use App\Helpers\ScheduleViewHelper;
+use function App\Helpers\e;
 /**
  * @var Schedule $schedule
  * @var string $cardTitle
@@ -22,21 +23,21 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
 <!--begin::Row Program Satırı-->
 <div class="row mb-3">
     <div class="col-12">
-        <div class="<?= $cardClasses ?>" id="scheduleCard-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>"
-            data-duration="<?= $duration ?? 50 ?>" data-break="<?= $break ?? 10 ?>"
+        <div class="<?= $cardClasses ?>" id="scheduleCard-<?= (int)$schedule->id ?>" data-schedule-id="<?= (int)$schedule->id ?>"
+            data-duration="<?= (int)($duration ?? 50) ?>" data-break="<?= (int)($break ?? 10) ?>"
             data-only-table="<?= isset($only_table) && $only_table ? 'true' : 'false' ?>"
             data-preference-mode="<?= isset($preference_mode) && $preference_mode ? 'true' : 'false' ?>"
-            data-week-count="<?= $weekCount ?? 1 ?>" data-type="<?= $schedule->type ?>"
-            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>"
-            data-academic-year="<?= htmlspecialchars($schedule->academic_year ?? '') ?>"
-            data-semester="<?= htmlspecialchars($schedule->semester ?? '') ?>"
-            data-semester-no="<?= $schedule->semester_no ?? '' ?>"
-            data-schedule-screen-name="<?= $schedule->getScheduleScreenName() ?>">
+            data-week-count="<?= (int)($weekCount ?? 1) ?>" data-type="<?= e((string)$schedule->type) ?>"
+            data-owner-type="<?= e((string)$schedule->owner_type) ?>" data-owner-id="<?= (int)$schedule->owner_id ?>"
+            data-academic-year="<?= e((string)($schedule->academic_year ?? '')) ?>"
+            data-semester="<?= e((string)($schedule->semester ?? '')) ?>"
+            data-semester-no="<?= e((string)($schedule->semester_no ?? '')) ?>"
+            data-schedule-screen-name="<?= e((string)$schedule->getScheduleScreenName()) ?>">
             <div class="<?= $headerClasses ?>">
                 <?php if (!$no_card): ?>
                     <h3 class="card-title fs-5 fw-bold text-body mb-0 d-flex align-items-center gap-2">
                         <i class="bi bi-calendar3 text-primary"></i>
-                        <span><?= $cardTitle ?></span>
+                        <span><?= e($cardTitle) ?></span>
                     </h3>
                 <?php endif; ?>
 
@@ -57,12 +58,12 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                 <div class="d-flex ms-auto <?php echo $no_card ? 'justify-content-end w-100' : 'card-tools'; ?>">
                     <div class="btn-group btn-group-sm shadow-xs schedule-export-btn-group" role="group" aria-label="Dışa aktarma">
                         <button id="singlePageExport" type="button" class="btn btn-outline-success d-inline-flex align-items-center justify-content-center gap-1"
-                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Excel Olarak İndir">
+                            data-owner-type="<?= e((string)$schedule->owner_type) ?>" data-owner-id="<?= (int)$schedule->owner_id ?>" data-semester-no="<?= e((string)($schedule->semester_no ?? '')) ?>" title="Excel Olarak İndir">
                             <i class="bi bi-file-earmark-excel"></i>
                             <span>Excel'e Aktar</span>
                         </button>
                         <button id="singlePageCalendar" type="button" class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center gap-1"
-                            data-owner-type="<?= $schedule->owner_type ?>" data-owner-id="<?= $schedule->owner_id ?>" data-semester-no="<?= $schedule->semester_no ?? '' ?>" title="Telefon Takvimine (iCal) Kaydet">
+                            data-owner-type="<?= e((string)$schedule->owner_type) ?>" data-owner-id="<?= (int)$schedule->owner_id ?>" data-semester-no="<?= e((string)($schedule->semester_no ?? '')) ?>" title="Telefon Takvimine (iCal) Kaydet">
                             <i class="bi bi-calendar-plus"></i>
                             <span>Takvime Kaydet</span>
                         </button>
@@ -90,14 +91,14 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
 
                 $internshipGroups = $canViewInternship ? ScheduleViewHelper::getInternshipSummary($schedule) : [];
                 if (!empty($internshipGroups)): 
-                    $collapseId = 'internshipCollapse-' . $schedule->id;
+                    $collapseId = 'internshipCollapse-' . (int)$schedule->id;
                 ?>
                 <div class="internship-info-card mt-3 border rounded-3 bg-body-tertiary shadow-none overflow-hidden small">
                     <div class="d-flex align-items-center justify-content-between p-2 cursor-pointer bg-body-secondary bg-opacity-50" 
                          data-bs-toggle="collapse" 
-                         data-bs-target="#<?= $collapseId ?>" 
+                         data-bs-target="#<?= e($collapseId) ?>" 
                          aria-expanded="true" 
-                         aria-controls="<?= $collapseId ?>"
+                         aria-controls="<?= e($collapseId) ?>"
                          role="button">
                         <div class="d-flex align-items-center gap-2 text-primary fw-semibold" style="font-size: 0.875rem;">
                             <i class="bi bi-briefcase-fill"></i>
@@ -108,7 +109,7 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                             <i class="bi bi-chevron-down"></i>
                         </button>
                     </div>
-                    <div class="collapse show" id="<?= $collapseId ?>">
+                    <div class="collapse show" id="<?= e($collapseId) ?>">
                         <div class="p-2 pt-2">
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered align-middle mb-0 bg-body" style="font-size: 0.825rem;">
@@ -124,11 +125,11 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                                     <tbody>
                                         <?php foreach ($internshipGroups as $group): ?>
                                             <tr>
-                                                <td class="font-monospace text-secondary"><?= htmlspecialchars($group['code']) ?></td>
-                                                <td class="text-body"><?= htmlspecialchars($group['name']) ?></td>
-                                                <td class="text-center"><span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size: 0.75rem;"><?= htmlspecialchars($group['group']) ?></span></td>
-                                                <td class="text-body"><?= htmlspecialchars($group['lecturer']) ?></td>
-                                                <td><span class="text-primary"><?= htmlspecialchars($group['slots']) ?></span></td>
+                                                <td class="font-monospace text-secondary"><?= e($group['code']) ?></td>
+                                                <td class="text-body"><?= e($group['name']) ?></td>
+                                                <td class="text-center"><span class="badge bg-secondary-subtle text-secondary border px-2 py-1" style="font-size: 0.75rem;"><?= e((string)$group['group']) ?></span></td>
+                                                <td class="text-body"><?= e($group['lecturer']) ?></td>
+                                                <td><span class="text-primary"><?= e($group['slots']) ?></span></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -154,8 +155,8 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                     <?php endif; ?>
                     <?php if (Gate::check(PermissionType::PUBLISH_SCHEDULE->value, $schedule)): ?>
                     <div class="form-check form-switch m-0 d-inline-flex align-items-center gap-1" title="Kullanıcıların görmesi için programı yayınlayın">
-                        <input class="form-check-input publish-schedule-toggle m-0" type="checkbox" role="switch" id="publish-switch-<?= $schedule->id ?>" data-schedule-id="<?= $schedule->id ?>" <?= !empty($schedule->is_published) ? 'checked' : '' ?>>
-                        <label class="form-check-label small fw-semibold ms-1" for="publish-switch-<?= $schedule->id ?>"><?= !empty($schedule->is_published) ? 'Yayında' : 'Yayınla' ?></label>
+                        <input class="form-check-input publish-schedule-toggle m-0" type="checkbox" role="switch" id="publish-switch-<?= (int)$schedule->id ?>" data-schedule-id="<?= (int)$schedule->id ?>" <?= !empty($schedule->is_published) ? 'checked' : '' ?>>
+                        <label class="form-check-label small fw-semibold ms-1" for="publish-switch-<?= (int)$schedule->id ?>"><?= !empty($schedule->is_published) ? 'Yayında' : 'Yayınla' ?></label>
                     </div>
                     <?php endif; ?>
                 </div>

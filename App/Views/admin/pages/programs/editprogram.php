@@ -14,7 +14,7 @@
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -55,7 +55,7 @@
                                     <div class="col-md-3">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= $program->department_id ?? '' ?>">
+                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= (int)($program->department_id ?? 0) ?>">
                                                 <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
@@ -64,7 +64,7 @@
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $program->name ?>" required>
+                                                   placeholder="Adı" value="<?= e($program->name) ?>" required>
                                         </div>
                                     </div>
                                     <div class="col-md-1">

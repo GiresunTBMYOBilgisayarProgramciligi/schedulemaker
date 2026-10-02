@@ -2,12 +2,15 @@
 /**
  * Dashboard Partial: Mutemet (Payroll Officer)
  *
- * @var \App\Models\User $currentUser
+ * @var User  $currentUser
  * @var array $stats  ['departments', 'programs', 'academics', 'lessons']
  * @var array $departments
  * @var array $programs
  * @var array $units
  */
+
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!-- İstatistik Kartları -->
@@ -15,7 +18,7 @@
     <div class="col-12 col-sm-6 col-md-3">
         <div class="small-box text-bg-primary mb-0">
             <div class="inner">
-                <h3><?= $stats['departments'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['departments'] ?? 0) ?></h3>
                 <p>Bölüm</p>
             </div>
             <div class="small-box-icon">
@@ -29,7 +32,7 @@
     <div class="col-12 col-sm-6 col-md-3">
         <div class="small-box text-bg-success mb-0">
             <div class="inner">
-                <h3><?= $stats['programs'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['programs'] ?? 0) ?></h3>
                 <p>Program</p>
             </div>
             <div class="small-box-icon">
@@ -43,7 +46,7 @@
     <div class="col-12 col-sm-6 col-md-3">
         <div class="small-box text-bg-warning mb-0">
             <div class="inner">
-                <h3><?= $stats['academics'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['academics'] ?? 0) ?></h3>
                 <p>Akademisyen</p>
             </div>
             <div class="small-box-icon">
@@ -57,7 +60,7 @@
     <div class="col-12 col-sm-6 col-md-3">
         <div class="small-box text-bg-info mb-0">
             <div class="inner">
-                <h3><?= $stats['lessons'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['lessons'] ?? 0) ?></h3>
                 <p>Ders</p>
             </div>
             <div class="small-box-icon">

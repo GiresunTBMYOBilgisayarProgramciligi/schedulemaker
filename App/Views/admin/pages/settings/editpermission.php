@@ -2,9 +2,12 @@
 /**
  * @var string $page_title
  * @var array $users
- * @var \App\Models\Unit[] $units
+ * @var Unit[] $units
  */
+
 use App\Enums\PermissionType;
+use App\Models\Unit;
+use function App\Helpers\e;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -12,7 +15,7 @@ use App\Enums\PermissionType;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -73,7 +76,7 @@ use App\Enums\PermissionType;
                                             <select class="form-select tom-select" id="wizard_user_id" name="user_id">
                                                 <option value=""></option>
                                                 <?php foreach ($users as $user): ?>
-                                                    <option value="<?= $user->id ?>"><?= $user->getFullName() ?> (<?= $user->mail ?>)</option>
+                                                    <option value="<?= (int)$user->id ?>"><?= e($user->getFullName()) ?> (<?= e($user->mail) ?>)</option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -89,7 +92,7 @@ use App\Enums\PermissionType;
                                                     <select class="form-select tom-select" id="unit_id" name="unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -122,11 +125,11 @@ use App\Enums\PermissionType;
                                             <label>Verilecek Yetkiler</label>
                                             <div class="row">
                                                 <?php foreach (PermissionType::getManageablePermissions() as $perm): ?>
-                                                    <div class="col-md-4 permission-item" data-allowed-scopes="<?= implode(',', $perm->getAllowedScopes()) ?>">
+                                                    <div class="col-md-4 permission-item" data-allowed-scopes="<?= e(implode(',', $perm->getAllowedScopes())) ?>">
                                                         <div class="form-check">
-                                                            <input class="form-check-input permission-checkbox" type="checkbox" value="<?= $perm->value ?>" id="perm_<?= $perm->value ?>">
-                                                            <label class="form-check-label" for="perm_<?= $perm->value ?>">
-                                                                <?= $perm->getLabel() ?> (<?= $perm->value ?>)
+                                                            <input class="form-check-input permission-checkbox" type="checkbox" value="<?= e($perm->value) ?>" id="perm_<?= e($perm->value) ?>">
+                                                            <label class="form-check-label" for="perm_<?= e($perm->value) ?>">
+                                                                <?= e($perm->getLabel()) ?> (<?= e($perm->value) ?>)
                                                             </label>
                                                         </div>
                                                     </div>

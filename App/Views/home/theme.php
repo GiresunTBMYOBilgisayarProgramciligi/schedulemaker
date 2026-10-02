@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>">
+<?php
+$themeMode = (isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark') ? 'dark' : 'light';
+?>
+<html lang="tr" data-bs-theme="<?= $themeMode ?>">
 <?php
 include "theme/head.php";
 ?>
@@ -72,10 +75,11 @@ include "theme/head.php";
     <?php
     include "theme/footer_scripts.php";
     if (isset($_SESSION['error'])) {
+        $encodedError = json_encode((string)$_SESSION['error'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
         echo '<script>
         document.addEventListener("DOMContentLoaded", function () {
             if (typeof Toast !== "undefined") {
-                new Toast().prepareToast("Hata", "' . addslashes($_SESSION['error']) . '", "danger");
+                new Toast().prepareToast("Hata", ' . $encodedError . ', "danger");
             }
         });
         </script>';

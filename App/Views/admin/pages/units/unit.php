@@ -10,7 +10,7 @@ use App\Core\Gate;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -88,9 +88,9 @@ use App\Core\Gate;
                                 <?php else: ?>
                                     <?php foreach ($unit->departments as $dept): ?>
                                         <tr>
-                                            <td><?= $dept->id ?></td>
-                                            <td><a href="/admin/department/<?= $dept->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($dept->name ?? '') ?></a></td>
-                                            <td><?= $dept->chairperson?->getFullName() ?? '-' ?></td>
+                                            <td><?= (int)$dept->id ?></td>
+                                            <td><a href="/admin/department/<?= (int)$dept->id ?>" class="text-dark" title="Görüntüle"><?= e($dept->name ?? '') ?></a></td>
+                                            <td><?= e($dept->chairperson?->getFullName() ?? '-') ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $dept)): ?>
                                                 <a href="/admin/editdepartment/<?= $dept->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">

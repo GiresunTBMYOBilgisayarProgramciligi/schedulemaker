@@ -15,6 +15,7 @@
 
 use App\Core\Gate;
 use App\Enums\LessonType;
+use function App\Helpers\e;
 use function App\Helpers\renderBuildingSelectOptions;
 use function App\Helpers\renderLecturerSelectOptions;
 use function App\Helpers\getSettingValue;
@@ -28,7 +29,7 @@ use function App\Helpers\getSettingValue;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -52,7 +53,7 @@ use function App\Helpers\getSettingValue;
                     <div class="card">
                         <form action="/ajax/updateLesson" method="post" class="ajaxForm updateForm"
                               title="Ders Bilgilerini Güncelle">
-                            <input type="hidden" name="id" value="<?= $lesson->id ?>">
+                            <input type="hidden" name="id" value="<?= (int)$lesson->id ?>">
                             <div class="card-body pb-0">
                                 <div class="row">
                                     <div class="col-md-1">
@@ -60,7 +61,7 @@ use function App\Helpers\getSettingValue;
                                             <label class="form-label" for="code">Kodu</label>
                                             <input type="text" class="form-control" id="code" name="code"
                                                    placeholder="Kodu"
-                                                   value="<?= $lesson->code ?>"
+                                                   value="<?= e($lesson->code) ?>"
                                                    required
                                                 <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>
                                             >
@@ -71,7 +72,7 @@ use function App\Helpers\getSettingValue;
                                             <label class="form-label" for="group_no">Grup No</label>
                                             <input type="number" class="form-control" id="group_no" name="group_no"
                                                    placeholder="Grup No"
-                                                   value="<?= $lesson->group_no ?>"
+                                                   value="<?= (int)$lesson->group_no ?>"
                                                    min="0"
                                                    <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>
                                                    required>
@@ -82,8 +83,8 @@ use function App\Helpers\getSettingValue;
                                             <label class="form-label" for="type">Türü</label>
                                             <select class="form-select" id="type" name="type" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?php foreach (LessonType::toArray() as $id => $type): ?>
-                                                    <option value="<?= $id ?>"
-                                                        <?= $id == $lesson->type ? "selected" : "" ?>><?= $type ?></option>
+                                                    <option value="<?= (int)$id ?>"
+                                                        <?= $id == $lesson->type ? "selected" : "" ?>><?= e($type) ?></option>
                                                 <?php endforeach ?>
                                             </select>
                                         </div>
@@ -104,14 +105,14 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $lesson->name ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                   placeholder="Adı" value="<?= e($lesson->name) ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="hours">Ders Saati</label>
                                             <input type="number" class="form-control" id="hours" name="hours"
-                                                   placeholder="Ders Saati" value="<?= $lesson->hours ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                   placeholder="Ders Saati" value="<?= (int)$lesson->hours ?>" required <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                         </div>
                                     </div>
                                 </div>
@@ -124,7 +125,7 @@ use function App\Helpers\getSettingValue;
                                                 <option value="">Birim Seçiniz</option>
                                                 <?php foreach ($units as $unit): ?>
                                                     <!-- Use $lesson->department->unit_id to select the correct unit -->
-                                                    <option value="<?= $unit->id ?>" <?= ($lesson->department->unit_id ?? '') == $unit->id ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
+                                                    <option value="<?= (int)$unit->id ?>" <?= ($lesson->department->unit_id ?? '') == $unit->id ? 'selected' : '' ?>><?= e($unit->name) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -133,7 +134,7 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
                                             <select class="form-select tom-select" id="department_id"
-                                                name="department_id" required data-selected="<?= $lesson->department_id ?? '' ?>"
+                                                name="department_id" required data-selected="<?= (int)($lesson->department_id ?? 0) ?>"
                                                 <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
@@ -143,7 +144,7 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
                                             <select class="form-select" id="program_id" name="program_id" required
-                                                data-selected="<?= $lesson->program_id ?? '' ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                                data-selected="<?= (int)($lesson->program_id ?? 0) ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>
@@ -158,7 +159,7 @@ use function App\Helpers\getSettingValue;
                                                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-load-all-buildings" title="Tüm Birimlerden Bina Seç" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>><i class="bi bi-globe"></i> Tüm Binalar</button>
                                                 </div>
                                             </div>
-                                            <select class="form-select tom-select" id="building_id" name="building_id" required data-selected="<?= $lesson->building_id ?? '' ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
+                                            <select class="form-select tom-select" id="building_id" name="building_id" required data-selected="<?= (int)($lesson->building_id ?? 0) ?>" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                 <?= renderBuildingSelectOptions($buildings ?? [], (int)($lesson->building_id ?? 0) ?: null, $has_multiple_building_units ?? null, 'Bina seçiniz...') ?>
                                             </select>
                                         </div>
@@ -168,7 +169,7 @@ use function App\Helpers\getSettingValue;
                                             <label class="form-label"  for="classroom_type">Derslik Türü</label>
                                             <select class="form-select" id="classroom_type" name="classroom_type">
                                                 <?php foreach ($classroomTypes as $id=>$classroomType): ?>
-                                                    <option value="<?= $id ?>" <?=$id==$lesson->classroom_type ? "selected":""?>><?= $classroomType ?></option>
+                                                    <option value="<?= (int)$id ?>" <?=$id==$lesson->classroom_type ? "selected":""?>><?= e($classroomType) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -177,7 +178,7 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="size">Mevcut / Kontenjan</label>
                                             <input type="number" class="form-control" id="size" name="size"
-                                                   placeholder="Mevcut / Kontenjan" value="<?= $lesson->size ?>" required>
+                                                   placeholder="Mevcut / Kontenjan" value="<?= (int)$lesson->size ?>" required>
                                         </div>
                                     </div>
                                 </div>
@@ -189,12 +190,12 @@ use function App\Helpers\getSettingValue;
                                                 <select class="form-select" id="academic_year" name="academic_year"
                                                     <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
                                                     <?php 
-                                                    $currentAcademicYear = $lesson->assignments[0]->academic_year ?? getSettingValue('academic_year');
-                                                    $currentSemester = $lesson->assignments[0]->semester ?? getSettingValue('semester');
-                                                    ?>
+                                                     $currentAcademicYear = $lesson->assignments[0]->academic_year ?? getSettingValue('academic_year');
+                                                     $currentSemester = $lesson->assignments[0]->semester ?? getSettingValue('semester');
+                                                     ?>
                                                     <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                                        <option value="<?= $year . ' - ' . $year + 1 ?>" <?= $currentAcademicYear == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                            <?= $year . ' - ' . $year + 1 ?>
+                                                        <option value="<?= e($year . ' - ' . ($year + 1)) ?>" <?= $currentAcademicYear == $year . ' - ' . ($year + 1) ? 'selected' : '' ?>>
+                                                            <?= e($year . ' - ' . ($year + 1)) ?>
                                                         </option>
                                                     <?php endfor; ?>
                                                 </select>

@@ -20,7 +20,7 @@ use App\Models\User;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -57,16 +57,16 @@ use App\Models\User;
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-4">Program Adı</dt>
-                                <dd class="col-sm-8"><?= $program->name ?></dd>
+                                <dd class="col-sm-8"><?= e($program->name) ?></dd>
                                 <dt class="col-sm-4">Bölüm</dt>
                                 <dd class="col-sm-8">
-                                    <a href="/admin/department/<?= $program->department_id ?>">
-                                        <?= $program->department?->name ?? '' ?></a>
+                                    <a href="/admin/department/<?= (int)$program->department_id ?>">
+                                        <?= e($program->department?->name ?? '') ?></a>
                                 </dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
                                 <dd class="col-sm-8"><a
-                                        href="/admin/profile/<?= $program->department?->chairperson?->id ?? '#' ?>">
-                                        <?= $program->department?->chairperson?->getFullName() ?? '' ?></a>
+                                        href="/admin/profile/<?= (int)($program->department?->chairperson?->id ?? 0) ?>">
+                                        <?= e($program->department?->chairperson?->getFullName() ?? '') ?></a>
                                 </dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>
                                 <dd class="col-sm-8"><?= count($program->lecturers ?? []) ?></dd>
@@ -132,8 +132,8 @@ use App\Models\User;
                                 <tbody>
                                     <?php foreach ($program->lecturers as $lecturer): ?>
                                         <tr>
-                                            <td><a href="/admin/profile/<?= $lecturer->id ?>" class="text-dark" title="Görüntüle"><?= $lecturer->getFullName() ?></a></td>
-                                            <td><?= $lecturer->mail ?></td>
+                                            <td><a href="/admin/profile/<?= (int)$lecturer->id ?>" class="text-dark" title="Görüntüle"><?= e($lecturer->getFullName()) ?></a></td>
+                                            <td><?= e($lecturer->mail) ?></td>
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
                                                     <?php if (Gate::check("update", $lecturer)): ?>
@@ -195,19 +195,19 @@ use App\Models\User;
                                 <tbody>
                                     <?php foreach ($program->lessons as $lesson): ?>
                                         <tr>
-                                            <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
+                                            <td><?= e($lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '')) ?></td>
                                             <td
-                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
+                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.e($lesson->parentLesson->getFullName(addCode: true, addProgram: true)).' Dersine bağlı"' : '' ?>
                                             >
-                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
-                                                    <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                <a href="/admin/lesson/<?= (int)$lesson->id ?>" class="text-dark" title="Görüntüle">
+                                                    <?= e($lesson->parentLesson ? $lesson->name . "*" : $lesson->name) ?>
                                                 </a>
                                             </td>
-                                            <td><?= $lesson->getTypeName() ?></td>
-                                            <td><?= $lesson->hours ?></td>
-                                            <td><?= $lesson->semester_no ?></td>
-                                            <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
-                                            <td><?= $lesson->getClassroomTypeName() ?></td>
+                                            <td><?= e($lesson->getTypeName()) ?></td>
+                                            <td><?= (int)$lesson->hours ?></td>
+                                            <td><?= (int)$lesson->semester_no ?></td>
+                                            <td><?= e($lesson->lecturer?->getFullName() ?? '') ?></td>
+                                            <td><?= e($lesson->getClassroomTypeName()) ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $lesson)): ?>
                                                     <?php if (Gate::check("update", $lesson)): ?>

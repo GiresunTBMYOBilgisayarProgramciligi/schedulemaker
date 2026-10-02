@@ -15,7 +15,7 @@ use App\Models\Lesson;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -91,26 +91,26 @@ use App\Models\Lesson;
                                     <?php foreach ($lessons as $lesson): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $lesson->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$lesson->id ?>">
                                             </td>
-                                            <td><?= $lesson->id ?></td>
-                                            <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
+                                            <td><?= (int)$lesson->id ?></td>
+                                            <td><?= e($lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '')) ?></td>
                                             <td
-                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
+                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.e($lesson->parentLesson->getFullName(addCode: true, addProgram: true)).' Dersine bağlı"' : '' ?>
                                             >
-                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
-                                                    <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                <a href="/admin/lesson/<?= (int)$lesson->id ?>" class="text-dark" title="Görüntüle">
+                                                    <?= e($lesson->parentLesson ? $lesson->name . "*" : $lesson->name) ?>
                                                 </a>
                                             </td>
-                                            <td><?= $lesson->getTypeName() ?></td>
-                                            <td><?= $lesson->size ?></td>
-                                            <td><?= $lesson->hours ?></td>
-                                            <td><?= $lesson->semester_no ?></td>
-                                            <td><?= $lesson->lecturer?->getFullName() ?? '<span class="text-danger">Atanmamış</span>' ?></td>
-                                            <td><?= $lesson->department?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                            <td><?= $lesson->program?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                            <td><?= $lesson->building?->name ?? '<span class="text-danger">—</span>' ?></td>
-                                            <td><?= $lesson->getClassroomTypeName() ?></td>
+                                            <td><?= e($lesson->getTypeName()) ?></td>
+                                            <td><?= (int)$lesson->size ?></td>
+                                            <td><?= (int)$lesson->hours ?></td>
+                                            <td><?= (int)$lesson->semester_no ?></td>
+                                            <td><?= $lesson->lecturer ? e($lesson->lecturer->getFullName()) : '<span class="text-danger">Atanmamış</span>' ?></td>
+                                            <td><?= $lesson->department ? e($lesson->department->name) : '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->program ? e($lesson->program->name) : '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= $lesson->building ? e($lesson->building->name) : '<span class="text-danger">—</span>' ?></td>
+                                            <td><?= e($lesson->getClassroomTypeName()) ?></td>
 
 
                                             <td class="text-center">

@@ -7,7 +7,9 @@
  * @var $trace string Hata izleme yığını (Opsiyonel - Debug modu)
  */
 
-$title = "Hata " . $code;
+use function App\Helpers\e;
+
+$title = "Hata " . (int)$code;
 $color = "danger";
 $icon = "bi bi-exclamation-triangle-fill";
 
@@ -40,35 +42,35 @@ if ($code == 404) {
     <div class="app-content">
         <div class="container-fluid">
             <div class="error-page">
-                <h2 class="headline text-<?php echo $color; ?>"> <?php echo $code; ?></h2>
+                <h2 class="headline text-<?= e($color) ?>"> <?= (int)$code ?></h2>
 
                 <div class="error-content">
-                    <h3><i class="<?php echo $icon; ?> text-<?php echo $color; ?>"></i> Oops! Bir şeyler ters gitti.
+                    <h3><i class="<?= e($icon) ?> text-<?= e($color) ?>"></i> Oops! Bir şeyler ters gitti.
                     </h3>
 
                     <p>
-                        <?php echo htmlspecialchars($message); ?>
+                        <?= e($message) ?>
                         <br>
                         Bu hatayı düzeltmek için çalışacağız. Bu sırada <a href="/admin">panoya dönebilirsiniz</a>.
                     </p>
 
-                    <?php if (isset($file) && $_ENV['DEBUG'] === 'true'): ?>
-                        <div class="card card-<?php echo $color; ?> card-outline mt-4">
+                    <?php if (isset($file) && ($_ENV['DEBUG'] ?? 'false') === 'true'): ?>
+                        <div class="card card-<?= e($color) ?> card-outline mt-4">
                             <div class="card-header">
                                 <h3 class="card-title">Hata Detayları (Debug)</h3>
                             </div>
                             <div class="card-body">
                                 <dl class="row">
                                     <dt class="col-sm-2">Dosya:</dt>
-                                    <dd class="col-sm-10"><?php echo htmlspecialchars($file); ?></dd>
+                                    <dd class="col-sm-10"><?= e($file) ?></dd>
 
                                     <dt class="col-sm-2">Satır:</dt>
-                                    <dd class="col-sm-10"><?php echo $line; ?></dd>
+                                    <dd class="col-sm-10"><?= (int)$line ?></dd>
 
                                     <dt class="col-sm-12">Yığın İzi (Trace):</dt>
                                     <dd class="col-sm-12">
                                         <pre class="bg-light p-3 border rounded"
-                                            style="overflow-x: auto; max-height: 400px;"><code><?php echo htmlspecialchars($trace); ?></code></pre>
+                                            style="overflow-x: auto; max-height: 400px;"><code><?= e($trace) ?></code></pre>
                                     </dd>
                                 </dl>
                             </div>

@@ -1,7 +1,5 @@
 <?php
 /**
- * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
- * @var array $departments \App\Models\Department->getDepartments())
  * @var string $page_title
  */
 ?>
@@ -13,7 +11,7 @@
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>

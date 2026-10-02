@@ -1,7 +1,10 @@
 <?php
 /**
- * @var \App\Models\User $currentUser
+ * @var User $currentUser
  */
+
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 <!--begin::Header-->
 <nav class="app-header navbar navbar-expand bg-body">
@@ -88,23 +91,23 @@
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                     <img
-                            src="<?= $currentUser->getGravatarURL(50) ?>"
+                            src="<?= e($currentUser->getGravatarURL(50)) ?>"
                             class="user-image rounded-circle shadow"
                             alt="User Image"
                     />
-                    <span class="d-none d-md-inline"><?= $currentUser->getFullName() ?></span>
+                    <span class="d-none d-md-inline"><?= e($currentUser->getFullName()) ?></span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                     <!--begin::User Image-->
                     <li class="user-header text-bg-primary">
                         <img
-                                src="<?= $currentUser->getGravatarURL(90) ?>"
+                                src="<?= e($currentUser->getGravatarURL(90)) ?>"
                                 class="rounded-circle shadow"
                                 alt="User Image"
                         />
                         <p>
-                            <?= $currentUser->getFullName() ?>
-                            <small><?= $currentUser->getLastLogin() ?></small>
+                            <?= e($currentUser->getFullName()) ?>
+                            <small><?= e($currentUser->getLastLogin()) ?></small>
                         </p>
                     </li>
                     <!--end::User Image-->

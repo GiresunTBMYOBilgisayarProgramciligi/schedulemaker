@@ -7,9 +7,12 @@
  * @var string $scriptPath
  * @var string $logPath
  * @var string $phpBin
- * @var \App\Models\User $currentUser
+ * @var User   $currentUser
  */
+
 use App\Enums\MailQueueStatus;
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!--begin::App Main-->
@@ -19,7 +22,7 @@ use App\Enums\MailQueueStatus;
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><i class="bi bi-envelope-paper me-2"></i><?= $page_title ?></h3>
+                    <h3 class="mb-0"><i class="bi bi-envelope-paper me-2"></i><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -93,8 +96,8 @@ use App\Enums\MailQueueStatus;
                                 Crontab çalışmıyorsa veya anlık toplu gönderim başlatmak istiyorsanız aşağıdaki butonları kullanabilirsiniz.
                             </p>
                             <div class="d-grid gap-2">
-                                <button type="button" id="btn-process-queue" class="btn btn-primary btn-lg" data-batch-size="<?= $batchSize ?? 10 ?>">
-                                    <i class="bi bi-send-fill me-1"></i> Kuyruğu Şimdi Çalıştır (<?= $batchSize ?? 10 ?> Gönder)
+                                <button type="button" id="btn-process-queue" class="btn btn-primary btn-lg" data-batch-size="<?= (int)($batchSize ?? 10) ?>">
+                                    <i class="bi bi-send-fill me-1"></i> Kuyruğu Şimdi Çalıştır (<?= (int)($batchSize ?? 10) ?> Gönder)
                                 </button>
                                 <div class="d-flex gap-2">
                                     <button type="button" id="btn-retry-failed" class="btn btn-outline-warning flex-fill" <?= ($stats['failed'] ?? 0) === 0 ? 'disabled' : '' ?>>
@@ -129,7 +132,7 @@ use App\Enums\MailQueueStatus;
                             <!-- Kopyalanabilir Komut -->
                             <div class="input-group mb-3">
                                 <span class="input-group-text bg-dark text-white"><i class="bi bi-terminal"></i></span>
-                                <input type="text" class="form-control font-monospace bg-light" id="cronCommandInput" value="<?= htmlspecialchars($cronCommand) ?>" readonly>
+                                <input type="text" class="form-control font-monospace bg-light" id="cronCommandInput" value="<?= e($cronCommand) ?>" readonly>
                                 <button class="btn btn-success" type="button" id="btn-copy-cron" title="Panoya Kopyala">
                                     <i class="bi bi-clipboard me-1"></i> Kopyala
                                 </button>
@@ -202,27 +205,27 @@ use App\Enums\MailQueueStatus;
                                         MailQueueStatus::Processing->value => '<span class="badge bg-info"><i class="bi bi-arrow-repeat me-1"></i>İşleniyor</span>',
                                         MailQueueStatus::Sent->value       => '<span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>Gönderildi</span>',
                                         MailQueueStatus::Failed->value     => '<span class="badge bg-danger"><i class="bi bi-exclamation-circle me-1"></i>Başarısız</span>',
-                                        default                            => '<span class="badge bg-secondary">' . htmlspecialchars($item->status ?? '') . '</span>',
+                                        default                            => '<span class="badge bg-secondary">' . e($item->status ?? '') . '</span>',
                                     };
 
                                     $hasAttachments = !empty($item->attachments);
                                     $attList = $hasAttachments ? json_decode($item->attachments, true) : [];
                                     $attCount = is_array($attList) ? count($attList) : 0;
                                     ?>
-                                    <tr id="queue-row-<?= $item->id ?>">
-                                        <td class="text-muted small"><?= $item->id ?></td>
+                                    <tr id="queue-row-<?= (int)$item->id ?>">
+                                        <td class="text-muted small"><?= (int)$item->id ?></td>
                                         <td><?= $statusBadge ?></td>
                                         <td>
-                                            <div class="fw-semibold text-dark"><?= htmlspecialchars($item->to_name ?: 'İsimsiz') ?></div>
-                                            <div class="small text-muted"><?= htmlspecialchars($item->to_email ?? '') ?></div>
+                                            <div class="fw-semibold text-dark"><?= e($item->to_name ?: 'İsimsiz') ?></div>
+                                            <div class="small text-muted"><?= e($item->to_email ?? '') ?></div>
                                         </td>
                                         <td>
-                                            <div class="text-truncate" style="max-width: 320px;" title="<?= htmlspecialchars($item->subject ?? '') ?>">
-                                                <?= htmlspecialchars($item->subject ?? '') ?>
+                                            <div class="text-truncate" style="max-width: 320px;" title="<?= e($item->subject ?? '') ?>">
+                                                <?= e($item->subject ?? '') ?>
                                             </div>
                                             <?php if (!empty($item->error_message)): ?>
-                                                <div class="small text-danger text-truncate" style="max-width: 320px;" title="<?= htmlspecialchars($item->error_message) ?>">
-                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i><?= htmlspecialchars($item->error_message) ?>
+                                                <div class="small text-danger text-truncate" style="max-width: 320px;" title="<?= e($item->error_message) ?>">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i><?= e($item->error_message) ?>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
@@ -249,16 +252,16 @@ use App\Enums\MailQueueStatus;
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
                                                 <button type="button" class="btn btn-outline-primary btn-view-detail"
-                                                    data-id="<?= $item->id ?>"
-                                                    data-email="<?= htmlspecialchars($item->to_email ?? '') ?>"
-                                                    data-name="<?= htmlspecialchars($item->to_name ?? '') ?>"
-                                                    data-subject="<?= htmlspecialchars($item->subject ?? '') ?>"
-                                                    data-status="<?= htmlspecialchars($item->status ?? '') ?>"
-                                                    data-error="<?= htmlspecialchars($item->error_message ?? '') ?>"
+                                                    data-id="<?= (int)$item->id ?>"
+                                                    data-email="<?= e($item->to_email ?? '') ?>"
+                                                    data-name="<?= e($item->to_name ?? '') ?>"
+                                                    data-subject="<?= e($item->subject ?? '') ?>"
+                                                    data-status="<?= e($item->status ?? '') ?>"
+                                                    data-error="<?= e($item->error_message ?? '') ?>"
                                                     title="İçeriği İncele">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-danger btn-delete-item" data-id="<?= $item->id ?>" title="Sil">
+                                                <button type="button" class="btn btn-outline-danger btn-delete-item" data-id="<?= (int)$item->id ?>" title="Sil">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>

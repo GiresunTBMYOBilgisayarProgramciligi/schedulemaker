@@ -13,7 +13,7 @@ use App\Models\Unit;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -75,12 +75,12 @@ use App\Models\Unit;
                                     <?php foreach ($units as $unit): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $unit->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$unit->id ?>">
                                             </td>
-                                            <td><?= $unit->id ?></td>
-                                            <td><a href="/admin/unit/<?= $unit->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($unit->name) ?></a></td>
-                                            <td><?= $unit->getTypeName() ?></td>
-                                            <td><?= $unit->manager ? htmlspecialchars($unit->manager->getFullName()) : '<span class="text-muted fst-italic">Atanmamış</span>' ?></td>
+                                            <td><?= (int)$unit->id ?></td>
+                                            <td><a href="/admin/unit/<?= (int)$unit->id ?>" class="text-dark" title="Görüntüle"><?= e($unit->name) ?></a></td>
+                                            <td><?= e($unit->getTypeName()) ?></td>
+                                            <td><?= $unit->manager ? e($unit->manager->getFullName()) : '<span class="text-muted fst-italic">Atanmamış</span>' ?></td>
                                             <td>
                                                 <?php if ($unit->active): ?>
                                                     <span class="badge bg-success">Aktif</span>

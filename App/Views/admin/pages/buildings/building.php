@@ -10,12 +10,12 @@ use App\Core\Gate;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
                         <li class="breadcrumb-item"><a href="/admin/listbuildings">Bina Listesi</a></li>
-                        <li class="breadcrumb-item active"><?= htmlspecialchars($building->name ?? '') ?></li>
+                        <li class="breadcrumb-item active"><?= e($building->name ?? '') ?></li>
                     </ol>
                 </div>
             </div>
@@ -27,7 +27,7 @@ use App\Core\Gate;
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title"><?= htmlspecialchars($building->name ?? '') ?> (Bağlı Birim: <?= htmlspecialchars($building->unit->name ?? 'Yok') ?>)</h3>
+                            <h3 class="card-title"><?= e($building->name ?? '') ?> (Bağlı Birim: <?= e($building->unit->name ?? 'Yok') ?>)</h3>
                             <div class="card-tools">
                                 <?php if (Gate::check("update", $building)): ?>
                                 <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">
@@ -74,10 +74,10 @@ use App\Core\Gate;
                                 <?php else: ?>
                                     <?php foreach ($building->classrooms as $cls): ?>
                                         <tr>
-                                            <td><?= $cls->id ?></td>
-                                            <td><a href="/admin/classroom/<?= $cls->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($cls->name ?? '') ?></a></td>
-                                            <td><?= $cls->getTypeName() ?></td>
-                                            <td><?= $cls->class_size ?></td>
+                                            <td><?= (int)$cls->id ?></td>
+                                            <td><a href="/admin/classroom/<?= (int)$cls->id ?>" class="text-dark" title="Görüntüle"><?= e($cls->name ?? '') ?></a></td>
+                                            <td><?= e($cls->getTypeName()) ?></td>
+                                            <td><?= (int)$cls->class_size ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $cls)): ?>
                                                 <a href="/admin/editclassroom/<?= $cls->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">

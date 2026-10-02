@@ -14,6 +14,7 @@
 use App\Core\Gate;
 use App\Models\Lesson;
 use App\Enums\UserRole;
+use function App\Helpers\e;
 use function App\Helpers\renderProgramSelectOptions;
 use function App\Helpers\renderLecturerSelectOptions;
 use function App\Helpers\renderBuildingSelectOptions;
@@ -26,7 +27,7 @@ use function App\Helpers\renderBuildingSelectOptions;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= htmlspecialchars($page_title) ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -58,8 +59,8 @@ use function App\Helpers\renderBuildingSelectOptions;
                             <select class="form-select" id="academic_year" name="academic_year">
                                 <?php for ($year = 2023; $year <= (int)date('Y') + 1; $year++): ?>
                                     <?php $yOption = $year . ' - ' . ($year + 1); ?>
-                                    <option value="<?= $yOption ?>" <?= $current_academic_year === $yOption ? 'selected' : '' ?>>
-                                        <?= $yOption ?>
+                                    <option value="<?= e($yOption) ?>" <?= $current_academic_year === $yOption ? 'selected' : '' ?>>
+                                        <?= e($yOption) ?>
                                     </option>
                                 <?php endfor; ?>
                             </select>
@@ -128,7 +129,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                     <h3 class="card-title m-0"><i class="bi bi-list-check me-1"></i> Ders Listesi ve Hoca Atamaları</h3>
                     <div class="ms-auto d-flex align-items-center gap-2">
                         <?php if (Gate::check("create", Lesson::class)): ?>
-                            <a href="/admin/addlesson/<?= $selected_program_id ?? '' ?>" id="btnAddLesson" class="btn btn-sm btn-outline-primary" title="Seçili programa yeni ders ekle">
+                            <a href="/admin/addlesson/<?= (int)($selected_program_id ?? 0) ?>" id="btnAddLesson" class="btn btn-sm btn-outline-primary" title="Seçili programa yeni ders ekle">
                                 <i class="bi bi-plus-lg me-1"></i> Ders Ekle
                             </a>
                         <?php endif; ?>
@@ -194,32 +195,32 @@ use function App\Helpers\renderBuildingSelectOptions;
             $deptId = (int)($lec->department_id ?? 0);
             $deptName = $lec->department?->name ?? 'Diğer Bölüm';
         ?>
-        <option value="<?= $lec->id ?>" 
+        <option value="<?= (int)$lec->id ?>" 
                 data-unit-id="<?= $unitId ?>"
-                data-unit-name="<?= htmlspecialchars($unitName) ?>"
+                data-unit-name="<?= e($unitName) ?>"
                 data-department-id="<?= $deptId ?>"
-                data-department-name="<?= htmlspecialchars($deptName) ?>">
-            <?= htmlspecialchars($lec->getFullName(true)) ?>
+                data-department-name="<?= e($deptName) ?>">
+            <?= e($lec->getFullName(true)) ?>
         </option>
     <?php endforeach; ?>
 </template>
 
 <template id="lessonTypeOptionsTemplate">
     <?php foreach ($lessonTypes as $val => $lbl): ?>
-        <option value="<?= $val ?>"><?= htmlspecialchars($lbl) ?></option>
+        <option value="<?= e($val) ?>"><?= e($lbl) ?></option>
     <?php endforeach; ?>
 </template>
 
 <template id="classroomTypeOptionsTemplate">
     <option value="">-- Seçiniz --</option>
     <?php foreach ($classroomTypes as $val => $lbl): ?>
-        <option value="<?= $val ?>"><?= htmlspecialchars($lbl) ?></option>
+        <option value="<?= e($val) ?>"><?= e($lbl) ?></option>
     <?php endforeach; ?>
 </template>
 
 <template id="semesterNoOptionsTemplate">
     <?php foreach ($semesterNoList as $val => $lbl): ?>
-        <option value="<?= $val ?>"><?= htmlspecialchars($lbl) ?></option>
+        <option value="<?= (int)$val ?>"><?= e($lbl) ?></option>
     <?php endforeach; ?>
 </template>
 

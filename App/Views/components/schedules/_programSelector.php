@@ -17,6 +17,7 @@
  * @var bool|null $showFormText
  */
 
+use function App\Helpers\e;
 use function App\Helpers\getMaxSemesterNo;
 use function App\Helpers\getSemesterSelectOptions;
 use function App\Helpers\getSettingValue;
@@ -55,24 +56,24 @@ if ($showButton) {
     if (!empty($customButtonHtml)) {
         $renderedButtonHtml = $customButtonHtml;
     } else {
-        $onlyTableAttr = $dataOnlyTable !== null ? ' data-only-table="' . htmlspecialchars($dataOnlyTable) . '"' : '';
-        $scheduleTypeAttr = !empty($dataScheduleType) ? ' data-schedule-type="' . htmlspecialchars($dataScheduleType) . '"' : '';
-        $renderedButtonHtml = '<button type="button" class="btn btn-primary" id="' . htmlspecialchars($buttonId) . '"'
+        $onlyTableAttr = $dataOnlyTable !== null ? ' data-only-table="' . e($dataOnlyTable) . '"' : '';
+        $scheduleTypeAttr = !empty($dataScheduleType) ? ' data-schedule-type="' . e($dataScheduleType) . '"' : '';
+        $renderedButtonHtml = '<button type="button" class="btn btn-primary" id="' . e($buttonId) . '"'
             . $onlyTableAttr . $scheduleTypeAttr . '>'
-            . htmlspecialchars($buttonText)
+            . e($buttonText)
             . '</button>';
     }
 }
 ?>
 <div class="row g-2 g-md-3 program-selector" data-component="program-selector">
     <div class="col-12 col-md-3">
-        <select class="form-select tom-select" id="unit_id" name="unit_id"<?= !empty($dataAction) ? ' data-action="' . htmlspecialchars($dataAction) . '"' : '' ?>>
+        <select class="form-select tom-select" id="unit_id" name="unit_id"<?= !empty($dataAction) ? ' data-action="' . e($dataAction) . '"' : '' ?>>
             <option value="">Birim Seçiniz</option>
             <?php if (!empty($units)): ?>
                 <?php foreach ($units as $unit): ?>
-                    <?php $unitMax = getMaxSemesterNo(null, null, $unit->id); ?>
-                    <option value="<?= $unit->id ?>" data-type="<?= htmlspecialchars((string)($unit->type ?? '')) ?>" data-max-semester="<?= $unitMax ?>" <?= ((string)$selectedUnitId !== '' && (string)$selectedUnitId === (string)$unit->id) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($unit->name) ?>
+                    <?php $unitMax = getMaxSemesterNo(null, null, (int)$unit->id); ?>
+                    <option value="<?= (int)$unit->id ?>" data-type="<?= e((string)($unit->type ?? '')) ?>" data-max-semester="<?= (int)$unitMax ?>" <?= ((string)$selectedUnitId !== '' && (string)$selectedUnitId === (string)$unit->id) ? 'selected' : '' ?>>
+                        <?= e($unit->name) ?>
                     </option>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -84,7 +85,7 @@ if ($showButton) {
         <?php endif; ?>
     </div>
     <div class="col-12 col-md-3">
-        <select class="form-select tom-select" id="department_id" name="department_id"<?= !empty($dataAction) ? ' data-action="' . htmlspecialchars($dataAction) . '"' : '' ?> data-selected="<?= htmlspecialchars((string)$selectedDepartmentId) ?>">
+        <select class="form-select tom-select" id="department_id" name="department_id"<?= !empty($dataAction) ? ' data-action="' . e($dataAction) . '"' : '' ?> data-selected="<?= e((string)$selectedDepartmentId) ?>">
             <option value="0">İlk olarak Birim Seçiniz</option>
         </select>
         <?php if ($showFormText): ?>
@@ -94,7 +95,7 @@ if ($showButton) {
         <?php endif; ?>
     </div>
     <div class="col-12 col-md-3">
-        <select class="form-select" id="program_id" name="program_id" data-selected="<?= htmlspecialchars((string)$selectedProgramId) ?>">
+        <select class="form-select" id="program_id" name="program_id" data-selected="<?= e((string)$selectedProgramId) ?>">
             <option value="0">İlk olarak Bölüm seçiniz</option>
         </select>
         <?php if ($showFormText): ?>
@@ -107,11 +108,11 @@ if ($showButton) {
         <?php if ($showButton && $buttonPosition === 'inline'): ?>
             <div class="input-group">
         <?php endif; ?>
-                <select class="form-select" id="semester_no" name="semester_no" data-component="program-selector-semester" data-selected="<?= htmlspecialchars((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . $maxSemester . '"' : '' ?>>
+                <select class="form-select" id="semester_no" name="semester_no" data-component="program-selector-semester" data-selected="<?= e((string)$selectedSemesterNo) ?>"<?= $maxSemester !== null ? ' data-max-semester="' . (int)$maxSemester . '"' : '' ?>>
                     <option value=""><?= !empty($semesterOptions) ? 'Tüm Yarıyıllar / Sınıflar' : 'İlk olarak Program seçiniz' ?></option>
                     <?php foreach ($semesterOptions as $semNo => $semLabel): ?>
-                        <option value="<?= $semNo ?>" <?= ((string)$selectedSemesterNo !== '' && (string)$selectedSemesterNo === (string)$semNo) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($semLabel) ?>
+                        <option value="<?= (int)$semNo ?>" <?= ((string)$selectedSemesterNo !== '' && (string)$selectedSemesterNo === (string)$semNo) ? 'selected' : '' ?>>
+                            <?= e($semLabel) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

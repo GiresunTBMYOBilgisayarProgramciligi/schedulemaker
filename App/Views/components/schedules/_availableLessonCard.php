@@ -2,6 +2,7 @@
 use App\Core\View;
 use App\Enums\ExamType;
 use App\Helpers\ScheduleViewHelper;
+use function App\Helpers\e;
 
 /**
  * Available lessons panelindeki tek bir ders kartı component'i.
@@ -31,22 +32,22 @@ if (!$isDummy) {
         if ($parent) {
             $popoverTitle = 'Sınav Birleştirmesi';
             $popoverContent = 'Bu dersin sınavı, ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlıdır.';
-            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . e($popoverTitle) . '" data-bs-content="' . e($popoverContent) . '" data-bs-trigger="hover"';
         }
     } elseif (!$isExam && !empty($lesson->parentLesson)) {
         $parent = $lesson->parentLesson ?? null;
         if ($parent) {
             $popoverTitle = 'Birleştirilmiş Ders';
             $popoverContent = 'Bu ders ' . $parent->getFullName(addCode: true, addProgram: true) . ' dersine bağlı olduğu için düzenlenemez.';
-            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . e($popoverTitle) . '" data-bs-content="' . e($popoverContent) . '" data-bs-trigger="hover"';
         }
     }
 }
 ?>
 <div class='frame col-md-3 p-1'>
     <div <?= $attrString ?> <?= $popoverAttr ?>>
-        <span class="lesson-name" title="<?= htmlspecialchars($lessonName) ?>">
-            <?= htmlspecialchars($lessonName) ?>
+        <span class="lesson-name" title="<?= e($lessonName) ?>">
+            <?= e($lessonName) ?>
         </span>
 
         <div class="lesson-meta">
@@ -54,12 +55,12 @@ if (!$isDummy) {
                 <?php if ($isDummy): ?>
                     -
                 <?php else: ?>
-                    <?= ($lesson->lecturer ?? null)?->getFullName() ?>
+                    <?= e(($lesson->lecturer ?? null)?->getFullName() ?? '') ?>
 
                 <?php endif; ?>
             </span>
             <span class="lesson-classroom">
-                <?= $infoText ?>
+                <?= e($infoText) ?>
             </span>
         </div>
 

@@ -1,7 +1,9 @@
 <?php
 /**
- * @var \App\Core\AssetManager $assetManager
+ * @var AssetManager $assetManager
  */
+
+use App\Core\AssetManager;
 ?>
 <!--begin::Script-->
 <?= $assetManager->renderJs() ?>

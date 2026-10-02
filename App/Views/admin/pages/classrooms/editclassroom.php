@@ -16,7 +16,7 @@ use function App\Helpers\renderBuildingSelectOptions;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -47,7 +47,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                                         <div class="">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $classroom->name ?>" required>
+                                                   placeholder="Adı" value="<?= e($classroom->name) ?>" required>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -63,7 +63,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                                             <label class="form-label" for="type"> Türü</label>
                                             <select name="type" id="type" class="form-select">
                                                 <?php foreach ($classroomTypes as $id => $type): ?>
-                                                    <option value="<?= $id ?>" <?= $classroom->type == $id ? "selected" : "" ?>><?= $type ?></option>
+                                                    <option value="<?= (int)$id ?>" <?= $classroom->type == $id ? "selected" : "" ?>><?= e($type) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -72,7 +72,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                                         <div class="">
                                             <label class="form-label" for="class_size">Ders Mevcudu</label>
                                             <input type="number" class="form-control" id="class_size" name="class_size"
-                                                   placeholder="Ders Mevcudu" value="<?= $classroom->class_size ?>"
+                                                   placeholder="Ders Mevcudu" value="<?= (int)$classroom->class_size ?>"
                                                    required>
                                         </div>
                                     </div>
@@ -80,7 +80,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                                         <div class="">
                                             <label class="form-label" for="exam_size">Sınav Mevcudu</label>
                                             <input type="number" class="form-control" id="exam_size" name="exam_size"
-                                                   placeholder="Sınav Mevcudu" value="<?= $classroom->exam_size ?>"
+                                                   placeholder="Sınav Mevcudu" value="<?= (int)$classroom->exam_size ?>"
                                                    required>
                                         </div>
                                     </div>

@@ -18,7 +18,7 @@ use App\Core\Gate;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -50,15 +50,15 @@ use App\Core\Gate;
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-4">Derslik Adı</dt>
-                                <dd class="col-sm-8"><?= htmlspecialchars($classroom->name, ENT_QUOTES, 'UTF-8') ?></dd>
+                                <dd class="col-sm-8"><?= e($classroom->name) ?></dd>
                                 <dt class="col-sm-4">Bina</dt>
-                                <dd class="col-sm-8"><?= $classroom->building?->name ?? 'Belirtilmemiş' ?></dd>
+                                <dd class="col-sm-8"><?= e($classroom->building?->name ?? 'Belirtilmemiş') ?></dd>
                                 <dt class="col-sm-4">Ders Mevcudu</dt>
-                                <dd class="col-sm-8"><?= $classroom->class_size ?></dd>
+                                <dd class="col-sm-8"><?= (int)$classroom->class_size ?></dd>
                                 <dt class="col-sm-4">Sınav Mevcudu</dt>
-                                <dd class="col-sm-8"><?= $classroom->exam_size ?></dd>
+                                <dd class="col-sm-8"><?= (int)$classroom->exam_size ?></dd>
                                 <dt class="col-sm-4">Türü</dt>
-                                <dd class="col-sm-8"><?= $classroom->getTypeName() ?></dd>
+                                <dd class="col-sm-8"><?= e($classroom->getTypeName()) ?></dd>
                             </dl>
                         </div>
                         <div class="card-footer">

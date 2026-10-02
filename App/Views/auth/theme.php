@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="tr" data-bs-theme="<?php echo $_COOKIE['theme'] ?? 'light'; ?>">
+<?php
+$themeMode = (isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark') ? 'dark' : 'light';
+?>
+<html lang="tr" data-bs-theme="<?= $themeMode ?>">
 <?php
 include "theme/head.php";
 include $filePath;

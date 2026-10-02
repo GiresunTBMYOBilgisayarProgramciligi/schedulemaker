@@ -2,6 +2,7 @@
 use App\Core\View;
 use App\Enums\OwnerType;
 use App\Helpers\ScheduleViewHelper;
+use function App\Helpers\e;
 use function App\Helpers\getClassFromSemesterNo;
 
 /**
@@ -43,7 +44,7 @@ if (!$isOnlyTable) {
             $parent = $slotData->lesson->parentLesson;
             $popoverTitle = "Birleştirilmiş Ders";
             $popoverContent = "Bu ders " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlı olduğu için düzenlenemez.";
-            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . e($popoverTitle) . '" data-bs-content="' . e($popoverContent) . '" data-bs-trigger="hover"';
         }
     } elseif ($type === 'exam') {
         $isChild = !empty($slotData->lesson->examParentLesson);
@@ -51,7 +52,7 @@ if (!$isOnlyTable) {
             $parent = $slotData->lesson->examParentLesson;
             $popoverTitle = "Sınav Birleştirmesi";
             $popoverContent = "Bu dersin sınavı, " . $parent->getFullName(addCode: true, addProgram: true) . " dersine bağlıdır.";
-            $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+            $popoverAttr = 'data-bs-toggle="popover" title="' . e($popoverTitle) . '" data-bs-content="' . e($popoverContent) . '" data-bs-trigger="hover"';
         }
     }
 
@@ -60,7 +61,7 @@ if (!$isOnlyTable) {
         $popoverContent = isset($popoverContent) 
             ? "Bu öğe kilitlidir ve düzenlenemez. Ayrıca: " . $popoverContent 
             : "Bu öğe kilitlenmiştir. Kilidi açılana kadar düzenlenemez.";
-        $popoverAttr = 'data-bs-toggle="popover" title="' . htmlspecialchars($popoverTitle) . '" data-bs-content="' . htmlspecialchars($popoverContent) . '" data-bs-trigger="hover"';
+        $popoverAttr = 'data-bs-toggle="popover" title="' . e($popoverTitle) . '" data-bs-content="' . e($popoverContent) . '" data-bs-trigger="hover"';
     }
 }
 
@@ -92,17 +93,17 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                 <input type="checkbox" class="lesson-bulk-checkbox mt-0" title="Toplu işlem için seç">
             <?php endif; ?>
 
-            <span class="lesson-name" title="<?= htmlspecialchars($fullLessonTitle) ?>">
+            <span class="lesson-name" title="<?= e($fullLessonTitle) ?>">
                 <?php if (!$isOnlyTable && $isLocked): ?>
                     <i class="fa fa-lock me-1 text-danger" title="Kilitli"></i>
                 <?php endif; ?>
-                <?= htmlspecialchars($lessonDisplayName) ?>
+                <?= e($lessonDisplayName) ?>
             </span>
         </div>
 
         <?php if ($groupLetter !== null): ?>
-            <span class="badge lesson-group-badge lesson-group-badge-<?= strtolower($groupLetter) ?> flex-shrink-0" title="Grup <?= $groupLetter ?>">
-                Grup <?= $groupLetter ?>
+            <span class="badge lesson-group-badge lesson-group-badge-<?= e(strtolower($groupLetter)) ?> flex-shrink-0" title="Grup <?= e($groupLetter) ?>">
+                Grup <?= e($groupLetter) ?>
             </span>
         <?php endif; ?>
     </div>
@@ -124,14 +125,14 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                     <div class="lesson-observer-item small d-flex align-items-center justify-content-between w-100 gap-1">
                         <div class="d-flex flex-column flex-grow-1 min-w-0">
                             <?php foreach ($observerNamesList as $obsName): ?>
-                                <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= htmlspecialchars($obsName) ?>">
-                                    <i class="bi bi-person-badge me-1 opacity-75"></i><?= htmlspecialchars($obsName) ?>
+                                <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= e($obsName) ?>">
+                                    <i class="bi bi-person-badge me-1 opacity-75"></i><?= e($obsName) ?>
                                 </span>
                             <?php endforeach; ?>
                         </div>
                         <?php if (!empty($assignment['classroom_name'])): ?>
-                            <span class="lesson-classroom lesson-classroom-badge ms-1 align-self-center flex-shrink-0" title="Sınav Salonu: <?= htmlspecialchars($assignment['classroom_name']) ?>">
-                                <?= htmlspecialchars($assignment['classroom_name']) ?>
+                            <span class="lesson-classroom lesson-classroom-badge ms-1 align-self-center flex-shrink-0" title="Sınav Salonu: <?= e($assignment['classroom_name']) ?>">
+                                <?= e($assignment['classroom_name']) ?>
                             </span>
                         <?php endif; ?>
                     </div>
@@ -140,30 +141,30 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
         <?php else: ?>
             <?php if ($isClassroomSchedule): ?>
                 <div class="d-flex flex-column w-100 gap-1 lesson-meta-classroom">
-                    <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
-                        <i class="bi bi-person me-1 opacity-75"></i><?= ($slotData->lecturer ?? null)?->getFullName() ?>
+                    <span class="lesson-lecturer text-truncate" title="<?= e(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
+                        <i class="bi bi-person me-1 opacity-75"></i><?= e(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>
                     </span>
                     <?php if (!empty($programInfo)): ?>
-                        <span class="lesson-program text-truncate" title="Program: <?= htmlspecialchars($programInfo) ?>">
-                            <i class="bi bi-mortarboard me-1 opacity-75"></i><?= htmlspecialchars($programInfo) ?>
+                        <span class="lesson-program text-truncate" title="Program: <?= e($programInfo) ?>">
+                            <i class="bi bi-mortarboard me-1 opacity-75"></i><?= e($programInfo) ?>
                         </span>
                     <?php endif; ?>
                 </div>
             <?php else: ?>
                 <div class="d-flex align-items-center justify-content-between w-100 lesson-meta-row">
                     <?php if ($isUserSchedule && !empty($programInfo)): ?>
-                        <span class="lesson-program text-truncate" title="Program: <?= htmlspecialchars($programInfo) ?>">
-                            <i class="bi bi-mortarboard me-1 opacity-75"></i><?= htmlspecialchars($programInfo) ?>
+                        <span class="lesson-program text-truncate" title="Program: <?= e($programInfo) ?>">
+                            <i class="bi bi-mortarboard me-1 opacity-75"></i><?= e($programInfo) ?>
                         </span>
                     <?php else: ?>
-                        <span class="lesson-lecturer text-truncate" title="<?= htmlspecialchars(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
-                            <i class="bi bi-person me-1 opacity-75"></i><?= ($slotData->lecturer ?? null)?->getFullName() ?>
+                        <span class="lesson-lecturer text-truncate" title="<?= e(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>">
+                            <i class="bi bi-person me-1 opacity-75"></i><?= e(($slotData->lecturer ?? null)?->getFullName() ?? '') ?>
                         </span>
                     <?php endif; ?>
 
                     <?php if (!empty(($slotData->classroom ?? null)?->name)): ?>
-                        <span class="lesson-classroom lesson-classroom-badge ms-1 flex-shrink-0" title="Derslik: <?= htmlspecialchars($slotData->classroom->name) ?>">
-                            <?= $slotData->classroom->name ?>
+                        <span class="lesson-classroom lesson-classroom-badge ms-1 flex-shrink-0" title="Derslik: <?= e($slotData->classroom->name) ?>">
+                            <?= e($slotData->classroom->name) ?>
                         </span>
                     <?php else: ?>
                         <span class="lesson-classroom" title="Derslik atanmadı"></span>

@@ -19,7 +19,7 @@ use App\Models\User;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -58,15 +58,15 @@ use App\Models\User;
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-4">Bölüm Adı</dt>
-                                <dd class="col-sm-8"><?= $department->name ?></dd>
+                                <dd class="col-sm-8"><?= e($department->name) ?></dd>
                                 <dt class="col-sm-4">Bölüm Başkanı</dt>
                                 <dd class="col-sm-8">
-                                    <a href="/admin/profile/<?= $department->chairperson?->id ?? '#' ?>">
-                                        <?= $department->chairperson?->getFullName() ?? '' ?>
+                                    <a href="/admin/profile/<?= (int)($department->chairperson?->id ?? 0) ?>">
+                                        <?= e($department->chairperson?->getFullName() ?? '') ?>
                                     </a>
                                 </dd>
                                 <dt class="col-sm-4">Üst Birim</dt>
-                                <dd class="col-sm-8"><?= $department->unit?->name ?? 'Belirtilmemiş' ?></dd>
+                                <dd class="col-sm-8"><?= e($department->unit?->name ?? 'Belirtilmemiş') ?></dd>
                                 <dt class="col-sm-4">Program Sayısı</dt>
                                 <dd class="col-sm-8"><?= count($department->programs ?? []) ?></dd>
                                 <dt class="col-sm-4">Akademisyen Sayısı</dt>
@@ -129,9 +129,9 @@ use App\Models\User;
                                 <tbody>
                                     <?php foreach ($department->programs as $program): ?>
                                         <tr>
-                                            <td><?= $program->id ?></td>
-                                            <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
-                                            <td><?= $program->department?->name ?? '' ?></td>
+                                            <td><?= (int)$program->id ?></td>
+                                            <td><a href="/admin/program/<?= (int)$program->id ?>" class="text-dark" title="Görüntüle"><?= e($program->name) ?></a></td>
+                                            <td><?= e($program->department?->name ?? '') ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $program)): ?>
                                                     <?php if (Gate::check("update", $program)): ?>
@@ -193,9 +193,9 @@ use App\Models\User;
                                 <tbody>
                                     <?php foreach ($department->users as $lecturer): ?>
                                         <tr>
-                                            <td><a href="/admin/profile/<?= $lecturer->id ?>" class="text-dark" title="Görüntüle"><?= $lecturer->getFullName() ?></a></td>
-                                            <td><?= $lecturer->mail ?></td>
-                                            <td><?= $lecturer->program?->name ?? '' ?></td>
+                                            <td><a href="/admin/profile/<?= (int)$lecturer->id ?>" class="text-dark" title="Görüntüle"><?= e($lecturer->getFullName()) ?></a></td>
+                                            <td><?= e($lecturer->mail) ?></td>
+                                            <td><?= e($lecturer->program?->name ?? '') ?></td>
                                             <?php if (Gate::allowsRole("department_head")): ?>
                                                 <td class="text-center">
                                                     <?php if (Gate::check("update", $lecturer)): ?>
@@ -255,19 +255,19 @@ use App\Models\User;
                                 <tbody>
                                     <?php foreach ($department->lessons as $lesson): ?>
                                         <tr>
-                                            <td><?= $lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '') ?></td>
+                                            <td><?= e($lesson->code . ($lesson->group_no > 0 ? '.' . $lesson->group_no : '')) ?></td>
                                             <td
-                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.$lesson->parentLesson->getFullName(addCode: true, addProgram: true).' Dersine bağlı"' : '' ?>
+                                                <?= $lesson->parentLesson ? 'data-bs-toggle="popover" data-bs-trigger="hover" title="Bağlı Ders" data-bs-content="'.e($lesson->parentLesson->getFullName(addCode: true, addProgram: true)).' Dersine bağlı"' : '' ?>
                                             >
-                                                <a href="/admin/lesson/<?= $lesson->id ?>" class="text-dark" title="Görüntüle">
-                                                    <?= $lesson->parentLesson ? $lesson->name . "*" : $lesson->name ?>
+                                                <a href="/admin/lesson/<?= (int)$lesson->id ?>" class="text-dark" title="Görüntüle">
+                                                    <?= e($lesson->parentLesson ? $lesson->name . "*" : $lesson->name) ?>
                                                 </a>
                                             </td>
-                                            <td><?= $lesson->getTypeName() ?></td>
-                                            <td><?= $lesson->hours ?></td>
-                                            <td><?= $lesson->semester_no ?></td>
-                                            <td><?= $lesson->lecturer?->getFullName() ?? '' ?></td>
-                                            <td><?= $lesson->program?->name ?? '' ?></td>
+                                            <td><?= e($lesson->getTypeName()) ?></td>
+                                            <td><?= (int)$lesson->hours ?></td>
+                                            <td><?= (int)$lesson->semester_no ?></td>
+                                            <td><?= e($lesson->lecturer?->getFullName() ?? '') ?></td>
+                                            <td><?= e($lesson->program?->name ?? '') ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("view", $lesson)): ?>
                                                     <?php if (Gate::check("update", $lesson)): ?>

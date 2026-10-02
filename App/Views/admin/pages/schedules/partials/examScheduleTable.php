@@ -3,6 +3,7 @@ use App\Models\Schedule;
 use App\Core\View;
 use App\Helpers\ScheduleViewHelper;
 use App\Enums\ScheduleItemStatus;
+use function App\Helpers\e;
 
 /**
  * @var array $weekRows
@@ -22,8 +23,8 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
         $totalRows = count($scheduleRows);
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>" role="grid"
-            aria-label="Sınav Programı - Hafta <?= $weekIndex + 1 ?>">
+        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= (int)$weekIndex ?>" role="grid"
+            aria-label="Sınav Programı - Hafta <?= (int)$weekIndex + 1 ?>">
             <thead>
                 <tr>
                     <th class="time-slot">Saat</th>
@@ -61,11 +62,11 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                 }
 
                                 $dropZone = ($scheduleItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
-                                <td class="<?= $dropZone ?>" rowspan="<?= $rowSpan ?>"
+                                <td class="<?= $dropZone ?>" rowspan="<?= (int)$rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
                                     data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>"
-                                    data-schedule-item-id="<?= $scheduleItem->id ?>">
+                                    data-schedule-item-id="<?= (int)$scheduleItem->id ?>">
 
                                     <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
                                         <div class="lesson-group-container h-100">

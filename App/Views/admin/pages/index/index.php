@@ -1,15 +1,19 @@
 <?php
 /**
- * @var \App\Models\User $currentUser    Oturum açmış kullanıcı
- * @var string           $dashboardRole  'admin'|'secretary'|'dept_head'|'lecturer'|'user'
- * @var array            $stats          İstatistik verileri (role göre farklı anahtarlar)
- * @var array            $recentLogs     Son sistem logları (sadece admin grubu)
- * @var array            $programs       Aktif programlar (sadece admin grubu)
- * @var array            $units          Birimler (sadece admin grubu)
- * @var \App\Models\Department $department  Bölüm detayı (sadece dept_head)
- * @var string           $scheduleHTML   Ders programı HTML (dept_head / lecturer)
- * @var array            $myLessons      Kullanıcının dersleri (sadece lecturer)
+ * @var User       $currentUser    Oturum açmış kullanıcı
+ * @var string     $dashboardRole  'admin'|'secretary'|'dept_head'|'lecturer'|'user'
+ * @var array      $stats          İstatistik verileri (role göre farklı anahtarlar)
+ * @var array      $recentLogs     Son sistem logları (sadece admin grubu)
+ * @var array      $programs       Aktif programlar (sadece admin grubu)
+ * @var array      $units          Birimler (sadece admin grubu)
+ * @var Department $department     Bölüm detayı (sadece dept_head)
+ * @var string     $scheduleHTML   Ders programı HTML (dept_head / lecturer)
+ * @var array      $myLessons      Kullanıcının dersleri (sadece lecturer)
  */
+
+use App\Models\Department;
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 <!--begin::App Main-->
 <main class="app-main">
@@ -23,19 +27,19 @@
                     <div class="d-flex align-items-center gap-3">
                         <!-- Kullanıcı Avatarı -->
                         <img
-                            src="<?= $currentUser->getGravatarURL(64) ?>"
-                            alt="<?= htmlspecialchars($currentUser->getFullName()) ?>"
+                            src="<?= e($currentUser->getGravatarURL(64)) ?>"
+                            alt="<?= e($currentUser->getFullName()) ?>"
                             class="rounded-circle shadow-sm border border-2 border-white"
                             width="52" height="52"
                         >
                         <div>
                             <h3 class="mb-0 fw-semibold">
-                                Merhaba, <?= htmlspecialchars($currentUser->getFullName()) ?> 👋
+                                Merhaba, <?= e($currentUser->getFullName()) ?> 👋
                             </h3>
                             <p class="text-muted mb-0 small">
-                                <span class="badge bg-primary me-1"><?= htmlspecialchars($currentUser->getRoleName()) ?></span>
+                                <span class="badge bg-primary me-1"><?= e($currentUser->getRoleName()) ?></span>
                                 <?php if (!empty($currentUser->unit?->name)): ?>
-                                    <span class="me-1 text-muted"><?= htmlspecialchars($currentUser->unit->name) ?></span>
+                                    <span class="me-1 text-muted"><?= e($currentUser->unit->name) ?></span>
                                 <?php endif; ?>
                                 <i class="bi bi-calendar3 me-1"></i>
                                 <?= (new DateTime())->format('d.m.Y') ?>

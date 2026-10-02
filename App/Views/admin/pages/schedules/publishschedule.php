@@ -8,6 +8,7 @@
 
 use App\Core\View;
 use App\Enums\ExamType;
+use function App\Helpers\e;
 use function App\Helpers\getSettingValue;
 
 $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
@@ -22,7 +23,7 @@ $isTestMode = ($mailDriver !== 'smtp');
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6 d-flex align-items-center">
-                    <h3 class="mb-0 me-3"><?= $page_title ?></h3>
+                    <h3 class="mb-0 me-3"><?= e($page_title) ?></h3>
                     <?php if ($isTestMode): ?>
                         <a href="/mail_log.html" target="_blank" class="btn btn-outline-info btn-sm shadow-sm" title="Gönderilen test maillerini görüntüle">
                             <i class="bi bi-envelope-paper"></i> Test Mail Logları
@@ -64,9 +65,9 @@ $isTestMode = ($mailDriver !== 'smtp');
                                     <span class="input-group-text"> - </span>
                                     <select class="form-select" id="academic_year" name="academic_year">
                                         <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                            <option value="<?= $year . ' - ' . $year + 1 ?>"
-                                                <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                <?= $year . ' - ' . $year + 1 ?>
+                                            <option value="<?= e($year . ' - ' . ($year + 1)) ?>"
+                                                <?= getSettingValue("academic_year") == $year . ' - ' . ($year + 1) ? 'selected' : '' ?>>
+                                                <?= e($year . ' - ' . ($year + 1)) ?>
                                             </option>
                                         <?php endfor; ?>
                                     </select>
@@ -158,7 +159,7 @@ $isTestMode = ($mailDriver !== 'smtp');
                                                     <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <div class="form-text">
@@ -200,7 +201,7 @@ $isTestMode = ($mailDriver !== 'smtp');
                                                     <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <div class="form-text">

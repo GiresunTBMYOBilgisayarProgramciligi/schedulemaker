@@ -19,7 +19,7 @@ use function App\Helpers\getSettingValue;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -45,12 +45,12 @@ use function App\Helpers\getSettingValue;
                         <div class="card-body box-profile">
                             <div class="text-center">
                                 <img class="img-fluid rounded-circle border border-3 p-1 mx-auto d-block" style="width: 100px;"
-                                     src="<?= $user->getGravatarURL(150) ?>" alt="User profile picture">
+                                     src="<?= e($user->getGravatarURL(150)) ?>" alt="User profile picture">
                             </div>
 
-                            <h3 class="profile-username text-center"><?= $user->getFullName() ?></h3>
+                            <h3 class="profile-username text-center"><?= e($user->getFullName()) ?></h3>
 
-                            <p class="text-muted text-center"><?= $user->title ?></p>
+                            <p class="text-muted text-center"><?= e($user->title) ?></p>
 
                             <ul class="list-group list-group-flush mb-3">
                                 <li class="list-group-item d-flex justify-content-between align-items-start">

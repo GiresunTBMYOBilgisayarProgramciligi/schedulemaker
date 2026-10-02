@@ -13,7 +13,7 @@ use function App\Helpers\renderLecturerSelectOptions;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -46,8 +46,8 @@ use function App\Helpers\renderLecturerSelectOptions;
                                             <select class="form-select" id="type" name="type" required>
                                                 <option value="">Seçiniz...</option>
                                                 <?php foreach ($unitTypes as $t): ?>
-                                                    <option value="<?= $t['value'] ?>" <?= $unit->type === $t['value'] ? 'selected' : '' ?>>
-                                                        <?= $t['label'] ?>
+                                                    <option value="<?= e($t['value']) ?>" <?= $unit->type === $t['value'] ? 'selected' : '' ?>>
+                                                        <?= e($t['label']) ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>

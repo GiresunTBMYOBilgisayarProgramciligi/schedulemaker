@@ -20,7 +20,7 @@ use App\Enums\UserTitle;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -128,7 +128,7 @@ use App\Enums\UserTitle;
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="department_id">Bölüm</label>
-                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= $user->department_id ?? '' ?>">
+                                            <select class="form-select tom-select" id="department_id" name="department_id" data-selected="<?= (int)($user->department_id ?? 0) ?>">
                                                 <option value="0">İlk olarak Birim Seçiniz</option>
                                             </select>
                                         </div>
@@ -136,7 +136,7 @@ use App\Enums\UserTitle;
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label" for="program_id">Program</label>
-                                            <select class="form-select" id="program_id" name="program_id" data-selected="<?= $user->program_id ?? '' ?>">
+                                            <select class="form-select" id="program_id" name="program_id" data-selected="<?= (int)($user->program_id ?? 0) ?>">
                                                 <option value="0">İlk olarak Bölüm Seçiniz</option>
                                             </select>
                                         </div>

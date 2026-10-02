@@ -16,7 +16,7 @@ use App\Models\Classroom;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -85,14 +85,14 @@ use App\Models\Classroom;
                                     <?php foreach ($classrooms as $classroom): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $classroom->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$classroom->id ?>">
                                             </td>
-                                            <td><?= $classroom->id ?></td>
-                                            <td><a href="/admin/classroom/<?= $classroom->id ?>" class="text-dark" title="Görüntüle"><?= $classroom->name ?></a></td>
-                                            <td><?= $classroom->getTypeName() ?></td>
-                                            <td><?= $classroom->building->name ?? '-' ?></td>
-                                            <td><?= $classroom->class_size ?></td>
-                                            <td><?= $classroom->exam_size ?></td>
+                                            <td><?= (int)$classroom->id ?></td>
+                                            <td><a href="/admin/classroom/<?= (int)$classroom->id ?>" class="text-dark" title="Görüntüle"><?= e($classroom->name) ?></a></td>
+                                            <td><?= e($classroom->getTypeName()) ?></td>
+                                            <td><?= e($classroom->building->name ?? '-') ?></td>
+                                            <td><?= (int)$classroom->class_size ?></td>
+                                            <td><?= (int)$classroom->exam_size ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $classroom)): ?>
                                                 <a href="/admin/editclassroom/<?= $classroom->id ?>" class="btn btn-sm btn-outline-warning" title="Düzenle">

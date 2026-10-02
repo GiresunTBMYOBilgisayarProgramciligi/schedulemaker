@@ -17,7 +17,7 @@ use App\Models\User;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -91,17 +91,17 @@ use App\Models\User;
                                         <?php foreach ($users as $user): ?>
                                             <tr>
                                                 <td class="text-center no-export">
-                                                    <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $user->id ?>">
+                                                    <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$user->id ?>">
                                                 </td>
                                                 <!--<td><?php /*= $user->id */ ?></td>-->
-                                                <td><?= $user->title ?></td>
-                                                <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->name ?></a></td>
-                                                <td><a href="/admin/profile/<?= $user->id ?>" class="text-dark" title="Görüntüle"><?= $user->last_name ?></a></td>
-                                                <td><?= $user->mail ?></td>
-                                                <td><?= $user->unit->name ?? '' ?></td>
-                                                <td><?= $user->department->name ?? '' ?></td>
-                                                <td><?= $user->program->name ?? '' ?></td>
-                                                <td><?= $user->getRoleName() ?></td>
+                                                <td><?= e($user->title) ?></td>
+                                                <td><a href="/admin/profile/<?= (int)$user->id ?>" class="text-dark" title="Görüntüle"><?= e($user->name) ?></a></td>
+                                                <td><a href="/admin/profile/<?= (int)$user->id ?>" class="text-dark" title="Görüntüle"><?= e($user->last_name) ?></a></td>
+                                                <td><?= e($user->mail) ?></td>
+                                                <td><?= e($user->unit->name ?? '') ?></td>
+                                                <td><?= e($user->department->name ?? '') ?></td>
+                                                <td><?= e($user->program->name ?? '') ?></td>
+                                                <td><?= e($user->getRoleName()) ?></td>
                                                 <!--<td><?php /*= $user->getRegisterDate() */ ?></td>-->
                                                 <td class="text-center">
                                                     <?php if (Gate::check("update", $user)): ?>

@@ -8,6 +8,7 @@
 
 use App\Core\View;
 use App\Enums\ExamType;
+use function App\Helpers\e;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -20,7 +21,7 @@ use function App\Helpers\getSettingValue;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -61,10 +62,11 @@ use function App\Helpers\getSettingValue;
                             <div class="flex-fill">
                                 <div class="input-group">
                                     <select class="form-select" id="academic_year" name="academic_year">
-                                        <?php for ($year = 2023; $year <= date('Y'); $year++): ?>
-                                            <option value="<?= $year . ' - ' . $year + 1 ?>"
-                                                <?= getSettingValue("academic_year") == $year . ' - ' . $year + 1 ? 'selected' : '' ?>>
-                                                <?= $year . ' - ' . $year + 1 ?>
+                                        <?php for ($year = 2023; $year <= (int)date('Y'); $year++): ?>
+                                            <?php $academicYearVal = $year . ' - ' . ($year + 1); ?>
+                                            <option value="<?= e($academicYearVal) ?>"
+                                                <?= getSettingValue("academic_year") == $academicYearVal ? 'selected' : '' ?>>
+                                                <?= e($academicYearVal) ?>
                                             </option>
                                         <?php endfor; ?>
                                     </select>
@@ -158,13 +160,13 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>" <?= (!empty($selected_lecturer_unit_id) && (string)$selected_lecturer_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>" <?= (!empty($selected_lecturer_unit_id) && (string)$selected_lecturer_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
                                                 <div class="col-12 col-md-6">
                                                     <div class="input-group">
-                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz" data-selected="<?= htmlspecialchars((string)($selected_lecturer_id ?? '')) ?>">
+                                                        <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz" data-selected="<?= e((string)($selected_lecturer_id ?? '')) ?>">
                                                             <option value="0">İlk olarak Birim Seçiniz</option>
                                                         </select>
                                                         <button class="btn btn-primary" type="button"
@@ -189,7 +191,7 @@ use function App\Helpers\getSettingValue;
                                                     <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id">
                                                         <option value="">Birim Seçiniz</option>
                                                         <?php foreach ($units as $unit): ?>
-                                                            <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                                            <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 </div>
@@ -222,17 +224,17 @@ use function App\Helpers\getSettingValue;
                                 <select id="classroom_options_template">
                                     <option value="">Derslik Seçiniz</option>
                                     <?php foreach ($classrooms as $classroom): ?>
-                                        <option value="<?= $classroom->id ?>"
-                                            data-exam-size="<?= htmlspecialchars($classroom->exam_size ?? '', ENT_QUOTES) ?>">
-                                            <?= $classroom->name ?>
-                                            (<?= htmlspecialchars($classroom->exam_size ?? '', ENT_QUOTES) ?>)
+                                        <option value="<?= (int)$classroom->id ?>"
+                                            data-exam-size="<?= e((string)($classroom->exam_size ?? '')) ?>">
+                                            <?= e($classroom->name) ?>
+                                            (<?= e((string)($classroom->exam_size ?? '')) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                                 <select id="lecturer_options_template">
                                     <option value="">Gözetmen Seçiniz</option>
                                     <?php foreach ($lecturers as $lecturer): ?>
-                                        <option value="<?= $lecturer->id ?>"><?= $lecturer->getFullName() ?></option>
+                                        <option value="<?= (int)$lecturer->id ?>"><?= e($lecturer->getFullName()) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

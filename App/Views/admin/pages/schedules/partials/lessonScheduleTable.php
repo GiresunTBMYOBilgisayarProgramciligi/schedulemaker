@@ -3,6 +3,7 @@ use App\Models\Schedule;
 use App\Core\View;
 use App\Helpers\ScheduleViewHelper;
 use App\Enums\ScheduleItemStatus;
+use function App\Helpers\e;
 
 /**
  * @var array $weekRows
@@ -18,7 +19,7 @@ use App\Enums\ScheduleItemStatus;
         $dayHeaders = $weekHeaders[$weekIndex] ?? [];
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= $weekIndex ?>" role="grid"
+        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= (int)$weekIndex ?>" role="grid"
             aria-label="Ders Programı">
             <thead>
                 <tr>
@@ -59,7 +60,7 @@ use App\Enums\ScheduleItemStatus;
                                     $dropZone = ($firstItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                     <td class="<?= $dropZone ?>" data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                         data-end-time="<?= $scheduleRow['slotEndTime']->format('H:i') ?>"
-                                        data-schedule-item-id="<?= $firstItem->id ?>"
+                                        data-schedule-item-id="<?= (int)$firstItem->id ?>"
                                         data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>">
                                         <?php if ($hasGroup): ?>
                                             <div class="lesson-group-container">

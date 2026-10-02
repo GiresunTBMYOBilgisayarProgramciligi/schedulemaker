@@ -12,6 +12,7 @@
 
 use App\Core\View;
 use App\Enums\ExamType;
+use function App\Helpers\e;
 use function App\Helpers\getSettingValue;
 
 $currentAcademicYear = getSettingValue("academic_year") ?? (date('Y') . ' - ' . (date('Y') + 1));
@@ -29,7 +30,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                     <i class="bi bi-shield-check text-success"></i>
                     <span class="small fw-semibold text-muted">Resmi Üniversite Portalı</span>
                     <span class="vr mx-1"></span>
-                    <span class="small fw-bold text-primary"><?= htmlspecialchars($currentAcademicYear) ?> <?= htmlspecialchars($currentSemester) ?></span>
+                    <span class="small fw-bold text-primary"><?= e($currentAcademicYear) ?> <?= e($currentSemester) ?></span>
                 </div>
                 <h1 class="display-6 fw-bold tracking-tight text-body mb-3">
                     Haftalık Ders ve Sınav Programı Portalı
@@ -108,9 +109,10 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                         <span class="input-group-text bg-body-secondary text-muted"><i class="bi bi-calendar-range"></i></span>
                         <select class="form-select" id="academic_year" name="academic_year" aria-label="Akademik Yıl">
                             <?php for ($year = 2023; $year <= (int)date('Y'); $year++): ?>
-                                <option value="<?= $year . ' - ' . ($year + 1) ?>"
-                                    <?= $currentAcademicYear == ($year . ' - ' . ($year + 1)) ? 'selected' : '' ?>>
-                                    <?= $year . ' - ' . ($year + 1) ?>
+                                <?php $academicYearVal = $year . ' - ' . ($year + 1); ?>
+                                <option value="<?= e($academicYearVal) ?>"
+                                    <?= $currentAcademicYear == $academicYearVal ? 'selected' : '' ?>>
+                                    <?= e($academicYearVal) ?>
                                 </option>
                             <?php endfor; ?>
                         </select>
@@ -198,7 +200,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                 <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id" data-action="public">
                                     <option value="">Birim Seçiniz</option>
                                     <?php foreach ($units as $unit): ?>
-                                        <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                        <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -231,7 +233,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                 <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id" data-action="public">
                                     <option value="">Birim Seçiniz</option>
                                     <?php foreach ($units as $unit): ?>
-                                        <option value="<?= $unit->id ?>"><?= htmlspecialchars($unit->name) ?></option>
+                                        <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

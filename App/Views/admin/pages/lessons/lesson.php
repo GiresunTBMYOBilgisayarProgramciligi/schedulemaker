@@ -20,7 +20,7 @@ use App\Core\Gate;
             <!--begin::Row-->
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0"><?= $page_title ?></h3>
+                    <h3 class="mb-0"><?= e($page_title) ?></h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -56,33 +56,33 @@ use App\Core\Gate;
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-2">Ders Kodu - Grup No</dt>
-                                <dd class="col-sm-4"><?= $lesson->code ?> - <?= $lesson->group_no ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->code) ?> - <?= (int)$lesson->group_no ?></dd>
                                 <dt class="col-sm-2">Ders Adı</dt>
-                                <dd class="col-sm-4"><?= $lesson->name ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->name) ?></dd>
                                 <dt class="col-sm-2">Ders Türü</dt>
-                                <dd class="col-sm-4"><?= $lesson->getTypeName() ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->getTypeName()) ?></dd>
                                 <dt class="col-sm-2">Saat</dt>
-                                <dd class="col-sm-4"><?= $lesson->hours ?></dd>
+                                <dd class="col-sm-4"><?= (int)$lesson->hours ?></dd>
                                 <dt class="col-sm-2">Yarıyılı</dt>
-                                <dd class="col-sm-4"><?= $lesson->semester_no . ". Yarıyıl" ?></dd>
+                                <dd class="col-sm-4"><?= (int)$lesson->semester_no . ". Yarıyıl" ?></dd>
                                 <dt class="col-sm-2">Bölüm</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/department/<?= $lesson->department_id ?>">
-                                        <?= $lesson->department->name ?>
+                                    <a href="/admin/department/<?= (int)$lesson->department_id ?>">
+                                        <?= e($lesson->department->name ?? '') ?>
                                     </a>
                                 </dd>
                                 <dt class="col-sm-2">Program</dt>
                                 <dd class="col-sm-4">
-                                    <a href="/admin/program/<?= $lesson->program_id ?>">
-                                        <?= $lesson->program->name ?>
+                                    <a href="/admin/program/<?= (int)$lesson->program_id ?>">
+                                        <?= e($lesson->program->name ?? '') ?>
                                     </a>
                                 </dd>
                                 <dt class="col-sm-2">Bina</dt>
-                                <dd class="col-sm-4"><?= $lesson->building?->name ?? 'Belirtilmemiş' ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->building?->name ?? 'Belirtilmemiş') ?></dd>
                                 <dt class="col-sm-2">Derslik Türü</dt>
-                                <dd class="col-sm-4"><?= $lesson->getClassroomTypeName() ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->getClassroomTypeName()) ?></dd>
                                 <dt class="col-sm-2">Dersin Hocası (Aktif)</dt>
-                                <dd class="col-sm-4"><?= $lesson->lecturer?->getFullName() ?? 'Atanmamış' ?></dd>
+                                <dd class="col-sm-4"><?= e($lesson->lecturer?->getFullName() ?? 'Atanmamış') ?></dd>
                                 <dt class="col-sm-2">Dönemlik Görevlendirmeler</dt>
                                 <dd class="col-sm-4">
                                     <?php if (!empty($lesson->assignments)): ?>

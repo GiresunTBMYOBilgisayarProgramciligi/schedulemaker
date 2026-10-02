@@ -1,10 +1,12 @@
 <?php
 /**
  * @var array $logs
- * @var \App\Core\AssetManager $assetManager
+ * @var AssetManager $assetManager
  */
 
+use App\Core\AssetManager;
 use App\Helpers\LogViewHelper;
+use function App\Helpers\e;
 ?>
 <main class="app-main">
     <div class="app-content-header">

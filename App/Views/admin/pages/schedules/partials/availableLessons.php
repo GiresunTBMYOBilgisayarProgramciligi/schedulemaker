@@ -3,6 +3,7 @@ use App\Enums\ClassroomType;
 use App\Enums\ExamType;
 use App\Core\View;
 use App\Models\Schedule;
+use function App\Helpers\e;
 
 /**
  * Programa atanmamış (available) derslerin listesi.
@@ -32,7 +33,7 @@ foreach ($availableLessons as $lesson) {
 // classroom_type key'lerine göre sırala (1, 2, 3, 4)
 ksort($groupedLessons);
 
-$accordionId = 'availableLessonsAccordion-' . $schedule->id;
+$accordionId = 'availableLessonsAccordion-' . (int)$schedule->id;
 ?>
 <div class="available-schedule-items drop-zone small" data-bs-toggle="tooltip" title="Silmek için buraya sürükleyin"
     data-bs-placement="left" data-bs-trigger="none" data-overlayscrollbars-initialize data-overlayscrollbars-overflow-x="hidden">
@@ -66,24 +67,24 @@ $accordionId = 'availableLessonsAccordion-' . $schedule->id;
     <?php endif; ?>
 
     <?php // Derslik türüne göre gruplandırılmış dersler ?>
-    <div class="accordion accordion-flush" id="<?= $accordionId ?>">
+    <div class="accordion accordion-flush" id="<?= e($accordionId) ?>">
         <?php foreach ($groupedLessons as $typeKey => $lessons): ?>
             <?php
             $typeName = $classroomTypes[$typeKey] ?? 'Diğer';
-            $collapseId = 'collapse-type-' . $typeKey . '-' . $schedule->id;
+            $collapseId = 'collapse-type-' . (int)$typeKey . '-' . (int)$schedule->id;
             $lessonCount = count($lessons);
             ?>
             <div class="accordion-item available-lessons-group">
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed py-1 px-2" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>"
-                        aria-expanded="false" aria-controls="<?= $collapseId ?>">
-                        <span class="badge bg-secondary me-2"><?= $lessonCount ?></span>
-                        <?= htmlspecialchars($typeName) ?>
+                        data-bs-toggle="collapse" data-bs-target="#<?= e($collapseId) ?>"
+                        aria-expanded="false" aria-controls="<?= e($collapseId) ?>">
+                        <span class="badge bg-secondary me-2"><?= (int)$lessonCount ?></span>
+                        <?= e($typeName) ?>
                     </button>
                 </h2>
-                <div id="<?= $collapseId ?>" class="accordion-collapse collapse show"
-                    data-bs-parent="#<?= $accordionId ?>">
+                <div id="<?= e($collapseId) ?>" class="accordion-collapse collapse show"
+                    data-bs-parent="#<?= e($accordionId) ?>">
                     <div class="accordion-body p-1">
                         <div class="row">
                             <?php foreach ($lessons as $lesson): ?>

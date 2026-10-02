@@ -6,6 +6,7 @@
  * @var $line int Hatanın oluştuğu satır (Opsiyonel - Debug modu)
  * @var $trace string Hata izleme yığını (Opsiyonel - Debug modu)
  */
+use function App\Helpers\e;
 
 $errorData = [
     400 => ['color' => 'warning', 'title' => 'Geçersiz İstek.', 'message' => 'İsteğiniz anlaşılamadı veya geçersiz formatta.'],
@@ -25,34 +26,34 @@ $displayMessage = (!empty($message) && strlen(trim($message)) > 0) ? $message : 
 ?>
 <body class="bg-body-tertiary d-flex align-items-center justify-content-center" style="min-height: 100vh; margin: 0; padding: 2rem 0;">
     <div class="text-center px-4 w-100">
-        <h1 class="display-1 fw-bold text-<?= $currentError['color'] ?> mb-3" style="font-size: 6rem;"><?= $code ?></h1>
-        <h2 class="fs-3 mb-3"><?= $currentError['title'] ?></h2>
+        <h1 class="display-1 fw-bold text-<?= e($currentError['color']) ?> mb-3" style="font-size: 6rem;"><?= (int)$code ?></h1>
+        <h2 class="fs-3 mb-3"><?= e($currentError['title']) ?></h2>
         <p class="text-muted mb-4 mx-auto" style="max-width: 600px;">
-            <?php echo htmlspecialchars($displayMessage); ?>
+            <?= e($displayMessage) ?>
             <br>
             Lütfen tekrar deneyin veya sorun devam ederse destek ile iletişime geçin.
         </p>
         <div class="mb-5">
-            <a href="<?= htmlspecialchars($_SERVER['HTTP_REFERER'] ?? '/admin') ?>" class="btn btn-primary me-2"><i class="bi bi-arrow-left me-2"></i> Geri</a>
+            <a href="<?= e($_SERVER['HTTP_REFERER'] ?? '/admin') ?>" class="btn btn-primary me-2"><i class="bi bi-arrow-left me-2"></i> Geri</a>
             <a href="#" class="btn btn-outline-secondary"><i class="bi bi-life-preserver me-2"></i> İletişime geç</a>
         </div>
         
-        <?php if (isset($file) && $_ENV['DEBUG'] === 'true'): ?>
-            <div class="card card-<?= $currentError['color'] ?> card-outline text-start mt-5 mx-auto shadow-sm" style="max-width: 900px;">
+        <?php if (isset($file) && ($_ENV['DEBUG'] ?? 'false') === 'true'): ?>
+            <div class="card card-<?= e($currentError['color']) ?> card-outline text-start mt-5 mx-auto shadow-sm" style="max-width: 900px;">
                 <div class="card-header">
                     <h3 class="card-title"><i class="bi bi-bug me-2"></i>Hata Detayları (Debug)</h3>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-2 text-truncate">Dosya:</dt>
-                        <dd class="col-sm-10 text-break"><?php echo htmlspecialchars($file); ?></dd>
+                        <dd class="col-sm-10 text-break"><?= e($file) ?></dd>
 
                         <dt class="col-sm-2">Satır:</dt>
-                        <dd class="col-sm-10"><?php echo $line; ?></dd>
+                        <dd class="col-sm-10"><?= (int)$line ?></dd>
 
                         <dt class="col-sm-12 mt-3">Yığın İzi (Trace):</dt>
                         <dd class="col-sm-12 mb-0 mt-2">
-                            <pre class="bg-light p-3 border rounded mb-0 text-dark" style="overflow-x: auto; max-height: 500px; font-size: 0.875rem;"><code><?php echo htmlspecialchars($trace); ?></code></pre>
+                            <pre class="bg-light p-3 border rounded mb-0 text-dark" style="overflow-x: auto; max-height: 500px; font-size: 0.875rem;"><code><?= e($trace) ?></code></pre>
                         </dd>
                     </dl>
                 </div>

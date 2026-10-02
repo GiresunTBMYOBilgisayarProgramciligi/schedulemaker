@@ -15,7 +15,7 @@ use App\Models\Program;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -82,11 +82,11 @@ use App\Models\Program;
                                     <?php foreach ($programs as $program): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $program->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$program->id ?>">
                                             </td>
-                                            <td><?= $program->id ?></td>
-                                            <td><a href="/admin/program/<?= $program->id ?>" class="text-dark" title="Görüntüle"><?= $program->name ?></a></td>
-                                            <td><?= $program->department?->name ?></td>
+                                            <td><?= (int)$program->id ?></td>
+                                            <td><a href="/admin/program/<?= (int)$program->id ?>" class="text-dark" title="Görüntüle"><?= e($program->name) ?></a></td>
+                                            <td><?= e($program->department?->name ?? '') ?></td>
                                             <td>
                                                 <div class="form-check form-switch ">
                                                     <input name="active" class="form-check-input" type="checkbox"

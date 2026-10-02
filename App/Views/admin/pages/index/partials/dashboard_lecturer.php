@@ -2,11 +2,15 @@
 /**
  * Dashboard Partial: Akademisyen / Araştırma Görevlisi
  *
- * @var \App\Models\User $currentUser
- * @var array $stats  ['lesson_count', 'weekly_hours']
- * @var string $scheduleHTML
- * @var \App\Models\Lesson[] $myLessons
+ * @var User     $currentUser
+ * @var array    $stats  ['lesson_count', 'weekly_hours']
+ * @var string   $scheduleHTML
+ * @var Lesson[] $myLessons
  */
+
+use App\Models\Lesson;
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!-- Kişisel İstatistik Kartları -->
@@ -18,7 +22,7 @@
             </span>
             <div class="info-box-content">
                 <span class="info-box-text">Üstlenilen Ders</span>
-                <span class="info-box-number"><?= $stats['lesson_count'] ?? 0 ?></span>
+                <span class="info-box-number"><?= (int)($stats['lesson_count'] ?? 0) ?></span>
             </div>
         </div>
     </div>
@@ -29,7 +33,7 @@
             </span>
             <div class="info-box-content">
                 <span class="info-box-text">Haftalık Ders Yükü</span>
-                <span class="info-box-number"><?= $stats['weekly_hours'] ?? 0 ?> <small class="fs-6 text-muted">saat</small></span>
+                <span class="info-box-number"><?= (int)($stats['weekly_hours'] ?? 0) ?> <small class="fs-6 text-muted">saat</small></span>
             </div>
         </div>
     </div>
@@ -44,7 +48,7 @@
                     <?= !empty($currentUser->department?->name) ? 'Bölüm' : 'Program' ?>
                 </span>
                 <span class="info-box-number" style="font-size:0.95rem;">
-                    <?= htmlspecialchars($currentUser->department?->name ?? $currentUser->program?->name ?? '-') ?>
+                    <?= e($currentUser->department?->name ?? $currentUser->program?->name ?? '-') ?>
                 </span>
             </div>
         </div>
@@ -84,15 +88,15 @@
                     <?php foreach ($myLessons as $lesson): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
                         <div>
-                            <div class="fw-semibold small"><?= htmlspecialchars($lesson->name ?? '') ?></div>
+                            <div class="fw-semibold small"><?= e($lesson->name ?? '') ?></div>
                             <div class="text-muted" style="font-size:0.75rem;">
-                                <?= htmlspecialchars($lesson->program?->name ?? '') ?>
+                                <?= e($lesson->program?->name ?? '') ?>
                                 <?php if (!empty($lesson->hours)): ?>
-                                    &bull; <?= $lesson->hours ?> saat/hafta
+                                    &bull; <?= (int)$lesson->hours ?> saat/hafta
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <a href="/admin/lesson/<?= $lesson->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                        <a href="/admin/lesson/<?= (int)$lesson->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                             <i class="bi bi-eye"></i>
                         </a>
                     </li>

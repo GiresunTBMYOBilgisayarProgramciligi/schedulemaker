@@ -1,4 +1,5 @@
 <?php
+use function App\Helpers\e;
 use function App\Helpers\getAppVersion;
 ?>
 <!--begin::Institutional Footer-->
@@ -46,7 +47,7 @@ use function App\Helpers\getAppVersion;
                         <span class="small fw-bold text-body">Öğr. Gör. Samet ATABAŞ</span>
                     </div>
                     <div class="text-muted small" style="font-size: 0.75rem;">
-                        <span>Sürüm</span> <span class="fw-semibold text-secondary">v<?= getAppVersion() ?></span>
+                        <span>Sürüm</span> <span class="fw-semibold text-secondary">v<?= e(getAppVersion()) ?></span>
                     </div>
                 </div>
             </div>

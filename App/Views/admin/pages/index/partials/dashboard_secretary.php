@@ -2,9 +2,12 @@
 /**
  * Dashboard Partial: Sekreter
  *
- * @var \App\Models\User $currentUser
+ * @var User  $currentUser
  * @var array $stats  ['classrooms', 'buildings']
  */
+
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!-- İstatistik Kartları -->
@@ -12,7 +15,7 @@
     <div class="col-12 col-sm-6 col-md-4">
         <div class="small-box text-bg-success mb-0">
             <div class="inner">
-                <h3><?= $stats['classrooms'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['classrooms'] ?? 0) ?></h3>
                 <p>Derslik</p>
             </div>
             <div class="small-box-icon">
@@ -26,7 +29,7 @@
     <div class="col-12 col-sm-6 col-md-4">
         <div class="small-box text-bg-info mb-0">
             <div class="inner">
-                <h3><?= $stats['buildings'] ?? 0 ?></h3>
+                <h3><?= (int)($stats['buildings'] ?? 0) ?></h3>
                 <p>Bina</p>
             </div>
             <div class="small-box-icon">
@@ -45,7 +48,7 @@
             </span>
             <div class="info-box-content">
                 <span class="info-box-text text-muted">Birim</span>
-                <span class="info-box-number fw-semibold"><?= htmlspecialchars($currentUser->unit->name) ?></span>
+                <span class="info-box-number fw-semibold"><?= e($currentUser->unit->name) ?></span>
             </div>
         </div>
     </div>

@@ -15,7 +15,7 @@ use function App\Helpers\renderLecturerSelectOptions;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
@@ -46,7 +46,7 @@ use function App\Helpers\renderLecturerSelectOptions;
                                         <div class="mb-3">
                                             <label class="form-label" for="name">Adı</label>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                   placeholder="Adı" value="<?= $department->name ?>" required>
+                                                   placeholder="Adı" value="<?= e($department->name) ?>" required>
                                         </div>
                                     </div>
                                     <div class="col-md-5">
@@ -71,7 +71,7 @@ use function App\Helpers\renderLecturerSelectOptions;
                                                 </div>
                                             </div>
                                             <select class="form-select tom-select" id="chairperson_id"
-                                                    name="chairperson_id" data-selected="<?= $department->chairperson_id ?? '' ?>">
+                                                    name="chairperson_id" data-selected="<?= (int)($department->chairperson_id ?? 0) ?>">
                                                 <?= renderLecturerSelectOptions($lecturers ?? [], $department->chairperson_id ?? null, false, 'İlk olarak Birim Seçiniz') ?>
                                             </select>
                                         </div>

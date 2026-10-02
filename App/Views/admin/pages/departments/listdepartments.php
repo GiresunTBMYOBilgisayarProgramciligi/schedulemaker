@@ -15,7 +15,7 @@ use App\Models\Department;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -83,12 +83,12 @@ use App\Models\Department;
                                     <?php foreach ($departments as $department): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $department->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$department->id ?>">
                                             </td>
-                                            <td><?= $department->id ?></td>
-                                            <td><a href="/admin/department/<?= $department->id ?>" class="text-dark" title="Görüntüle"><?= $department->name ?></a></td>
-                                            <td><?= $department->chairperson?->getFullName() ?? '' ?></td>
-                                            <td><?= $department->unit?->name ?? '' ?></td>
+                                            <td><?= (int)$department->id ?></td>
+                                            <td><a href="/admin/department/<?= (int)$department->id ?>" class="text-dark" title="Görüntüle"><?= e($department->name) ?></a></td>
+                                            <td><?= e($department->chairperson?->getFullName() ?? '') ?></td>
+                                            <td><?= e($department->unit?->name ?? '') ?></td>
                                             <td>
                                                 <div class="form-check form-switch ">
                                                     <input name="active" class="form-check-input" type="checkbox"

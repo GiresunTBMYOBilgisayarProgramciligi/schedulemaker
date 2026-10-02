@@ -2,6 +2,7 @@
 /**
  * @var \App\Models\User|null $currentUser Oturum açmış kullanıcı
  */
+use function App\Helpers\e;
 use function App\Helpers\getCurrentYearAndSemester;
 use function App\Helpers\getSettingValue;
 
@@ -92,14 +93,14 @@ try {
                 <?php if ($currentUser): ?>
                     <li class="nav-item dropdown user-menu">
                         <a href="#" class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1 px-2 rounded-pill bg-body-secondary" data-bs-toggle="dropdown">
-                            <img src="<?= $currentUser->getGravatarURL(40) ?>" class="rounded-circle shadow-xs" width="28" height="28" alt="Kullanıcı Resmi" />
-                            <span class="fw-semibold text-truncate small" style="max-width: 140px;"><?= htmlspecialchars($currentUser->getFullName()) ?></span>
+                            <img src="<?= e($currentUser->getGravatarURL(40)) ?>" class="rounded-circle shadow-xs" width="28" height="28" alt="Kullanıcı Resmi" />
+                            <span class="fw-semibold text-truncate small" style="max-width: 140px;"><?= e($currentUser->getFullName()) ?></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
                             <li class="px-3 py-2 border-bottom">
-                                <div class="fw-bold"><?= htmlspecialchars($currentUser->getFullName()) ?></div>
-                                <div class="text-muted small"><?= htmlspecialchars($currentUser->email ?? '') ?></div>
-                                <span class="badge text-bg-primary mt-1"><?= htmlspecialchars(strtoupper($currentUser->role ?? 'Yetkili')) ?></span>
+                                <div class="fw-bold"><?= e($currentUser->getFullName()) ?></div>
+                                <div class="text-muted small"><?= e((string)($currentUser->email ?? '')) ?></div>
+                                <span class="badge text-bg-primary mt-1"><?= e(strtoupper((string)($currentUser->role ?? 'Yetkili'))) ?></span>
                             </li>
                             <li>
                                 <a href="/admin" class="dropdown-item d-flex align-items-center gap-2 py-2">

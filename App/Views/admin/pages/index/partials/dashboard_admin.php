@@ -2,16 +2,22 @@
 /**
  * Dashboard Partial: Yönetici Grubu (admin / manager / submanager)
  *
- * @var \App\Models\User $currentUser
- * @var array $stats  ['units', 'academics', 'classrooms', 'lessons', 'departments', 'programs']
- * @var \App\Models\Log[] $recentLogs
- * @var \App\Models\Program[] $programs
- * @var \App\Models\Unit[] $units
- * @var \App\Models\Department[] $departments
+ * @var User         $currentUser
+ * @var array        $stats  ['units', 'academics', 'classrooms', 'lessons', 'departments', 'programs']
+ * @var Log[]        $recentLogs
+ * @var Program[]    $programs
+ * @var Unit[]       $units
+ * @var Department[] $departments
  */
 
-use App\Helpers\LogViewHelper;
 use App\Enums\UserRole;
+use App\Helpers\LogViewHelper;
+use App\Models\Department;
+use App\Models\Log;
+use App\Models\Program;
+use App\Models\Unit;
+use App\Models\User;
+use function App\Helpers\e;
 ?>
 
 <!-- İstatistik Kartları -->
@@ -145,9 +151,9 @@ use App\Enums\UserRole;
                         <tbody>
                             <?php foreach ($units ?? [] as $unit): ?>
                             <tr>
-                                <td class="fw-semibold"><?= htmlspecialchars($unit->name) ?></td>
+                                <td class="fw-semibold"><?= e($unit->name) ?></td>
                                 <td class="text-end">
-                                    <a href="/admin/unit/<?= $unit->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                                    <a href="/admin/unit/<?= (int)$unit->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
@@ -194,19 +200,19 @@ use App\Enums\UserRole;
                         <tbody>
                             <?php foreach ($departments ?? [] as $dept): ?>
                             <tr>
-                                <td class="fw-semibold"><?= htmlspecialchars($dept->name) ?></td>
-                                <td class="text-muted small"><?= htmlspecialchars($dept->unit?->name ?? '-') ?></td>
+                                <td class="fw-semibold"><?= e($dept->name) ?></td>
+                                <td class="text-muted small"><?= e($dept->unit?->name ?? '-') ?></td>
                                 <td class="text-muted small">
                                     <?php if (!empty($dept->chairperson)): ?>
-                                        <a href="/admin/profile/<?= $dept->chairperson->id ?>">
-                                            <?= htmlspecialchars($dept->chairperson->getFullName()) ?>
+                                        <a href="/admin/profile/<?= (int)$dept->chairperson->id ?>">
+                                            <?= e($dept->chairperson->getFullName()) ?>
                                         </a>
                                     <?php else: ?>
                                         <span class="text-muted fst-italic">Atanmamış</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-end">
-                                    <a href="/admin/department/<?= $dept->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                                    <a href="/admin/department/<?= (int)$dept->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
@@ -254,12 +260,12 @@ use App\Enums\UserRole;
                         <tbody>
                             <?php foreach ($programs ?? [] as $program): ?>
                             <tr>
-                                <td class="fw-semibold"><?= htmlspecialchars($program->name) ?></td>
-                                <td class="text-muted small"><?= htmlspecialchars($program->department?->name ?? '-') ?></td>
+                                <td class="fw-semibold"><?= e($program->name) ?></td>
+                                <td class="text-muted small"><?= e($program->department?->name ?? '-') ?></td>
                                 <td class="text-center"><?= count($program->lecturers ?? []) ?></td>
                                 <td class="text-center"><?= count($program->lessons ?? []) ?></td>
                                 <td class="text-end">
-                                    <a href="/admin/program/<?= $program->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
+                                    <a href="/admin/program/<?= (int)$program->id ?>" class="btn btn-xs btn-outline-secondary py-0 px-1">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
@@ -298,19 +304,19 @@ use App\Enums\UserRole;
                             <div class="flex-grow-1 me-2" style="min-width:0;">
                                 <div class="d-flex align-items-center gap-1 mb-1">
                                     <?= LogViewHelper::renderLevelBadge($log) ?>
-                                    <span class="text-muted small text-truncate"><?= htmlspecialchars($log->channel ?? '') ?></span>
+                                    <span class="text-muted small text-truncate"><?= e($log->channel ?? '') ?></span>
                                 </div>
-                                <p class="mb-0 small text-truncate" title="<?= htmlspecialchars($log->message ?? '') ?>">
-                                    <?= htmlspecialchars($log->message ?? '') ?>
+                                <p class="mb-0 small text-truncate" title="<?= e($log->message ?? '') ?>">
+                                    <?= e($log->message ?? '') ?>
                                 </p>
                                 <?php if (!empty($log->username)): ?>
                                     <span class="text-muted" style="font-size:0.7rem;">
-                                        <i class="bi bi-person"></i> <?= htmlspecialchars($log->username) ?>
+                                        <i class="bi bi-person"></i> <?= e($log->username) ?>
                                     </span>
                                 <?php endif; ?>
                             </div>
                             <span class="text-muted text-nowrap" style="font-size:0.7rem;">
-                                <?= htmlspecialchars(substr($log->created_at ?? '', 0, 16)) ?>
+                                <?= e(substr($log->created_at ?? '', 0, 16)) ?>
                             </span>
                         </div>
                     </li>

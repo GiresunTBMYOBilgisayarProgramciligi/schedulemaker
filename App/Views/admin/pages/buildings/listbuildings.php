@@ -11,7 +11,7 @@ use App\Models\Building;
     <div class="app-content-header">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-sm-6"><h3 class="mb-0"><?= $page_title ?></h3></div>
+                <div class="col-sm-6"><h3 class="mb-0"><?= e($page_title) ?></h3></div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item"><a href="/admin">Ana Sayfa</a></li>
@@ -70,11 +70,11 @@ use App\Models\Building;
                                     <?php foreach ($buildings as $building): ?>
                                         <tr>
                                             <td class="text-center no-export">
-                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= $building->id ?>">
+                                                <input type="checkbox" class="form-check-input bulk-select-row" data-id="<?= (int)$building->id ?>">
                                             </td>
-                                            <td><?= $building->id ?></td>
-                                            <td><a href="/admin/building/<?= $building->id ?>" class="text-dark" title="Görüntüle"><?= htmlspecialchars($building->name) ?></a></td>
-                                            <td><?= htmlspecialchars($building->unit->name ?? 'Bilinmiyor') ?></td>
+                                            <td><?= (int)$building->id ?></td>
+                                            <td><a href="/admin/building/<?= (int)$building->id ?>" class="text-dark" title="Görüntüle"><?= e($building->name) ?></a></td>
+                                            <td><?= e($building->unit->name ?? 'Bilinmiyor') ?></td>
                                             <td class="text-center">
                                                 <?php if (Gate::check("update", $building)): ?>
                                                 <a href="/admin/editbuilding/<?= $building->id ?>" class="btn btn-sm btn-outline-warning">

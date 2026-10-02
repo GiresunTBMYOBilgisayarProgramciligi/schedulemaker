@@ -1,10 +1,12 @@
 <?php
 /**
- * @var \App\Models\User|null $currentUser
+ * @var User|null $currentUser
  */
 
 use App\Middlewares\AuthMiddleware;
+use App\Models\User;
 use App\Repositories\UserConsentRepository;
+use function App\Helpers\e;
 
 $user = $currentUser ?? AuthMiddleware::user();
 if (!$user) {
@@ -34,7 +36,7 @@ if ($hasAccepted) {
             </div>
             <div class="modal-body p-4">
                 <p class="text-secondary mb-3">
-                    Sayın <strong><?= htmlspecialchars($user->getFullName()) ?></strong>,
+                    Sayın <strong><?= e($user->getFullName()) ?></strong>,
                 </p>
                 <p class="text-body-secondary small lh-base mb-3">
                     Ders ve Sınav Programı Bilgi Sistemi'ni güvenle kullanabilmeniz ve eğitim-öğretim planlama süreçlerinin mevzuata uygun yürütülebilmesi amacıyla hazırlanan yasal bilgilendirme metinlerini incelemeniz gerekmektedir:
