@@ -13,6 +13,21 @@ use App\Models\User;
 use Exception;
 
 /**
+ * HTML karakterlerini güvenli şekilde kaçırır (XSS koruması).
+ *
+ * @param mixed $value
+ * @param bool $doubleEncode
+ * @return string
+ */
+function e(mixed $value, bool $doubleEncode = true): string
+{
+    if ($value === null) {
+        return '';
+    }
+    return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+}
+
+/**
  * @param mixed $default İstenen ayar bulunamazsa dönülecek ön tanımlı değer
  * @throws Exception
  */

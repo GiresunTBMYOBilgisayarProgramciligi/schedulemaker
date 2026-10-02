@@ -20,10 +20,13 @@ use App\Models\User;
     
     <div style="background: #f8f9fa; border-left: 4px solid #f39c12; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
         <ul style="margin: 0; padding-left: 20px;">
-            <?php foreach ($changes as $change): ?>
+            <?php foreach ($changes as $change): 
+                $changeDetail = is_array($change) ? ($change['detail'] ?? '') : ($change->detail ?? '');
+                $changeDate = is_array($change) ? ($change['created_at'] ?? '') : ($change->created_at ?? '');
+            ?>
                 <li style="margin-bottom: 8px;">
-                    <strong><?= htmlspecialchars($change->detail) ?></strong>
-                    <span style="color: #7f8c8d; font-size: 12px;">(<?= htmlspecialchars($change->created_at) ?>)</span>
+                    <strong><?= htmlspecialchars((string)$changeDetail) ?></strong>
+                    <span style="color: #7f8c8d; font-size: 12px;">(<?= htmlspecialchars((string)$changeDate) ?>)</span>
                 </li>
             <?php endforeach; ?>
         </ul>

@@ -41,7 +41,9 @@ class PasswordResetMailer extends Mailer
      */
     private function getAppUrl(): string
     {
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        $port = $_SERVER['SERVER_PORT'] ?? null;
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $port == 443;
+        $protocol = $isHttps ? "https://" : "http://";
         $domainName = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $protocol . $domainName;
     }
