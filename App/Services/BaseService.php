@@ -35,4 +35,17 @@ abstract class BaseService
     {
         return Log::context($this, array_merge(['service' => static::class], $extra));
     }
+
+    /**
+     * Veritabanı transaction sarmalayıcısı.
+     *
+     * @template T
+     * @param callable(): T $callback
+     * @return T
+     * @throws \Throwable
+     */
+    protected function transaction(callable $callback): mixed
+    {
+        return Database::transaction($callback);
+    }
 }

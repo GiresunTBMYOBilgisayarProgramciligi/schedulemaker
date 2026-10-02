@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Enums\PermissionType;
-
+use App\Enums\ClassroomType;
+use App\Validators\LessonValidator;
+use App\Models\Program;
 use App\Enums\ExamType;
 use App\Enums\LessonType;
 use App\Enums\ScheduleItemStatus;
@@ -148,42 +150,44 @@ class LessonService extends BaseService
                 }
             }
 
-            $lessonFromDb->fill($dto->toArray());
+            return $this->transaction(function () use ($lessonFromDb, $dto) {
+                $lessonFromDb->fill($dto->toArray());
 
-            if (!empty($dto->lecturer_id)) {
-                $semester = $dto->semester ?? getSettingValue('semester');
-                $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
-                (new LessonAssignmentRepository())->upsert(
-                    $lessonFromDb->id,
-                    (int) $dto->lecturer_id,
-                    $semester,
-                    $academicYear
-                );
-                $this->logger->info('Ders hoca ataması güncellendi', [
-                    'lesson_id'     => $lessonFromDb->id,
-                    'lecturer_id'   => $dto->lecturer_id,
-                    'semester'      => $semester,
-                    'academic_year' => $academicYear
-                ]);
-            } elseif ($dto->unassign_lecturer) {
-                $semester = $dto->semester ?? getSettingValue('semester');
-                $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
-                if (!empty($semester) && !empty($academicYear)) {
-                    (new LessonAssignmentRepository())->deleteAssignment(
+                if (!empty($dto->lecturer_id)) {
+                    $semester = $dto->semester ?? getSettingValue('semester');
+                    $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
+                    (new LessonAssignmentRepository())->upsert(
                         $lessonFromDb->id,
+                        (int) $dto->lecturer_id,
                         $semester,
                         $academicYear
                     );
-                    $this->logger->info('Ders hoca ataması kaldırıldı', [
+                    $this->logger->info('Ders hoca ataması güncellendi', [
                         'lesson_id'     => $lessonFromDb->id,
+                        'lecturer_id'   => $dto->lecturer_id,
                         'semester'      => $semester,
                         'academic_year' => $academicYear
                     ]);
+                } elseif ($dto->unassign_lecturer) {
+                    $semester = $dto->semester ?? getSettingValue('semester');
+                    $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
+                    if (!empty($semester) && !empty($academicYear)) {
+                        (new LessonAssignmentRepository())->deleteAssignment(
+                            $lessonFromDb->id,
+                            $semester,
+                            $academicYear
+                        );
+                        $this->logger->info('Ders hoca ataması kaldırıldı', [
+                            'lesson_id'     => $lessonFromDb->id,
+                            'semester'      => $semester,
+                            'academic_year' => $academicYear
+                        ]);
+                    }
                 }
-            }
-        }
 
-        return $this->updateLesson($lessonFromDb);
+                return $this->updateLesson($lessonFromDb);
+            });
+        }
     }
 
 
@@ -1052,5 +1056,157 @@ class LessonService extends BaseService
         $validSemesters = getSemesterNumbers($semester, $totalSemesters, true);
 
         return (new LessonRepository())->getLessonsByProgramAndSemesters($programId, $validSemesters, $semester, $academicYear);
+    }
+
+    /**
+     * UBS tablosundan gelen tek bir dersi kaydeder veya günceller.
+     *
+     * @param array $data
+     * @return array
+     * @throws Exception
+     */
+    public function saveUbsLessonItem(array $data): array
+    {
+        $programId = (int)($data['program_id'] ?? 0);
+        if ($programId <= 0) {
+            throw new Exception("Geçerli bir program seçilmelidir.");
+        }
+
+        /** @var Program|null $program */
+        $program = (new ProgramRepository())->find($programId);
+        if (!$program) {
+            throw new Exception("Program bulunamadı.");
+        }
+
+        $lessonId = !empty($data['lesson_id']) ? (int)$data['lesson_id'] : null;
+        $semester = trim((string)($data['semester'] ?? getSettingValue('semester')));
+        $academicYear = trim((string)($data['academic_year'] ?? getSettingValue('academic_year')));
+        $lecturerId = !empty($data['lecturer_id']) ? (int)$data['lecturer_id'] : null;
+
+        if ($lessonId) {
+            /** @var Lesson|null $lesson */
+            $lesson = (new Lesson())->find($lessonId);
+            if (!$lesson) {
+                throw new Exception("Güncellenecek ders bulunamadı (ID: {$lessonId}).");
+            }
+
+            Gate::authorize(PermissionType::UPDATE->value, $lesson, "Bu dersi güncelleme yetkiniz yok.");
+
+            // Mevcut dersi güncelle
+            $lessonData = [
+                'id'             => $lesson->id,
+                'code'           => strtoupper(trim((string)($data['code'] ?? $lesson->code))),
+                'group_no'       => isset($data['group_no']) ? (int)$data['group_no'] : (int)$lesson->group_no,
+                'name'           => trim((string)($data['name'] ?? $lesson->name)),
+                'size'           => isset($data['size']) ? (int)$data['size'] : (int)$lesson->size,
+                'hours'          => isset($data['hours']) ? (int)$data['hours'] : (int)$lesson->hours,
+                'type'           => isset($data['type']) ? (int)$data['type'] : (int)$lesson->type,
+                'semester_no'    => isset($data['semester_no']) ? (int)$data['semester_no'] : (int)$lesson->semester_no,
+                'classroom_type' => isset($data['classroom_type']) ? (int)$data['classroom_type'] : (int)$lesson->classroom_type,
+                'building_id'    => !empty($data['building_id']) ? (int)$data['building_id'] : $lesson->building_id,
+                'department_id'  => $lesson->department_id,
+                'program_id'     => $lesson->program_id,
+                'semester'       => $semester,
+                'academic_year'  => $academicYear,
+                'lecturer_id'    => $lecturerId,
+            ];
+
+            $dto = (new LessonValidator(isAssignmentUpdate: false))->getDTO($lessonData);
+            $this->updateLessonData($lesson->id, $dto, false);
+
+            return [
+                'status'    => 'success',
+                'msg'       => "'{$lesson->name}' dersi başarıyla güncellendi.",
+                'lesson_id' => $lesson->id,
+                'type'      => 'updated',
+            ];
+        } else {
+            Gate::authorize(PermissionType::CREATE->value, Lesson::class, "Yeni ders ekleme yetkiniz yok.");
+
+            $lessonData = [
+                'code'           => strtoupper(trim((string)($data['code'] ?? ''))),
+                'group_no'       => (int)($data['group_no'] ?? 0),
+                'name'           => trim((string)($data['name'] ?? '')),
+                'size'           => (int)($data['size'] ?? 0),
+                'hours'          => (int)($data['hours'] ?? 0),
+                'type'           => (int)($data['type'] ?? LessonType::COMPULSORY->value),
+                'semester_no'    => (int)($data['semester_no'] ?? 1),
+                'classroom_type' => (int)($data['classroom_type'] ?? ClassroomType::CLASSROOM->value),
+                'building_id'    => !empty($data['building_id']) ? (int)$data['building_id'] : null,
+                'department_id'  => (int)$program->department_id,
+                'program_id'     => (int)$program->id,
+                'semester'       => $semester,
+                'academic_year'  => $academicYear,
+                'lecturer_id'    => $lecturerId,
+            ];
+
+            $dto = (new LessonValidator())->getDTO($lessonData);
+            $newLessonId = $this->saveNew($dto);
+
+            return [
+                'status'    => 'success',
+                'msg'       => "'{$dto->name}' yeni ders olarak başarıyla eklendi.",
+                'lesson_id' => $newLessonId,
+                'type'      => 'added',
+            ];
+        }
+    }
+
+    /**
+     * UBS tablosundaki tüm veya seçili dersleri topluca kaydeder.
+     *
+     * @param array $requestData
+     * @return array
+     * @throws Exception
+     */
+    public function bulkSaveUbsLessons(array $requestData): array
+    {
+        $items = $requestData['items'] ?? [];
+        if (!is_array($items) || empty($items)) {
+            throw new Exception("Kaydedilecek ders verisi bulunamadı.");
+        }
+
+        $programId = (int)($requestData['program_id'] ?? 0);
+        $semester = trim((string)($requestData['semester'] ?? getSettingValue('semester')));
+        $academicYear = trim((string)($requestData['academic_year'] ?? getSettingValue('academic_year')));
+
+        if ($programId <= 0) {
+            throw new Exception("Geçerli bir program seçilmelidir.");
+        }
+
+        $addedCount = 0;
+        $updatedCount = 0;
+        $errors = [];
+
+        $this->transaction(function () use ($items, $programId, $semester, $academicYear, &$addedCount, &$updatedCount, &$errors) {
+            foreach ($items as $idx => $item) {
+                $item['program_id'] = $programId;
+                $item['semester'] = $semester;
+                $item['academic_year'] = $academicYear;
+
+                try {
+                    $res = $this->saveUbsLessonItem($item);
+                    if ($res['type'] === 'added') {
+                        $addedCount++;
+                    } else {
+                        $updatedCount++;
+                    }
+                } catch (Exception $e) {
+                    $errors[] = "Ders '" . ($item['code'] ?? '') . " - " . ($item['name'] ?? '') . "': " . $e->getMessage();
+                }
+            }
+
+            if (!empty($errors) && ($addedCount + $updatedCount) === 0) {
+                throw new Exception("İşlemler sırasında hata oluştu:\n" . implode("\n", $errors));
+            }
+        });
+
+        return [
+            'status'       => 'success',
+            'added'        => $addedCount,
+            'updated'      => $updatedCount,
+            'errors'       => $errors,
+            'msg'          => "{$updatedCount} ders güncellendi, {$addedCount} yeni ders eklendi." . (!empty($errors) ? " (" . count($errors) . " ders atlandı)" : ""),
+        ];
     }
 }

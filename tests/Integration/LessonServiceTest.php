@@ -233,4 +233,86 @@ class LessonServiceTest extends BaseTestCase
         $stmt->execute([$childId]);
         $this->assertEmpty($stmt->fetchAll());
     }
+
+    public function testSaveUbsLessonItemAndBulkSave(): void
+    {
+        // Yetkili kullanıcı tanımla
+        $admin = new \App\Models\User();
+        $admin->id = 1;
+        $admin->role = 'admin';
+        $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+        $propUser = $ref->getProperty('currentUser');
+        $propUser->setValue(null, $admin);
+        $propResolved = $ref->getProperty('isResolved');
+        $propResolved->setValue(null, true);
+
+        // 1. Yeni UBS dersi ekleme
+        $ubsItem = [
+            'program_id' => $this->progId,
+            'code' => 'UBS' . rand(100, 999),
+            'name' => 'UBS Test Dersi',
+            'group_no' => 1,
+            'size' => 45,
+            'hours' => 3,
+            'type' => 1,
+            'semester_no' => 2,
+            'classroom_type' => 1,
+            'building_id' => $this->buildingId,
+            'semester' => 'Bahar',
+            'academic_year' => '2025 - 2026',
+            'lecturer_id' => $this->lecturerId,
+        ];
+
+        $result = $this->service->saveUbsLessonItem($ubsItem);
+        $this->assertEquals('success', $result['status']);
+        $this->assertEquals('added', $result['type']);
+        $this->assertNotEmpty($result['lesson_id']);
+
+        // 2. Mevcut UBS dersini güncelleme
+        $ubsItem['lesson_id'] = $result['lesson_id'];
+        $ubsItem['name'] = 'UBS Test Dersi Güncellendi';
+        $ubsItem['size'] = 50;
+
+        $updateResult = $this->service->saveUbsLessonItem($ubsItem);
+        $this->assertEquals('success', $updateResult['status']);
+        $this->assertEquals('updated', $updateResult['type']);
+
+        // 3. Toplu UBS ders kaydetme
+        $bulkItems = [
+            [
+                'code' => 'UBS' . rand(100, 999),
+                'name' => 'Toplu UBS 1',
+                'group_no' => 1,
+                'size' => 30,
+                'hours' => 2,
+                'type' => 1,
+                'semester_no' => 1,
+                'classroom_type' => 1,
+                'building_id' => $this->buildingId,
+                'lecturer_id' => $this->lecturerId,
+            ],
+            [
+                'code' => 'UBS' . rand(100, 999),
+                'name' => 'Toplu UBS 2',
+                'group_no' => 1,
+                'size' => 35,
+                'hours' => 2,
+                'type' => 1,
+                'semester_no' => 1,
+                'classroom_type' => 1,
+                'building_id' => $this->buildingId,
+                'lecturer_id' => $this->lecturerId,
+            ],
+        ];
+
+        $bulkResult = $this->service->bulkSaveUbsLessons([
+            'program_id' => $this->progId,
+            'semester' => 'Bahar',
+            'academic_year' => '2025 - 2026',
+            'items' => $bulkItems,
+        ]);
+
+        $this->assertEquals('success', $bulkResult['status']);
+        $this->assertEquals(2, $bulkResult['added']);
+    }
 }
