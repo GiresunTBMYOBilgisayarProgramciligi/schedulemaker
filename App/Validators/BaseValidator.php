@@ -2,6 +2,8 @@
 
 namespace App\Validators;
 
+use App\Exceptions\ValidationException;
+
 /**
  * Tüm validator sınıfları için temel sınıf
  * 
@@ -14,7 +16,7 @@ abstract class BaseValidator
      * Veriyi doğrular, hata varsa ValidationException fırlatır.
      * @param array $data Doğrulanacak veri
      * @return void
-     * @throws \App\Exceptions\ValidationException
+     * @throws ValidationException
      */
     abstract public function validate(array $data): void;
 
@@ -22,7 +24,7 @@ abstract class BaseValidator
      * Veriyi doğrular ve DTO nesnesi döndürür.
      * @param array $data
      * @return mixed
-     * @throws \App\Exceptions\ValidationException
+     * @throws ValidationException
      */
     abstract public function getDTO(array $data): mixed;
 

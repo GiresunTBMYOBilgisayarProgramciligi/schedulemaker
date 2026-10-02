@@ -82,7 +82,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
                 'department' => (new DepartmentRepository())->find($ownerId)?->unit_id,
                 OwnerType::PROGRAM->value => (new DepartmentRepository())->find((new ProgramRepository())->find($ownerId)?->department_id)?->unit_id,
                 OwnerType::USER->value => (new UserRepository())->find($ownerId)?->unit_id ?? (new DepartmentRepository())->find((new UserRepository())->find($ownerId)?->department_id)?->unit_id,
-                OwnerType::CLASSROOM->value => ((new ClassroomRepository())->find($ownerId) instanceof \App\Models\Classroom) ? (new ClassroomRepository())->find($ownerId)->getUnit()?->id : null,
+                OwnerType::CLASSROOM->value => ((new ClassroomRepository())->find($ownerId) instanceof Classroom) ? (new ClassroomRepository())->find($ownerId)->getUnit()?->id : null,
                 'building' => (new BuildingRepository())->find($ownerId)?->unit_id,
                 OwnerType::LESSON->value => (new DepartmentRepository())->find((new LessonRepository())->find($ownerId)?->department_id)?->unit_id,
                 default => null,

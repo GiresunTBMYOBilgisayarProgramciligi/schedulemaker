@@ -13,6 +13,7 @@
  */
 use App\Core\Gate;
 use App\Models\Lesson;
+use App\Enums\UserRole;
 use function App\Helpers\renderProgramSelectOptions;
 use function App\Helpers\renderLecturerSelectOptions;
 use function App\Helpers\renderBuildingSelectOptions;
@@ -90,7 +91,7 @@ use function App\Helpers\renderBuildingSelectOptions;
                             <button type="button" id="btnExportExcel" class="btn btn-success" title="Seçili programın ders atama listesini Excel formatında indir">
                                 <i class="bi bi-file-earmark-excel me-1"></i> Excel İndir
                             </button>
-                            <?php if (Gate::allowsRole(\App\Enums\UserRole::DepartmentHead)): ?>
+                            <?php if (Gate::allowsRole(UserRole::DepartmentHead)): ?>
                                 <button type="button" id="btnExportAllExcel" class="btn btn-outline-success" title="Yetkili olduğunuz tüm programların ders atama listesini tek dosyada indir">
                                     <i class="bi bi-file-earmark-spreadsheet me-1"></i> Tüm Programları Excel İndir
                                 </button>

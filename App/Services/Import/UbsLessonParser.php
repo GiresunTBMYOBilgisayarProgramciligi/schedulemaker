@@ -10,6 +10,7 @@ use App\Enums\UserTitle;
 use App\Models\Building;
 use App\Models\Lesson;
 use App\Models\Program;
+use App\Models\User;
 use App\Repositories\BuildingRepository;
 use App\Repositories\LessonAssignmentRepository;
 use App\Repositories\LessonRepository;
@@ -329,7 +330,7 @@ class UbsLessonParser
                 $missingInUbsCount++;
                 $currentAssignment = $assignmentRepo->findByLessonAndPeriod($dbL->id, $semester, $academicYear);
                 $curLecId = $currentAssignment ? (int)$currentAssignment->lecturer_id : null;
-                /** @var \App\Models\User|null $curLecUser */
+                /** @var User|null $curLecUser */
                 $curLecUser = $curLecId ? $this->userRepository->find($curLecId) : null;
 
                 $items[] = [
@@ -387,7 +388,7 @@ class UbsLessonParser
     /**
      * Akademisyen ismine göre kullanıcıyı bulur (Önbellekli)
      */
-    private function findLecturer(string $normalizedName): ?\App\Models\User
+    private function findLecturer(string $normalizedName): ?User
     {
         if ($normalizedName === '') {
             return null;

@@ -7,6 +7,7 @@ use Exception;
 use App\Exceptions\AuthorizationException;
 use App\Models\User;
 use App\Policies\BasePolicy;
+use App\Enums\UserRole;
 
 /**
  * Yetki kontrolü için merkezi yönetim sınıfı
@@ -63,7 +64,7 @@ class Gate
             return false;
         }
 
-        /** @var \App\Policies\BasePolicy $policy */
+        /** @var BasePolicy $policy */
         $policy = new $policyClass();
 
         // 1. 'before' kontrolü (admin gibi global yetkiler için)
@@ -121,19 +122,19 @@ class Gate
      * Belirtilen kullanıcının rol seviyesini kontrol eder.
      * 
      * @param User|null $user Yetkisi kontrol edilecek kullanıcı (null ise aktif oturumdaki kullanıcı alınır)
-     * @param string|\App\Enums\UserRole $role Gereken minimum rol (örn. 'secretary' veya UserRole::Secretary)
+     * @param string|UserRole $role Gereken minimum rol (örn. 'secretary' veya UserRole::Secretary)
      * @param bool $reverse true ise belirtilen rolden daha düşük roller izin alır
      * @return bool
      */
-    public static function hasRole(?User $user, string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    public static function hasRole(?User $user, string|UserRole $role, bool $reverse = false): bool
     {
         $user = $user ?? AuthMiddleware::user();
         if (!$user) {
             return false;
         }
 
-        $roleKey = $role instanceof \App\Enums\UserRole ? $role->value : $role;
-        $userRoleKey = $user->role instanceof \App\Enums\UserRole ? $user->role->value : $user->role;
+        $roleKey = $role instanceof UserRole ? $role->value : $role;
+        $userRoleKey = $user->role instanceof UserRole ? $user->role->value : $user->role;
 
         $requiredLevel = self::$roleLevels[$roleKey] ?? 0;
         $userLevel = self::$roleLevels[$userRoleKey] ?? 50;
@@ -148,11 +149,11 @@ class Gate
     /**
      * Sadece rol bazlı yetkisini kontrol eder (Aktif oturumdaki kullanıcı için).
      * 
-     * @param string|\App\Enums\UserRole $role Gereken minimum rol (örn. 'submanager')
+     * @param string|UserRole $role Gereken minimum rol (örn. 'submanager')
      * @param bool $reverse true ise belirtilen rolden daha düşük roller izin alır
      * @return bool
      */
-    public static function allowsRole(string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    public static function allowsRole(string|UserRole $role, bool $reverse = false): bool
     {
         return self::hasRole(AuthMiddleware::user(), $role, $reverse);
     }

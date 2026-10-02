@@ -11,6 +11,7 @@
  */
 
 use App\Helpers\LogViewHelper;
+use App\Enums\UserRole;
 ?>
 
 <!-- İstatistik Kartları -->
@@ -111,7 +112,7 @@ use App\Helpers\LogViewHelper;
 <div class="row g-3">
 
     <!-- ===================== Listeler (sol kolon) ===================== -->
-    <?php $isAdmin = $currentUser->role === \App\Enums\UserRole::Admin->value; ?>
+    <?php $isAdmin = $currentUser->role === UserRole::Admin->value; ?>
     <div class="col-12 col-xl-<?= $isAdmin ? '7' : '12' ?>">
 
         <!-- Birim Listesi (collapsible) -->

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Core\Gate;
 use App\Enums\UserRole;
 use App\Enums\OwnerType;
 use function App\Helpers\getSettingValue;
@@ -406,13 +407,13 @@ class User extends Model
     /**
      * Kullanıcının belirtilen rol seviyesine sahip olup olmadığını kontrol eder.
      *
-     * @param string|\App\Enums\UserRole $role
+     * @param string|UserRole $role
      * @param bool $reverse
      * @return bool
      */
-    public function hasRole(string|\App\Enums\UserRole $role, bool $reverse = false): bool
+    public function hasRole(string|UserRole $role, bool $reverse = false): bool
     {
-        return \App\Core\Gate::hasRole($this, $role, $reverse);
+        return Gate::hasRole($this, $role, $reverse);
     }
 
     /**

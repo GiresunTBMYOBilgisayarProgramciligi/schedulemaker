@@ -1,3 +1,6 @@
+<?php
+use function App\Helpers\getAppVersion;
+?>
 <!--begin::Institutional Footer-->
 <footer class="app-footer bg-body-tertiary border-top py-4 mt-auto">
     <div class="container-fluid px-3 px-lg-4">
@@ -43,7 +46,7 @@
                         <span class="small fw-bold text-body">Öğr. Gör. Samet ATABAŞ</span>
                     </div>
                     <div class="text-muted small" style="font-size: 0.75rem;">
-                        <span>Sürüm</span> <span class="fw-semibold text-secondary">v<?= \App\Helpers\getAppVersion() ?></span>
+                        <span>Sürüm</span> <span class="fw-semibold text-secondary">v<?= getAppVersion() ?></span>
                     </div>
                 </div>
             </div>

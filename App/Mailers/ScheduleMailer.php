@@ -9,8 +9,8 @@ use App\Models\Lesson;
 use App\Models\LessonAssignment;
 use App\Models\Program;
 use App\Models\Schedule;
-use App\Models\Unit;
 use App\Models\User;
+use App\Services\MailQueueService;
 use Exception;
 
 class ScheduleMailer extends Mailer
@@ -266,7 +266,7 @@ class ScheduleMailer extends Mailer
                 mailerClass: static::class
             );
 
-            return (new \App\Services\MailQueueService())->enqueue(
+            return (new MailQueueService())->enqueue(
                 toEmail: $lecturer->mail,
                 toName: $lecturer->getFullName(),
                 subject: $subject,
@@ -344,7 +344,7 @@ class ScheduleMailer extends Mailer
                 mailerClass: static::class
             );
 
-            return (new \App\Services\MailQueueService())->enqueue(
+            return (new MailQueueService())->enqueue(
                 toEmail: $lecturer->mail,
                 toName: $lecturer->getFullName(),
                 subject: $subject,

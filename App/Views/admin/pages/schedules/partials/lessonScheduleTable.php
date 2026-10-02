@@ -1,5 +1,6 @@
 <?php
 use App\Models\Schedule;
+use App\Core\View;
 use App\Helpers\ScheduleViewHelper;
 use App\Enums\ScheduleItemStatus;
 
@@ -74,7 +75,7 @@ use App\Enums\ScheduleItemStatus;
                                                         isset($only_table) && $only_table,
                                                         isset($preference_mode) && $preference_mode
                                                     );
-                                                    echo \App\Core\View::renderComponent('schedules/_lessonCard', [
+                                                    echo View::renderComponent('schedules/_lessonCard', [
                                                         'scheduleItem' => $item,
                                                         'slotData' => $slotData,
                                                         'schedule' => $schedule,
@@ -85,7 +86,7 @@ use App\Enums\ScheduleItemStatus;
                                                     ]);
                                                 endforeach; ?>
                                             <?php else: ?>
-                                                <?= \App\Core\View::renderComponent('schedules/_emptySlotDummy', [
+                                                <?= View::renderComponent('schedules/_emptySlotDummy', [
                                                     'scheduleItem' => $item,
                                                     'preference_mode' => $preference_mode ?? false
                                                 ]) ?>

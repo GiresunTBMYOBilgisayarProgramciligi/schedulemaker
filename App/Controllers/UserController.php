@@ -13,6 +13,7 @@ use App\Validators\UserValidator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\Import\UserImporter;
 use App\Repositories\UserRepository;
+use App\Middlewares\AuthMiddleware;
 use Exception;
 
 class UserController extends Controller
@@ -59,8 +60,8 @@ class UserController extends Controller
 
             Gate::authorize(PermissionType::UPDATE->value, $user, "Kullanıcı bilgilerini güncelleme yetkiniz yok");
 
-            $currentUser = \App\Middlewares\AuthMiddleware::user();
-            $canEditSpecialFields = \App\Core\Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id);
+            $currentUser = AuthMiddleware::user();
+            $canEditSpecialFields = Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id);
 
             if (!$canEditSpecialFields) {
                 $requestData['role'] = $user->role;

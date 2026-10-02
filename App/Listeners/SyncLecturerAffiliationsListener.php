@@ -7,6 +7,7 @@ use App\Models\Lesson;
 use App\Models\UserAffiliation;
 use App\Models\Program;
 use App\Models\Department;
+use App\Models\User;
 
 class SyncLecturerAffiliationsListener
 {
@@ -36,7 +37,7 @@ class SyncLecturerAffiliationsListener
             return;
         }
 
-        $lecturer = clone (new \App\Models\User())->find($lecturerId);
+        $lecturer = clone (new User())->find($lecturerId);
         if ($lecturer && $lecturer->unit_id == $unitId && $lecturer->department_id == $departmentId && $lecturer->program_id == $programId) {
             return;
         }

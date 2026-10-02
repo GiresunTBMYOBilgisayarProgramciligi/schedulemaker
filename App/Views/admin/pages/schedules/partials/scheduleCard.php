@@ -2,6 +2,8 @@
 use App\Models\Schedule;
 use App\Core\Gate;
 use App\Enums\PermissionType;
+use App\Enums\OwnerType;
+use App\Middlewares\AuthMiddleware;
 use App\Helpers\ScheduleViewHelper;
 /**
  * @var Schedule $schedule
@@ -79,8 +81,8 @@ $bodyClasses = $no_card ? "" : "card-body p-2 p-md-3";
                 </div><!--end::Row-->
 
                 <?php 
-                $currentUser = \App\Middlewares\AuthMiddleware::user();
-                $isProgramSchedule = ($schedule->owner_type === \App\Enums\OwnerType::PROGRAM->value);
+                $currentUser = AuthMiddleware::user();
+                $isProgramSchedule = ($schedule->owner_type === OwnerType::PROGRAM->value);
                 $canViewInternship = $isProgramSchedule && $currentUser !== null && (
                     Gate::check(PermissionType::UPDATE->value, $schedule) || 
                     Gate::check(PermissionType::VIEW->value, $schedule)

@@ -8,6 +8,7 @@ use App\Events\ChairpersonChangedEvent;
 use App\Repositories\DepartmentRepository;
 use App\Repositories\UserRepository;
 use App\Services\UserService;
+use App\Models\User;
 
 /**
  * Bölüm başkanı değiştiğinde kullanıcı rollerini senkronize eden dinleyici.
@@ -29,7 +30,7 @@ class SyncChairpersonRoleListener
 
         // Eski başkanın rolünü düşür (başka bölümde başkan değilse)
         if ($event->oldChairpersonId !== null) {
-            /** @var \App\Models\User|null $oldChairperson */
+            /** @var User|null $oldChairperson */
             $oldChairperson = $userRepository->find($event->oldChairpersonId);
 
             if ($oldChairperson && !$departmentRepository->isChairpersonOfAnyDepartment($event->oldChairpersonId)) {
@@ -44,7 +45,7 @@ class SyncChairpersonRoleListener
 
         // Yeni başkanın rolünü yükselt
         if ($event->newChairpersonId !== null) {
-            /** @var \App\Models\User|null $newChairperson */
+            /** @var User|null $newChairperson */
             $newChairperson = $userRepository->find($event->newChairpersonId);
 
             if ($newChairperson && $newChairperson->role !== UserRole::DepartmentHead->value) {

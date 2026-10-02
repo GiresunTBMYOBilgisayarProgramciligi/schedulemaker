@@ -36,7 +36,7 @@ class ClassroomRepository extends BaseRepository
                 FROM classrooms c 
                 INNER JOIN buildings b ON c.building_id = b.id 
                 WHERE b.unit_id = :unit_id";
-        $stmt = \App\Core\Database::getConnection()->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute(['unit_id' => $unitId]);
         $row = $stmt->fetch();
         return (int)($row['total'] ?? 0);
