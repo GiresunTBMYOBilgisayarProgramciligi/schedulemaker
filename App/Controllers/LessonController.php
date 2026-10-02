@@ -266,25 +266,25 @@ class LessonController extends Controller
      * @return array
      */
     public function importLessons(array $files, array $requestData): array
-    {            $uploadedFile = $files['file'] ?? null;
-            if (!$uploadedFile) {
-                throw new Exception("Dosya yüklenmedi");
-            }
+    {
+        Gate::authorize(PermissionType::CREATE->value, Lesson::class, "Ders içe aktarma yetkiniz yok.");
 
-            $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
-            $importer    = new LessonImporter($spreadsheet, $requestData);
-            $result      = $importer->import();
+        $uploadedFile = $this->validateUploadedFile($files);
 
-            return [
-                'status'         => "success",
-                'msg'            => sprintf(
-                    "%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var",
-                    $result['added'], $result['updated'], $result['errorCount']
-                ),
-                'errors'         => $result['errors'],
-                'addedLessons'   => $result['addedLessons'],
-                'updatedLessons' => $result['updatedLessons']
-            ];
+        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+        $importer    = new LessonImporter($spreadsheet, $requestData);
+        $result      = $importer->import();
+
+        return [
+            'status'         => "success",
+            'msg'            => sprintf(
+                "%d Ders oluşturuldu,%d Ders güncellendi. %d hatalı kayıt var",
+                $result['added'], $result['updated'], $result['errorCount']
+            ),
+            'errors'         => $result['errors'],
+            'addedLessons'   => $result['addedLessons'],
+            'updatedLessons' => $result['updatedLessons']
+        ];
     }
 
     /**

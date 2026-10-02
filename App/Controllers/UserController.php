@@ -111,25 +111,25 @@ class UserController extends Controller
      * @return array
      */
     public function importUsers(array $files): array
-    {            $uploadedFile = $files['file'] ?? null;
-            if (!$uploadedFile) {
-                throw new Exception("Dosya yüklenmedi");
-            }
+    {
+        Gate::authorize(PermissionType::CREATE->value, User::class, "Kullanıcı içe aktarma yetkiniz yok.");
 
-            $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
-            $importer    = new UserImporter($spreadsheet);
-            $result      = $importer->import();
+        $uploadedFile = $this->validateUploadedFile($files);
 
-            return [
-                'status'       => "success",
-                'msg'          => sprintf(
-                    "%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var",
-                    $result['added'], $result['updated'], $result['errorCount']
-                ),
-                'errors'       => $result['errors'],
-                'addedUsers'   => $result['addedUsers'],
-                'updatedUsers' => $result['updatedUsers']
-            ];
+        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+        $importer    = new UserImporter($spreadsheet);
+        $result      = $importer->import();
+
+        return [
+            'status'       => "success",
+            'msg'          => sprintf(
+                "%d kullanıcı oluşturuldu,%d kullanıcı güncellendi. %d hatalı kayıt var",
+                $result['added'], $result['updated'], $result['errorCount']
+            ),
+            'errors'       => $result['errors'],
+            'addedUsers'   => $result['addedUsers'],
+            'updatedUsers' => $result['updatedUsers']
+        ];
     }
 
     /**
