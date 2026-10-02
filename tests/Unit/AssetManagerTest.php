@@ -15,6 +15,7 @@ class AssetManagerTest extends BaseTestCase
 
         $this->assertStringContainsString('adminlte.min.css', $renderedCss);
         $this->assertStringContainsString('bootstrap.min.js', $renderedJs);
+        $this->assertStringContainsString('csrf.js', $renderedJs);
     }
 
     public function testAddCustomCssAndJs(): void
@@ -54,5 +55,6 @@ class AssetManagerTest extends BaseTestCase
         $this->assertStringContainsString('dataTables.bootstrap5.min.css', $renderedCss);
         $this->assertStringContainsString('dataTables.min.js', $renderedJs);
         $this->assertStringContainsString('data_table.js', $renderedJs);
+        $this->assertStringContainsString('ajax.js', $renderedJs);
     }
 }

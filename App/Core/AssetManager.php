@@ -68,6 +68,9 @@ class AssetManager
         [
             'path' => '/assets/js/myHTMLElements.js'
         ],
+        [
+            'path' => '/assets/js/csrf.js'
+        ],
     ];
 
     // Sayfa özel assetleri

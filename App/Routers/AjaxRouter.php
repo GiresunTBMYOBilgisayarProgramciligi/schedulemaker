@@ -24,6 +24,7 @@ use App\Models\User;
 use Exception;
 use App\Attributes\AuthRequired;
 use App\Attributes\PublicAction;
+use App\Attributes\WithoutCsrf;
 
 #[AuthRequired]
 class AjaxRouter extends Router
@@ -165,6 +166,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getLecturersListAction($unit_id): void
     {
         $this->response = (new UserController())->getLecturersByUnitResponse((int)$unit_id);
@@ -175,6 +177,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getAllLecturersListAction(): void
     {
         $this->response = (new UserController())->getAllLecturersListResponse();
@@ -185,6 +188,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getFilteredLecturersListAction(): void
     {
         $this->response = (new UserController())->getFilteredLecturersListResponse($this->data);
@@ -391,6 +395,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getProgramsListAction($department_id): void
     {
         $this->response = (new ProgramController())->getProgramsListResponse((int)$department_id);
@@ -401,6 +406,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getDepartmentsListAction($unit_id): void
     {
         $this->response = (new DepartmentController())->getDepartmentsListResponse((int)$unit_id);
@@ -411,6 +417,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getBuildingsListAction($unit_id): void
     {
         $this->response = (new BuildingController())->getBuildingsListResponse((int)$unit_id);
@@ -421,6 +428,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getAllBuildingsListAction(): void
     {
         $this->response = (new BuildingController())->getAllBuildingsListResponse();
@@ -431,6 +439,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getClassroomsListAction($building_id): void
     {
         $this->response = (new ClassroomController())->getClassroomsListResponse((int)$building_id);
@@ -447,6 +456,7 @@ class AjaxRouter extends Router
      * @throws Exception
      */
     #[PublicAction]
+    #[WithoutCsrf]
     public function getScheduleHTMLAction(): void
     {
         $this->response = (new ScheduleController())->getSchedulesHTMLResponse($this->data);
@@ -457,6 +467,7 @@ class AjaxRouter extends Router
      * Sadece kullanılabilir dersler listesinin HTML çıktısını döndürür
      * @throws Exception
      */
+    #[WithoutCsrf]
     public function getAvailableLessonsHTMLAction(): void
     {
         $this->response = (new ScheduleController())->getAvailableLessonsHTMLResponse($this->data);
@@ -468,6 +479,7 @@ class AjaxRouter extends Router
      * Schedule tipi exam ise UZEM hariç tümü; ders ise classroom_type filtresi uygulanır.
      * @throws Exception
      */
+    #[WithoutCsrf]
     public function getAvailableClassroomForScheduleAction(): void
     {
         $this->response = (new ScheduleController())->getAvailableClassrooms($this->data);
@@ -478,6 +490,7 @@ class AjaxRouter extends Router
      * Sınav atamalarında müsait gözetmenlerin listesini hazırlar.
      * @throws Exception
      */
+    #[WithoutCsrf]
     public function getAvailableObserversForScheduleAction(): void
     {
         $this->response = (new ScheduleController())->getAvailableObservers($this->data);
@@ -489,6 +502,7 @@ class AjaxRouter extends Router
      * Her iki program tipi için de çalışır; iç mantık schedule.type ve assignments'a göre ayrım yapar.
      * @throws Exception
      */
+    #[WithoutCsrf]
     public function checkScheduleCrashAction(): void
     {
         $this->response = (new ScheduleController())->checkScheduleCrash($this->data);
@@ -500,6 +514,7 @@ class AjaxRouter extends Router
      * @return void
      * @throws Exception
      */
+    #[WithoutCsrf]
     public function getScheduleAction(): void
     {
         $this->response = (new ScheduleController())->getSchedule($this->data);

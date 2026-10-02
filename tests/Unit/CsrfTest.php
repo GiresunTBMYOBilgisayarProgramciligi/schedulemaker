@@ -177,4 +177,16 @@ class CsrfTest extends BaseTestCase
 
         CsrfMiddleware::handle();
     }
+
+    public function testWithoutCsrfAttributeOnAjaxRouterActions(): void
+    {
+        $ref = new \ReflectionClass(\App\Routers\AjaxRouter::class);
+        $method = $ref->getMethod('getDepartmentsListAction');
+        $attrs = $method->getAttributes(\App\Attributes\WithoutCsrf::class);
+        
+        $this->assertNotEmpty($attrs, 'getDepartmentsListAction must have #[WithoutCsrf] attribute');
+
+        $methodProg = $ref->getMethod('getProgramsListAction');
+        $this->assertNotEmpty($methodProg->getAttributes(\App\Attributes\WithoutCsrf::class), 'getProgramsListAction must have #[WithoutCsrf] attribute');
+    }
 }
