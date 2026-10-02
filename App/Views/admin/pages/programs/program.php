@@ -1,14 +1,14 @@
 <?php
 /**
- * @var \App\Controllers\ProgramController $programController
- * @var \App\Models\Program $program
- * @var \App\Controllers\ScheduleController $scheduleController
+ * @var Program $program
  * @var string $page_title
  * @var string $scheduleHTML
- * @var \App\Models\User $currentUser
+ * @var User $currentUser
  */
 
 use App\Core\Gate;
+use App\Models\Program;
+use App\Models\User;
 
 ?>
 <!--begin::App Main-->

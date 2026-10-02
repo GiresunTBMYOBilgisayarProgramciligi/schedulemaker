@@ -1,7 +1,6 @@
 <?php
 /**
- * @var \App\Controllers\ProgramController $programController
- * @var \App\Models\Program $program
+ * @var Program $program
  * @var string $page_title
  * @var array $programs
  */

@@ -1,15 +1,15 @@
 <?php
 /**
- * @var array $departments \App\Models\Department->getDepartments())
- * @var \App\Models\Department $department
- * @var \App\Models\User $lecturer
- * @var \App\Controllers\LessonController $lessonController
+ * @var array $departments
+ * @var Department $department
+ * @var User $lecturer
  * @var string $page_title
  * @var array $lecturers
  * @var array $classroomTypes
- * @var \App\Models\Building[] $buildings
+ * @var Building[] $buildings
  */
 
+use App\Enums\LessonType;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -65,8 +65,8 @@ use function App\Helpers\getSettingValue;
                                     <div class="col-md-2">
                                         <div class="mb-3">
                                             <label class="form-label" for="type">Türü</label>
-                                            <select class="form-select" id="type" name="type" required>
-                                                <?php foreach ($lessonController->getTypeList() as $id => $type): ?>
+                                             <select class="form-select" id="type" name="type" required>
+                                                <?php foreach (LessonType::toArray() as $id => $type): ?>
                                                     <option value="<?= $id ?>"><?= $type ?></option>
                                                 <?php endforeach ?>
                                             </select>
@@ -76,9 +76,9 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="semester_no">Yarıyılı</label>
                                             <select class="form-select" id="semester_no" name="semester_no" data-field="lesson-semester" required>
-                                                <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
-                                                    <option value="<?= $key ?>"><?= $value ?></option>
-                                                <?php endforeach ?>
+                                                <?php for ($i = 1; $i <= 12; $i++): ?>
+                                                    <option value="<?= $i ?>"><?= $i ?>. Yarıyıl</option>
+                                                <?php endfor ?>
                                             </select>
                                         </div>
                                     </div>

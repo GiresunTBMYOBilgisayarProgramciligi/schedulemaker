@@ -1,8 +1,7 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
- * @var \App\Models\User $user kullanıcı listesinde döngüde kullanılan user değişkeni
- * @var array $departments \App\Models\Department->getDepartments())
+ * @var \App\Models\User $user
+ * @var array $departments
  * @var array $units
  * @var string $page_title
  */

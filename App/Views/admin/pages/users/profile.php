@@ -1,13 +1,13 @@
 <?php
 /**
  * @var \App\Models\User $user
- * @var \App\Controllers\UserController $userController
  * @var array $departments
  * @var array $units
  * @var string $page_title
  */
 
 use App\Core\Gate;
+use App\Models\ScheduleNote;
 use function App\Helpers\getSettingValue;
 
 ?>
@@ -471,7 +471,7 @@ window.loadMyScheduleNotes = async function() {
     if (!listContainer) return;
 
     const profileUserId = <?= (int)$user->id ?>;
-    const canManageNotes = <?= \App\Core\Gate::check('canManageNotes', \App\Models\ScheduleNote::class) ? 'true' : 'false' ?>;
+    const canManageNotes = <?= Gate::check('canManageNotes', ScheduleNote::class) ? 'true' : 'false' ?>;
 
     const formData = new FormData();
     formData.append('user_id', profileUserId);

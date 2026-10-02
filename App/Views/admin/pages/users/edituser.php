@@ -1,10 +1,8 @@
 <?php
 /**
- * @var \App\Controllers\UserController $userController
- * @var \App\Models\User $user düzenlenecek kullanıcı user değişkeni
- * @var \App\Controllers\ProgramController $programController
+ * @var \App\Models\User $user düzenlenecek kullanıcı
  * @var \App\Models\Program $program
- * @var array $departments \App\Models\Department->getDepartments())
+ * @var array $departments
  * @var array $units
  * @var string $page_title
  */

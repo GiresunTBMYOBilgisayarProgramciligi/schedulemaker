@@ -1,7 +1,6 @@
 <?php
 /**
- * @var \App\Controllers\LessonController $lessonController
- * @var \App\Models\Lesson $lesson
+ * @var Lesson $lesson
  * @var array $lessons
  * @var string $page_title
  */

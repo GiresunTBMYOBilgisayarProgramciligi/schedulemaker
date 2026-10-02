@@ -1,20 +1,20 @@
 <?php
 /**
- * @var \App\Models\Program $program
- * @var array $departments \App\Models\Department->getDepartments())
- * @var \App\Models\Department $department
- * @var \App\Models\User $lecturer
- * @var \App\Models\Lesson $lesson
- * @var \App\Controllers\LessonController $lessonController
+ * @var Program $program
+ * @var array $departments
+ * @var Department $department
+ * @var User $lecturer
+ * @var Lesson $lesson
  * @var string $page_title
  * @var array $lecturers
  * @var bool|null $has_multiple_units
  * @var array $classroomTypes
- * @var \App\Models\Building[] $buildings
+ * @var Building[] $buildings
  * @var bool|null $has_multiple_building_units
  */
 
 use App\Core\Gate;
+use App\Enums\LessonType;
 use function App\Helpers\renderBuildingSelectOptions;
 use function App\Helpers\renderLecturerSelectOptions;
 use function App\Helpers\getSettingValue;
@@ -81,7 +81,7 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="type">Türü</label>
                                             <select class="form-select" id="type" name="type" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <?php foreach ($lessonController->getTypeList() as $id=>$type): ?>
+                                                <?php foreach (LessonType::toArray() as $id => $type): ?>
                                                     <option value="<?= $id ?>"
                                                         <?= $id == $lesson->type ? "selected" : "" ?>><?= $type ?></option>
                                                 <?php endforeach ?>
@@ -93,10 +93,10 @@ use function App\Helpers\getSettingValue;
                                         <div class="mb-3">
                                             <label class="form-label" for="semester_no">Yarıyılı</label>
                                             <select class="form-select" id="semester_no" name="semester_no" data-field="lesson-semester" <?= Gate::allowsRole("department_head") ? "" : "disabled" ?>>
-                                                <?php foreach ($lessonController->getSemesterNoList() as $key => $value): ?>
-                                                    <option value="<?= $key ?>"
-                                                        <?= $key == $lesson->semester_no ? "selected" : "" ?>><?= $value ?></option>
-                                                <?php endforeach ?>
+                                                <?php for ($i = 1; $i <= 12; $i++): ?>
+                                                    <option value="<?= $i ?>"
+                                                        <?= $i == $lesson->semester_no ? "selected" : "" ?>><?= $i ?>. Yarıyıl</option>
+                                                <?php endfor ?>
                                             </select>
                                         </div>
                                     </div>

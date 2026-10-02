@@ -1,13 +1,14 @@
 <?php
 /**
- * @var \App\Controllers\DepartmentController $departmentController
- * @var \App\Models\Department $department
+ * @var Department $department
  * @var string $page_title
  * @var string $scheduleHTML
- * @var \App\Models\User $currentUser
+ * @var User $currentUser
  */
 
 use App\Core\Gate;
+use App\Models\Department;
+use App\Models\User;
 ?>
 <!--begin::App Main-->
 <main class="app-main">

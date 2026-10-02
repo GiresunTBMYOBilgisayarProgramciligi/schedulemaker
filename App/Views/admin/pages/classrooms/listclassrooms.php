@@ -1,6 +1,5 @@
 <?php
 /**
- * @var \App\Controllers\ClassroomController $classroomController
  * @var \App\Models\Classroom $classroom
  * @var string $page_title
  * @var array $classrooms

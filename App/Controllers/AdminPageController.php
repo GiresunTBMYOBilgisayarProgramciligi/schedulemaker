@@ -38,7 +38,7 @@ use App\Services\MailQueueService;
 use App\Services\ProgramService;
 use App\Services\UserService;
 use App\Services\BuildingService;
-use App\Controllers\SettingsController;
+use App\Services\SettingsService;
 use function App\Helpers\getSettingValue;
 use Exception;
 
@@ -67,13 +67,8 @@ class AdminPageController extends Controller
 
         // Ortak veri
         $view_data = [
-            "departmentController" => new DepartmentController(),
-            "classroomController"  => new ClassroomController(),
-            "lessonController"     => new LessonController(),
-            "programController"    => new ProgramController(),
-            'userController'       => new UserController(),
-            "page_title"           => "Anasayfa",
-            "dashboardRole"        => $dashboardRole,
+            "page_title"    => "Anasayfa",
+            "dashboardRole" => $dashboardRole,
         ];
 
         // --- Yönetici grubu (admin / manager / submanager) ---
@@ -199,7 +194,6 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('formpages');
         return [
             "page_title" => "Kullanıcı Ekle",
-            "userController" => new UserController(),
             "units" => (new UnitRepository())->getAuthorized('view'),
             "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_id" => $department_id,
@@ -260,7 +254,6 @@ class AdminPageController extends Controller
             "canEditSpecialFields" => Gate::allowsRole('submanager') || ($currentUser->role === 'department_head' && $currentUser->id !== $user->id),
 
             "page_title" => $user->getFullName() . " Profil Sayfası",
-            "userController" => new UserController(),
             "units" => (new UnitRepository())->getAuthorized('view'),
             "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
@@ -322,8 +315,6 @@ class AdminPageController extends Controller
             "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "department_programs" => (new DepartmentRepository())->getDepartmentProgramsList($user->department_id ?? null),
             "programs" => (new ProgramRepository())->getActiveProgramsWithDetails(),
-            "programController" => new ProgramController(),
-            "userController" => new UserController(),
         ];
     }
 
@@ -402,7 +393,6 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Lesson::class, "Ders listesini görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         $view_data = [
-            "lessonController" => new LessonController(),
             "page_title" => "Ders Listesi"
         ];
         
@@ -467,7 +457,6 @@ class AdminPageController extends Controller
             "page_title"                  => "Ders Ekle",
             "departments"                 => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "units"                       => (new UnitRepository())->getAuthorized('view'),
-            "lessonController"            => new LessonController(),
             "classroomTypes"              => ClassroomType::toArray(),
             "buildings"                   => $buildingData['buildings'],
             "has_multiple_building_units" => $buildingData['has_multiple_units'],
@@ -499,13 +488,11 @@ class AdminPageController extends Controller
         $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
         $lecturerData = (new UserService())->getAuthorizedLecturersData($currentUser);
         $view_data = [
-            "lessonController"            => new LessonController(),
             "lesson"                      => $lesson,
             "page_title"                  => $lesson->getFullName(true) . " Düzenle",
             "departments"                 => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "units"                       => (new UnitRepository())->getAuthorized('view'),
             "department_programs"         => (new DepartmentRepository())->getDepartmentProgramsList($lesson->department_id ?? null),
-            "programController"           => new ProgramController(),
             "classroomTypes"              => ClassroomType::toArray(),
             "buildings"                   => $buildingData['buildings'],
             "has_multiple_building_units" => $buildingData['has_multiple_units'],
@@ -591,7 +578,6 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::LIST->value, Classroom::class, "Derslik listesini görme yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
         return [
-            "classroomController" => new ClassroomController(),
             "classrooms" => (new ClassroomRepository())->getAuthorized('view', [], ['building']),
             "page_title" => "Derslik Listesi",
             "buildingOptions" => array_map(fn($b) => ['value' => $b->id, 'label' => $b->name], (new BuildingRepository())->findAll())
@@ -627,7 +613,6 @@ class AdminPageController extends Controller
         $currentUser = AuthMiddleware::user();
         $buildingData = (new BuildingService())->getAuthorizedBuildingsData($currentUser);
         return [
-            "classroomController"         => new ClassroomController(),
             "classroom"                   => $classroom,
             "classroomTypes"              => ClassroomType::toArray(),
             "buildings"                   => $buildingData['buildings'],
@@ -708,7 +693,6 @@ class AdminPageController extends Controller
             }
         }
         return [
-            "departmentController" => new DepartmentController(),
             "department"           => $department,
             "page_title"           => ($department->name ?? '') . ' Düzenle',
             "units"                => (new UnitRepository())->getAuthorized('view'),
@@ -811,7 +795,6 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::UPDATE->value, $program, "Program düzenleme yetkiniz yok");
         $assetManager->loadPageAssets('formpages');
         return [
-            "programController" => new ProgramController(),
             "program" => $program,
             "departments" => (new DepartmentRepository())->getAuthorized('view', ['active' => true]),
             "units" => (new UnitRepository())->getAuthorized('view'),
@@ -871,7 +854,6 @@ class AdminPageController extends Controller
         }
 
         $view_data = [
-            "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Ders Programı Düzenle",
@@ -938,7 +920,6 @@ class AdminPageController extends Controller
         }
 
         $view_data = [
-            "scheduleController" => new ScheduleController(),
             "departments" => $departments,
             "units" => (new UnitRepository())->getAuthorized('view', ['active' => true]),
             "page_title" => "Sınav Programını Düzenle",
@@ -976,7 +957,6 @@ class AdminPageController extends Controller
         }
 
         $view_data = [
-            "scheduleController" => new ScheduleController(),
             "units"              => $units,
             "departments"        => $departments,
             "page_title"         => "Program Dışa Aktar",
@@ -1007,7 +987,6 @@ class AdminPageController extends Controller
         (new SchedulePublishService())->cleanEmptySchedules();
 
         $view_data = [
-            "scheduleController" => new ScheduleController(),
             "units"              => $units,
             "departments"        => $departments,
             "page_title"         => "Program Yayınla",
@@ -1023,8 +1002,8 @@ class AdminPageController extends Controller
         Gate::authorize(PermissionType::CREATE->value, Setting::class, "Ayarları görüntüleme yetkiniz yok.");
         $assetManager->loadPageAssets('formpages');
 
-        // Ayarları model üzerinden çekiyoruz (SettingsController getSettings metodu ile formatlanmış halde)
-        $settings = (new SettingsController())->getSettings();
+        // Ayarları model üzerinden çekiyoruz (SettingsService getAllSettings metodu ile)
+        $settings = (new SettingsService())->getAllSettings();
 
         // View'a gönderilecek veriler
         return [

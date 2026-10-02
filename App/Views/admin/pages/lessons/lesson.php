@@ -1,8 +1,6 @@
 <?php
 /**
- * @var \App\Controllers\LessonController $lessonController
  * @var Lesson $lesson
- * @var \App\Controllers\ScheduleController $scheduleController
  * @var string $page_title
  * @var string $scheduleHTML
  * @var array $combineLessonList
