@@ -52,19 +52,65 @@ class AuthMiddleware
             return self::$currentUser;
         }
 
-        $id = $_SESSION[$_ENV["SESSION_KEY"]] ?? $_COOKIE[$_ENV["COOKIE_KEY"]] ?? null;
-        
-        if ($id) {
+        $sessionKey = $_ENV["SESSION_KEY"] ?? 'schedule_session';
+        $cookieKey  = $_ENV["COOKIE_KEY"] ?? 'schedule_cookie_';
+
+        $userId = null;
+        if (!empty($_SESSION[$sessionKey])) {
+            $userId = (int)$_SESSION[$sessionKey];
+        }
+
+        if ($userId) {
             try {
                 // İlişkileri de yükleyerek (department, program, lessons) kullanıcıyı getir
-                $user = (new User())->get()->where(['id' => $id])->with(['department', 'program', 'lessons'])->first();
+                $user = (new User())->get()->where(['id' => $userId])->with(['department', 'program', 'lessons'])->first();
                 self::$currentUser = $user ?: null;
             } catch (Exception $e) {
                 self::$currentUser = null;
             }
+        } elseif (!empty($_COOKIE[$cookieKey])) {
+            self::$currentUser = self::resolveUserFromSignedCookie((string)$_COOKIE[$cookieKey]);
         }
 
         self::$isResolved = true;
         return self::$currentUser;
+    }
+
+    /**
+     * İmzalı çerezden kullanıcıyı doğrular ve döndürür.
+     *
+     * @param string $cookieValue ID:HMAC formatında imzalı çerez değeri
+     * @return User|null
+     */
+    public static function resolveUserFromSignedCookie(string $cookieValue): ?User
+    {
+        $parts = explode(':', $cookieValue, 2);
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        [$userIdStr, $hmac] = $parts;
+        if (!is_numeric($userIdStr) || (int)$userIdStr <= 0) {
+            return null;
+        }
+
+        $userId = (int)$userIdStr;
+        try {
+            $user = (new User())->get()->where(['id' => $userId])->with(['department', 'program', 'lessons'])->first();
+            if (!$user) {
+                return null;
+            }
+
+            $secret = $_ENV['APP_KEY'] ?? 'schedulemaker_app_secure_salt';
+            $expectedHmac = hash_hmac('sha256', $userId . ':' . $user->password, $secret);
+
+            if (hash_equals($expectedHmac, $hmac)) {
+                return $user;
+            }
+        } catch (Exception $e) {
+            return null;
+        }
+
+        return null;
     }
 }

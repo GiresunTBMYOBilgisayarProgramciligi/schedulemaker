@@ -5,6 +5,7 @@ namespace App\Validators;
 use App\Exceptions\ValidationException;
 use App\DTOs\BulkDeleteDTO;
 use App\DTOs\BulkUpdateDTO;
+use App\Enums\UserRole;
 
 /**
  * Toplu işlem (bulk action) verilerini doğrulayan validator.
@@ -166,6 +167,13 @@ class BulkActionValidator extends BaseValidator
             $expectedType = $allowedFields[$fieldName];
             if (!$this->isValidFieldType($fieldValue, $expectedType)) {
                 $errors[$fieldName] = "'{$fieldName}' alanı geçerli bir {$expectedType} değeri olmalıdır.";
+                continue;
+            }
+
+            if ($entity === 'user' && $fieldName === 'role' && $fieldValue !== null && $fieldValue !== '') {
+                if (UserRole::tryFrom((string)$fieldValue) === null) {
+                    $errors[$fieldName] = "'{$fieldValue}' geçerli bir kullanıcı rolü değildir.";
+                }
             }
         }
 

@@ -370,13 +370,23 @@ class UserService extends BaseService
             throw new Exception("Şifre Yanlış");
         }
 
-        // Session veya Cookie yaz
-        if (!$dto->rememberMe) {
-            $_SESSION[$_ENV['SESSION_KEY']] = $user->id;
-        } else {
-            setcookie($_ENV['COOKIE_KEY'], (string)$user->id, [
+        $sessionKey = $_ENV['SESSION_KEY'] ?? 'schedule_session';
+        $cookieKey  = $_ENV['COOKIE_KEY'] ?? 'schedule_cookie_';
+
+        // Session yaz
+        $_SESSION[$sessionKey] = $user->id;
+
+        // Remember Me istenmişse güvenli imzalı çerez oluştur
+        if ($dto->rememberMe) {
+            $secret = $_ENV['APP_KEY'] ?? 'schedulemaker_app_secure_salt';
+            $hmac = hash_hmac('sha256', $user->id . ':' . $user->password, $secret);
+            $cookieValue = $user->id . ':' . $hmac;
+
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie($cookieKey, $cookieValue, [
                 'expires'  => time() + (86400 * 30),
                 'path'     => '/',
+                'secure'   => $isHttps,
                 'httponly' => true,
                 'samesite' => 'Strict',
             ]);
@@ -468,6 +478,11 @@ class UserService extends BaseService
 
                 if (!Gate::check(PermissionType::UPDATE->value, $user)) {
                     $failed[$id] = "Güncelleme yetkiniz yok.";
+                    continue;
+                }
+
+                if (array_key_exists('role', $dto->fields) && !Gate::allowsRole('submanager')) {
+                    $failed[$id] = "Kullanıcı rolünü değiştirme yetkiniz yok.";
                     continue;
                 }
 

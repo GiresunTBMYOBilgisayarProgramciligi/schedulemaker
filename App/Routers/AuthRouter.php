@@ -53,8 +53,9 @@ class AuthRouter extends Router
         session_destroy();
 
         // Çerezleri sil (remember me varsa)
-        if (isset($_COOKIE[$_ENV["COOKIE_KEY"]])) {
-            setcookie($_ENV["COOKIE_KEY"], "", [
+        $cookieKey = $_ENV["COOKIE_KEY"] ?? 'schedule_cookie_';
+        if (isset($_COOKIE[$cookieKey])) {
+            setcookie($cookieKey, "", [
                 'expires'  => time() - 3600,
                 'path'     => '/',
                 'httponly' => true,
