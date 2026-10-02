@@ -7,6 +7,8 @@ use App\Core\Gate;
 use App\Enums\PermissionType;
 use App\Enums\UserRole;
 use App\Models\User;
+
+$requestUri = $_SERVER["REQUEST_URI"] ?? '';
 ?>
 <!--begin::Sidebar-->
 <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
@@ -44,7 +46,7 @@ use App\Models\User;
                 <li class="nav-header">ANA MENÜ</li>
                 <!-- Başlangıç-->
                 <li class="nav-item">
-                    <a href="/admin" class="nav-link <?= ($_SERVER["REQUEST_URI"] === '/admin' || $_SERVER["REQUEST_URI"] === '/admin/') ? 'active' : ''; ?>">
+                    <a href="/admin" class="nav-link <?= ($requestUri === '/admin' || $requestUri === '/admin/') ? 'active' : ''; ?>">
                         <i class="nav-icon bi bi-speedometer"></i>
                         <p>Başlangıç</p>
                     </a>
@@ -52,7 +54,7 @@ use App\Models\User;
                 <!-- Profilim -->
                 <li class="nav-item">
                     <a href="/admin/profile"
-                        class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'profile')) ? 'active' : ''; ?>">
+                        class="nav-link <?= (str_contains($requestUri, 'profile')) ? 'active' : ''; ?>">
                         <i class="nav-icon bi bi-person-badge"></i>
                         <p>Profilim</p>
                     </a>
@@ -64,8 +66,8 @@ use App\Models\User;
                 <?php endif; ?>
                 <!-- Ders İşlemleri -->
                 <?php if ($currentUser->role !== UserRole::Secretary->value && (Gate::allowsRole("department_head") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_LESSONS->value))): ?>
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'lesson')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($requestUri, 'lesson')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'lesson')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-journals"></i>
                             <p>
                                 Ders İşlemleri
@@ -74,14 +76,14 @@ use App\Models\User;
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
-                                <a href="/admin/listlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listlessons')) ? 'active' : ''; ?>">
+                                <a href="/admin/listlessons" class="nav-link <?= (str_contains($requestUri, 'listlessons')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-journal-text"></i>
                                     <p>Liste</p>
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a href="/admin/assignlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'assignlessons')) ? 'active' : ''; ?>">
+                                <a href="/admin/assignlessons" class="nav-link <?= (str_contains($requestUri, 'assignlessons')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-person-check"></i>
                                     <p>Ders Atama</p>
                                 </a>
@@ -89,7 +91,7 @@ use App\Models\User;
 
                             <?php if ($currentUser->role !== UserRole::PayrollOfficer->value): ?>
                             <li class="nav-item">
-                                <a href="/admin/importlessons" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importlessons')) ? 'active' : ''; ?>">
+                                <a href="/admin/importlessons" class="nav-link <?= (str_contains($requestUri, 'importlessons')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-box-arrow-in-down"></i>
                                     <p>İçe aktar</p>
                                 </a>
@@ -100,8 +102,8 @@ use App\Models\User;
                 <?php endif; ?>
                 <!-- Takvim İşlemleri -->
                 <?php if (Gate::allowsRole("department_head") || $currentUser->role === UserRole::PayrollOfficer->value || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value)): ?>
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'schedule')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($requestUri, 'schedule')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'schedule')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-calendar"></i>
                             <p>
                                 Takvim İşlemleri
@@ -111,27 +113,27 @@ use App\Models\User;
                         <ul class="nav nav-treeview">
                             <?php if ($currentUser->role !== UserRole::PayrollOfficer->value && $currentUser->role !== UserRole::Secretary->value): ?>
                             <li class="nav-item">
-                                <a href="/admin/editschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editschedule')) ? 'active' : ''; ?>">
+                                <a href="/admin/editschedule" class="nav-link <?= (str_contains($requestUri, 'editschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-calendar-plus"></i>
                                     <p>Ders Programı</p>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="/admin/editexamschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editexamschedule')) ? 'active' : ''; ?>">
+                                <a href="/admin/editexamschedule" class="nav-link <?= (str_contains($requestUri, 'editexamschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-calendar2-plus"></i>
                                     <p>Sınav Programı</p>
                                 </a>
                             </li>
                             <?php endif; ?>
                             <li class="nav-item">
-                                <a href="/admin/exportschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'exportschedule')) ? 'active' : ''; ?>">
+                                <a href="/admin/exportschedule" class="nav-link <?= (str_contains($requestUri, 'exportschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-box-arrow-down"></i>
                                     <p>Dışa Aktar</p>
                                 </a>
                             </li>
                             <?php if ($currentUser->role !== UserRole::Secretary->value && Gate::hasAnyPermission($currentUser->id, PermissionType::PUBLISH_SCHEDULE->value)): ?>
                             <li class="nav-item">
-                                <a href="/admin/publishschedule" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'publishschedule')) ? 'active' : ''; ?>">
+                                <a href="/admin/publishschedule" class="nav-link <?= (str_contains($requestUri, 'publishschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-globe"></i>
                                     <p>Program Yayınla</p>
                                 </a>
@@ -147,7 +149,7 @@ use App\Models\User;
                 <?php endif; ?>
                 <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_UNIT->value)): ?>
                     <li class="nav-item">
-                        <a href="/admin/listunits" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'unit')) ? 'active' : ''; ?>">
+                        <a href="/admin/listunits" class="nav-link <?= (str_contains($requestUri, 'unit')) ? 'active' : ''; ?>">
                             <i class="bi bi-bank nav-icon"></i>
                             <p>Üst Birim İşlemleri</p>
                         </a>
@@ -155,7 +157,7 @@ use App\Models\User;
                 <?php endif; ?>
                 <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_DEPARTMENT->value)): ?>
                     <li class="nav-item">
-                        <a href="/admin/listdepartments" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department') && !str_contains($_SERVER["REQUEST_URI"], '/department/')) ? 'active' : ''; ?>">
+                        <a href="/admin/listdepartments" class="nav-link <?= (str_contains($requestUri, 'department') && !str_contains($requestUri, '/department/')) ? 'active' : ''; ?>">
                             <i class="bi bi-buildings nav-icon"></i>
                             <p>Bölüm İşlemleri</p>
                         </a>
@@ -163,7 +165,7 @@ use App\Models\User;
                 <?php endif; ?>
                 <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_PROGRAM->value)): ?>
                     <li class="nav-item">
-                        <a href="/admin/listprograms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program') && !str_contains($_SERVER["REQUEST_URI"], '/program/')) ? 'active' : ''; ?>">
+                        <a href="/admin/listprograms" class="nav-link <?= (str_contains($requestUri, 'program') && !str_contains($requestUri, '/program/')) ? 'active' : ''; ?>">
                             <i class="bi bi-building nav-icon"></i>
                             <p>Program İşlemleri</p>
                         </a>
@@ -172,7 +174,7 @@ use App\Models\User;
                 <!-- Bölümüm -->
                 <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->department_id)): ?>
                     <li class="nav-item">
-                        <a href="/admin/department/<?= (int)$currentUser->department_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'department')) ? 'active' : ''; ?>">
+                        <a href="/admin/department/<?= (int)$currentUser->department_id ?>" class="nav-link <?= (str_contains($requestUri, 'department')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-buildings"></i>
                             <p>Bölümüm</p>
                         </a>
@@ -181,7 +183,7 @@ use App\Models\User;
                 <!-- Programım -->
                 <?php if (Gate::allowsRole("department_head", true) && !empty($currentUser->program_id)): ?>
                     <li class="nav-item">
-                        <a href="/admin/program/<?= (int)$currentUser->program_id ?>" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'program')) ? 'active' : ''; ?>">
+                        <a href="/admin/program/<?= (int)$currentUser->program_id ?>" class="nav-link <?= (str_contains($requestUri, 'program')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-building"></i>
                             <p>Programım</p>
                         </a>
@@ -193,14 +195,14 @@ use App\Models\User;
                     <li class="nav-header">FİZİKSEL ALTYAPI</li>
                     <!-- Bina İşlemleri -->
                     <li class="nav-item">
-                        <a href="/admin/listbuildings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'building')) ? 'active' : ''; ?>">
+                        <a href="/admin/listbuildings" class="nav-link <?= (str_contains($requestUri, 'building')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-building-fill-gear"></i>
                             <p>Bina İşlemleri</p>
                         </a>
                     </li>
                     <!-- Derslik İşlemleri -->
                     <li class="nav-item">
-                        <a href="/admin/listclassrooms" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'classroom')) ? 'active' : ''; ?>">
+                        <a href="/admin/listclassrooms" class="nav-link <?= (str_contains($requestUri, 'classroom')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-door-closed-fill"></i>
                             <p>Derslik İşlemleri</p>
                         </a>
@@ -211,8 +213,8 @@ use App\Models\User;
                 <?php if (Gate::allowsRole("submanager") || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_USERS->value)): ?>
                     <li class="nav-header">SİSTEM & YÖNETİM</li>
                     <!-- Kullanıcı İşlemleri -->
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'user')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($requestUri, 'user')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'user')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-person-fill-gear"></i>
                             <p>
                                 Kullanıcı İşlemleri
@@ -221,14 +223,14 @@ use App\Models\User;
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
-                                <a href="/admin/listusers" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'listusers')) ? 'active' : ''; ?>">
+                                <a href="/admin/listusers" class="nav-link <?= (str_contains($requestUri, 'listusers')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-person-lines-fill"></i>
                                     <p>Liste</p>
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a href="/admin/importusers" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'importusers')) ? 'active' : ''; ?>">
+                                <a href="/admin/importusers" class="nav-link <?= (str_contains($requestUri, 'importusers')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-box-arrow-in-down"></i>
                                     <p>İçe aktar</p>
                                 </a>
@@ -236,8 +238,8 @@ use App\Models\User;
                         </ul>
                     </li>
                     <!-- Ayarlar -->
-                    <li class="nav-item <?= (str_contains($_SERVER["REQUEST_URI"], 'settings') || str_contains($_SERVER["REQUEST_URI"], 'logs')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings') || str_contains($_SERVER["REQUEST_URI"], 'logs')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($requestUri, 'settings') || str_contains($requestUri, 'logs')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'settings') || str_contains($requestUri, 'logs')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-sliders"></i>
                             <p>
                                 Ayarlar
@@ -246,25 +248,25 @@ use App\Models\User;
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
-                                <a href="/admin/settings" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'settings') && !str_contains($_SERVER["REQUEST_URI"], 'settingslogs')) ? 'active' : ''; ?>">
+                                <a href="/admin/settings" class="nav-link <?= (str_contains($requestUri, 'settings') && !str_contains($requestUri, 'settingslogs')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-gear"></i>
                                     <p>Ayarları Düzenle</p>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="/admin/editpermission" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'editpermission')) ? 'active' : ''; ?>">
+                                <a href="/admin/editpermission" class="nav-link <?= (str_contains($requestUri, 'editpermission')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-shield-lock"></i>
                                     <p>Yetkileri Düzenle</p>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="/admin/logs" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'logs')) ? 'active' : ''; ?>">
+                                <a href="/admin/logs" class="nav-link <?= (str_contains($requestUri, 'logs')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-journal-text"></i>
                                     <p>Kayıtlar</p>
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="/admin/mailqueue" class="nav-link <?= (str_contains($_SERVER["REQUEST_URI"], 'mailqueue')) ? 'active' : ''; ?>">
+                                <a href="/admin/mailqueue" class="nav-link <?= (str_contains($requestUri, 'mailqueue')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-envelope-paper"></i>
                                     <p>E-posta Kuyruğu</p>
                                 </a>

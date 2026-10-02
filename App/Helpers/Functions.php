@@ -2,11 +2,14 @@
 
 namespace App\Helpers;
 
+require_once __DIR__ . '/global_helpers.php';
+
 use App\Services\SettingsService;
 use App\Services\ProgramService;
 use App\Services\UserService;
 use App\Services\DepartmentService;
 use App\Services\BuildingService;
+use App\Core\Csrf;
 use App\Core\Gate;
 use App\Enums\UserRole;
 use App\Models\Department;
@@ -29,6 +32,22 @@ function e(mixed $value, bool $doubleEncode = true): string
         return '';
     }
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', $doubleEncode);
+}
+
+/**
+ * Geçerli oturum için CSRF belirtecini döndürür.
+ */
+function csrf_token(): string
+{
+    return Csrf::token();
+}
+
+/**
+ * HTML formları için gizli CSRF input alanını üretir.
+ */
+function csrf_field(): string
+{
+    return Csrf::field();
 }
 
 /**

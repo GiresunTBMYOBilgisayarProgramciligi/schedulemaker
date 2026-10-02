@@ -23,6 +23,7 @@
       "App\\": "App/"
     },
     "files": [
+      "App/Helpers/global_helpers.php",
       "App/Helpers/Functions.php"
     ]
   },
