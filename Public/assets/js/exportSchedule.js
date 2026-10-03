@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             modal.closeModal();
             onConfirm(options);
-        });
+        };
     }
 
     // Export isteği gönderme ve indirme işlemi
