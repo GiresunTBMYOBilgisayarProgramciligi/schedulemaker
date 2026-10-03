@@ -2,8 +2,6 @@
 
 namespace App\Helpers;
 
-use App\Models\Log;
-
 class LogViewHelper
 {
     /**

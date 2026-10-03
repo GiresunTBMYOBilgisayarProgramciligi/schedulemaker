@@ -4,7 +4,7 @@
  *
  * @var User         $currentUser
  * @var array        $stats  ['units', 'academics', 'classrooms', 'lessons', 'departments', 'programs']
- * @var Log[]        $recentLogs
+ * @var object[]     $recentLogs
  * @var Program[]    $programs
  * @var Unit[]       $units
  * @var Department[] $departments
@@ -12,11 +12,6 @@
 
 use App\Enums\UserRole;
 use App\Helpers\LogViewHelper;
-use App\Models\Department;
-use App\Models\Log;
-use App\Models\Program;
-use App\Models\Unit;
-use App\Models\User;
 use function App\Helpers\e;
 ?>
 

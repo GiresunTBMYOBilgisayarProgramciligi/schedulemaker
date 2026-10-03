@@ -18,18 +18,22 @@ class LogTest extends BaseTestCase
         $this->assertInstanceOf(NullHandler::class, $handlers[0]);
     }
 
-    public function testLoggingDoesNotInsertIntoDatabaseDuringTests(): void
+    public function testLogsTableDoesNotExistAndDbLoggingIsDisabled(): void
     {
         Log::reset();
         $db = $this->getDb();
 
-        $initialCount = (int)$db->query("SELECT COUNT(*) FROM logs")->fetchColumn();
+        // logs tablosunun veritabanından tamamen silindiğini doğrula
+        $tables = $db->query("SHOW TABLES LIKE 'logs'")->fetchAll();
+        $this->assertEmpty($tables, "Veritabanında logs tablosu bulunmamalıdır.");
 
-        Log::logger()->info("Bu bir test log kaydıdır ve DB'ye yazılmamalıdır", Log::context($this));
-        Log::logger()->error("Bu bir test hata log kaydıdır ve DB'ye yazılmamalıdır", Log::context($this));
-
-        $finalCount = (int)$db->query("SELECT COUNT(*) FROM logs")->fetchColumn();
-        $this->assertEquals($initialCount, $finalCount);
+        // Logger'ın DB handler kullanmadığını doğrula
+        $logger = Log::logger();
+        foreach ($logger->getHandlers() as $handler) {
+            $this->assertNotInstanceOf(\Monolog\Handler\AbstractProcessingHandler::class, $handler, 
+                get_class($handler) === \App\Core\AppRotatingFileHandler::class ? '' : 'Logger veritabanı işleyicisi içermemelidir.'
+            );
+        }
     }
 
     public function testChannelReturnsLoggerForGivenChannel(): void

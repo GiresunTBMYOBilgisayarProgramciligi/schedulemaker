@@ -9,7 +9,6 @@ Bu dizindeki alt bileşenler:
 *   **[AssetManager](./AssetManager/README.md)**
 *   **[Controller](./Controller/README.md)**
 *   **[Database](./Database/README.md)**
-*   **[DbLogHandler](./DbLogHandler/README.md)**
 *   **[ErrorHandler](./ErrorHandler/README.md)**
 *   **[ImportExportManager](./ImportExportManager/README.md)**
 *   **[Log](./Log/README.md)**

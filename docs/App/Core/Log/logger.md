@@ -7,9 +7,7 @@ Uygulama genelinde kullanılacak Monolog nesnesini hazırlar ve döndürür (Sta
 
 ## Mantık (Algoritma)
 1.  **Önbellek Kontrolü**: Eğer daha önce bir logger nesnesi oluşturulmuşsa, doğrudan o nesneyi döndürür.
-2.  **Kanal Oluşturma**: 'app' kanal isminde yeni bir Monolog `Logger` nesnesi türetir.
-3.  **DbLogHandler**: Her durumda veritabanına log yazmak için `DbLogHandler`'ı handler listesine ekler.
-    - Hata seviyesi: DEBUG moduna göre belirlenir.
-4.  **Debug Modu Kontrolü**: Eğer `.env` dosyasında `DEBUG=true` ise:
-    - `debug.log`, `info.log` ve `error.log` dosyalarına yazmak için `StreamHandler` ve `FilterHandler` eklemelerini yapar.
-5.  **Dönüş**: Yapılandırılmış logger nesnesini static değişkene kaydederek döndürür.
+2.  **Kanal Oluşturma**: 'app' kanal isminde Monolog `Logger` nesnesi türetir.
+3.  **AppRotatingFileHandler**: `Logs/{channel}-{date}.log` dosyalarına JSON formatında rotasyonlu olarak log yazar.
+    - Saklama süresi ve dosya rotasyon periyodu sistem ayarlarından (`settings`) dinamik okunur.
+4.  **Dönüş**: Yapılandırılmış logger nesnesini static değişkene kaydederek döndürür.

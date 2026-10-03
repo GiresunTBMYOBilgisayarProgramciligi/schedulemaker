@@ -4,13 +4,13 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use App\Helpers\LogViewHelper;
-use App\Models\Log;
+use stdClass;
 
 class LogViewHelperTest extends TestCase
 {
     public function testRenderLevelBadge(): void
     {
-        $log = new Log();
+        $log = new stdClass();
         $log->level = 'ERROR';
         $badge = LogViewHelper::renderLevelBadge($log);
         $this->assertStringContainsString('badge bg-danger', $badge);
@@ -22,7 +22,7 @@ class LogViewHelperTest extends TestCase
 
     public function testRenderSource(): void
     {
-        $log = new Log();
+        $log = new stdClass();
         $log->file = '/var/www/App/Services/ScheduleService.php';
         $log->line = 42;
         $log->class = 'App\Services\ScheduleService';
@@ -36,7 +36,7 @@ class LogViewHelperTest extends TestCase
 
     public function testRenderContextModal(): void
     {
-        $log = new Log();
+        $log = new stdClass();
         $log->id = 123;
         $log->level = 'INFO';
         $log->context = json_encode(['username' => 'testuser', 'action' => 'save']);

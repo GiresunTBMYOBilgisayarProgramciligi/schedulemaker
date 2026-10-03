@@ -10,7 +10,6 @@ use App\Middlewares\AuthMiddleware;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Lesson;
-use App\Models\Log;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Unit;
@@ -23,7 +22,6 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
-use App\Repositories\LogRepository;
 use App\Repositories\LessonAssignmentRepository;
 use App\Services\LogReaderService;
 
