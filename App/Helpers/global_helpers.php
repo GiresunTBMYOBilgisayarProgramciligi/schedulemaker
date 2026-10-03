@@ -48,6 +48,19 @@ if (!function_exists('csrf_field')) {
     }
 }
 
+if (!function_exists('isDebug')) {
+    /**
+     * Uygulamanın debug (hata ayıklama) modunda olup olmadığını döner.
+     * .env içerisindeki DEBUG değerini güvenli boolean tipe dönüştürür.
+     *
+     * @return bool
+     */
+    function isDebug(): bool
+    {
+        return filter_var($_ENV['DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+}
+
 if (!function_exists('getSettingValue')) {
     /**
      * Sistem ayar değerini döner.

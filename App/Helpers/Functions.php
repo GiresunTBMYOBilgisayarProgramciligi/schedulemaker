@@ -51,6 +51,14 @@ function csrf_field(): string
 }
 
 /**
+ * Uygulamanın debug (hata ayıklama) modunda olup olmadığını döner.
+ */
+function isDebug(): bool
+{
+    return filter_var($_ENV['DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+}
+
+/**
  * @param mixed $default İstenen ayar bulunamazsa dönülecek ön tanımlı değer
  * @throws Exception
  */

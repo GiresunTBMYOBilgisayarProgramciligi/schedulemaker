@@ -252,7 +252,7 @@ INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
 ('log', 'log_rotation_period', 'daily', 'string'),
 ('log', 'log_retention_days', '14', 'integer'),
 ('log', 'log_max_files', '14', 'integer'),
-('log', 'log_level', 'DEBUG', 'string');
+('log', 'log_level', 'INFO', 'string');
 
 CREATE TABLE IF NOT EXISTS schedule_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -356,7 +356,7 @@ class Model
                 $results = $this->$relationMethod($results, $options);
             } else {
                 // Geliştirme aşamasında hata ayıklamak için log düşülebilir
-                if ($_ENV['DEBUG'] ?? false) {
+                if (isDebug()) {
                     $this->logger()->error("Model ilişkisi bulunamadı: " . get_class($this) . "::" . $relationMethod, $this->logContext());
                 }
             }
@@ -414,8 +414,9 @@ class Model
     public function find($id): ?object
     {
         if (is_null($id)) {
-            if (($_ENV['DEBUG']))
+            if (isDebug()) {
                 error_log("Find metoduna id girilmemiş");
+            }
             return null;
         }
 

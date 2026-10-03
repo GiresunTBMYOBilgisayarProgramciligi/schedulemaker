@@ -57,12 +57,14 @@ class Log
             return self::$cachedSettings;
         }
 
-        // Varsayılan güvenli ayarlar
+        $isDebug = function_exists('isDebug') ? isDebug() : filter_var($_ENV['DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        // Varsayılan güvenli ayarlar (Canlıda INFO, debug modunda DEBUG)
         $defaults = [
             'rotationPeriod' => 'daily',
             'retentionDays'  => 14,
             'maxFiles'       => 14,
-            'levelName'      => 'DEBUG',
+            'levelName'      => $isDebug ? 'DEBUG' : 'INFO',
             'dateFormat'     => 'Y-m-d',
         ];
 
@@ -206,19 +208,24 @@ class Log
             self::cleanExpiredLogs($logDir, $settings['retentionDays']);
         }
 
-        if (($_ENV['DEBUG'] ?? 'false') === 'true') {
+        $isDebug = function_exists('isDebug') ? isDebug() : filter_var($_ENV['DEBUG'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $configuredLevel = strtoupper(trim($levelName));
+
+        if ($isDebug) {
+            // Debug modu aktifken (geliştirme ortamı), minimum seviye en az Debug'dır
             $minLevel = Level::Debug;
         } else {
-            $minLevel = match (strtoupper($levelName)) {
-                'DEBUG'     => Level::Debug,
-                'INFO'      => Level::Info,
-                'NOTICE'    => Level::Notice,
-                'WARNING'   => Level::Warning,
-                'ERROR'     => Level::Error,
-                'CRITICAL'  => Level::Critical,
-                'ALERT'     => Level::Alert,
-                'EMERGENCY' => Level::Emergency,
-                default     => Level::Info,
+            // Canlı ortamda (DEBUG=false), DEBUG logları KESİNLİKLE yazılamaz (Master Override).
+            // Veritabanı ayarı 'DEBUG' olsa dahi otomatik olarak 'INFO' seviyesine yükseltilir.
+            $minLevel = match ($configuredLevel) {
+                'DEBUG', 'INFO' => Level::Info,
+                'NOTICE'        => Level::Notice,
+                'WARNING'       => Level::Warning,
+                'ERROR'         => Level::Error,
+                'CRITICAL'      => Level::Critical,
+                'ALERT'         => Level::Alert,
+                'EMERGENCY'     => Level::Emergency,
+                default         => Level::Info,
             };
         }
 

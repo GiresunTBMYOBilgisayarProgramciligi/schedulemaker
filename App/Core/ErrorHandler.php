@@ -215,7 +215,7 @@ class ErrorHandler
         ];
 
         // Debug modu aktifse detayları ekle
-        if ($_ENV['DEBUG'] === 'true') {
+        if (isDebug()) {
             $view_data['file'] = $exception->getFile();
             $view_data['line'] = $exception->getLine();
             $view_data['trace'] = $exception->getTraceAsString();
@@ -251,7 +251,7 @@ class ErrorHandler
             // View render edilemezse fallback
             echo "<h1>Hata " . $statusCode . "</h1>";
             echo "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
-            if ($_ENV['DEBUG'] === 'true') {
+            if (isDebug()) {
                 echo "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
             }
             exit();
@@ -289,7 +289,7 @@ class ErrorHandler
         }
 
         // Geliştirme ortamında daha fazla detay göster
-        if ($_ENV['DEBUG'] === 'true') {
+        if (isDebug()) {
             $response['debug'] = [
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),

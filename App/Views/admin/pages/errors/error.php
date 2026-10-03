@@ -54,7 +54,7 @@ if ($code == 404) {
                         Bu hatayı düzeltmek için çalışacağız. Bu sırada <a href="/admin">panoya dönebilirsiniz</a>.
                     </p>
 
-                    <?php if (isset($file) && ($_ENV['DEBUG'] ?? 'false') === 'true'): ?>
+                    <?php if (isset($file) && isDebug()): ?>
                         <div class="card card-<?= e($color) ?> card-outline mt-4">
                             <div class="card-header">
                                 <h3 class="card-title">Hata Detayları (Debug)</h3>

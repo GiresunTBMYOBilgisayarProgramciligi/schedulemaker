@@ -126,4 +126,32 @@ class LogTest extends BaseTestCase
         }
         @rmdir($tempDir);
     }
+
+    public function testIsDebugHelperEvaluatesBooleanValuesCorrectly(): void
+    {
+        $backup = $_ENV['DEBUG'] ?? null;
+
+        $_ENV['DEBUG'] = 'true';
+        $this->assertTrue(isDebug());
+
+        $_ENV['DEBUG'] = '1';
+        $this->assertTrue(isDebug());
+
+        $_ENV['DEBUG'] = 'false';
+        $this->assertFalse(isDebug());
+
+        $_ENV['DEBUG'] = '0';
+        $this->assertFalse(isDebug());
+
+        unset($_ENV['DEBUG']);
+        $this->assertFalse(isDebug());
+
+        // Eski değeri geri yükle
+        if ($backup !== null) {
+            $_ENV['DEBUG'] = $backup;
+        } else {
+            unset($_ENV['DEBUG']);
+        }
+    }
 }
+

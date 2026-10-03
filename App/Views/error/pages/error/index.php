@@ -38,7 +38,7 @@ $displayMessage = (!empty($message) && strlen(trim($message)) > 0) ? $message : 
             <a href="#" class="btn btn-outline-secondary"><i class="bi bi-life-preserver me-2"></i> İletişime geç</a>
         </div>
         
-        <?php if (isset($file) && ($_ENV['DEBUG'] ?? 'false') === 'true'): ?>
+        <?php if (isset($file) && isDebug()): ?>
             <div class="card card-<?= e($currentError['color']) ?> card-outline text-start mt-5 mx-auto shadow-sm" style="max-width: 900px;">
                 <div class="card-header">
                     <h3 class="card-title"><i class="bi bi-bug me-2"></i>Hata Detayları (Debug)</h3>

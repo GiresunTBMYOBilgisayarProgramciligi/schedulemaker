@@ -1096,7 +1096,7 @@ class AdminPageController extends Controller
         $filename = basename($filename);
         $filePath = $_ENV["DOWNLOAD_PATH"] . "/" . $filename;
         if (!file_exists($filePath)) {
-            if ($_ENV["DEBUG"]) {
+            if (isDebug()) {
                 error_log(__LINE__ . ". satırda filePath değişkeni:" . var_export($filePath, true));
             }
             throw new Exception("İndirilecek dosya bulunamadı", 404);
