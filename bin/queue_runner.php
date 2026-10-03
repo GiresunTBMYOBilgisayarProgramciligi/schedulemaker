@@ -28,26 +28,48 @@ if (file_exists(dirname(__DIR__) . '/App/.env')) {
 }
 
 $startTime = microtime(true);
-$options = getopt('', ['limit::', 'max-attempts::']);
+$options = getopt('', ['limit::', 'max-attempts::', 'verbose::']);
 $batchSize = isset($options['limit']) ? (int)$options['limit'] : null;
 $maxAttempts = isset($options['max-attempts']) ? (int)$options['max-attempts'] : null;
+$isVerbose = isset($options['verbose']);
+
+$queueLogger = Log::channel('queue');
 
 try {
     $service = new MailQueueService();
     $effectiveBatch = $batchSize ?? (int)\App\Helpers\getSettingValue('mail_batch_size', 'mail', 10);
     $effectiveAttempts = $maxAttempts ?? (int)\App\Helpers\getSettingValue('mail_max_attempts', 'mail', 3);
 
-    echo "[" . date('Y-m-d H:i:s') . "] Mail kuyruğu işleniyor (Limit: {$effectiveBatch}, Max Attempts: {$effectiveAttempts})...\n";
-
     $result = $service->processQueue($batchSize, $maxAttempts);
     $duration = round(microtime(true) - $startTime, 3);
 
-    echo "[" . date('Y-m-d H:i:s') . "] Tamamlandı ({$duration}s): İşlenen: {$result['processed']}, Başarılı: {$result['sent']}, Başarısız: {$result['failed']}\n";
+    // İşlenen e-posta varsa INFO, yoksa DEBUG seviyesinde logla (disk şişmesini önlemek için)
+    if ($result['processed'] > 0) {
+        $message = "Mail kuyruğu tamamlandı ({$duration}s): İşlenen: {$result['processed']}, Başarılı: {$result['sent']}, Başarısız: {$result['failed']}";
+        $queueLogger->info($message, [
+            'processed' => $result['processed'],
+            'sent'      => $result['sent'],
+            'failed'    => $result['failed'],
+            'duration'  => $duration,
+            'batch'     => $effectiveBatch,
+            'attempts'  => $effectiveAttempts,
+        ]);
+        echo "[" . date('Y-m-d H:i:s') . "] {$message}\n";
+    } else {
+        $queueLogger->debug("Mail kuyruğu boş, işlenecek kayıt bulunamadı ({$duration}s).", [
+            'duration' => $duration
+        ]);
+        if ($isVerbose) {
+            echo "[" . date('Y-m-d H:i:s') . "] Mail kuyruğu boş ({$duration}s).\n";
+        }
+    }
+
     exit(0);
 } catch (\Throwable $e) {
-    echo "[" . date('Y-m-d H:i:s') . "] HATA: " . $e->getMessage() . "\n";
-    Log::logger()->error("CLI Queue Runner hatası: " . $e->getMessage(), [
+    $errorMessage = "CLI Queue Runner hatası: " . $e->getMessage();
+    $queueLogger->error($errorMessage, [
         'exception' => $e
     ]);
+    echo "[" . date('Y-m-d H:i:s') . "] HATA: {$errorMessage}\n";
     exit(1);
 }

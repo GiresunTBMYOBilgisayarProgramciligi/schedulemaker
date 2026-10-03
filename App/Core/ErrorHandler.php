@@ -134,7 +134,7 @@ class ErrorHandler
     private function logException($exception)
     {
         try {
-            $logger = Log::logger();
+            $logger = Log::channel('system');
             // Kullanıcı bilgisi
             $username = null;
             $userId = null;

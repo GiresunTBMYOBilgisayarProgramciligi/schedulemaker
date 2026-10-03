@@ -3,89 +3,246 @@
 namespace App\Core;
 
 use App\Middlewares\AuthMiddleware;
-use Monolog\Handler\FilterHandler;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
-use Monolog\Handler\StreamHandler;
+use Monolog\Handler\RotatingFileHandler;
 use Monolog\Level;
 use Monolog\Logger;
 
 /**
  * Centralized logging helper for the whole application.
- * Provides a shared logger instance and a unified context builder.
+ * Provides channel-based rotating file logging and a unified context builder.
  */
 class Log
 {
+    /** @var array<string, Logger> */
+    private static array $loggers = [];
+
     /** @var Logger|null */
-    private static ?Logger $logger = null;
+    private static ?Logger $customLogger = null;
+
+    /** @var array{maxFiles: int, levelName: string}|null */
+    private static ?array $cachedSettings = null;
+
+    /** @var bool Re-entrancy guard to prevent infinite recursion during bootstrap */
+    private static bool $isLoadingSettings = false;
 
     /**
      * Set a custom logger instance (e.g. for testing).
      */
     public static function setLogger(?Logger $logger): void
     {
-        self::$logger = $logger;
+        self::$customLogger = $logger;
     }
 
     /**
-     * Reset the shared logger instance.
+     * Reset the shared logger instances.
      */
     public static function reset(): void
     {
-        self::$logger = null;
+        self::$loggers = [];
+        self::$customLogger = null;
+        self::$cachedSettings = null;
+        self::$isLoadingSettings = false;
     }
 
     /**
-     * Get the shared Monolog logger instance.
+     * Log ayarlarını döngüsel bağımlılık ve aşırı bellek tüketimi oluşturmadan güvenle yükler.
+     *
+     * @return array{rotationPeriod: string, retentionDays: int, maxFiles: int, levelName: string, dateFormat: string}
      */
-    public static function logger(): Logger
+    private static function resolveLogSettings(): array
     {
-        if (self::$logger instanceof Logger) {
-            return self::$logger;
+        if (self::$cachedSettings !== null) {
+            return self::$cachedSettings;
         }
 
-        // Build the logger here so the project doesn't depend on LoggerFactory
-        $channel = 'app';
+        // Varsayılan güvenli ayarlar
+        $defaults = [
+            'rotationPeriod' => 'daily',
+            'retentionDays'  => 14,
+            'maxFiles'       => 14,
+            'levelName'      => 'DEBUG',
+            'dateFormat'     => 'Y-m-d',
+        ];
+
+        // Zaten ayar yükleniyorsa döngüyü kır ve varsayılanları dön
+        if (self::$isLoadingSettings) {
+            return $defaults;
+        }
+
+        self::$isLoadingSettings = true;
+
+        try {
+            // Service katmanını tetiklemeden doğrudan PDO üzerinden ayarları oku
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT `key`, `value` FROM `settings` WHERE `group` = 'log'");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
+            if (is_array($rows)) {
+                // Rotasyon periyodu: daily (günlük), weekly (haftalık), monthly (aylık)
+                if (!empty($rows['log_rotation_period'])) {
+                    $period = strtolower(trim((string)$rows['log_rotation_period']));
+                    if (in_array($period, ['daily', 'weekly', 'monthly'], true)) {
+                        $defaults['rotationPeriod'] = $period;
+                    }
+                }
+
+                // Saklama süresi (gün)
+                if (isset($rows['log_retention_days']) && is_numeric($rows['log_retention_days'])) {
+                    $days = (int)$rows['log_retention_days'];
+                    if ($days > 0) {
+                        $defaults['retentionDays'] = $days;
+                    }
+                } elseif (isset($rows['log_max_files']) && is_numeric($rows['log_max_files'])) {
+                    // Geriye dönük uyumluluk
+                    $days = (int)$rows['log_max_files'];
+                    if ($days > 0) {
+                        $defaults['retentionDays'] = $days;
+                    }
+                }
+
+                // Minimum log seviyesi
+                if (!empty($rows['log_level'])) {
+                    $defaults['levelName'] = (string)$rows['log_level'];
+                }
+            }
+        } catch (\Throwable) {
+            // DB hazır değilse veya tablo yoksa sessizce varsayılanları kullan
+        } finally {
+            self::$isLoadingSettings = false;
+        }
+
+        // Periyot bazında Monolog dosya formatı ve maxFiles hesapla
+        switch ($defaults['rotationPeriod']) {
+            case 'weekly':
+                $defaults['dateFormat'] = AppRotatingFileHandler::FILE_PER_WEEK; // Y-\WW (örn: 2026-W40)
+                $defaults['maxFiles'] = max(1, (int)ceil($defaults['retentionDays'] / 7));
+                break;
+            case 'monthly':
+                $defaults['dateFormat'] = AppRotatingFileHandler::FILE_PER_MONTH; // Y-m (örn: 2026-10)
+                $defaults['maxFiles'] = max(1, (int)ceil($defaults['retentionDays'] / 30));
+                break;
+            case 'daily':
+            default:
+                $defaults['dateFormat'] = AppRotatingFileHandler::FILE_PER_DAY; // Y-m-d (örn: 2026-10-03)
+                $defaults['maxFiles'] = max(1, $defaults['retentionDays']);
+                break;
+        }
+
+        self::$cachedSettings = $defaults;
+        return self::$cachedSettings;
+    }
+
+    /**
+     * Belirtilen saklama süresinden daha eski log dosyalarını diskten temizler.
+     *
+     * @param string $logDir
+     * @param int $retentionDays
+     * @return int Silinen dosya sayısı
+     */
+    public static function cleanExpiredLogs(string $logDir, int $retentionDays): int
+    {
+        if ($retentionDays <= 0 || !is_dir($logDir)) {
+            return 0;
+        }
+
+        $thresholdTime = time() - ($retentionDays * 86400);
+        $files = glob($logDir . '/*.log') ?: [];
+        $deleted = 0;
+
+        foreach ($files as $file) {
+            if (is_file($file) && filemtime($file) < $thresholdTime) {
+                if (@unlink($file)) {
+                    $deleted++;
+                }
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Get a Monolog logger instance for a specific channel.
+     * Channels: 'app', 'auth', 'schedule', 'security', 'database', 'system', etc.
+     */
+    public static function channel(string $channel = 'app'): Logger
+    {
+        if (self::$customLogger instanceof Logger) {
+            return self::$customLogger;
+        }
+
+        $channel = strtolower(trim($channel)) ?: 'app';
+
+        if (isset(self::$loggers[$channel])) {
+            return self::$loggers[$channel];
+        }
+
         $logger = new Logger($channel);
+
+        // Olası döngüsel çağrılarda aynı kanalın tekrar oluşturulmasını önlemek için erken sakla
+        self::$loggers[$channel] = $logger;
 
         // Test ortamında logları devre dışı bırak (NullHandler)
         if (($_ENV['APP_ENV'] ?? '') === 'testing' || defined('PHPUNIT_RUNNING')) {
             $logger->pushHandler(new NullHandler());
-            self::$logger = $logger;
-            return self::$logger;
+            return $logger;
         }
-
-        // DB handler: write everything from Debug and above
-        $dbLevel = ($_ENV['DEBUG'] ?? 'false') === 'true' ? Level::Debug : Level::Info;
-        $dbHandler = new DbLogHandler($dbLevel, true);
-        $logger->pushHandler($dbHandler);
 
         $logDir = $_ENV['LOG_PATH'] ?? dirname(__DIR__, 2) . '/Logs';
         if (!is_dir($logDir)) {
             @mkdir($logDir, 0777, true);
         }
 
-        // Optional fallback to file in DEBUG
+        // Ayarları güvenli ve optimize şekilde çek
+        $settings = self::resolveLogSettings();
+        $maxFiles = $settings['maxFiles'];
+        $levelName = $settings['levelName'];
+        $dateFormat = $settings['dateFormat'];
+
+        // Eski dosyaları temizleme (GC: 1% olasılıkla tetiklenir, performansı etkilemez)
+        if (mt_rand(1, 100) === 1) {
+            self::cleanExpiredLogs($logDir, $settings['retentionDays']);
+        }
+
         if (($_ENV['DEBUG'] ?? 'false') === 'true') {
-            $debugFile = $logDir . '/debug.log';
-            if (!file_exists($debugFile) ? is_writable($logDir) : is_writable($debugFile)) {
-                $debugHandler = new StreamHandler($debugFile, Level::Debug);
-                $logger->pushHandler(new FilterHandler($debugHandler, Level::Debug, Level::Debug));
-            }
-        }
-        
-        $infoFile = $logDir . '/info.log';
-        if (!file_exists($infoFile) ? is_writable($logDir) : is_writable($infoFile)) {
-            $infoHandler = new StreamHandler($infoFile, Level::Info);
-            $logger->pushHandler(new FilterHandler($infoHandler, Level::Info, Level::Info));
-        }
-
-        $errorFile = $logDir . '/error.log';
-        if (!file_exists($errorFile) ? is_writable($logDir) : is_writable($errorFile)) {
-            $logger->pushHandler(new StreamHandler($errorFile, Level::Error, true));
+            $minLevel = Level::Debug;
+        } else {
+            $minLevel = match (strtoupper($levelName)) {
+                'DEBUG'     => Level::Debug,
+                'INFO'      => Level::Info,
+                'NOTICE'    => Level::Notice,
+                'WARNING'   => Level::Warning,
+                'ERROR'     => Level::Error,
+                'CRITICAL'  => Level::Critical,
+                'ALERT'     => Level::Alert,
+                'EMERGENCY' => Level::Emergency,
+                default     => Level::Info,
+            };
         }
 
-        self::$logger = $logger;
-        return self::$logger;
+        // Rotasyonlu dosya işleyicisi: Logs/{channel}-{date}.log
+        // filePermission null bırakılır; böylece farklı kullanıcılar (web www-data ve cli) chmod yetki hatası almaz
+        $logFile = $logDir . '/' . $channel . '.log';
+        $handler = new AppRotatingFileHandler($logFile, $maxFiles, $minLevel, true, null);
+        $handler->setFilenameFormat('{filename}-{date}', $dateFormat);
+
+        // JSON formatlayıcı: her log satırı tekil ve ayrıştırılabilir bir JSON nesnesidir
+        $formatter = new JsonFormatter(JsonFormatter::BATCH_MODE_NEWLINES, true);
+        $handler->setFormatter($formatter);
+
+        $logger->pushHandler($handler);
+
+        return $logger;
+    }
+
+    /**
+     * Get the default shared Monolog logger instance ('app' channel).
+     */
+    public static function logger(): Logger
+    {
+        return self::channel('app');
     }
 
     /**

@@ -25,6 +25,7 @@ use App\Repositories\UnitRepository;
 use App\Repositories\BuildingRepository;
 use App\Repositories\LogRepository;
 use App\Repositories\LessonAssignmentRepository;
+use App\Services\LogReaderService;
 
 use App\Enums\ClassroomType;
 use App\Enums\LessonType;
@@ -81,7 +82,7 @@ class AdminPageController extends Controller
                 'departments'=> (new DepartmentRepository())->count(),
                 'programs'   => (new ProgramRepository())->count(),
             ];
-            $view_data['recentLogs']   = $currentUser->role === UserRole::Admin->value ? (new LogRepository())->getRecent(10) : [];
+            $view_data['recentLogs']   = $currentUser->role === UserRole::Admin->value ? (new LogReaderService())->getRecent(10) : [];
             $view_data["programs"]     = (new ProgramRepository())->getAuthorized('view', ['active' => true], ['lecturers', 'lessons', 'department' => ['with' => ['chairperson', 'unit']]]);
             $view_data["units"]        = (new UnitRepository())->getAuthorized('view', ['active' => true]);
             $view_data["departments"]  = (new DepartmentRepository())->getAuthorized('view', [], ["chairperson", "unit"]);
@@ -1025,14 +1026,28 @@ class AdminPageController extends Controller
         ];
     }
 
-    public function getLogsPageData(AssetManager $assetManager): array
+    public function getLogsPageData(AssetManager $assetManager, array $requestData = []): array
     {
         Gate::authorizeRole("admin", false, "Kayıtlara erişim yetkiniz yok");
         $assetManager->loadPageAssets('listpages');
-        $logs = (new Log())->get()->orderBy('created_at', 'DESC')->limit(500)->all();
+
+        $logReader = new LogReaderService();
+        $selectedChannel = $requestData['channel'] ?? 'all';
+        $selectedLevel = $requestData['level'] ?? '';
+        $search = $requestData['search'] ?? '';
+
+        $logs = $logReader->getLogs([
+            'channel' => $selectedChannel,
+            'level'   => $selectedLevel,
+            'search'  => $search,
+        ], 500);
+
         return [
-            "page_title" => "Kayıtlar",
-            "logs"       => $logs,
+            "page_title"      => "Kayıtlar",
+            "logs"            => $logs,
+            "channels"        => $logReader->getAvailableChannels(),
+            "selectedChannel" => $selectedChannel,
+            "selectedLevel"   => $selectedLevel,
         ];
     }
 

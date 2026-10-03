@@ -43,7 +43,7 @@ class AuthRouter extends Router
     {
         $user = AuthMiddleware::user();
         if ($user) {
-            $this->logger()->info($user->getFullName() . " çıkış yaptı.", $this->logContext());
+            \App\Core\Log::channel('auth')->info($user->getFullName() . " çıkış yaptı.", $this->logContext());
         }
 
         // Tüm session verilerini temizle

@@ -14,6 +14,7 @@ use App\Core\EventDispatcher;
 
 class ScheduleNoteService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     private ScheduleNoteRepository $repository;
     private UserRepository $userRepository;
 

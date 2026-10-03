@@ -14,6 +14,7 @@ use App\Models\ScheduleItem;
  */
 class TimelineService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     /**
      * "Flatten Timeline" mantığı ile zaman çizelgesini kritik noktalara ayırır.
      * 

@@ -23,7 +23,7 @@ class SyncChairpersonRoleListener
      */
     public function handle(ChairpersonChangedEvent $event): void
     {
-        $logger = Log::logger();
+        $logger = Log::channel('auth');
         $userRepository = new UserRepository();
         $departmentRepository = new DepartmentRepository();
         $userService = new UserService();

@@ -19,11 +19,12 @@ abstract class BaseService
 {
     protected PDO $db;
     protected Logger $logger;
+    protected string $logChannel = 'app';
 
     public function __construct()
     {
         $this->db = Database::getConnection();
-        $this->logger = Log::logger();
+        $this->logger = Log::channel($this->logChannel);
     }
 
     /**

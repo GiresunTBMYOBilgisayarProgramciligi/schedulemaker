@@ -21,6 +21,7 @@ use App\Repositories\ScheduleRepository;
  */
 class ScheduleSyncService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     private ScheduleService $scheduleService;
     private ScheduleRepository $scheduleRepo;
     private TimelineService $timelineService;

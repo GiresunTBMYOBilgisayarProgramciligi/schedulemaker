@@ -14,6 +14,7 @@ use function App\Helpers\getSettingValue;
 
 class MailQueueService extends BaseService
 {
+    protected string $logChannel = 'queue';
     private MailQueueRepository $repository;
 
     public function __construct()

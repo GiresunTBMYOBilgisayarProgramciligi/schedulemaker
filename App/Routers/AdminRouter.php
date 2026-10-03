@@ -294,7 +294,7 @@ class AdminRouter extends Router
 
     public function LogsAction()
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getLogsPageData($this->assetManager));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getLogsPageData($this->assetManager, $_GET));
         $this->callView("admin/settings/logs");
     }
 

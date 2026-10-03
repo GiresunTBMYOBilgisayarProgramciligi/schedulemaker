@@ -37,7 +37,7 @@ class CsrfMiddleware
         $submittedToken = self::resolveSubmittedToken();
 
         if (!Csrf::validate($submittedToken)) {
-            Log::logger()->warning('CSRF doğrulaması başarısız oldu.', Log::context(null, [
+            Log::channel('security')->warning('CSRF doğrulaması başarısız oldu.', Log::context(null, [
                 'method' => $method,
                 'uri' => $_SERVER['REQUEST_URI'] ?? '',
                 'has_token' => !empty($submittedToken)

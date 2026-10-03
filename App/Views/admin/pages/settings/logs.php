@@ -2,16 +2,23 @@
 /**
  * @var array $logs
  * @var AssetManager $assetManager
+ * @var array $channels
+ * @var string $selectedChannel
+ * @var string $selectedLevel
  */
 
 use App\Core\AssetManager;
 use App\Helpers\LogViewHelper;
 use function App\Helpers\e;
+
+$selectedChannel = $selectedChannel ?? 'all';
+$selectedLevel = $selectedLevel ?? '';
+$channels = $channels ?? [];
 ?>
 <main class="app-main">
     <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row">
+            <div class="row align-items-center">
                 <div class="col-sm-6">
                     <h3 class="mb-0">Kayıtlar</h3>
                 </div>
@@ -27,6 +34,45 @@ use function App\Helpers\e;
 
     <div class="app-content">
         <div class="container-fluid">
+            <!-- Filtreleme Alanı -->
+            <div class="card card-outline card-secondary mb-3">
+                <div class="card-body py-2">
+                    <form method="GET" action="/admin/logs" class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <label for="channelSelect" class="col-form-label fw-bold small"><i class="bi bi-diagram-3 me-1"></i>Kanal:</label>
+                        </div>
+                        <div class="col-auto">
+                            <select name="channel" id="channelSelect" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="all" <?= $selectedChannel === 'all' ? 'selected' : '' ?>>Tüm Kanallar</option>
+                                <?php foreach ($channels as $ch): ?>
+                                    <option value="<?= htmlspecialchars($ch) ?>" <?= $selectedChannel === $ch ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars(ucfirst($ch)) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-auto ms-md-2">
+                            <label for="levelSelect" class="col-form-label fw-bold small"><i class="bi bi-funnel me-1"></i>Seviye:</label>
+                        </div>
+                        <div class="col-auto">
+                            <select name="level" id="levelSelect" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="" <?= empty($selectedLevel) ? 'selected' : '' ?>>Tüm Seviyeler</option>
+                                <?php foreach (['DEBUG', 'INFO', 'NOTICE', 'WARNING', 'ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'] as $lvl): ?>
+                                    <option value="<?= $lvl ?>" <?= $selectedLevel === $lvl ? 'selected' : '' ?>><?= $lvl ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <?php if ($selectedChannel !== 'all' || !empty($selectedLevel)): ?>
+                            <div class="col-auto ms-auto">
+                                <a href="/admin/logs" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Filtreleri Sıfırla
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </form>
+                </div>
+            </div>
+
             <div class="card card-outline card-primary">
                 <div class="card-body">
                     <div class="table-responsive">
@@ -35,6 +81,7 @@ use function App\Helpers\e;
                             <thead>
                                 <tr>
                                     <th>Tarih</th>
+                                    <th class="filterable">Kanal</th>
                                     <th class="filterable">Kullanıcı</th>
                                     <th class="filterable">Seviye</th>
                                     <th>Mesaj</th>
@@ -48,6 +95,7 @@ use function App\Helpers\e;
                                 <?php foreach ($logs as $log): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($log->created_at) ?></td>
+                                        <td><?= LogViewHelper::renderChannelBadge($log->channel ?? 'app') ?></td>
                                         <td><?= htmlspecialchars($log->username ?: ('#' . ($log->user_id ?? '-'))) ?></td>
                                         <td>
                                             <?= LogViewHelper::renderLevelBadge($log) ?>
@@ -90,7 +138,16 @@ use function App\Helpers\e;
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
             </div>
             <div class="modal-body">
-                Tüm log kayıtları kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?
+                <p>Log dosyaları kalıcı olarak silinecektir. Bu işlemi onaylıyor musunuz?</p>
+                <?php if ($selectedChannel !== 'all'): ?>
+                    <div class="alert alert-warning py-2 mb-0">
+                        <strong>Kanal Filtresi Aktif:</strong> Sadece <code><?= htmlspecialchars($selectedChannel) ?></code> kanalına ait dosyalar temizlenecektir.
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-danger py-2 mb-0">
+                        <strong>Tüm Kanallar:</strong> Sisteme ait tüm log dosyaları temizlenecektir.
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
@@ -105,16 +162,20 @@ use function App\Helpers\e;
         const confirmBtn = document.getElementById('confirmClearLogs');
         if (confirmBtn) {
             confirmBtn.addEventListener('click', async function () {
-                // Modalı kapat
                 const modalElement = document.getElementById('clearLogsModal');
                 const modal = bootstrap.Modal.getInstance(modalElement);
+                const activeChannel = '<?= htmlspecialchars($selectedChannel) ?>';
 
                 try {
                     const response = await fetch('/ajax/clearLogs', {
                         method: 'POST',
                         headers: {
+                            'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest'
-                        }
+                        },
+                        body: JSON.stringify({
+                            channel: activeChannel !== 'all' ? activeChannel : null
+                        })
                     });
 
                     const data = await response.json();
@@ -123,7 +184,6 @@ use function App\Helpers\e;
                         if (modal) {
                             modal.hide();
                         }
-                        // Başarı mesajı ve sayfa yenileme
                         location.reload();
                     } else {
                         alert(data.msg || 'Bir hata oluştu');

@@ -18,3 +18,13 @@ SET @add_less_idx = IF(@less_idx_exists = 0, 'ALTER TABLE lessons ADD INDEX idx_
 PREPARE stmt FROM @add_less_idx;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+-- ============================================================================
+-- Log ve Hata Yönetimi Ayarları (v0.3.4)
+-- ============================================================================
+INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
+('log', 'log_rotation_period', 'daily', 'string'),
+('log', 'log_retention_days', '14', 'integer'),
+('log', 'log_max_files', '14', 'integer'),
+('log', 'log_level', 'DEBUG', 'string')
+ON DUPLICATE KEY UPDATE `type` = VALUES(`type`);

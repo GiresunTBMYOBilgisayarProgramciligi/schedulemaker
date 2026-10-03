@@ -53,17 +53,19 @@ class SettingsController extends Controller
     }
 
     /**
-     * Log tablosunu temizler
+     * Log dosyalarını temizler
+     * @param array $requestData
      * @return array
      * @throws Exception
      */
-    public function clearLogs(): array
+    public function clearLogs(array $requestData = []): array
     {
         Gate::authorizeRole("submanager", false, "Bu işlemi yapmak için yetkiniz yok");
-        $this->database->exec("TRUNCATE TABLE logs");
+        $channel = $requestData['channel'] ?? null;
+        $count = (new \App\Services\LogReaderService())->clearLogs($channel);
         return [
             "status" => "success",
-            "msg" => "Loglar başarıyla temizlendi"
+            "msg" => "Log dosyaları başarıyla temizlendi ({$count} dosya)."
         ];
     }
 

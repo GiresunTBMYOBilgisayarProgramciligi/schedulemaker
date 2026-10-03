@@ -31,6 +31,7 @@ use App\Repositories\LessonAssignmentRepository;
  */
 class AvailabilityService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     private TimelineManager $timelineManager;
     private ScheduleRepository $scheduleRepo;
 

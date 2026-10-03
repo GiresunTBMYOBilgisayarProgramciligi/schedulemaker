@@ -25,7 +25,7 @@ class SendScheduleNoteDeletedEmailListener
             $mailer = new ScheduleNoteMailer();
             $mailer->sendNoteDeletedEmail($event->note, $event->lecturer, $event->deletedBy);
         } catch (\Throwable $e) {
-            Log::logger()->error("SendScheduleNoteDeletedEmailListener hatası: " . $e->getMessage(), [
+            Log::channel('schedule')->error("SendScheduleNoteDeletedEmailListener hatası: " . $e->getMessage(), [
                 'note_id'   => $event->note->id ?? null,
                 'exception' => $e
             ]);

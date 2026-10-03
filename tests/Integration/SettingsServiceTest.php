@@ -36,4 +36,17 @@ class SettingsServiceTest extends BaseTestCase
         $settingUpdated = (new Setting())->get()->where(['group' => 'test_group', 'key' => 'academic_year'])->first();
         $this->assertEquals('2027-2028', $settingUpdated->value);
     }
+
+    public function testSaveAndRetrieveLogSettings(): void
+    {
+        $dto1 = new SettingDTO(group: 'log', key: 'log_max_files', value: '30', type: 'integer');
+        $dto2 = new SettingDTO(group: 'log', key: 'log_level', value: 'WARNING', type: 'string');
+
+        $this->service->saveMultipleSettings([$dto1, $dto2]);
+
+        $allSettings = $this->service->getAllSettings();
+        $this->assertArrayHasKey('log', $allSettings);
+        $this->assertEquals(30, (int)$allSettings['log']['log_max_files']);
+        $this->assertEquals('WARNING', $allSettings['log']['log_level']);
+    }
 }

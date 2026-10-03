@@ -9,12 +9,12 @@ class LogViewHelper
     /**
      * Log seviyesi için Bootstrap badge HTML çıktısı üretir.
      *
-     * @param Log|string $logOrLevel Log nesnesi veya seviye string'i (örn: 'ERROR', 'INFO', 'DEBUG')
+     * @param object|string $logOrLevel Log nesnesi veya seviye string'i (örn: 'ERROR', 'INFO', 'DEBUG')
      * @return string
      */
-    public static function renderLevelBadge(Log|string $logOrLevel): string
+    public static function renderLevelBadge(object|string $logOrLevel): string
     {
-        $level = $logOrLevel instanceof Log ? (string)$logOrLevel->level : $logOrLevel;
+        $level = is_object($logOrLevel) ? (string)$logOrLevel->level : (string)$logOrLevel;
         $cleanLevel = htmlspecialchars($level);
 
         $badgeClass = match (strtoupper($level)) {
@@ -29,12 +29,33 @@ class LogViewHelper
     }
 
     /**
-     * Log kaynağını (dosya, satır, sınıf, metot) biçimlendirip döner.
+     * Log kanalı için Bootstrap badge HTML çıktısı üretir.
      *
-     * @param Log $log
+     * @param string $channel
      * @return string
      */
-    public static function renderSource(Log $log): string
+    public static function renderChannelBadge(string $channel): string
+    {
+        $clean = htmlspecialchars($channel);
+        $badgeClass = match (strtolower($channel)) {
+            'security' => 'danger',
+            'auth'     => 'warning text-dark',
+            'schedule' => 'primary',
+            'database' => 'dark',
+            'system'   => 'secondary',
+            default    => 'info text-dark',
+        };
+
+        return '<span class="badge bg-' . $badgeClass . '">' . $clean . '</span>';
+    }
+
+    /**
+     * Log kaynağını (dosya, satır, sınıf, metot) biçimlendirip döner.
+     *
+     * @param object $log
+     * @return string
+     */
+    public static function renderSource(object $log): string
     {
         $src = [];
         if (!empty($log->file)) {
@@ -53,10 +74,10 @@ class LogViewHelper
     /**
      * Log context detaylarını gösteren Bootstrap modal ve tetikleyici buton HTML'ini üretir.
      *
-     * @param Log $log
+     * @param object $log
      * @return string
      */
-    public static function renderContextModal(Log $log): string
+    public static function renderContextModal(object $log): string
     {
         $modalId = 'contextModal-' . $log->id;
         $contextData = !empty($log->context) ? json_decode($log->context, true) : [];

@@ -28,6 +28,7 @@ use PDOException;
  */
 class UserService extends BaseService
 {
+    protected string $logChannel = 'app';
     private UserRepository $userRepository;
 
     public function __construct(?UserRepository $userRepository = null)
@@ -217,8 +218,6 @@ class UserService extends BaseService
      */
     public function saveNew(UserDTO $dto): int
     {
-        $this->logger->debug('Yeni kullanıcı ekleniyor', ['mail' => $dto->mail]);
-
         $userData = $dto->toArray();
         $password = !empty($userData['password']) ? $userData['password'] : bin2hex(random_bytes(8));
         $userData['password'] = password_hash($password, PASSWORD_DEFAULT);
@@ -229,7 +228,10 @@ class UserService extends BaseService
                 $user->fill($userData);
                 $user->create();
 
-                $this->logger->info('Kullanıcı eklendi', ['id' => $user->id]);
+                $this->logger->info("Kullanıcı eklendi: {$user->getFullName()} (ID: {$user->id})", $this->logContext([
+                    'target_user_id' => $user->id,
+                    'mail'           => $user->mail,
+                ]));
 
                 return $user->id;
             });
@@ -289,8 +291,6 @@ class UserService extends BaseService
      */
     public function updateUser(User $user): int
     {
-        $this->logger->debug('Kullanıcı güncelleniyor', ['id' => $user->id]);
-
         $excluded = ['register_date', 'last_login'];
 
         if (!empty($user->password)) {
@@ -302,7 +302,10 @@ class UserService extends BaseService
         try {
             return Database::transaction(function () use ($user, $excluded) {
                 $user->update($excluded);
-                $this->logger->info('Kullanıcı güncellendi', ['id' => $user->id]);
+                $this->logger->info("Kullanıcı güncellendi: {$user->getFullName()} (ID: {$user->id})", $this->logContext([
+                    'target_user_id' => $user->id,
+                    'mail'           => $user->mail,
+                ]));
                 return $user->id;
             });
         } catch (Exception $e) {
@@ -322,8 +325,6 @@ class UserService extends BaseService
      */
     public function deleteUser(User $user): void
     {
-        $this->logger->debug('Kullanıcı siliniyor', ['id' => $user->id]);
-
         try {
             Database::transaction(function () use ($user) {
                 // Önce kullanıcıya ait ders programı kayıtlarını temizle
@@ -333,12 +334,13 @@ class UserService extends BaseService
                 $user->delete();
             });
             
-            $this->logger->info('Kullanıcı başarıyla silindi', ['id' => $user->id]);
+            $this->logger->info("Kullanıcı silindi: {$user->getFullName()} (ID: {$user->id})", $this->logContext([
+                'target_user_id' => $user->id,
+            ]));
         } catch (Exception $e) {
-            $this->logger->error('Kullanıcı silinirken hata oluştu', [
-                'id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
+            $this->logger->error('Kullanıcı silinirken hata oluştu: ' . $e->getMessage(), $this->logContext([
+                'target_user_id' => $user->id,
+            ]));
             throw new Exception("Kullanıcı silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -393,7 +395,7 @@ class UserService extends BaseService
         }
 
         // Log giriş
-        $this->logger->info($user->getFullName() . ' giriş yaptı.', Log::context($this, [
+        Log::channel('auth')->info($user->getFullName() . ' giriş yaptı.', Log::context($this, [
             'user_id'  => $user->id,
             'username' => $user->getFullName(),
         ]));
@@ -415,8 +417,6 @@ class UserService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
-        $this->logger->debug('Toplu kullanıcı silme başlatıldı', ['ids' => $dto->ids]);
-
         $success = [];
         $failed = [];
 
@@ -440,10 +440,11 @@ class UserService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu kullanıcı silme tamamlandı', [
+        $this->logger->info("Toplu kullanıcı silme tamamlandı: " . count($success) . " başarılı, " . count($failed) . " başarısız.", $this->logContext([
             'success_count' => count($success),
-            'failed_count'  => count($failed)
-        ]);
+            'failed_count'  => count($failed),
+            'success_ids'   => $success,
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -460,8 +461,6 @@ class UserService extends BaseService
         $dto = $dtoOrIds instanceof BulkUpdateDTO
             ? $dtoOrIds
             : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
-
-        $this->logger->debug('Toplu kullanıcı güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
 
         $success = [];
         $failed = [];
@@ -497,10 +496,11 @@ class UserService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu kullanıcı güncelleme tamamlandı', [
+        $this->logger->info("Toplu kullanıcı güncelleme tamamlandı: " . count($success) . " başarılı, " . count($failed) . " başarısız.", $this->logContext([
             'success_count' => count($success),
-            'failed_count'  => count($failed)
-        ]);
+            'failed_count'  => count($failed),
+            'fields'        => array_keys($dto->fields),
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }

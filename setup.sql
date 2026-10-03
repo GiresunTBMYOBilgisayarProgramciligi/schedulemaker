@@ -272,6 +272,13 @@ INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
 ('mail', 'mail_batch_size', '10', 'integer'),
 ('mail', 'mail_max_attempts', '3', 'integer');
 
+-- Log ve Hata Yönetimi Ayarları
+INSERT INTO settings (`group`, `key`, `value`, `type`) VALUES
+('log', 'log_rotation_period', 'daily', 'string'),
+('log', 'log_retention_days', '14', 'integer'),
+('log', 'log_max_files', '14', 'integer'),
+('log', 'log_level', 'DEBUG', 'string');
+
 CREATE TABLE IF NOT EXISTS schedule_notes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

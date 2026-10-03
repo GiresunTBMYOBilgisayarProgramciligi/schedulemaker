@@ -130,8 +130,8 @@ class ScheduleLogHelper
         $detail = self::getChangeDetail($actionText, $dto, $oldDto, $isExam);
         $lecturerIds = self::extractLecturerIds($dto);
 
-        // 1. INFO Seviyesinde Monolog & DB Logs kaydı
-        Log::logger()->info($detail, Log::context(null, [
+        // 1. INFO Seviyesinde Monolog kaydı (schedule kanalı)
+        Log::channel('schedule')->info($detail, Log::context(null, [
             'schedule_id' => $dto->scheduleId,
             'action_type' => $actionType,
             'is_exam' => $isExam,

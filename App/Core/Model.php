@@ -32,7 +32,7 @@ class Model
      */
     protected function logger(): Logger
     {
-        return Log::logger();
+        return Log::channel('database');
     }
 
     /**

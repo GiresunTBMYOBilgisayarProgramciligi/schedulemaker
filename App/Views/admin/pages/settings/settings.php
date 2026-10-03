@@ -54,6 +54,9 @@ use function App\Helpers\e;
                                     <a href="#mail" class="list-group-item list-group-item-action" data-bs-toggle="pill" role="tab">
                                         <i class="bi bi-envelope me-2" aria-hidden="true"></i>Mail Ayarları
                                     </a>
+                                    <a href="#log" class="list-group-item list-group-item-action" data-bs-toggle="pill" role="tab">
+                                        <i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>Log Ayarları
+                                    </a>
                                 </div>
                             </div>
 
@@ -478,6 +481,59 @@ use function App\Helpers\e;
                                                         <input type="hidden" name="settings[mail][mail_max_attempts][type]" value="integer">
                                                         <input type="number" min="1" max="10" class="form-control" id="settings[mail][mail_max_attempts][value]" name="settings[mail][mail_max_attempts][value]" value="<?= (int)($settings['mail']['mail_max_attempts'] ?? 3) ?>">
                                                         <div class="form-text">Hata alan bir e-postanın kaç defa otomatik tekrar deneneceğini belirler. Varsayılan: 3</div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end mt-3">
+                                                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Log Settings Tab -->
+                                    <div class="tab-pane fade" id="log" role="tabpanel">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">Log ve Hata Yönetimi Ayarları</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="col-form-label" for="settings[log][log_rotation_period][value]">Yeni Dosya Oluşturma Sıklığı (Rotasyon Periyodu)</label>
+                                                        <input type="hidden" name="settings[log][log_rotation_period][type]" value="string">
+                                                        <?php $currentPeriod = strtolower((string)($settings['log']['log_rotation_period'] ?? 'daily')); ?>
+                                                        <select class="form-select" id="settings[log][log_rotation_period][value]" name="settings[log][log_rotation_period][value]">
+                                                            <option value="daily" <?= $currentPeriod === 'daily' ? 'selected' : '' ?>>Günlük (Her gün yeni dosya: {kanal}-YYYY-MM-DD.log)</option>
+                                                            <option value="weekly" <?= $currentPeriod === 'weekly' ? 'selected' : '' ?>>Haftalık (Her hafta yeni dosya: {kanal}-YYYY-Www.log)</option>
+                                                            <option value="monthly" <?= $currentPeriod === 'monthly' ? 'selected' : '' ?>>Aylık (Her ay yeni dosya: {kanal}-YYYY-MM.log)</option>
+                                                        </select>
+                                                        <div class="form-text">Yeni bir log dosyasının hangi periyotla açılacağını belirler. Canlı ve yoğun sistemler için Günlük veya Haftalık önerilir.</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="col-form-label" for="settings[log][log_retention_days][value]">Log Saklama Süresi (Kaç Günden Eski Olanlar Silinecek)</label>
+                                                        <input type="hidden" name="settings[log][log_retention_days][type]" value="integer">
+                                                        <input type="hidden" name="settings[log][log_max_files][type]" value="integer">
+                                                        <?php $retentionDays = (int)($settings['log']['log_retention_days'] ?? ($settings['log']['log_max_files'] ?? 14)); ?>
+                                                        <input type="number" min="1" max="365" class="form-control" id="settings[log][log_retention_days][value]" name="settings[log][log_retention_days][value]" value="<?= $retentionDays ?>">
+                                                        <input type="hidden" name="settings[log][log_max_files][value]" value="<?= $retentionDays ?>">
+                                                        <div class="form-text">Bu günden daha eski log dosyaları disk doluluğunu önlemek için otomatik olarak temizlenir. Varsayılan: 14 gün.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="col-form-label" for="settings[log][log_level][value]">Minimum Kayıt Seviyesi (Log Level)</label>
+                                                        <input type="hidden" name="settings[log][log_level][type]" value="string">
+                                                        <?php $currentLogLevel = strtoupper((string)($settings['log']['log_level'] ?? 'DEBUG')); ?>
+                                                        <select class="form-select" id="settings[log][log_level][value]" name="settings[log][log_level][value]">
+                                                            <option value="DEBUG" <?= $currentLogLevel === 'DEBUG' ? 'selected' : '' ?>>DEBUG (Hata Ayıklama - Tüm Detaylar)</option>
+                                                            <option value="INFO" <?= $currentLogLevel === 'INFO' ? 'selected' : '' ?>>INFO (Genel Bilgilendirme)</option>
+                                                            <option value="NOTICE" <?= $currentLogLevel === 'NOTICE' ? 'selected' : '' ?>>NOTICE (Önemli Bildirimler)</option>
+                                                            <option value="WARNING" <?= $currentLogLevel === 'WARNING' ? 'selected' : '' ?>>WARNING (Uyarılar ve Potansiyel Sorunlar)</option>
+                                                            <option value="ERROR" <?= $currentLogLevel === 'ERROR' ? 'selected' : '' ?>>ERROR (Çalışma Zamanı Hataları)</option>
+                                                            <option value="CRITICAL" <?= $currentLogLevel === 'CRITICAL' ? 'selected' : '' ?>>CRITICAL (Kritik Sistem Sorunları)</option>
+                                                            <option value="ALERT" <?= $currentLogLevel === 'ALERT' ? 'selected' : '' ?>>ALERT (Derhal Müdahale Gerektiren Durumlar)</option>
+                                                            <option value="EMERGENCY" <?= $currentLogLevel === 'EMERGENCY' ? 'selected' : '' ?>>EMERGENCY (Sistem Kullanılamaz Durumda)</option>
+                                                        </select>
+                                                        <div class="form-text">Seçilen seviye ve üzerindeki log kayıtları dosyalara işlenir. Canlı ortamlar için INFO veya WARNING önerilir.</div>
                                                     </div>
                                                 </div>
                                                 <div class="text-end mt-3">

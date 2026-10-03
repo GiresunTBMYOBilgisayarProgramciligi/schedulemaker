@@ -661,7 +661,7 @@ class AjaxRouter extends Router
      */
     public function clearLogsAction(): void
     {
-        $this->response = (new SettingsController())->clearLogs();
+        $this->response = (new SettingsController())->clearLogs($this->data);
         $this->sendResponse();
     }
 

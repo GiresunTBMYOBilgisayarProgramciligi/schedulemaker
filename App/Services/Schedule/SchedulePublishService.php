@@ -26,6 +26,7 @@ use function App\Helpers\getSettingValue;
 
 class SchedulePublishService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     /**
      * @throws Exception
      */

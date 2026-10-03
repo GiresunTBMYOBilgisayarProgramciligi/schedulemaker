@@ -163,7 +163,7 @@ abstract class Mailer
             $this->mailer->isHTML(true);
 
         } catch (Exception $e) {
-            Log::logger()->error("Mailer yapılandırma hatası: {$e->getMessage()}", Log::context($this));
+            Log::channel('mail')->error("Mailer yapılandırma hatası: {$e->getMessage()}", Log::context($this));
         }
     }
 
@@ -257,7 +257,7 @@ abstract class Mailer
 
             return $queuedCount > 0;
         } catch (\Throwable $e) {
-            Log::logger()->error("Mailer kuyruğa ekleme hatası: {$e->getMessage()}", Log::context($this));
+            Log::channel('mail')->error("Mailer kuyruğa ekleme hatası: {$e->getMessage()}", Log::context($this));
             return false;
         }
     }
@@ -323,13 +323,13 @@ abstract class Mailer
             }
 
             if (@file_put_contents($logFilePath, $updatedContent) === false) {
-                Log::logger()->warning("Mail log dosyasına yazılamadı: {$logFilePath}");
+                Log::channel('mail')->warning("Mail log dosyasına yazılamadı: {$logFilePath}");
             }
 
-            Log::logger()->info("E-posta simülasyon modunda yakalandı: {$recipientStr} - {$safeSubject}");
+            Log::channel('mail')->info("E-posta simülasyon modunda yakalandı: {$recipientStr} - {$safeSubject}");
             return true;
         } catch (\Throwable $e) {
-            Log::logger()->error("E-posta loglama hatası: {$e->getMessage()}");
+            Log::channel('mail')->error("E-posta loglama hatası: {$e->getMessage()}");
             return false;
         }
     }

@@ -30,6 +30,7 @@ use function App\Helpers\getSettingValue;
  */
 class ScheduleService extends BaseService
 {
+    protected string $logChannel = 'schedule';
     protected ScheduleRepository $scheduleRepo;
     protected ScheduleItemRepository $itemRepo;
     protected ScheduleItemValidator $validator;
