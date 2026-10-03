@@ -1065,11 +1065,12 @@ class AdminPageController extends Controller
         $stats = $mailQueueService->getQueueStats();
         $items = $mailQueueService->getItems(null, 200);
 
-        // Sunucu Crontab komutu oluşturma
-        $phpBin = PHP_BINARY ?: 'php';
+        // Sunucu Crontab komutu oluşturma (Web/FPM yerine CLI binary kullanılmalıdır)
+        $phpBin = $_ENV['PHP_BINARY'] ?? (file_exists('/usr/bin/php') ? '/usr/bin/php' : (PHP_BINARY && !str_contains(PHP_BINARY, 'fpm') && !str_contains(PHP_BINARY, 'cgi') ? PHP_BINARY : 'php'));
         $scriptPath = dirname(__DIR__, 2) . '/bin/queue_runner.php';
         $logPath = dirname(__DIR__, 2) . '/Logs/queue.log';
-        $cronCommand = "* * * * * {$phpBin} {$scriptPath} >> {$logPath} 2>&1";
+        // Betik Monolog queue kanalı üzerinden rotasyonlu log yazdığı için cron çıktısı /dev/null'a yönlendirilir
+        $cronCommand = "* * * * * {$phpBin} {$scriptPath} > /dev/null 2>&1";
 
         $batchSize = (int)getSettingValue('mail_batch_size', 'mail', 10);
         $maxAttempts = (int)getSettingValue('mail_max_attempts', 'mail', 3);

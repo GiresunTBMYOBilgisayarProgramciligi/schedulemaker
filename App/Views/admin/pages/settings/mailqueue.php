@@ -130,12 +130,20 @@ use function App\Helpers\e;
                             </p>
 
                             <!-- Kopyalanabilir Komut -->
-                            <div class="input-group mb-3">
+                            <div class="input-group mb-2">
                                 <span class="input-group-text bg-dark text-white"><i class="bi bi-terminal"></i></span>
                                 <input type="text" class="form-control font-monospace bg-light" id="cronCommandInput" value="<?= e($cronCommand) ?>" readonly>
                                 <button class="btn btn-success" type="button" id="btn-copy-cron" title="Panoya Kopyala">
                                     <i class="bi bi-clipboard me-1"></i> Kopyala
                                 </button>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 px-1">
+                                <span class="text-muted small">
+                                    <i class="bi bi-info-circle text-primary me-1"></i> Gönderim kayıtları ve hatalar otomatik olarak <code>queue</code> kanalında loglanır.
+                                </span>
+                                <a href="/admin/logs?channel=queue" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-journal-text me-1"></i> Kuyruk Loglarını Gör
+                                </a>
                             </div>
 
                             <!-- Kurulum Adımları -->

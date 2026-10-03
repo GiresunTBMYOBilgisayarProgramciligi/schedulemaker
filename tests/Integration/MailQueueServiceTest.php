@@ -154,4 +154,25 @@ class MailQueueServiceTest extends BaseTestCase
         $this->assertTrue($deleted);
         $this->assertNull((new MailQueue())->find($queueId));
     }
+
+    public function testGetMailQueuePageDataReturnsCorrectCronCommand(): void
+    {
+        $adminUser = (new User())->find(1);
+        $sessionKey = $_ENV["SESSION_KEY"] ?? 'schedule_session';
+        $_SESSION[$sessionKey] = $adminUser->id;
+
+        $controller = new \App\Controllers\AdminPageController();
+        $assetManager = new \App\Core\AssetManager();
+
+        $data = $controller->getMailQueuePageData($adminUser, $assetManager);
+
+        $this->assertArrayHasKey('cronCommand', $data);
+        $this->assertStringStartsWith('* * * * * ', $data['cronCommand']);
+        $this->assertStringContainsString('/usr/bin/php', $data['cronCommand']);
+        $this->assertStringContainsString('bin/queue_runner.php', $data['cronCommand']);
+        $this->assertStringEndsWith('> /dev/null 2>&1', $data['cronCommand']);
+        $this->assertStringNotContainsString('>>', $data['cronCommand']);
+        $this->assertStringNotContainsString('fpm', $data['cronCommand']);
+    }
 }
+

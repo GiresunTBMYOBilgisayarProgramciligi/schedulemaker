@@ -7,7 +7,7 @@
  * kuyrukta bekleyen e-postaları parça parça (batch) gönderir.
  * 
  * Kullanım (Crontab):
- * * * * * * php /path/to/schedulemaker/bin/queue_runner.php >> /path/to/schedulemaker/Logs/queue.log 2>&1
+ * * * * * /usr/bin/php /path/to/schedulemaker/bin/queue_runner.php > /dev/null 2>&1
  */
 
 if (php_sapi_name() !== 'cli') {
