@@ -80,7 +80,7 @@ use App\Enums\UserTitle;
                                         <div class="mb-3">
                                             <label class="form-label" for="password">Parola</label>
                                             <input type="password" class="form-control" id="password" name="password"
-                                                   placeholder="Parola">
+                                                   placeholder="Parola" autocomplete="new-password">
                                             <div class="form-text text-muted">Boş bırakıldığı taktirde işleme alınmayacaktır.</div>
                                         </div>
                                     </div>
