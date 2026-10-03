@@ -69,12 +69,12 @@ document.addEventListener("DOMContentLoaded", function () {
         let cardItem = event.target.closest('.schedule-note-item');
         event.preventDefault();
         const form = event.target;
-        const confirmMessage = form.getAttribute('data-confirm-message') || gettext.deleteMessage;
+        const confirmMessage = form.getAttribute('data-confirm-message') || (typeof gettext !== 'undefined' ? gettext.deleteMessage : "Bu kaydı silmek istediğinize emin misiniz?");
         let confirmDeleteModal = new Modal();
-        confirmDeleteModal.prepareModal(gettext.confirmDelete, confirmMessage, true);
-        confirmDeleteModal.confirmButton.textContent = gettext.delete;
+        confirmDeleteModal.prepareModal(typeof gettext !== 'undefined' ? gettext.confirmDelete : "Silme Onayı", confirmMessage, true);
+        confirmDeleteModal.confirmButton.textContent = typeof gettext !== 'undefined' ? gettext.delete : "Sil";
         confirmDeleteModal.showModal();
-        confirmDeleteModal.confirmButton.addEventListener("click", () => {
+        confirmDeleteModal.confirmButton.onclick = () => {
             confirmDeleteModal.closeModal();
             fetchForm(form, new FormData(form)).then((data) => {
                 if (data && data.status === "success") {
@@ -92,21 +92,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             });
-        });
+        };
     }
 
     function handleAjaxDeleteParentLesson(event) {
         event.preventDefault();
         const form = event.target;
         let data = new FormData(form);
-        let deleteParentModal = new Modal()
-        deleteParentModal.prepareModal("Bağlantı Silme Onayı", "Bu dersin bağlantısını silmek istediğinizden emin miziniz?", true, true);
-        deleteParentModal.confirmButton.textContent = gettext.delete
+        let deleteParentModal = new Modal();
+        deleteParentModal.prepareModal("Bağlantı Silme Onayı", "Bu dersin bağlantısını silmek istediğinizden emin misiniz?", true, true);
+        deleteParentModal.confirmButton.textContent = typeof gettext !== 'undefined' ? gettext.delete : "Sil";
         deleteParentModal.showModal();
-        deleteParentModal.confirmButton.addEventListener("click", (event) => {
+        deleteParentModal.confirmButton.onclick = () => {
             deleteParentModal.hideModal();
-            fetchForm(form, data)
-        })
+            fetchForm(form, data);
+        };
     }
     function fetchForm(form, data) {
         let isToast = form.getAttribute("data-toast") === "true";
@@ -210,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (modal) {
-                    modal.cancelButton.addEventListener("click", handleRedirect);
+                    modal.cancelButton.onclick = handleRedirect;
                 }
 
                 if (data.status === "success" && form && form.classList.contains("js-reset-on-success")) {

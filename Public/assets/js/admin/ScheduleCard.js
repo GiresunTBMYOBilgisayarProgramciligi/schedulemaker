@@ -44,9 +44,16 @@ class ScheduleCard {
         this.currentWeekIndex = 0;
         this.weekCount = 1;
         this.owner_name = null;
+        this.stickyAbortController = null;
+        this.stickyWrapper = null;
 
         if (scheduleCardElement) {
-            this.initialize(scheduleCardElement)
+            // Önceki bir örnek varsa bellekten ve dinleyicilerinden temizle
+            if (scheduleCardElement.__scheduleCardInstance && typeof scheduleCardElement.__scheduleCardInstance.destroy === 'function') {
+                scheduleCardElement.__scheduleCardInstance.destroy();
+            }
+            scheduleCardElement.__scheduleCardInstance = this;
+            this.initialize(scheduleCardElement);
         } else {
             new Toast().prepareToast("Hata", "Ders programı nesnesi tanımlanamadı", "danger");
         }
@@ -102,10 +109,12 @@ class ScheduleCard {
             });
         }
 
-        // Re-initialize Bootstrap Popovers (Her iki modda da çalışmalı)
+        // Önceki Popover örneklerini dispose et ve yenilerini bağla
         const popoverTriggerList = [].slice.call(this.card.querySelectorAll('[data-bs-toggle="popover"]'));
-        popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl, { trigger: 'hover' });
+        popoverTriggerList.forEach(el => {
+            const oldInstance = bootstrap.Popover.getInstance(el);
+            if (oldInstance) oldInstance.dispose();
+            new bootstrap.Popover(el, { trigger: 'hover' });
         });
 
         /**
@@ -205,6 +214,26 @@ class ScheduleCard {
             const result = await response.json();
 
             if (result.status === "success" && result.HTML) {
+                // Temizleme: Eski popover ve tooltipleri bellekten kaldır
+                this.card.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+                    const inst = bootstrap.Popover.getInstance(el);
+                    if (inst) inst.dispose();
+                });
+                this.card.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                    const inst = bootstrap.Tooltip.getInstance(el);
+                    if (inst) inst.dispose();
+                });
+
+                // Sticky headers temizle
+                if (this.stickyAbortController) {
+                    this.stickyAbortController.abort();
+                    this.stickyAbortController = null;
+                }
+                if (this.stickyWrapper) {
+                    this.stickyWrapper.remove();
+                    this.stickyWrapper = null;
+                }
+
                 // Update Card Content
                 // We need to parse HTML and extract content to preserve this.card element
                 const parser = new DOMParser();
@@ -317,10 +346,14 @@ class ScheduleCard {
             this.showContextMenu(event.pageX, event.pageY, lessonCard);
         });
 
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('lesson-context-menu');
-            if (menu) menu.remove();
-        });
+        // Global context menu kapatma dinleyicisini sayfada tekil tut
+        if (!window.__lessonContextMenuGlobalListenerBound) {
+            window.__lessonContextMenuGlobalListenerBound = true;
+            document.addEventListener('click', () => {
+                const menu = document.getElementById('lesson-context-menu');
+                if (menu) menu.remove();
+            });
+        }
     }
 
     /**
@@ -388,11 +421,24 @@ class ScheduleCard {
     }
 
     initStickyHeaders() {
+        // Önceki dinleyicileri ve elemanları temizle
+        if (this.stickyAbortController) {
+            this.stickyAbortController.abort();
+            this.stickyAbortController = null;
+        }
+        if (this.stickyWrapper) {
+            this.stickyWrapper.remove();
+            this.stickyWrapper = null;
+        }
+
         const availableList = this.card.querySelector('.available-schedule-items');
         const table = this.card.querySelector('.schedule-table');
-        const thead = table.querySelector('thead');
+        const thead = table ? table.querySelector('thead') : null;
 
         if (!availableList || !table || !thead) return;
+
+        this.stickyAbortController = new AbortController();
+        const signal = this.stickyAbortController.signal;
 
         this.stickyWrapper = document.createElement('div');
         this.stickyWrapper.className = 'sticky-header-wrapper';
@@ -438,11 +484,16 @@ class ScheduleCard {
                 }
             });
 
-            this.stickyWrapper.style.width = this.card.offsetWidth + 'px';
-            tableContainer.scrollLeft = this.table.parentElement.scrollLeft;
+            if (this.stickyWrapper && this.card) {
+                this.stickyWrapper.style.width = this.card.offsetWidth + 'px';
+            }
+            if (this.table && this.table.parentElement) {
+                tableContainer.scrollLeft = this.table.parentElement.scrollLeft;
+            }
         };
 
         window.addEventListener('scroll', () => {
+            if (!this.card || !this.stickyWrapper) return;
             const cardRect = this.card.getBoundingClientRect();
             const navbar = document.querySelector('.app-header') || document.querySelector('.main-header') || document.querySelector('nav.navbar');
             const isNavbarFixed = navbar && (getComputedStyle(navbar).position === 'fixed' || document.body.classList.contains('layout-navbar-fixed'));
@@ -466,16 +517,39 @@ class ScheduleCard {
                 availableList.style.visibility = 'visible';
                 thead.style.visibility = 'visible';
             }
-        });
+        }, { signal });
 
-        const originalTableContainer = this.table.parentElement;
-        originalTableContainer.addEventListener('scroll', (e) => {
-            if (this.stickyWrapper.style.display === 'block') {
-                tableContainer.scrollLeft = e.target.scrollLeft;
-            }
-        });
+        const originalTableContainer = this.table ? this.table.parentElement : null;
+        if (originalTableContainer) {
+            originalTableContainer.addEventListener('scroll', (e) => {
+                if (this.stickyWrapper && this.stickyWrapper.style.display === 'block') {
+                    tableContainer.scrollLeft = e.target.scrollLeft;
+                }
+            }, { signal });
+        }
 
-        window.addEventListener('resize', syncWidths);
+        window.addEventListener('resize', syncWidths, { signal });
+    }
+
+    /**
+     * ScheduleCard örneği DOM'dan kaldırıldığında tüm dinleyicileri ve referansları temizler.
+     */
+    destroy() {
+        if (this.stickyAbortController) {
+            this.stickyAbortController.abort();
+            this.stickyAbortController = null;
+        }
+        if (this.stickyWrapper) {
+            this.stickyWrapper.remove();
+            this.stickyWrapper = null;
+        }
+        if (this.card) {
+            this.card.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => bootstrap.Popover.getInstance(el)?.dispose());
+            this.card.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getInstance(el)?.dispose());
+            delete this.card.__scheduleCardInstance;
+        }
+        this.selectedLessonElements.clear();
+        this.selectedScheduleItemIds.clear();
     }
 
     updateStickyList() {

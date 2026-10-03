@@ -21,10 +21,17 @@ window.initializeScheduleCards = function () {
         document.title = scheduleCardElements[0].dataset.scheduleScreenName;
     }
 
-    // Önceki kart referanslarını temizle
+    // Önceki kart referanslarını ve dinleyicilerini temizle
+    if (Array.isArray(window.scheduleCards)) {
+        window.scheduleCards.forEach(card => {
+            if (card && typeof card.destroy === 'function') {
+                card.destroy();
+            }
+        });
+    }
     window.scheduleCards = [];
     // Preference Mode (Hoca Tercihleri) için SingleScheduleHandler referanslarını temizle
-    window.singleScheduleHandlerList=[];
+    window.singleScheduleHandlerList = [];
 
     scheduleCardElements.forEach((scheduleCardElement) => {
         const type = scheduleCardElement.dataset.type;

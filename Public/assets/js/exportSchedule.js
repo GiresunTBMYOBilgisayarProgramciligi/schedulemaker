@@ -360,7 +360,7 @@ document.addEventListener("DOMContentLoaded", function () {
         modal.confirmButton.textContent = "Dışa Aktar";
         modal.showModal();
 
-        modal.confirmButton.addEventListener("click", () => {
+        modal.confirmButton.onclick = () => {
             const options = {};
             if (semesterNo) {
                 options.semester_no = semesterNo;

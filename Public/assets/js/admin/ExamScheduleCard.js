@@ -949,6 +949,9 @@ class ExamScheduleCard extends ScheduleCard {
         const label = this.card.querySelector('.current-week-label');
 
         if (!prevBtn || !nextBtn) return;
+        if (prevBtn.dataset.weekNavBound === 'true') return;
+        prevBtn.dataset.weekNavBound = 'true';
+        nextBtn.dataset.weekNavBound = 'true';
 
         prevBtn.addEventListener('click', () => {
             if (this.currentWeekIndex > 0) {

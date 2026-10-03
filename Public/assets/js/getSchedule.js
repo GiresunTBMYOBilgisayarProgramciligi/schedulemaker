@@ -198,6 +198,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             tableWrapper.parentNode.insertBefore(nav, tableWrapper);
 
+            // Varsa eski mql dinleyicisini durdur
+            if (card.__mqlController) {
+                card.__mqlController.abort();
+                delete card.__mqlController;
+            }
+
             // Mobilde tek gün görünümünde lunch-break-cell'in colspan değerini 1 yap
             // Böylece tarayıcı tablo motoru gereksiz boş sütun alanı bırakmaz ve gün tüm genişliği kaplar!
             const mql = window.matchMedia('(max-width: 767.98px)');
@@ -210,7 +216,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             };
             updateColspans(mql.matches);
-            mql.addEventListener('change', (e) => updateColspans(e.matches));
+            const mqlController = new AbortController();
+            mql.addEventListener('change', (e) => updateColspans(e.matches), { signal: mqlController.signal });
+            card.__mqlController = mqlController;
 
             const dayNameEl = nav.querySelector('.current-day-name');
             const dayDateEl = nav.querySelector('.current-day-date');
@@ -331,7 +339,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getSchedulesHTML(scheduleData = new FormData()) {
         const container = document.getElementById('schedule_container');
-        container.innerHTML = "";
+        if (container) {
+            // Eski popover ve tooltipleri bellekten temizle
+            container.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => bootstrap.Popover.getInstance(el)?.dispose());
+            container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getInstance(el)?.dispose());
+            container.querySelectorAll('.schedule-card').forEach(c => {
+                if (c.__mqlController) {
+                    c.__mqlController.abort();
+                    delete c.__mqlController;
+                }
+            });
+            container.innerHTML = "";
+        }
         return fetch("/ajax/getScheduleHTML", {
             method: "POST",
             headers: {

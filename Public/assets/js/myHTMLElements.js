@@ -97,13 +97,15 @@ class Modal {
         this.content.appendChild(this.footer);
 
         this.dialog.appendChild(this.content);
-
         this.modal.appendChild(this.dialog);
+        if (!document.body.contains(this.modal)) {
+            document.body.appendChild(this.modal);
+        }
     }
 
     prepareModal(title = "", content = "", showConfirmButton = false, showCancelButton = true, size = "sm", type = "") {
         this.title.innerHTML = title?.trim();
-        this.body.innerHTML = content.trim()
+        this.body.innerHTML = content.trim();
 
         // Boyutlandırma mantığı
         Object.values(this.sizes).forEach(sizeClass => this.dialog.classList.remove(sizeClass));
@@ -121,19 +123,20 @@ class Modal {
             this.confirmButton.remove();
         } else {
             this.footer.appendChild(this.confirmButton);
-            this.confirmButton.textContent = gettext.ok;
+            this.confirmButton.textContent = typeof gettext !== 'undefined' ? gettext.ok : "Tamam";
         }
         if (!showCancelButton) {
-            this.cancelButton.remove()
+            this.cancelButton.remove();
         } else {
             this.footer.appendChild(this.cancelButton);
-            this.cancelButton.textContent = gettext.close;
+            this.cancelButton.textContent = typeof gettext !== 'undefined' ? gettext.close : "Kapat";
         }
-        //Kapatıldığında modal sayfadan silinecek
-        this.cancelButton.addEventListener("click", () => {
+
+        // Kapatıldığında modal stilini temizle (tekil handler)
+        this.cancelButton.onclick = () => {
             this.content.classList.remove("text-bg-success", "text-bg-danger", "text-bg-info", "text-bg-warning", "text-bg-primary", "text-bg-secondary");
-            this.modal.remove()
-        })
+            this.closeModal();
+        };
     }
 
     showModal() {
@@ -142,32 +145,41 @@ class Modal {
             return;
         }
         this.isOpen = true;
-        const bootstrapModal = new bootstrap.Modal(this.modal);
+        if (!document.body.contains(this.modal)) {
+            document.body.appendChild(this.modal);
+        }
+
+        let bootstrapModal = bootstrap.Modal.getInstance(this.modal);
+        if (!bootstrapModal) {
+            bootstrapModal = new bootstrap.Modal(this.modal);
+        }
         bootstrapModal.show();
-        this.modal.addEventListener("hidden.bs.modal", () => {
+
+        const onHidden = () => {
             this.isOpen = false;
-            this.modal.remove();
-        });
+            this.modal.removeEventListener("hidden.bs.modal", onHidden);
+            const instance = bootstrap.Modal.getInstance(this.modal);
+            if (instance) {
+                instance.dispose();
+            }
+            if (this.modal && this.modal.parentNode) {
+                this.modal.remove();
+            }
+        };
+        this.modal.addEventListener("hidden.bs.modal", onHidden);
     }
 
     closeModal() {
-        // Bootstrap modal kapatma işlemi
         const bootstrapModal = bootstrap.Modal.getInstance(this.modal);
         if (bootstrapModal) {
-            bootstrapModal.hide(); // Bootstrap üzerinden kapat
-        }
-
-        // Modal kapatıldıktan sonra DOM'dan kaldır
-        this.modal.addEventListener("hidden.bs.modal", () => {
+            bootstrapModal.hide();
+        } else if (this.modal && this.modal.parentNode) {
             this.modal.remove();
-        });
-    }
-    hideModal() {
-        // Bootstrap modal kapatma işlemi
-        const bootstrapModal = bootstrap.Modal.getInstance(this.modal);
-        if (bootstrapModal) {
-            bootstrapModal.hide(); // Bootstrap üzerinden kapat
         }
+    }
+
+    hideModal() {
+        this.closeModal();
     }
 }
 
@@ -268,10 +280,18 @@ class Toast {
             delay: delay,
         });
 
-        // Toast kapatıldığında DOM'dan kaldır
-        this.toast.addEventListener("hidden.bs.toast", () => {
-            this.toast.remove();
-        });
+        // Toast kapatıldığında DOM'dan kaldır ve bootstrap örneğini dispose et
+        const onToastHidden = () => {
+            this.toast.removeEventListener("hidden.bs.toast", onToastHidden);
+            if (this.bsToast) {
+                this.bsToast.dispose();
+                this.bsToast = null;
+            }
+            if (this.toast && this.toast.parentNode) {
+                this.toast.remove();
+            }
+        };
+        this.toast.addEventListener("hidden.bs.toast", onToastHidden);
 
         // Toast'u göster
         this.bsToast.show();
