@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.3.4] - 2026-10-03
+
+### Added
+- **Monolog Kanal Bazlı Loglama Altyapısı ve Yönetim Paneli**:
+  - `app`, `auth`, `schedule`, `security`, `database`, `queue`, `mail` ve `system` olmak üzere 8 bağımsız kanala sahip merkezi Monolog mimarisi (`Logger` servisi).
+  - Günlük (`FILE_PER_DAY`), haftalık (`FILE_PER_WEEK = 'Y-\WW'`) ve aylık (`FILE_PER_MONTH`) rotasyon seçenekleri sunan özel `AppRotatingFileHandler` ve dinamik izin (`0666`) yönetimi.
+  - JSON formatlı log kayıtlarını bellek dostu (memory-efficient) okuyan, filtreleyen ve sayfalayan `LogReaderService`.
+  - AdminLTE uyumlu modern Log Yönetim Arayüzü (`/admin/logs`) ve ayarlar paneli (`/admin/settings#log`).
+  - Arka plan kuyruk işleyicisinin (`bin/queue_runner.php`) Monolog `queue` kanalına bağlanması.
+- **CSRF Belirteç (Token) Koruma Altyapısı**:
+  - Durum değiştiren tüm POST, PUT, DELETE isteklerinde otomatik CSRF kontrolü sağlayan `CsrfMiddleware` ve istisna mekanizması (`#[WithoutCsrf]`).
+  - Sayfadaki meta etiketinden CSRF token'ı dinamik okuyan, yenileyen ve tüm Fetch/XHR çağrılarına otomatik başlık ekleyen modüler `csrf.js` interceptor'ı.
+- **UBS (Üniversite Bilgi Sistemi) Ders İçe Aktarma Modülü**:
+  - Excel/CSV ve harici kaynaktan program bazında toplu ders aktarımı desteği, `LessonService` içinde atomik veritabanı transaction yönetimi (`BaseService::transaction`).
+- **Hiyerarşik Sıralama ve Dinamik Seçim Arayüzü**:
+  - Birim, bölüm, akademik unvan ve kıdem hiyerarşisine göre öğretim elemanı sıralama servisi (`sortLecturersHierarchically`) ve AdminLTE uyumlu dropdown render altyapısı (`renderLecturerSelectOptions`).
+  - Ders atama (`/admin/assignlessons`) sayfasında dinamik, hiyerarşik ve hızlı seçim bileşenleri.
+- **Program Değişiklik Bildirimlerinde Hoca Seçimi ve Detay Önizleme**:
+  - Program güncellemelerinde bildirim gönderilecek hocaların filtrelenebilmesi ve değişiklik detaylarının önizleme modalında incelenebilmesi desteği.
+- **Merkezi E-Posta Kuyruğu (MailQueue)**:
+  - Tüm e-posta gönderimlerinin merkezi `MailQueue` üzerine yönlendirilmesi ve geliştirme/test ortamları için simülasyon loglarının iyileştirilmesi.
+- **İmzalı Çerez (Signed Cookie) Güvenliği**:
+  - Çerez kurcalama (cookie tampering) ve sahteciliği önlemek amacıyla HMAC-SHA256 tabanlı çerez imzalama ve doğrulama mekanizması (`Cookie::sign`, `Cookie::verify`).
+- **Veritabanı Performans İndeksleri (v0.3.4)**:
+  - `lesson_assignments` tablosunda `idx_la_lecturer_period` (`lecturer_id`, `academic_year`, `semester`).
+  - `lessons` tablosunda `idx_lessons_program_semester` (`program_id`, `semester_no`).
+
+### Changed
+- **Katmanlı Mimari ve DRY Standartlaştırması (Refactoring Faz 1 - Faz 6)**:
+  - **Controller Katmanı:** Tüm dosya yükleme doğrulama mantığı DRY prensibine uygun olarak taban `Controller::validateUploadedFile()` metoduna toplandı.
+  - **Repository & Servis Katmanı:** Controller'lardaki doğrudan SQL sorguları ilgili repository sınıflarına devredildi; `SettingsService` katmanı soyutlanarak iş mantığı merkezileştirildi.
+  - **Ders & Çakışma Yönetimi:** UBS ders aktarım ve senkronizasyon mantığı `LessonService` katmanına taşındı. Çakışma denetimleri `ConflictService` ve `ScheduleItemDTO` ile tip güvenli hale getirildi.
+  - **Rol Ayrımı (UserRole Enum):** Akademik ve idari roller katı `UserRole` enum değerleriyle ayrıştırıldı, sorgularda negatif filtreleme yerine pozitif filtrelemeye geçildi.
+  - **Kod Standartları:** Dosya içi inline namespace referansları temizlendi, tüm sınıflar için dosya başı `use` bildirimleri standartlaştırıldı.
+  - **View-Controller Ayrımı:** View şablonlarındaki doğrudan model/controller bağımlılıkları temizlenerek veri akışı controller üzerinden `compact`/dizi olarak standartlaştırıldı.
+  - **Modüler JavaScript:** `ajax.js` içerisinden CSRF yönetimi bağımsız `csrf.js` modülüne taşınarak sorumluluklar ayrıştırıldı.
+- **İstemci Tarafı Bellek Yönetimi ve Yaşam Döngüsü Optimizasyonları (Frontend Faz 7)**:
+  - `myHTMLElements.js` içerisinde Bootstrap Modal ve Toast öğelerinin `hidden.bs.modal` ve `hidden.bs.toast` event'lerinde otomatik DOM'dan kaldırılması ve `dispose()` çağrısıyla bellek sızıntılarının (memory leak) önlenmesi.
+  - `ScheduleCard.js` içinde `AbortController` kullanılarak sticky table header kaydırma (scroll) ve yeniden boyutlandırma (resize) dinleyicilerinin temizlenmesi, `destroy()` yaşam döngüsü metodu.
+  - `ExamScheduleCard.js` içerisinde sınav takvim haftası navigasyonuna mükerrer click olaylarını önleyen guard kontrolü.
+  - `getSchedule.js` bileşeninde `matchMedia` dinleyicisinin düzgün kaldırılması ve eski Bootstrap Tooltip/Popover örneklerinin yok edilmesi.
+- **Veritabanı N+1 Sorgu ve Toplu İşlem Optimizasyonu**:
+  - Program notları ve ders atamalarında N+1 sorgular giderildi; `findByIds` ile toplu yükleme sağlandı.
+  - Çoklu not okundu işaretleme işlemi döngüsel `UPDATE` yerine tekil `UPDATE ... WHERE id IN (...)` sorgusuna dönüştürüldü.
+  - Birim bazında öğretim elemanı getirme sorgularındaki gereksiz aktif durum filtresi kaldırılarak tutarlılık sağlandı.
+
+### Fixed
+- **Form Otomatik Tamamlama (Autofill) Güvenlik ve Parola Düzeltmesi**:
+  - Kullanıcı düzenleme ve profil formlarında tarayıcı parola yöneticilerinin yanlışlıkla veya fark edilmeden parola alanını doldurup şifre değiştirmesini engelleyen `autocomplete="new-password"` koruması eklendi.
+- **XSS Açıkları ve Görünüm Güvenliği (Blade/View Sanitization)**:
+  - 73'ten fazla view dosyasında potansiyel XSS açıklarına karşı `htmlspecialchars` ve güvenli `e()` global helper fonksiyonu uygulandı.
+- **PHP 8.5 Uyumluluğu**:
+  - PHP 8.5 deprecation ve warning uyarıları çözüldü, katı tip tanımları güncellendi.
+- **Toplu İşlemlerde Rol Yetkilendirmesi**:
+  - Toplu kullanıcı ve ders işlemlerinde yetkisiz rol atamalarını ve IDOR açıklarını engelleyen sıkı Policy kontrolleri entegre edildi.
+- **Yarıyıl Seçimi Kaybı**:
+  - Ders düzenleme ve ekleme sayfalarında yarıyıl (`semester_no`) seçiminin belirli koşullarda ezilmesi hatası giderildi.
+- **Staj Dersleri Çakışma Düzeltmesi**:
+  - Ders birleştirme esnasında staj derslerinin normal derslerle hatalı çakışma üretmesi engellendi.
+- **Sekreter Rolü Kısıtlamaları**:
+  - Sekreter rolü için yetki kısıtlamaları ve derslik sayısı hesaplama sorgusundaki hatalı sayımlar düzeltildi.
+- **Profil Sayfası 500 Hatası**:
+  - Eksik helper fonksiyon referansları giderilerek global helper altyapısı (`global_helpers.php`) standartlaştırıldı.
+
 ## [0.3.3] - 2026-09-26
 
 ### Added
