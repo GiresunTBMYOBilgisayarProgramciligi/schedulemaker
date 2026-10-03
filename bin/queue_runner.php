@@ -43,7 +43,7 @@ try {
     $result = $service->processQueue($batchSize, $maxAttempts);
     $duration = round(microtime(true) - $startTime, 3);
 
-    // İşlenen e-posta varsa INFO, yoksa DEBUG seviyesinde logla (disk şişmesini önlemek için)
+    // Yalnızca işlenen e-posta olduğunda log kaydı oluştur (kuyruk boşken log dosyalarının ve panonun gereksiz dolmasını önler)
     if ($result['processed'] > 0) {
         $message = "Mail kuyruğu tamamlandı ({$duration}s): İşlenen: {$result['processed']}, Başarılı: {$result['sent']}, Başarısız: {$result['failed']}";
         $queueLogger->info($message, [
@@ -55,13 +55,8 @@ try {
             'attempts'  => $effectiveAttempts,
         ]);
         echo "[" . date('Y-m-d H:i:s') . "] {$message}\n";
-    } else {
-        $queueLogger->debug("Mail kuyruğu boş, işlenecek kayıt bulunamadı ({$duration}s).", [
-            'duration' => $duration
-        ]);
-        if ($isVerbose) {
-            echo "[" . date('Y-m-d H:i:s') . "] Mail kuyruğu boş ({$duration}s).\n";
-        }
+    } elseif ($isVerbose) {
+        echo "[" . date('Y-m-d H:i:s') . "] Mail kuyruğu boş ({$duration}s).\n";
     }
 
     exit(0);
