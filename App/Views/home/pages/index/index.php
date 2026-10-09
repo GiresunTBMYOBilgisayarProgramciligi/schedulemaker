@@ -8,6 +8,16 @@
  * @var string|int|null $selected_unit_id
  * @var string|int|null $selected_department_id
  * @var string|int|null $selected_program_id
+ * @var string|int|null $selected_semester_no
+ * @var string|int|null $selected_lecturer_id
+ * @var string|int|null $selected_lecturer_unit_id
+ * @var string|int|null $selected_classroom_id
+ * @var string|int|null $selected_classroom_building_id
+ * @var string|int|null $selected_classroom_unit_id
+ * @var string|null $active_tab
+ * @var string|null $selected_schedule_type
+ * @var string|null $selected_academic_year
+ * @var string|null $selected_semester
  */
 
 use App\Core\View;
@@ -15,8 +25,10 @@ use App\Enums\ExamType;
 use function App\Helpers\e;
 use function App\Helpers\getSettingValue;
 
-$currentAcademicYear = getSettingValue("academic_year") ?? (date('Y') . ' - ' . (date('Y') + 1));
-$currentSemester = getSettingValue("semester") ?? 'Bahar';
+$activeTab = $active_tab ?? 'program';
+$selectedScheduleType = $selected_schedule_type ?? 'lesson';
+$currentAcademicYear = $selected_academic_year ?? getSettingValue("academic_year") ?? (date('Y') . ' - ' . (date('Y') + 1));
+$currentSemester = $selected_semester ?? getSettingValue("semester") ?? 'Bahar';
 ?>
 
 <!--begin::Portal Page Container-->
@@ -73,19 +85,19 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                     </label>
                     <!-- Visual Segmented Button Pills -->
                     <div class="schedule-type-btn-group" id="scheduleTypePills" role="group" aria-label="Program Türü">
-                        <button type="button" class="schedule-type-btn active" data-type="lesson">
+                        <button type="button" class="schedule-type-btn <?= $selectedScheduleType === 'lesson' ? 'active' : '' ?>" data-type="lesson">
                             <i class="bi bi-book-half"></i>
                             <span>Ders Programı</span>
                         </button>
-                        <button type="button" class="schedule-type-btn" data-type="<?= ExamType::MIDTERM->value ?>">
+                        <button type="button" class="schedule-type-btn <?= $selectedScheduleType === ExamType::MIDTERM->value ? 'active' : '' ?>" data-type="<?= ExamType::MIDTERM->value ?>">
                             <i class="bi bi-pencil-square"></i>
                             <span>Ara Sınav</span>
                         </button>
-                        <button type="button" class="schedule-type-btn" data-type="<?= ExamType::FINAL->value ?>">
+                        <button type="button" class="schedule-type-btn <?= $selectedScheduleType === ExamType::FINAL->value ? 'active' : '' ?>" data-type="<?= ExamType::FINAL->value ?>">
                             <i class="bi bi-mortarboard"></i>
                             <span>Final</span>
                         </button>
-                        <button type="button" class="schedule-type-btn" data-type="<?= ExamType::MAKEUP->value ?>">
+                        <button type="button" class="schedule-type-btn <?= $selectedScheduleType === ExamType::MAKEUP->value ? 'active' : '' ?>" data-type="<?= ExamType::MAKEUP->value ?>">
                             <i class="bi bi-arrow-repeat"></i>
                             <span>Bütünleme</span>
                         </button>
@@ -93,10 +105,10 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
 
                     <!-- Hidden/Synchronized Select for Native JS Compatibility -->
                     <select class="d-none" id="schedule_type" name="schedule_type">
-                        <option value="lesson" selected>Ders Programı</option>
-                        <option value="<?= ExamType::MIDTERM->value ?>">Ara Sınav Programı</option>
-                        <option value="<?= ExamType::FINAL->value ?>">Final Programı</option>
-                        <option value="<?= ExamType::MAKEUP->value ?>">Bütünleme Programı</option>
+                        <option value="lesson" <?= $selectedScheduleType === 'lesson' ? 'selected' : '' ?>>Ders Programı</option>
+                        <option value="<?= ExamType::MIDTERM->value ?>" <?= $selectedScheduleType === ExamType::MIDTERM->value ? 'selected' : '' ?>>Ara Sınav Programı</option>
+                        <option value="<?= ExamType::FINAL->value ?>" <?= $selectedScheduleType === ExamType::FINAL->value ? 'selected' : '' ?>>Final Programı</option>
+                        <option value="<?= ExamType::MAKEUP->value ?>" <?= $selectedScheduleType === ExamType::MAKEUP->value ? 'selected' : '' ?>>Bütünleme Programı</option>
                     </select>
                 </div>
 
@@ -135,25 +147,25 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                 <!-- Navigation Tabs -->
                 <ul class="nav nav-tabs nav-tabs-portal" id="scheduleTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active d-inline-flex align-items-center gap-2" id="program-tab" data-bs-toggle="tab"
+                        <button class="nav-link <?= $activeTab === 'program' ? 'active' : '' ?> d-inline-flex align-items-center gap-2" id="program-tab" data-bs-toggle="tab"
                             data-bs-target="#program-tab-pane" type="button" role="tab"
-                            aria-controls="program-tab-pane" aria-selected="true">
+                            aria-controls="program-tab-pane" aria-selected="<?= $activeTab === 'program' ? 'true' : 'false' ?>">
                             <i class="bi bi-mortarboard-fill text-primary"></i>
                             <span>Birim / Bölüm / Program</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link d-inline-flex align-items-center gap-2" id="lecturer-tab" data-bs-toggle="tab"
+                        <button class="nav-link <?= $activeTab === 'lecturer' ? 'active' : '' ?> d-inline-flex align-items-center gap-2" id="lecturer-tab" data-bs-toggle="tab"
                             data-bs-target="#lecturer-tab-pane" type="button" role="tab"
-                            aria-controls="lecturer-tab-pane" aria-selected="false">
+                            aria-controls="lecturer-tab-pane" aria-selected="<?= $activeTab === 'lecturer' ? 'true' : 'false' ?>">
                             <i class="bi bi-person-workspace text-success"></i>
                             <span>Öğretim Elemanı</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link d-inline-flex align-items-center gap-2" id="classroom-tab" data-bs-toggle="tab"
+                        <button class="nav-link <?= $activeTab === 'classroom' ? 'active' : '' ?> d-inline-flex align-items-center gap-2" id="classroom-tab" data-bs-toggle="tab"
                             data-bs-target="#classroom-tab-pane" type="button" role="tab"
-                            aria-controls="classroom-tab-pane" aria-selected="false">
+                            aria-controls="classroom-tab-pane" aria-selected="<?= $activeTab === 'classroom' ? 'true' : 'false' ?>">
                             <i class="bi bi-door-open-fill text-warning"></i>
                             <span>Derslik & Amfi</span>
                         </button>
@@ -165,7 +177,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
             <!--begin::Tabs Form Content-->
             <div class="tab-content pt-2" id="scheduleTabsContent">
                 <!-- Tab 1: Birim / Bölüm / Program (Öğrenci Odaklı) -->
-                <div class="tab-pane fade show active" id="program-tab-pane" role="tabpanel" aria-labelledby="program-tab" tabindex="0">
+                <div class="tab-pane fade <?= $activeTab === 'program' ? 'show active' : '' ?>" id="program-tab-pane" role="tabpanel" aria-labelledby="program-tab" tabindex="0">
                     <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row align-items-end gy-3">
                             <div class="col-12">
@@ -192,7 +204,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                 </div>
 
                 <!-- Tab 2: Hoca / Öğretim Görevlisi -->
-                <div class="tab-pane fade" id="lecturer-tab-pane" role="tabpanel" aria-labelledby="lecturer-tab" tabindex="0">
+                <div class="tab-pane fade <?= $activeTab === 'lecturer' ? 'show active' : '' ?>" id="lecturer-tab-pane" role="tabpanel" aria-labelledby="lecturer-tab" tabindex="0">
                     <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row gy-3">
                             <div class="col-12 col-md-5">
@@ -200,14 +212,14 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                 <select class="form-select tom-select" id="lecturer_unit_id" name="lecturer_unit_id" data-action="public">
                                     <option value="">Birim Seçiniz</option>
                                     <?php foreach ($units as $unit): ?>
-                                        <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
+                                        <option value="<?= (int)$unit->id ?>" <?= ((string)($selected_lecturer_unit_id ?? '') !== '' && (string)$selected_lecturer_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= e($unit->name) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-12 col-md-7">
                                 <label class="form-label small fw-semibold text-muted mb-1">Öğretim Elemanı</label>
                                 <div class="input-group">
-                                    <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz">
+                                    <select class="form-select tom-select" id="lecturer_id" name="lecturer_id" placeholder="Öğretim Üyesi / Görevlisi Seçiniz" data-selected="<?= e((string)($selected_lecturer_id ?? '')) ?>">
                                         <option value="0">İlk olarak Birim Seçiniz</option>
                                     </select>
                                     <button class="btn btn-primary px-4 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" type="button" id="lecturerScheduleButton" data-only-table="true">
@@ -225,7 +237,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                 </div>
 
                 <!-- Tab 3: Derslik / Amfi / Laboratuvar -->
-                <div class="tab-pane fade" id="classroom-tab-pane" role="tabpanel" aria-labelledby="classroom-tab" tabindex="0">
+                <div class="tab-pane fade <?= $activeTab === 'classroom' ? 'show active' : '' ?>" id="classroom-tab-pane" role="tabpanel" aria-labelledby="classroom-tab" tabindex="0">
                     <div class="p-2 p-md-3 rounded-4 bg-body-tertiary border">
                         <div class="row gy-3">
                             <div class="col-12 col-md-4">
@@ -233,20 +245,20 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
                                 <select class="form-select tom-select" id="classroom_unit_id" name="classroom_unit_id" data-action="public">
                                     <option value="">Birim Seçiniz</option>
                                     <?php foreach ($units as $unit): ?>
-                                        <option value="<?= (int)$unit->id ?>"><?= e($unit->name) ?></option>
+                                        <option value="<?= (int)$unit->id ?>" <?= ((string)($selected_classroom_unit_id ?? '') !== '' && (string)$selected_classroom_unit_id === (string)$unit->id) ? 'selected' : '' ?>><?= e($unit->name) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4">
                                 <label class="form-label small fw-semibold text-muted mb-1">Bina / Blok</label>
-                                <select class="form-select tom-select" id="classroom_building_id" name="classroom_building_id" data-action="public">
+                                <select class="form-select tom-select" id="classroom_building_id" name="classroom_building_id" data-action="public" data-selected="<?= e((string)($selected_classroom_building_id ?? '')) ?>">
                                     <option value="0">İlk olarak Birim Seçiniz</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4">
                                 <label class="form-label small fw-semibold text-muted mb-1">Derslik / Salon</label>
                                 <div class="input-group">
-                                    <select class="form-select" id="classroom_id" name="classroom_id">
+                                    <select class="form-select" id="classroom_id" name="classroom_id" data-selected="<?= e((string)($selected_classroom_id ?? '')) ?>">
                                         <option value="0">İlk olarak Bina Seçiniz</option>
                                     </select>
                                     <button type="button" class="btn btn-primary px-3 fw-semibold shadow-sm d-inline-flex align-items-center gap-2" id="classroomScheduleButton" data-only-table="true">
@@ -362,6 +374,22 @@ document.addEventListener("DOMContentLoaded", function () {
         if (container) {
             container.scrollIntoView({ behavior: "smooth", block: "start" });
         }
+    });
+
+    // Sekme geçişlerinde TomSelect görünümünü senkronize et
+    const tabButtons = document.querySelectorAll('#scheduleTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('shown.bs.tab', function (e) {
+            const targetSelector = e.target.getAttribute('data-bs-target');
+            const target = targetSelector ? document.querySelector(targetSelector) : null;
+            if (target) {
+                target.querySelectorAll('.tom-select').forEach(sel => {
+                    if (sel.tomselect) {
+                        sel.tomselect.sync();
+                    }
+                });
+            }
+        });
     });
 });
 </script>

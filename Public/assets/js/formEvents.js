@@ -530,18 +530,22 @@ document.addEventListener("DOMContentLoaded", function () {
                    
                     const selectedProgramId = programSelect.getAttribute('data-selected');
                     if (selectedProgramId && selectedProgramId !== "0") {
-                        if (programSelect.tomselect) {
-                            programSelect.tomselect.setValue(selectedProgramId, true);
-                        } else { // Eğer önceden seçilmesi gereken bir program varsa
-                            programSelect.value = selectedProgramId;
+                        const exists = progList.some(program => String(program.id) === String(selectedProgramId));
+                        if (exists) {
+                            if (programSelect.tomselect) {
+                                programSelect.tomselect.setValue(selectedProgramId, true);
+                            } else {
+                                programSelect.value = selectedProgramId;
+                            }
+                            const programScheduleBtn = document.getElementById('departmentAndProgramScheduleButton');
+                            if (programScheduleBtn) {
+                                programScheduleBtn.click();
+                            }
+                        } else {
+                            new Toast().prepareToast("Bilgi", "Belirtilen program bulunamadı.", "warning");
                         }
-                        programSelect.removeAttribute('data-selected'); // Bir kez seçilmesi yeterli
+                        programSelect.removeAttribute('data-selected');
                         programSelect.dispatchEvent(new Event("change", { bubbles: true }));
-
-                        const programScheduleBtn = document.getElementById('departmentAndProgramScheduleButton');
-                        if (programScheduleBtn) {
-                            programScheduleBtn.click();
-                        }
                     }
                 })
                 .catch(error => {
@@ -606,6 +610,16 @@ document.addEventListener("DOMContentLoaded", function () {
                         classroomBuildingSelect.appendChild(option);
                     });
                 }
+
+                const selectedBuildingId = classroomBuildingSelect.getAttribute('data-selected');
+                if (selectedBuildingId && selectedBuildingId !== "0") {
+                    if (classroomBuildingSelect.tomselect) {
+                        classroomBuildingSelect.tomselect.setValue(selectedBuildingId, true);
+                    } else {
+                        classroomBuildingSelect.value = selectedBuildingId;
+                    }
+                    classroomBuildingSelect.removeAttribute('data-selected');
+                }
                 classroomBuildingSelect.dispatchEvent(new Event("change"));
             })
             .catch(error => {
@@ -654,6 +668,24 @@ document.addEventListener("DOMContentLoaded", function () {
                         option.textContent = room.name;
                         classroomSelect.appendChild(option);
                     });
+                }
+
+                const selectedClassroomId = classroomSelect.getAttribute('data-selected');
+                if (selectedClassroomId && selectedClassroomId !== "0") {
+                    const exists = roomList.some(room => String(room.id) === String(selectedClassroomId));
+                    if (exists) {
+                        if (classroomSelect.tomselect) {
+                            classroomSelect.tomselect.setValue(selectedClassroomId, true);
+                        }
+                        classroomSelect.value = selectedClassroomId;
+                        const classroomScheduleBtn = document.getElementById('classroomScheduleButton');
+                        if (classroomScheduleBtn) {
+                            classroomScheduleBtn.click();
+                        }
+                    } else {
+                        new Toast().prepareToast("Bilgi", "Belirtilen derslik bulunamadı.", "warning");
+                    }
+                    classroomSelect.removeAttribute('data-selected');
                 }
                 classroomSelect.dispatchEvent(new Event("change"));
             })
@@ -708,17 +740,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 const selectedLecturerId = lecturerSelect.getAttribute('data-selected');
                 if (selectedLecturerId && selectedLecturerId !== "0") {
-                    if (lecturerSelect.tomselect) {
-                        lecturerSelect.tomselect.setValue(selectedLecturerId, true);
-                    } else {
+                    const exists = lectList.some(lect => String(lect.id) === String(selectedLecturerId));
+                    if (exists) {
+                        if (lecturerSelect.tomselect) {
+                            lecturerSelect.tomselect.setValue(selectedLecturerId, true);
+                        }
                         lecturerSelect.value = selectedLecturerId;
+                        const lecturerScheduleBtn = document.getElementById('lecturerScheduleButton');
+                        if (lecturerScheduleBtn) {
+                            lecturerScheduleBtn.click();
+                        }
+                    } else {
+                        new Toast().prepareToast("Bilgi", "Belirtilen öğretim elemanı bulunamadı.", "warning");
                     }
                     lecturerSelect.removeAttribute('data-selected');
-
-                    const lecturerScheduleBtn = document.getElementById('lecturerScheduleButton');
-                    if (lecturerScheduleBtn) {
-                        lecturerScheduleBtn.click();
-                    }
                 }
 
                 lecturerSelect.dispatchEvent(new Event("change"));
@@ -883,8 +918,66 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (lecturerUnitSelect && lecturerUnitSelect.value !== "0" && lecturerUnitSelect.value !== "") {
-        if (lecturerSelect && (!lecturerSelect.value || lecturerSelect.value === "0" || lecturerSelect.value === "")) {
+        if (lecturerSelect && (!lecturerSelect.value || lecturerSelect.value === "0" || lecturerSelect.value === "" || lecturerSelect.getAttribute('data-selected'))) {
             lecturerUnitSelect.dispatchEvent(new Event("change"));
+        }
+    } else if (lecturerSelect && lecturerSelect.getAttribute('data-selected')) {
+        // Eğer birim seçilmemiş fakat hoca ID verilmişse tüm hocaları yükle
+        const actionParam = lecturerUnitSelect && lecturerUnitSelect.dataset.action ? `?action=${lecturerUnitSelect.dataset.action}` : '';
+        fetch(`/ajax/getAllLecturersList${actionParam}`, {
+            method: "POST",
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const lectList = data['lecturers'] || [];
+            if (lecturerSelect.tomselect) {
+                lecturerSelect.tomselect.clearOptions();
+                lecturerSelect.tomselect.addOption({value: 0, text: "Öğretim Üyesi / Görevlisi Seçiniz"});
+                lectList.forEach(lect => {
+                    lecturerSelect.tomselect.addOption({value: lect.id, text: lect.name});
+                });
+                lecturerSelect.tomselect.refreshOptions(false);
+            } else {
+                lecturerSelect.innerHTML = "<option value='0'>Öğretim Üyesi / Görevlisi Seçiniz</option>";
+                lectList.forEach(lect => {
+                    const option = document.createElement("option");
+                    option.value = lect.id;
+                    option.textContent = lect.name;
+                    lecturerSelect.appendChild(option);
+                });
+            }
+            const selectedLecturerId = lecturerSelect.getAttribute('data-selected');
+            if (selectedLecturerId && selectedLecturerId !== "0") {
+                const exists = lectList.some(lect => String(lect.id) === String(selectedLecturerId));
+                if (exists) {
+                    if (lecturerSelect.tomselect) {
+                        lecturerSelect.tomselect.setValue(selectedLecturerId, true);
+                    }
+                    lecturerSelect.value = selectedLecturerId;
+                    const lecturerScheduleBtn = document.getElementById('lecturerScheduleButton');
+                    if (lecturerScheduleBtn) {
+                        lecturerScheduleBtn.click();
+                    }
+                } else {
+                    new Toast().prepareToast("Bilgi", "Belirtilen öğretim elemanı bulunamadı.", "warning");
+                }
+                lecturerSelect.removeAttribute('data-selected');
+            }
+            lecturerSelect.dispatchEvent(new Event("change"));
+        })
+        .catch(console.error);
+    }
+
+    if (classroomUnitSelect && classroomUnitSelect.value !== "0" && classroomUnitSelect.value !== "") {
+        if (classroomBuildingSelect && (!classroomBuildingSelect.value || classroomBuildingSelect.value === "0" || classroomBuildingSelect.value === "" || classroomBuildingSelect.getAttribute('data-selected'))) {
+            classroomUnitSelect.dispatchEvent(new Event("change"));
+        }
+    }
+
+    if (classroomBuildingSelect && classroomBuildingSelect.value !== "0" && classroomBuildingSelect.value !== "") {
+        if (classroomSelect && (!classroomSelect.value || classroomSelect.value === "0" || classroomSelect.value === "" || classroomSelect.getAttribute('data-selected'))) {
+            classroomBuildingSelect.dispatchEvent(new Event("change"));
         }
     }
 
