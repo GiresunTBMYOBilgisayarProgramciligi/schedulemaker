@@ -24,5 +24,14 @@ setlocale(LC_ALL, 'tr_TR.UTF-8');
 $errorHandler = new \App\Core\ErrorHandler();
 $errorHandler->register();
 
+// Oturum ayarları: Uzun süreli planlama ve düzenlemelerde oturumun erken düşmesini engelle (4 saat)
+ini_set('session.gc_maxlifetime', '14400');
+session_set_cookie_params([
+    'lifetime' => 14400,
+    'path'     => '/',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+
 session_start();
 new Application();
