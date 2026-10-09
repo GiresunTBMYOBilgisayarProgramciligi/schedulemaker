@@ -45,7 +45,8 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
 
         $type        = 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $colsPerDay  = ($filters->owner_type === OwnerType::CLASSROOM->value) ? 1 : 2;
+        $isClassroom = in_array($filters->owner_type, [OwnerType::CLASSROOM->value, 'classroom_unit', 'building'], true);
+        $colsPerDay  = $isClassroom ? 1 : 2;
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
 

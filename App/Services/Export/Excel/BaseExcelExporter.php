@@ -22,8 +22,11 @@ use JetBrains\PhpStorm\NoReturn;
 use Monolog\Logger;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Shared\Drawing as SharedDrawing;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use function App\Helpers\getSettingValue;
 
@@ -40,6 +43,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     protected Spreadsheet $spreadsheet;
     protected Worksheet $sheet;
     protected ScheduleExportFilterBuilder $filterBuilder;
+    protected string $headerLastCol = '';
 
     public function __construct()
     {
@@ -102,7 +106,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     }
 
     /**
-     * Excel başlık satırlarını yazar (Üniversite / Birim / Dönem bilgisi).
+     * Excel başlık satırlarını yazar (Üniversite / Birim / Dönem bilgisi ve iki yanda logo).
      *
      * @param ScheduleExportFilterDTO|array $filters
      * @return int Verilerin başlayacağı bir sonraki satır numarası
@@ -112,9 +116,14 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $filtersDTO  = $filters instanceof ScheduleExportFilterDTO ? $filters : ScheduleExportFilterDTO::fromArray($filters);
         $type        = $filtersDTO->type ?? 'lesson';
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $colsPerDay  = ($filtersDTO->owner_type === OwnerType::CLASSROOM->value) ? 1 : 2;
+
+        $isExam      = in_array($type, ['exam', ExamType::MIDTERM->value, ExamType::FINAL->value, ExamType::MAKEUP->value], true);
+        $isClassroom = in_array($filtersDTO->owner_type, [OwnerType::CLASSROOM->value, 'classroom_unit', 'building'], true);
+        $colsPerDay  = ($isExam || $isClassroom) ? 1 : 2;
+
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
+        $this->headerLastCol = $lastCol;
 
         $universityName = getSettingValue('university_name', 'general', 'Giresun Üniversitesi');
         $unitName       = $this->resolveUnitName($filtersDTO);
@@ -124,25 +133,133 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $semester     = $filtersDTO->semester ?? getSettingValue('semester');
 
         $upperUniversity = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $universityName), 'UTF-8');
-        $upperUnit = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $unitName), 'UTF-8');
-        $titleLine1 = trim("{$upperUniversity} {$upperUnit}");
-        $titleLine2 = trim("{$academicYear} {$semester} YARIYILI {$periodLabel}");
+        $upperUnit       = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $unitName), 'UTF-8');
+        $titleLine1      = trim("{$upperUniversity} {$upperUnit}");
+        $titleLine2      = trim("{$academicYear} {$semester} YARIYILI {$periodLabel}");
 
-        $this->sheet->setCellValue("A2", $titleLine1);
-        $this->sheet->mergeCells("A2:{$lastCol}2");
-        $this->sheet->getStyle("A2")->getFont()->setBold(true)->setSize(11);
-        $this->sheet->getStyle("A2")->getAlignment()
+        $this->renderHeaderRow($titleLine1, $titleLine2, $lastCol, $totalCols);
+
+        return 3;
+    }
+
+    /**
+     * Ortak başlık formatını uygular ve logoları ekler.
+     */
+    protected function renderHeaderRow(string $titleLine1, string $titleLine2, string $lastCol, int $totalCols): void
+    {
+        // Başlık satırlarının yükseklikleri (ferah ve logolarla dengeli)
+        $this->sheet->getRowDimension(1)->setRowHeight(30);
+        $this->sheet->getRowDimension(2)->setRowHeight(30);
+
+        // A1'den son sütunun 2. satırına kadar tek bir büyük hücre olarak birleştir
+        $this->sheet->mergeCells("A1:{$lastCol}2");
+
+        // İki satırlı başlık metnini RichText olarak oluştur
+        $richText = new RichText();
+        $run1 = $richText->createTextRun($titleLine1 . "\n");
+        $run1->getFont()->setBold(true)->setSize(13);
+
+        $run2 = $richText->createTextRun($titleLine2);
+        $run2->getFont()->setBold(true)->setSize(11);
+
+        $this->sheet->setCellValue("A1", $richText);
+        $this->sheet->getStyle("A1")->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
+            ->setVertical(Alignment::VERTICAL_CENTER)
+            ->setWrapText(true);
 
-        $this->sheet->setCellValue("A3", $titleLine2);
-        $this->sheet->mergeCells("A3:{$lastCol}3");
-        $this->sheet->getStyle("A3")->getFont()->setBold(true)->setSize(11);
-        $this->sheet->getStyle("A3")->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
+        // İki yana kurumsal logoları yerleştir
+        $this->addHeaderLogos($totalCols);
+    }
 
-        return 5;
+    /**
+     * Başlığın sol ve sağ tarafına kurum logolarını ekler.
+     *
+     * @param int $totalCols Toplam sütun sayısı
+     */
+    protected function addHeaderLogos(int $totalCols): void
+    {
+        $logoPath = dirname(__DIR__, 4) . '/Public/assets/images/gru_official_logo.png';
+        if (!file_exists($logoPath)) {
+            $logoPath = dirname(__DIR__, 4) . '/Public/assets/images/gru_logo.png';
+        }
+        if (!file_exists($logoPath)) {
+            return;
+        }
+
+        // Sol Logo (A1 - Saat sütunu sol kenarından 12px içeride, dikeyde ortalı)
+        $leftDrawing = new Drawing();
+        $leftDrawing->setName('Kurum Logosu (Sol)');
+        $leftDrawing->setDescription('Giresun Üniversitesi Logosu');
+        $leftDrawing->setPath($logoPath);
+        $leftDrawing->setCoordinates('A1');
+        $leftDrawing->setHeight(60);
+        $leftDrawing->setOffsetX(12);
+        $leftDrawing->setOffsetY(10);
+        $leftDrawing->setWorksheet($this->sheet);
+
+        if ($totalCols >= 3) {
+            $lastCol = Coordinate::stringFromColumnIndex($totalCols);
+            $rightDrawing = new Drawing();
+            $rightDrawing->setName('Kurum Logosu (Sağ)');
+            $rightDrawing->setDescription('Giresun Üniversitesi Logosu');
+            $rightDrawing->setPath($logoPath);
+            $rightDrawing->setHeight(60);
+            $rightDrawing->setOffsetY(10);
+            $rightDrawing->setCoordinates($lastCol . '1');
+            $rightDrawing->setOffsetX(0);
+            $rightDrawing->setWorksheet($this->sheet);
+        }
+    }
+
+    /**
+     * Tablo hücreleri ve sütun genişlikleri oluştuktan sonra, sağ logoyu
+     * tablonun en sağ kenarına tam yaslar (taşma olmadan, simetrik boşlukla).
+     */
+    protected function alignRightHeaderLogo(): void
+    {
+        if (empty($this->headerLastCol)) {
+            return;
+        }
+
+        $rightDrawing = null;
+        foreach ($this->sheet->getDrawingCollection() as $drawing) {
+            if ($drawing->getName() === 'Kurum Logosu (Sağ)') {
+                $rightDrawing = $drawing;
+                break;
+            }
+        }
+
+        if (!$rightDrawing) {
+            return;
+        }
+
+        $this->sheet->calculateColumnWidths();
+        $font = $this->spreadsheet->getDefaultStyle()->getFont();
+
+        $logoWidth = $rightDrawing->getWidth() > 0 ? $rightDrawing->getWidth() : 60;
+        $padding = 10; // Sağ sınır ile logo arasındaki boşluk (px)
+        $requiredWidth = $logoWidth + $padding;
+
+        $targetColIdx = Coordinate::columnIndexFromString($this->headerLastCol);
+        $accumulatedWidth = 0;
+
+        // Son sütundan geriye doğru sütun genişliklerini topla
+        while ($targetColIdx >= 1) {
+            $colString = Coordinate::stringFromColumnIndex($targetColIdx);
+            $colWidth = $this->sheet->getColumnDimension($colString)->getWidth();
+            $colPx = SharedDrawing::cellDimensionToPixels($colWidth > 0 ? $colWidth : 10, $font);
+
+            $accumulatedWidth += $colPx;
+            if ($accumulatedWidth >= $requiredWidth || $targetColIdx === 1) {
+                $offsetX = (int) max(0, $accumulatedWidth - $requiredWidth);
+                $rightDrawing->setCoordinates($colString . '1');
+                $rightDrawing->setOffsetX($offsetX);
+                break;
+            }
+
+            $targetColIdx--;
+        }
     }
 
     /**
@@ -205,6 +322,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
         $this->buildSpreadsheet($filterDTO, $optionsDTO);
+        $this->alignRightHeaderLogo();
         $this->download($this->getFileName($filterDTO));
     }
 
@@ -217,6 +335,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
         $this->buildSpreadsheet($filterDTO, $optionsDTO);
+        $this->alignRightHeaderLogo();
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
         ob_start();
         $writer->save('php://output');

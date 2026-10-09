@@ -53,7 +53,7 @@ $currentSemester = getSettingValue("semester") ?? 'Bahar';
             <div class="col-12 col-lg-4 text-center d-none d-lg-block">
                 <div class="position-relative d-inline-block">
                     <div class="bg-body rounded-4 p-3 shadow-sm border border-primary-subtle d-inline-flex align-items-center justify-content-center" style="width: 160px; height: 160px;">
-                        <img src="/assets/images/gru_logo.png" alt="Giresun Üniversitesi Logo" width="130" height="130" class="img-fluid" />
+                        <img src="/assets/images/gru_official_logo.png" alt="Giresun Üniversitesi Logo" width="130" height="130" class="img-fluid" />
                     </div>
                 </div>
             </div>

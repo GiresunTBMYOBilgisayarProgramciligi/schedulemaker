@@ -11,6 +11,7 @@ use App\Enums\PermissionType;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -73,7 +74,7 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
 
         $this->writeListFileTitle($filters, $lastCol);
 
-        $row = 5;
+        $row = 3;
 
         foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new Schedule())->get()
@@ -119,7 +120,7 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
     }
 
     /**
-     * Liste formatı için dosya başlıklarını yazar (A2–A3).
+     * Liste formatı için dosya başlıklarını ve logoları yazar (satır 1–2).
      */
     protected function writeListFileTitle(ScheduleExportFilterDTO $filters, string $lastCol): void
     {
@@ -135,19 +136,10 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
         $titleLine1      = trim("{$upperUniversity} {$upperUnit}");
         $titleLine2      = trim("{$academicYear} {$semester} YARIYILI {$periodLabel}");
 
-        $this->sheet->setCellValue('A2', $titleLine1);
-        $this->sheet->mergeCells("A2:{$lastCol}2");
-        $this->sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
-        $this->sheet->getStyle('A2')->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
+        $totalCols = Coordinate::columnIndexFromString($lastCol);
+        $this->headerLastCol = $lastCol;
 
-        $this->sheet->setCellValue('A3', $titleLine2);
-        $this->sheet->mergeCells("A3:{$lastCol}3");
-        $this->sheet->getStyle('A3')->getFont()->setBold(true)->setSize(11);
-        $this->sheet->getStyle('A3')->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->renderHeaderRow($titleLine1, $titleLine2, $lastCol, $totalCols);
     }
 
     /**

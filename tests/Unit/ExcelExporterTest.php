@@ -45,7 +45,13 @@ class ExcelExporterTest extends BaseTestCase
 
             public function getSheetCellValue(string $cell): mixed
             {
-                return $this->sheet->getCell($cell)->getValue();
+                $val = $this->sheet->getCell($cell)->getValue();
+                return ($val instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) ? $val->getPlainText() : (string) $val;
+            }
+
+            public function getDrawings(): array
+            {
+                return $this->sheet->getDrawingCollection()->getArrayCopy();
             }
 
             public function testWriteFileTitle(ScheduleExportFilterDTO|array $filters): int
@@ -65,11 +71,20 @@ class ExcelExporterTest extends BaseTestCase
         $unitName = $exporter->testResolveUnitName($dto);
         $this->assertEquals('Görele Güzel Sanatlar Fakültesi', $unitName);
 
-        $exporter->testWriteFileTitle($dto);
-        $headerValue = $exporter->getSheetCellValue('A2');
+        $nextRow = $exporter->testWriteFileTitle($dto);
+        $this->assertEquals(3, $nextRow);
 
+        $headerValue = $exporter->getSheetCellValue('A1');
         $this->assertStringContainsString('GİRESUN ÜNİVERSİTESİ', $headerValue);
         $this->assertStringContainsString('GÖRELE GÜZEL SANATLAR FAKÜLTESİ', $headerValue);
+
+        // İki yanda kurumsal logoların eklendiğini doğrula
+        $drawings = $exporter->getDrawings();
+        $this->assertCount(2, $drawings);
+        $this->assertEquals('A1', $drawings[0]->getCoordinates());
+        $this->assertEquals('Kurum Logosu (Sol)', $drawings[0]->getName());
+        $this->assertStringEndsWith('1', $drawings[1]->getCoordinates());
+        $this->assertEquals('Kurum Logosu (Sağ)', $drawings[1]->getName());
     }
 
     public function testGetFileNameIncludesSpecificNames(): void
@@ -144,5 +159,96 @@ class ExcelExporterTest extends BaseTestCase
         $this->assertNotEmpty($content);
         // Misafir kullanıcı için staj tablosu Excel içeriğine eklenmemeli
         $this->assertStringNotContainsString('STAJ / İŞLETMEDE MESLEKİ EĞİTİM BİLGİLERİ', $content);
+    }
+
+    public function testClassroomAndBuildingExportHeaderEndsAtColumnF(): void
+    {
+        $exporter = new class extends LessonScheduleExcelExporter {
+            public function testWriteFileTitle(ScheduleExportFilterDTO|array $filters): int
+            {
+                return $this->writeFileTitle($filters);
+            }
+
+            public function getMergeCells(): array
+            {
+                return $this->sheet->getMergeCells();
+            }
+
+            public function getHeaderLastCol(): string
+            {
+                return $this->headerLastCol;
+            }
+        };
+
+        // Derslik export'u 6 sütunla (A..F) sınırlı olmalı
+        $classroomDto = ScheduleExportFilterDTO::fromArray([
+            'type'          => 'lesson',
+            'owner_type'    => 'classroom',
+            'owner_id'      => 1,
+            'semester'      => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ]);
+        $exporter->testWriteFileTitle($classroomDto);
+        $this->assertEquals('F', $exporter->getHeaderLastCol());
+        $this->assertContains('A1:F2', $exporter->getMergeCells());
+
+        // Bina export'u da derslikleri listelediği için 6 sütunla (A..F) sınırlı olmalı
+        $buildingExporter = new class extends LessonScheduleExcelExporter {
+            public function testWriteFileTitle(ScheduleExportFilterDTO|array $filters): int
+            {
+                return $this->writeFileTitle($filters);
+            }
+
+            public function getHeaderLastCol(): string
+            {
+                return $this->headerLastCol;
+            }
+        };
+        $buildingDto = ScheduleExportFilterDTO::fromArray([
+            'type'          => 'lesson',
+            'owner_type'    => 'building',
+            'owner_id'      => 1,
+            'semester'      => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ]);
+        $buildingExporter->testWriteFileTitle($buildingDto);
+        $this->assertEquals('F', $buildingExporter->getHeaderLastCol());
+    }
+
+    public function testRightLogoIsAlignedWithinHeaderBounds(): void
+    {
+        $exporter = new LessonScheduleExcelExporter();
+        $filterDto = ScheduleExportFilterDTO::fromArray([
+            'type'          => 'lesson',
+            'owner_type'    => 'program',
+            'owner_id'      => $this->programId,
+            'semester'      => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ]);
+
+        $raw = $exporter->getRawContent($filterDto);
+        $this->assertNotEmpty($raw);
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'excel_test_');
+        file_put_contents($tempFile, $raw);
+
+        $ss = \PhpOffice\PhpSpreadsheet\IOFactory::load($tempFile);
+        $sheet = $ss->getActiveSheet();
+        unlink($tempFile);
+
+        $drawings = $sheet->getDrawingCollection();
+        $this->assertCount(2, $drawings);
+
+        $left = $drawings[0];
+        $right = $drawings[1];
+
+        $this->assertEquals('Kurum Logosu (Sol)', $left->getName());
+        $this->assertEquals('A1', $left->getCoordinates());
+        $this->assertEquals(60, $left->getHeight());
+
+        $this->assertEquals('Kurum Logosu (Sağ)', $right->getName());
+        $this->assertEquals(60, $right->getHeight());
+        // Sağ logo en sağ sınır olan K (veya J) sütunu içinde yer almalı
+        $this->assertMatchesRegularExpression('/^[A-K]1$/', $right->getCoordinates());
     }
 }
