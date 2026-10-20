@@ -18,6 +18,8 @@ use App\Repositories\ProgramRepository;
 use App\Repositories\UserRepository;
 use App\Services\LessonService;
 use Exception;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv as CsvReader;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 /**
@@ -88,6 +90,46 @@ class UbsLessonParser
     public static function calculateTotalHours(int $t, int $u, int $l): int
     {
         return max(0, $t) + max(0, $u) + max(0, $l);
+    }
+
+    /**
+     * Verilen dosya yolunu okuyarak bir Spreadsheet nesnesi döndürür.
+     * .csv uzantılı dosyalar için PhpSpreadsheet'in CSV okuyucusu kullanılır;
+     * diğer tüm uzantılar (xlsx, xls vb.) için IOFactory otomatik algılar.
+     *
+     * CSV delimiter'ı virgül (,) ve noktalı virgül (;) arasında otomatik seçilir.
+     *
+     * @param string      $filePath     Dosyanın fiziksel yolu (tmp_name)
+     * @param string|null $originalName Orijinal dosya adı; uzantı bu isimden okunur (opsiyonel, yoksa filePath kullanılır)
+     * @return Spreadsheet
+     * @throws Exception
+     */
+    public static function loadSpreadsheet(string $filePath, ?string $originalName = null): Spreadsheet
+    {
+        // Uzantıyı orijinal adından al; yoksa filePath'ten dene (genellikle tmp_name için boş gelir)
+        $ext = strtolower(pathinfo($originalName ?? $filePath, PATHINFO_EXTENSION));
+
+        if ($ext === 'csv') {
+            // Delimiter otomatik algıla: ilk satıra bakarak virgül mü, noktalı virgül mü daha fazla
+            $fh = fopen($filePath, 'r');
+            $firstLine = $fh !== false ? (string) fgets($fh) : '';
+            if ($fh !== false) {
+                fclose($fh);
+            }
+            $commaCount     = substr_count($firstLine, ',');
+            $semicolonCount = substr_count($firstLine, ';');
+            $delimiter = ($semicolonCount > $commaCount) ? ';' : ',';
+
+            $reader = new CsvReader();
+            $reader->setDelimiter($delimiter)
+                   ->setEnclosure('"')
+                   ->setSheetIndex(0);
+
+            return $reader->load($filePath);
+        }
+
+        // xlsx, xls ve diğer Office formatları
+        return IOFactory::load($filePath);
     }
 
     /**

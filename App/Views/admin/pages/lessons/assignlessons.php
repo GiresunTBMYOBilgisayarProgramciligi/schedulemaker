@@ -246,10 +246,11 @@ use function App\Helpers\renderBuildingSelectOptions;
                     </div>
                     
                     <div class="mb-3">
-                        <label for="ubsFileInput" class="form-label fw-bold">UBS Excel Dosyası (.xlsx)</label>
-                        <input type="file" class="form-control" id="ubsFileInput" name="importFile" accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                        <label for="ubsFileInput" class="form-label fw-bold">UBS Dosyası <span class="text-muted fw-normal">(.xlsx, .xls veya .csv)</span></label>
+                        <input type="file" class="form-control" id="ubsFileInput" name="importFile" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" required>
                         <div class="form-text">
-                            Üniversite Bilgi Sistemi'nden (ÖBS / UBS) indirilen <strong>AcilanDersler.xlsx</strong> dosyasını seçiniz.
+                            Üniversite Bilgi Sistemi'nden (ÖBS / UBS) indirilen
+                            <strong>AcilanDersler.xlsx</strong> veya <strong>.csv</strong> dosyasını seçiniz.
                         </div>
                     </div>
 

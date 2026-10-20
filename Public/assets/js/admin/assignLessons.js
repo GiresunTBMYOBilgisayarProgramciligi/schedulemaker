@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const semester = semesterSelect.value;
             const file = ubsFileInput.files[0];
             if (!file) {
-                showToast('Uyarı', 'Lütfen bir Excel dosyası seçiniz.', 'warning');
+                showToast('Uyarı', 'Lütfen bir Excel (.xlsx, .xls) veya CSV (.csv) dosyası seçiniz.', 'warning');
                 return;
             }
 

@@ -496,7 +496,8 @@ class LessonController extends Controller
     }
 
     /**
-     * Yüklenen UBS Excel dosyasını seçilen program için analiz eder ve ders listesini döner.
+     * Yüklenen UBS Excel/CSV dosyasını seçilen program için analiz eder ve ders listesini döner.
+     * Desteklenen format: .xlsx, .xls, .csv
      *
      * @param array $files
      * @param array $requestData
@@ -521,9 +522,9 @@ class LessonController extends Controller
         Gate::authorize(PermissionType::LIST->value, Lesson::class, "Dersleri inceleme yetkiniz yok.");
 
         $fileKey = isset($files['importFile']) ? 'importFile' : 'file';
-        $uploadedFile = $this->validateUploadedFile($files, $fileKey, ['xlsx']);
+        $uploadedFile = $this->validateUploadedFile($files, $fileKey, ['xlsx', 'xls', 'csv']);
 
-        $spreadsheet = IOFactory::load($uploadedFile['tmp_name']);
+        $spreadsheet = UbsLessonParser::loadSpreadsheet($uploadedFile['tmp_name'], $uploadedFile['name'] ?? null);
         $parser = new UbsLessonParser();
         $result = $parser->parse($spreadsheet, $programId, $semester, $academicYear);
 
