@@ -526,8 +526,9 @@ class Lesson extends Model
         $semester = getSettingValue('semester');
         $academicYear = getSettingValue('academic_year');
 
-        $db = new LessonCombination();
-        $comb = $db->get()->where([
+        // Her sorgu için yeni nesne kullanılır; first() limit(1) ayarladığından aynı nesne
+        // tekrar kullanılırsa sonraki all() sorgusu da tek kayıtla sınırlanır.
+        $comb = (new LessonCombination())->get()->where([
             'child_lesson_id' => $this->id,
             'type' => 'exam',
             'semester' => $semester,
@@ -537,7 +538,7 @@ class Lesson extends Model
         $rootId = $comb ? $comb->parent_lesson_id : $this->id;
         $ids = [$rootId];
 
-        $children = $db->get()->where([
+        $children = (new LessonCombination())->get()->where([
             'parent_lesson_id' => $rootId,
             'type' => 'exam',
             'semester' => $semester,

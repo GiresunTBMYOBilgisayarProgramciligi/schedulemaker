@@ -65,11 +65,11 @@ class LessonCombinationRepository extends BaseRepository
      */
     public function reparentChild(int $grandChildId, int $newParentId, string $semester, string $academicYear): void
     {
-        (new LessonCombination())->get()->where([
+        $this->updateParent([
             'child_lesson_id' => $grandChildId,
             'semester'        => $semester,
             'academic_year'   => $academicYear,
-        ])->update(['parent_lesson_id' => $newParentId]);
+        ], $newParentId);
     }
 
     /**
@@ -84,12 +84,30 @@ class LessonCombinationRepository extends BaseRepository
      */
     public function reparentExamChild(int $grandChildId, int $newParentId, string $semester, string $academicYear): void
     {
-        (new LessonCombination())->get()->where([
+        $this->updateParent([
             'child_lesson_id' => $grandChildId,
             'type'            => 'exam',
             'semester'        => $semester,
             'academic_year'   => $academicYear,
-        ])->update(['parent_lesson_id' => $newParentId]);
+        ], $newParentId);
+    }
+
+    /**
+     * Filtreye uyan kombinasyon kayıtlarının parent dersini değiştirir.
+     * Model::update() tek kayıt (ID) üzerinden çalıştığı için kayıtlar tek tek güncellenir.
+     *
+     * @param array $filters
+     * @param int   $newParentId
+     * @throws Exception
+     */
+    private function updateParent(array $filters, int $newParentId): void
+    {
+        /** @var LessonCombination[] $combinations */
+        $combinations = (new LessonCombination())->get()->where($filters)->all();
+        foreach ($combinations as $combination) {
+            $combination->parent_lesson_id = $newParentId;
+            $combination->update();
+        }
     }
 
     /**
