@@ -118,7 +118,7 @@ class LessonService extends BaseService
     public function updateLessonData(int $id, LessonDTO $dto, bool $isLecturerOwnLesson): int
     {
         /** @var Lesson $lessonFromDb */
-        $lessonFromDb = (new LessonRepository())->find($id);
+        $lessonFromDb = (new LessonRepository())->findLessonWithDetails($id);
         if (!$lessonFromDb) {
             throw new Exception("Güncellenecek ders bulunamadı.");
         }
@@ -130,6 +130,8 @@ class LessonService extends BaseService
             if ($dto->classroom_type !== null) {
                 $lessonFromDb->classroom_type = (int) $dto->classroom_type;
             }
+
+            return $this->updateLesson($lessonFromDb);
         } else {
             Gate::authorize(PermissionType::UPDATE->value, $lessonFromDb, "Ders güncelleme yetkiniz yok");
 
