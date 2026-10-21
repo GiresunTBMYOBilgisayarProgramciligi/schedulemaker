@@ -41,7 +41,7 @@ use App\Core\Gate;
         <div class="container-fluid">
             <!--begin::Row-->
             <div class="row mb-3">
-                <div class="col-9">
+                <div class="col-md-9 col-sm-12">
                     <!-- Ders Bilgileri -->
                     <div class="card card-outline card-primary">
                         <div class="card-header">
@@ -220,7 +220,7 @@ use App\Core\Gate;
                         </div>
                     </div>
                 </div>
-                <div class="col-3">
+                <div class="col-md-3 col-sm-12">
                     <?php $user = $lesson->lecturer; ?>
                     <?php if ($user): ?>
                     <!-- Profile Image -->
