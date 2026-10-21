@@ -89,7 +89,10 @@ class ScheduleController extends Controller
      */
     public function getSchedulesHTML(array $requestData = [], bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
     {
-        $is_published_only = isset($requestData['is_published']) && $requestData['is_published'] === "true";
+        // Misafir kullanıcılar istekten bağımsız olarak her zaman sadece yayınlanmış programları görür.
+        // Bu modda eksik program kaydı oluşturulmaz.
+        $is_published_only = (isset($requestData['is_published']) && $requestData['is_published'] === "true")
+            || AuthMiddleware::user() === null;
         $dto = (new ScheduleViewFilterValidator())->getDTO($requestData, "getSchedulesHTML");
         
         // Non-program owners (User, Classroom, Lesson) always have semester_no = 0
@@ -162,9 +165,13 @@ class ScheduleController extends Controller
                         $dto->type,
                         $semester_no
                     );
-                    if (!$sch || !Gate::check(PermissionType::VIEW->value, $sch)) {
-                        continue; // Skip this semester if not accessible/published
-                    }
+                } else {
+                    $data = $dto->toArray();
+                    $data['semester_no'] = $semester_no;
+                    $sch = $scheduleService->getOrCreateSchedule(ScheduleFilterDTO::fromArray($data));
+                }
+                if (!$sch || !Gate::check(PermissionType::VIEW->value, $sch)) {
+                    continue; // Skip this semester if not accessible/published
                 }
                 
                 $data = $dto->toArray();
@@ -173,8 +180,10 @@ class ScheduleController extends Controller
                 $cardsHTML .= ScheduleViewHelper::prepareScheduleCard($specificDto, $only_table, $preference_mode, $no_card);
                 $renderedCount++;
             }
-            if ($is_published_only && empty($cardsHTML)) {
-                $HTMLOut = "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>";
+            if (empty($cardsHTML)) {
+                $HTMLOut = $is_published_only
+                    ? "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Yayınlanmış program bulunamadı.</div>"
+                    : "<div class='alert alert-info m-3'><i class='bi bi-info-circle me-2'></i>Program henüz yayınlanmadı.</div>";
             } elseif ($renderedCount > 1 && !$no_card && !$preference_mode) {
                 $toolbarHTML = '
                 <div class="row mb-3">

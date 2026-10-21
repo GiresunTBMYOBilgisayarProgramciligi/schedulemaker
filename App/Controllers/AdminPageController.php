@@ -713,45 +713,23 @@ class AdminPageController extends Controller
         $assetManager->loadPageAssets('listpages');
         $assetManager->loadPageAssets('singlepages');
 
+        // Program takvimini yönetme yetkisi olmayan kullanıcılar için eksik program kaydı oluşturulmaz;
+        // sadece mevcut ve görüntüleme yetkisi olan (yayınlanmış veya SchedulePolicy::view izin veren) programlar gösterilir.
+        $scheduleFilter = [
+            'owner_type' => OwnerType::PROGRAM->value,
+            'owner_id' => $program->id,
+        ];
+        if (!Gate::check(PermissionType::MANAGE_SCHEDULE->value, $program)) {
+            $scheduleFilter['is_published'] = "true";
+        }
+
         return [
             "program" => $program,
             "page_title" => $program->name . " Sayfası",
-            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML(
-                [
-                    'owner_type' => OwnerType::PROGRAM->value,
-                    'owner_id' => $program->id,
-                    'type' => 'lesson',
-                ],
-                true,
-                false
-            ),
-            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
-                [
-                    'owner_type' => OwnerType::PROGRAM->value,
-                    'owner_id' => $program->id,
-                    'type' => ExamType::MIDTERM->value
-                ],
-                true,
-                false
-            ),
-            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
-                [
-                    'owner_type' => OwnerType::PROGRAM->value,
-                    'owner_id' => $program->id,
-                    'type' => ExamType::FINAL->value
-                ],
-                true,
-                false
-            ),
-            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML(
-                [
-                    'owner_type' => OwnerType::PROGRAM->value,
-                    'owner_id' => $program->id,
-                    'type' => ExamType::MAKEUP->value
-                ],
-                true,
-                false
-            ),
+            "scheduleHTML" => (new ScheduleController())->getSchedulesHTML($scheduleFilter + ['type' => 'lesson'], true, false),
+            "midtermScheduleHTML" => (new ScheduleController())->getSchedulesHTML($scheduleFilter + ['type' => ExamType::MIDTERM->value], true, false),
+            "finalScheduleHTML" => (new ScheduleController())->getSchedulesHTML($scheduleFilter + ['type' => ExamType::FINAL->value], true, false),
+            "makeupScheduleHTML" => (new ScheduleController())->getSchedulesHTML($scheduleFilter + ['type' => ExamType::MAKEUP->value], true, false),
         ];
     }
 
