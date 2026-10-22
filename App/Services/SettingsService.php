@@ -40,7 +40,10 @@ class SettingsService extends BaseService
                     }
                 }
                 
-                $this->logger->info('Toplu ayar güncellemesi başarıyla tamamlandı');
+                $this->logger->info('Toplu ayar güncellemesi başarıyla tamamlandı', $this->logContext([
+                    'count'    => count($settingsData),
+                    'settings' => array_map(fn($dto) => "{$dto->group}.{$dto->key}", $settingsData),
+                ]));
                 return true;
             });
         } catch (Exception $e) {

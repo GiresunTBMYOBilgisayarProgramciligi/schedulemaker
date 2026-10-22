@@ -289,7 +289,16 @@ class LessonService extends BaseService
      */
     public function deleteLesson(Lesson $lesson): void
     {
-        $this->logger->debug('Ders siliniyor', ['id' => $lesson->id]);
+        $lessonContext = [
+            'lesson_id'     => $lesson->id,
+            'lesson_code'   => $lesson->code,
+            'lesson_name'   => $lesson->name,
+            'group_no'      => $lesson->group_no,
+            'program_id'    => $lesson->program_id,
+            'department_id' => $lesson->department_id,
+        ];
+
+        $this->logger->debug('Ders siliniyor', $this->logContext($lessonContext));
 
         try {
             Database::transaction(function () use ($lesson) {
@@ -300,12 +309,11 @@ class LessonService extends BaseService
                 $lesson->delete();
             });
 
-            $this->logger->info('Ders başarıyla silindi', ['id' => $lesson->id]);
+            $this->logger->info('Ders başarıyla silindi', $this->logContext($lessonContext));
         } catch (Exception $e) {
-            $this->logger->error('Ders silinirken hata oluştu', [
-                'id' => $lesson->id,
+            $this->logger->error('Ders silinirken hata oluştu', $this->logContext($lessonContext + [
                 'error' => $e->getMessage()
-            ]);
+            ]));
             throw new Exception("Ders silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -603,10 +611,14 @@ class LessonService extends BaseService
             // Parent'ın mevcut sınav programı varsa child için kopyala
             (new ScheduleSyncService())->syncExamChildFromParent($parentLesson, $childLesson);
 
-            $this->logger->info('Sınav birleştirme tamamlandı', [
-                'parent_id' => $parentLesson->id,
-                'child_id' => $childLesson->id,
-            ]);
+            $this->logger->info('Sınav birleştirme tamamlandı', $this->logContext([
+                'parent_id'     => $parentLesson->id,
+                'parent_name'   => $parentLesson->getFullName(addCode: true, addProgram: true),
+                'child_id'      => $childLesson->id,
+                'child_name'    => $childLesson->getFullName(addCode: true, addProgram: true),
+                'semester'      => $dto->semester,
+                'academic_year' => $dto->academicYear,
+            ]));
         });
     }
 
