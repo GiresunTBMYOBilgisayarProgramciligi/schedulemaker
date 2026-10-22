@@ -427,30 +427,46 @@ class ExamScheduleCard extends ScheduleCard {
                     }
                 });
 
-                // Gözetmen filtrelemesi (başka satırda seçilen gözetmenleri gizle)
+                // Gözetmen filtrelemesi: başka satırda seçilen gözetmenleri bu satırın listesinden çıkar.
+                // TomSelect açılışta seçenek elemanlarını yeniden oluşturduğu için d-none sınıfı kalıcı olmaz;
+                // bu yüzden seçenekler gerçekten kaldırılıp geri eklenir.
                 observerSelects.forEach(select => {
                     const ts = tomSelectInstances.get(select);
-                    if (!ts || !ts.options) return;
+                    if (!ts || !ts.allObserverOptions) return;
                     const rawVal = ts.getValue();
                     const currentVals = Array.isArray(rawVal) ? rawVal.map(String) : (rawVal ? [String(rawVal)] : []);
 
-                    Object.keys(ts.options).forEach(optValue => {
-                        if (optValue && !currentVals.includes(optValue) && allSelectedObservers.includes(optValue)) {
-                            ts.getOption(optValue)?.classList.add('d-none');
-                        } else if (optValue) {
-                            ts.getOption(optValue)?.classList.remove('d-none');
+                    ts.allObserverOptions.forEach(opt => {
+                        const id = String(opt.value);
+                        const takenElsewhere = !currentVals.includes(id) && allSelectedObservers.includes(id);
+                        const exists = !!ts.options[id];
+                        if (takenElsewhere && exists) {
+                            ts.removeOption(id, true);
+                        } else if (!takenElsewhere && !exists) {
+                            ts.addOption(opt);
                         }
                     });
                 });
             };
 
             const initTomSelect = (selectElement, placeholder) => {
+                // Sunucudan gelen sıra (dersi/sınavı olanlar önde) korunsun diye seçeneklere sıra numarası verilir
+                const allOptions = Array.from(selectElement.options)
+                    .filter(o => o.value)
+                    .map((o, i) => ({ value: o.value, text: o.innerText, rank: i }));
+                selectElement.innerHTML = "";
                 const ts = new TomSelect(selectElement, {
                     placeholder: placeholder,
                     allowEmptyOption: false,
                     dropdownParent: 'body',
                     maxItems: null,
+                    options: allOptions,
+                    valueField: 'value',
+                    labelField: 'text',
+                    searchField: ['text'],
+                    sortField: [{ field: 'rank' }],
                 });
+                ts.allObserverOptions = allOptions;
                 tomSelectInstances.set(selectElement, ts);
                 return ts;
             };
@@ -507,7 +523,8 @@ class ExamScheduleCard extends ScheduleCard {
                                 if (!observerTS.options[obs.id]) {
                                     observerTS.addOption({
                                         value: obs.id,
-                                        text: obs.name || 'Mevcut Gözetmen'
+                                        text: obs.name || 'Mevcut Gözetmen',
+                                        rank: -1
                                     });
                                 }
                                 observerTS.addItem(obs.id);
@@ -517,7 +534,8 @@ class ExamScheduleCard extends ScheduleCard {
                         if (!observerTS.options[initialAssignment.observer_id]) {
                             observerTS.addOption({
                                 value: initialAssignment.observer_id,
-                                text: initialAssignment.observer_name || 'Mevcut Gözetmen'
+                                text: initialAssignment.observer_name || 'Mevcut Gözetmen',
+                                rank: -1
                             });
                         }
                         observerTS.addItem(initialAssignment.observer_id);
