@@ -561,6 +561,17 @@ class ScheduleController extends Controller
 
 
     /**
+     * Programı bulup güncelleme yetkisini Policy üzerinden kontrol eder.
+     * @throws Exception
+     */
+    private function authorizeScheduleUpdate(int $scheduleId, string $message): void
+    {
+        $schedule = (new ScheduleRepository())->find($scheduleId)
+            ?: throw new Exception("Program bulunamadı");
+        Gate::authorize(PermissionType::UPDATE->value, clone $schedule, $message);
+    }
+
+    /**
      * Müsait derslikleri getirir
      * @param array $requestData
      * @return array
@@ -569,14 +580,7 @@ class ScheduleController extends Controller
     public function getAvailableClassrooms(array $requestData): array
     {
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableClassrooms");
-        if ($dto->schedule_id) {
-            $schedule = clone (new ScheduleRepository())->find($dto->schedule_id);
-            if ($schedule) {
-                Gate::authorize(PermissionType::UPDATE->value, $schedule, "Uygun derslik listesini almak için yetkiniz yok");
-            }
-        } else {
-            Gate::authorizeRole("department_head", false, "Uygun derslik listesini almak için yetkiniz yok");
-        }
+        $this->authorizeScheduleUpdate($dto->schedule_id, "Uygun derslik listesini almak için yetkiniz yok");
         $service = new AvailabilityService();
         $classrooms = $service->availableClassrooms($dto);
         return [
@@ -594,14 +598,7 @@ class ScheduleController extends Controller
     public function getAvailableObservers(array $requestData): array
     {
         $dto = (new ScheduleAvailabilityFilterValidator())->getDTO($requestData, "availableObservers");
-        if ($dto->schedule_id) {
-            $schedule = clone (new ScheduleRepository())->find($dto->schedule_id);
-            if ($schedule) {
-                Gate::authorize(PermissionType::UPDATE->value, $schedule, "Uygun gözetmen listesini almak için yetkiniz yok");
-            }
-        } else {
-            Gate::authorizeRole("department_head", false, "Uygun gözetmen listesini almak için yetkiniz yok");
-        }
+        $this->authorizeScheduleUpdate($dto->schedule_id, "Uygun gözetmen listesini almak için yetkiniz yok");
         $service = new AvailabilityService();
         $observers = $service->availableObservers($dto);
         return [

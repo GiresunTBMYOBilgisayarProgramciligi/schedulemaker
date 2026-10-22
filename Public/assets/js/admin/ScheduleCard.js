@@ -735,6 +735,7 @@ class ScheduleCard {
     async fetchAvailableObservers(observerSelect, hours) {
         const segments = this.generateScheduleItems(hours, null);
         let data = new FormData();
+        data.append("schedule_id", this.id);
         data.append("items", JSON.stringify(segments));
         data.append("day_index", this.draggedLesson.end_element.dataset.dayIndex);
         data.append("week_index", this.currentWeekIndex);

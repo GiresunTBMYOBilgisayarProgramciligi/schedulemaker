@@ -143,12 +143,26 @@ class LessonController extends Controller
 
 
     /**
+     * Verilen derslerin her biri için birleştirme yetkisini kontrol eder.
+     * @throws Exception
+     */
+    private function authorizeCombineLessons(string $message, int ...$lessonIds): void
+    {
+        Gate::authorize('combine', Lesson::class, $message);
+        foreach (array_filter($lessonIds) as $lessonId) {
+            $lesson = (new Lesson())->where(['id' => $lessonId])->with(['department'])->first()
+                ?: throw new Exception("Ders bulunamadı");
+            Gate::authorize('combine', $lesson, $message);
+        }
+    }
+
+    /**
      * Ders birleştirme önizleme — DB değişikliği yapmaz.
      */
     public function previewCombine(array $requestData): array
     {
-        Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
         $dto = (new CombineLessonValidator())->getDTO($requestData);
+        $this->authorizeCombineLessons("Ders birleştirme yetkiniz yok", $dto->parentId, $dto->childId);
         return (new LessonService())->previewCombineLesson($dto);
     }
 
@@ -157,8 +171,8 @@ class LessonController extends Controller
      */
     public function combine(array $requestData): array
     {
-        Gate::authorize('combine', Lesson::class, "Ders birleştirme yetkiniz yok");
         $dto = (new CombineLessonValidator())->getDTO($requestData);
+        $this->authorizeCombineLessons("Ders birleştirme yetkiniz yok", $dto->parentId, $dto->childId);
         
         if (!$dto->parentId || !$dto->childId) {
             throw new Exception("Birleştirmek için dersler belirtilmemiş");
@@ -178,10 +192,9 @@ class LessonController extends Controller
      */
     public function deleteParentLesson(array $requestData): array
     {
-        Gate::authorize('combine', Lesson::class, "Ders birleştirmesi kaldırma yetkiniz yok");
-        
         $requestData['type'] = 'lesson';
         $dto = (new DeleteCombineLessonValidator())->getDTO($requestData);
+        $this->authorizeCombineLessons("Ders birleştirmesi kaldırma yetkiniz yok", $dto->id);
         
         if (empty($dto->id)) {
             throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
@@ -202,9 +215,8 @@ class LessonController extends Controller
      */
     public function combineExamLesson(array $requestData): array
     {
-        Gate::authorize('combine', Lesson::class, "Sınav birleştirme yetkiniz yok");
-        
         $dto = (new CombineExamLessonValidator())->getDTO($requestData);
+        $this->authorizeCombineLessons("Sınav birleştirme yetkiniz yok", $dto->parentId, $dto->childId);
         
         if (empty($dto->parentId) || empty($dto->childId)) {
             throw new Exception("Birleştirmek için dersler belirtilmemiş");
@@ -230,7 +242,7 @@ class LessonController extends Controller
         if (empty($dto->id)) {
             throw new Exception("Bağlantısı silinecek dersin id numarası belirtilmemiş");
         }
-        Gate::authorize('combine', Lesson::class, "Sınav birleştirmesi kaldırma yetkiniz yok");
+        $this->authorizeCombineLessons("Sınav birleştirmesi kaldırma yetkiniz yok", $dto->id);
         (new LessonService())->deleteExamParentLesson($dto);
         
         return [
@@ -246,9 +258,8 @@ class LessonController extends Controller
      */
     public function getExamCombinableLessons(array $requestData): array
     {
-        Gate::authorize('combine', Lesson::class, "Sınav birleştirme listesini almak için yetkiniz yok");
-
         $lessonId = (int) ($requestData['lesson_id'] ?? 0);
+        $this->authorizeCombineLessons("Sınav birleştirme listesini almak için yetkiniz yok", $lessonId);
         $search = trim($requestData['search'] ?? '');
 
         $lessons = (new LessonService())->getExamCombinableLessonsForSelect($lessonId, $search);

@@ -138,11 +138,29 @@ class LessonPolicy extends BasePolicy
     }
 
     /**
-     * Ders birleştirme yetkisi
+     * Ders/sınav birleştirme yetkisi.
+     * Model olarak Lesson verilirse dersin birim/bölüm/program kapsamına göre,
+     * sınıf adı verilirse (ders henüz bilinmiyorsa) herhangi bir kapsamdaki yetkiye göre karar verir.
      */
-    public function combine(User $user): bool
+    public function combine(User $user, $model = null): bool
     {
-        return $this->hasRole($user, UserRole::SubManager) || 
+        if ($model instanceof Lesson) {
+            if ($this->hasRole($user, UserRole::SubManager)) {
+                $lessonUnitId = $model->department ? $model->department->unit_id : (new Department())->find($model->department_id)?->unit_id;
+                if (is_null($user->unit_id) || $user->unit_id == $lessonUnitId) {
+                    return true;
+                }
+            }
+
+            if ($this->hasExactRole($user, UserRole::DepartmentHead) && $user->department_id == $model->department_id) {
+                return true;
+            }
+
+            return $this->hasCascadePermission($user, PermissionType::MANAGE_LESSONS->value, $model) ||
+                   $this->hasCascadePermission($user, PermissionType::MANAGE_SCHEDULE->value, $model);
+        }
+
+        return $this->hasRole($user, UserRole::DepartmentHead) ||
                $this->hasAnyPermission($user, PermissionType::MANAGE_LESSONS->value) ||
                $this->hasAnyPermission($user, PermissionType::MANAGE_SCHEDULE->value);
     }

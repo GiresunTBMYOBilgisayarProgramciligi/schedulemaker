@@ -28,7 +28,7 @@ class ScheduleAvailabilityFilterValidator extends BaseScheduleFilterValidator
                 'defaults' => ['semester', 'academic_year'],
             ],
             'availableObservers' => [
-                'required' => ['type', 'items', 'day_index', 'week_index'],
+                'required' => ['schedule_id', 'type', 'items', 'day_index', 'week_index'],
                 'optional' => ['hours', 'startTime'],
                 'defaults' => ['semester', 'academic_year'],
             ],
