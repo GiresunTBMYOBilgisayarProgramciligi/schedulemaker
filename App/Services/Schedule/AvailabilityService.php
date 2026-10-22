@@ -362,11 +362,57 @@ class AvailabilityService extends BaseService
             }
 
             if ($isAvailable) {
+                $observer->day_note = $this->observerDayNote($observer, $dto, $existingItems);
                 $availableObservers[] = $observer;
             }
         }
 
+        // Hem dersi hem sınavı olanlar en üstte, ardından biri olanlar, sonra diğerleri (usort kararlıdır)
+        $rank = fn(User $o) => $o->day_note === null ? 0 : (str_contains($o->day_note, ' ve ') ? 2 : 1);
+        usort($availableObservers, fn(User $a, User $b) => $rank($b) <=> $rank($a));
+
         return $availableObservers;
+    }
+
+    /**
+     * Gözetmenin sınavın yapılacağı gündeki ders ve sınavlarını kısa metin olarak döndürür.
+     *
+     * @param User $observer
+     * @param AvailabilityFilterDTO $dto
+     * @param ScheduleItem[] $examDayItems Gözetmenin aynı tipteki programında o güne ait kayıtları
+     * @return string|null Örn. "Çarşamba günü dersi ve sınavı var"; yoksa null
+     * @throws Exception
+     */
+    private function observerDayNote(User $observer, AvailabilityFilterDTO $dto, array $examDayItems): ?string
+    {
+        $lessonSchedule = $this->scheduleRepo->findByOwnerAndPeriod(
+            OwnerType::USER->value,
+            $observer->id,
+            $dto->academic_year,
+            $dto->semester,
+            'lesson',
+            null
+        );
+        $lessonDayItems = $lessonSchedule ? (new ScheduleItem())->get()->where([
+            'schedule_id' => $lessonSchedule->id,
+            'day_index'   => $dto->day_index,
+            'week_index'  => 0,
+        ])->all() : [];
+
+        // Tercih/müsait değil gibi ders içermeyen kayıtlar sayılmaz
+        $hasData = fn(array $items) => count(array_filter($items, fn($i) => !empty($i->data))) > 0;
+        $has = array_filter([
+            'dersi' => $hasData($lessonDayItems),
+            'sınavı' => $hasData($examDayItems),
+        ]);
+        if (!$has) {
+            return null;
+        }
+
+        $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+        $dayName = $days[$dto->day_index] ?? "Bu";
+
+        return "$dayName günü " . implode(' ve ', array_keys($has)) . " var";
     }
 
     /**

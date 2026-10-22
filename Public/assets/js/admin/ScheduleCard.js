@@ -710,6 +710,7 @@ class ScheduleCard {
                     option.dataset.examSize = item.exam_size;
                 } else {
                     option.innerText = `${item.title} ${item.name} ${item.last_name}`;
+                    if (item.day_note) option.innerText += ` — ${item.day_note}`;
                 }
                 targetSelect.appendChild(option);
             });

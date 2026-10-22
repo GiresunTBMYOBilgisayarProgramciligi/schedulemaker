@@ -582,7 +582,8 @@ class ExamScheduleCard extends ScheduleCard {
                         isValid = false;
                     } else {
                         let observersList = selectedObserverIds.map(id => {
-                            let text = observerTS ? (observerTS.options[id]?.text || '') : '';
+                            // Seçenek metnindeki " — Çarşamba günü dersi var" notu karta aktarılmaz
+                            let text = observerTS ? (observerTS.options[id]?.text || '').split(' — ')[0] : '';
                             return {
                                 id: parseInt(id),
                                 name: text

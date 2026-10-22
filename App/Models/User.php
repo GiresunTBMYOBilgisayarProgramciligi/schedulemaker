@@ -33,8 +33,10 @@ class User extends Model
     public array $schedules = [];
     public array $lessons = [];
     public array $affiliations = [];
+    /** Gözetmen seçiminde gösterilen, aynı gün ders/sınav bilgisi (DB'ye yazılmaz) */
+    public ?string $day_note = null;
     protected array $dateFields = ['register_date', 'last_login'];
-    protected array $excludeFromDb = ['department', 'program', 'unit', 'schedules', 'lessons', 'affiliations'];
+    protected array $excludeFromDb = ['department', 'program', 'unit', 'schedules', 'lessons', 'affiliations', 'day_note'];
     protected string $table_name = "users";
 
 
