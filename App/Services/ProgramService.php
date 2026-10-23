@@ -189,7 +189,7 @@ class ProgramService extends BaseService
      */
     public function saveNew(ProgramDTO $dto): int
     {
-        $this->logger->debug('Yeni program ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni program ekleniyor', $this->logContext(['name' => $dto->name ?? null]));
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -197,7 +197,7 @@ class ProgramService extends BaseService
                 $program->fill($dto->toArray());
                 $program->create();
 
-                $this->logger->info('Program eklendi', ['id' => $program->id]);
+                $this->logger->info('Program eklendi', $this->logContext(['id' => $program->id]));
                 return $program->id;
             });
         } catch (PDOException $e) {
@@ -217,12 +217,12 @@ class ProgramService extends BaseService
      */
     public function updateProgram(Program $program): int
     {
-        $this->logger->debug('Program güncelleniyor', ['id' => $program->id]);
+        $this->logger->debug('Program güncelleniyor', $this->logContext(['id' => $program->id]));
 
         try {
             return Database::transaction(function () use ($program) {
                 $program->update();
-                $this->logger->info('Program güncellendi', ['id' => $program->id]);
+                $this->logger->info('Program güncellendi', $this->logContext(['id' => $program->id]));
                 return $program->id;
             });
         } catch (PDOException $e) {
@@ -241,7 +241,7 @@ class ProgramService extends BaseService
      */
     public function deleteProgram(Program $program): void
     {
-        $this->logger->debug('Program siliniyor', ['id' => $program->id]);
+        $this->logger->debug('Program siliniyor', $this->logContext(['id' => $program->id]));
 
         $lessons = (new Lesson())->get()->where(['program_id' => $program->id])->all();
         if (!empty($lessons)) {
@@ -258,12 +258,12 @@ class ProgramService extends BaseService
                 $program->delete();
             });
 
-            $this->logger->info('Program başarıyla silindi', ['id' => $program->id]);
+            $this->logger->info('Program başarıyla silindi', $this->logContext(['id' => $program->id]));
         } catch (Exception $e) {
-            $this->logger->error('Program silinirken hata oluştu', [
+            $this->logger->error('Program silinirken hata oluştu', $this->logContext([
                 'id' => $program->id,
                 'error' => $e->getMessage()
-            ]);
+            ]));
             throw new Exception("Program silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -277,7 +277,7 @@ class ProgramService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
-        $this->logger->debug('Toplu program silme başlatıldı', ['ids' => $dto->ids]);
+        $this->logger->debug('Toplu program silme başlatıldı', $this->logContext(['ids' => $dto->ids]));
 
         $success = [];
         $failed = [];
@@ -302,10 +302,10 @@ class ProgramService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu program silme tamamlandı', [
+        $this->logger->info('Toplu program silme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -323,7 +323,7 @@ class ProgramService extends BaseService
             ? $dtoOrIds
             : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
 
-        $this->logger->debug('Toplu program güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
+        $this->logger->debug('Toplu program güncelleme başlatıldı', $this->logContext(['ids' => $dto->ids, 'fields' => $dto->fields]));
 
         $success = [];
         $failed = [];
@@ -352,10 +352,10 @@ class ProgramService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu program güncelleme tamamlandı', [
+        $this->logger->info('Toplu program güncelleme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }

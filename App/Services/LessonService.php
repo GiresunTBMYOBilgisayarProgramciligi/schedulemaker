@@ -68,7 +68,7 @@ class LessonService extends BaseService
      */
     public function saveNew(LessonDTO $dto): int
     {
-        $this->logger->debug('Yeni ders ekleniyor', ['name' => $dto->name, 'code' => $dto->code ?? null]);
+        $this->logger->debug('Yeni ders ekleniyor', $this->logContext(['name' => $dto->name, 'code' => $dto->code ?? null]));
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -85,15 +85,19 @@ class LessonService extends BaseService
                         $semester,
                         $academicYear
                     );
-                    $this->logger->info('Ders hoca ataması oluşturuldu', [
+                    $this->logger->info('Ders hoca ataması oluşturuldu', $this->logContext([
                         'lesson_id' => $lesson->id,
                         'lecturer_id' => $dto->lecturer_id,
                         'semester' => $semester,
                         'academic_year' => $academicYear
-                    ]);
+                    ]));
                 }
 
-                $this->logger->info('Ders eklendi', ['id' => $lesson->id, 'name' => $lesson->name]);
+                $this->logger->info('Ders eklendi', $this->logContext([
+                    'lesson_id'   => $lesson->id,
+                    'lesson_code' => $lesson->code,
+                    'lesson_name' => $lesson->name,
+                ]));
                 return $lesson->id;
             });
         } catch (Exception $e) {
@@ -164,12 +168,12 @@ class LessonService extends BaseService
                         $semester,
                         $academicYear
                     );
-                    $this->logger->info('Ders hoca ataması güncellendi', [
+                    $this->logger->info('Ders hoca ataması güncellendi', $this->logContext([
                         'lesson_id'     => $lessonFromDb->id,
                         'lecturer_id'   => $dto->lecturer_id,
                         'semester'      => $semester,
                         'academic_year' => $academicYear
-                    ]);
+                    ]));
                 } elseif ($dto->unassign_lecturer) {
                     $semester = $dto->semester ?? getSettingValue('semester');
                     $academicYear = $dto->academic_year ?? getSettingValue('academic_year');
@@ -179,11 +183,11 @@ class LessonService extends BaseService
                             $semester,
                             $academicYear
                         );
-                        $this->logger->info('Ders hoca ataması kaldırıldı', [
+                        $this->logger->info('Ders hoca ataması kaldırıldı', $this->logContext([
                             'lesson_id'     => $lessonFromDb->id,
                             'semester'      => $semester,
                             'academic_year' => $academicYear
-                        ]);
+                        ]));
                     }
                 }
 
@@ -203,12 +207,20 @@ class LessonService extends BaseService
      */
     public function updateLesson(Lesson $lesson): int
     {
-        $this->logger->debug('Ders güncelleniyor', ['id' => $lesson->id]);
+        $this->logger->debug('Ders güncelleniyor', $this->logContext([
+            'lesson_id'   => $lesson->id,
+            'lesson_code' => $lesson->code,
+            'lesson_name' => $lesson->name,
+        ]));
 
         try {
             return Database::transaction(function () use ($lesson) {
                 $lesson->update();
-                $this->logger->info('Ders güncellendi', ['id' => $lesson->id]);
+                $this->logger->info('Ders güncellendi', $this->logContext([
+                    'lesson_id'   => $lesson->id,
+                    'lesson_code' => $lesson->code,
+                    'lesson_name' => $lesson->name,
+                ]));
                 return $lesson->id;
             });
         } catch (Exception $e) {
@@ -235,10 +247,10 @@ class LessonService extends BaseService
      */
     private function mergeSourceIntoConflicting(Lesson $source, Lesson $conflicting): int
     {
-        $this->logger->debug('Ders birleştirme başlatıldı: kaynak → çakışan', [
+        $this->logger->debug('Ders birleştirme başlatıldı: kaynak → çakışan', $this->logContext([
             'source_id'      => $source->id,
             'conflicting_id' => $conflicting->id,
-        ]);
+        ]));
 
         Database::transaction(function () use ($source, $conflicting) {
             // 1. Kaynak dersin scalar alanlarını çakışan derse aktar
@@ -272,10 +284,10 @@ class LessonService extends BaseService
             $source->delete();
         });
 
-        $this->logger->info('Ders birleştirme tamamlandı', [
+        $this->logger->info('Ders birleştirme tamamlandı', $this->logContext([
             'source_id'      => $source->id,
             'conflicting_id' => $conflicting->id,
-        ]);
+        ]));
 
         return $conflicting->id;
     }
@@ -334,10 +346,10 @@ class LessonService extends BaseService
         $childLessonId = $dto->childId;
         $slotsToSkip = $dto->getParsedItemsToRemove();
 
-        $this->logger->debug('Ders birleştirme başlatıldı', [
+        $this->logger->debug('Ders birleştirme başlatıldı', $this->logContext([
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
-        ]);
+        ]));
 
         Database::transaction(function () use ($parentLessonId, $childLessonId, $slotsToSkip, $dto) {
             /** @var Lesson $parentLesson */
@@ -428,10 +440,10 @@ class LessonService extends BaseService
                 $syncService->syncExamChildFromParent($parentLesson, $grandChild);
             }
 
-            $this->logger->info('Ders birleştirildi', [
+            $this->logger->info('Ders birleştirildi', $this->logContext([
                 'parent_id' => $parentLesson->id,
                 'child_id' => $childLesson->id,
-            ]);
+            ]));
         });
     }
 
@@ -444,7 +456,7 @@ class LessonService extends BaseService
     public function deleteParentLesson(DeleteCombineLessonDTO $dto): void
     {
         $lessonId = $dto->id;
-        $this->logger->debug('Ders bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
+        $this->logger->debug('Ders bağlantısı kaldırılıyor', $this->logContext(['lesson_id' => $lessonId]));
 
         /** @var Lesson $lesson */
         $lesson = (new Lesson())->find($lessonId)
@@ -454,7 +466,7 @@ class LessonService extends BaseService
 
         (new LessonCombinationRepository())->deleteLessonLink($lessonId, $dto->semester, $dto->academicYear);
 
-        $this->logger->info('Ders bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
+        $this->logger->info('Ders bağlantısı kaldırıldı', $this->logContext(['lesson_id' => $lessonId]));
     }
 
     // ──────────────────────────────────────────
@@ -538,10 +550,10 @@ class LessonService extends BaseService
         $parentLessonId = $dto->parentId;
         $childLessonId = $dto->childId;
 
-        $this->logger->debug('Sınav birleştirme başlatıldı', [
+        $this->logger->debug('Sınav birleştirme başlatıldı', $this->logContext([
             'parent_id' => $parentLessonId,
             'child_id' => $childLessonId,
-        ]);
+        ]));
 
         Database::transaction(function () use ($parentLessonId, $childLessonId, $dto) {
             /** @var Lesson $parentLesson */
@@ -632,7 +644,7 @@ class LessonService extends BaseService
     public function deleteExamParentLesson(DeleteCombineLessonDTO $dto): void
     {
         $lessonId = $dto->id;
-        $this->logger->debug('Sınav birleştirme bağlantısı kaldırılıyor', ['lesson_id' => $lessonId]);
+        $this->logger->debug('Sınav birleştirme bağlantısı kaldırılıyor', $this->logContext(['lesson_id' => $lessonId]));
 
         /** @var Lesson $lesson */
         $lesson = (new Lesson())->find($lessonId)
@@ -655,7 +667,7 @@ class LessonService extends BaseService
 
         (new LessonCombinationRepository())->deleteExamLink($lessonId, $dto->semester, $dto->academicYear);
 
-        $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', ['lesson_id' => $lessonId]);
+        $this->logger->info('Sınav birleştirme bağlantısı kaldırıldı', $this->logContext(['lesson_id' => $lessonId]));
     }
 
     /**
@@ -984,7 +996,7 @@ class LessonService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
-        $this->logger->debug('Toplu ders silme başlatıldı', ['ids' => $dto->ids]);
+        $this->logger->debug('Toplu ders silme başlatıldı', $this->logContext(['ids' => $dto->ids]));
 
         $success = [];
         $failed = [];
@@ -1009,10 +1021,10 @@ class LessonService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu ders silme tamamlandı', [
+        $this->logger->info('Toplu ders silme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -1030,7 +1042,7 @@ class LessonService extends BaseService
             ? $dtoOrIds
             : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
 
-        $this->logger->debug('Toplu ders güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
+        $this->logger->debug('Toplu ders güncelleme başlatıldı', $this->logContext(['ids' => $dto->ids, 'fields' => $dto->fields]));
 
         $success = [];
         $failed = [];
@@ -1047,10 +1059,10 @@ class LessonService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu ders güncelleme tamamlandı', [
+        $this->logger->info('Toplu ders güncelleme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }

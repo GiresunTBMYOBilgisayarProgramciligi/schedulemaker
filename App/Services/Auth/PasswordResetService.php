@@ -43,7 +43,7 @@ class PasswordResetService extends BaseService
         $event = new UserForgotPasswordEvent($user, $token);
         EventDispatcher::getInstance()->dispatch($event);
 
-        $this->logger->info("Şifre sıfırlama talebi alındı", ['email' => $dto->email]);
+        $this->logger->info("Şifre sıfırlama talebi alındı", $this->logContext(['email' => $dto->email]));
     }
 
     /**
@@ -77,6 +77,6 @@ class PasswordResetService extends BaseService
         // Kullanılmış token'ı sil
         $resetRepo->deleteByEmail($dto->email);
 
-        $this->logger->info("Kullanıcı şifresi sıfırlandı", ['user_id' => $user->id]);
+        $this->logger->info("Kullanıcı şifresi sıfırlandı", $this->logContext(['user_id' => $user->id]));
     }
 }

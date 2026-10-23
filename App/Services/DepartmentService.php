@@ -150,7 +150,7 @@ class DepartmentService extends BaseService
      */
     public function saveNew(DepartmentDTO $dto): int
     {
-        $this->logger->debug('Yeni bölüm ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni bölüm ekleniyor', $this->logContext(['name' => $dto->name ?? null]));
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -166,7 +166,7 @@ class DepartmentService extends BaseService
                     }
                 }
 
-                $this->logger->info('Bölüm eklendi', ['id' => $department->id]);
+                $this->logger->info('Bölüm eklendi', $this->logContext(['id' => $department->id]));
                 return $department->id;
             });
         } catch (PDOException $e) {
@@ -186,7 +186,7 @@ class DepartmentService extends BaseService
      */
     public function updateDepartment(Department $department): int
     {
-        $this->logger->debug('Bölüm güncelleniyor', ['id' => $department->id]);
+        $this->logger->debug('Bölüm güncelleniyor', $this->logContext(['id' => $department->id]));
 
         try {
             return Database::transaction(function () use ($department) {
@@ -200,7 +200,7 @@ class DepartmentService extends BaseService
                     }
                 }
 
-                $this->logger->info('Bölüm güncellendi', ['id' => $department->id]);
+                $this->logger->info('Bölüm güncellendi', $this->logContext(['id' => $department->id]));
                 return $department->id;
             });
         } catch (PDOException $e) {
@@ -219,7 +219,7 @@ class DepartmentService extends BaseService
      */
     public function deleteDepartment(Department $department): void
     {
-        $this->logger->debug('Bölüm siliniyor', ['id' => $department->id]);
+        $this->logger->debug('Bölüm siliniyor', $this->logContext(['id' => $department->id]));
 
         $programs = (new Program())->get()->where(['department_id' => $department->id])->all();
         if (!empty($programs)) {
@@ -241,12 +241,12 @@ class DepartmentService extends BaseService
                 $department->delete();
             });
 
-            $this->logger->info('Bölüm başarıyla silindi', ['id' => $department->id]);
+            $this->logger->info('Bölüm başarıyla silindi', $this->logContext(['id' => $department->id]));
         } catch (Exception $e) {
-            $this->logger->error('Bölüm silinirken hata oluştu', [
+            $this->logger->error('Bölüm silinirken hata oluştu', $this->logContext([
                 'id' => $department->id,
                 'error' => $e->getMessage()
-            ]);
+            ]));
             throw new Exception("Bölüm silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -260,7 +260,7 @@ class DepartmentService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
-        $this->logger->debug('Toplu bölüm silme başlatıldı', ['ids' => $dto->ids]);
+        $this->logger->debug('Toplu bölüm silme başlatıldı', $this->logContext(['ids' => $dto->ids]));
 
         $success = [];
         $failed = [];
@@ -285,10 +285,10 @@ class DepartmentService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu bölüm silme tamamlandı', [
+        $this->logger->info('Toplu bölüm silme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -306,7 +306,7 @@ class DepartmentService extends BaseService
             ? $dtoOrIds
             : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
 
-        $this->logger->debug('Toplu bölüm güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
+        $this->logger->debug('Toplu bölüm güncelleme başlatıldı', $this->logContext(['ids' => $dto->ids, 'fields' => $dto->fields]));
 
         $success = [];
         $failed = [];
@@ -335,10 +335,10 @@ class DepartmentService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu bölüm güncelleme tamamlandı', [
+        $this->logger->info('Toplu bölüm güncelleme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }

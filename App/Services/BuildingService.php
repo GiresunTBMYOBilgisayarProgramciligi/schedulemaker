@@ -151,7 +151,7 @@ class BuildingService extends BaseService
      */
     public function saveNew(BuildingDTO $dto): int
     {
-        $this->logger->debug('Yeni bina ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni bina ekleniyor', $this->logContext(['name' => $dto->name ?? null]));
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -159,7 +159,7 @@ class BuildingService extends BaseService
                 $building->fill($dto->toArray());
                 $building->create();
 
-                $this->logger->info('Bina eklendi', ['id' => $building->id]);
+                $this->logger->info('Bina eklendi', $this->logContext(['id' => $building->id]));
                 return $building->id;
             });
         } catch (PDOException $e) {
@@ -179,12 +179,12 @@ class BuildingService extends BaseService
      */
     public function updateBuilding(Building $building): int
     {
-        $this->logger->debug('Bina güncelleniyor', ['id' => $building->id]);
+        $this->logger->debug('Bina güncelleniyor', $this->logContext(['id' => $building->id]));
 
         try {
             return Database::transaction(function () use ($building) {
                 $building->update();
-                $this->logger->info('Bina güncellendi', ['id' => $building->id]);
+                $this->logger->info('Bina güncellendi', $this->logContext(['id' => $building->id]));
                 return $building->id;
             });
         } catch (PDOException $e) {
@@ -204,7 +204,7 @@ class BuildingService extends BaseService
      */
     public function deleteBuilding(Building $building): void
     {
-        $this->logger->debug('Bina siliniyor', ['id' => $building->id]);
+        $this->logger->debug('Bina siliniyor', $this->logContext(['id' => $building->id]));
 
         try {
             Database::transaction(function () use ($building) {
@@ -218,12 +218,12 @@ class BuildingService extends BaseService
                 $building->delete();
             });
 
-            $this->logger->info('Bina başarıyla silindi', ['id' => $building->id]);
+            $this->logger->info('Bina başarıyla silindi', $this->logContext(['id' => $building->id]));
         } catch (Exception $e) {
-            $this->logger->error('Bina silinirken hata oluştu', [
+            $this->logger->error('Bina silinirken hata oluştu', $this->logContext([
                 'id'    => $building->id,
                 'error' => $e->getMessage()
-            ]);
+            ]));
             throw new Exception("Bina silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -237,7 +237,7 @@ class BuildingService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', $dtoOrIds));
-        $this->logger->debug('Toplu bina silme başlatıldı', ['ids' => $dto->ids]);
+        $this->logger->debug('Toplu bina silme başlatıldı', $this->logContext(['ids' => $dto->ids]));
 
         $success = [];
         $failed = [];
@@ -262,10 +262,10 @@ class BuildingService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu bina silme tamamlandı', [
+        $this->logger->info('Toplu bina silme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -283,7 +283,7 @@ class BuildingService extends BaseService
             ? $dtoOrIds 
             : new BulkUpdateDTO(ids: array_map('intval', $dtoOrIds), fields: $fields);
 
-        $this->logger->debug('Toplu bina güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
+        $this->logger->debug('Toplu bina güncelleme başlatıldı', $this->logContext(['ids' => $dto->ids, 'fields' => $dto->fields]));
 
         $success = [];
         $failed = [];
@@ -312,10 +312,10 @@ class BuildingService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu bina güncelleme tamamlandı', [
+        $this->logger->info('Toplu bina güncelleme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }

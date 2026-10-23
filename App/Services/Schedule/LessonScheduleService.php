@@ -145,7 +145,7 @@ class LessonScheduleService extends ScheduleService
      */
     public function moveScheduleItems(array $dtos, array $deletedDtos): SaveScheduleResult
     {
-        $this->logger->debug("LessonScheduleService::moveScheduleItems START");
+        $this->logger->debug("LessonScheduleService::moveScheduleItems START", $this->logContext());
 
         try {
             return Database::transaction(function () use ($dtos, $deletedDtos) {
@@ -183,9 +183,9 @@ class LessonScheduleService extends ScheduleService
         }, $this->determineOwners($dto, $lesson));
         $createdIds = [];
 
-        $this->logger->debug('saveToMultipleSchedules: Owner list determined', [
+        $this->logger->debug('saveToMultipleSchedules: Owner list determined', $this->logContext([
             'owner_count' => count($owners)
-        ]);
+        ]));
 
         if ($lesson && !$dto->isDummy()) {
             $lesson->IsScheduleComplete($sourceSchedule->type);

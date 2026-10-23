@@ -18,7 +18,7 @@ class SettingsService extends BaseService
      */
     public function saveMultipleSettings(array $settingsData): bool
     {
-        $this->logger->debug('Toplu ayar güncellemesi başlatıldı');
+        $this->logger->debug('Toplu ayar güncellemesi başlatıldı', $this->logContext());
 
         try {
             return Database::transaction(function () use ($settingsData) {
@@ -47,7 +47,7 @@ class SettingsService extends BaseService
                 return true;
             });
         } catch (Exception $e) {
-            $this->logger->error('Ayarlar kaydedilirken hata oluştu: ' . $e->getMessage());
+            $this->logger->error('Ayarlar kaydedilirken hata oluştu: ' . $e->getMessage(), $this->logContext());
             throw new Exception("Ayarlar kaydedilirken bir hata oluştu: " . $e->getMessage());
         }
     }

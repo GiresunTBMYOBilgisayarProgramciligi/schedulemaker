@@ -708,7 +708,7 @@ class ScheduleService extends BaseService
      */
     public function wipeResourceSchedules(string $ownerType, int $ownerId): void
     {
-        $this->logger->debug("wipeResourceSchedules START for $ownerType ID: $ownerId");
+        $this->logger->debug("wipeResourceSchedules START for $ownerType ID: $ownerId", $this->logContext());
         // Model yerine Repository kullanımı tercih edildi
         $schedules = $this->scheduleRepo->findBy([
             'owner_type' => $ownerType,
@@ -724,7 +724,7 @@ class ScheduleService extends BaseService
             $schedule->delete();
         }
 
-        $this->logger->debug("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId");
+        $this->logger->debug("wipeResourceSchedules COMPLETED for $ownerType ID: $ownerId", $this->logContext());
     }
 
     /**

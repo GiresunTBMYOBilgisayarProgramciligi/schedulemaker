@@ -289,7 +289,7 @@ class ExamScheduleService extends ScheduleService
      */
     public function moveExamScheduleItems(array $dtos, array $deletedDtos): array
     {
-        $this->logger->debug("ExamService::moveExamScheduleItems START");
+        $this->logger->debug("ExamService::moveExamScheduleItems START", $this->logContext());
 
         return Database::transaction(function () use ($dtos, $deletedDtos) {
             if (!empty($deletedDtos)) {

@@ -120,11 +120,11 @@ class ScheduleSyncService extends BaseService
             $this->scheduleRepo->touch($affectedScheduleIds);
         }
 
-        $this->logger->info('Sınav programı child\'a kopyalandı', [
+        $this->logger->info('Sınav programı child\'a kopyalandı', $this->logContext([
             'parent_id' => $parentLesson->id,
             'child_id' => $childLesson->id,
             'affected_schedules' => count(array_unique($affectedScheduleIds))
-        ]);
+        ]));
     }
 
     /**

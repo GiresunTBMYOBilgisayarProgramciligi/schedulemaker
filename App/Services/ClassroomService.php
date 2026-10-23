@@ -28,7 +28,7 @@ class ClassroomService extends BaseService
      */
     public function saveNew(ClassroomDTO $dto): int
     {
-        $this->logger->debug('Yeni derslik ekleniyor', ['name' => $dto->name ?? null]);
+        $this->logger->debug('Yeni derslik ekleniyor', $this->logContext(['name' => $dto->name ?? null]));
 
         try {
             return Database::transaction(function () use ($dto) {
@@ -36,7 +36,7 @@ class ClassroomService extends BaseService
                 $classroom->fill($dto->toArray());
                 $classroom->create();
 
-                $this->logger->info('Derslik eklendi', ['id' => $classroom->id]);
+                $this->logger->info('Derslik eklendi', $this->logContext(['id' => $classroom->id]));
                 return $classroom->id;
             });
         } catch (Exception $e) {
@@ -56,12 +56,12 @@ class ClassroomService extends BaseService
      */
     public function updateClassroom(Classroom $classroom): int
     {
-        $this->logger->debug('Derslik güncelleniyor', ['id' => $classroom->id]);
+        $this->logger->debug('Derslik güncelleniyor', $this->logContext(['id' => $classroom->id]));
 
         try {
             return Database::transaction(function () use ($classroom) {
                 $classroom->update();
-                $this->logger->info('Derslik güncellendi', ['id' => $classroom->id]);
+                $this->logger->info('Derslik güncellendi', $this->logContext(['id' => $classroom->id]));
                 return $classroom->id;
             });
         } catch (PDOException $e) {
@@ -80,7 +80,7 @@ class ClassroomService extends BaseService
      */
     public function deleteClassroom(Classroom $classroom): void
     {
-        $this->logger->debug('Derslik siliniyor', ['id' => $classroom->id]);
+        $this->logger->debug('Derslik siliniyor', $this->logContext(['id' => $classroom->id]));
 
         try {
             Database::transaction(function () use ($classroom) {
@@ -91,12 +91,12 @@ class ClassroomService extends BaseService
                 $classroom->delete();
             });
 
-            $this->logger->info('Derslik başarıyla silindi', ['id' => $classroom->id]);
+            $this->logger->info('Derslik başarıyla silindi', $this->logContext(['id' => $classroom->id]));
         } catch (Exception $e) {
-            $this->logger->error('Derslik silinirken hata oluştu', [
+            $this->logger->error('Derslik silinirken hata oluştu', $this->logContext([
                 'id' => $classroom->id,
                 'error' => $e->getMessage()
-            ]);
+            ]));
             throw new Exception("Derslik silinirken bir hata oluştu: " . $e->getMessage());
         }
     }
@@ -110,7 +110,7 @@ class ClassroomService extends BaseService
     public function bulkDelete(BulkDeleteDTO|array $dtoOrIds): BulkActionResultDTO
     {
         $dto = $dtoOrIds instanceof BulkDeleteDTO ? $dtoOrIds : new BulkDeleteDTO(ids: array_map('intval', (array)$dtoOrIds));
-        $this->logger->debug('Toplu derslik silme başlatıldı', ['ids' => $dto->ids]);
+        $this->logger->debug('Toplu derslik silme başlatıldı', $this->logContext(['ids' => $dto->ids]));
 
         $success = [];
         $failed = [];
@@ -135,10 +135,10 @@ class ClassroomService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu derslik silme tamamlandı', [
+        $this->logger->info('Toplu derslik silme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
@@ -156,7 +156,7 @@ class ClassroomService extends BaseService
             ? $dtoOrIds
             : new BulkUpdateDTO(ids: array_map('intval', (array)$dtoOrIds), fields: $fields);
 
-        $this->logger->debug('Toplu derslik güncelleme başlatıldı', ['ids' => $dto->ids, 'fields' => $dto->fields]);
+        $this->logger->debug('Toplu derslik güncelleme başlatıldı', $this->logContext(['ids' => $dto->ids, 'fields' => $dto->fields]));
 
         $success = [];
         $failed = [];
@@ -185,10 +185,10 @@ class ClassroomService extends BaseService
             }
         }
 
-        $this->logger->info('Toplu derslik güncelleme tamamlandı', [
+        $this->logger->info('Toplu derslik güncelleme tamamlandı', $this->logContext([
             'success_count' => count($success),
             'failed_count'  => count($failed)
-        ]);
+        ]));
 
         return new BulkActionResultDTO(success: $success, failed: $failed);
     }
