@@ -12,6 +12,8 @@ use Exception;
 use App\Core\View;
 use App\Core\Gate;
 use App\Enums\PermissionType;
+use App\Enums\ScheduleItemStatus;
+use App\Middlewares\AuthMiddleware;
 use App\DTOs\ScheduleFilterDTO;
 use App\Services\Schedule\AvailabilityService;
 use App\Services\Schedule\ScheduleService;
@@ -451,6 +453,32 @@ class ScheduleViewHelper
     }
 
     /**
+     * Tercih edilen / uygun olmayan (dummy) schedule item'larını satırlardan çıkarır.
+     *
+     * @param array $weekRows prepareScheduleRows çıktısı
+     * @return array
+     */
+    private static function stripDummyItems(array $weekRows): array
+    {
+        $dummyStatuses = [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value];
+        foreach ($weekRows as $weekIndex => $rows) {
+            foreach ($rows as $rowIndex => $row) {
+                foreach ($row['days'] as $dayKey => $cell) {
+                    if (!$cell) {
+                        continue;
+                    }
+                    $items = is_array($cell) ? $cell : [$cell];
+                    $items = array_values(array_filter($items, fn($item) => !in_array($item->status, $dummyStatuses)));
+                    $weekRows[$weekIndex][$rowIndex]['days'][$dayKey] = is_array($cell)
+                        ? ($items ?: null)
+                        : ($items[0] ?? null);
+                }
+            }
+        }
+        return $weekRows;
+    }
+
+    /**
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
@@ -466,6 +494,11 @@ class ScheduleViewHelper
         $schedule = $scheduleService->getOrCreateSchedule($dto);
         $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
         $scheduleRows = self::prepareScheduleRows($schedule);
+
+        // Misafirler hocanın tercih/uygun değil (dummy) kayıtlarını görmez.
+        if (AuthMiddleware::user() === null) {
+            $scheduleRows = self::stripDummyItems($scheduleRows);
+        }
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,
