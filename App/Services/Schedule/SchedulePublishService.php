@@ -38,26 +38,86 @@ class SchedulePublishService extends BaseService
             throw new Exception("Program bulunamadı");
         }
 
-        $schedule->is_published = !$schedule->is_published;
-        $schedule->published_at = $schedule->is_published ? date('Y-m-d H:i:s') : null;
-        $schedule->update();
+        $publishStatus = !$schedule->is_published;
+        $result = $this->applyPublishStatus($schedule, $publishStatus);
 
-        if ($schedule->is_published) {
-            EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
+        $crossUnitNotified = 0;
+        if ($publishStatus && $schedule->owner_type === OwnerType::PROGRAM->value) {
+            $crossUnitNotified = $this->notifyCrossUnitUsersForProgramSchedule($schedule);
         }
 
-        $actionText = $schedule->is_published ? "yayınlandı" : "yayından kaldırıldı";
+        $actionText = $publishStatus ? "yayınlandı" : "yayından kaldırıldı";
         $screenName = $schedule->getScheduleScreenName();
         $this->logger->info("Program ($screenName) {$actionText}.", $this->logContext([
             'schedule_id' => $schedule->id,
-            'is_published' => $schedule->is_published
+            'is_published' => $publishStatus,
+            'notified_users' => $result['notified_users'],
+            'cross_unit_notified' => $crossUnitNotified
         ]));
+
+        $msg = "Program " . $actionText;
+        if ($publishStatus && $result['notified_users'] > 0) {
+            $msg .= " (hocaya e-posta gönderildi)";
+        }
+        if ($publishStatus && $crossUnitNotified > 0) {
+            $msg .= " (Farklı birimden $crossUnitNotified hocaya bilgilendirme e-postası gönderildi)";
+        }
 
         return [
             "status" => "success",
-            "msg" => "Program " . $actionText,
-            "is_published" => $schedule->is_published
+            "msg" => $msg,
+            "is_published" => $publishStatus,
+            "notified_users" => $result['notified_users'],
+            "cross_unit_notified" => $crossUnitNotified,
+            "is_test_mode" => (getSettingValue('mail_driver', 'mail', 'log') !== 'smtp')
         ];
+    }
+
+    /**
+     * Tek bir schedule'ın yayın durumunu günceller. Yayınlanıyorsa SchedulePublishedEvent tetikler
+     * (hoca programı için e-posta kuyruğa eklenir). Tüm yayınlama yolları bu metodu kullanır.
+     *
+     * @return array{notified_users: int}
+     */
+    private function applyPublishStatus(Schedule $schedule, bool $publishStatus): array
+    {
+        $schedule->is_published = $publishStatus ? 1 : 0;
+        $schedule->published_at = $publishStatus ? date('Y-m-d H:i:s') : null;
+        $schedule->update();
+
+        $notifiedUsers = 0;
+        if ($publishStatus) {
+            EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
+            if ($schedule->owner_type === OwnerType::USER->value) {
+                $notifiedUsers = 1;
+            }
+        }
+
+        return ['notified_users' => $notifiedUsers];
+    }
+
+    /**
+     * Program programı yayınlandığında, o programın derslerine giren ancak programın kadrosunda
+     * olmayan (farklı birim/bölüm/program) hocalara bilgilendirme e-postası gönderir.
+     */
+    private function notifyCrossUnitUsersForProgramSchedule(Schedule $schedule): int
+    {
+        $scheduleIdsData = $this->collectScheduleIdsByScope(
+            'program',
+            (int)$schedule->owner_id,
+            (string)$schedule->semester,
+            (string)$schedule->academic_year,
+            (string)$schedule->type
+        );
+
+        return $this->notifyCrossUnitUsers(
+            $scheduleIdsData['cross_unit_users'],
+            'program',
+            (int)$schedule->owner_id,
+            (string)$schedule->semester,
+            (string)$schedule->academic_year,
+            (string)$schedule->type
+        );
     }
 
     /**
@@ -80,56 +140,6 @@ class SchedulePublishService extends BaseService
             ]));
         }
         return $deletedCount;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function bulkPublish(?string $semester = null, ?string $academicYear = null, bool $publishStatus = true, ?string $type = null): int
-    {
-        $semester = $semester ?? getSettingValue('semester');
-        $academicYear = $academicYear ?? getSettingValue('academic_year');
-
-        // Yayınlama öncesinde boş schedule kayıtlarını temizle
-        if ($publishStatus) {
-            $this->cleanEmptySchedules($semester, $academicYear, $type);
-        }
-
-        $where = [
-            'semester' => $semester,
-            'academic_year' => $academicYear,
-            'owner_type' => ['!=' => OwnerType::LESSON->value]
-        ];
-        
-        if ($type) {
-            $where['type'] = $type;
-        }
-
-        $schedules = (new Schedule())->get()->where($where)->all();
-
-        $count = 0;
-        foreach ($schedules as $schedule) {
-            if ((bool)$schedule->is_published !== $publishStatus) {
-                $schedule->is_published = $publishStatus ? 1 : 0;
-                $schedule->published_at = $publishStatus ? date('Y-m-d H:i:s') : null;
-                $schedule->update();
-                $count++;
-
-                if ($publishStatus) {
-                    EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
-                }
-            }
-        }
-
-        $actionText = $publishStatus ? "yayınlandı" : "yayından kaldırıldı";
-        $this->logger->info("Toplu program işlemi: {$count} adet program {$actionText} ($academicYear - $semester).", $this->logContext([
-            'count' => $count,
-            'semester' => $semester,
-            'academic_year' => $academicYear,
-            'publish_status' => $publishStatus
-        ]));
-
-        return $count;
     }
 
     public function getPublishStats(?string $semester = null, ?string $academicYear = null, ?string $type = null): array
@@ -339,17 +349,9 @@ class SchedulePublishService extends BaseService
             }
 
             if ((bool)$schedule->is_published !== $publishStatus) {
-                $schedule->is_published = $publishStatus ? 1 : 0;
-                $schedule->published_at = $publishStatus ? date('Y-m-d H:i:s') : null;
-                $schedule->update();
+                $result = $this->applyPublishStatus($schedule, $publishStatus);
                 $count++;
-
-                if ($publishStatus) {
-                    EventDispatcher::getInstance()->dispatch(new SchedulePublishedEvent($schedule->id));
-                    if ($schedule->owner_type === OwnerType::USER->value) {
-                        $notifiedUsers++;
-                    }
-                }
+                $notifiedUsers += $result['notified_users'];
             }
         }
 

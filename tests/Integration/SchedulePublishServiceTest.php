@@ -46,6 +46,60 @@ class SchedulePublishServiceTest extends BaseTestCase
         $this->assertNull($scheduleUpdated->published_at);
     }
 
+    public function testTogglePublishOnProgramScheduleNotifiesCrossUnitLecturer(): void
+    {
+        $unitId = $this->insert('units', ['name' => 'Birim ' . rand(1000, 9999), 'type' => 'faculty', 'active' => 1]);
+        $deptId = $this->insert('departments', ['name' => 'Bölüm ' . rand(1000, 9999), 'unit_id' => $unitId, 'active' => 1]);
+        $programId = $this->insert('programs', ['name' => 'Program ' . rand(1000, 9999), 'department_id' => $deptId, 'active' => 1]);
+
+        $otherUnitId = $this->insert('units', ['name' => 'Diğer Birim ' . rand(1000, 9999), 'type' => 'faculty', 'active' => 1]);
+        $mail = 'crossunit_' . uniqid() . '@example.com';
+        $lecturerId = $this->insert('users', [
+            'name' => 'Farklı',
+            'last_name' => 'Birim',
+            'mail' => $mail,
+            'role' => 'lecturer',
+            'unit_id' => $otherUnitId
+        ]);
+
+        $lessonId = $this->insert('lessons', [
+            'code' => 'XB' . rand(1000, 9999),
+            'name' => 'Ortak Ders',
+            'program_id' => $programId,
+            'semester_no' => 1
+        ]);
+        $this->insert('lesson_assignments', [
+            'lesson_id' => $lessonId,
+            'lecturer_id' => $lecturerId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+
+        $scheduleId = $this->insert('schedules', [
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => $programId,
+            'semester_no' => 1,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published' => 0
+        ]);
+
+        $res = $this->service->togglePublish($scheduleId);
+        $this->assertTrue($res['is_published']);
+        $this->assertEquals(1, $res['cross_unit_notified']);
+
+        $stmt = $this->getDb()->prepare("SELECT COUNT(*) FROM mail_queue WHERE to_email = ?");
+        $stmt->execute([$mail]);
+        $this->assertEquals(1, (int)$stmt->fetchColumn(), 'Farklı birim hocasına bilgilendirme maili kuyruğa eklenmeli');
+
+        // Yayından kaldırma mail göndermemeli
+        $res2 = $this->service->togglePublish($scheduleId);
+        $this->assertFalse($res2['is_published']);
+        $stmt->execute([$mail]);
+        $this->assertEquals(1, (int)$stmt->fetchColumn());
+    }
+
     public function testBulkPublishByUserSingleAndClassroomSingleScope(): void
     {
         $adminId = $this->insert('users', [
