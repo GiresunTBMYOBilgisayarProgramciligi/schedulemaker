@@ -131,7 +131,6 @@ use App\Models\Department;
 </main>
 <!--end::App Main-->
 
-<script src="/assets/js/bulkActions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     BulkActions.init({

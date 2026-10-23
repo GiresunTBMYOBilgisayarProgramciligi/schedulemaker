@@ -128,7 +128,6 @@ use App\Models\Program;
     <!--end::App Content-->
 </main>
 <!--end::App Main-->
-<script src="/assets/js/bulkActions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     BulkActions.init({

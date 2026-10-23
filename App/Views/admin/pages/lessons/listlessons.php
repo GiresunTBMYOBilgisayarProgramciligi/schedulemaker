@@ -147,7 +147,6 @@ use App\Models\Lesson;
 </main>
 <!--end::App Main-->
 
-<script src="/assets/js/bulkActions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     BulkActions.init({

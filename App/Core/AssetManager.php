@@ -142,6 +142,9 @@ class AssetManager
                 ],
                 [
                     'path' => '/assets/js/ajax.js'
+                ],
+                [//Toplu işlemler (toolbar yoksa işlem yapmaz)
+                    'path' => '/assets/js/bulkActions.js'
                 ]
             ]
         ],
@@ -448,7 +451,7 @@ class AssetManager
             $attributes = '';
             // Temel öznitelikler
             $attributes .= ' rel="stylesheet"';
-            $attributes .= ' href="' . $css['path'] . '"';
+            $attributes .= ' href="' . self::versioned($css['path']) . '"';
 
             // Ek öznitelikler
             if (isset($css['attributes']) && is_array($css['attributes'])) {
@@ -473,7 +476,7 @@ class AssetManager
         foreach ($this->js as $js) {
             $attributes = '';
             // Temel öznitelikler
-            $attributes .= ' src="' . $js['path'] . '"';
+            $attributes .= ' src="' . self::versioned($js['path']) . '"';
 
             // Ek öznitelikler
             if (isset($js['attributes']) && is_array($js['attributes'])) {
@@ -485,5 +488,28 @@ class AssetManager
             $output .= '<script' . $attributes . '></script>' . PHP_EOL;
         }
         return $output;
+    }
+
+    /**
+     * Yerel dosya yoluna son değiştirilme zamanına dayalı sürüm parametresi ekler.
+     * Dosya değiştiğinde URL de değişir ve tarayıcı önbelleği otomatik olarak geçersiz kalır.
+     * Harici (CDN) adresler ve bulunamayan dosyalar olduğu gibi bırakılır.
+     *
+     * @param string $path Asset yolu (ör. /assets/js/ajax.js)
+     * @return string Sürüm parametreli yol
+     */
+    public static function versioned(string $path): string
+    {
+        if (!str_starts_with($path, '/') || str_starts_with($path, '//')) {
+            return $path;
+        }
+
+        $file = dirname(__DIR__, 2) . '/Public' . strtok($path, '?');
+        $mtime = is_file($file) ? filemtime($file) : false;
+        if ($mtime === false) {
+            return $path;
+        }
+
+        return $path . (str_contains($path, '?') ? '&' : '?') . 'v=' . $mtime;
     }
 }

@@ -106,7 +106,6 @@ use App\Models\Building;
     </div>
 </main>
 
-<script src="/assets/js/bulkActions.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     BulkActions.init({
