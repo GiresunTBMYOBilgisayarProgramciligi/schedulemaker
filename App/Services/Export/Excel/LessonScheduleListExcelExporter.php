@@ -239,17 +239,8 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
                 }
             }
 
-            // Derslik (derslik tabanlı programda zaten derslik bilgisi schedule sahibidir)
-            $classroomName = '';
-            if ($scheduleType !== 'classroom' && !empty($data->classroom)) {
-                $classroomName = $data->classroom->name;
-            }
-
-            // Hoca (hoca tabanlı programda hoca bilgisi schedule sahibidir)
-            $lecturerName = '';
-            if ($scheduleType !== 'user' && !empty($data->lecturer)) {
-                $lecturerName = $data->lecturer->getFullName();
-            }
+            $classroomName = $this->resolveClassroomName($item, $data, $scheduleType);
+            $lecturerName  = $this->resolveLecturerName($item, $data, $scheduleType);
 
             $this->sheet->setCellValue("A{$row}", $code);
             $this->sheet->setCellValue("B{$row}", $lessonName);
@@ -277,6 +268,30 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
         }
 
         return $row;
+    }
+
+    /**
+     * Derslik hücresi değerini belirler (derslik tabanlı programda derslik zaten schedule sahibidir).
+     */
+    protected function resolveClassroomName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
+        if ($scheduleType !== 'classroom' && !empty($data->classroom)) {
+            return $data->classroom->name;
+        }
+
+        return '';
+    }
+
+    /**
+     * Hoca hücresi değerini belirler (hoca tabanlı programda hoca zaten schedule sahibidir).
+     */
+    protected function resolveLecturerName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
+        if ($scheduleType !== 'user' && !empty($data->lecturer)) {
+            return $data->lecturer->getFullName();
+        }
+
+        return '';
     }
 
     /**

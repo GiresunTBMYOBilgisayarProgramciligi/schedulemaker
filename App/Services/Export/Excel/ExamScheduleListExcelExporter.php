@@ -6,6 +6,7 @@ namespace App\Services\Export\Excel;
 
 use App\DTOs\ScheduleExportFilterDTO;
 use App\Enums\ExamType;
+use App\Models\ScheduleItem;
 
 /**
  * Sınav programlarını (Ara Sınav / Final / Bütünleme) satır bazlı liste formatında
@@ -31,5 +32,42 @@ class ExamScheduleListExcelExporter extends LessonScheduleListExcelExporter
             ExamType::MAKEUP->value  => 'BÜTÜNLEME SINAV PROGRAMI (LİSTE)',
             default                  => 'SINAV PROGRAMI (LİSTE)',
         };
+    }
+
+    /**
+     * Sınavlarda salon bilgisi slot verisinde değil, ScheduleItem detail['assignments'] içindedir.
+     */
+    protected function resolveClassroomName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
+        $names = [];
+        foreach ($item->detail['assignments'] ?? [] as $assignment) {
+            if (!empty($assignment['classroom_name'])) {
+                $names[] = $assignment['classroom_name'];
+            }
+        }
+
+        return implode("\n", array_unique($names));
+    }
+
+    /**
+     * Sınavlarda hoca sütunu gözetmenleri içerir (detail['assignments'] içinden).
+     */
+    protected function resolveLecturerName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
+        $names = [];
+        foreach ($item->detail['assignments'] ?? [] as $assignment) {
+            if (!empty($assignment['observers']) && is_array($assignment['observers'])) {
+                foreach ($assignment['observers'] as $observer) {
+                    $name = is_array($observer) ? ($observer['name'] ?? '') : (is_string($observer) ? $observer : '');
+                    if ($name !== '') {
+                        $names[] = $name;
+                    }
+                }
+            } elseif (!empty($assignment['observer_name'])) {
+                $names[] = $assignment['observer_name'];
+            }
+        }
+
+        return implode("\n", array_unique($names));
     }
 }
