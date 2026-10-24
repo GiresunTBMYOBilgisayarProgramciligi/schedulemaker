@@ -316,10 +316,22 @@ class AvailabilityService extends BaseService
     {
         $dto = $filters instanceof AvailabilityFilterDTO ? $filters : AvailabilityFilterDTO::fromArray($filters);
 
-        $observerFilters = [
-            'role' => ['in' => ['lecturer', 'department_head', 'manager', 'submanager']]
-        ];
-        $observers = (new UserRepository())->findBy($observerFilters);
+        $observerRoles = ['lecturer', 'department_head', 'manager', 'submanager'];
+        $unitIds = $this->resolveScheduleUnitIds($dto->schedule_id);
+        if (empty($unitIds)) {
+            $observers = (new UserRepository())->findBy(['role' => ['in' => $observerRoles]]);
+        } else {
+            // Programın/hocanın birimindeki ve o birimde ders veren (affiliation) hocalar
+            $observers = [];
+            foreach ($unitIds as $unitId) {
+                foreach ((new UserRepository())->getLecturersByUnit($unitId) as $candidate) {
+                    if (in_array($candidate->role, $observerRoles, true)) {
+                        $observers[$candidate->id] = $candidate;
+                    }
+                }
+            }
+            $observers = array_values($observers);
+        }
         $itemsToCheck = is_string($dto->items) ? (json_decode($dto->items, true) ?: []) : (is_array($dto->items) ? $dto->items : []);
 
         $availableObservers = [];
@@ -372,6 +384,35 @@ class AvailabilityService extends BaseService
         usort($availableObservers, fn(User $a, User $b) => $rank($b) <=> $rank($a));
 
         return $availableObservers;
+    }
+
+    /**
+     * Programın sahibinin bağlı olduğu birim ID'lerini döndürür.
+     * Program için bölümün birimi, hoca için kadro ve affiliation birimleri, ders için dersin bölümünün birimi.
+     * Çözümlenemezse boş dizi döner (filtre uygulanmaz).
+     *
+     * @param int|null $scheduleId
+     * @return int[]
+     * @throws Exception
+     */
+    private function resolveScheduleUnitIds(?int $scheduleId): array
+    {
+        if (!$scheduleId) {
+            return [];
+        }
+        $schedule = $this->scheduleRepo->find($scheduleId);
+        if (!$schedule) {
+            return [];
+        }
+
+        $unitIds = match ($schedule->owner_type) {
+            OwnerType::PROGRAM->value => [(new Program())->where(['id' => $schedule->owner_id])->with(['department'])->first()?->department?->unit_id],
+            OwnerType::USER->value => (new User())->find($schedule->owner_id)?->getRelatedUnitIds() ?? [],
+            OwnerType::LESSON->value => [(new Lesson())->where(['id' => $schedule->owner_id])->with(['department'])->first()?->department?->unit_id],
+            default => [],
+        };
+
+        return array_values(array_unique(array_map('intval', array_filter($unitIds))));
     }
 
     /**
