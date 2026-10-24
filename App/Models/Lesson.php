@@ -552,6 +552,40 @@ class Lesson extends Model
     }
 
     /**
+     * Sınav birleştirme bağlantılı derslere ek olarak aynı koda sahip diğer grupların
+     * (ve onların sınav bağlı derslerinin) ID listesini döner.
+     * @return array
+     */
+    public function getExamAllLinkedLessonIds(): array
+    {
+        $linkedIds = $this->getExamLinkedLessonIds();
+
+        if ($this->group_no > 0) {
+            $siblings = (new Lesson())->get()->where([
+                'code' => $this->code,
+                'program_id' => $this->program_id,
+                'semester_no' => $this->semester_no,
+                'group_no' => ['>' => 0],
+                'id' => ['!=' => $this->id]
+            ])->all();
+            foreach ($siblings as $sibling) {
+                $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds());
+            }
+        }
+        return array_values(array_unique($linkedIds));
+    }
+
+    /**
+     * Sınav programında birleştirilmiş toplam mevcudu (bağlı dersler ve diğer gruplar dahil) döner.
+     * @return int
+     */
+    public function getExamTotalSize(): int
+    {
+        $linkedIds = $this->getExamAllLinkedLessonIds();
+        return (int)(new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
+    }
+
+    /**
      * @return string
      * @throws Exception
      */
@@ -579,23 +613,8 @@ class Lesson extends Model
         $academicYear = $academicYear ?? getSettingValue('academic_year');
 
         if ($isExam) {
-            $linkedIds = $this->getExamLinkedLessonIds();
+            $linkedIds = $this->getExamAllLinkedLessonIds();
 
-            // Aynı koda sahip diğer grupları da bağlantılı ID'lere ekle (Kullanıcı Talebi)
-            if ($this->group_no > 0) {
-                $siblings = (new Lesson())->get()->where([
-                    'code' => $this->code,
-                    'program_id' => $this->program_id,
-                    'semester_no' => $this->semester_no,
-                    'group_no' => ['>' => 0],
-                    'id' => ['!=' => $this->id]
-                ])->all();
-                foreach ($siblings as $sibling) {
-                    $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds());
-                }
-            }
-            $linkedIds = array_unique($linkedIds);
-            
             // Toplam grup mevcudunu hesapla
             $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
             // Tüm bağlı derslerin programlarını çek

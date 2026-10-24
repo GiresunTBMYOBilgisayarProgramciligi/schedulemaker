@@ -63,7 +63,7 @@ class ScheduleViewHelper
             'data-lesson-id' => $slotData->lesson->id,
             'data-lesson-code' => $slotData->lesson->code,
             'data-lesson-name' => $slotData->lesson->getFullName(addCode: true),
-            'data-size' => $slotData->lesson->size,
+            'data-size' => $isExam ? $slotData->lesson->getExamTotalSize() : $slotData->lesson->size,
             'data-lecturer-id' => ($slotData->lecturer ?? null)?->id,
             'data-lecturer-name' => ($slotData->lecturer ?? null)?->getFullName(),
             'data-classroom-id' => ($slotData->classroom ?? null)?->id,
