@@ -90,6 +90,71 @@ class ScheduleNoteRepository extends BaseRepository
     }
 
     /**
+     * Hocanın bulunduğu program ID'lerini döndürür (kadro, affiliation ve ders atamaları).
+     *
+     * @return int[]
+     */
+    public function getLecturerProgramIds(int $lecturerId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT program_id FROM users WHERE id = :uid AND program_id IS NOT NULL
+            UNION
+            SELECT program_id FROM user_affiliations WHERE user_id = :uid2 AND program_id IS NOT NULL
+            UNION
+            SELECT l.program_id FROM lesson_assignments la
+            JOIN lessons l ON l.id = la.lesson_id
+            WHERE la.lecturer_id = :uid3 AND l.program_id IS NOT NULL
+        ");
+        $stmt->execute(['uid' => $lecturerId, 'uid2' => $lecturerId, 'uid3' => $lecturerId]);
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * Birimdeki tüm hocaların (kadro, affiliation veya birim derslerine atanmış) seçili döneme ait notlarını getirir.
+     */
+    public function getUnitNotes(int $unitId, string $academicYear, string $semester, string $scheduleType): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id FROM users WHERE unit_id = :unit1
+            UNION
+            SELECT user_id FROM user_affiliations WHERE unit_id = :unit2
+            UNION
+            SELECT la.lecturer_id
+            FROM lesson_assignments la
+            JOIN lessons l ON l.id = la.lesson_id
+            LEFT JOIN programs p ON p.id = l.program_id
+            JOIN departments d ON d.id = COALESCE(l.department_id, p.department_id)
+            WHERE d.unit_id = :unit3
+              AND la.academic_year = :academic_year
+              AND la.semester = :semester
+              AND la.lecturer_id IS NOT NULL
+        ");
+        $stmt->execute([
+            'unit1'         => $unitId,
+            'unit2'         => $unitId,
+            'unit3'         => $unitId,
+            'academic_year' => $academicYear,
+            'semester'      => $semester,
+        ]);
+        $lecturerIds = array_values(array_unique(array_filter(array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN)))));
+
+        if (empty($lecturerIds)) {
+            return [];
+        }
+
+        return (new ScheduleNote())->get()
+            ->where([
+                'user_id' => ['in' => $lecturerIds],
+                'academic_year' => $academicYear,
+                'semester' => $semester,
+                'schedule_type' => $scheduleType,
+            ])
+            ->orderBy('updated_at', 'DESC')
+            ->with(['user', 'readByUser'])
+            ->all();
+    }
+
+    /**
      * Belirtilen akademisyenin seçili döneme ait notlarını getirir.
      */
     public function getLecturerNotes(int $userId, string $academicYear, string $semester, string $scheduleType): array

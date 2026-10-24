@@ -43,9 +43,20 @@ class ScheduleNotesHandler {
             lecturerId = selectedLecturerId;
         }
 
+        // Program veya hoca seçilmediyse seçili birimin tüm notları getirilir
+        let unitId = 0;
+        if (programId <= 0 && lecturerId <= 0) {
+            const programUnitEl = document.getElementById('unit_id');
+            const lecturerUnitEl = document.getElementById('lecturer_unit_id');
+            const programUnitId = programUnitEl ? parseInt(programUnitEl.value, 10) || 0 : 0;
+            const lecturerUnitId = lecturerUnitEl ? parseInt(lecturerUnitEl.value, 10) || 0 : 0;
+            unitId = isLecturerTabActive ? (lecturerUnitId || programUnitId) : (programUnitId || lecturerUnitId);
+        }
+
         return {
             programId,
             lecturerId,
+            unitId,
             academicYear,
             semester,
             scheduleType
@@ -74,14 +85,14 @@ class ScheduleNotesHandler {
 
         // Tab değiştirildiğinde veya hoca/program seçimi değiştiğinde rozeti güncelle
         document.addEventListener('change', function (e) {
-            if (e.target && e.target.matches('#program_id, #lecturer_id, #academic_year, #semester, #schedule_type')) {
+            if (e.target && e.target.matches('#unit_id, #lecturer_unit_id, #program_id, #lecturer_id, #academic_year, #semester, #schedule_type')) {
                 self.updateNotesCountBadge();
             }
         });
 
         // TomSelect bileşenlerinin değişimlerini dinle
         setTimeout(() => {
-            ['#program_id', '#lecturer_id', '#academic_year', '#semester', '#schedule_type'].forEach(selector => {
+            ['#unit_id', '#lecturer_unit_id', '#program_id', '#lecturer_id', '#academic_year', '#semester', '#schedule_type'].forEach(selector => {
                 const el = document.querySelector(selector);
                 if (el && el.tomselect) {
                     el.tomselect.on('change', function() {
@@ -160,11 +171,11 @@ class ScheduleNotesHandler {
      * Seçili programa veya hocaya ait akademisyen not sayısını ve durum dökümünü günceller.
      */
     async updateNotesCountBadge() {
-        const { programId, lecturerId, academicYear, semester, scheduleType } = this.getContextParams();
+        const { programId, lecturerId, unitId, academicYear, semester, scheduleType } = this.getContextParams();
         const countEl = document.getElementById('schedule-notes-count');
         if (!countEl) return;
 
-        if (programId <= 0 && lecturerId <= 0) {
+        if (programId <= 0 && lecturerId <= 0 && unitId <= 0) {
             countEl.innerHTML = '';
             return;
         }
@@ -172,6 +183,7 @@ class ScheduleNotesHandler {
         const formData = new FormData();
         if (programId > 0) formData.append('program_id', programId);
         if (lecturerId > 0) formData.append('lecturer_id', lecturerId);
+        if (unitId > 0) formData.append('unit_id', unitId);
         formData.append('academic_year', academicYear);
         formData.append('semester', semester);
         formData.append('schedule_type', scheduleType);
@@ -244,10 +256,10 @@ class ScheduleNotesHandler {
      * Program düzenleme ekranında seçili programa veya hocaya ait akademisyen notlarını yükler.
      */
     async loadProgramNotes() {
-        const { programId, lecturerId, academicYear, semester, scheduleType } = this.getContextParams();
+        const { programId, lecturerId, unitId, academicYear, semester, scheduleType } = this.getContextParams();
 
-        if (programId <= 0 && lecturerId <= 0) {
-            this.notify('Uyarı', 'Lütfen önce bir program veya hoca seçiniz.', 'warning');
+        if (programId <= 0 && lecturerId <= 0 && unitId <= 0) {
+            this.notify('Uyarı', 'Lütfen önce bir birim, program veya hoca seçiniz.', 'warning');
             return;
         }
 
@@ -272,6 +284,7 @@ class ScheduleNotesHandler {
         const formData = new FormData();
         if (programId > 0) formData.append('program_id', programId);
         if (lecturerId > 0) formData.append('lecturer_id', lecturerId);
+        if (unitId > 0) formData.append('unit_id', unitId);
         formData.append('academic_year', academicYear);
         formData.append('semester', semester);
         formData.append('schedule_type', scheduleType);

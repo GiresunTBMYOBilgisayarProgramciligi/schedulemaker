@@ -152,11 +152,30 @@ class ScheduleNoteServiceTest extends BaseTestCase
 
         $editor = new User();
         $editor->id = $this->editorId;
+        $editor->role = 'admin';
 
         $notes = $this->service->getLecturerNotes($this->userId, '2026 - 2027', 'Güz', 'lesson', $editor);
         $this->assertCount(1, $notes);
         $this->assertEquals('Hoca bazlı not testi', $notes[0]->note);
         $this->assertEquals($this->userId, $notes[0]->user->id);
+    }
+
+    public function testGetLecturerNotesFiltersOutOfScopeEditor(): void
+    {
+        $this->service->saveNote(new ScheduleNoteDTO(
+            userId: $this->userId,
+            academicYear: '2026 - 2027',
+            semester: 'Güz',
+            scheduleType: 'lesson',
+            note: 'Kapsam dışı not'
+        ));
+
+        $editor = new User();
+        $editor->id = $this->editorId;
+        $editor->role = 'lecturer';
+
+        $notes = $this->service->getLecturerNotes($this->userId, '2026 - 2027', 'Güz', 'lesson', $editor);
+        $this->assertCount(0, $notes);
     }
 
     public function testDeleteNote(): void

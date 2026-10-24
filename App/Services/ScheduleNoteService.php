@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Events\ScheduleNoteStatusUpdatedEvent;
 use App\Events\ScheduleNoteDeletedEvent;
 use App\Core\EventDispatcher;
+use App\Policies\ScheduleNotePolicy;
 
 class ScheduleNoteService extends BaseService
 {
@@ -45,6 +46,7 @@ class ScheduleNoteService extends BaseService
 
     /**
      * Bir yöneticinin başka bir akademisyenin notlarını incelemesi (okundu olarak da işaretler).
+     * Yetki kontrolü çağıran tarafta yapılır.
      */
     public function getNotesForUserByEditor(int $userId, User $editor): array
     {
@@ -61,12 +63,7 @@ class ScheduleNoteService extends BaseService
     public function getProgramNotes(int $programId, string $academicYear, string $semester, string $scheduleType, User $editor, bool $markAsRead = true): array
     {
         $notes = $this->repository->getProgramNotes($programId, $academicYear, $semester, $scheduleType);
-
-        if ($markAsRead && !empty($notes)) {
-            $this->repository->markMultipleAsRead(array_column($notes, 'id'), $editor->id);
-        }
-
-        return $notes;
+        return $this->finalizeEditorNotes($notes, $editor, $markAsRead);
     }
 
     /**
@@ -75,6 +72,28 @@ class ScheduleNoteService extends BaseService
     public function getLecturerNotes(int $userId, string $academicYear, string $semester, string $scheduleType, User $editor, bool $markAsRead = true): array
     {
         $notes = $this->repository->getLecturerNotes($userId, $academicYear, $semester, $scheduleType);
+        return $this->finalizeEditorNotes($notes, $editor, $markAsRead);
+    }
+
+    /**
+     * Seçili birimdeki tüm hoca notlarını, kullanıcının yetkisi dahilinde tek seferde getirir.
+     */
+    public function getUnitNotes(int $unitId, string $academicYear, string $semester, string $scheduleType, User $editor, bool $markAsRead = true): array
+    {
+        $notes = $this->repository->getUnitNotes($unitId, $academicYear, $semester, $scheduleType);
+        return $this->finalizeEditorNotes($notes, $editor, $markAsRead);
+    }
+
+    /**
+     * Notları düzenleyicinin yetki kapsamına göre süzer ve (istenirse) yalnızca erişilebilenleri okundu işaretler.
+     *
+     * @param ScheduleNote[] $notes
+     * @return ScheduleNote[]
+     */
+    private function finalizeEditorNotes(array $notes, User $editor, bool $markAsRead): array
+    {
+        $policy = new ScheduleNotePolicy();
+        $notes = array_values(array_filter($notes, fn(ScheduleNote $n) => $policy->canManageLecturerNotes($editor, (int)$n->user_id)));
 
         if ($markAsRead && !empty($notes)) {
             $this->repository->markMultipleAsRead(array_column($notes, 'id'), $editor->id);

@@ -68,7 +68,7 @@ class ScheduleNoteController extends Controller
 
         Gate::authorize('view', ScheduleNote::class, "Bu kullanıcının notlarını görme yetkiniz yok.", $targetUserId);
 
-        if ($targetUserId !== $currentUser->id && Gate::check('canManageNotes', ScheduleNote::class)) {
+        if ($targetUserId !== $currentUser->id) {
             $notes = $this->service->getNotesForUserByEditor($targetUserId, $currentUser);
         } else {
             $notes = $this->service->getMyNotes($targetUserId);
@@ -111,6 +111,7 @@ class ScheduleNoteController extends Controller
 
         $programId = !empty($requestData['program_id']) ? (int)$requestData['program_id'] : 0;
         $lecturerId = !empty($requestData['lecturer_id']) ? (int)$requestData['lecturer_id'] : 0;
+        $unitId = !empty($requestData['unit_id']) ? (int)$requestData['unit_id'] : 0;
         $academicYear = $requestData['academic_year'] ?? '';
         $semester = $requestData['semester'] ?? '';
         $scheduleType = $requestData['schedule_type'] ?? '';
@@ -119,18 +120,21 @@ class ScheduleNoteController extends Controller
             throw new Exception("Eksik arama parametreleri.");
         }
 
-        if ($programId <= 0 && $lecturerId <= 0) {
-            throw new Exception("Lütfen önce bir program veya hoca seçiniz.");
+        if ($programId <= 0 && $lecturerId <= 0 && $unitId <= 0) {
+            throw new Exception("Lütfen önce bir birim, program veya hoca seçiniz.");
         }
 
         $markAsRead = !isset($requestData['mark_read']) || ($requestData['mark_read'] !== '0' && $requestData['mark_read'] !== 0 && $requestData['mark_read'] !== false);
 
         Gate::authorize('canManageNotes', ScheduleNote::class, "Program notlarını görme yetkiniz yok.");
 
-        if ($lecturerId > 0 && $programId <= 0) {
+        // Kapsam dışı notlar servis katmanında hocanın programlarını düzenleme yetkisine göre süzülür.
+        if ($programId > 0) {
+            $notes = $this->service->getProgramNotes($programId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
+        } elseif ($lecturerId > 0) {
             $notes = $this->service->getLecturerNotes($lecturerId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
         } else {
-            $notes = $this->service->getProgramNotes($programId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
+            $notes = $this->service->getUnitNotes($unitId, $academicYear, $semester, $scheduleType, $currentUser, $markAsRead);
         }
 
         $data = array_map(function (ScheduleNote $note) {
@@ -170,10 +174,15 @@ class ScheduleNoteController extends Controller
             throw new Exception("Oturum açmanız gerekmektedir.");
         }
 
-        Gate::authorize('canManageNotes', ScheduleNote::class, "Not durumunu güncelleme yetkiniz yok.");
-
         $validator = new ScheduleNoteValidator();
         $dto = $validator->getStatusDTO($requestData);
+
+        /** @var ScheduleNote|null $existingNote */
+        $existingNote = (new ScheduleNoteRepository())->find($dto->noteId);
+        if (!$existingNote) {
+            throw new Exception("Not bulunamadı.");
+        }
+        Gate::authorize('manageNote', $existingNote, "Bu notun durumunu güncelleme yetkiniz yok.");
 
         $note = $this->service->updateStatus($dto, $currentUser);
 
