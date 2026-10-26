@@ -37,6 +37,13 @@ Sınav çakışmaları şu prensiplere göre denetlenir:
 
 `ConflictService`, gelen veride `assignments` olup olmadığına bakarak sınav çakışma mantığını otomatik olarak devreye sokar.
 
+### Günlük Sınav Sınırı (Esnek Uyarı)
+Yönetmeliğe göre bir programda (`program_id` + `semester_no`) bir günde en fazla 2 sınav yapılabilir (`ExamScheduleService::MAX_EXAMS_PER_DAY`).
+- Kural **engelleyici değildir**: sınav ekleme/taşıma/düzenleme öncesi `ExamScheduleCard.confirmDailyExamLimit()` `/ajax/checkExamDailyLimit` endpoint'ini çağırır; sınır aşılıyorsa uyarı gösterilir ve kullanıcı onaylarsa işlem devam eder.
+- Aynı saat diliminde olan sınavlar (gruplar, `exam_parent_lesson_id` ile birleştirilmiş dersler) **tek sınav** sayılır.
+- Taşıma/düzenlemede silinecek sınav (ve kardeş kayıtları) sayıma dahil edilmez.
+- Uyarı kontrolü hata verirse kayıt engellenmez.
+
 ## 5. Müsait Gözetmen Bulma
 `AvailabilityService::availableObservers` metodu:
 - Tüm hocaları ve yetkili personeli (Gözetmen Havuzu) tarar.

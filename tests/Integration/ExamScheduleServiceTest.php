@@ -233,4 +233,85 @@ class ExamScheduleServiceTest extends BaseTestCase
         ])->all();
         $this->assertEmpty($remainingSecondObs);
     }
+
+    private function makeExamDto(int $lessonId, int $day, string $start, string $end, ?int $id = null): ScheduleItemDTO
+    {
+        return ScheduleItemDTO::fromArray([
+            'schedule_id' => $this->programScheduleId,
+            'day_index' => $day,
+            'week_index' => 0,
+            'start_time' => $start,
+            'end_time' => $end,
+            'status' => 'single',
+            'data' => [['lesson_id' => $lessonId]],
+            'id' => $id,
+        ]);
+    }
+
+    private function insertExtraLesson(string $name): int
+    {
+        return $this->insert('lessons', [
+            'name' => $name,
+            'code' => 'EXT' . rand(1000, 9999),
+            'hours' => 3,
+            'department_id' => $this->deptId,
+            'program_id' => $this->progId,
+            'building_id' => $this->buildingId,
+            'classroom_type' => ClassroomType::CLASSROOM->value,
+            'semester_no' => 1,
+            'type' => 1
+        ]);
+    }
+
+    public function testDailyExamLimitWarnsOnThirdExamOfSameDay(): void
+    {
+        $lesson2 = $this->insertExtraLesson('Fizik');
+        $lesson3 = $this->insertExtraLesson('Kimya');
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
+
+        // İkinci sınav sınırı aşmaz
+        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]));
+
+        // Üçüncü sınav uyarı üretir
+        $warnings = $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 1, '14:00:00', '15:00:00')]);
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString('en fazla 2 sınav', $warnings[0]);
+
+        // Başka güne eklemek uyarı üretmez
+        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 2, '14:00:00', '15:00:00')]));
+    }
+
+    public function testDailyExamLimitCountsSameSlotOnce(): void
+    {
+        $lesson2 = $this->insertExtraLesson('Fizik');
+        $lesson3 = $this->insertExtraLesson('Kimya');
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
+
+        // Mevcut bir sınavla aynı saat dilimi (birleşik sınav/grup) yeni sınav sayılmaz
+        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 1, '09:00:00', '10:00:00')]));
+    }
+
+    public function testDailyExamLimitIgnoresDeletedItemOnMove(): void
+    {
+        $lesson2 = $this->insertExtraLesson('Fizik');
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
+
+        $existing = (new ScheduleItem())->get()->where([
+            'schedule_id' => $this->programScheduleId,
+            'day_index' => 1,
+            'start_time' => '11:00:00',
+        ])->first();
+
+        // Aynı gün içinde sınavı başka saate taşımak sınırı aşmaz
+        $warnings = $this->service->checkDailyExamLimit(
+            [$this->makeExamDto($lesson2, 1, '14:00:00', '15:00:00')],
+            [$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00', (int) $existing->id)]
+        );
+        $this->assertSame([], $warnings);
+    }
 }

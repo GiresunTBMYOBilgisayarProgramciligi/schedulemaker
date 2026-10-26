@@ -554,6 +554,15 @@ class AjaxRouter extends Router
     }
     
     /**
+     * Sınav için günlük sınav sınırı uyarılarını döner (engelleyici değil)
+     */
+    public function checkExamDailyLimitAction(): void
+    {
+        $this->response = (new ScheduleController())->checkExamDailyLimit($this->data);
+        $this->sendResponse();
+    }
+
+    /**
      * Sınav programı taşıma isteği (silme + kaydetme)
      */
     public function moveExamScheduleItemsAction(): void

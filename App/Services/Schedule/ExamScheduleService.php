@@ -9,12 +9,14 @@ use App\Enums\ExamType;
 use App\Enums\OwnerType;
 use App\Enums\PermissionType;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\LessonCombination;
 use App\Repositories\LessonAssignmentRepository;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\DTOs\ScheduleItemDTO;
 use Exception;
+use function App\Helpers\getClassFromSemesterNo;
 
 /**
  * Sınav programına özgü işlemleri yönetir.
@@ -255,6 +257,149 @@ class ExamScheduleService extends ScheduleService
     private function examSlotKey(ScheduleItem $item): string
     {
         return "{$item->day_index}|{$item->week_index}|{$item->start_time}";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Günlük Sınav Sınırı (Esnek Uyarı)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Yönetmeliğe göre bir programda (sınıfta) bir günde yapılabilecek en fazla sınav sayısı */
+    public const MAX_EXAMS_PER_DAY = 2;
+
+    /**
+     * Eklenecek/taşınacak sınavlar sonrası bir programda aynı gün MAX_EXAMS_PER_DAY'den fazla
+     * sınav oluşuyorsa uyarı mesajlarını döner. Engelleyici değildir; kullanıcı onaylarsa kayıt yapılır.
+     *
+     * Aynı saat diliminde olan sınavlar (gruplar, sınav birleştirmeleri) tek sınav sayılır.
+     * Taşıma/düzenleme sırasında silinecek sınavlar sayıma dahil edilmez.
+     *
+     * @param ScheduleItemDTO[] $dtos Eklenecek item DTO'ları
+     * @param ScheduleItemDTO[] $deletedDtos Aynı işlemde silinecek item DTO'ları
+     * @return string[] Uyarı mesajları (boşsa sorun yok)
+     * @throws Exception
+     */
+    public function checkDailyExamLimit(array $dtos, array $deletedDtos = []): array
+    {
+        $excludedIds = [];
+        foreach ($deletedDtos as $deletedDto) {
+            $id = (int) ($deletedDto->id ?? 0);
+            if (!$id) {
+                continue;
+            }
+            $item = (new ScheduleItem())->find($id);
+            if (!$item) {
+                continue;
+            }
+            foreach ($this->findExamSiblingItems($item) as $sibling) {
+                $excludedIds[(int) $sibling->id] = true;
+            }
+        }
+
+        // "programKey|gün|hafta" => ['schedule' => Schedule, 'slots' => [slotKey => etiket]]
+        $targets = [];
+
+        foreach ($dtos as $dto) {
+            $lessonId = $dto->data[0]['lesson_id'] ?? $dto->data['lesson_id'] ?? null;
+            $lesson = $lessonId ? (new Lesson())->where(['id' => $lessonId])->with(['examChildLessons', 'examParentLesson'])->first() : null;
+            $targetSchedule = (new Schedule())->find($dto->scheduleId);
+            if (!$lesson || !$targetSchedule) {
+                continue;
+            }
+
+            $newSlot = "{$dto->startTime}|{$dto->endTime}";
+            $newLabel = $lesson->getFullName(true, false, true, true) ?: $lesson->code;
+
+            foreach ($this->resolveExamPrograms($lesson) as $program) {
+                $key = "{$program['program_id']}|{$program['semester_no']}|{$dto->dayIndex}|{$dto->weekIndex}";
+                if (!isset($targets[$key])) {
+                    $relSchedule = (new Schedule())->get()->where([
+                        'owner_type' => OwnerType::PROGRAM->value,
+                        'owner_id' => $program['program_id'],
+                        'semester_no' => $program['semester_no'],
+                        'semester' => $targetSchedule->semester,
+                        'academic_year' => $targetSchedule->academic_year,
+                        'type' => $targetSchedule->type,
+                    ])->first();
+
+                    $slots = [];
+                    if ($relSchedule) {
+                        $dayItems = (new ScheduleItem())->get()->where([
+                            'schedule_id' => $relSchedule->id,
+                            'day_index' => $dto->dayIndex,
+                            'week_index' => $dto->weekIndex,
+                        ])->all();
+                        foreach ($dayItems as $existing) {
+                            if (isset($excludedIds[(int) $existing->id]) || !in_array($existing->status, ['single', 'group'])) {
+                                continue;
+                            }
+                            $existingLessonId = (int) ($existing->data[0]['lesson_id'] ?? 0);
+                            $existingLesson = $existingLessonId ? (new Lesson())->find($existingLessonId) : null;
+                            $slots["{$existing->start_time}|{$existing->end_time}"] = $existingLesson?->getFullName(true, false, true, true) ?? $existingLesson?->code ?? '';
+                        }
+                    }
+
+                    $targets[$key] = [
+                        'program_id' => $program['program_id'],
+                        'semester_no' => $program['semester_no'],
+                        'day_index' => $dto->dayIndex,
+                        'slots' => $slots,
+                    ];
+                }
+                $targets[$key]['slots'][$newSlot] = $newLabel;
+            }
+        }
+
+        $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+        $warnings = [];
+        foreach ($targets as $target) {
+            $count = count($target['slots']);
+            if ($count <= self::MAX_EXAMS_PER_DAY) {
+                continue;
+            }
+            $programName = (new Program())->find($target['program_id'])?->name ?? '';
+            $classLabel = $target['semester_no'] ? getClassFromSemesterNo($target['semester_no']) . ". Sınıf" : '';
+            $dayName = $days[$target['day_index']] ?? 'Bu gün';
+            $names = implode(', ', array_filter($target['slots']));
+            $warnings[] = trim("{$programName} {$classLabel}") . ": {$dayName} günü {$count} sınav olacak"
+                . ($names !== '' ? " ({$names})" : '')
+                . ". Yönetmeliğe göre bir günde en fazla " . self::MAX_EXAMS_PER_DAY . " sınav yapılabilir.";
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * Bir sınavdan etkilenen benzersiz program (program_id + semester_no) listesini döner.
+     * saveExamScheduleItems'taki program owner belirleme mantığıyla aynıdır
+     * (exam parent, gruplu dersler ve sınav birleştirmeleri).
+     *
+     * @return array<int, array{program_id: int, semester_no: int}>
+     */
+    private function resolveExamPrograms(Lesson $lesson): array
+    {
+        $mainLesson = !empty($lesson->examParentLesson) ? $lesson->examParentLesson : $lesson;
+
+        $lessons = [$mainLesson];
+        if ($mainLesson->group_no > 0) {
+            $siblings = (new Lesson())->get()->where([
+                'code' => $mainLesson->code,
+                'program_id' => $mainLesson->program_id,
+                'semester_no' => $mainLesson->semester_no,
+                'group_no' => ['>' => 0],
+                'id' => ['!=' => $mainLesson->id]
+            ])->with(['examChildLessons'])->all();
+            $lessons = array_merge($lessons, $siblings);
+        }
+
+        $programs = [];
+        foreach ($lessons as $l) {
+            $programs["{$l->program_id}|{$l->semester_no}"] = ['program_id' => (int) $l->program_id, 'semester_no' => (int) $l->semester_no];
+            foreach ($l->examChildLessons ?? [] as $child) {
+                $programs["{$child->program_id}|{$child->semester_no}"] = ['program_id' => (int) $child->program_id, 'semester_no' => (int) $child->semester_no];
+            }
+        }
+
+        return array_values($programs);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

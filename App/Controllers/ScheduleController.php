@@ -508,6 +508,30 @@ class ScheduleController extends Controller
     }
 
     /**
+     * Sınav eklenmeden/taşınmadan önce günlük sınav sınırı (yönetmelik) uyarılarını döner.
+     * Engelleyici değildir; yalnızca uyarı mesajları üretir.
+     */
+    public function checkExamDailyLimit(array $requestData): array
+    {
+        $items = json_decode($requestData['items'] ?? '[]', true);
+        $deletedItems = json_decode($requestData['deleted_items'] ?? '[]', true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                "status" => "error",
+                "msg" => "Geçersiz veri formatı",
+            ];
+        }
+
+        $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
+        $deletedDtos = (new ScheduleItemValidator())->getBatchDTO($deletedItems);
+
+        return [
+            "status" => "success",
+            "warnings" => (new ExamScheduleService())->checkDailyExamLimit($dtos, $deletedDtos),
+        ];
+    }
+
+    /**
      * Sınav programı öğelerini taşıma isteği (tek işlemde sil ve ekle)
      */
     public function moveExamScheduleItems(array $requestData): array

@@ -818,7 +818,40 @@ class ExamScheduleCard extends ScheduleCard {
         };
     }
 
+    /**
+     * Bir programda günde en fazla 2 sınav yapılabilir (yönetmelik). Esnek kontrol:
+     * sınır aşılıyorsa uyarı gösterilir, kullanıcı onaylarsa işlem devam eder.
+     * @returns {Promise<boolean>} İşleme devam edilecekse true
+     */
+    async confirmDailyExamLimit(scheduleItems, deletedItems = []) {
+        try {
+            let data = new FormData();
+            data.append('items', JSON.stringify(scheduleItems));
+            data.append('deleted_items', JSON.stringify(deletedItems));
+
+            const response = await fetch("/ajax/checkExamDailyLimit", {
+                method: "POST",
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data
+            });
+            const result = await response.json();
+
+            if (result.status !== "success" || !result.warnings?.length) {
+                return true;
+            }
+            return confirm(result.warnings.join("\n\n") + "\n\nYine de devam etmek istiyor musunuz?");
+        } catch (error) {
+            // Uyarı kontrolü başarısız olursa kaydı engelleme (esnek kural)
+            console.error("confirmDailyExamLimit error:", error);
+            return true;
+        }
+    }
+
     async saveScheduleItems(scheduleItems) {
+        if (!await this.confirmDailyExamLimit(scheduleItems)) {
+            return false;
+        }
+
         let data = new FormData();
         data.append('items', JSON.stringify(scheduleItems));
 
@@ -844,6 +877,10 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     async moveScheduleItems(scheduleItems, deletedItems) {
+        if (!await this.confirmDailyExamLimit(scheduleItems, deletedItems)) {
+            return false;
+        }
+
         let data = new FormData();
         data.append('items', JSON.stringify(scheduleItems));
         data.append('deleted_items', JSON.stringify(deletedItems));

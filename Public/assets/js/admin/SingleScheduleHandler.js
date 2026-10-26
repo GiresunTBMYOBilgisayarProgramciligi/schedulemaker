@@ -466,6 +466,10 @@ class SingleScheduleHandler {
             const isExam = this.ScheduleCard.type === 'exam';
             const url = isExam ? '/ajax/moveExamScheduleItems' : '/ajax/moveScheduleItems';
 
+            if (isExam && !(await this.ScheduleCard.confirmDailyExamLimit(items, deletedItems))) {
+                return false;
+            }
+
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData,
