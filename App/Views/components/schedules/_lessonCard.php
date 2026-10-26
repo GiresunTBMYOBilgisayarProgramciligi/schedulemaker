@@ -70,13 +70,22 @@ $isClassroomSchedule = ($schedule->owner_type === OwnerType::CLASSROOM->value);
 $isProgramSchedule = ($schedule->owner_type === OwnerType::PROGRAM->value);
 
 $groupLetter = $slotData->lesson->getGroupLetter();
+// Birleştirilmiş grup kardeşleri (hoca programı): Grup A, B
+$groupLabel = $scheduleItem->getGroupLabel($slotData->lesson);
 
 $fullLessonTitle = ($type === 'exam')
     ? (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true) : $slotData->lesson->getFullName())
     : (($schedule->owner_type !== 'program') ? $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: true) : $slotData->lesson->getFullName(addGroup: true));
 
+// Gözetmenlik görevi: hocanın kendi user programındaki, ders sahibi olmayan sınav kaydı
+$isObserverDuty = $type === 'exam' && $isUserSchedule
+    && ($scheduleItem->detail['reference_type'] ?? null) === 'exam_assignment';
+
+// Gözetmen olunan sınavın ders hocası (ExamScheduleService tarafından işlenir)
+$lessonLecturerName = $isObserverDuty ? ($scheduleItem->detail['lesson_lecturer'] ?? null) : null;
+
 $lessonDisplayName = ($type === 'exam')
-    ? (($isUserSchedule || $isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName() : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true))
+    ? (($isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName() : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true))
     : (($isUserSchedule || $isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName(addGroup: false) : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: false));
 
 $programInfo = null;
@@ -101,9 +110,13 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
             </span>
         </div>
 
+        <?php if ($isObserverDuty): ?>
+            <span class="badge text-bg-warning flex-shrink-0" title="Bu sınavda gözetmen olarak görevlisiniz">Gözetmenlik</span>
+        <?php endif; ?>
+
         <?php if ($groupLetter !== null): ?>
-            <span class="badge lesson-group-badge lesson-group-badge-<?= e(strtolower($groupLetter)) ?> flex-shrink-0" title="Grup <?= e($groupLetter) ?>">
-                Grup <?= e($groupLetter) ?>
+            <span class="badge lesson-group-badge lesson-group-badge-<?= e(strtolower($groupLetter)) ?> flex-shrink-0" title="Grup <?= e($groupLabel) ?>">
+                Grup <?= e($groupLabel) ?>
             </span>
         <?php endif; ?>
     </div>
@@ -150,6 +163,18 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                         </span>
                     <?php endif; ?>
                 </div>
+            <?php elseif (!empty($lessonLecturerName)): ?>
+                <?php // Gözetmenlik: ders hocası ve sınav salonu ayrı satırlarda gösterilir ?>
+                <div class="d-flex flex-column w-100 gap-1 lesson-meta-observer-duty">
+                    <span class="lesson-lecturer text-truncate" title="Ders hocası: <?= e($lessonLecturerName) ?>">
+                        <i class="bi bi-person-badge me-1 opacity-75"></i>Hoca: <?= e($lessonLecturerName) ?>
+                    </span>
+                    <?php if (!empty(($slotData->classroom ?? null)?->name)): ?>
+                        <span class="lesson-classroom text-truncate" title="Sınav salonu: <?= e($slotData->classroom->name) ?>">
+                            <i class="bi bi-door-open me-1 opacity-75"></i>Salon: <strong><?= e($slotData->classroom->name) ?></strong>
+                        </span>
+                    <?php endif; ?>
+                </div>
             <?php else: ?>
                 <div class="d-flex align-items-center justify-content-between w-100 lesson-meta-row">
                     <?php if ($isUserSchedule && !empty($programInfo)): ?>
@@ -172,7 +197,7 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                 </div>
             <?php endif; ?>
         <?php endif; ?>
-        <?php if (!$isOnlyTable && !($schedule->owner_type == OwnerType::USER->value && $type == "exam")): ?>
+        <?php if (!$isOnlyTable && !$isObserverDuty): ?>
             <?= View::renderComponent('schedules/_childLessons', [
                 'slotData' => $slotData,
                 'type' => $type

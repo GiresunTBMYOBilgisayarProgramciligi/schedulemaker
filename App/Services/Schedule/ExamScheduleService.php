@@ -3,9 +3,14 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
+use App\Core\Gate;
 use App\DTOs\DeleteScheduleResult;
 use App\Enums\ExamType;
+use App\Enums\OwnerType;
+use App\Enums\PermissionType;
 use App\Models\Lesson;
+use App\Models\LessonCombination;
+use App\Repositories\LessonAssignmentRepository;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\DTOs\ScheduleItemDTO;
@@ -20,6 +25,237 @@ use Exception;
 class ExamScheduleService extends ScheduleService
 {
     // EXAM_TYPES sabiti yerine ExamType enum kullanılacak
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Hoca Sınav Görünümü
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Filtreye uyan programı itemlarıyla yükler (görüntüleme ve dışa aktarma için ortak giriş noktası).
+     *
+     * Hoca (user) sınav programı istenirse hocanın dersleri ve gözetmenlik görevleri birleştirilir
+     * (bkz. getLecturerExamSchedule); diğer tüm programlar olduğu gibi döner.
+     * Hocanın henüz user programı kaydı yoksa kaydedilmemiş geçici bir program üzerinden birleştirilir.
+     *
+     * @param array $filter owner_type, owner_id, semester, academic_year, type ... alanlı Schedule filtresi
+     * @throws Exception
+     */
+    public function findScheduleWithItems(array $filter): ?Schedule
+    {
+        $schedule = (new Schedule())->get()->where($filter)->with('items')->first();
+
+        $isLecturerExam = ($filter['owner_type'] ?? null) === OwnerType::USER->value
+            && ExamType::isExamType((string)($filter['type'] ?? ''));
+        if (!$isLecturerExam) {
+            return $schedule;
+        }
+
+        if (!$schedule) {
+            $schedule = new Schedule();
+            $schedule->owner_type = OwnerType::USER->value;
+            $schedule->owner_id = (int)$filter['owner_id'];
+            $schedule->semester = $filter['semester'] ?? null;
+            $schedule->academic_year = $filter['academic_year'] ?? null;
+            $schedule->type = $filter['type'];
+            $schedule->semester_no = 0;
+        }
+        return $this->getLecturerExamSchedule($schedule);
+    }
+
+    /**
+     * Hocanın profilinde gösterilecek birleşik sınav programını hazırlar (kaydedilmez).
+     *
+     * İçerik:
+     * - Hocanın o dönem verdiği derslerin sınav kayıtları (gözetmen/salon bilgisiyle, hoca gözetmen olmasa da)
+     * - Hocanın gözetmenlik görevleri (kendi user programı)
+     *
+     * Mükerrer önleme:
+     * - Sınav birleştirmesinde child dersler parent'a çevrilir (child bilgisi kartta görünür)
+     * - Grup kardeşleri (aynı kod/program/yarıyıl) aynı slotta tek kayıt olur, harfleri detail['group_letters'] alanında taşınır
+     * - Aynı slottaki bağlantısız dersler (ör. farklı binadaki programlar) ayrı kayıt kalır
+     * - Hoca kendi dersinin (veya grup kardeşinin) gözetmeni ise aynı sınavın gözetmenlik kaydı atlanır
+     *
+     * @param Schedule $schedule Hocanın (owner_type=user) sınav programı
+     * @return Schedule Aynı program; items alanı birleşik kayıtlarla değiştirilmiştir
+     * @throws Exception
+     */
+    public function getLecturerExamSchedule(Schedule $schedule): Schedule
+    {
+        $semester = $schedule->semester;
+        $academicYear = $schedule->academic_year;
+        $schedule->items = $schedule->id
+            ? (new ScheduleItem())->get()->where(['schedule_id' => $schedule->id])->all()
+            : [];
+
+        $assignments = (new LessonAssignmentRepository())->findByLecturer($schedule->owner_id, $semester, $academicYear);
+        $taughtIds = array_values(array_unique(array_filter(array_map(fn($a) => (int)$a->lesson_id, $assignments))));
+        $observerLessonIds = array_values(array_unique(array_filter(
+            array_map(fn(ScheduleItem $item) => (int)($item->data[0]['lesson_id'] ?? 0), $schedule->items)
+        )));
+
+        $taughtParentMap = $this->mapToExamParents($taughtIds, $semester, $academicYear);
+        $observerParentMap = $this->mapToExamParents($observerLessonIds, $semester, $academicYear);
+        $lessons = $this->indexLessons(array_merge(array_values($taughtParentMap), array_values($observerParentMap)));
+
+        // Hocanın dersleri: slot başına tek kayıt
+        $ownItems = [];
+        $ownIdentities = [];
+        $itemLessonIds = [];
+        foreach ($this->getVisibleLessonExamItems($schedule, array_values(array_unique($taughtParentMap))) as [$lessonId, $item]) {
+            $slot = $this->examSlotKey($item);
+            $itemLessonIds[$slot . '|' . $this->examIdentity($lessonId, $lessons)][] = [$lessonId, $item];
+        }
+        foreach ($itemLessonIds as $entries) {
+            $slot = $this->examSlotKey($entries[0][1]);
+            usort($entries, fn($x, $y) => $x[0] <=> $y[0]);
+            [, $item] = $entries[0];
+            $letters = [];
+            foreach ($entries as [$lessonId]) {
+                $ownIdentities[$this->examIdentity($lessonId, $lessons) . '|' . $slot] = true;
+                $letter = isset($lessons[$lessonId]) ? $lessons[$lessonId]->getGroupLetter() : null;
+                if ($letter !== null) {
+                    $letters[$letter] = $letter;
+                }
+            }
+            if (count($letters) > 1) {
+                ksort($letters);
+                $item->detail = ['group_letters' => array_values($letters)] + ($item->detail ?? []);
+            }
+            $ownItems[] = $item;
+        }
+
+        // Gözetmenlik kayıtları: hocanın kendi dersine ait olanlar zaten ders kaydında görünür
+        $observerItems = array_filter($schedule->items, function (ScheduleItem $item) use ($ownIdentities, $observerParentMap, $lessons) {
+            $lessonId = (int)($item->data[0]['lesson_id'] ?? 0);
+            $resolvedId = $observerParentMap[$lessonId] ?? $lessonId;
+            return !isset($ownIdentities[$this->examIdentity($resolvedId, $lessons) . '|' . $this->examSlotKey($item)]);
+        });
+
+        $this->attachLessonLecturerNames($observerItems, $observerLessonIds, $semester, $academicYear);
+
+        $schedule->items = array_values(array_merge($ownItems, $observerItems));
+        return $schedule;
+    }
+
+    /**
+     * Gözetmenlik kayıtlarına sınavı yapılan dersin hocasını detail['lesson_lecturer'] olarak ekler (kaydedilmez).
+     *
+     * @param ScheduleItem[] $items
+     * @param int[] $lessonIds
+     * @throws Exception
+     */
+    private function attachLessonLecturerNames(array $items, array $lessonIds, string $semester, string $academicYear): void
+    {
+        if (empty($items) || empty($lessonIds)) {
+            return;
+        }
+        $lecturerNames = [];
+        $lessonsWithLecturer = (new Lesson())->get()->where(['id' => ['in' => $lessonIds]])
+            ->with(['lecturer' => ['semester' => $semester, 'academic_year' => $academicYear]])->all();
+        foreach ($lessonsWithLecturer as $lesson) {
+            if ($lesson->lecturer) {
+                $lecturerNames[(int)$lesson->id] = $lesson->lecturer->getFullName();
+            }
+        }
+        foreach ($items as $item) {
+            $name = $lecturerNames[(int)($item->data[0]['lesson_id'] ?? 0)] ?? null;
+            if ($name !== null) {
+                $item->detail = ($item->detail ?? []) + ['lesson_lecturer' => $name];
+            }
+        }
+    }
+
+    /**
+     * Verilen dersler (parent id'ler) için görüntüleme yetkisi olan lesson sahipli sınav kayıtlarını döner.
+     *
+     * @param int[] $parentIds
+     * @return array<int,array{0:int,1:ScheduleItem}> [[lesson_id, item], ...]
+     * @throws Exception
+     */
+    private function getVisibleLessonExamItems(Schedule $schedule, array $parentIds): array
+    {
+        if (empty($parentIds)) {
+            return [];
+        }
+        $lessonSchedules = $this->scheduleRepo->findMultipleByOwners(
+            array_map(fn($id) => ['owner_type' => 'lesson', 'owner_id' => $id], $parentIds),
+            $schedule->semester,
+            $schedule->academic_year,
+            $schedule->type
+        );
+        $visibleIds = [];
+        foreach ($lessonSchedules as $lessonSchedule) {
+            if (Gate::check(PermissionType::VIEW->value, $lessonSchedule)) {
+                $visibleIds[$lessonSchedule->id] = (int)$lessonSchedule->owner_id;
+            }
+        }
+        if (empty($visibleIds)) {
+            return [];
+        }
+        $items = (new ScheduleItem())->get()->where(['schedule_id' => ['in' => array_keys($visibleIds)]])->all();
+        return array_map(fn(ScheduleItem $item) => [$visibleIds[$item->schedule_id], $item], $items);
+    }
+
+    /**
+     * @param int[] $lessonIds
+     * @return array<int,Lesson> id => Lesson
+     * @throws Exception
+     */
+    private function indexLessons(array $lessonIds): array
+    {
+        $lessonIds = array_values(array_unique($lessonIds));
+        if (empty($lessonIds)) {
+            return [];
+        }
+        $indexed = [];
+        foreach ((new Lesson())->get()->where(['id' => ['in' => $lessonIds]])->all() as $lesson) {
+            $indexed[(int)$lesson->id] = $lesson;
+        }
+        return $indexed;
+    }
+
+    /**
+     * Sınav olarak aynı sayılan dersin kimliği: grup kardeşleri ortak, diğerleri ders id'siyle.
+     *
+     * @param array<int,Lesson> $lessons
+     */
+    private function examIdentity(int $lessonId, array $lessons): string
+    {
+        $lesson = $lessons[$lessonId] ?? null;
+        return ($lesson && $lesson->group_no > 0)
+            ? "g:{$lesson->code}:{$lesson->program_id}:{$lesson->semester_no}"
+            : "l:{$lessonId}";
+    }
+
+    /**
+     * Ders id'lerini sınav birleştirmesindeki parent id'lerine çevirir (birleştirilmemiş ders kendisine eşlenir).
+     *
+     * @param int[] $lessonIds
+     * @return array<int,int> [lesson_id => exam parent lesson_id]
+     * @throws Exception
+     */
+    private function mapToExamParents(array $lessonIds, string $semester, string $academicYear): array
+    {
+        $map = array_combine($lessonIds, $lessonIds) ?: [];
+        if (empty($lessonIds)) {
+            return $map;
+        }
+        $combinations = (new LessonCombination())->get()->where([
+            'child_lesson_id' => ['in' => $lessonIds],
+            'type' => 'exam',
+            'semester' => $semester,
+            'academic_year' => $academicYear,
+        ])->all();
+        foreach ($combinations as $combination) {
+            $map[(int)$combination->child_lesson_id] = (int)$combination->parent_lesson_id;
+        }
+        return $map;
+    }
+
+    private function examSlotKey(ScheduleItem $item): string
+    {
+        return "{$item->day_index}|{$item->week_index}|{$item->start_time}";
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Sınav Item Kayıt

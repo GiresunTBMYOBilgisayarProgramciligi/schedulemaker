@@ -178,6 +178,18 @@ class ScheduleItem extends Model
     }
 
     /**
+     * Grup etiketi: hoca sınav görünümünde birleştirilen grup kardeşleri için "A, B",
+     * aksi halde dersin kendi grup harfi. Grup yoksa null.
+     */
+    public function getGroupLabel(?Lesson $lesson): ?string
+    {
+        if (!empty($this->detail['group_letters'])) {
+            return implode(', ', $this->detail['group_letters']);
+        }
+        return $lesson?->getGroupLetter();
+    }
+
+    /**
      * @return string H:i formatında başlangıç saati
      */
     public function getShortStartTime(): string

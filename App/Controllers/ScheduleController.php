@@ -144,7 +144,11 @@ class ScheduleController extends Controller
 
         if ($dto->semester_no !== null) {
             // birleştirilmiş dönem veya tek dönem
-            $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);
+            // Hoca sınav programında hocanın dersleri ve gözetmenlik görevleri birleştirilir
+            $lecturerExamSchedule = ($dto->owner_type === OwnerType::USER->value && ExamType::isExamType($dto->type) && $schedule !== null)
+                ? (new ExamScheduleService())->getLecturerExamSchedule($schedule)
+                : null;
+            $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card, $lecturerExamSchedule);
         } elseif (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             // Hoca, Derslik ve Ders programları için tek bir genel program oluşturulur
             $HTMLOut .= ScheduleViewHelper::prepareScheduleCard($dto, $only_table, $preference_mode, $no_card);

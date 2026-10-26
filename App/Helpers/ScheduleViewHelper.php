@@ -482,7 +482,7 @@ class ScheduleViewHelper
      * Ders programı düzenleme sayfasında, ders profil, bölüm ve program sayfasındaki Ders program kartlarının html çıktısını oluşturur
      * @throws Exception
      */
-    public static function prepareScheduleCard(ScheduleFilterDTO $dto, bool $only_table = false, bool $preference_mode = false, bool $no_card = false): string
+    public static function prepareScheduleCard(ScheduleFilterDTO $dto, bool $only_table = false, bool $preference_mode = false, bool $no_card = false, ?Schedule $schedule = null): string
     {
         if (in_array($dto->owner_type, [OwnerType::USER->value, OwnerType::CLASSROOM->value, OwnerType::LESSON->value])) {
             $data = $dto->toArray();
@@ -491,7 +491,7 @@ class ScheduleViewHelper
         }
 
         $scheduleService = new ScheduleService();
-        $schedule = $scheduleService->getOrCreateSchedule($dto);
+        $schedule ??= $scheduleService->getOrCreateSchedule($dto);
         $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
         $scheduleRows = self::prepareScheduleRows($schedule);
 

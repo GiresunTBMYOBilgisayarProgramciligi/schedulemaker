@@ -48,12 +48,16 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                             ?>
 
                             <?php if ($scheduleItem):
+                                // Aynı hücrede birden çok kayıt olabilir (hoca profilindeki birleşik görünüm)
+                                $items = is_array($scheduleItem) ? $scheduleItem : [$scheduleItem];
+                                $firstItem = $items[0];
+                                $cellKey = implode(',', array_map(fn($it) => $it->id, $items));
                                 // Rowspan hesapla
                                 $rowSpan = 1;
-                                $itemId = $scheduleItem->id;
                                 for ($i = $rowIndex + 1; $i < $totalRows; $i++) {
-                                    $nextItem = $scheduleRows[$i]['days'][$dayIndex] ?? null;
-                                    if ($nextItem && $nextItem->id === $itemId) {
+                                    $nextCell = $scheduleRows[$i]['days'][$dayIndex] ?? null;
+                                    $nextItems = is_array($nextCell) ? $nextCell : array_filter([$nextCell]);
+                                    if ($nextItems && implode(',', array_map(fn($it) => $it->id, $nextItems)) === $cellKey) {
                                         $rowSpan++;
                                         $coveredCells[$weekIndex][$i][$dayIndex] = true;
                                     } else {
@@ -61,19 +65,28 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                     }
                                 }
 
-                                $dropZone = ($scheduleItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
+                                $dropZone = ($firstItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>
                                 <td class="<?= $dropZone ?>" rowspan="<?= (int)$rowSpan ?>"
                                     data-start-time="<?= $scheduleRow['slotStartTime']->format('H:i') ?>"
                                     data-end-time="<?= $scheduleRows[$rowIndex + $rowSpan - 1]['slotEndTime']->format('H:i') ?>"
                                     data-day-index="<?= (int) filter_var($dayIndex, FILTER_SANITIZE_NUMBER_INT) ?>"
-                                    data-schedule-item-id="<?= (int)$scheduleItem->id ?>">
+                                    data-schedule-item-id="<?= (int)$firstItem->id ?>">
 
-                                    <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
+                                    <?php $hasGroup = !empty(array_filter($items, fn($it) => $it->status === ScheduleItemStatus::GROUP->value)); ?>
+                                    <?php if ($hasGroup): ?>
                                         <div class="lesson-group-container h-100">
-                                        <?php endif; ?>
+                                    <?php endif; ?>
 
-                                        <?php if (count($scheduleItem->getSlotDatas()) > 0): ?>
-                                            <?php foreach ($scheduleItem->getSlotDatas() as $slotData):
+                                    <?php $sideBySide = count($items) > 1; ?>
+                                    <?php if ($sideBySide): ?>
+                                        <div class="d-flex gap-1 h-100 exam-cell-multi">
+                                    <?php endif; ?>
+                                    <?php foreach ($items as $item): ?>
+                                        <?php if ($sideBySide): ?>
+                                            <div class="flex-fill" style="min-width: 0; flex-basis: 0;">
+                                        <?php endif; ?>
+                                        <?php if (count($item->getSlotDatas()) > 0): ?>
+                                            <?php foreach ($item->getSlotDatas() as $slotData):
                                                 $draggable = ScheduleViewHelper::isDraggable(
                                                     $slotData,
                                                     $schedule,
@@ -81,7 +94,7 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                                     isset($preference_mode) && $preference_mode
                                                 );
                                                 echo View::renderComponent('schedules/_lessonCard', [
-                                                    'scheduleItem' => $scheduleItem,
+                                                    'scheduleItem' => $item,
                                                     'slotData' => $slotData,
                                                     'schedule' => $schedule,
                                                     'draggable' => $draggable,
@@ -92,12 +105,19 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
                                             endforeach; ?>
                                         <?php else: ?>
                                             <?= View::renderComponent('schedules/_emptySlotDummy', [
-                                                'scheduleItem' => $scheduleItem,
+                                                'scheduleItem' => $item,
                                                 'preference_mode' => $preference_mode ?? false
                                             ]) ?>
                                         <?php endif; ?>
+                                        <?php if ($sideBySide): ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                    <?php if ($sideBySide): ?>
+                                        </div>
+                                    <?php endif; ?>
 
-                                        <?php if ($scheduleItem->status === ScheduleItemStatus::GROUP->value): ?>
+                                    <?php if ($hasGroup): ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
