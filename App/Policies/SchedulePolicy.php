@@ -123,19 +123,9 @@ class SchedulePolicy extends BasePolicy
     {
         if (!$schedule->is_published) {
             if (!$user) return false;
-            if ($this->hasRole($user, UserRole::DepartmentHead)) return true;
+            // Hoca ve üstü roller (hoca, araştırma görevlisi, bölüm başkanı, yönetim) yayınlanmamış dahil tüm programları görüntüleyebilir
+            if ($this->hasRole($user, UserRole::Lecturer)) return true;
             if ($this->update($user, $schedule)) return true;
-
-            // Hocalar ve araştırma görevlileri yayından önce kontrol edebilmek için
-            // bağlı oldukları programın programını görüntüleyebilir (kendi programları update() ile zaten kapsanıyor)
-            if (
-                $schedule->owner_type === 'program'
-                && $this->hasExactRole($user, UserRole::Lecturer, UserRole::ResearchAssistant)
-                && !empty($user->program_id)
-                && (int)$schedule->owner_id === (int)$user->program_id
-            ) {
-                return true;
-            }
 
             // Sınıf programları sisteme giriş yapmış yetkili kullanıcılar tarafından görüntülenebilir
             if ($schedule->owner_type === 'classroom') {
