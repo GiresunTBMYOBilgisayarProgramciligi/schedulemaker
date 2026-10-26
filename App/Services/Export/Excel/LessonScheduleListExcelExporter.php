@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Export\Excel;
 
+use App\Services\Schedule\ExamScheduleService;
 use App\Core\Gate;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
@@ -77,10 +78,7 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
         $row = 3;
 
         foreach ($scheduleFilters as $scheduleFilter) {
-            $schedule = (new Schedule())->get()
-                ->where($scheduleFilter['filter'])
-                ->with('items')
-                ->first();
+            $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);
 
             if (!$schedule || empty($schedule->items)) {
                 continue;
@@ -212,7 +210,8 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
             $code = $lesson?->code ?? '';
 
             // Ders Adı (grup harfi dahil)
-            $lessonName = $lesson?->getFullName(addGroup: true) ?? '';
+            $groupLabel = $lesson ? $item->getGroupLabel($lesson) : null;
+            $lessonName = $lesson ? $lesson->getFullName() . ($groupLabel !== null ? " ({$groupLabel})" : '') : '';
 
             // Program/Bölüm
             $programName = '';
@@ -222,9 +221,10 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
                     $programName .= ' - ' . getClassFromSemesterNo($lesson->semester_no);
                 }
             }
-            if (!empty($lesson?->childLessons)) {
+            $childLessons = $lesson ? $this->resolveChildLessons($lesson) : [];
+            if (!empty($childLessons)) {
                 $childPrograms = [];
-                foreach ($lesson->childLessons as $child) {
+                foreach ($childLessons as $child) {
                     if ($child?->program) {
                         $childProgramStr = $child->program->name;
                         if ($lesson->semester_no) {
@@ -235,7 +235,7 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
                 }
                 if (!empty($childPrograms)) {
                     $allPrograms = array_unique(array_merge([$programName], $childPrograms));
-                    $programName = implode(', ', array_filter($allPrograms));
+                    $programName = implode("\n", array_filter($allPrograms)); // alt alta
                 }
             }
 
@@ -262,7 +262,9 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
                 ->setVertical(Alignment::VERTICAL_CENTER)
                 ->setWrapText(true);
 
-            $this->sheet->getRowDimension($row)->setRowHeight(20);
+            // Alt alta yazılan program/salon/hoca değerleri için satır yüksekliği
+            $lineCount = max(1, ...array_map(fn($v) => substr_count((string)$v, "\n") + 1, [$programName, $classroomName, $lecturerName]));
+            $this->sheet->getRowDimension($row)->setRowHeight(max(20, $lineCount * 15));
 
             $row++;
         }
@@ -280,6 +282,16 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
         }
 
         return '';
+    }
+
+    /**
+     * Program sütununda gösterilecek bağlı dersleri belirler (alt sınıflar ezebilir).
+     *
+     * @return \App\Models\Lesson[]
+     */
+    protected function resolveChildLessons(\App\Models\Lesson $lesson): array
+    {
+        return $lesson->childLessons ?? [];
     }
 
     /**

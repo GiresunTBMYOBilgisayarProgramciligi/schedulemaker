@@ -2,6 +2,7 @@
 
 namespace App\Services\Export\Excel;
 
+use App\Services\Schedule\ExamScheduleService;
 use App\Core\Gate;
 use App\Enums\ExamType;
 use App\Enums\PermissionType;
@@ -69,10 +70,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
         $row = $this->writeFileTitle($filters);
 
         foreach ($scheduleFilters as $scheduleFilter) {
-            $schedule = (new Schedule())->get()
-                ->where($scheduleFilter['filter'])
-                ->with("items")
-                ->first();
+            $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);
 
             if (!$schedule || empty($schedule->items)) {
                 continue;
@@ -295,15 +293,19 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             }
 
             // Ders Adı
-            $lessonName = $data->lesson->getFullName(addGroup: true);
+            $groupLabel = $item->getGroupLabel($data->lesson);
+            $lessonName = $data->lesson->getFullName() . ($groupLabel !== null ? " ({$groupLabel})" : '');
             if ($options->showCode && !empty($data->lesson->code)) {
                 $lessonName = "[" . $data->lesson->code . "] " . $lessonName;
             }
             $richContent->createTextRun($lessonName)->getFont()->setBold(true);
 
             // Hoca Adı (Daima dersin asıl hocası)
-            if ($options->showLecturer && $data->lesson?->lecturer) {
-                $richContent->createText("\n(" . $data->lesson->lecturer->getFullName() . ")");
+            // Gözetmenlik kayıtlarında ders hocası detail['lesson_lecturer'] içinde gelir
+            $lessonLecturerName = $data->lesson?->lecturer?->getFullName() ?? ($item->detail['lesson_lecturer'] ?? null);
+            if ($options->showLecturer && $lessonLecturerName) {
+                // Gözetmenlik kaydında ders hocası ve salon karışmasın diye etiketlenir
+                $richContent->createText("\n" . (isset($item->detail['lesson_lecturer']) ? "Hoca: " : "(") . $lessonLecturerName . (isset($item->detail['lesson_lecturer']) ? "" : ")"));
             }
 
 
@@ -320,9 +322,9 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
                         }
                     }
                 }
-                $programNamesStr = implode(', ', array_unique($programNames));
-                if ($programNamesStr) {
-                    $richContent->createText("\n(" . $programNamesStr . ")");
+                // Programlar alt alta yazılır
+                foreach (array_unique($programNames) as $programName) {
+                    $richContent->createText("\n(" . $programName . ")");
                 }
             }
 
@@ -372,7 +374,7 @@ class ExamScheduleExcelExporter extends BaseExcelExporter
             } else {
                 // B) Gözetmen/Derslik bazlı kayit: data içinde classifier bilgisi var
                 if ($scheduleType !== 'classroom' && $data->classroom) {
-                    $richContent->createText("\n");
+                    $richContent->createText(isset($item->detail['lesson_lecturer']) ? "\nSalon: " : "\n");
                     $richContent->createTextRun($data->classroom->name)->getFont()->setBold(true);
                 }
                 

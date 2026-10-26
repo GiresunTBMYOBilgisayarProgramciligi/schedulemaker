@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Export\Json;
 
+use App\Services\Schedule\ExamScheduleService;
 use App\Core\Gate;
 use App\Core\Log;
 use App\DTOs\ScheduleExportFilterDTO;
@@ -87,10 +88,7 @@ class LessonScheduleJsonExporter implements ScheduleExporterInterface
         $rows = [];
 
         foreach ($scheduleFilters as $scheduleFilter) {
-            $schedule = (new Schedule())->get()
-                ->where($scheduleFilter['filter'])
-                ->with('items')
-                ->first();
+            $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);
 
             if (!$schedule && $scheduleFilter['type'] === OwnerType::PROGRAM->value) {
                 // Schedule kaydı henüz oluşmamışsa geçici nesne oluşturulup yetki ve staj kontrolleri yürütülür

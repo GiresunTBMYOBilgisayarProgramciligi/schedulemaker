@@ -35,10 +35,25 @@ class ExamScheduleListExcelExporter extends LessonScheduleListExcelExporter
     }
 
     /**
-     * Sınavlarda salon bilgisi slot verisinde değil, ScheduleItem detail['assignments'] içindedir.
+     * Sınav programında sınav birleştirmesiyle bağlanan dersler (examChildLessons) gösterilir.
+     *
+     * @return \App\Models\Lesson[]
+     */
+    protected function resolveChildLessons(\App\Models\Lesson $lesson): array
+    {
+        return $lesson->examChildLessons ?? [];
+    }
+
+    /**
+     * Sınavlarda salon bilgisi ScheduleItem detail['assignments'] içindedir.
+     * Gözetmenlik/derslik bazlı kayıtlarda assignments yoktur, salon slot verisinden okunur.
      */
     protected function resolveClassroomName(ScheduleItem $item, object $data, string $scheduleType): string
     {
+        if (!isset($item->detail['assignments'])) {
+            return parent::resolveClassroomName($item, $data, $scheduleType);
+        }
+
         $names = [];
         foreach ($item->detail['assignments'] ?? [] as $assignment) {
             if (!empty($assignment['classroom_name'])) {
@@ -51,9 +66,15 @@ class ExamScheduleListExcelExporter extends LessonScheduleListExcelExporter
 
     /**
      * Sınavlarda hoca sütunu gözetmenleri içerir (detail['assignments'] içinden).
+     * Assignments olmayan kayıtlarda slot verisindeki gözetmen kullanılır.
      */
     protected function resolveLecturerName(ScheduleItem $item, object $data, string $scheduleType): string
     {
+        if (!isset($item->detail['assignments'])) {
+            // Gözetmenlik kaydı: sınavı yapılan dersin hocası
+            return $item->detail['lesson_lecturer'] ?? parent::resolveLecturerName($item, $data, $scheduleType);
+        }
+
         $names = [];
         foreach ($item->detail['assignments'] ?? [] as $assignment) {
             if (!empty($assignment['observers']) && is_array($assignment['observers'])) {

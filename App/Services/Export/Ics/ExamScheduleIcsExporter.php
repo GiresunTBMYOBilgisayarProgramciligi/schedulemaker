@@ -2,6 +2,7 @@
 
 namespace App\Services\Export\Ics;
 
+use App\Services\Schedule\ExamScheduleService;
 use App\Core\Gate;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
@@ -63,10 +64,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
         ];
 
         foreach ($scheduleFilters as $scheduleFilter) {
-            $schedule = (new Schedule())->get()
-                ->where($scheduleFilter['filter'])
-                ->with("items")
-                ->first();
+            $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);
 
             if (!$schedule || empty($schedule->items)) continue;
 
@@ -104,7 +102,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
                     $summaryText = "[{$typeLabel}] " . $lesson->name;
                     if (!empty($lesson->code)) $summaryText .= " ({$lesson->code})";
-                    if ($groupLetter = $lesson->getGroupLetter()) {
+                    if ($groupLetter = $scheduleItem->getGroupLabel($lesson)) {
                         $summaryText .= " (Grup {$groupLetter})";
                     }
 
@@ -150,8 +148,9 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                     }
 
                     // Hoca Adı (Daima dersin asıl hocası)
-                    if ($data->lesson?->lecturer) {
-                        $descriptionParts[] = "Hoca: " . $data->lesson->lecturer->getFullName();
+                    $lessonLecturerName = $data->lesson?->lecturer?->getFullName() ?? ($scheduleItem->detail['lesson_lecturer'] ?? null);
+                    if ($lessonLecturerName) {
+                        $descriptionParts[] = "Hoca: " . $lessonLecturerName;
                     }
 
                     if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
