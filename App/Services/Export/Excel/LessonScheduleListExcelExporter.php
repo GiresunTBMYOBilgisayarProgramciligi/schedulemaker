@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Export\Excel;
 
-use App\Services\Schedule\ExamScheduleService;
 use App\Core\Gate;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
+use App\Enums\OwnerType;
 use App\Enums\PermissionType;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Repositories\ClassroomRepository;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\RichText\RichText;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
@@ -22,35 +23,21 @@ use function App\Helpers\getSettingValue;
 /**
  * Ders programını satır bazlı liste formatında Excel olarak dışa aktarır.
  *
- * Sütunlar:
+ * Sütunlar (gösterim seçeneklerine göre bazıları çıkarılır, bkz. resolveColumns):
  *   Ders Kodu | Ders Adı | Program/Bölüm | Derslik | Hoca | Gün | Başlangıç Saati | Bitiş Saati
  */
 class LessonScheduleListExcelExporter extends BaseExcelExporter
 {
-    /** @var string[] Gün isimleri (0=Pazartesi … 6=Pazar) */
-    protected const DAYS = [
-        'Pazartesi',
-        'Salı',
-        'Çarşamba',
-        'Perşembe',
-        'Cuma',
-        'Cumartesi',
-        'Pazar',
-    ];
-
-    /** @var string[] Başlık satırı */
-    protected const HEADERS = [
-        'Ders Kodu',
-        'Ders Adı',
-        'Program/Bölüm',
-        'Derslik',
-        'Hoca',
-        'Gün',
-        'Başlangıç Saati',
-        'Bitiş Saati',
-    ];
+    /** Ortalanarak yazılan sütunlar; diğerleri sola yaslı ve satır kaydırmalı yazılır */
+    protected const CENTERED_COLUMNS = ['code', 'day', 'date', 'start', 'end'];
 
     protected string $defaultFileTitle = 'Ders Programı';
+
+    /** @var array<string, string> Çıktıdaki sütunlar: anahtar => başlık */
+    protected array $columns = [];
+
+    /** Sınav başlangıç tarihi; tanımlıysa "Gün" sütunu yerine "Tarih" sütunu yazılır */
+    protected ?\DateTime $startDate = null;
 
     /**
      * @param ScheduleExportFilterDTO  $filters     Doğrulanmış filtre DTO'su
@@ -70,15 +57,26 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
             $this->logContext()
         );
 
-        $totalCols = count(self::HEADERS);
-        $lastCol   = Coordinate::stringFromColumnIndex($totalCols);
+        // Sınav başlangıç tarihi tanımlıysa "Gün" yerine sıralanabilir gerçek tarih yazılır
+        $this->startDate = $this->resolveStartDate($filters->type ?? 'lesson');
+
+        // Tek tablo: derslik başlık çubukları yazılmaz, derslik adı ilk sütunda yer alır
+        $singleTable   = $showOptions->hideTitles && $this->isClassroomExport($filters);
+        $this->columns = $this->resolveColumns($filters, $showOptions);
+        if ($singleTable) {
+            $this->columns = ['owner' => 'Derslik'] + $this->columns;
+        }
+        $lastCol = Coordinate::stringFromColumnIndex(count($this->columns));
 
         $this->writeListFileTitle($filters, $lastCol);
 
         $row = 3;
 
+        // Tek tablo görünümünde tüm dersliklerin satırları toplanıp birlikte sıralanır
+        $singleTableEntries = [];
+
         foreach ($scheduleFilters as $scheduleFilter) {
-            $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);
+            $schedule = $this->findSchedule($scheduleFilter['filter']);
 
             if (!$schedule || empty($schedule->items)) {
                 continue;
@@ -88,25 +86,139 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
                 continue;
             }
 
-            $row = $this->writeScheduleHeader($scheduleFilter['title'], $row, $lastCol);
-            $row = $this->writeColumnHeaders($row, $lastCol);
+            // Tercih / uygun değil kayıtları dışa aktarılmaz.
+            // Staj dersleri, ızgara çıktısında olduğu gibi yalnızca program programlarında seçeneğe bağlıdır.
+            $skipInternship = !$showOptions->showInternship && $scheduleFilter['type'] === OwnerType::PROGRAM->value;
+            $items = array_filter(
+                $schedule->items,
+                fn(ScheduleItem $item) => !$item->isDummy() && !($skipInternship && $item->isInternshipOnly())
+            );
+            if (empty($items)) {
+                continue;
+            }
 
+            $this->writtenScheduleCount++;
+
+            if ($singleTable) {
+                $ownerName = $this->resolveOwnerName((int) $schedule->owner_id, $scheduleFilter['title']);
+                foreach ($items as $item) {
+                    $singleTableEntries[] = ['owner' => $ownerName, 'item' => $item, 'type' => $scheduleFilter['type']];
+                }
+                continue;
+            }
+
+            $row          = $this->writeTitleBar($scheduleFilter['title'], $row, $lastCol, 'ffbf00');
+            $row          = $this->writeColumnHeaders($row, $lastCol);
             $dataStartRow = $row;
 
-            foreach ($schedule->items as $item) {
-                /** @var ScheduleItem $item */
-                $row = $this->writeItem($item, $scheduleFilter['type'], $showOptions, $row);
+            usort($items, fn(ScheduleItem $a, ScheduleItem $b) => $this->compareItems($a, $b));
+            foreach ($items as $item) {
+                $row = $this->writeItem($item, $scheduleFilter['type'], $row);
             }
 
-            if ($row > $dataStartRow) {
-                $this->sheet->getStyle("A{$dataStartRow}:{$lastCol}" . ($row - 1))
-                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            }
-
+            $this->drawDataBorders($dataStartRow, $row, $lastCol);
             $row++;
         }
 
+        if (!empty($singleTableEntries)) {
+            usort($singleTableEntries, fn(array $a, array $b) => $this->compareItems($a['item'], $b['item'])
+                ?: strnatcmp($a['owner'], $b['owner']));
+
+            $headerRow    = $row;
+            $row          = $this->writeColumnHeaders($row, $lastCol);
+            $dataStartRow = $row;
+            foreach ($singleTableEntries as $entry) {
+                $row = $this->writeItem($entry['item'], $entry['type'], $row, $entry['owner']);
+            }
+            $this->drawDataBorders($dataStartRow, $row, $lastCol);
+
+            // Hizmetli / görevli listesi olarak kullanılırken gün veya dersliğe göre süzülebilsin
+            $this->sheet->setAutoFilter("A{$headerRow}:{$lastCol}" . ($row - 1));
+        }
+
         $this->autoSizeColumns('A', $lastCol);
+    }
+
+    /**
+     * Item'ın tarihini Excel tarih değeri olarak yazar; böylece Excel'de tarihe göre doğru sıralanır.
+     * Görünüm Türkçe gün adıyla birlikte "27.10.2026 Salı" biçimindedir.
+     */
+    private function writeDateCell(string $cell, ScheduleItem $item): void
+    {
+        $date = (clone $this->startDate)->modify('+' . ((int) $item->week_index * 7 + (int) $item->day_index) . ' days');
+        $this->sheet->setCellValue($cell, ExcelDate::PHPToExcel($date));
+        $this->sheet->getStyle($cell)->getNumberFormat()->setFormatCode('[$-41F]dd.mm.yyyy dddd');
+    }
+
+    /**
+     * Item'ları zaman sırasına göre karşılaştırır: hafta, gün, başlangıç saati.
+     */
+    private function compareItems(ScheduleItem $a, ScheduleItem $b): int
+    {
+        return [(int) $a->week_index, (int) $a->day_index, (string) $a->start_time]
+            <=> [(int) $b->week_index, (int) $b->day_index, (string) $b->start_time];
+    }
+
+    /**
+     * Veri satırlarına ($startRow .. $endRow - 1) kenarlık çizer.
+     */
+    private function drawDataBorders(int $startRow, int $endRow, string $lastCol): void
+    {
+        if ($endRow > $startRow) {
+            $this->drawBorders("A{$startRow}", $lastCol, $endRow - 1);
+        }
+    }
+
+    /**
+     * Tek tablo görünümünde "Derslik" sütununa yazılacak program sahibinin (derslik) adı.
+     */
+    private function resolveOwnerName(int $classroomId, string $fallback): string
+    {
+        return (new ClassroomRepository())->find($classroomId)?->name ?? $fallback;
+    }
+
+    /**
+     * Gösterim seçeneklerine ve çıktı türüne göre sütunları belirler (alt sınıflar ezebilir).
+     *
+     * - Ders Kodu / Program/Bölüm / Hoca: ilgili seçenek kapalıysa çıkarılır
+     * - Derslik: derslik bazlı çıktılarda derslik zaten program sahibidir, çıkarılır
+     * - Hoca: hoca bazlı ders programında hoca zaten program sahibidir, çıkarılır
+     *
+     * @return array<string, string> anahtar => başlık
+     */
+    protected function resolveColumns(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $options): array
+    {
+        $columns = [];
+        if ($options->showCode) {
+            $columns['code'] = 'Ders Kodu';
+        }
+        $columns['name'] = 'Ders Adı';
+        if ($options->showProgram) {
+            $columns['program'] = 'Program/Bölüm';
+        }
+        if (!$this->isClassroomExport($filters)) {
+            $columns['classroom'] = 'Derslik';
+        }
+        if ($options->showLecturer && $filters->owner_type !== OwnerType::USER->value) {
+            $columns['lecturer'] = 'Hoca';
+        }
+        if ($this->startDate) {
+            $columns['date'] = 'Tarih';
+        } else {
+            $columns['day'] = 'Gün';
+        }
+        $columns['start'] = 'Başlangıç Saati';
+        $columns['end']   = 'Bitiş Saati';
+
+        return $columns;
+    }
+
+    /**
+     * Filtreye uyan programı item'larıyla birlikte getirir (alt sınıflar ezebilir).
+     */
+    protected function findSchedule(array $filter): ?Schedule
+    {
+        return (new Schedule())->get()->where($filter)->with('items')->first();
     }
 
     /**
@@ -141,32 +253,11 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
     }
 
     /**
-     * Program başlık çubuğunu (turuncu bar) yazar.
-     */
-    protected function writeScheduleHeader(string $title, int $row, string $lastCol): int
-    {
-        $this->sheet->setCellValue("A{$row}", $title);
-        $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")
-            ->getFont()->setBold(true)->setSize(11);
-        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")
-            ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
-        $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")
-            ->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('ffbf00');
-
-        return $row + 1;
-    }
-
-    /**
      * Kolon başlıklarını yazar.
      */
     protected function writeColumnHeaders(int $row, string $lastCol): int
     {
-        foreach (self::HEADERS as $colIndex => $header) {
+        foreach (array_values($this->columns) as $colIndex => $header) {
             $col = Coordinate::stringFromColumnIndex($colIndex + 1);
             $this->sheet->setCellValue("{$col}{$row}", $header);
         }
@@ -194,82 +285,91 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
     protected function writeItem(
         ScheduleItem $item,
         string $scheduleType,
-        ScheduleExportOptionsDTO $options,
-        int $row
+        int $row,
+        string $ownerName = ''
     ): int {
-        $dayName   = self::DAYS[$item->day_index] ?? '';
-        $startTime = $item->getShortStartTime();
-        $endTime   = $item->getShortEndTime();
+        foreach ($item->getSlotDatas() as $data) {
+            $lineCount = 1;
+            foreach (array_keys($this->columns) as $colIndex => $key) {
+                $cell = Coordinate::stringFromColumnIndex($colIndex + 1) . $row;
 
-        $slotDatas = $item->getSlotDatas();
-
-        foreach ($slotDatas as $data) {
-            $lesson = $data->lesson;
-
-            // Ders Kodu
-            $code = $lesson?->code ?? '';
-
-            // Ders Adı (grup harfi dahil)
-            $groupLabel = $lesson ? $item->getGroupLabel($lesson) : null;
-            $lessonName = $lesson ? $lesson->getFullName() . ($groupLabel !== null ? " ({$groupLabel})" : '') : '';
-
-            // Program/Bölüm
-            $programName = '';
-            if ($lesson?->program) {
-                $programName = $lesson->program->name;
-                if ($lesson->semester_no) {
-                    $programName .= ' - ' . getClassFromSemesterNo($lesson->semester_no);
+                if ($key === 'date') {
+                    $this->writeDateCell($cell, $item);
+                    $value = '';
+                } else {
+                    // Yalnızca çıktıda yer alan sütunların değeri hesaplanır (hoca adı sorgu gerektirebilir)
+                    $value = match ($key) {
+                        'owner'     => $ownerName,
+                        'code'      => $data->lesson?->code ?? '',
+                        'name'      => $this->resolveLessonName($item, $data),
+                        'program'   => $this->resolveProgramName($data),
+                        'classroom' => $this->resolveClassroomName($item, $data, $scheduleType),
+                        'lecturer'  => $this->resolveLecturerName($item, $data, $scheduleType),
+                        'observer'  => $this->resolveObserverName($item, $data, $scheduleType),
+                        'day'       => self::DAYS[$item->day_index] ?? '',
+                        'start'     => $item->getShortStartTime(),
+                        'end'       => $item->getShortEndTime(),
+                        default     => '',
+                    };
+                    // Metin olarak yazılır; "=" ile başlayan bir ders adı formül olarak yorumlanmaz
+                    $this->sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING);
                 }
-            }
-            $childLessons = $lesson ? $this->resolveChildLessons($lesson) : [];
-            if (!empty($childLessons)) {
-                $childPrograms = [];
-                foreach ($childLessons as $child) {
-                    if ($child?->program) {
-                        $childProgramStr = $child->program->name;
-                        if ($lesson->semester_no) {
-                            $childProgramStr .= ' - ' . getClassFromSemesterNo($lesson->semester_no);
-                        }
-                        $childPrograms[] = $childProgramStr;
-                    }
+
+                $alignment = $this->sheet->getStyle($cell)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                if (in_array($key, static::CENTERED_COLUMNS, true)) {
+                    $alignment->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                } else {
+                    $alignment->setWrapText(true);
                 }
-                if (!empty($childPrograms)) {
-                    $allPrograms = array_unique(array_merge([$programName], $childPrograms));
-                    $programName = implode("\n", array_filter($allPrograms)); // alt alta
-                }
+
+                $lineCount = max($lineCount, substr_count($value, "\n") + 1);
             }
-
-            $classroomName = $this->resolveClassroomName($item, $data, $scheduleType);
-            $lecturerName  = $this->resolveLecturerName($item, $data, $scheduleType);
-
-            $this->sheet->setCellValue("A{$row}", $code);
-            $this->sheet->setCellValue("B{$row}", $lessonName);
-            $this->sheet->setCellValue("C{$row}", $programName);
-            $this->sheet->setCellValue("D{$row}", $classroomName);
-            $this->sheet->setCellValue("E{$row}", $lecturerName);
-            $this->sheet->setCellValue("F{$row}", $dayName);
-            $this->sheet->setCellValue("G{$row}", $startTime);
-            $this->sheet->setCellValue("H{$row}", $endTime);
-
-            foreach (['A', 'F', 'G', 'H'] as $centerCol) {
-                $this->sheet->getStyle("{$centerCol}{$row}")
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-            }
-            $this->sheet->getStyle("B{$row}:E{$row}")
-                ->getAlignment()
-                ->setVertical(Alignment::VERTICAL_CENTER)
-                ->setWrapText(true);
 
             // Alt alta yazılan program/salon/hoca değerleri için satır yüksekliği
-            $lineCount = max(1, ...array_map(fn($v) => substr_count((string)$v, "\n") + 1, [$programName, $classroomName, $lecturerName]));
             $this->sheet->getRowDimension($row)->setRowHeight(max(20, $lineCount * 15));
 
             $row++;
         }
 
         return $row;
+    }
+
+    /**
+     * Ders adı (grup harfi dahil).
+     */
+    protected function resolveLessonName(ScheduleItem $item, object $data): string
+    {
+        $lesson = $data->lesson;
+        if (!$lesson) {
+            return '';
+        }
+        $groupLabel = $item->getGroupLabel($lesson);
+
+        return $lesson->getFullName() . ($groupLabel !== null ? " ({$groupLabel})" : '');
+    }
+
+    /**
+     * Program/Bölüm hücresi: dersin programı ve bağlı derslerin programları alt alta.
+     */
+    protected function resolveProgramName(object $data): string
+    {
+        $lesson = $data->lesson;
+        if (!$lesson) {
+            return '';
+        }
+        $classSuffix = $lesson->semester_no ? ' - ' . getClassFromSemesterNo($lesson->semester_no) : '';
+
+        $programNames = [];
+        if ($lesson->program) {
+            $programNames[] = $lesson->program->name . $classSuffix;
+        }
+        foreach ($this->resolveChildLessons($lesson) as $child) {
+            if ($child?->program) {
+                $programNames[] = $child->program->name . $classSuffix;
+            }
+        }
+
+        return implode("\n", array_unique($programNames));
     }
 
     /**
@@ -303,6 +403,14 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
             return $data->lecturer->getFullName();
         }
 
+        return '';
+    }
+
+    /**
+     * Gözetmen hücresi değerini belirler. Ders programında gözetmen yoktur (alt sınıflar ezebilir).
+     */
+    protected function resolveObserverName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
         return '';
     }
 

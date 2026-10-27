@@ -4,7 +4,6 @@ namespace App\Services\Export\Excel;
 
 use App\Core\Gate;
 use App\Enums\PermissionType;
-use App\Enums\ScheduleItemStatus;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Middlewares\AuthMiddleware;
@@ -15,8 +14,6 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
-use App\Enums\LessonType;
-use App\Enums\OwnerType;
 use function App\Helpers\getClassFromSemesterNo;
 use function App\Helpers\getSettingValue;
 use App\Helpers\ScheduleViewHelper;
@@ -24,7 +21,7 @@ use App\Helpers\ScheduleViewHelper;
 /**
  * Ders programını Excel formatında dışa aktarır.
  */
-class LessonScheduleExcelExporter extends BaseExcelExporter
+class LessonScheduleExcelExporter extends BaseGridExcelExporter
 {
     /**
      * @param ScheduleExportFilterDTO $filters     Doğrulanmış filtre DTO'su
@@ -43,14 +40,15 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
             $this->logContext()
         );
 
-        $type        = 'lesson';
-        $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
-        $isClassroom = in_array($filters->owner_type, [OwnerType::CLASSROOM->value, 'classroom_unit', 'building'], true);
+        $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
+        // Sütun düzeni dosya başlığıyla (writeFileTitle) aynı kuraldan türetilir
+        $isClassroom = $this->isClassroomExport($filters);
         $colsPerDay  = $isClassroom ? 1 : 2;
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
+        $dayTitles   = array_slice(self::DAYS, 0, $maxDayIndex + 1);
 
-        $row         = $this->writeFileTitle($filters);
+        $row = $this->writeFileTitle($filters);
 
         foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new Schedule())->get()
@@ -66,242 +64,96 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
                 continue;
             }
 
-            // Staj dersleri özeti (ana ızgarayı şişirmemek için alt tablo olarak yazılır, misafir/public kullanıcılara gösterilmez)
-            $currentUser = AuthMiddleware::user();
-            $canViewInternship = ($currentUser !== null) && (
-                Gate::check(PermissionType::UPDATE->value, $schedule) || 
-                Gate::check(PermissionType::VIEW->value, $schedule)
-            );
-            $internshipSummary = ($canViewInternship && $showOptions->showInternship) ? ScheduleViewHelper::getInternshipSummary($schedule) : [];
+            $this->writtenScheduleCount++;
 
-            $maxDayIndex = getSettingValue('maxDayIndex', 'lesson', 4);
-            $scheduleRows = ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex);
+            // Staj dersleri özeti (ana ızgarayı şişirmemek için alt tablo olarak yazılır, misafir/public kullanıcılara gösterilmez)
+            $internshipSummary = (AuthMiddleware::user() !== null && $showOptions->showInternship)
+                ? ScheduleViewHelper::getInternshipSummary($schedule)
+                : [];
+
+            // Tercih / uygun değil kayıtları dışa aktarılmaz
+            $scheduleRows = ScheduleViewHelper::stripDummyItems(
+                ScheduleViewHelper::prepareScheduleRows($schedule, $maxDayIndex)
+            );
 
             foreach ($scheduleRows as $weekIndex => $slots) {
-                $isClassroom = ($scheduleFilter['type'] === 'classroom');
-                $colsPerDay  = $isClassroom ? 1 : 2;
-                $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
-                $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
-
                 if ($weekIndex > 0) {
-                    $row += 1;
-                    $this->sheet->setCellValue("A{$row}", ($weekIndex + 1) . ". HAFTA");
-                    $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-                    $this->sheet->getStyle("A{$row}")->getFont()->setBold(true);
-                    $row++;
+                    $row = $this->writeWeekHeader($weekIndex, $row, $lastCol);
                 }
 
                 // Program başlığı (turuncu bar)
-                $this->sheet->setCellValue("A{$row}", $scheduleFilter['title']);
-                $this->sheet->getStyle("A{$row}")->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $this->sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true)->setSize(11);
-                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
-                    ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('ffbf00');
+                $row = $this->writeTitleBar($scheduleFilter['title'], $row, $lastCol, 'ffbf00');
 
-                $firstCell = "A" . ($row + 1);
-                $row++;
-
-                // Gün başlıkları
-                $days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-                $this->sheet->setCellValue("A{$row}", "Saat");
-
-                for ($i = 0; $i <= $maxDayIndex; $i++) {
-                    $colIdx = $i * $colsPerDay + 2;
-                    $col    = Coordinate::stringFromColumnIndex($colIdx);
-                    $this->sheet->setCellValue("{$col}{$row}", $days[$i]);
-                    $this->sheet->getStyle("{$col}{$row}")->getAlignment()
-                        ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                        ->setVertical(Alignment::VERTICAL_CENTER);
-
-                    if (!$isClassroom) {
-                        $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
-                        $this->sheet->setCellValue("{$sCol}{$row}", "S");
-                        $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()
-                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                            ->setVertical(Alignment::VERTICAL_CENTER);
-                        $this->sheet->getColumnDimension($sCol)->setWidth(8);
-                    }
-                }
-
-                $this->sheet->getColumnDimension('A')->setWidth(12);
-                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
-                $this->sheet->getStyle("A{$row}:{$lastCol}{$row}")->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $row++;
+                $firstCell = "A{$row}";
+                $row = $this->writeDayHeaderRow($dayTitles, $row, $lastCol, $colsPerDay, !$isClassroom);
 
                 // Slot satırları
                 $coveredCells = [];
-                $totalRows = count($slots);
-                
+
                 foreach ($slots as $rowIndex => $slot) {
                     $slotStart = $slot['slotStartTime']->format('H:i');
 
                     // Öğle Arası: 12:00 başlangıçlı slot birleştirilmiş tek satır olarak gösterilir
                     if ($slotStart === '12:00') {
-                        $lunchEndTime = (clone $slot['slotEndTime'])->modify('+10 minutes')->format('H:i');
-                        $timeLabel    = $slotStart . ' - ' . $lunchEndTime;
-
-                        $this->sheet->setCellValue("A{$row}", $timeLabel);
-                        $this->sheet->getStyle("A{$row}")->getAlignment()
-                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                            ->setVertical(Alignment::VERTICAL_CENTER);
-
-                        // İçerik hücresi: 2. sütundan son sütuna kadar birleştir
-                        $contentStartCol = Coordinate::stringFromColumnIndex(2);
-                        $this->sheet->setCellValue("{$contentStartCol}{$row}", 'ÖĞLE ARASI');
-                        $this->sheet->mergeCells("{$contentStartCol}{$row}:{$lastCol}{$row}");
-
-                        // Stil: arka plan rengi + hizalama + bold
-                        $lunchStyle = "A{$row}:{$lastCol}{$row}";
-                        $this->sheet->getStyle($lunchStyle)->getFill()
-                            ->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setRGB('B8D4E8'); // Açık mavi tonu
-                        $this->sheet->getStyle($lunchStyle)->getFont()
-                            ->setBold(true)
-                            ->setItalic(true);
-                        $this->sheet->getStyle($lunchStyle)->getAlignment()
-                            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                            ->setVertical(Alignment::VERTICAL_CENTER);
-                        $this->sheet->getStyle("A{$row}")->getFont()->setItalic(false);
-                        $this->sheet->getRowDimension($row)->setRowHeight(20);
-
+                        $this->writeLunchRow($slot, $row, $lastCol);
                         $row++;
                         continue;
                     }
 
-                    $timeLabel = $slotStart . " - " . $slot['slotEndTime']->format('H:i');
-                    $this->sheet->setCellValue("A{$row}", $timeLabel);
+                    $this->sheet->setCellValue("A{$row}", $slotStart . " - " . $slot['slotEndTime']->format('H:i'));
                     $this->sheet->getStyle("A{$row}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                         ->setVertical(Alignment::VERTICAL_CENTER);
 
                     for ($i = 0; $i <= $maxDayIndex; $i++) {
-                        $colIdx = $i * $colsPerDay + 2;
-                        $col    = Coordinate::stringFromColumnIndex($colIdx);
-                        $dayKey = 'day' . $i;
-
-                        if (isset($coveredCells[$weekIndex][$rowIndex][$i])) {
+                        if (isset($coveredCells[$rowIndex][$i])) {
                             continue;
                         }
 
-                        if (isset($slot['days'][$dayKey]) && $slot['days'][$dayKey] !== null) {
-                            $cellData = $slot['days'][$dayKey];
-                            $items = is_array($cellData) ? $cellData : [$cellData];
+                        $colIdx = $i * $colsPerDay + 2;
+                        $col    = Coordinate::stringFromColumnIndex($colIdx);
+                        $items  = $this->cellItems($slot['days']['day' . $i] ?? null);
 
-                            // Satır birleştirme hesaplama
-                            $rowSpan = 1;
-                            $firstItem = $items[0];
-                            $itemEndTime = $firstItem->getShortEndTime();
-
-                            for ($j = $rowIndex + 1; $j < $totalRows; $j++) {
-                                $nextSlot = $slots[$j];
-                                $nextSlotStart = $nextSlot['slotStartTime']->format('H:i');
-
-                                if ($nextSlotStart < $itemEndTime) {
-                                    $nextCellData = $nextSlot['days'][$dayKey] ?? null;
-                                    $isSame = false;
-                                    if ($nextCellData) {
-                                        $nextItems = is_array($nextCellData) ? $nextCellData : [$nextCellData];
-                                        if (count($nextItems) === count($items)) {
-                                            $sameCount = 0;
-                                            foreach ($items as $it) {
-                                                foreach ($nextItems as $nit) {
-                                                    if ($it->id === $nit->id) {
-                                                        $sameCount++;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                            if ($sameCount === count($items)) {
-                                                $isSame = true;
-                                            }
-                                        }
-                                    }
-
-                                    if ($isSame) {
-                                        $rowSpan++;
-                                        $coveredCells[$weekIndex][$j][$i] = true;
-                                    } else {
-                                        break;
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            $combinedContent  = new RichText();
-                            $combinedClassroom = new RichText();
-                            $combinedContent->createText("\n");
-                            $combinedClassroom->createText("\n");
-
-                            foreach ($items as $idx => $item) {
-                                $this->formatItem(
-                                    $item,
-                                    $scheduleFilter['type'],
-                                    $showOptions,
-                                    $combinedContent,
-                                    $combinedClassroom,
-                                    $idx > 0
-                                );
-                            }
-
-                            $combinedContent->createText("\n");
-                            $combinedClassroom->createText("\n");
-
-                            $this->sheet->setCellValue("{$col}{$row}", $combinedContent);
-                            if ($rowSpan > 1) {
-                                $this->sheet->mergeCells("{$col}{$row}:{$col}" . ($row + $rowSpan - 1));
-                            }
-
-                            if (!$isClassroom) {
-                                $sCol = Coordinate::stringFromColumnIndex($colIdx + 1);
-                                $this->sheet->setCellValue("{$sCol}{$row}", $combinedClassroom);
-                                $this->sheet->getStyle("{$sCol}{$row}")->getAlignment()
-                                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                                    ->setVertical(Alignment::VERTICAL_CENTER)
-                                    ->setWrapText(true);
-                                    
-                                if ($rowSpan > 1) {
-                                    $this->sheet->mergeCells("{$sCol}{$row}:{$sCol}" . ($row + $rowSpan - 1));
-                                }
-                            }
-                            
-                            // Yükseklik hesaplaması
-                            $lines = substr_count($combinedContent->getPlainText(), "\n") + 1;
-                            $requiredHeight = $lines * 14; 
-                            $heightPerRow = ceil($requiredHeight / $rowSpan);
-                            
-                            if ($heightPerRow > 15) {
-                                for ($r = 0; $r < $rowSpan; $r++) {
-                                    $currentHeight = $this->sheet->getRowDimension($row + $r)->getRowHeight();
-                                    if ($currentHeight === -1 || $currentHeight < $heightPerRow) {
-                                        $this->sheet->getRowDimension($row + $r)->setRowHeight($heightPerRow);
-                                    }
-                                }
-                            }
+                        if (empty($items)) {
+                            continue;
                         }
 
-                        if (!isset($coveredCells[$weekIndex][$rowIndex][$i])) {
-                            $this->sheet->getStyle("{$col}{$row}")->getAlignment()
-                                ->setWrapText(true)
-                                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                                ->setVertical(Alignment::VERTICAL_CENTER);
+                        $rowSpan = $this->calculateRowSpan($slots, $rowIndex, $i, $items, $coveredCells);
+
+                        $combinedContent   = new RichText();
+                        $combinedClassroom = new RichText();
+                        $combinedContent->createText("\n");
+                        $combinedClassroom->createText("\n");
+
+                        foreach ($items as $idx => $item) {
+                            $this->formatItem(
+                                $item,
+                                $scheduleFilter['type'],
+                                $showOptions,
+                                $combinedContent,
+                                $combinedClassroom,
+                                $idx > 0
+                            );
                         }
+
+                        $combinedContent->createText("\n");
+                        $combinedClassroom->createText("\n");
+
+                        $this->writeMergedCell($col, $row, $rowSpan, $combinedContent);
+                        if (!$isClassroom) {
+                            $this->writeMergedCell(Coordinate::stringFromColumnIndex($colIdx + 1), $row, $rowSpan, $combinedClassroom);
+                        }
+
+                        $this->fitRowHeight($row, $rowSpan, $combinedContent->getPlainText());
                     }
 
                     $row++;
                 }
 
-                // Kenarlıklar
-                $this->sheet->getStyle($firstCell . ":" . $lastCol . ($row - 1))
-                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                $this->drawBorders($firstCell, $lastCol, $row - 1);
 
                 // Staj dersleri varsa ve seçeneklerde aktifse alt tablo olarak ekle
-                if ($showOptions->showInternship && !empty($internshipSummary)) {
+                if (!empty($internshipSummary)) {
                     $row = $this->writeInternshipTable($internshipSummary, $row, $lastCol);
                 }
 
@@ -310,6 +162,33 @@ class LessonScheduleExcelExporter extends BaseExcelExporter
         }
 
         $this->autoSizeColumns('A', $lastCol);
+    }
+
+    /**
+     * Öğle arası satırını (tüm gün sütunları birleştirilmiş) yazar.
+     */
+    private function writeLunchRow(array $slot, int $row, string $lastCol): void
+    {
+        $lunchEndTime = (clone $slot['slotEndTime'])->modify('+10 minutes')->format('H:i');
+        $this->sheet->setCellValue("A{$row}", $slot['slotStartTime']->format('H:i') . ' - ' . $lunchEndTime);
+
+        // İçerik hücresi: 2. sütundan son sütuna kadar birleştir
+        $this->sheet->setCellValue("B{$row}", 'ÖĞLE ARASI');
+        $this->sheet->mergeCells("B{$row}:{$lastCol}{$row}");
+
+        // Stil: arka plan rengi + hizalama + bold
+        $lunchStyle = "A{$row}:{$lastCol}{$row}";
+        $this->sheet->getStyle($lunchStyle)->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('B8D4E8'); // Açık mavi tonu
+        $this->sheet->getStyle($lunchStyle)->getFont()
+            ->setBold(true)
+            ->setItalic(true);
+        $this->sheet->getStyle($lunchStyle)->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle("A{$row}")->getFont()->setItalic(false);
+        $this->sheet->getRowDimension($row)->setRowHeight(20);
     }
 
     /**

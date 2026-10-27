@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Core\Model;
+use App\Enums\LessonType;
+use App\Enums\ScheduleItemStatus;
 use function App\Helpers\getSettingValue;
 
 class ScheduleItem extends Model
@@ -175,6 +177,35 @@ class ScheduleItem extends Model
             default:
                 return '';
         }
+    }
+
+    /**
+     * Hocanın tercih / uygun değil (dummy) kaydı mı?
+     */
+    public function isDummy(): bool
+    {
+        return in_array($this->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value], true);
+    }
+
+    /**
+     * Kayıt yalnızca staj derslerinden mi oluşuyor? (Program programında staj dersleri ana ızgara yerine
+     * ayrı tabloda gösterilir.) Ders verisi boşsa false döner.
+     *
+     * @throws \Exception
+     */
+    public function isInternshipOnly(): bool
+    {
+        $slotDatas = $this->getSlotDatas();
+        if (empty($slotDatas)) {
+            return false;
+        }
+        foreach ($slotDatas as $slotData) {
+            if (!$slotData->lesson || (int)$slotData->lesson->type !== LessonType::INTERNSHIP->value) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

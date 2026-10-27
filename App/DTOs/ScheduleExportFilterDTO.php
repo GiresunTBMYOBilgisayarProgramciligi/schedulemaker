@@ -18,7 +18,8 @@ readonly class ScheduleExportFilterDTO extends ScheduleFilterDTO
         public ?bool $show_lecturer = null,
         public ?bool $show_program = null,
         public ?bool $show_observer = null,
-        public ?bool $show_internship = null
+        public ?bool $show_internship = null,
+        public ?bool $hide_titles = null
     ) {
         parent::__construct($type, $semester, $academic_year, $semester_no, $owner_type, $owner_id);
     }
@@ -39,7 +40,8 @@ readonly class ScheduleExportFilterDTO extends ScheduleFilterDTO
             show_lecturer: isset($data['show_lecturer']) ? (bool)$data['show_lecturer'] : null,
             show_program: isset($data['show_program']) ? (bool)$data['show_program'] : null,
             show_observer: isset($data['show_observer']) ? (bool)$data['show_observer'] : null,
-            show_internship: isset($data['show_internship']) ? (bool)$data['show_internship'] : null
+            show_internship: isset($data['show_internship']) ? (bool)$data['show_internship'] : null,
+            hide_titles: isset($data['hide_titles']) ? (bool)$data['hide_titles'] : null
         );
     }
 
@@ -51,6 +53,7 @@ readonly class ScheduleExportFilterDTO extends ScheduleFilterDTO
             'show_program' => $this->show_program,
             'show_observer' => $this->show_observer,
             'show_internship' => $this->show_internship,
+            'hide_titles' => $this->hide_titles,
         ], fn($value) => $value !== null));
     }
 }

@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 spinner.showSpinner(spinnerContainer);
                 await fetchExportScheduleList(data);
-            });
+            }, "list");
             return;
         }
 
@@ -308,8 +308,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /**
      * Dışa aktarma seçeneklerini soran modalı gösterir
+     * @param {string} format Dışa aktarma biçimi ("excel" | "list" | "json"); biçime özel seçenekler için
      */
-    function showExportOptionsModal(ownerType, scheduleType, semesterNo, onConfirm) {
+    function showExportOptionsModal(ownerType, scheduleType, semesterNo, onConfirm, format = "excel") {
         const modal = new Modal();
         const isExam = scheduleType !== "lesson";
         const typeLabel = isExam ? "Sınav" : "Ders";
@@ -328,7 +329,8 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>`;
         }
 
-        if (ownerType === "user" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit") {
+        // Sınavlarda birleştirilmiş dersler farklı programlara ait olabileceğinden program adı her çıktı türünde seçilebilir
+        if (isExam || ownerType === "user" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit") {
             content += `<div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" id="show_program" checked>
                 <label class="form-check-label" for="show_program">Program/Bölüm Adı</label>
@@ -354,6 +356,15 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>`;
         }
 
+        // Derslik bazlı sınav listesinde derslik başlıkları yerine tek tablo ve "Derslik" sütunu
+        const isClassroomExport = ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit";
+        if (isExam && isClassroomExport && format === "list") {
+            content += `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="hide_titles">
+                <label class="form-check-label" for="hide_titles">Derslik başlıklarını gösterme (tüm derslikler tek tabloda, derslik adı ilk sütunda)</label>
+            </div>`;
+        }
+
         content += `</div>`;
 
         modal.prepareModal(typeLabel + " Programı Dışa Aktarma Seçenekleri", content, true, true, "md");
@@ -369,6 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
             if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
             if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
+            if (document.getElementById("hide_titles")) options.hide_titles = document.getElementById("hide_titles").checked;
             if (document.getElementById("show_internship")) {
                 options.show_internship = document.getElementById("show_internship").checked;
             } else if (isPublicPage) {

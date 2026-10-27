@@ -783,6 +783,7 @@ class ScheduleController extends Controller
             'show_program'    => $dto->show_program ?? true,
             'show_observer'   => $dto->show_observer ?? true,
             'show_internship' => $dto->show_internship ?? false,
+            'hide_titles'     => $dto->hide_titles ?? false,
         ]);
 
         $exporter = ExporterFactory::create($dto, 'list');

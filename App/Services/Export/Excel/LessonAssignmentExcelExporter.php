@@ -9,7 +9,6 @@ use App\Models\Program;
 use App\Repositories\ProgramRepository;
 use App\Services\LessonService;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Exception;
 use function App\Helpers\getSuggestedSemesterNo;
@@ -68,6 +67,25 @@ class LessonAssignmentExcelExporter
         bool $showBuilding = true,
         ?string $customFileName = null
     ): void {
+        $spreadsheet = $this->buildSpreadsheet($programIds, $semester, $academicYear, $showClassroomType, $showBuilding);
+        $fileName    = $this->getFileName($programIds, $semester, $academicYear, $customFileName);
+
+        BaseExcelExporter::sendDownload($spreadsheet, $fileName);
+    }
+
+    /**
+     * Ders atama listesi çalışma kitabını oluşturur (tarayıcıya göndermeden).
+     *
+     * @param int[] $programIds
+     * @throws Exception
+     */
+    public function buildSpreadsheet(
+        array $programIds,
+        string $semester,
+        string $academicYear,
+        bool $showClassroomType = true,
+        bool $showBuilding = true
+    ): Spreadsheet {
         $programRepo = new ProgramRepository();
         $lessonService = new LessonService();
 
@@ -183,26 +201,27 @@ class LessonAssignmentExcelExporter
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
         }
 
-        // Dosya adı belirleme
+        return $spreadsheet;
+    }
+
+    /**
+     * İndirilecek dosyanın adını üretir.
+     *
+     * @param int[] $programIds
+     */
+    public function getFileName(array $programIds, string $semester, string $academicYear, ?string $customFileName = null): string
+    {
         if (!empty($customFileName)) {
             $fileName = $customFileName;
         } elseif (count($programIds) === 1) {
             /** @var Program|null $program */
-            $program = $programRepo->find($programIds[0]);
+            $program = (new ProgramRepository())->find($programIds[0]);
             $programName = $program ? $program->name : 'Program';
             $fileName = sprintf('%s_%s_%s_Ders_Görevlendirme_Listesi.xlsx', $academicYear, $semester, $programName);
         } else {
             $fileName = sprintf('%s_%s_Tum_Programlar_Ders_Görevlendirme_Listesi.xlsx', $academicYear, $semester);
         }
 
-        $fileName = preg_replace('/[^\w\.\-\s]/u', '_', $fileName);
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        header('Cache-Control: max-age=0');
-
-        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $writer->save('php://output');
-        exit;
+        return preg_replace('/[^\w\.\-\s]/u', '_', $fileName);
     }
 }

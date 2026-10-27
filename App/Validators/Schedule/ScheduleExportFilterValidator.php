@@ -22,17 +22,17 @@ class ScheduleExportFilterValidator extends BaseScheduleFilterValidator
         return [
             'exportScheduleAction' => [
                 'required' => ['type', 'owner_type'],
-                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship'],
+                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship', 'hide_titles'],
                 'defaults' => ['semester', 'academic_year'],
             ],
             'generateScheduleFilters' => [
                 'required' => ['type', 'owner_type'],
-                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship'],
+                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship', 'hide_titles'],
                 'defaults' => ['semester', 'academic_year'],
             ],
             'exportSchedule' => [
                 'required' => ['type', 'owner_type'],
-                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship'],
+                'optional' => ['owner_id', 'building_id', 'unit_id', 'classroom_unit_id', 'classroom_id', 'semester_no', 'show_code', 'show_lecturer', 'show_program', 'show_observer', 'show_internship', 'hide_titles'],
                 'defaults' => ['semester', 'academic_year'],
             ],
             'exportScheduleIcsAction' => [

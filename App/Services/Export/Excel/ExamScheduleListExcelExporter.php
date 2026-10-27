@@ -5,19 +5,30 @@ declare(strict_types=1);
 namespace App\Services\Export\Excel;
 
 use App\DTOs\ScheduleExportFilterDTO;
+use App\DTOs\ScheduleExportOptionsDTO;
 use App\Enums\ExamType;
+use App\Models\Schedule;
 use App\Models\ScheduleItem;
+use App\Services\Schedule\ExamScheduleService;
 
 /**
  * Sınav programlarını (Ara Sınav / Final / Bütünleme) satır bazlı liste formatında
  * Excel olarak dışa aktarır.
  *
- * Tablo çizimi, sütunlar ve veri formatı LessonScheduleListExcelExporter ile aynıdır;
- * sadece başlık etiketi ve dosya başlığı sınav türüne göre özelleşir.
+ * Tablo çizimi ve veri formatı LessonScheduleListExcelExporter ile aynıdır; başlık etiketi,
+ * dosya başlığı ve Hoca / Gözetmen sütunları sınava göre özelleşir.
  */
 class ExamScheduleListExcelExporter extends LessonScheduleListExcelExporter
 {
     protected string $defaultFileTitle = 'Sınav Programı';
+
+    /**
+     * Hoca sınav programı, hocanın dersleri ve gözetmenlik görevleriyle birleşik olarak hazırlanır.
+     */
+    protected function findSchedule(array $filter): ?Schedule
+    {
+        return (new ExamScheduleService())->findScheduleWithItems($filter);
+    }
 
     /**
      * Sınav türüne göre başlık etiketini belirler.
@@ -65,14 +76,46 @@ class ExamScheduleListExcelExporter extends LessonScheduleListExcelExporter
     }
 
     /**
-     * Sınavlarda hoca sütunu gözetmenleri içerir (detail['assignments'] içinden).
-     * Assignments olmayan kayıtlarda slot verisindeki gözetmen kullanılır.
+     * Sınav listesinde ders hocası ve gözetmenler ayrı sütunlardadır.
+     * Hoca sütunu hoca bazlı sınav programında da gösterilir (birleşik görünümde
+     * hocanın gözetmen olduğu sınavların ders hocası farklıdır).
+     */
+    protected function resolveColumns(ScheduleExportFilterDTO $filters, ScheduleExportOptionsDTO $options): array
+    {
+        $columns = [];
+        foreach (parent::resolveColumns($filters, $options) as $key => $header) {
+            if ($key === 'day' || $key === 'date') {
+                if ($options->showLecturer) {
+                    $columns['lecturer'] = 'Hoca';
+                }
+                if ($options->showObserver) {
+                    $columns['observer'] = 'Gözetmen';
+                }
+            }
+            if ($key !== 'lecturer') {
+                $columns[$key] = $header;
+            }
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Sınavı yapılan dersin hocası (bkz. resolveExamLessonLecturerName).
      */
     protected function resolveLecturerName(ScheduleItem $item, object $data, string $scheduleType): string
     {
+        return $this->resolveExamLessonLecturerName($item, $data);
+    }
+
+    /**
+     * Gözetmenler program bazlı kayıtlarda detail['assignments'] içindedir.
+     * Gözetmenlik/derslik bazlı kayıtlarda gözetmen slot verisindeki hocadır.
+     */
+    protected function resolveObserverName(ScheduleItem $item, object $data, string $scheduleType): string
+    {
         if (!isset($item->detail['assignments'])) {
-            // Gözetmenlik kaydı: sınavı yapılan dersin hocası
-            return $item->detail['lesson_lecturer'] ?? parent::resolveLecturerName($item, $data, $scheduleType);
+            return $data->lecturer?->getFullName() ?? '';
         }
 
         $names = [];

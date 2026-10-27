@@ -5,7 +5,9 @@ namespace App\Services\Export\Excel;
 use App\Core\Log;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
+use App\Exceptions\NotFoundException;
 use App\Models\Classroom;
+use App\Models\ScheduleItem;
 use App\Models\Unit;
 use App\DTOs\ScheduleExportFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
@@ -16,6 +18,7 @@ use App\Repositories\LessonRepository;
 use App\Repositories\ProgramRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Schedule\ExamScheduleService;
 use App\Services\Export\ScheduleExporterInterface;
 use App\Services\Export\ScheduleExportFilterBuilder;
 use JetBrains\PhpStorm\NoReturn;
@@ -26,6 +29,8 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Shared\Drawing as SharedDrawing;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use function App\Helpers\getSettingValue;
@@ -44,6 +49,15 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     protected Worksheet $sheet;
     protected ScheduleExportFilterBuilder $filterBuilder;
     protected string $headerLastCol = '';
+
+    /** Dosyaya yazılan program sayısı; sıfırsa indirme yerine hata verilir */
+    protected int $writtenScheduleCount = 0;
+
+    /** @var string[] Gün isimleri (0=Pazartesi … 6=Pazar) */
+    protected const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+
+    /** @var array<string, string> "dersId|dönem|yıl" => ders hocası adı (sorgu önbelleği) */
+    private array $lessonLecturerNames = [];
 
     public function __construct()
     {
@@ -118,8 +132,7 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $maxDayIndex = getSettingValue('maxDayIndex', $type, 4);
 
         $isExam      = in_array($type, ['exam', ExamType::MIDTERM->value, ExamType::FINAL->value, ExamType::MAKEUP->value], true);
-        $isClassroom = in_array($filtersDTO->owner_type, [OwnerType::CLASSROOM->value, 'classroom_unit', 'building'], true);
-        $colsPerDay  = ($isExam || $isClassroom) ? 1 : 2;
+        $colsPerDay  = ($isExam || $this->isClassroomExport($filtersDTO)) ? 1 : 2;
 
         $totalCols   = ($maxDayIndex + 1) * $colsPerDay + 1;
         $lastCol     = Coordinate::stringFromColumnIndex($totalCols);
@@ -140,6 +153,68 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $this->renderHeaderRow($titleLine1, $titleLine2, $lastCol, $totalCols);
 
         return 3;
+    }
+
+    /**
+     * Derslik bazlı bir dışa aktarma mı? (derslik, birim derslikleri veya bina)
+     * Bu durumda ızgarada ayrı derslik ("S") sütunu bulunmaz.
+     */
+    protected function isClassroomExport(ScheduleExportFilterDTO $filters): bool
+    {
+        return in_array($filters->owner_type, [OwnerType::CLASSROOM->value, 'classroom_unit', 'building'], true);
+    }
+
+    /**
+     * Sınavı yapılan dersin hocasının adını döndürür.
+     *
+     * Slot verisindeki ders, hoca ilişkisi olmadan yüklenir; slottaki "lecturer" ise kayıt türüne göre
+     * ders hocası (program kaydı) ya da gözetmen (derslik / gözetmenlik kaydı) olabilir. Bu yüzden:
+     *  1) Gözetmenlik kaydında hizmet katmanının eklediği detail['lesson_lecturer'] kullanılır
+     *  2) Program kaydında (detail['assignments'] dolu) slottaki hoca dersin hocasıdır
+     *  3) Diğer durumlarda ders ataması dönem bazında sorgulanır (ders başına bir kez)
+     */
+    protected function resolveExamLessonLecturerName(ScheduleItem $item, object $data): string
+    {
+        if (!empty($item->detail['lesson_lecturer'])) {
+            return $item->detail['lesson_lecturer'];
+        }
+        if (isset($item->detail['assignments']) && !empty($data->lecturer)) {
+            return $data->lecturer->getFullName();
+        }
+        if (!empty($data->lesson?->lecturer)) {
+            return $data->lesson->lecturer->getFullName();
+        }
+
+        $lessonId = (int) ($data->lesson?->id ?? 0);
+        if ($lessonId === 0) {
+            return '';
+        }
+        $semester     = $item->schedule?->semester ?? getSettingValue('semester');
+        $academicYear = $item->schedule?->academic_year ?? getSettingValue('academic_year');
+        $cacheKey     = "{$lessonId}|{$semester}|{$academicYear}";
+
+        if (!array_key_exists($cacheKey, $this->lessonLecturerNames)) {
+            $names = (new ExamScheduleService())->getLessonLecturerNames([$lessonId], $semester, $academicYear);
+            $this->lessonLecturerNames[$cacheKey] = $names[$lessonId] ?? '';
+        }
+
+        return $this->lessonLecturerNames[$cacheKey];
+    }
+
+    /**
+     * Sınav türüne göre ayarlarda tanımlı sınav başlangıç tarihini döndürür.
+     * Gün indeksi 0 bu tarihe, hafta indeksi 1 bu tarihten 7 gün sonrasına karşılık gelir.
+     */
+    protected function resolveStartDate(string $type): ?\DateTime
+    {
+        $settingKey = ExamType::tryFrom($type)?->startDateSettingKey();
+        if ($settingKey === null) {
+            return null;
+        }
+
+        $startDateString = getSettingValue($settingKey, 'exam');
+
+        return $startDateString ? new \DateTime($startDateString) : null;
     }
 
     /**
@@ -314,6 +389,8 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
 
     /**
      * Dosyayı tarayıcıya indirme olarak gönderir.
+     *
+     * @throws NotFoundException Görüntüleme yetkisi olan, içerik barındıran hiçbir program bulunamazsa
      */
     #[NoReturn]
     public function export(ScheduleExportFilterDTO|array $filters, ScheduleExportOptionsDTO|array $showOptions = []): void
@@ -322,6 +399,9 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
         $optionsDTO = $showOptions instanceof ScheduleExportOptionsDTO ? $showOptions : ScheduleExportOptionsDTO::fromArray($showOptions);
 
         $this->buildSpreadsheet($filterDTO, $optionsDTO);
+        if ($this->writtenScheduleCount === 0) {
+            throw new NotFoundException("Dışa aktarılacak program bulunamadı. Program boş olabilir ya da görüntüleme yetkiniz olmayabilir.");
+        }
         $this->alignRightHeaderLogo();
         $this->download($this->getFileName($filterDTO));
     }
@@ -348,13 +428,55 @@ abstract class BaseExcelExporter implements ScheduleExporterInterface
     #[NoReturn]
     protected function download(string $fileName): void
     {
+        self::sendDownload($this->spreadsheet, $fileName);
+    }
+
+    /**
+     * Verilen çalışma kitabını .xlsx olarak tarayıcıya gönderir ve isteği sonlandırır.
+     * Bu sınıftan türemeyen Excel çıktıları (ör. LessonAssignmentExcelExporter) da kullanır.
+     */
+    #[NoReturn]
+    public static function sendDownload(Spreadsheet $spreadsheet, string $fileName): void
+    {
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
 
-        $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
         $writer->save('php://output');
         exit;
+    }
+
+    /**
+     * Program başlık çubuğunu yazar.
+     *
+     * @return int Bir sonraki satır numarası
+     */
+    protected function writeTitleBar(string $title, int $row, string $lastCol, string $fillRgb, ?string $fontRgb = null): int
+    {
+        $range = "A{$row}:{$lastCol}{$row}";
+        $this->sheet->setCellValue("A{$row}", $title);
+        $this->sheet->mergeCells($range);
+        $this->sheet->getStyle($range)->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $this->sheet->getStyle($range)->getFont()->setBold(true)->setSize(11);
+        $this->sheet->getStyle($range)->getFill()
+            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($fillRgb);
+        if ($fontRgb !== null) {
+            $this->sheet->getStyle($range)->getFont()->getColor()->setRGB($fontRgb);
+        }
+
+        return $row + 1;
+    }
+
+    /**
+     * Tablo kenarlıklarını çizer.
+     */
+    protected function drawBorders(string $firstCell, string $lastCol, int $lastRow): void
+    {
+        $this->sheet->getStyle("{$firstCell}:{$lastCol}{$lastRow}")
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
     }
 
     /**

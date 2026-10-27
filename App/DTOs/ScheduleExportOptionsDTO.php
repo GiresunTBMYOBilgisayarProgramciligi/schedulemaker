@@ -14,19 +14,22 @@ class ScheduleExportOptionsDTO implements ArrayAccess
     public bool $show_program;
     public bool $show_observer;
     public bool $show_internship;
+    public bool $hide_titles;
 
     public function __construct(
         public bool $showCode = true,
         public bool $showLecturer = true,
         public bool $showProgram = true,
         public bool $showObserver = true,
-        public bool $showInternship = true
+        public bool $showInternship = true,
+        public bool $hideTitles = false
     ) {
         $this->show_code       = $this->showCode;
         $this->show_lecturer   = $this->showLecturer;
         $this->show_program    = $this->showProgram;
         $this->show_observer   = $this->showObserver;
         $this->show_internship = $this->showInternship;
+        $this->hide_titles     = $this->hideTitles;
     }
 
     public static function fromArray(array|self $data): self
@@ -40,7 +43,8 @@ class ScheduleExportOptionsDTO implements ArrayAccess
             showLecturer: isset($data['show_lecturer']) ? filter_var($data['show_lecturer'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showLecturer']) ? (bool)$data['showLecturer'] : true),
             showProgram: isset($data['show_program']) ? filter_var($data['show_program'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showProgram']) ? (bool)$data['showProgram'] : true),
             showObserver: isset($data['show_observer']) ? filter_var($data['show_observer'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showObserver']) ? (bool)$data['showObserver'] : true),
-            showInternship: isset($data['show_internship']) ? filter_var($data['show_internship'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showInternship']) ? (bool)$data['showInternship'] : true)
+            showInternship: isset($data['show_internship']) ? filter_var($data['show_internship'], FILTER_VALIDATE_BOOLEAN) : (isset($data['showInternship']) ? (bool)$data['showInternship'] : true),
+            hideTitles: isset($data['hide_titles']) ? filter_var($data['hide_titles'], FILTER_VALIDATE_BOOLEAN) : (isset($data['hideTitles']) ? (bool)$data['hideTitles'] : false)
         );
     }
 
@@ -52,6 +56,7 @@ class ScheduleExportOptionsDTO implements ArrayAccess
             'show_program'    => $this->showProgram,
             'show_observer'   => $this->showObserver,
             'show_internship' => $this->showInternship,
+            'hide_titles'     => $this->hideTitles,
         ];
     }
 

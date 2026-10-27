@@ -12,7 +12,6 @@ use Exception;
 use App\Core\View;
 use App\Core\Gate;
 use App\Enums\PermissionType;
-use App\Enums\ScheduleItemStatus;
 use App\Middlewares\AuthMiddleware;
 use App\DTOs\ScheduleFilterDTO;
 use App\Services\Schedule\AvailabilityService;
@@ -393,22 +392,8 @@ class ScheduleViewHelper
 
         foreach ($schedule->items as $scheduleItem) {
             // Program programında staj dersleri ana ızgara yerine alt bilgi tablosunda gösterilir
-            if ($schedule->owner_type === OwnerType::PROGRAM->value) {
-                $isInternshipOnly = true;
-                $slotDatas = $scheduleItem->getSlotDatas();
-                if (empty($slotDatas)) {
-                    $isInternshipOnly = false;
-                } else {
-                    foreach ($slotDatas as $sd) {
-                        if (!$sd->lesson || (int)$sd->lesson->type !== LessonType::INTERNSHIP->value) {
-                            $isInternshipOnly = false;
-                            break;
-                        }
-                    }
-                }
-                if ($isInternshipOnly) {
-                    continue;
-                }
+            if ($schedule->owner_type === OwnerType::PROGRAM->value && $scheduleItem->isInternshipOnly()) {
+                continue;
             }
 
             $itemStart = \DateTime::createFromFormat('H:i:s', $scheduleItem->start_time) ?: \DateTime::createFromFormat('H:i', $scheduleItem->start_time);
@@ -458,9 +443,8 @@ class ScheduleViewHelper
      * @param array $weekRows prepareScheduleRows çıktısı
      * @return array
      */
-    private static function stripDummyItems(array $weekRows): array
+    public static function stripDummyItems(array $weekRows): array
     {
-        $dummyStatuses = [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value];
         foreach ($weekRows as $weekIndex => $rows) {
             foreach ($rows as $rowIndex => $row) {
                 foreach ($row['days'] as $dayKey => $cell) {
@@ -468,7 +452,7 @@ class ScheduleViewHelper
                         continue;
                     }
                     $items = is_array($cell) ? $cell : [$cell];
-                    $items = array_values(array_filter($items, fn($item) => !in_array($item->status, $dummyStatuses)));
+                    $items = array_values(array_filter($items, fn(ScheduleItem $item) => !$item->isDummy()));
                     $weekRows[$weekIndex][$rowIndex]['days'][$dayKey] = is_array($cell)
                         ? ($items ?: null)
                         : ($items[0] ?? null);

@@ -14,8 +14,12 @@ App/Services/Export/
 ├── ScheduleFilterBuilder.php       # Schedule sorgusu için filtre listesi üretir
 ├── Excel/
 │   ├── BaseExcelExporter.php       # Ortak Excel altyapısı (abstract)
-│   ├── LessonScheduleExcelExporter.php  # Ders programı → .xlsx
-│   └── ExamScheduleExcelExporter.php   # Sınav programı → .xlsx
+│   ├── BaseGridExcelExporter.php   # Izgara (Saat × Gün) çıktıları için ortak altyapı: rowspan, gün başlıkları (abstract)
+│   ├── LessonScheduleExcelExporter.php  # Ders programı → .xlsx (ızgara)
+│   ├── ExamScheduleExcelExporter.php   # Sınav programı → .xlsx (ızgara)
+│   ├── LessonScheduleListExcelExporter.php  # Ders programı → .xlsx (liste)
+│   ├── ExamScheduleListExcelExporter.php   # Sınav programı → .xlsx (liste)
+│   └── LessonAssignmentExcelExporter.php   # Ders görevlendirme listesi → .xlsx (importLessons şablonu)
 └── Ics/
     ├── BaseIcsExporter.php         # Ortak ICS altyapısı (abstract)
     ├── LessonScheduleIcsExporter.php    # Ders programı → .ics

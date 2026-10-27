@@ -140,6 +140,29 @@ class ExamScheduleService extends ScheduleService
     }
 
     /**
+     * Derslerin verilen dönemdeki atanmış hocalarının adlarını döndürür.
+     *
+     * @param int[] $lessonIds
+     * @return array<int,string> ders id => hoca adı (hocası atanmamış dersler dahil edilmez)
+     * @throws Exception
+     */
+    public function getLessonLecturerNames(array $lessonIds, string $semester, string $academicYear): array
+    {
+        if (empty($lessonIds)) {
+            return [];
+        }
+        $lecturerNames = [];
+        $lessonsWithLecturer = (new Lesson())->get()->where(['id' => ['in' => $lessonIds]])
+            ->with(['lecturer' => ['semester' => $semester, 'academic_year' => $academicYear]])->all();
+        foreach ($lessonsWithLecturer as $lesson) {
+            if ($lesson->lecturer) {
+                $lecturerNames[(int)$lesson->id] = $lesson->lecturer->getFullName();
+            }
+        }
+        return $lecturerNames;
+    }
+
+    /**
      * Gözetmenlik kayıtlarına sınavı yapılan dersin hocasını detail['lesson_lecturer'] olarak ekler (kaydedilmez).
      *
      * @param ScheduleItem[] $items
@@ -151,14 +174,7 @@ class ExamScheduleService extends ScheduleService
         if (empty($items) || empty($lessonIds)) {
             return;
         }
-        $lecturerNames = [];
-        $lessonsWithLecturer = (new Lesson())->get()->where(['id' => ['in' => $lessonIds]])
-            ->with(['lecturer' => ['semester' => $semester, 'academic_year' => $academicYear]])->all();
-        foreach ($lessonsWithLecturer as $lesson) {
-            if ($lesson->lecturer) {
-                $lecturerNames[(int)$lesson->id] = $lesson->lecturer->getFullName();
-            }
-        }
+        $lecturerNames = $this->getLessonLecturerNames($lessonIds, $semester, $academicYear);
         foreach ($items as $item) {
             $name = $lecturerNames[(int)($item->data[0]['lesson_id'] ?? 0)] ?? null;
             if ($name !== null) {
