@@ -120,7 +120,9 @@ $currentSemester = $selected_semester ?? getSettingValue("semester") ?? 'Bahar';
                     <div class="input-group shadow-xs">
                         <span class="input-group-text bg-body-secondary text-muted"><i class="bi bi-calendar-range"></i></span>
                         <select class="form-select" id="academic_year" name="academic_year" aria-label="Akademik Yıl">
-                            <?php for ($year = 2023; $year <= (int)date('Y'); $year++): ?>
+                            <?php // URL'den gelen yıl aralık dışındaysa liste onu da kapsar; aksi halde ilk seçenek sessizce seçilirdi ?>
+                            <?php $currentStartYear = (int)$currentAcademicYear; ?>
+                            <?php for ($year = min(2023, $currentStartYear ?: 2023); $year <= max((int)date('Y'), $currentStartYear); $year++): ?>
                                 <?php $academicYearVal = $year . ' - ' . ($year + 1); ?>
                                 <option value="<?= e($academicYearVal) ?>"
                                     <?= $currentAcademicYear == $academicYearVal ? 'selected' : '' ?>>

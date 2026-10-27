@@ -150,8 +150,9 @@ class HomeRouter extends Router
         // Sınav türleri kısa adlarla da verilebilir (?type=vize, ?type=final, ?type=but); tanınmayan değer ders programına düşer
         $requestedScheduleType = (string)($_GET['schedule_type'] ?? $_GET['type'] ?? 'lesson');
         $selectedScheduleType = ExamType::fromAlias($requestedScheduleType)?->value ?? 'lesson';
-        $selectedAcademicYear = isset($_GET['academic_year']) ? (string)$_GET['academic_year'] : (isset($_GET['year']) ? (string)$_GET['year'] : null);
-        $selectedSemester = isset($_GET['semester']) ? (string)$_GET['semester'] : null;
+        // Tanınmayan yıl/dönem null döner; view sistem ayarındaki aktif döneme düşer
+        $selectedAcademicYear = $this->normalizeAcademicYear((string)($_GET['academic_year'] ?? $_GET['year'] ?? ''));
+        $selectedSemester = $this->normalizeSemester((string)($_GET['semester'] ?? $_GET['term'] ?? ''));
 
         $this->view_data = array_merge($this->view_data, [
             "units" => (new Unit())->get()->where(['active' => true])->all(),
@@ -174,5 +175,43 @@ class HomeRouter extends Router
             "page_title" => "Anasayfa"
         ]);
         $this->callView("home/index");
+    }
+
+    /**
+     * URL'deki akademik yılı sistemdeki "2026 - 2027" biçimine çevirir.
+     * "2026-2027", "2026/2027", "2026_2027" ve yalnızca başlangıç yılı ("2026") kabul edilir.
+     */
+    private function normalizeAcademicYear(string $value): ?string
+    {
+        if (!preg_match('/^\s*(\d{4})\s*(?:[-\/_ ]+\s*(\d{4}))?\s*$/', $value, $matches)) {
+            return null;
+        }
+
+        $startYear = (int)$matches[1];
+        // Makul aralık dışındaki yıllar view'daki yıl listesini gereksiz büyütmesin
+        if ($startYear < 2000 || $startYear > (int)date('Y') + 1) {
+            return null;
+        }
+        if (isset($matches[2]) && (int)$matches[2] !== $startYear + 1) {
+            return null;
+        }
+
+        return $startYear . ' - ' . ($startYear + 1);
+    }
+
+    /**
+     * URL'deki dönem adını sistemdeki "Güz", "Bahar", "Yaz" değerlerine çevirir.
+     * Büyük/küçük harf ve Türkçe karakter farkı yok sayılır; İngilizce karşılıklar da kabul edilir.
+     */
+    private function normalizeSemester(string $value): ?string
+    {
+        $normalized = strtr(mb_strtolower(trim($value), 'UTF-8'), ['ü' => 'u']);
+
+        return match($normalized) {
+            'guz', 'fall', 'autumn' => 'Güz',
+            'bahar', 'spring' => 'Bahar',
+            'yaz', 'summer' => 'Yaz',
+            default => null,
+        };
     }
 }

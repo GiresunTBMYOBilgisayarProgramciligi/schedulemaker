@@ -150,6 +150,39 @@ class HomeRouterTest extends BaseTestCase
         $this->assertEquals((string)$this->unitId, $data['selected_unit_id']);
     }
 
+    /**
+     * @dataProvider academicPeriodProvider
+     */
+    public function testIndexActionNormalizesAcademicYearAndSemester(array $get, ?string $expectedYear, ?string $expectedSemester): void
+    {
+        $_GET = $get;
+
+        $router = new HomeRouter();
+        ob_start();
+        $router->IndexAction();
+        ob_end_clean();
+
+        $data = $this->getViewData($router);
+
+        $this->assertSame($expectedYear, $data['selected_academic_year']);
+        $this->assertSame($expectedSemester, $data['selected_semester']);
+    }
+
+    public static function academicPeriodProvider(): array
+    {
+        return [
+            'sistem biçimi' => [['academic_year' => '2026 - 2027', 'semester' => 'Güz'], '2026 - 2027', 'Güz'],
+            'boşluksuz yıl, küçük harf dönem' => [['year' => '2026-2027', 'semester' => 'guz'], '2026 - 2027', 'Güz'],
+            'eğik çizgi, büyük harf' => [['year' => '2026/2027', 'semester' => 'BAHAR'], '2026 - 2027', 'Bahar'],
+            'yalnızca başlangıç yılı, İngilizce dönem' => [['year' => '2026', 'term' => 'summer'], '2026 - 2027', 'Yaz'],
+            'ardışık olmayan yıllar' => [['year' => '2026-2028', 'semester' => 'kis'], null, null],
+            'çok eski yıl' => [['year' => '0001'], null, null],
+            'çok ileri yıl' => [['year' => '9999-10000'], null, null],
+            'geçersiz değerler' => [['year' => 'abc', 'semester' => ''], null, null],
+            'parametre yok' => [[], null, null],
+        ];
+    }
+
     public function testIndexActionFallsBackToLessonForUnknownScheduleType(): void
     {
         $_GET = [
