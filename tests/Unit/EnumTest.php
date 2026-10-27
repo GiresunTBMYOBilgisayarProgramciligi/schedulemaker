@@ -157,6 +157,15 @@ class EnumTest extends BaseTestCase
 
         $this->assertEquals('midterm_start_date', ExamType::MIDTERM->startDateSettingKey());
         $this->assertContains('midterm-exam', ExamType::values());
+
+        $this->assertSame(ExamType::MIDTERM, ExamType::fromAlias('midterm-exam'));
+        $this->assertSame(ExamType::MIDTERM, ExamType::fromAlias('VİZE'));
+        $this->assertSame(ExamType::MIDTERM, ExamType::fromAlias('ara_sınav'));
+        $this->assertSame(ExamType::FINAL, ExamType::fromAlias('final'));
+        $this->assertSame(ExamType::MAKEUP, ExamType::fromAlias('Bütünleme'));
+        $this->assertSame(ExamType::MAKEUP, ExamType::fromAlias('but'));
+        $this->assertNull(ExamType::fromAlias('lesson'));
+        $this->assertNull(ExamType::fromAlias('invalid-type'));
     }
 
     public function testClassroomType(): void

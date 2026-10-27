@@ -37,6 +37,26 @@ enum ExamType: string
     }
 
     /**
+     * URL parametrelerindeki kısa/Türkçe adları (vize, final, but vb.) sınav tipine çevirir.
+     * Büyük/küçük harf, Türkçe karakter, boşluk ve alt çizgi farkları yok sayılır.
+     */
+    public static function fromAlias(string $alias): ?self
+    {
+        $normalized = strtr(mb_strtolower(trim($alias), 'UTF-8'), [
+            "\u{0307}" => '', // "İ" küçültülünce oluşan birleşik nokta
+            'ı' => 'i', 'ü' => 'u', 'ş' => 's', 'ç' => 'c', 'ğ' => 'g', 'ö' => 'o',
+            '_' => '-', ' ' => '-',
+        ]);
+
+        return match($normalized) {
+            'midterm-exam', 'midterm', 'vize', 'ara-sinav', 'arasinav' => self::MIDTERM,
+            'final-exam', 'final', 'final-sinavi', 'final-sinav' => self::FINAL,
+            'makeup-exam', 'makeup', 'butunleme', 'but', 'butunleme-sinavi' => self::MAKEUP,
+            default => null,
+        };
+    }
+
+    /**
      * Sınav başlangıç tarih ayar anahtarını döndürür.
      */
     public function startDateSettingKey(): string

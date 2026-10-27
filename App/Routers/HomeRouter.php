@@ -6,6 +6,7 @@ use App\Repositories\UserRepository;
 use App\Middlewares\AuthMiddleware;
 use App\Core\AssetManager;
 use App\Core\Router;
+use App\Enums\ExamType;
 use App\Models\Building;
 use App\Models\Classroom;
 use App\Models\Department;
@@ -146,7 +147,9 @@ class HomeRouter extends Router
         }
 
         // 5. Genel parametreler
-        $selectedScheduleType = (string)($_GET['schedule_type'] ?? $_GET['type'] ?? 'lesson');
+        // Sınav türleri kısa adlarla da verilebilir (?type=vize, ?type=final, ?type=but); tanınmayan değer ders programına düşer
+        $requestedScheduleType = (string)($_GET['schedule_type'] ?? $_GET['type'] ?? 'lesson');
+        $selectedScheduleType = ExamType::fromAlias($requestedScheduleType)?->value ?? 'lesson';
         $selectedAcademicYear = isset($_GET['academic_year']) ? (string)$_GET['academic_year'] : (isset($_GET['year']) ? (string)$_GET['year'] : null);
         $selectedSemester = isset($_GET['semester']) ? (string)$_GET['semester'] : null;
 

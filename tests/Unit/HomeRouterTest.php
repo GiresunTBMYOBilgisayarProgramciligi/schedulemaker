@@ -127,6 +127,42 @@ class HomeRouterTest extends BaseTestCase
 
         $data = $this->getViewData($router);
 
-        $this->assertEquals('final', $data['selected_schedule_type']);
+        $this->assertEquals('final-exam', $data['selected_schedule_type']);
+    }
+
+    public function testIndexActionResolvesExamTypeAliasWithProgramParameters(): void
+    {
+        $_GET = [
+            'type' => 'Vize',
+            'unit' => (string)$this->unitId,
+            'department' => (string)$this->deptId,
+        ];
+
+        $router = new HomeRouter();
+        ob_start();
+        $router->IndexAction();
+        ob_end_clean();
+
+        $data = $this->getViewData($router);
+
+        $this->assertEquals('midterm-exam', $data['selected_schedule_type']);
+        $this->assertEquals('program', $data['active_tab']);
+        $this->assertEquals((string)$this->unitId, $data['selected_unit_id']);
+    }
+
+    public function testIndexActionFallsBackToLessonForUnknownScheduleType(): void
+    {
+        $_GET = [
+            'type' => 'bilinmeyen'
+        ];
+
+        $router = new HomeRouter();
+        ob_start();
+        $router->IndexAction();
+        ob_end_clean();
+
+        $data = $this->getViewData($router);
+
+        $this->assertEquals('lesson', $data['selected_schedule_type']);
     }
 }
