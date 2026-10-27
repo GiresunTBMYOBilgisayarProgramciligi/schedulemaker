@@ -1,5 +1,85 @@
 # Changelog
 
+## [0.3.5] - 2026-10-27
+
+> **Veritabanı güncellemesi gerekli:** Mevcut kurulumlarda `update-database.sql` çalıştırılarak kullanılmayan `logs` tablosu kaldırılmalıdır.
+
+### Added
+- **Birleşik Hoca Sınav Programı**:
+  - Hoca profilinde ve herkese açık hoca sayfasında sınav programı; hocanın o dönem verdiği derslerin sınavları ve gözetmenlik görevleriyle birlikte tek görünümde gösterilir (`ExamScheduleService::getLecturerExamSchedule`). Birleştirme okuma anında yapılır, veritabanına yeni kayıt yazılmaz.
+  - Sınav birleştirmesindeki child dersler parent kaydında "Sınav Bağlı Dersler" olarak, aynı slottaki grup kardeşleri tek kartta "Grup A, B" rozetiyle gösterilir; hocanın kendi dersindeki gözetmenlik kaydı mükerrer gösterilmez.
+  - Gözetmenlik kartlarında "Gözetmenlik" rozeti, sınavı yapılan dersin hocası ve sınav salonu ayrı satırlarda yer alır; sınav tablosu aynı hücrede birden çok kaydı destekler.
+  - Izgara Excel, liste Excel, ICS ve JSON dışa aktarımları da aynı birleşik görünümü kullanır (`ExamScheduleService::findScheduleWithItems`).
+- **Günlük En Fazla 2 Sınav Uyarısı**:
+  - Sınav ekleme, taşıma ve düzenlemede aynı program/yarıyıl için bir günde 2'den fazla sınav oluşuyorsa yönetmelik uyarısı gösterilir; kullanıcı onaylarsa işlem devam eder. Aynı saat dilimindeki sınavlar (grup, sınav birleştirme) tek sayılır.
+- **Yönetici Paneli Gözetmenlik İstatistikleri**:
+  - Hocaların sınav türüne göre gözetmenlik görevi sayısı ve toplam süresini gösteren dashboard kartı (özet, yığılmış çubuk grafik ve liste); yıl, dönem, birim ve bölüm filtresi (`UserRepository::getExamDutyStats`).
+- **Gözetmen Seçimi İyileştirmeleri**:
+  - Uygun gözetmen listesi programın/hocanın/dersin bağlı olduğu birimdeki hocalar ve o birimde ders veren hocalarla sınırlandırıldı.
+  - Sınav gününde dersi veya sınavı olan gözetmenler listenin başına alınır ve adlarının yanında "Çarşamba günü dersi var" gibi bilgi notu gösterilir.
+- **Excel Liste Çıktısı Seçenekleri**:
+  - Liste çıktısında modal seçenekleri (ders kodu, hoca, program, gözetmen, staj) dikkate alınır; sınav listesinde Hoca ve Gözetmen ayrı sütunlardır.
+  - Sınav başlangıç tarihi tanımlıysa "Gün" yerine sıralanabilir gerçek tarih yazılır, satırlar tarih/saat sırasıyla dizilir.
+  - Derslik sınav listesi için "Derslik başlıklarını gösterme" seçeneği: tüm derslikler filtrelenebilir tek tabloda.
+- **Birim Bazlı Hoca Notları**:
+  - Hoca notları, hocanın programlarını düzenleme yetkisine bağlandı (`ScheduleNotePolicy::canManageLecturerNotes`); birim seçildiğinde o birimdeki tüm hoca notları tek seferde getirilir.
+- **Ana Sayfada Query Parametresiyle Program Yükleme**:
+  - `unit_id`, `program_id`, `lecturer_id`, `classroom_id` gibi URL parametreleriyle program, hoca ve derslik programları otomatik yüklenir; eksik birim/bölüm hiyerarşisi otomatik tamamlanır.
+- **JSON Dışa Aktarımında Staj Dersleri**:
+  - JSON ders programı dışa aktarımına staj dersleri desteği ve UZEM/birim binası konum çözümlemesi eklendi.
+- **UBS İçe Aktarmada CSV Desteği**:
+  - `UbsLessonParser::loadSpreadsheet()` ile `.csv` dosyaları ayraç (virgül/noktalı virgül) otomatik algılanarak içe aktarılabilir.
+- **Otomatik Asset Sürümleme**:
+  - `AssetManager::versioned()` ile yerel JS/CSS URL'lerine dosya değiştirilme zamanına dayalı `?v=<mtime>` parametresi eklenerek tarayıcı önbelleği güncellemelerde otomatik geçersiz kılınır.
+- **Mail Kuyruğu Log Erişimi**:
+  - Mail kuyruğu yönetim kartına kuyruk loglarına doğrudan erişim butonu eklendi.
+
+### Changed
+- **Program Görüntüleme Yetkileri**:
+  - Hoca ve üstü roller yayınlanmamış olanlar dahil tüm programları görüntüleyebilir.
+  - Müsait gözetmen/derslik sorguları ve ders birleştirme yetkileri rol kontrolü yerine kapsam bazlı Policy kontrolüne (`SchedulePolicy::update`, `LessonPolicy::combine`) taşındı.
+- **Program Yayınlama Bildirimleri**:
+  - Program kartından yayınlama, toplu yayınlama ile aynı bildirim mantığına getirildi (`applyPublishStatus()`); farklı birim hocalarına da bilgilendirme maili gönderilir.
+- **Excel Dışa Aktarım Altyapısı**:
+  - Izgara ortak kodu `BaseGridExcelExporter`'a, başlık biçimlendirmesi `BaseExcelExporter::renderHeaderRow()`'a taşındı.
+  - Liste hücreleri formül enjeksiyonuna karşı metin olarak yazılır; program adları virgül yerine alt alta yazılır.
+  - Excel çıktıları ve arayüzdeki logolar yeni kurumsal logolarla (`gru_official_logo`) güncellendi.
+- **Loglama**:
+  - Veritabanına log yazımı kaldırıldı; loglama tamamen dosya tabanlı rotasyonlu JSON mimarisine geçti.
+  - Servis loglarına `logContext()` ile işlemi yapan kullanıcı, sınıf/metod, URL ve IP bilgisi eklendi; ders loglarına ders kodu ve adı eklendi.
+  - `DEBUG` kontrolü `isDebug()` helper'ı ile standartlaştırıldı, log seviyesi hiyerarşisi düzenlendi; yeni kurulumlarda varsayılan log seviyesi `INFO` oldu.
+  - Mail kuyruğu boşken log kaydı oluşturulmaz.
+- **Oturum Süresi**:
+  - Uzun süren planlama işlemlerinde oturumun erken düşmemesi için oturum süresi 4 saate çıkarıldı.
+- **Mobil Görünüm**:
+  - Ders detay sayfası küçük ekranlarda tek sütun olarak gösterilir.
+
+### Fixed
+- **Misafir Erişimi ve Yayınlanmamış Programlar**:
+  - Misafir kullanıcılar yalnızca yayınlanmış programları görür ve kayıt oluşturamaz; çok dönemli program kartlarına görüntüleme yetkisi kontrolü eklendi.
+  - Misafir görünümünde tercih/uygun değil slotları gizlendi.
+- **Sınav Birleştirme ve Mevcut Hesaplama**:
+  - Alt dersi olan derslerin sınav birleştirmesinde oluşan "ID veya Tablo adı eksik" hatası giderildi.
+  - Birleştirilmiş sınav mevcudu yalnızca bir alt dersi sayıyordu; tüm bağlı dersler hesaba katılıyor.
+  - Sınav kartı ve düzenleme modalındaki mevcut, birleştirilmiş toplam mevcut olarak hesaplanıyor (`Lesson::getExamTotalSize`).
+- **Gözetmen Seçimi**:
+  - Başka satırda seçilen gözetmen artık diğer satırların listesinden kalıcı olarak çıkarılıyor.
+- **Excel Çıktıları**:
+  - Sınav ızgarasında kısa sınavların çıktıdan kaybolmasına yol açan rowspan hatası giderildi.
+  - Tercih/uygun değil kayıtlarının ders ızgarası ve liste çıktılarına sızması engellendi.
+  - Sınav liste çıktısında Derslik ve Hoca sütunlarının boş gelmesi ve program sütununda yanlış bağlı derslerin gösterilmesi düzeltildi.
+  - Boş veya yetkisiz dışa aktarmada boş Excel yerine bilgilendirici hata verilir.
+- **Bildirimler**:
+  - `ScheduleMailer`'daki eksik import nedeniyle birime bağlı hocalara mail gitmemesi düzeltildi.
+- **Ders Güncelleme**:
+  - Hocanın kendi dersini güncellemesinde değişikliklerin kaydedilmemesi hatası giderildi.
+- **Mail Kuyruğu Cron Komutu**:
+  - Crontab komutunda FPM binary yolu yerine `/usr/bin/php` CLI yolu önceliklendirildi, çıktı yönlendirmesi düzenlendi.
+
+### Removed
+- `logs` tablosu, `DbLogHandler`, `LogRepository` ve `App\Models\Log` sınıfları.
+- Kullanılmayan `bin/clean_empty_schedules.php` betiği (temizlik yayınlama sayfasında otomatik yapılıyor) ve `SchedulePublishService::bulkPublish()`.
+
 ## [0.3.4] - 2026-10-03
 
 ### Added
