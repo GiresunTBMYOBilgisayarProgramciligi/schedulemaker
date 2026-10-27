@@ -4,6 +4,8 @@ namespace App\Repositories;
 
 use App\Models\User;
 use App\Models\UserAffiliation;
+use App\Enums\ExamType;
+use App\Enums\OwnerType;
 use App\Enums\UserRole;
 use App\Enums\UserTitle;
 use App\Middlewares\AuthMiddleware;
@@ -65,6 +67,89 @@ class UserRepository extends BaseRepository
         return $this->count([
             "role" => ['in' => UserRole::getAcademicRoles()]
         ]);
+    }
+
+    /**
+     * Belirtilen dönemde kullanıcıların sınav gözetmenlik görevi sayılarını sınav türüne göre döner.
+     *
+     * Görevler, sınav kaydedilirken gözetmenin kendi (owner_type = 'user') takvimine yazılan
+     * ve detail alanında reference_type = 'exam_assignment' bulunan item'lardan sayılır.
+     * Hiç görevi olmayan akademisyenler de 0 değeriyle listeye dahil edilir.
+     * Birim/bölüm filtresi kullanıcının kadro birimi/bölümü (users.unit_id / users.department_id) üzerinden uygulanır.
+     *
+     * @param string $semester
+     * @param string $academicYear
+     * @param int|null $unitId
+     * @param int|null $departmentId
+     * @return array<int, array{id:int, full_name:string, department_name:?string,
+     *               by_type:array<string,int>, total:int, total_minutes:int}> by_type ExamType değerleriyle anahtarlanır
+     */
+    public function getExamDutyStats(string $semester, string $academicYear, ?int $unitId = null, ?int $departmentId = null): array
+    {
+        $examTypes = ExamType::values();
+        $academicRoles = UserRole::getAcademicRoles();
+        $placeholders = fn(array $values) => implode(',', array_fill(0, count($values), '?'));
+
+        // Her sınav türü için ayrı sayaç kolonu (type_0, type_1, ...)
+        $typeColumns = [];
+        $outerTypeColumns = [];
+        foreach (array_keys($examTypes) as $i) {
+            $typeColumns[] = "SUM(s.type = ?) AS type_$i";
+            $outerTypeColumns[] = "COALESCE(duty.type_$i, 0) AS type_$i";
+        }
+
+        $filterSql = '';
+        $filterParams = [];
+        foreach (['unit_id' => $unitId, 'department_id' => $departmentId] as $column => $value) {
+            if (!$value) {
+                continue;
+            }
+            $filterSql .= " AND u.$column = ?";
+            $filterParams[] = $value;
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.title, u.name, u.last_name, d.name AS department_name,
+                   " . implode(', ', $outerTypeColumns) . ",
+                   COALESCE(duty.total, 0) AS total,
+                   COALESCE(duty.total_minutes, 0) AS total_minutes
+            FROM users u
+            LEFT JOIN departments d ON d.id = u.department_id
+            LEFT JOIN (
+                SELECT s.owner_id AS user_id,
+                       " . implode(', ', $typeColumns) . ",
+                       COUNT(*) AS total,
+                       SUM(TIME_TO_SEC(TIMEDIFF(si.end_time, si.start_time))) DIV 60 AS total_minutes
+                FROM schedule_items si
+                INNER JOIN schedules s ON s.id = si.schedule_id
+                WHERE s.owner_type = ?
+                  AND s.type IN (" . $placeholders($examTypes) . ")
+                  AND s.semester = ?
+                  AND s.academic_year = ?
+                  AND si.detail LIKE '%\"exam_assignment\"%'
+                GROUP BY s.owner_id
+            ) duty ON duty.user_id = u.id
+            WHERE (u.role IN (" . $placeholders($academicRoles) . ") OR duty.user_id IS NOT NULL)
+              $filterSql
+            ORDER BY total DESC, u.name, u.last_name
+        ");
+        $stmt->execute(array_merge(
+            $examTypes,
+            [OwnerType::USER->value],
+            $examTypes,
+            [$semester, $academicYear],
+            $academicRoles,
+            $filterParams
+        ));
+
+        return array_map(fn(array $row) => [
+            'id'              => (int)$row['id'],
+            'full_name'       => trim($row['title'] . ' ' . $row['name'] . ' ' . $row['last_name']),
+            'department_name' => $row['department_name'],
+            'by_type'         => array_combine($examTypes, array_map(fn($i) => (int)$row["type_$i"], array_keys($examTypes))),
+            'total'           => (int)$row['total'],
+            'total_minutes'   => (int)$row['total_minutes'],
+        ], $stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**

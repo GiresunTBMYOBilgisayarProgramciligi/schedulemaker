@@ -1,0 +1,75 @@
+/* --- Dashboard: Sınav Gözetmenlik Görevleri grafiği --- */
+/* Seri renkleri ExamType değerlerine göre: midterm-exam / final-exam / makeup-exam */
+.exam-duty {
+    --duty-series-midterm-exam: #2a78d6;
+    --duty-series-final-exam: #eb6834;
+    --duty-series-makeup-exam: #1baf7a;
+}
+
+[data-bs-theme="dark"] .exam-duty {
+    --duty-series-midterm-exam: #3987e5;
+    --duty-series-final-exam: #d95926;
+    --duty-series-makeup-exam: #199e70;
+}
+
+.exam-duty .duty-chart,
+.exam-duty .duty-table {
+    overflow-y: auto;
+    max-height: 440px;
+}
+
+.exam-duty .duty-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 34%) 1fr 2.5rem;
+    align-items: center;
+    gap: .5rem;
+    padding: 3px 0;
+}
+
+.exam-duty .duty-row:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.exam-duty .duty-name {
+    font-size: .8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.exam-duty .duty-track {
+    display: flex;
+    height: 14px;
+    gap: 2px;
+}
+
+.exam-duty .duty-seg {
+    height: 100%;
+    min-width: 3px;
+}
+
+.exam-duty .duty-seg:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.exam-duty .duty-value {
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.exam-duty .duty-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 4px;
+}
+
+.exam-duty .duty-department {
+    font-size: .7rem;
+}
+
+.exam-duty .seg-midterm-exam { background: var(--duty-series-midterm-exam); }
+.exam-duty .seg-final-exam { background: var(--duty-series-final-exam); }
+.exam-duty .seg-makeup-exam { background: var(--duty-series-makeup-exam); }

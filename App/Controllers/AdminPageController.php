@@ -48,7 +48,7 @@ class AdminPageController extends Controller
      *
      * @throws Exception
      */
-    public function getIndexPageData(User $currentUser, AssetManager $assetManager): array
+    public function getIndexPageData(User $currentUser, AssetManager $assetManager, array $filters = []): array
     {
         $assetManager->addCss("/assets/css/schedule.css");
         $assetManager->addJs("/assets/js/exportSchedule.js");
@@ -84,6 +84,19 @@ class AdminPageController extends Controller
             $view_data["programs"]     = (new ProgramRepository())->getAuthorized('view', ['active' => true], ['lecturers', 'lessons', 'department' => ['with' => ['chairperson', 'unit']]]);
             $view_data["units"]        = (new UnitRepository())->getAuthorized('view', ['active' => true]);
             $view_data["departments"]  = (new DepartmentRepository())->getAuthorized('view', [], ["chairperson", "unit"]);
+
+            // Sınav gözetmenlik görevi istatistikleri (yıl / dönem / birim / bölüm filtreli)
+            // exportschedule asset grubu: birim → bölüm seçimi için formEvents.js + TomSelect
+            $assetManager->loadPageAssets('exportschedule');
+            $assetManager->addCss("/assets/css/dashboard.css");
+            $view_data['examDutyFilters'] = $this->resolveExamDutyFilters($filters, $view_data['units'], $view_data['departments']);
+            $view_data['examDutyStats'] = (new UserRepository())->getExamDutyStats(
+                $view_data['examDutyFilters']['semester'],
+                $view_data['examDutyFilters']['academic_year'],
+                $view_data['examDutyFilters']['unit_id'],
+                $view_data['examDutyFilters']['department_id']
+            );
+            $view_data['examDutySummary'] = $this->summarizeExamDutyStats($view_data['examDutyStats']);
 
         // --- Sekreter ---
         } elseif (Gate::allowsRole('secretary')) {
@@ -152,6 +165,74 @@ class AdminPageController extends Controller
 
 
         return $view_data;
+    }
+
+    /**
+     * Dashboard sınav görevi istatistik filtrelerini doğrular.
+     * Geçersiz yıl/dönem ayarlardaki aktif değere, yetkisiz birim/bölüm null'a düşer.
+     *
+     * @param array $filters ['academic_year', 'semester', 'unit_id', 'department_id']
+     * @param Unit[] $authorizedUnits
+     * @param Department[] $authorizedDepartments
+     * @return array{academic_year:string, semester:string, unit_id:?int, department_id:?int}
+     */
+    private function resolveExamDutyFilters(array $filters, array $authorizedUnits, array $authorizedDepartments): array
+    {
+        $academicYear = (string)($filters['academic_year'] ?? '');
+        if (!preg_match('/^\d{4} - \d{4}$/', $academicYear)) {
+            $academicYear = (string)getSettingValue('academic_year');
+        }
+
+        $semester = (string)($filters['semester'] ?? '');
+        if (!in_array($semester, ['Güz', 'Bahar', 'Yaz'], true)) {
+            $semester = (string)getSettingValue('semester');
+        }
+
+        $unitId = (int)($filters['unit_id'] ?? 0);
+        if (!in_array($unitId, array_map(fn($u) => (int)$u->id, $authorizedUnits), true)) {
+            $unitId = null;
+        }
+
+        $departmentId = (int)($filters['department_id'] ?? 0);
+        $department = null;
+        foreach ($authorizedDepartments as $dept) {
+            if ((int)$dept->id === $departmentId) {
+                $department = $dept;
+                break;
+            }
+        }
+        // Bölüm, seçili birime ait değilse yok sayılır
+        if (!$department || ($unitId && (int)$department->unit_id !== $unitId)) {
+            $departmentId = null;
+        }
+
+        return [
+            'academic_year' => $academicYear,
+            'semester'      => $semester,
+            'unit_id'       => $unitId,
+            'department_id' => $departmentId,
+        ];
+    }
+
+    /**
+     * Sınav görevi istatistiklerinden dashboard özet değerlerini hesaplar.
+     *
+     * @param array $stats UserRepository::getExamDutyStats() çıktısı
+     * @return array{total:int, assigned_count:int, unassigned_count:int, average:float, max:int}
+     */
+    private function summarizeExamDutyStats(array $stats): array
+    {
+        $totals = array_column($stats, 'total');
+        $assignedCount = count(array_filter($totals));
+        $total = array_sum($totals);
+
+        return [
+            'total'            => $total,
+            'assigned_count'   => $assignedCount,
+            'unassigned_count' => count($totals) - $assignedCount,
+            'average'          => $assignedCount ? round($total / $assignedCount, 1) : 0.0,
+            'max'              => $totals ? max($totals) : 0,
+        ];
     }
 
     public function getListUsersPageData(User $currentUser, AssetManager $assetManager): array

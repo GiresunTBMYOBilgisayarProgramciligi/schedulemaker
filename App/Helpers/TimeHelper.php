@@ -32,6 +32,19 @@ class TimeHelper
     }
 
     /**
+     * Dakika cinsinden süreyi okunabilir metne çevirir (örn: 90 → "1 sa 30 dk")
+     *
+     * @param int $minutes
+     * @return string
+     */
+    public static function formatDuration(int $minutes): string
+    {
+        $hours = intdiv($minutes, 60);
+        $rest = $minutes % 60;
+        return $rest ? "$hours sa $rest dk" : "$hours sa";
+    }
+
+    /**
      * Başlangıç saatinden itibaren belirli bir saat (float) ekleyerek bitiş saatini hesaplar
      * 
      * @param string $startTime HH:MM formatı

@@ -42,7 +42,7 @@ class AdminRouter extends Router
      */
     public function IndexAction(): void
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getIndexPageData($this->currentUser, $this->assetManager));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getIndexPageData($this->currentUser, $this->assetManager, $_GET));
         $this->callView("admin/index/index");
     }
 

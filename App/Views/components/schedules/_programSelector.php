@@ -15,6 +15,8 @@
  * @var string|null $dataScheduleType
  * @var string|null $customButtonHtml
  * @var bool|null $showFormText
+ * @var bool|null $showProgram     Program seçimini gösterir (varsayılan: true)
+ * @var bool|null $showSemesterNo  Yarıyıl/sınıf seçimini gösterir (varsayılan: true)
  */
 
 use function App\Helpers\e;
@@ -36,6 +38,10 @@ $customButtonHtml = $customButtonHtml ?? null;
 $showFormText = $showFormText ?? false;
 $showButton = $showButton ?? true;
 $buttonPosition = $buttonPosition ?? 'inline';
+$showProgram = $showProgram ?? true;
+$showSemesterNo = $showSemesterNo ?? true;
+// Gizlenen alanlara göre kolon genişliği (birim + bölüm her zaman görünür)
+$columnClass = 'col-12 col-md-' . (12 / (2 + (int)$showProgram + (int)$showSemesterNo));
 
 $hasProgramSelected = !empty($selectedProgramId) && (string)$selectedProgramId !== '0';
 $hasUnitSelected = !empty($selectedUnitId) && (string)$selectedUnitId !== '0';
@@ -43,7 +49,7 @@ $hasUnitSelected = !empty($selectedUnitId) && (string)$selectedUnitId !== '0';
 $semesterOptions = [];
 $maxSemester = null;
 
-if ($hasProgramSelected || ($showFormText && $hasUnitSelected)) {
+if ($showSemesterNo && ($hasProgramSelected || ($showFormText && $hasUnitSelected))) {
     $maxSemester = getMaxSemesterNo(
         $hasProgramSelected ? (int)$selectedProgramId : null,
         !empty($selectedDepartmentId) ? (int)$selectedDepartmentId : null,
@@ -66,7 +72,7 @@ if ($showButton) {
 }
 ?>
 <div class="row g-2 g-md-3 program-selector" data-component="program-selector">
-    <div class="col-12 col-md-3">
+    <div class="<?= $columnClass ?>">
         <select class="form-select tom-select" id="unit_id" name="unit_id"<?= !empty($dataAction) ? ' data-action="' . e($dataAction) . '"' : '' ?>>
             <option value="">Birim Seçiniz</option>
             <?php if (!empty($units)): ?>
@@ -84,7 +90,7 @@ if ($showButton) {
             </div>
         <?php endif; ?>
     </div>
-    <div class="col-12 col-md-3">
+    <div class="<?= $columnClass ?>">
         <select class="form-select tom-select" id="department_id" name="department_id"<?= !empty($dataAction) ? ' data-action="' . e($dataAction) . '"' : '' ?> data-selected="<?= e((string)$selectedDepartmentId) ?>">
             <option value="0">İlk olarak Birim Seçiniz</option>
         </select>
@@ -94,7 +100,8 @@ if ($showButton) {
             </div>
         <?php endif; ?>
     </div>
-    <div class="col-12 col-md-3">
+    <?php if ($showProgram): ?>
+    <div class="<?= $columnClass ?>">
         <select class="form-select" id="program_id" name="program_id" data-selected="<?= e((string)$selectedProgramId) ?>">
             <option value="0">İlk olarak Bölüm seçiniz</option>
         </select>
@@ -104,7 +111,9 @@ if ($showButton) {
             </div>
         <?php endif; ?>
     </div>
-    <div class="col-12 col-md-3">
+    <?php endif; ?>
+    <?php if ($showSemesterNo): ?>
+    <div class="<?= $columnClass ?>">
         <?php if ($showButton && $buttonPosition === 'inline'): ?>
             <div class="input-group">
         <?php endif; ?>
@@ -126,6 +135,11 @@ if ($showButton) {
             </div>
         <?php endif; ?>
     </div>
+    <?php elseif ($showButton && $buttonPosition === 'inline'): ?>
+        <div class="col-12 col-md-auto">
+            <?= $renderedButtonHtml ?>
+        </div>
+    <?php endif; ?>
     <?php if ($showButton && $buttonPosition === 'bottom'): ?>
         <div class="col-12 d-flex justify-content-end mt-3">
             <?= $renderedButtonHtml ?>

@@ -8,9 +8,15 @@
  * @var Program[]    $programs
  * @var Unit[]       $units
  * @var Department[] $departments
+ * @var array        $examDutyStats   UserRepository::getExamDutyStats() çıktısı
+ * @var array        $examDutyFilters ['academic_year', 'semester', 'unit_id', 'department_id']
+ * @var array        $examDutySummary ['total', 'assigned_count', 'unassigned_count', 'average', 'max']
  */
 
+use App\Core\View;
+use App\Enums\ExamType;
 use App\Enums\UserRole;
+use App\Helpers\TimeHelper;
 use App\Helpers\LogViewHelper;
 use function App\Helpers\e;
 ?>
@@ -109,6 +115,178 @@ use function App\Helpers\e;
     </div>
 </div>
 <!-- /row istatistik -->
+
+<?php
+// ===================== Sınav Görev İstatistikleri =====================
+$examDutyStats   = $examDutyStats ?? [];
+$examDutyFilters = $examDutyFilters ?? [];
+$examDutySummary = $examDutySummary ?? ['total' => 0, 'assigned_count' => 0, 'unassigned_count' => 0, 'average' => 0, 'max' => 0];
+$dutyYear        = $examDutyFilters['academic_year'] ?? '';
+$dutySemester    = $examDutyFilters['semester'] ?? '';
+$dutyWithTasks   = array_filter($examDutyStats, fn($r) => $r['total'] > 0);
+?>
+<div class="card card-outline card-info mb-4 exam-duty" id="examDutyCard">
+    <div class="card-header" role="button"
+         data-bs-toggle="collapse"
+         data-bs-target="#collapseExamDuty"
+         aria-expanded="true"
+         aria-controls="collapseExamDuty"
+         style="cursor:pointer;">
+        <h3 class="card-title">
+            <i class="bi bi-clipboard-data me-1"></i> Sınav Gözetmenlik Görevleri
+            <span class="text-muted small ms-1">
+                <?= e($dutyYear . ' ' . $dutySemester) ?>
+            </span>
+        </h3>
+        <div class="card-tools">
+            <i class="bi bi-chevron-up collapse-icon"></i>
+        </div>
+    </div>
+    <div class="collapse show" id="collapseExamDuty">
+        <div class="card-body">
+            <!-- Filtre -->
+            <form method="get" action="/admin#examDutyCard" class="row g-2 g-md-3 mb-3 align-items-start" id="examDutyFilterForm">
+                <div class="col-6 col-md-2">
+                    <select class="form-select" name="academic_year" aria-label="Akademik Yıl">
+                        <?php for ($year = 2023; $year <= (int)date('Y'); $year++): ?>
+                            <?php $yearValue = $year . ' - ' . ($year + 1); ?>
+                            <option value="<?= e($yearValue) ?>" <?= $dutyYear === $yearValue ? 'selected' : '' ?>><?= e($yearValue) ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <select class="form-select" name="semester" aria-label="Dönem">
+                        <?php foreach (['Güz', 'Bahar', 'Yaz'] as $semesterOption): ?>
+                            <option value="<?= e($semesterOption) ?>" <?= $dutySemester === $semesterOption ? 'selected' : '' ?>><?= e($semesterOption) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <?= View::renderComponent('schedules/_programSelector', [
+                        'units'                => $units ?? [],
+                        'selectedUnitId'       => $examDutyFilters['unit_id'] ?? '',
+                        'selectedDepartmentId' => $examDutyFilters['department_id'] ?? '',
+                        'showProgram'          => false,
+                        'showSemesterNo'       => false,
+                        'showButton'           => false,
+                    ]) ?>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i>Filtrele
+                    </button>
+                    <a href="/admin" class="btn btn-outline-secondary" title="Filtreyi temizle">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+
+            <!-- Özet -->
+            <div class="row g-2 mb-3 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="border rounded py-2">
+                        <div class="fs-4 fw-semibold"><?= $examDutySummary['total'] ?></div>
+                        <div class="text-muted small">Toplam Görev</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded py-2">
+                        <div class="fs-4 fw-semibold"><?= $examDutySummary['assigned_count'] ?></div>
+                        <div class="text-muted small">Görevli Hoca</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded py-2">
+                        <div class="fs-4 fw-semibold"><?= $examDutySummary['average'] ?></div>
+                        <div class="text-muted small">Hoca Başına Ortalama</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded py-2">
+                        <div class="fs-4 fw-semibold"><?= $examDutySummary['unassigned_count'] ?></div>
+                        <div class="text-muted small">Görevi Olmayan</div>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (empty($dutyWithTasks)): ?>
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-clipboard-x fs-2"></i>
+                    <p class="mt-2 mb-0">Bu dönem için atanmış gözetmenlik görevi bulunamadı.</p>
+                </div>
+            <?php else: ?>
+            <div class="row g-3">
+                <!-- Grafik -->
+                <div class="col-12 col-xl-7">
+                    <div class="d-flex flex-wrap gap-3 mb-2 small text-body-secondary">
+                        <?php foreach (ExamType::cases() as $examType): ?>
+                            <span><span class="duty-swatch seg-<?= $examType->value ?>"></span><?= e($examType->label()) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="duty-chart">
+                        <?php foreach ($dutyWithTasks as $row): ?>
+                        <?php
+                            $typeSummary = implode(', ', array_map(
+                                fn(ExamType $type) => $type->label() . ': ' . $row['by_type'][$type->value],
+                                ExamType::cases()
+                            ));
+                            $tooltip = $row['full_name'] . ' — ' . $typeSummary
+                                . ' (Toplam ' . $row['total'] . ', ' . TimeHelper::formatDuration($row['total_minutes']) . ')';
+                        ?>
+                        <div class="duty-row" title="<?= e($tooltip) ?>">
+                            <div class="duty-name"><?= e($row['full_name']) ?></div>
+                            <div class="duty-track" style="width: <?= round($row['total'] / $examDutySummary['max'] * 100, 2) ?>%;">
+                                <?php foreach ($row['by_type'] as $type => $count): ?>
+                                    <?php if ($count > 0): ?>
+                                    <div class="duty-seg seg-<?= e($type) ?>" style="flex: <?= $count ?> 0 0;"></div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="duty-value"><?= $row['total'] ?></div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Liste -->
+                <div class="col-12 col-xl-5">
+                    <div class="duty-table">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Öğretim Elemanı</th>
+                                    <?php foreach (ExamType::cases() as $examType): ?>
+                                        <th class="text-center"><?= e($examType->label()) ?></th>
+                                    <?php endforeach; ?>
+                                    <th class="text-center">Toplam</th>
+                                    <th class="text-end">Süre</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($examDutyStats as $row): ?>
+                                <tr class="<?= $row['total'] === 0 ? 'text-muted' : '' ?>">
+                                    <td>
+                                        <a href="/admin/profile/<?= $row['id'] ?>" class="fw-semibold"><?= e($row['full_name']) ?></a>
+                                        <?php if (!empty($row['department_name'])): ?>
+                                            <div class="text-muted duty-department"><?= e($row['department_name']) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <?php foreach ($row['by_type'] as $count): ?>
+                                        <td class="text-center"><?= $count ?></td>
+                                    <?php endforeach; ?>
+                                    <td class="text-center fw-semibold"><?= $row['total'] ?></td>
+                                    <td class="text-end small text-nowrap"><?= TimeHelper::formatDuration($row['total_minutes']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
 <div class="row g-3">
 
