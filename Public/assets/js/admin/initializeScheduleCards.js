@@ -48,7 +48,7 @@ window.initializeScheduleCards = function () {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
-    
+
     // DOM yüklendiğinde mevcut kartları başlat
     window.initializeScheduleCards();
 
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let formData = new FormData();
         formData.append('id', scheduleId);
-        
+
         toggle.disabled = true;
         try {
             const response = await fetch('/ajax/togglePublishSchedule', {
