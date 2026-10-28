@@ -3,11 +3,9 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
-use App\Core\Gate;
 use App\DTOs\DeleteScheduleResult;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
-use App\Enums\PermissionType;
 use App\Models\Lesson;
 use App\Models\Program;
 use App\Models\LessonCombination;
@@ -48,20 +46,21 @@ class ExamScheduleService extends ScheduleService
 
         $isLecturerExam = ($filter['owner_type'] ?? null) === OwnerType::USER->value
             && ExamType::isExamType((string)($filter['type'] ?? ''));
-        if (!$isLecturerExam) {
-            return $schedule;
+        if ($isLecturerExam) {
+            if (!$schedule) {
+                $schedule = new Schedule();
+                $schedule->owner_type = OwnerType::USER->value;
+                $schedule->owner_id = (int)$filter['owner_id'];
+                $schedule->semester = $filter['semester'] ?? null;
+                $schedule->academic_year = $filter['academic_year'] ?? null;
+                $schedule->type = $filter['type'];
+                $schedule->semester_no = 0;
+            }
+            $schedule = $this->getLecturerExamSchedule($schedule);
         }
 
-        if (!$schedule) {
-            $schedule = new Schedule();
-            $schedule->owner_type = OwnerType::USER->value;
-            $schedule->owner_id = (int)$filter['owner_id'];
-            $schedule->semester = $filter['semester'] ?? null;
-            $schedule->academic_year = $filter['academic_year'] ?? null;
-            $schedule->type = $filter['type'];
-            $schedule->semester_no = 0;
-        }
-        return $this->getLecturerExamSchedule($schedule);
+        // Misafir dışa aktarım kuralları (bkz. GuestScheduleVisibility)
+        return $schedule ? (new GuestScheduleVisibility())->forExport($schedule) : null;
     }
 
     /**
@@ -91,9 +90,7 @@ class ExamScheduleService extends ScheduleService
 
         $assignments = (new LessonAssignmentRepository())->findByLecturer($schedule->owner_id, $semester, $academicYear);
         $taughtIds = array_values(array_unique(array_filter(array_map(fn($a) => (int)$a->lesson_id, $assignments))));
-        $observerLessonIds = array_values(array_unique(array_filter(
-            array_map(fn(ScheduleItem $item) => (int)($item->data[0]['lesson_id'] ?? 0), $schedule->items)
-        )));
+        $observerLessonIds = $this->getItemLessonIds($schedule->items);
 
         $taughtParentMap = $this->mapToExamParents($taughtIds, $semester, $academicYear);
         $observerParentMap = $this->mapToExamParents($observerLessonIds, $semester, $academicYear);
@@ -133,10 +130,27 @@ class ExamScheduleService extends ScheduleService
             return !isset($ownIdentities[$this->examIdentity($resolvedId, $lessons) . '|' . $this->examSlotKey($item)]);
         });
 
-        $this->attachLessonLecturerNames($observerItems, $observerLessonIds, $semester, $academicYear);
+        $this->attachLessonLecturerNames($observerItems, $semester, $academicYear);
 
         $schedule->items = array_values(array_merge($ownItems, $observerItems));
         return $schedule;
+    }
+
+    /**
+     * Kayıtların slot verisindeki ders ID'lerini tekil olarak döndürür.
+     *
+     * @param ScheduleItem[] $items
+     * @return int[]
+     */
+    public function getItemLessonIds(array $items): array
+    {
+        $lessonIds = [];
+        foreach ($items as $item) {
+            foreach ($item->data ?? [] as $dayData) {
+                $lessonIds[] = (int)($dayData['lesson_id'] ?? 0);
+            }
+        }
+        return array_values(array_unique(array_filter($lessonIds)));
     }
 
     /**
@@ -163,15 +177,16 @@ class ExamScheduleService extends ScheduleService
     }
 
     /**
-     * Gözetmenlik kayıtlarına sınavı yapılan dersin hocasını detail['lesson_lecturer'] olarak ekler (kaydedilmez).
+     * Sınav kayıtlarına sınavı yapılan dersin hocasını detail['lesson_lecturer'] olarak ekler (kaydedilmez).
+     * Gözetmenlik kayıtlarında ve misafir sınav görünümünde (GuestScheduleVisibility) kullanılır.
      *
      * @param ScheduleItem[] $items
-     * @param int[] $lessonIds
      * @throws Exception
      */
-    private function attachLessonLecturerNames(array $items, array $lessonIds, string $semester, string $academicYear): void
+    public function attachLessonLecturerNames(array $items, string $semester, string $academicYear): void
     {
-        if (empty($items) || empty($lessonIds)) {
+        $lessonIds = $this->getItemLessonIds($items);
+        if (empty($lessonIds)) {
             return;
         }
         $lecturerNames = $this->getLessonLecturerNames($lessonIds, $semester, $academicYear);
@@ -201,11 +216,10 @@ class ExamScheduleService extends ScheduleService
             $schedule->academic_year,
             $schedule->type
         );
+        // Görüntüleme yetkisi veya dersin program programının yayın durumu (bkz. GuestScheduleVisibility kural 5)
         $visibleIds = [];
-        foreach ($lessonSchedules as $lessonSchedule) {
-            if (Gate::check(PermissionType::VIEW->value, $lessonSchedule)) {
-                $visibleIds[$lessonSchedule->id] = (int)$lessonSchedule->owner_id;
-            }
+        foreach ((new GuestScheduleVisibility())->filterVisibleLessonSchedules($lessonSchedules) as $lessonSchedule) {
+            $visibleIds[$lessonSchedule->id] = (int)$lessonSchedule->owner_id;
         }
         if (empty($visibleIds)) {
             return [];

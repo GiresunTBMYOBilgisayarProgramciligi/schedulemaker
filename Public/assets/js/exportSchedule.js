@@ -12,6 +12,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const classroomSelect = document.getElementById("classroom_id");
 
     /**
+     * Giriş yapmamış (misafir) kullanıcı mı? Yalnızca public temada data-guest="true" olur.
+     * Giriş yapmış kullanıcı public sayfada da paneldeki seçenekleri görür.
+     */
+    function isGuestUser() {
+        return document.querySelector(".app-public-wrapper")?.dataset.guest === "true";
+    }
+
+    /**
      * Yarıyıl numarasına göre kullanıcı dostu etiket döner (örn: "1. Sınıf (1. Yarıyıl)")
      */
     function getSemesterLabel(semesterNo) {
@@ -307,6 +315,53 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     /**
+     * Dışa aktarma modalında gösterilecek seçenekleri belirler (tüm seçenek kuralları burada).
+     *
+     * Modalda yer almayan seçenekler isteğe eklenmez ve sunucu varsayılanı kullanılır.
+     * Misafir sınav çıktısında gözetmen ve program adı sunucuda da kapatılır (GuestScheduleVisibility).
+     *
+     * @param {string} ownerType program | department | unit | user | classroom | building | classroom_unit
+     * @param {boolean} isExam Sınav programı mı
+     * @param {string} format "excel" | "list" | "json"
+     * @param {boolean} isGuest Giriş yapmamış kullanıcı mı
+     * @returns {{id: string, label: string, checked: boolean}[]}
+     */
+    function getExportOptionFields(ownerType, isExam, format, isGuest) {
+        const isProgramOwner = ["program", "department", "unit"].includes(ownerType);
+        const isClassroomOwner = ["classroom", "building", "classroom_unit"].includes(ownerType);
+        const isUserOwner = ownerType === "user";
+        const fields = [{id: "show_code", label: "Ders Kodu", checked: true}];
+
+        // Hoca ders programında hoca zaten programın sahibidir
+        if (isProgramOwner || isClassroomOwner || (isExam && isUserOwner)) {
+            fields.push({id: "show_lecturer", label: "Hoca Adı", checked: true});
+        }
+
+        // Misafir sınav çıktısı: yalnızca ders kodu ve hoca adı
+        if (isGuest && isExam) {
+            return fields;
+        }
+
+        // Sınavlarda birleştirilmiş dersler farklı programlara ait olabileceğinden program adı her çıktı türünde seçilebilir
+        if (isExam || isUserOwner || isClassroomOwner) {
+            fields.push({id: "show_program", label: "Program/Bölüm Adı", checked: true});
+        }
+        // Hocanın kendi sınav programında gözetmen seçeneği yok
+        if (isExam && !isUserOwner) {
+            fields.push({id: "show_observer", label: "Gözetmen İsimleri", checked: true});
+        }
+        // Staj tablosu yalnızca birim/bölüm/program ders programında ve giriş yapmış kullanıcıya
+        if (!isExam && isProgramOwner && !isGuest) {
+            fields.push({id: "show_internship", label: "Staj / İşletmede Mesleki Eğitim Tablosu", checked: true});
+        }
+        // Derslik bazlı sınav listesinde derslik başlıkları yerine tek tablo ve "Derslik" sütunu
+        if (isExam && isClassroomOwner && format === "list") {
+            fields.push({id: "hide_titles", label: "Derslik başlıklarını gösterme (tüm derslikler tek tabloda, derslik adı ilk sütunda)", checked: false});
+        }
+        return fields;
+    }
+
+    /**
      * Dışa aktarma seçeneklerini soran modalı gösterir
      * @param {string} format Dışa aktarma biçimi ("excel" | "list" | "json"); biçime özel seçenekler için
      */
@@ -314,58 +369,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const modal = new Modal();
         const isExam = scheduleType !== "lesson";
         const typeLabel = isExam ? "Sınav" : "Ders";
+        const isGuest = isGuestUser();
+        const fields = getExportOptionFields(ownerType, isExam, format, isGuest);
 
-        let content = `<div class="p-2">
+        const content = `<div class="p-2">
             <p class="mb-3 border-bottom pb-2">Excel tablosunda görünmesini istediğiniz alanları seçin:</p>
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show_code" checked>
-                <label class="form-check-label" for="show_code">Ders Kodu</label>
-            </div>`;
-
-        if (ownerType === "program" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit" || ownerType === "department" || ownerType === "unit" || (isExam && ownerType === "user")) {
-            content += `<div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show_lecturer" checked>
-                <label class="form-check-label" for="show_lecturer">Hoca Adı</label>
-            </div>`;
-        }
-
-        // Sınavlarda birleştirilmiş dersler farklı programlara ait olabileceğinden program adı her çıktı türünde seçilebilir
-        if (isExam || ownerType === "user" || ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit") {
-            content += `<div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show_program" checked>
-                <label class="form-check-label" for="show_program">Program/Bölüm Adı</label>
-            </div>`;
-        }
-
-        // Sınav türleri için gözetmen seçeneği (Hoca hariç)
-        if (isExam && ownerType !== "user") {
-            content += `<div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show_observer" checked>
-                <label class="form-check-label" for="show_observer">Gözetmen İsimleri</label>
-            </div>`;
-        }
-
-        // Bölüm/Program ders programları için staj tablosu seçeneği (Birim, Bölüm veya Program seçildiğinde)
-        // Public (öğrenci/misafir) sayfasında staj programı seçeneği gösterilmez
-        const isPublicPage = !!document.querySelector(".app-public-wrapper") || !!document.querySelector("[data-action='public']");
-        const isProgramScheduleExport = ownerType === "program" || ownerType === "department" || ownerType === "unit";
-        if (!isExam && isProgramScheduleExport && !isPublicPage) {
-            content += `<div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="show_internship" checked>
-                <label class="form-check-label" for="show_internship">Staj / İşletmede Mesleki Eğitim Tablosu</label>
-            </div>`;
-        }
-
-        // Derslik bazlı sınav listesinde derslik başlıkları yerine tek tablo ve "Derslik" sütunu
-        const isClassroomExport = ownerType === "classroom" || ownerType === "building" || ownerType === "classroom_unit";
-        if (isExam && isClassroomExport && format === "list") {
-            content += `<div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" id="hide_titles">
-                <label class="form-check-label" for="hide_titles">Derslik başlıklarını gösterme (tüm derslikler tek tabloda, derslik adı ilk sütunda)</label>
-            </div>`;
-        }
-
-        content += `</div>`;
+            ${fields.map(field => `<div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="${field.id}"${field.checked ? " checked" : ""}>
+                <label class="form-check-label" for="${field.id}">${field.label}</label>
+            </div>`).join("")}
+        </div>`;
 
         modal.prepareModal(typeLabel + " Programı Dışa Aktarma Seçenekleri", content, true, true, "md");
         modal.confirmButton.textContent = "Dışa Aktar";
@@ -376,14 +389,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (semesterNo) {
                 options.semester_no = semesterNo;
             }
-            if (document.getElementById("show_code")) options.show_code = document.getElementById("show_code").checked;
-            if (document.getElementById("show_lecturer")) options.show_lecturer = document.getElementById("show_lecturer").checked;
-            if (document.getElementById("show_program")) options.show_program = document.getElementById("show_program").checked;
-            if (document.getElementById("show_observer")) options.show_observer = document.getElementById("show_observer").checked;
-            if (document.getElementById("hide_titles")) options.hide_titles = document.getElementById("hide_titles").checked;
-            if (document.getElementById("show_internship")) {
-                options.show_internship = document.getElementById("show_internship").checked;
-            } else if (isPublicPage) {
+            fields.forEach(field => {
+                options[field.id] = document.getElementById(field.id).checked;
+            });
+            // Misafire staj tablosu çıkarılmaz (sunucu varsayılanı açık olduğundan açıkça kapatılır)
+            if (isGuest && !("show_internship" in options)) {
                 options.show_internship = false;
             }
 

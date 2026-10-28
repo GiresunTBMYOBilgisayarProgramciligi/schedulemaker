@@ -12,9 +12,9 @@ use Exception;
 use App\Core\View;
 use App\Core\Gate;
 use App\Enums\PermissionType;
-use App\Middlewares\AuthMiddleware;
 use App\DTOs\ScheduleFilterDTO;
 use App\Services\Schedule\AvailabilityService;
+use App\Services\Schedule\GuestScheduleVisibility;
 use App\Services\Schedule\ScheduleService;
 use App\Models\User;
 use App\Models\Program;
@@ -476,13 +476,11 @@ class ScheduleViewHelper
 
         $scheduleService = new ScheduleService();
         $schedule ??= $scheduleService->getOrCreateSchedule($dto);
+        // Misafir görünüm kuralları (bkz. GuestScheduleVisibility)
+        $schedule = (new GuestScheduleVisibility())->forView($schedule);
+
         $availableLessons = ($only_table) ? [] : (new AvailabilityService())->availableLessons($schedule, $preference_mode);
         $scheduleRows = self::prepareScheduleRows($schedule);
-
-        // Misafirler hocanın tercih/uygun değil (dummy) kayıtlarını görmez.
-        if (AuthMiddleware::user() === null) {
-            $scheduleRows = self::stripDummyItems($scheduleRows);
-        }
 
         $availableLessonsHTML = View::renderPartial('admin', 'schedules', 'availableLessons', [
             'availableLessons' => $availableLessons,

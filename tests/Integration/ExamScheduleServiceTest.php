@@ -4,6 +4,7 @@ namespace Tests\Integration;
 
 use Tests\BaseTestCase;
 use App\Services\Schedule\ExamScheduleService;
+use App\Services\Schedule\GuestScheduleVisibility;
 use App\DTOs\ScheduleItemDTO;
 use App\Models\ScheduleItem;
 use App\Enums\OwnerType;
@@ -313,5 +314,181 @@ class ExamScheduleServiceTest extends BaseTestCase
             [$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00', (int) $existing->id)]
         );
         $this->assertSame([], $warnings);
+    }
+
+    /**
+     * Gözetmenli bir sınav kaydeder; program, derslik ve iki gözetmenin user programlarına yansır.
+     *
+     * @return int İkinci gözetmenin ID'si
+     */
+    private function saveExamWithObservers(): int
+    {
+        $secondObserverId = $this->insert('users', [
+            'name' => 'Gizli',
+            'last_name' => 'Gozetmen',
+            'mail' => 'hidden_obs_' . rand(1000, 9999) . '@test.com',
+            'role' => 'lecturer',
+            'department_id' => $this->deptId,
+            'unit_id' => $this->unitId
+        ]);
+
+        $this->service->saveExamScheduleItems([ScheduleItemDTO::fromArray([
+            'schedule_id' => $this->programScheduleId,
+            'day_index' => 1,
+            'week_index' => 0,
+            'start_time' => '09:00:00',
+            'end_time' => '10:00:00',
+            'status' => 'single',
+            'data' => [['lesson_id' => $this->lessonId]],
+            'detail' => [
+                'assignments' => [[
+                    'classroom_id' => $this->classroomId,
+                    'classroom_name' => 'Amfi Gizli',
+                    'observers' => [
+                        ['id' => $this->lecturerId, 'name' => 'Exam Lecturer'],
+                        ['id' => $secondObserverId, 'name' => 'Gizli Gozetmen'],
+                    ]
+                ]]
+            ]
+        ])]);
+
+        return $secondObserverId;
+    }
+
+    private function examFilter(string $ownerType, int $ownerId, ?int $semesterNo): array
+    {
+        // Dışa aktarım filtresiyle aynı: semester_no yalnızca program için eklenir
+        $filter = [
+            'owner_type' => $ownerType,
+            'owner_id' => $ownerId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'type' => 'final-exam',
+        ];
+        if ($semesterNo !== null) {
+            $filter['semester_no'] = $semesterNo;
+        }
+        return $filter;
+    }
+
+    private function actAsAdmin(): void
+    {
+        $admin = new \App\Models\User();
+        $admin->id = 1;
+        $admin->role = 'admin';
+        $ref = new \ReflectionClass(\App\Middlewares\AuthMiddleware::class);
+        $ref->getProperty('currentUser')->setValue(null, $admin);
+        $ref->getProperty('isResolved')->setValue(null, true);
+    }
+
+    public function testGuestExamScheduleHidesObserversButKeepsClassroom(): void
+    {
+        $secondObserverId = $this->saveExamWithObservers();
+        // Dersin hocası gözetmenlerden farklı; misafir kartında gözetmen yerine o görünmeli
+        $lessonLecturerId = $this->insert('users', [
+            'name' => 'Ders',
+            'last_name' => 'Hocasi',
+            'mail' => 'lesson_lec_' . rand(1000, 9999) . '@test.com',
+            'role' => 'lecturer',
+            'department_id' => $this->deptId,
+            'unit_id' => $this->unitId
+        ]);
+        $this->insert('lesson_assignments', [
+            'lesson_id' => $this->lessonId,
+            'lecturer_id' => $lessonLecturerId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->resetAuth();
+
+        // Program: salon kalır, gözetmen isimleri silinir
+        $program = $this->service->findScheduleWithItems($this->examFilter(OwnerType::PROGRAM->value, $this->progId, 1));
+        $assignment = $program->items[0]->detail['assignments'][0];
+        $this->assertSame('Amfi Gizli', $assignment['classroom_name']);
+        $this->assertArrayNotHasKey('observers', $assignment);
+
+        // Derslik: gözetmeni tutan lecturer_id ve gözetmen listesi temizlenir
+        $classroom = $this->service->findScheduleWithItems($this->examFilter(OwnerType::CLASSROOM->value, $this->classroomId, null));
+        $this->assertCount(1, $classroom->items);
+        $this->assertNull($classroom->items[0]->data[0]['lecturer_id']);
+        $this->assertArrayNotHasKey('observers', $classroom->items[0]->detail);
+
+        // Hoca: kendi gözetmenlik görevi görünür (hoca programı yayınlanmadıkça misafir programı zaten göremez),
+        // aynı sınavdaki diğer gözetmen bilgisi yer almaz
+        $observer = $this->service->findScheduleWithItems($this->examFilter(OwnerType::USER->value, $secondObserverId, null));
+        $this->assertCount(1, $observer->items);
+        $this->assertSame('exam_assignment', $observer->items[0]->detail['reference_type']);
+        $this->assertArrayNotHasKey('observers', $observer->items[0]->detail);
+
+        // Ekran: misafir kartında gözetmen adı ve "Gözetmen atanmadı" yer almaz, salon görünür
+        $html = \App\Helpers\ScheduleViewHelper::prepareScheduleCard(
+            \App\DTOs\ScheduleFilterDTO::fromArray($this->examFilter(OwnerType::PROGRAM->value, $this->progId, 1)),
+            true
+        );
+        $this->assertStringContainsString('Amfi Gizli', $html);
+        $this->assertStringContainsString('Ders Hocasi', $html);
+        $this->assertStringNotContainsString('Gizli Gozetmen', $html);
+        $this->assertStringNotContainsString('Exam Lecturer', $html);
+        $this->assertStringNotContainsString('Gözetmen atanmadı', $html);
+    }
+
+    public function testLoggedInExamScheduleKeepsObservers(): void
+    {
+        $secondObserverId = $this->saveExamWithObservers();
+        $this->actAsAdmin();
+
+        $program = $this->service->findScheduleWithItems($this->examFilter(OwnerType::PROGRAM->value, $this->progId, 1));
+        $this->assertCount(2, $program->items[0]->detail['assignments'][0]['observers']);
+
+        $classroom = $this->service->findScheduleWithItems($this->examFilter(OwnerType::CLASSROOM->value, $this->classroomId, null));
+        $this->assertSame($this->lecturerId, (int)$classroom->items[0]->data[0]['lecturer_id']);
+
+        $observer = $this->service->findScheduleWithItems($this->examFilter(OwnerType::USER->value, $secondObserverId, null));
+        $this->assertCount(1, $observer->items);
+
+        $html = \App\Helpers\ScheduleViewHelper::prepareScheduleCard(
+            \App\DTOs\ScheduleFilterDTO::fromArray($this->examFilter(OwnerType::PROGRAM->value, $this->progId, 1)),
+            true
+        );
+        $this->assertStringContainsString('Gizli Gozetmen', $html);
+    }
+
+    public function testGuestLecturerExamShowsOwnLessonOnlyAfterProgramPublished(): void
+    {
+        $this->saveExamWithObservers();
+        $lessonLecturerId = $this->insert('users', [
+            'name' => 'Yayin',
+            'last_name' => 'Hocasi',
+            'mail' => 'pub_lec_' . rand(1000, 9999) . '@test.com',
+            'role' => 'lecturer',
+            'department_id' => $this->deptId,
+            'unit_id' => $this->unitId
+        ]);
+        $this->insert('lesson_assignments', [
+            'lesson_id' => $this->lessonId,
+            'lecturer_id' => $lessonLecturerId,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026'
+        ]);
+        $this->resetAuth();
+        $filter = $this->examFilter(OwnerType::USER->value, $lessonLecturerId, null);
+
+        // Ders programları yayınlanmaz; program programı yayınlanmadıkça misafir dersin sınavını görmez
+        $this->assertSame([], $this->service->findScheduleWithItems($filter)->items);
+
+        $this->getDb()->exec("UPDATE schedules SET is_published = 1 WHERE id = {$this->programScheduleId}");
+        $items = $this->service->findScheduleWithItems($filter)->items;
+        $this->assertCount(1, $items);
+        $this->assertSame($this->lessonId, (int)$items[0]->data[0]['lesson_id']);
+    }
+
+    public function testGuestExamExportOptionOverrides(): void
+    {
+        $this->resetAuth();
+        $this->assertSame(['show_observer' => false, 'show_program' => false], GuestScheduleVisibility::exportOptionOverrides('midterm-exam'));
+        $this->assertSame([], GuestScheduleVisibility::exportOptionOverrides('lesson'));
+
+        $this->actAsAdmin();
+        $this->assertSame([], GuestScheduleVisibility::exportOptionOverrides('midterm-exam'));
     }
 }

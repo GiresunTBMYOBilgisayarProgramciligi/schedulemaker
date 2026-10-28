@@ -70,6 +70,14 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
 
             if (!Gate::check(PermissionType::VIEW->value, $schedule)) continue;
 
+            // Slot verisindeki ders hoca ilişkisi olmadan yüklenir; ders hocası dönem atamasından toplu çözümlenir
+            $examScheduleService = new ExamScheduleService();
+            $lessonLecturerNames = $examScheduleService->getLessonLecturerNames(
+                $examScheduleService->getItemLessonIds($schedule->items),
+                (string)$schedule->semester,
+                (string)$schedule->academic_year
+            );
+
             foreach ($schedule->items as $scheduleItem) {
                 // Tercih/müsait değil item'lerini dışa aktarma
                 if (in_array($scheduleItem->status, [ScheduleItemStatus::PREFERRED->value, ScheduleItemStatus::UNAVAILABLE->value])) {
@@ -148,12 +156,12 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
                     }
 
                     // Hoca Adı (Daima dersin asıl hocası)
-                    $lessonLecturerName = $data->lesson?->lecturer?->getFullName() ?? ($scheduleItem->detail['lesson_lecturer'] ?? null);
+                    $lessonLecturerName = $scheduleItem->detail['lesson_lecturer'] ?? ($lessonLecturerNames[(int)$lesson->id] ?? null);
                     if ($lessonLecturerName) {
                         $descriptionParts[] = "Hoca: " . $lessonLecturerName;
                     }
 
-                    if ($scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
+                    if (($showOptions['show_program'] ?? true) && $scheduleFilter['type'] !== 'program' && $scheduleFilter['type'] !== 'department' && $lesson->program) {
                         $descriptionParts[] = "Program: " . $lesson->program->name;
                     }
                     $descriptionParts[] = 'Sınav Türü: ' . $typeLabel;

@@ -17,6 +17,7 @@ use App\DTOs\ScheduleFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
 use App\Services\Schedule\LessonScheduleService;
 use App\Services\Schedule\ExamScheduleService;
+use App\Services\Schedule\GuestScheduleVisibility;
 use App\Services\Schedule\ConflictService;
 use App\Services\Schedule\SchedulePublishService;
 use App\Services\Export\ExporterFactory;
@@ -739,13 +740,13 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
 
-        $showOptions = ScheduleExportOptionsDTO::fromArray([
+        $showOptions = ScheduleExportOptionsDTO::fromArray(array_merge([
             'show_code'       => $dto->show_code ?? true,
             'show_lecturer'   => $dto->show_lecturer ?? true,
             'show_program'    => $dto->show_program ?? true,
             'show_observer'   => $dto->show_observer ?? true,
             'show_internship' => $dto->show_internship ?? true,
-        ]);
+        ], GuestScheduleVisibility::exportOptionOverrides($dto->type)));
 
         $exporter = ExporterFactory::create($dto, 'excel');
         $exporter->export($dto, $showOptions);
@@ -760,9 +761,10 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleIcsAction");
 
-        $showOptions = ScheduleExportOptionsDTO::fromArray([
+        $showOptions = ScheduleExportOptionsDTO::fromArray(array_merge([
             'show_observer' => $dto->show_observer ?? true,
-        ]);
+            'show_program'  => $dto->show_program ?? true,
+        ], GuestScheduleVisibility::exportOptionOverrides($dto->type)));
 
         $exporter = ExporterFactory::create($dto, 'ics');
         $exporter->export($dto, $showOptions);
@@ -777,14 +779,14 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
 
-        $showOptions = ScheduleExportOptionsDTO::fromArray([
+        $showOptions = ScheduleExportOptionsDTO::fromArray(array_merge([
             'show_code'       => $dto->show_code ?? true,
             'show_lecturer'   => $dto->show_lecturer ?? true,
             'show_program'    => $dto->show_program ?? true,
             'show_observer'   => $dto->show_observer ?? true,
             'show_internship' => $dto->show_internship ?? false,
             'hide_titles'     => $dto->hide_titles ?? false,
-        ]);
+        ], GuestScheduleVisibility::exportOptionOverrides($dto->type)));
 
         $exporter = ExporterFactory::create($dto, 'list');
         $exporter->export($dto, $showOptions);
@@ -799,13 +801,13 @@ class ScheduleController extends Controller
     {
         $dto = (new ScheduleExportFilterValidator())->getDTO($requestData, "exportScheduleAction");
 
-        $showOptions = ScheduleExportOptionsDTO::fromArray([
+        $showOptions = ScheduleExportOptionsDTO::fromArray(array_merge([
             'show_code'       => $dto->show_code ?? true,
             'show_lecturer'   => $dto->show_lecturer ?? true,
             'show_program'    => $dto->show_program ?? true,
             'show_observer'   => $dto->show_observer ?? true,
             'show_internship' => $dto->show_internship ?? true,
-        ]);
+        ], GuestScheduleVisibility::exportOptionOverrides($dto->type)));
 
         $exporter = ExporterFactory::create($dto, 'json');
         $exporter->export($dto, $showOptions);

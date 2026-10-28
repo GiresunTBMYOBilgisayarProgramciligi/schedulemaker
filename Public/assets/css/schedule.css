@@ -859,6 +859,14 @@
         right: 5%;
     }
 
+    /* Misafir sınav kartı: salon rozetleri (gözetmen satırları yerine) */
+    .lesson-exam-classrooms {
+        max-height: 120px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        font-size: 0.78rem;
+    }
+
     /* Gözetmen Listesi Stili */
     .lesson-observers-list {
         max-height: 120px;

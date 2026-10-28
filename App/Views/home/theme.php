@@ -9,7 +9,8 @@ include "theme/head.php";
 <!--begin::Body-->
 <body class="d-flex flex-column min-vh-100 bg-body-tertiary font-sans" data-overlayscrollbars-initialize>
     <!--begin::App Wrapper-->
-    <div class="app-public-wrapper d-flex flex-column min-vh-100 w-100">
+    <?php // data-guest: dışa aktarma seçenekleri misafire göre belirlenir (exportSchedule.js, GuestScheduleVisibility) ?>
+    <div class="app-public-wrapper d-flex flex-column min-vh-100 w-100" data-guest="<?= empty($currentUser) ? 'true' : 'false' ?>">
         <?php
         include "theme/navbar.php";
         ?>
