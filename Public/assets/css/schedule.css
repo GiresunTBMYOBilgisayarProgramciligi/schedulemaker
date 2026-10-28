@@ -374,6 +374,12 @@
         /* İkon pozisyonlama için */
     }
 
+    /* Sadece tablo görünümünde (only-table) min-height kaldırılır */
+    .schedule-table.only-table .empty-slot,
+    .only-table .empty-slot {
+        min-height: 0;
+    }
+
     /* Not İkonu */
     .note-icon {
         position: absolute;

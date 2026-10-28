@@ -398,8 +398,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Halihazırda sayfada bulunan program kartları varsa ilklendir
-    const existingContainer = document.getElementById('schedule_container');
-    if (existingContainer && existingContainer.querySelector('.schedule-card')) {
+    // Dashboard gibi #schedule_container olmayan sayfalarda tüm doküman taranır
+    const existingContainer = document.getElementById('schedule_container') || document;
+    if (existingContainer.querySelector('.schedule-card')) {
         initWeekNavigation(existingContainer);
         initMobileDayNavigation(existingContainer);
     }

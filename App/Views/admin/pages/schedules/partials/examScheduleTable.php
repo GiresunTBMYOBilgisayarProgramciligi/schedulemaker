@@ -21,8 +21,9 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
     foreach ($weekRows as $weekIndex => $scheduleRows):
         $dayHeaders = $weekHeaders[$weekIndex] ?? [];
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
+        $tableOnlyClass = (!empty($only_table)) ? ' only-table' : '';
         ?>
-        <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= (int)$weekIndex ?>" role="grid"
+        <table class="schedule-table <?= $displayClass ?><?= $tableOnlyClass ?>" data-week-index="<?= (int)$weekIndex ?>" role="grid"
             aria-label="Sınav Programı - Hafta <?= (int)$weekIndex + 1 ?>">
             <thead>
                 <tr>
