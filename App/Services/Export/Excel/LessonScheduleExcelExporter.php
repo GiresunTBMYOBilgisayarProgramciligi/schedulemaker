@@ -94,7 +94,7 @@ class LessonScheduleExcelExporter extends BaseGridExcelExporter
                     $slotStart = $slot['slotStartTime']->format('H:i');
 
                     // Öğle Arası: 12:00 başlangıçlı slot birleştirilmiş tek satır olarak gösterilir
-                    if ($slotStart === '12:00') {
+                    if (ScheduleViewHelper::isLunchSlot($slot)) {
                         $this->writeLunchRow($slot, $row, $lastCol);
                         $row++;
                         continue;
@@ -112,13 +112,13 @@ class LessonScheduleExcelExporter extends BaseGridExcelExporter
 
                         $colIdx = $i * $colsPerDay + 2;
                         $col    = Coordinate::stringFromColumnIndex($colIdx);
-                        $items  = $this->cellItems($slot['days']['day' . $i] ?? null);
+                        $items  = ScheduleViewHelper::cellItems($slot['days']['day' . $i] ?? null);
 
                         if (empty($items)) {
                             continue;
                         }
 
-                        $rowSpan = $this->calculateRowSpan($slots, $rowIndex, $i, $items, $coveredCells);
+                        $rowSpan = $this->calculateRowSpan($slots, $rowIndex, $i, $coveredCells, stopAtLunch: true);
 
                         $combinedContent   = new RichText();
                         $combinedClassroom = new RichText();

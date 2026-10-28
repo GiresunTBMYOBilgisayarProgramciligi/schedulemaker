@@ -21,7 +21,6 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
     foreach ($weekRows as $weekIndex => $scheduleRows):
         $dayHeaders = $weekHeaders[$weekIndex] ?? [];
         $displayClass = ($weekIndex === 0) ? 'active' : 'd-none';
-        $totalRows = count($scheduleRows);
         ?>
         <table class="schedule-table <?= $displayClass ?>" data-week-index="<?= (int)$weekIndex ?>" role="grid"
             aria-label="Sınav Programı - Hafta <?= (int)$weekIndex + 1 ?>">
@@ -49,20 +48,11 @@ $coveredCells = []; // [$weekIndex][$rowIndex][$dayIndex]
 
                             <?php if ($scheduleItem):
                                 // Aynı hücrede birden çok kayıt olabilir (hoca profilindeki birleşik görünüm)
-                                $items = is_array($scheduleItem) ? $scheduleItem : [$scheduleItem];
+                                $items = ScheduleViewHelper::cellItems($scheduleItem);
                                 $firstItem = $items[0];
-                                $cellKey = implode(',', array_map(fn($it) => $it->id, $items));
-                                // Rowspan hesapla
-                                $rowSpan = 1;
-                                for ($i = $rowIndex + 1; $i < $totalRows; $i++) {
-                                    $nextCell = $scheduleRows[$i]['days'][$dayIndex] ?? null;
-                                    $nextItems = is_array($nextCell) ? $nextCell : array_filter([$nextCell]);
-                                    if ($nextItems && implode(',', array_map(fn($it) => $it->id, $nextItems)) === $cellKey) {
-                                        $rowSpan++;
-                                        $coveredCells[$weekIndex][$i][$dayIndex] = true;
-                                    } else {
-                                        break;
-                                    }
+                                $rowSpan = ScheduleViewHelper::calculateRowSpan($scheduleRows, $rowIndex, $dayIndex);
+                                for ($i = $rowIndex + 1; $i < $rowIndex + $rowSpan; $i++) {
+                                    $coveredCells[$weekIndex][$i][$dayIndex] = true;
                                 }
 
                                 $dropZone = ($firstItem->status === ScheduleItemStatus::UNAVAILABLE->value || (isset($only_table) && $only_table)) ? '' : 'drop-zone'; ?>

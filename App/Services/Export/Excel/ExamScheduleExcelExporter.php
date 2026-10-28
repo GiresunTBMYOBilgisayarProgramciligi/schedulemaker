@@ -111,13 +111,13 @@ class ExamScheduleExcelExporter extends BaseGridExcelExporter
                         }
 
                         $col   = Coordinate::stringFromColumnIndex($i * $colsPerDay + 2);
-                        $items = $this->cellItems($slot['days']['day' . $i] ?? null);
+                        $items = ScheduleViewHelper::cellItems($slot['days']['day' . $i] ?? null);
 
                         if (empty($items)) {
                             continue;
                         }
 
-                        $rowSpan = $this->calculateRowSpan($slots, $rowIndex, $i, $items, $coveredCells);
+                        $rowSpan = $this->calculateRowSpan($slots, $rowIndex, $i, $coveredCells);
 
                         $combinedContent = new RichText();
                         $combinedContent->createText("\n");

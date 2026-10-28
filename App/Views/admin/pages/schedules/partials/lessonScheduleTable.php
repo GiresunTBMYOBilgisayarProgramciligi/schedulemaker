@@ -31,7 +31,7 @@ use function App\Helpers\e;
             </thead>
             <tbody>
                 <?php foreach ($scheduleRows as $scheduleRow): ?>
-                    <?php if ($scheduleRow['slotStartTime']->format('H:i') === '12:00'): ?>
+                    <?php if (ScheduleViewHelper::isLunchSlot($scheduleRow)): ?>
                         <!-- Öğle Arası -->
                         <tr class="lunch-break-row">
                             <td class="time-slot">

@@ -100,4 +100,51 @@ class ScheduleViewHelperTest extends BaseTestCase
         $this->assertStringContainsString('data-day-name="Pazartesi"', $html);
         $this->assertStringContainsString('schedule-table', $html);
     }
+
+    /**
+     * @param array<string, int[]> $cells Saat => hücredeki item ID'leri (boş dizi: boş hücre)
+     */
+    private function makeSlots(array $cells): array
+    {
+        $slots = [];
+        foreach ($cells as $start => $ids) {
+            $items = array_map(function (int $id) {
+                $item = new ScheduleItem();
+                $item->id = $id;
+                return $item;
+            }, $ids);
+            $slots[] = [
+                'slotStartTime' => new \DateTime($start),
+                'slotEndTime' => (new \DateTime($start))->modify('+50 minutes'),
+                'days' => ['day0' => count($items) > 1 ? $items : ($items[0] ?? null)],
+            ];
+        }
+        return $slots;
+    }
+
+    public function testCalculateRowSpanMergesConsecutiveSameItems(): void
+    {
+        $slots = $this->makeSlots(['08:00' => [1], '09:00' => [1], '10:00' => [2], '11:00' => []]);
+
+        $this->assertSame(2, ScheduleViewHelper::calculateRowSpan($slots, 0, 'day0'));
+        $this->assertSame(1, ScheduleViewHelper::calculateRowSpan($slots, 2, 'day0'));
+        $this->assertSame(1, ScheduleViewHelper::calculateRowSpan($slots, 3, 'day0'), 'Boş hücre birleştirilmez');
+    }
+
+    public function testCalculateRowSpanComparesWholeItemSet(): void
+    {
+        // Sıra farkı önemsiz, eksik item birleştirmeyi keser
+        $slots = $this->makeSlots(['08:00' => [1, 2], '09:00' => [2, 1], '10:00' => [1]]);
+
+        $this->assertSame(2, ScheduleViewHelper::calculateRowSpan($slots, 0, 'day0'));
+    }
+
+    public function testCalculateRowSpanStopsAtLunchWhenRequested(): void
+    {
+        $slots = $this->makeSlots(['11:00' => [1], '12:00' => [1], '13:00' => [1]]);
+
+        $this->assertSame(3, ScheduleViewHelper::calculateRowSpan($slots, 0, 'day0'));
+        $this->assertSame(1, ScheduleViewHelper::calculateRowSpan($slots, 0, 'day0', stopAtLunch: true));
+        $this->assertTrue(ScheduleViewHelper::isLunchSlot($slots[1]));
+    }
 }

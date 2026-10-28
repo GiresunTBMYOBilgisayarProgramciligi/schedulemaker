@@ -2,7 +2,7 @@
 
 namespace App\Services\Export\Excel;
 
-use App\Models\ScheduleItem;
+use App\Helpers\ScheduleViewHelper;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -68,59 +68,21 @@ abstract class BaseGridExcelExporter extends BaseExcelExporter
     }
 
     /**
-     * Hücre içeriğini item listesine çevirir.
-     *
-     * @return ScheduleItem[]
-     */
-    protected function cellItems(mixed $cellData): array
-    {
-        if (empty($cellData)) {
-            return [];
-        }
-
-        return is_array($cellData) ? array_values($cellData) : [$cellData];
-    }
-
-    /**
-     * Hücredeki item'ların sonraki slotlarda aynen devam ettiği satır sayısını hesaplar
-     * ve kapsanan hücreleri $coveredCells içine işaretler.
-     *
-     * Karşılaştırma tüm item kümesi üzerinden yapılır; hücrede birden fazla item varsa
-     * hepsi bir sonraki slotta da bulunmadıkça birleştirme yapılmaz.
+     * Ortak birleştirme kuralıyla (ScheduleViewHelper::calculateRowSpan) birleştirilecek satır sayısını
+     * döndürür ve kapsanan hücreleri $coveredCells içine işaretler.
      *
      * @param array $slots prepareScheduleRows çıktısındaki tek haftanın slotları
-     * @param ScheduleItem[] $items Başlangıç hücresindeki item'lar
      * @param array $coveredCells [rowIndex][dayIndex] => true
+     * @param bool $stopAtLunch Öğle arası ayrı satır olarak yazılıyorsa birleştirme öğle arasında kesilir
      */
-    protected function calculateRowSpan(array $slots, int $rowIndex, int $dayIndex, array $items, array &$coveredCells): int
+    protected function calculateRowSpan(array $slots, int $rowIndex, int $dayIndex, array &$coveredCells, bool $stopAtLunch = false): int
     {
-        $dayKey   = 'day' . $dayIndex;
-        $itemIds  = $this->itemIdSet($items);
-        $rowSpan  = 1;
-        $total    = count($slots);
-
-        for ($j = $rowIndex + 1; $j < $total; $j++) {
-            $nextItems = $this->cellItems($slots[$j]['days'][$dayKey] ?? null);
-            if (empty($nextItems) || $this->itemIdSet($nextItems) !== $itemIds) {
-                break;
-            }
-            $rowSpan++;
+        $rowSpan = ScheduleViewHelper::calculateRowSpan($slots, $rowIndex, 'day' . $dayIndex, $stopAtLunch);
+        for ($j = $rowIndex + 1; $j < $rowIndex + $rowSpan; $j++) {
             $coveredCells[$j][$dayIndex] = true;
         }
 
         return $rowSpan;
-    }
-
-    /**
-     * @param ScheduleItem[] $items
-     * @return array Sıralı item id listesi
-     */
-    private function itemIdSet(array $items): array
-    {
-        $ids = array_map(fn($item) => $item->id, $items);
-        sort($ids);
-
-        return $ids;
     }
 
     /**

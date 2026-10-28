@@ -438,6 +438,68 @@ class ScheduleViewHelper
     }
 
     /**
+     * Ders tablolarında öğle arası olarak tek satır çizilen slot mu (12:00 başlangıçlı).
+     */
+    public static function isLunchSlot(array $slot): bool
+    {
+        return $slot['slotStartTime']->format('H:i') === '12:00';
+    }
+
+    /**
+     * prepareScheduleRows hücresini (boş, tek item veya item dizisi) item listesine çevirir.
+     *
+     * @return ScheduleItem[]
+     */
+    public static function cellItems(mixed $cellData): array
+    {
+        if (empty($cellData)) {
+            return [];
+        }
+        return is_array($cellData) ? array_values($cellData) : [$cellData];
+    }
+
+    /**
+     * Hücredeki item'ların sonraki slotlarda aynen devam ettiği satır sayısını (rowspan) döndürür.
+     * Ekran, Excel ve e-posta tabloları aynı birleştirme kuralını kullanır.
+     *
+     * Karşılaştırma tüm item kümesi üzerinden yapılır; hücrede birden fazla item varsa
+     * hepsi bir sonraki slotta da bulunmadıkça birleştirme yapılmaz.
+     *
+     * @param array $slots prepareScheduleRows çıktısındaki tek haftanın slotları
+     * @param string $dayKey Gün anahtarı (day0, day1, ...)
+     * @param bool $stopAtLunch Öğle arası ayrı satır olarak çiziliyorsa birleştirme öğle arasında kesilir
+     */
+    public static function calculateRowSpan(array $slots, int $rowIndex, string $dayKey, bool $stopAtLunch = false): int
+    {
+        $itemIds = self::cellItemIds($slots[$rowIndex]['days'][$dayKey] ?? null);
+        if (empty($itemIds)) {
+            return 1;
+        }
+
+        $rowSpan = 1;
+        for ($j = $rowIndex + 1, $total = count($slots); $j < $total; $j++) {
+            if ($stopAtLunch && self::isLunchSlot($slots[$j])) {
+                break;
+            }
+            if (self::cellItemIds($slots[$j]['days'][$dayKey] ?? null) !== $itemIds) {
+                break;
+            }
+            $rowSpan++;
+        }
+        return $rowSpan;
+    }
+
+    /**
+     * @return int[] Hücredeki item ID'leri (sıralı)
+     */
+    private static function cellItemIds(mixed $cellData): array
+    {
+        $ids = array_map(fn($item) => (int)$item->id, self::cellItems($cellData));
+        sort($ids);
+        return $ids;
+    }
+
+    /**
      * Tercih edilen / uygun olmayan (dummy) schedule item'larını satırlardan çıkarır.
      *
      * @param array $weekRows prepareScheduleRows çıktısı
