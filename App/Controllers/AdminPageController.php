@@ -54,6 +54,7 @@ class AdminPageController extends Controller
         $assetManager->addJs("/assets/js/exportSchedule.js");
         $assetManager->addJs("/assets/js/admin/ScheduleCard.js");
         $assetManager->addJs("/assets/js/admin/initializeScheduleCards.js");
+        $assetManager->addJs("/assets/js/getSchedule.js");
 
         $dashboardRole = match(true) {
             Gate::allowsRole('submanager')                                                                         => 'admin',
@@ -141,6 +142,9 @@ class AdminPageController extends Controller
                 $view_data["scheduleHTML"] = "<div class='alert alert-warning m-3'><i class='bi bi-exclamation-triangle me-2'></i>Ders programı yüklenemedi.</div>";
             }
 
+            // Sınav programları (her exam tipi için)
+            $view_data['examScheduleHTMLs'] = $this->getUserExamScheduleHTMLs($currentUser);
+
         // --- Akademisyen / Araştırma Görevlisi ---
         } else {
             // Kişisel ders programı
@@ -151,6 +155,9 @@ class AdminPageController extends Controller
             } catch (\Throwable $e) {
                 $view_data["scheduleHTML"] = "<div class='alert alert-warning m-3'><i class='bi bi-exclamation-triangle me-2'></i>Ders programı yüklenemedi.</div>";
             }
+
+            // Sınav programları (her exam tipi için)
+            $view_data['examScheduleHTMLs'] = $this->getUserExamScheduleHTMLs($currentUser);
 
             // Haftalık ders yükü (saat toplamı) - Yeni atama sistemi ile
             $currentUser->lessons = (new UserRepository())->getActiveLessons($currentUser);
@@ -165,6 +172,27 @@ class AdminPageController extends Controller
 
 
         return $view_data;
+    }
+
+    /**
+     * Kullanıcının her sınav tipi için sınav programı HTML'ini döndürür.
+     * Yüklenemeyen tip için uyarı mesajı yer alır.
+     *
+     * @return array<string, string> ExamType değeri => HTML
+     */
+    private function getUserExamScheduleHTMLs(User $user): array
+    {
+        $htmls = [];
+        foreach (ExamType::cases() as $examType) {
+            try {
+                $htmls[$examType->value] = (new ScheduleController())->getSchedulesHTML(
+                    ['owner_type' => OwnerType::USER->value, 'owner_id' => $user->id, 'type' => $examType->value], true
+                );
+            } catch (\Throwable $e) {
+                $htmls[$examType->value] = "<div class='alert alert-warning m-3'><i class='bi bi-exclamation-triangle me-2'></i>Sınav programı yüklenemedi.</div>";
+            }
+        }
+        return $htmls;
     }
 
     /**

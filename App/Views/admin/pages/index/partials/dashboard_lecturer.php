@@ -6,6 +6,7 @@
  * @var array    $stats  ['lesson_count', 'weekly_hours']
  * @var string   $scheduleHTML
  * @var Lesson[] $myLessons
+ * @var array    $examScheduleHTMLs  Sınav tipi => HTML
  */
 
 use App\Models\Lesson;
@@ -57,23 +58,15 @@ use function App\Helpers\e;
 </div>
 
 <div class="row g-3">
-    <!-- Ders Programı -->
+    <!-- Ders & Sınav Programları (Sekmeli Kart) -->
     <div class="col-12 col-xl-8">
-        <div class="card card-outline card-primary h-100">
-            <div class="card-header">
-                <h3 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ders Programım</h3>
-            </div>
-            <div class="card-body">
-                <?php if (!empty($scheduleHTML)): ?>
-                    <?= $scheduleHTML ?>
-                <?php else: ?>
-                <div class="text-center text-muted py-5">
-                    <i class="bi bi-calendar-x fs-1 opacity-50"></i>
-                    <p class="mt-2">Ders programı henüz oluşturulmamış.</p>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php
+        $tabPrefix      = 'lecturer';
+        $cardColor      = 'primary';
+        $emptyClass     = 'py-5';
+        $emptyIconClass = 'fs-1 opacity-50';
+        include __DIR__ . '/schedule_tabs_card.php';
+        ?>
     </div>
 
     <!-- Ders Listesi -->

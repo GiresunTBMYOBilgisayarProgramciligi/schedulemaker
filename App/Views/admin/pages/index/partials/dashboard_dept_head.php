@@ -6,6 +6,7 @@
  * @var Department|null $department
  * @var array           $stats  ['programs', 'academics', 'lessons']
  * @var string          $scheduleHTML
+ * @var array           $examScheduleHTMLs  Sınav tipi => HTML
  */
 
 use App\Models\Department;
@@ -94,28 +95,16 @@ use function App\Helpers\e;
     </div>
     <?php endif; ?>
 
-    <!-- Ders Programı -->
+    <!-- Ders & Sınav Programları (Sekmeli Kart) -->
     <div class="col-12 col-xl-7">
-        <div class="card card-outline card-info h-100">
-            <div class="card-header">
-                <h3 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ders Programım</h3>
-                <div class="card-tools">
-                    <a href="/admin/editschedule<?= !empty($department?->id) ? '?department_id=' . (int)$department->id : '' ?>" class="btn btn-sm btn-outline-info">
-                        Programı Düzenle
-                    </a>
-                </div>
-            </div>
-            <div class="card-body">
-                <?php if (!empty($scheduleHTML)): ?>
-                    <?= $scheduleHTML ?>
-                <?php else: ?>
-                <div class="text-center text-muted py-4">
-                    <i class="bi bi-calendar-x fs-2"></i>
-                    <p class="mt-2">Ders programı henüz oluşturulmamış.</p>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php
+        $tabPrefix      = 'dept';
+        $cardColor      = 'info';
+        $emptyClass     = 'py-4';
+        $emptyIconClass = 'fs-2';
+        $lessonEditUrl  = '/admin/editschedule' . (!empty($department?->id) ? '?department_id=' . (int)$department->id : '');
+        include __DIR__ . '/schedule_tabs_card.php';
+        ?>
     </div>
 </div>
 
