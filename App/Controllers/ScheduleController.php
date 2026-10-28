@@ -917,6 +917,9 @@ class ScheduleController extends Controller
         if ($action && $crossUnitCount > 0) {
             $msg .= " (Farklı birimden $crossUnitCount hocaya bilgilendirme e-postası gönderildi)";
         }
+        if ($action && ($result['staff_notified'] ?? 0) > 0) {
+            $msg .= " (Kadrodaki {$result['staff_notified']} hocaya bilgilendirme e-postası gönderildi)";
+        }
 
         $mailDriver = getSettingValue('mail_driver', 'mail', 'log');
 

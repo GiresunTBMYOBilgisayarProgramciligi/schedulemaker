@@ -256,25 +256,7 @@ class ScheduleMailer extends Mailer
                 'appUrl'         => $this->getAppUrl()
             ]);
 
-            $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>', '</tr>'], "\n", $body));
-
-            self::recordSentMailInFake(
-                toAddresses: [[$lecturer->mail, $lecturer->getFullName()]],
-                subject: $subject,
-                body: $body,
-                altBody: $altBody,
-                attachments: $attachments,
-                mailerClass: static::class
-            );
-
-            return (new MailQueueService())->enqueue(
-                toEmail: $lecturer->mail,
-                toName: $lecturer->getFullName(),
-                subject: $subject,
-                body: $body,
-                altBody: $altBody,
-                attachments: $attachments
-            );
+            return $this->enqueueForLecturer($lecturer, $subject, $body, $attachments);
         } catch (\Throwable $e) {
             return 0;
         }
@@ -334,27 +316,86 @@ class ScheduleMailer extends Mailer
                 'appUrl'             => $this->getAppUrl()
             ]);
 
-            $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>'], "\n", $body));
-
-            self::recordSentMailInFake(
-                toAddresses: [[$lecturer->mail, $lecturer->getFullName()]],
-                subject: $subject,
-                body: $body,
-                altBody: $altBody,
-                attachments: [],
-                mailerClass: static::class
-            );
-
-            return (new MailQueueService())->enqueue(
-                toEmail: $lecturer->mail,
-                toName: $lecturer->getFullName(),
-                subject: $subject,
-                body: $body,
-                altBody: $altBody
-            );
+            return $this->enqueueForLecturer($lecturer, $subject, $body);
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    /**
+     * Kadrolu olunan birim/bölüm/program programı yayınlandığında hocaya ek içermeyen bilgilendirme e-postası kuyruğa ekler.
+     *
+     * @param string $scope Yayınlama kapsamı: unit | department | program
+     * @return int Kuyruk kaydı ID'si (gönderilemezse 0)
+     */
+    public function queueAffiliationPublishedNotification(
+        User $lecturer,
+        string $scope,
+        string $scheduleType,
+        string $semester,
+        string $academicYear,
+        string $unitName,
+        ?string $departmentName = null,
+        ?string $programName = null
+    ): int {
+        try {
+            if (empty($lecturer->mail)) {
+                return 0;
+            }
+
+            [$scopeLabel, $scopeName] = match ($scope) {
+                'program'    => ['Programınızın', (string)$programName],
+                'department' => ['Bölümünüzün', (string)$departmentName],
+                default      => ['Biriminizin', $unitName],
+            };
+
+            $subject = "{$academicYear} {$semester} Dönemi {$scopeName} {$scheduleType} Programı Yayınlandı";
+
+            $body = View::renderEmail('schedule_affiliation_published', [
+                'lecturer'       => $lecturer,
+                'scopeLabel'     => $scopeLabel,
+                'scopeName'      => $scopeName,
+                'scheduleType'   => $scheduleType,
+                'semester'       => $semester,
+                'academicYear'   => $academicYear,
+                'unitName'       => $unitName,
+                'departmentName' => $departmentName,
+                'programName'    => $programName,
+                'appUrl'         => $this->getAppUrl()
+            ]);
+
+            return $this->enqueueForLecturer($lecturer, $subject, $body);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * E-postayı hocaya gönderilmek üzere kuyruğa ekler (test ortamında gönderilen e-posta olarak da kaydeder).
+     *
+     * @return int Kuyruk kaydı ID'si
+     */
+    private function enqueueForLecturer(User $lecturer, string $subject, string $body, array $attachments = []): int
+    {
+        $altBody = strip_tags(str_replace(['<br>', '</li>', '</p>', '</tr>'], "\n", $body));
+
+        self::recordSentMailInFake(
+            toAddresses: [[$lecturer->mail, $lecturer->getFullName()]],
+            subject: $subject,
+            body: $body,
+            altBody: $altBody,
+            attachments: $attachments,
+            mailerClass: static::class
+        );
+
+        return (new MailQueueService())->enqueue(
+            toEmail: $lecturer->mail,
+            toName: $lecturer->getFullName(),
+            subject: $subject,
+            body: $body,
+            altBody: $altBody,
+            attachments: $attachments
+        );
     }
 
     /**

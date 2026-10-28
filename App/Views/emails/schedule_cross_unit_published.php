@@ -84,13 +84,8 @@ $ownAffiliationName = htmlspecialchars($ownAffiliationName ?? '');
     </div>
 
     <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 15px; margin: 20px 0; border-radius: 0 4px 4px 0; font-size: 13px; color: #856404; line-height: 1.5;">
-        <strong>Önemli Bilgilendirme:</strong> Kadronuzun bulunduğu 
-        <?php if (!empty($ownAffiliationName)): ?>
-            <strong><?= $ownAffiliationName ?></strong>
-        <?php else: ?>
-            kendi biriminiz/programınız
-        <?php endif; ?> 
-        ders programı yayınlandığında, tüm derslerinizi içeren kişisel haftalık ders programınız e-posta ekleri (Excel ve Takvim) ile birlikte tarafınıza iletilecektir. Bu e-posta yalnızca yukarıda belirtilen programdaki dersleriniz hakkında ön bilgilendirme amaçlıdır.
+        <strong>Önemli Bilgilendirme:</strong> Bu e-posta yalnızca yukarıda belirtilen programdaki dersleriniz hakkında ön bilgilendirme amaçlıdır.
+        Tüm derslerinizi içeren kişisel programınız yayınlandığında, e-posta ekleri (Excel ve Takvim) ile birlikte tarafınıza iletilecektir<?= !empty($ownAffiliationName) ? " (kadronuzun bulunduğu birim: <strong>{$ownAffiliationName}</strong>)" : '' ?>.
     </div>
 
     <p style="margin-top: 25px;">

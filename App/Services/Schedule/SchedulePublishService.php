@@ -42,8 +42,9 @@ class SchedulePublishService extends BaseService
         $result = $this->applyPublishStatus($schedule, $publishStatus);
 
         $crossUnitNotified = 0;
+        $staffNotified = 0;
         if ($publishStatus && $schedule->owner_type === OwnerType::PROGRAM->value) {
-            $crossUnitNotified = $this->notifyCrossUnitUsersForProgramSchedule($schedule);
+            ['cross_unit' => $crossUnitNotified, 'staff' => $staffNotified] = $this->notifyUsersForProgramSchedule($schedule);
         }
 
         $actionText = $publishStatus ? "yayınlandı" : "yayından kaldırıldı";
@@ -52,7 +53,8 @@ class SchedulePublishService extends BaseService
             'schedule_id' => $schedule->id,
             'is_published' => $publishStatus,
             'notified_users' => $result['notified_users'],
-            'cross_unit_notified' => $crossUnitNotified
+            'cross_unit_notified' => $crossUnitNotified,
+            'staff_notified' => $staffNotified
         ]));
 
         $msg = "Program " . $actionText;
@@ -62,6 +64,9 @@ class SchedulePublishService extends BaseService
         if ($publishStatus && $crossUnitNotified > 0) {
             $msg .= " (Farklı birimden $crossUnitNotified hocaya bilgilendirme e-postası gönderildi)";
         }
+        if ($publishStatus && $staffNotified > 0) {
+            $msg .= " (Kadrodaki $staffNotified hocaya bilgilendirme e-postası gönderildi)";
+        }
 
         return [
             "status" => "success",
@@ -69,6 +74,7 @@ class SchedulePublishService extends BaseService
             "is_published" => $publishStatus,
             "notified_users" => $result['notified_users'],
             "cross_unit_notified" => $crossUnitNotified,
+            "staff_notified" => $staffNotified,
             "is_test_mode" => (getSettingValue('mail_driver', 'mail', 'log') !== 'smtp')
         ];
     }
@@ -97,27 +103,21 @@ class SchedulePublishService extends BaseService
     }
 
     /**
-     * Program programı yayınlandığında, o programın derslerine giren ancak programın kadrosunda
-     * olmayan (farklı birim/bölüm/program) hocalara bilgilendirme e-postası gönderir.
+     * Program programı yayınlandığında hocalara bilgilendirme e-postası gönderir:
+     *  - Programın derslerine giren ancak kadrosunda olmayan (farklı birim/bölüm/program) hocalar
+     *  - Programa kadrolu hocalar (hoca programları ayrıca yayınlanana kadar ek içermeyen bilgilendirme)
+     *
+     * @return array{cross_unit: int, staff: int}
      */
-    private function notifyCrossUnitUsersForProgramSchedule(Schedule $schedule): int
+    private function notifyUsersForProgramSchedule(Schedule $schedule): array
     {
-        $scheduleIdsData = $this->collectScheduleIdsByScope(
-            'program',
-            (int)$schedule->owner_id,
-            (string)$schedule->semester,
-            (string)$schedule->academic_year,
-            (string)$schedule->type
-        );
+        $period = [(string)$schedule->semester, (string)$schedule->academic_year, (string)$schedule->type];
+        $scheduleIdsData = $this->collectScheduleIdsByScope('program', (int)$schedule->owner_id, ...$period);
 
-        return $this->notifyCrossUnitUsers(
-            $scheduleIdsData['cross_unit_users'],
-            'program',
-            (int)$schedule->owner_id,
-            (string)$schedule->semester,
-            (string)$schedule->academic_year,
-            (string)$schedule->type
-        );
+        return [
+            'cross_unit' => $this->notifyCrossUnitUsers($scheduleIdsData['cross_unit_users'], 'program', (int)$schedule->owner_id, ...$period),
+            'staff'      => $this->notifyStaffUsers($scheduleIdsData['staff_users'], 'program', (int)$schedule->owner_id, ...$period),
+        ];
     }
 
     /**
@@ -176,7 +176,7 @@ class SchedulePublishService extends BaseService
      * @param string $semester
      * @param string $academicYear
      * @param string $type
-     * @return array ['program' => [ids], 'lesson' => [ids], 'classroom' => [ids], 'user' => [ids], 'cross_unit_users' => [user_id => [lesson_ids]]]
+     * @return array ['program' => [ids], 'lesson' => [ids], 'classroom' => [ids], 'user' => [ids], 'cross_unit_users' => [user_id => [lesson_ids]], 'staff_users' => [user_ids]]
      * @throws Exception
      */
     private function collectScheduleIdsByScope(
@@ -190,7 +190,8 @@ class SchedulePublishService extends BaseService
             OwnerType::PROGRAM->value => [],
             OwnerType::CLASSROOM->value => [],
             OwnerType::USER->value => [],
-            'cross_unit_users' => []
+            'cross_unit_users' => [],
+            'staff_users' => []
         ];
 
         $departmentIds = [];
@@ -309,6 +310,7 @@ class SchedulePublishService extends BaseService
             }
         }
         $result['cross_unit_users'] = $crossUnitUsers;
+        $result['staff_users'] = $userIds;
 
         return $result;
     }
@@ -332,10 +334,10 @@ class SchedulePublishService extends BaseService
         }
 
         $scheduleIdsData = $this->collectScheduleIdsByScope($scope, $scopeId, $semester, $academicYear, $type);
-        $scheduleIdsToProcess = $this->filterScheduleIdsByTab($scheduleIdsData, $ownerTypeTab);
+        $scheduleIdsToProcess = $this->filterScheduleIdsByTab($scheduleIdsData, $ownerTypeTab, $scope);
 
         if (empty($scheduleIdsToProcess)) {
-            return ['count' => 0, 'notified_users' => 0, 'cross_unit_notified' => 0];
+            return ['count' => 0, 'notified_users' => 0, 'cross_unit_notified' => 0, 'staff_notified' => 0];
         }
 
         $schedules = (new Schedule())->get()->where(['id' => ['in' => $scheduleIdsToProcess]])->all();
@@ -356,8 +358,13 @@ class SchedulePublishService extends BaseService
         }
 
         $crossUnitNotified = 0;
+        $staffNotified = 0;
         if ($publishStatus && $ownerTypeTab === null) {
             $crossUnitNotified = $this->notifyCrossUnitUsers($scheduleIdsData['cross_unit_users'], $scope, $scopeId, $semester, $academicYear, $type);
+            // Kadrolu hocalar yalnızca bu işlemde gerçekten yayınlanan program olduğunda bilgilendirilir (tekrar basışta mükerrer e-posta gitmez)
+            if ($count > 0 && in_array($scope, ['unit', 'department', 'program'], true)) {
+                $staffNotified = $this->notifyStaffUsers($scheduleIdsData['staff_users'], $scope, $scopeId, $semester, $academicYear, $type);
+            }
         }
 
         $actionText = $publishStatus ? "yayınlandı" : "yayından kaldırıldı";
@@ -365,13 +372,15 @@ class SchedulePublishService extends BaseService
             'count' => $count,
             'scope' => $scope,
             'scope_id' => $scopeId,
-            'publish_status' => $publishStatus
+            'publish_status' => $publishStatus,
+            'staff_notified' => $staffNotified
         ]));
 
         return [
             'count' => $count,
             'notified_users' => $notifiedUsers,
-            'cross_unit_notified' => $crossUnitNotified
+            'cross_unit_notified' => $crossUnitNotified,
+            'staff_notified' => $staffNotified
         ];
     }
     
@@ -385,30 +394,8 @@ class SchedulePublishService extends BaseService
             return $count;
         }
 
-        $unitName = "";
-        $departmentName = "";
-        $programName = "";
-
-        if ($scope === 'unit') {
-            $unit = (new Unit())->find($scopeId);
-            $unitName = $unit?->name ?? 'Birim';
-        } elseif ($scope === 'department') {
-            $dept = (new Department())->find($scopeId);
-            $departmentName = $dept?->name ?? '';
-            $unit = $dept ? (new Unit())->find($dept->unit_id) : null;
-            $unitName = $unit?->name ?? '';
-        } elseif ($scope === 'program') {
-            $prog = (new Program())->find($scopeId);
-            $programName = $prog?->name ?? '';
-            $dept = $prog ? (new Department())->find($prog->department_id) : null;
-            $departmentName = $dept?->name ?? '';
-            $unit = $dept ? (new Unit())->find($dept->unit_id) : null;
-            $unitName = $unit?->name ?? '';
-        }
-
-        $scheduleModel = new Schedule();
-        $scheduleModel->type = $type;
-        $typeLabel = $scheduleModel->getScheduleTypeName();
+        ['unit' => $unitName, 'department' => $departmentName, 'program' => $programName] = $this->resolveScopeNames($scope, $scopeId);
+        $typeLabel = $this->getScheduleTypeLabel($type);
 
         $mailer = new ScheduleMailer();
 
@@ -440,18 +427,94 @@ class SchedulePublishService extends BaseService
     }
 
     /**
-     * Sekme (Tab) seçimine göre işlenecek schedule ID'lerini filtreler
+     * Kapsama kadrolu akademik personele kapsamın programının yayınlandığını bildirir (ek içermeyen e-posta).
+     *
+     * @param int[] $staffUserIds
      */
-    private function filterScheduleIdsByTab(array $scheduleIdsData, ?string $ownerTypeTab): array
+    private function notifyStaffUsers(array $staffUserIds, string $scope, int $scopeId, string $semester, string $academicYear, string $type): int
     {
-        if ($ownerTypeTab === null) {
-            return array_merge(
-                $scheduleIdsData[OwnerType::PROGRAM->value] ?? [],
-                $scheduleIdsData[OwnerType::CLASSROOM->value] ?? [],
-                $scheduleIdsData[OwnerType::USER->value] ?? []
-            );
+        if (empty($staffUserIds)) {
+            return 0;
         }
-        return $scheduleIdsData[$ownerTypeTab] ?? [];
+
+        ['unit' => $unitName, 'department' => $departmentName, 'program' => $programName] = $this->resolveScopeNames($scope, $scopeId);
+        $typeLabel = $this->getScheduleTypeLabel($type);
+        $mailer = new ScheduleMailer();
+
+        $count = 0;
+        foreach ((new User())->get()->where(['id' => ['in' => $staffUserIds]])->all() as $lecturer) {
+            if (!$lecturer->isAcademic() || empty($lecturer->mail)) {
+                continue;
+            }
+            $queueId = $mailer->queueAffiliationPublishedNotification(
+                $lecturer,
+                $scope,
+                $typeLabel,
+                $semester,
+                $academicYear,
+                $unitName,
+                $departmentName ?: null,
+                $programName ?: null
+            );
+            if ($queueId > 0) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Yayınlama kapsamının birim, bölüm ve program adlarını döndürür.
+     *
+     * @return array{unit: string, department: string, program: string}
+     */
+    private function resolveScopeNames(string $scope, int $scopeId): array
+    {
+        $names = ['unit' => '', 'department' => '', 'program' => ''];
+
+        if ($scope === 'unit') {
+            $names['unit'] = (new Unit())->find($scopeId)?->name ?? 'Birim';
+        } elseif ($scope === 'department') {
+            $dept = (new Department())->find($scopeId);
+            $names['department'] = $dept?->name ?? '';
+            $names['unit'] = $dept ? ((new Unit())->find($dept->unit_id)?->name ?? '') : '';
+        } elseif ($scope === 'program') {
+            $prog = (new Program())->find($scopeId);
+            $names['program'] = $prog?->name ?? '';
+            $dept = $prog ? (new Department())->find($prog->department_id) : null;
+            $names['department'] = $dept?->name ?? '';
+            $names['unit'] = $dept ? ((new Unit())->find($dept->unit_id)?->name ?? '') : '';
+        }
+
+        return $names;
+    }
+
+    private function getScheduleTypeLabel(string $type): string
+    {
+        $scheduleModel = new Schedule();
+        $scheduleModel->type = $type;
+        return $scheduleModel->getScheduleTypeName();
+    }
+
+    /**
+     * Sekme (Tab) seçimine göre işlenecek schedule ID'lerini filtreler.
+     *
+     * Sekme verilmezse (yayınlama sayfasındaki Program sekmesi) program ve derslik programları işlenir.
+     * Hoca programları program yayınıyla birlikte yayınlanmaz; yalnızca Hoca sekmesinden veya
+     * hoca kapsamından (user, user_single) yayınlanır.
+     */
+    private function filterScheduleIdsByTab(array $scheduleIdsData, ?string $ownerTypeTab, string $scope): array
+    {
+        if ($ownerTypeTab !== null) {
+            return $scheduleIdsData[$ownerTypeTab] ?? [];
+        }
+        if (in_array($scope, ['user', 'user_single'], true)) {
+            return $scheduleIdsData[OwnerType::USER->value] ?? [];
+        }
+        return array_merge(
+            $scheduleIdsData[OwnerType::PROGRAM->value] ?? [],
+            $scheduleIdsData[OwnerType::CLASSROOM->value] ?? []
+        );
     }
 
     /**
@@ -467,7 +530,7 @@ class SchedulePublishService extends BaseService
         ?string $ownerTypeTab = null
     ): array {
         $scheduleIdsData = $this->collectScheduleIdsByScope($scope, $scopeId, $semester, $academicYear, $type);
-        $scheduleIdsToProcess = $this->filterScheduleIdsByTab($scheduleIdsData, $ownerTypeTab);
+        $scheduleIdsToProcess = $this->filterScheduleIdsByTab($scheduleIdsData, $ownerTypeTab, $scope);
 
         if (empty($scheduleIdsToProcess)) {
             return [

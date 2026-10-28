@@ -343,5 +343,121 @@ class SchedulePublishServiceTest extends BaseTestCase
         $pendingEmpty = $this->service->getPendingChangesGroupedByLecturer();
         $this->assertEmpty($pendingEmpty);
     }
+
+    public function testProgramScopePublishDoesNotPublishLecturerSchedules(): void
+    {
+        $adminId = $this->insert('users', [
+            'name' => 'Admin',
+            'last_name' => 'User',
+            'mail' => 'admin_' . uniqid() . '@example.com',
+            'role' => 'admin'
+        ]);
+        $_SESSION[$_ENV["SESSION_KEY"] ?? 'user_id'] = $adminId;
+
+        $unitId = $this->insert('units', ['name' => 'Birim ' . rand(1000, 9999), 'type' => 'faculty', 'active' => 1]);
+        $deptId = $this->insert('departments', ['name' => 'Bölüm ' . rand(1000, 9999), 'unit_id' => $unitId, 'active' => 1]);
+        $programId = $this->insert('programs', ['name' => 'Program ' . rand(1000, 9999), 'department_id' => $deptId, 'active' => 1]);
+        // Programa kadrolu hoca: eskiden program yayınıyla birlikte yayınlanıyordu
+        $staffMail = 'kadrolu_' . uniqid() . '@example.com';
+        $lecturerId = $this->insert('users', [
+            'name' => 'Kadrolu',
+            'last_name' => 'Hoca',
+            'mail' => $staffMail,
+            'role' => 'lecturer',
+            'program_id' => $programId
+        ]);
+
+        $period = ['type' => 'midterm-exam', 'semester' => 'Güz', 'academic_year' => '2025 - 2026', 'is_published' => 0];
+        $programScheduleId = $this->insert('schedules', $period + ['owner_type' => 'program', 'owner_id' => $programId, 'semester_no' => 1]);
+        $userScheduleId = $this->insert('schedules', $period + ['owner_type' => 'user', 'owner_id' => $lecturerId]);
+        foreach ([$programScheduleId, $userScheduleId] as $scheduleId) {
+            $this->insert('schedule_items', [
+                'schedule_id' => $scheduleId,
+                'day_index' => 1,
+                'start_time' => '09:00:00',
+                'end_time' => '10:00:00',
+                'status' => 'single',
+                'data' => json_encode([['lesson_id' => 1]])
+            ]);
+        }
+
+        // Program sekmesi: owner_type_tab gönderilmez
+        $result = $this->service->bulkPublishByScope(
+            scope: 'program',
+            scopeId: $programId,
+            semester: 'Güz',
+            academicYear: '2025 - 2026',
+            type: 'midterm-exam',
+            publishStatus: true
+        );
+
+        $this->assertTrue((bool)(new Schedule())->find($programScheduleId)->is_published);
+        $this->assertFalse((bool)(new Schedule())->find($userScheduleId)->is_published);
+
+        // Kadrolu hocaya ek içermeyen bilgilendirme e-postası gider
+        $this->assertSame(1, $result['staff_notified']);
+        $stmt = $this->getDb()->prepare("SELECT subject, body FROM mail_queue WHERE to_email = ?");
+        $stmt->execute([$staffMail]);
+        $mails = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $this->assertCount(1, $mails);
+        $this->assertStringContainsString('Ara Sınav Programı Yayınlandı', $mails[0]['subject']);
+        $this->assertStringContainsString('Programınızın', $mails[0]['body']);
+
+        // Zaten yayında olan kapsam yeniden yayınlanınca e-posta tekrar gitmez
+        $again = $this->service->bulkPublishByScope(
+            scope: 'program',
+            scopeId: $programId,
+            semester: 'Güz',
+            academicYear: '2025 - 2026',
+            type: 'midterm-exam',
+            publishStatus: true
+        );
+        $this->assertSame(0, $again['staff_notified']);
+
+        // Hoca sekmesi aynı kapsamda hoca programını yayınlar
+        $this->service->bulkPublishByScope(
+            scope: 'program',
+            scopeId: $programId,
+            semester: 'Güz',
+            academicYear: '2025 - 2026',
+            type: 'midterm-exam',
+            publishStatus: true,
+            ownerTypeTab: 'user'
+        );
+        $this->assertTrue((bool)(new Schedule())->find($userScheduleId)->is_published);
+    }
+
+    public function testTogglePublishOnProgramScheduleNotifiesStaffLecturer(): void
+    {
+        $unitId = $this->insert('units', ['name' => 'Birim ' . rand(1000, 9999), 'type' => 'faculty', 'active' => 1]);
+        $deptId = $this->insert('departments', ['name' => 'Bölüm ' . rand(1000, 9999), 'unit_id' => $unitId, 'active' => 1]);
+        $programName = 'Kadro Programı ' . rand(1000, 9999);
+        $programId = $this->insert('programs', ['name' => $programName, 'department_id' => $deptId, 'active' => 1]);
+
+        $staffMail = 'staff_' . uniqid() . '@example.com';
+        $this->insert('users', ['name' => 'Kadro', 'last_name' => 'Hoca', 'mail' => $staffMail, 'role' => 'lecturer', 'program_id' => $programId]);
+        // Akademik olmayan kadro (sekreter) bilgilendirilmez
+        $secretaryMail = 'secretary_' . uniqid() . '@example.com';
+        $this->insert('users', ['name' => 'Kadro', 'last_name' => 'Sekreter', 'mail' => $secretaryMail, 'role' => 'secretary', 'program_id' => $programId]);
+
+        $scheduleId = $this->insert('schedules', [
+            'type' => 'lesson',
+            'owner_type' => 'program',
+            'owner_id' => $programId,
+            'semester_no' => 1,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published' => 0
+        ]);
+
+        $res = $this->service->togglePublish($scheduleId);
+        $this->assertSame(1, $res['staff_notified']);
+
+        $stmt = $this->getDb()->prepare("SELECT subject FROM mail_queue WHERE to_email = ?");
+        $stmt->execute([$staffMail]);
+        $this->assertSame("2025 - 2026 Güz Dönemi {$programName} Ders Programı Yayınlandı", $stmt->fetchColumn());
+        $stmt->execute([$secretaryMail]);
+        $this->assertFalse($stmt->fetchColumn());
+    }
 }
 
