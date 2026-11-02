@@ -17,6 +17,18 @@ class AdjacentClassOverlapRule implements ExamWarningRule
 {
     private const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
+    public function title(): string
+    {
+        return 'Farklı sınıf düzeylerinin sınavları çakışıyor';
+    }
+
+    public function description(): string
+    {
+        return 'Aynı programın farklı sınıflarındaki sınavların aynı saatte yapılması, iki sınıfın derslerini alan '
+            . '(örneğin dersten kalan) öğrencilerin sınava girmesini engeller. Fakültelerde zorunlu olmadığı için '
+            . 'bu kural yalnızca uyarıdır; sınavlardan birinin saatini değiştirmeniz önerilir.';
+    }
+
     public function check(ExamRuleContext $context): array
     {
         // "program|gün|hafta" => ['program_id', 'day_index', 'schedule', 'entries' => [...]]

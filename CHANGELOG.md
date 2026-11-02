@@ -9,6 +9,7 @@
 - **Sınıf Düzeyi Çakışması Uyarısı**: Sınav ekleme, taşıma ve düzenlemede aynı programın farklı sınıf düzeylerindeki (1-2, 1-3 ...) sınavları aynı saate denk geliyorsa uyarı gösterilir; kullanıcı onaylarsa işlem devam eder. Sınav birleştirmesiyle bağlı dersler aynı sınav sayılır.
 
 ### Changed
+- Sınav kuralı uyarıları (günlük sınır, sınıf düzeyi çakışması, derslik kapasitesi) tarayıcının `confirm()` penceresi yerine `Modal` ile gösterilir; uyarılar kural bazında gruplanır ve her kuralın başlığı ile açıklaması yer alır (`ExamWarningService::checkGrouped`, `ExamScheduleCard.confirmWarningsModal`).
 - Yönetici panosundaki "Sınav Gözetmenlik Görevleri" kartı Sınav Analizleri sayfasına taşındı.
 - Esnek sınav kuralları `ExamScheduleService` dışına, `App\Services\Schedule\ExamRules` altında ayrı kural sınıflarına taşındı (`ExamWarningRule`, `DailyExamLimitRule`, `AdjacentClassOverlapRule`, `ExamWarningService`).
 

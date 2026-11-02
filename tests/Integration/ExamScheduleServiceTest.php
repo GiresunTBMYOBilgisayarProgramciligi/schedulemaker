@@ -417,6 +417,34 @@ class ExamScheduleServiceTest extends BaseTestCase
         $this->assertSame([], $this->warnings->check([$this->makeExamDto($lesson3, 2, '14:00:00', '15:00:00')]));
     }
 
+    public function testWarningsAreGroupedByRuleWithTitleAndDescription(): void
+    {
+        $lesson2 = $this->insertExtraLesson('Fizik');
+        $lesson3 = $this->insertExtraLesson('Kimya');
+        $secondClassLesson = $this->insertExtraLesson('Fizik 2', 3);
+        $secondClassSchedule = $this->insertProgramSchedule(3);
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
+
+        // Üçüncü sınav yalnızca günlük sınır kuralını ihlal eder
+        $groups = $this->warnings->checkGrouped([$this->makeExamDto($lesson3, 1, '14:00:00', '15:00:00')]);
+        $this->assertCount(1, $groups);
+        $this->assertSame('Günlük sınav sınırı aşılıyor', $groups[0]['title']);
+        $this->assertNotSame('', $groups[0]['description']);
+        $this->assertCount(1, $groups[0]['messages']);
+
+        // 2. sınıf sınavı 1. sınıfla aynı saatte: yalnızca sınıf çakışması kuralı uyarır, ihlal etmeyen kurallar listeye girmez
+        $overlapDto = $this->makeExamDto($secondClassLesson, 1, '09:00:00', '10:00:00', null, $secondClassSchedule);
+        $groups = $this->warnings->checkGrouped([$overlapDto]);
+        $this->assertCount(1, $groups);
+        $this->assertSame('Farklı sınıf düzeylerinin sınavları çakışıyor', $groups[0]['title']);
+
+        // Düz liste, gruplanmış mesajların birleşimidir
+        $this->assertSame($groups[0]['messages'], $this->warnings->check([$overlapDto]));
+        $this->assertSame([], $this->warnings->checkGrouped([$this->makeExamDto($lesson3, 2, '14:00:00', '15:00:00')]));
+    }
+
     public function testDailyExamLimitCountsSameSlotOnce(): void
     {
         $lesson2 = $this->insertExtraLesson('Fizik');

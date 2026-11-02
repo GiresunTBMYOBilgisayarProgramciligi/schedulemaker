@@ -39,6 +39,34 @@ class ExamWarningService
     }
 
     /**
+     * Uyarıları kural bazında gruplar; uyarı üretmeyen kurallar listeye girmez.
+     *
+     * @param ScheduleItemDTO[] $dtos Eklenecek item DTO'ları
+     * @param ScheduleItemDTO[] $deletedDtos Aynı işlemde silinecek item DTO'ları (taşıma/düzenleme)
+     * @return array<int, array{title:string, description:string, messages:string[]}>
+     * @throws Exception
+     */
+    public function checkGrouped(array $dtos, array $deletedDtos = []): array
+    {
+        $context = new ExamRuleContext($dtos, $deletedDtos, $this->examService ?? new ExamScheduleService());
+
+        $groups = [];
+        foreach ($this->rules as $rule) {
+            $messages = $rule->check($context);
+            if ($messages === []) {
+                continue;
+            }
+            $groups[] = [
+                'title' => $rule->title(),
+                'description' => $rule->description(),
+                'messages' => array_values($messages),
+            ];
+        }
+
+        return $groups;
+    }
+
+    /**
      * @param ScheduleItemDTO[] $dtos Eklenecek item DTO'ları
      * @param ScheduleItemDTO[] $deletedDtos Aynı işlemde silinecek item DTO'ları (taşıma/düzenleme)
      * @return string[] Uyarı mesajları (boşsa sorun yok)
@@ -46,13 +74,6 @@ class ExamWarningService
      */
     public function check(array $dtos, array $deletedDtos = []): array
     {
-        $context = new ExamRuleContext($dtos, $deletedDtos, $this->examService ?? new ExamScheduleService());
-
-        $warnings = [];
-        foreach ($this->rules as $rule) {
-            $warnings = array_merge($warnings, $rule->check($context));
-        }
-
-        return $warnings;
+        return array_merge(...array_column($this->checkGrouped($dtos, $deletedDtos), 'messages') ?: [[]]);
     }
 }

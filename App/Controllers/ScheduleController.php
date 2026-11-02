@@ -527,9 +527,12 @@ class ScheduleController extends Controller
         $dtos = (new ScheduleItemValidator())->getBatchDTO($items);
         $deletedDtos = (new ScheduleItemValidator())->getBatchDTO($deletedItems);
 
+        $groups = (new ExamWarningService())->checkGrouped($dtos, $deletedDtos);
+
         return [
             "status" => "success",
-            "warnings" => (new ExamWarningService())->check($dtos, $deletedDtos),
+            "warnings" => array_merge(...array_column($groups, 'messages') ?: [[]]),
+            "groups" => $groups,
         ];
     }
 

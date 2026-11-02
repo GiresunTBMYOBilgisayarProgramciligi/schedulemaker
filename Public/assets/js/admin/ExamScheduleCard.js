@@ -578,7 +578,8 @@ class ExamScheduleCard extends ScheduleCard {
                 resolve(null);
             });
 
-            scheduleModal.confirmButton.addEventListener("click", (event) => {
+            let confirmingCapacity = false;
+            scheduleModal.confirmButton.addEventListener("click", async (event) => {
                 event.preventDefault();
                 let selectedData = {
                     hours: hoursInput.value,
@@ -625,12 +626,24 @@ class ExamScheduleCard extends ScheduleCard {
                     return;
                 }
 
-                if (parseInt(totalCapacitySpan.innerText) < lessonSize) {
+                const totalCapacity = parseInt(totalCapacitySpan.innerText);
+                if (totalCapacity < lessonSize) {
                     if (ignoreRemainingCheck.checked) {
                         // Kalan mevcudu yok say: detail'e ignore_remaining ekle
                         selectedData.ignore_remaining = true;
-                    } else if (!confirm("Seçilen dersliklerin kapasitesi ders mevcudundan az. Devam etmek istiyor musunuz?")) {
-                        return;
+                    } else {
+                        if (confirmingCapacity) return;
+                        confirmingCapacity = true;
+                        const proceed = await this.confirmWarningsModal([{
+                            title: "Derslik kapasitesi ders mevcudundan az",
+                            description: "Seçilen dersliklerin toplam sınav kapasitesi ders mevcudunu karşılamıyor. "
+                                + "Küçük farklar için \"Kalan mevcudu yok say\" seçeneğini işaretleyebilir ya da derslik ekleyebilirsiniz.",
+                            messages: [`Ders mevcudu: ${lessonSize} öğrenci, toplam kapasite: ${totalCapacity} (${lessonSize - totalCapacity} öğrenci açıkta kalıyor).`]
+                        }], { title: "Kapasite Uyarısı", confirmText: "Yine de kaydet", cancelText: "Düzenlemeye dön" });
+                        confirmingCapacity = false;
+                        if (!proceed) {
+                            return;
+                        }
                     }
                 }
 
@@ -819,8 +832,8 @@ class ExamScheduleCard extends ScheduleCard {
     }
 
     /**
-     * Bir programda günde en fazla 2 sınav yapılabilir (yönetmelik). Esnek kontrol:
-     * sınır aşılıyorsa uyarı gösterilir, kullanıcı onaylarsa işlem devam eder.
+     * Sınav eklenmeden/taşınmadan önce esnek sınav kurallarını (günlük sınır, sınıf düzeyi çakışması vb.)
+     * kontrol eder. Kurallar ihlal ediliyorsa uyarılar modal içinde gösterilir, kullanıcı onaylarsa işlem devam eder.
      * @returns {Promise<boolean>} İşleme devam edilecekse true
      */
     async confirmDailyExamLimit(scheduleItems, deletedItems = []) {
@@ -836,15 +849,110 @@ class ExamScheduleCard extends ScheduleCard {
             });
             const result = await response.json();
 
-            if (result.status !== "success" || !result.warnings?.length) {
+            if (result.status !== "success") {
                 return true;
             }
-            return confirm(result.warnings.join("\n\n") + "\n\nYine de devam etmek istiyor musunuz?");
+            // Eski sürüm yanıtı (yalnızca düz uyarı listesi) için tek gruba çevir
+            const groups = result.groups?.length
+                ? result.groups
+                : (result.warnings?.length ? [{ title: "Sınav kuralı uyarısı", description: "", messages: result.warnings }] : []);
+            if (!groups.length) {
+                return true;
+            }
+            return await this.confirmWarningsModal(groups);
         } catch (error) {
             // Uyarı kontrolü başarısız olursa kaydı engelleme (esnek kural)
             console.error("confirmDailyExamLimit error:", error);
             return true;
         }
+    }
+
+    /**
+     * Sınav kuralı uyarılarını modal içinde gösterir ve kullanıcının devam edip etmeyeceğini sorar.
+     * Başka bir modal açıkken (örn. atama penceresi) üstte açılır.
+     *
+     * @param {Array<{title: string, description: string, messages: string[]}>} groups Kural bazında gruplanmış uyarılar
+     * @param {{title?: string, confirmText?: string, cancelText?: string}} options
+     * @returns {Promise<boolean>} Kullanıcı "devam et" derse true; vazgeçer ya da modalı kapatırsa false
+     */
+    confirmWarningsModal(groups, options = {}) {
+        const {
+            title = "Sınav Kuralı Uyarısı",
+            confirmText = "Yine de devam et",
+            cancelText = "Vazgeç"
+        } = options;
+
+        return new Promise((resolve) => {
+            const el = (tag, className = "", text = null) => {
+                const node = document.createElement(tag);
+                if (className) node.className = className;
+                if (text !== null) node.textContent = text; // textContent: ders adları vb. güvenli yazılır
+                return node;
+            };
+
+            const modal = new Modal();
+            modal.prepareModal("", "", true, true, "lg");
+
+            const titleText = el("span", "", title);
+            modal.title.replaceChildren(el("i", "bi bi-exclamation-triangle-fill text-warning me-2"), titleText);
+
+            const body = el("div");
+            body.appendChild(el(
+                "p",
+                "mb-3",
+                "Yapmak istediğiniz işlem aşağıdaki sınav kurallarına aykırı görünüyor. "
+                + "Bu kurallar yalnızca uyarıdır; dilerseniz yine de devam edebilir ya da vazgeçip sınavı düzenleyebilirsiniz."
+            ));
+
+            groups.forEach((group) => {
+                const messages = group.messages || [];
+                const card = el("div", "card border-warning-subtle mb-3");
+
+                const header = el("div", "card-header bg-warning-subtle d-flex align-items-center gap-2 fw-semibold");
+                header.appendChild(el("i", "bi bi-exclamation-circle"));
+                header.appendChild(el("span", "flex-grow-1", group.title || "Sınav kuralı uyarısı"));
+                header.appendChild(el("span", "badge text-bg-warning", String(messages.length)));
+                card.appendChild(header);
+
+                if (group.description) {
+                    card.appendChild(el("div", "card-body py-2 small text-body-secondary", group.description));
+                }
+
+                const list = el("ul", "list-group list-group-flush");
+                messages.forEach((message) => list.appendChild(el("li", "list-group-item", message)));
+                card.appendChild(list);
+
+                body.appendChild(card);
+            });
+            modal.body.replaceChildren(body);
+
+            modal.confirmButton.className = "btn btn-warning";
+            modal.confirmButton.replaceChildren(el("i", "bi bi-check2-circle me-1"), document.createTextNode(confirmText));
+            modal.cancelButton.className = "btn btn-outline-secondary";
+            modal.cancelButton.textContent = cancelText;
+
+            let confirmed = false;
+            modal.confirmButton.addEventListener("click", () => {
+                confirmed = true;
+                modal.closeModal();
+            });
+            modal.modal.addEventListener("hidden.bs.modal", () => {
+                // Üstteki modal kapanınca bootstrap body kaydırma kilidini kaldırır; altta modal varsa geri koy
+                if (document.querySelector(".modal.show")) {
+                    document.body.classList.add("modal-open");
+                }
+                resolve(confirmed);
+            });
+
+            modal.showModal();
+
+            // Başka bir modalın üzerinde açılıyorsa (atama penceresi) katmanı öne al
+            if (document.querySelectorAll(".modal.show, .modal-backdrop").length > 2) {
+                const backdrops = document.querySelectorAll(".modal-backdrop");
+                backdrops[backdrops.length - 1].style.zIndex = 1060;
+                modal.modal.style.zIndex = 1065;
+            }
+        });
     }
 
     async saveScheduleItems(scheduleItems) {

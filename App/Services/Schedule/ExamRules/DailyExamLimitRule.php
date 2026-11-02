@@ -16,6 +16,18 @@ class DailyExamLimitRule implements ExamWarningRule
 
     private const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
+    public function title(): string
+    {
+        return 'Günlük sınav sınırı aşılıyor';
+    }
+
+    public function description(): string
+    {
+        return 'Yönetmeliğe göre bir sınıfın bir günde en fazla ' . self::MAX_EXAMS_PER_DAY . ' sınavı olabilir. '
+            . 'Aynı saat dilimindeki sınavlar (gruplar, birleştirilmiş sınavlar) tek sınav sayılır. '
+            . 'Sınavlardan birini başka bir güne taşımanız önerilir.';
+    }
+
     public function check(ExamRuleContext $context): array
     {
         // "program|yarıyıl|gün|hafta" => ['slots' => [slotKey => etiket], ...]
