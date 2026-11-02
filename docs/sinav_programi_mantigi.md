@@ -8,7 +8,7 @@ Sistemde üç ana sınav tipi tanımlıdır:
 - `final-exam` (Final)
 - `makeup-exam` (Bütünleme)
 
-Bu tiplerdeki programlar `ExamService` üzerinden yönetilir ve normal ders programı (`lesson`) mantığından ayrıştırılır. Ancak, sınav süresi hesaplamaları ve çakışma kontrollerinde `App\Helpers\TimeHelper` ve `App\Services\TimelineService` yardımcı sınıfları ortaklaşa kullanılır.
+Bu tiplerdeki programlar `ExamScheduleService` üzerinden yönetilir ve normal ders programı (`lesson`) mantığından ayrıştırılır. Ancak, sınav süresi hesaplamaları ve çakışma kontrollerinde `App\Helpers\TimeHelper` ve `App\Services\TimelineService` yardımcı sınıfları ortaklaşa kullanılır.
 
 ## 2. Çoklu Atama (Assignments) Yapısı
 Normal derslerin aksine, bir sınav aynı anda **birden fazla derslikte** ve büyük salonlarda (amfiler vb.) **aynı derslikte birden fazla gözetmenle** gerçekleştirilebilir. 
@@ -38,11 +38,28 @@ Sınav çakışmaları şu prensiplere göre denetlenir:
 `ConflictService`, gelen veride `assignments` olup olmadığına bakarak sınav çakışma mantığını otomatik olarak devreye sokar.
 
 ### Günlük Sınav Sınırı (Esnek Uyarı)
-Yönetmeliğe göre bir programda (`program_id` + `semester_no`) bir günde en fazla 2 sınav yapılabilir (`ExamScheduleService::MAX_EXAMS_PER_DAY`).
+Yönetmeliğe göre bir programda (`program_id` + `semester_no`) bir günde en fazla 2 sınav yapılabilir (`DailyExamLimitRule::MAX_EXAMS_PER_DAY`).
 - Kural **engelleyici değildir**: sınav ekleme/taşıma/düzenleme öncesi `ExamScheduleCard.confirmDailyExamLimit()` `/ajax/checkExamDailyLimit` endpoint'ini çağırır; sınır aşılıyorsa uyarı gösterilir ve kullanıcı onaylarsa işlem devam eder.
 - Aynı saat diliminde olan sınavlar (gruplar, `exam_parent_lesson_id` ile birleştirilmiş dersler) **tek sınav** sayılır.
 - Taşıma/düzenlemede silinecek sınav (ve kardeş kayıtları) sayıma dahil edilmez.
 - Uyarı kontrolü hata verirse kayıt engellenmez.
+
+### Sınıf Düzeyi Çakışması (Esnek Uyarı)
+Aynı programda farklı sınıf düzeylerinin (1-2, 1-3, 2-4 ...) sınavları zaman olarak çakışmamalıdır. Sınıf, `getClassFromSemesterNo()` ile yarıyıl numarasından hesaplanır (yarıyıl 1-2 = 1. sınıf, 3-4 = 2. sınıf). Örn. güz döneminde yarıyıl 1 ile yarıyıl 3 aynı saatte sınava konulamaz.
+- Günlük sınır gibi **engelleyici değildir**: uyarı gösterilir, kullanıcı onaylarsa işlem devam eder (MYO'larda katı, fakültelerde esnek bir kural olduğu için).
+- Tam aynı saat değil, süre kesişimine bakılır (`TimeHelper::isOverlapping`); peş peşe sınavlar çakışma sayılmaz.
+- Yalnızca aynı program içinde geçerlidir; aynı sınıf düzeyi (bunun için günlük sınır var) ve farklı programlar uyarı üretmez.
+- Sınav birleştirmesi (`lesson_combinations`, `type='exam'`) ile bağlı dersler farklı sınıflarda olsa da aynı sınav sayılır, birbirinin çakışması sayılmaz.
+- Taşıma/düzenlemede silinecek sınav sayıma dahil edilmez.
+
+### Esnek Kuralların Yapısı
+Uyarı niteliğindeki kurallar `App\Services\Schedule\ExamRules` altında toplanır (`ExamScheduleService` dışında):
+- `ExamWarningRule`: her kuralın uyguladığı arayüz (`check(ExamRuleContext): string[]`).
+- `ExamRuleContext`: eklenecek sınavlar, etkilenen programlar ve programlardaki mevcut sınavlar gibi ortak veriyi bir kez hazırlar.
+- `DailyExamLimitRule`, `AdjacentClassOverlapRule`: mevcut kurallar.
+- `ExamWarningService`: kuralları çalıştırır ve uyarıları birleştirir. Yeni kural eklemek için sınıfı yazıp `ExamWarningService::defaultRules()` listesine eklemek yeterlidir.
+
+`/ajax/checkExamDailyLimit` endpoint'i (adı geriye dönük uyumluluk için korunmuştur) bu servisi çağırır; istemci tarafında `ExamScheduleCard.confirmDailyExamLimit()` tüm uyarıları tek onay penceresinde gösterir.
 
 ## 5. Müsait Gözetmen Bulma
 `AvailabilityService::availableObservers` metodu:

@@ -4,6 +4,7 @@ namespace Tests\Integration;
 
 use Tests\BaseTestCase;
 use App\Services\Schedule\ExamScheduleService;
+use App\Services\Schedule\ExamRules\ExamWarningService;
 use App\Services\Schedule\GuestScheduleVisibility;
 use App\DTOs\ScheduleItemDTO;
 use App\Models\ScheduleItem;
@@ -14,6 +15,7 @@ use App\Repositories\ScheduleRepository;
 class ExamScheduleServiceTest extends BaseTestCase
 {
     private ExamScheduleService $service;
+    private ExamWarningService $warnings;
     private int $unitId;
     private int $deptId;
     private int $progId;
@@ -27,6 +29,7 @@ class ExamScheduleServiceTest extends BaseTestCase
     {
         parent::setUp();
         $this->service = new ExamScheduleService();
+        $this->warnings = new ExamWarningService();
 
         $this->unitId = $this->insert('units', ['name' => 'Exam Unit ' . rand(1000, 9999), 'type' => 'myo', 'active' => 1]);
         $this->deptId = $this->insert('departments', ['name' => 'Exam Dept ' . rand(1000, 9999), 'unit_id' => $this->unitId, 'active' => 1]);
@@ -235,10 +238,10 @@ class ExamScheduleServiceTest extends BaseTestCase
         $this->assertEmpty($remainingSecondObs);
     }
 
-    private function makeExamDto(int $lessonId, int $day, string $start, string $end, ?int $id = null): ScheduleItemDTO
+    private function makeExamDto(int $lessonId, int $day, string $start, string $end, ?int $id = null, ?int $scheduleId = null): ScheduleItemDTO
     {
         return ScheduleItemDTO::fromArray([
-            'schedule_id' => $this->programScheduleId,
+            'schedule_id' => $scheduleId ?? $this->programScheduleId,
             'day_index' => $day,
             'week_index' => 0,
             'start_time' => $start,
@@ -249,7 +252,7 @@ class ExamScheduleServiceTest extends BaseTestCase
         ]);
     }
 
-    private function insertExtraLesson(string $name): int
+    private function insertExtraLesson(string $name, int $semesterNo = 1): int
     {
         return $this->insert('lessons', [
             'name' => $name,
@@ -259,9 +262,139 @@ class ExamScheduleServiceTest extends BaseTestCase
             'program_id' => $this->progId,
             'building_id' => $this->buildingId,
             'classroom_type' => ClassroomType::CLASSROOM->value,
-            'semester_no' => 1,
+            'semester_no' => $semesterNo,
             'type' => 1
         ]);
+    }
+
+    private function insertProgramSchedule(int $semesterNo): int
+    {
+        return $this->insert('schedules', [
+            'type' => 'final-exam',
+            'owner_type' => OwnerType::PROGRAM->value,
+            'owner_id' => $this->progId,
+            'semester_no' => $semesterNo,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published' => 0
+        ]);
+    }
+
+    public function testAdjacentClassOverlapWarnsWhenFirstAndSecondClassOverlap(): void
+    {
+        $secondClassLesson = $this->insertExtraLesson('Fizik 2', 3);
+        $secondClassSchedule = $this->insertProgramSchedule(3);
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+
+        // 1. sınıf (yarıyıl 1) ile 2. sınıf (yarıyıl 3) aynı saatte: uyarı
+        $warnings = $this->warnings->check([$this->makeExamDto($secondClassLesson, 1, '09:00:00', '10:00:00', null, $secondClassSchedule)]);
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString('1. sınıf', $warnings[0]);
+        $this->assertStringContainsString('2. sınıf', $warnings[0]);
+
+        // Süreler kısmen kesişiyorsa da uyarı
+        $this->assertCount(1, $this->warnings->check([$this->makeExamDto($secondClassLesson, 1, '09:30:00', '10:30:00', null, $secondClassSchedule)]));
+
+        // Peş peşe (kesişmeyen) saatte uyarı yok
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($secondClassLesson, 1, '10:00:00', '11:00:00', null, $secondClassSchedule)]));
+
+        // Başka günde uyarı yok
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($secondClassLesson, 2, '09:00:00', '10:00:00', null, $secondClassSchedule)]));
+    }
+
+    public function testAdjacentClassOverlapWarnsForNonConsecutiveClasses(): void
+    {
+        $thirdClassLesson = $this->insertExtraLesson('Fizik 3', 5);
+        $thirdClassSchedule = $this->insertProgramSchedule(5);
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+
+        // 1. sınıf ile 3. sınıf da çakışma uyarısı verir
+        $warnings = $this->warnings->check([$this->makeExamDto($thirdClassLesson, 1, '09:00:00', '10:00:00', null, $thirdClassSchedule)]);
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString('1. sınıf', $warnings[0]);
+        $this->assertStringContainsString('3. sınıf', $warnings[0]);
+    }
+
+    public function testAdjacentClassOverlapIgnoresSameClassAndOtherPrograms(): void
+    {
+        $sameClassLesson = $this->insertExtraLesson('Kimya');
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+
+        // Aynı sınıf çakışması bu kuralın konusu değil
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($sameClassLesson, 1, '09:00:00', '10:00:00')]));
+
+        // Farklı programın 2. sınıfı ilgilendirmez
+        $otherProgId = $this->insert('programs', ['name' => 'Other Prog ' . rand(1000, 9999), 'department_id' => $this->deptId, 'active' => 1]);
+        $otherLesson = $this->insert('lessons', [
+            'name' => 'Diger',
+            'code' => 'OTH' . rand(1000, 9999),
+            'hours' => 3,
+            'department_id' => $this->deptId,
+            'program_id' => $otherProgId,
+            'building_id' => $this->buildingId,
+            'classroom_type' => ClassroomType::CLASSROOM->value,
+            'semester_no' => 3,
+            'type' => 1
+        ]);
+        $otherSchedule = $this->insert('schedules', [
+            'type' => 'final-exam',
+            'owner_type' => OwnerType::PROGRAM->value,
+            'owner_id' => $otherProgId,
+            'semester_no' => 3,
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+            'is_published' => 0
+        ]);
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($otherLesson, 1, '09:00:00', '10:00:00', null, $otherSchedule)]));
+    }
+
+    public function testAdjacentClassOverlapIgnoresDeletedItemOnMove(): void
+    {
+        $secondClassLesson = $this->insertExtraLesson('Fizik 2', 3);
+        $secondClassSchedule = $this->insertProgramSchedule(3);
+
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $this->service->saveExamScheduleItems([$this->makeExamDto($secondClassLesson, 1, '11:00:00', '12:00:00', null, $secondClassSchedule)]);
+
+        $existing = (new ScheduleItem())->get()->where([
+            'schedule_id' => $secondClassSchedule,
+            'day_index' => 1,
+            'start_time' => '11:00:00',
+        ])->first();
+
+        // 2. sınıf sınavı 09:00'a taşınırsa uyarı verir
+        $this->assertCount(1, $this->warnings->check([$this->makeExamDto($secondClassLesson, 1, '09:00:00', '10:00:00', null, $secondClassSchedule)]));
+
+        // Mevcut 1. sınıf sınavı 09:00'dan 11:00'a (2. sınıfın kendi saatine) taşınmıyorsa; 2. sınıfın kendi
+        // eski kaydı silinecekse sayıma katılmaz: 11:00'daki 2. sınıf kaydı silinip 14:00'a taşınınca uyarı yok
+        $this->assertSame([], $this->warnings->check(
+            [$this->makeExamDto($secondClassLesson, 1, '14:00:00', '15:00:00', null, $secondClassSchedule)],
+            [$this->makeExamDto($secondClassLesson, 1, '11:00:00', '12:00:00', (int) $existing->id, $secondClassSchedule)]
+        ));
+    }
+
+    public function testAdjacentClassOverlapIgnoresCombinedExam(): void
+    {
+        $secondClassLesson = $this->insertExtraLesson('Fizik 2', 3);
+        $this->insertProgramSchedule(3);
+        // 2. sınıf dersi, 1. sınıf dersiyle sınav birleştirmesi yapılmış (ortak sınav)
+        $this->insert('lesson_combinations', [
+            'parent_lesson_id' => $this->lessonId,
+            'child_lesson_id' => $secondClassLesson,
+            'type' => 'exam',
+            'semester' => 'Güz',
+            'academic_year' => '2025 - 2026',
+        ]);
+
+        // Ortak sınav kendi içinde çakışma sayılmaz
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]));
+
+        // Birleşik sınav kaydedildikten sonra, kayıtlı ortak sınav yeni bir sınav eklenirken çakışma sayılmaz
+        $this->service->saveExamScheduleItems([$this->makeExamDto($this->lessonId, 1, '09:00:00', '10:00:00')]);
+        $thirdLesson = $this->insertExtraLesson('Kimya');
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($thirdLesson, 2, '09:00:00', '10:00:00')]));
     }
 
     public function testDailyExamLimitWarnsOnThirdExamOfSameDay(): void
@@ -273,15 +406,15 @@ class ExamScheduleServiceTest extends BaseTestCase
         $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
 
         // İkinci sınav sınırı aşmaz
-        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]));
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]));
 
         // Üçüncü sınav uyarı üretir
-        $warnings = $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 1, '14:00:00', '15:00:00')]);
+        $warnings = $this->warnings->check([$this->makeExamDto($lesson3, 1, '14:00:00', '15:00:00')]);
         $this->assertCount(1, $warnings);
         $this->assertStringContainsString('en fazla 2 sınav', $warnings[0]);
 
         // Başka güne eklemek uyarı üretmez
-        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 2, '14:00:00', '15:00:00')]));
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($lesson3, 2, '14:00:00', '15:00:00')]));
     }
 
     public function testDailyExamLimitCountsSameSlotOnce(): void
@@ -293,7 +426,7 @@ class ExamScheduleServiceTest extends BaseTestCase
         $this->service->saveExamScheduleItems([$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00')]);
 
         // Mevcut bir sınavla aynı saat dilimi (birleşik sınav/grup) yeni sınav sayılmaz
-        $this->assertSame([], $this->service->checkDailyExamLimit([$this->makeExamDto($lesson3, 1, '09:00:00', '10:00:00')]));
+        $this->assertSame([], $this->warnings->check([$this->makeExamDto($lesson3, 1, '09:00:00', '10:00:00')]));
     }
 
     public function testDailyExamLimitIgnoresDeletedItemOnMove(): void
@@ -309,7 +442,7 @@ class ExamScheduleServiceTest extends BaseTestCase
         ])->first();
 
         // Aynı gün içinde sınavı başka saate taşımak sınırı aşmaz
-        $warnings = $this->service->checkDailyExamLimit(
+        $warnings = $this->warnings->check(
             [$this->makeExamDto($lesson2, 1, '14:00:00', '15:00:00')],
             [$this->makeExamDto($lesson2, 1, '11:00:00', '12:00:00', (int) $existing->id)]
         );

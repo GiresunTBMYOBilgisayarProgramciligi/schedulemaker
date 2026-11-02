@@ -17,6 +17,7 @@ use App\DTOs\ScheduleFilterDTO;
 use App\DTOs\ScheduleExportOptionsDTO;
 use App\Services\Schedule\LessonScheduleService;
 use App\Services\Schedule\ExamScheduleService;
+use App\Services\Schedule\ExamRules\ExamWarningService;
 use App\Services\Schedule\GuestScheduleVisibility;
 use App\Services\Schedule\ConflictService;
 use App\Services\Schedule\SchedulePublishService;
@@ -509,7 +510,7 @@ class ScheduleController extends Controller
     }
 
     /**
-     * Sınav eklenmeden/taşınmadan önce günlük sınav sınırı (yönetmelik) uyarılarını döner.
+     * Sınav eklenmeden/taşınmadan önce esnek sınav kuralları (günlük sınır, ardışık sınıf çakışması vb.) uyarılarını döner.
      * Engelleyici değildir; yalnızca uyarı mesajları üretir.
      */
     public function checkExamDailyLimit(array $requestData): array
@@ -528,7 +529,7 @@ class ScheduleController extends Controller
 
         return [
             "status" => "success",
-            "warnings" => (new ExamScheduleService())->checkDailyExamLimit($dtos, $deletedDtos),
+            "warnings" => (new ExamWarningService())->check($dtos, $deletedDtos),
         ];
     }
 
