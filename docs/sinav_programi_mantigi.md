@@ -61,6 +61,11 @@ Uyarı niteliğindeki kurallar `App\Services\Schedule\ExamRules` altında toplan
 
 `/ajax/checkExamDailyLimit` endpoint'i (adı geriye dönük uyumluluk için korunmuştur) bu servisi çağırır; istemci tarafında `ExamScheduleCard.confirmDailyExamLimit()` tüm uyarıları tek onay penceresinde gösterir.
 
+### Kayıtlı Programların Analizi (Sınav Analizleri)
+Esnek kurallar sınav eklenirken uyarı üretir; zaten kaydedilmiş programlardaki ihlaller ise `ExamAnalysisService` ile raporlanır (yalnızca okuma):
+- **Sayfa:** `/admin/examanalysis` (Takvim İşlemleri > Sınav Analizleri, yönetici grubu). Gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırı sekmeleri; yıl, dönem, sınav tipi, birim ve bölüm filtreli.
+- **Komut satırı:** `php bin/exam_class_conflicts.php` ve `php bin/exam_daily_limit.php` (`--type=vize|final|but --semester=Güz --year="2026 - 2027" --program=<id> --format=text|json`, günlük sınır betiğinde ayrıca `--max`). İhlal varsa çıkış kodu 1 olur.
+
 ## 5. Müsait Gözetmen Bulma
 `AvailabilityService::availableObservers` metodu:
 - Tüm hocaları ve yetkili personeli (Gözetmen Havuzu) tarar.

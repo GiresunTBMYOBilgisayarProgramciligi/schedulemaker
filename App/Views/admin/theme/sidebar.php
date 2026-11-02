@@ -102,8 +102,8 @@ $requestUri = $_SERVER["REQUEST_URI"] ?? '';
                 <?php endif; ?>
                 <!-- Takvim İşlemleri -->
                 <?php if (Gate::allowsRole("department_head") || $currentUser->role === UserRole::PayrollOfficer->value || Gate::hasAnyPermission($currentUser->id, PermissionType::MANAGE_SCHEDULE->value)): ?>
-                    <li class="nav-item <?= (str_contains($requestUri, 'schedule')) ? 'menu-open' : ''; ?>">
-                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'schedule')) ? 'active' : ''; ?>">
+                    <li class="nav-item <?= (str_contains($requestUri, 'schedule') || str_contains($requestUri, 'examanalysis')) ? 'menu-open' : ''; ?>">
+                        <a href="#" class="nav-link <?= (str_contains($requestUri, 'schedule') || str_contains($requestUri, 'examanalysis')) ? 'active' : ''; ?>">
                             <i class="nav-icon bi bi-calendar"></i>
                             <p>
                                 Takvim İşlemleri
@@ -122,6 +122,14 @@ $requestUri = $_SERVER["REQUEST_URI"] ?? '';
                                 <a href="/admin/editexamschedule" class="nav-link <?= (str_contains($requestUri, 'editexamschedule')) ? 'active' : ''; ?>">
                                     <i class="nav-icon bi bi-calendar2-plus"></i>
                                     <p>Sınav Programı</p>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            <?php if (Gate::allowsRole("submanager")): ?>
+                            <li class="nav-item">
+                                <a href="/admin/examanalysis" class="nav-link <?= (str_contains($requestUri, 'examanalysis')) ? 'active' : ''; ?>">
+                                    <i class="nav-icon bi bi-clipboard-data"></i>
+                                    <p>Sınav Analizleri</p>
                                 </a>
                             </li>
                             <?php endif; ?>

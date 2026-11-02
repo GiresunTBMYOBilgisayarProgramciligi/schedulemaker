@@ -1,4 +1,4 @@
-/* --- Dashboard: Sınav Gözetmenlik Görevleri grafiği --- */
+/* --- Sınav Analizleri: Sınav Gözetmenlik Görevleri grafiği --- */
 /* Seri renkleri ExamType değerlerine göre: midterm-exam / final-exam / makeup-exam */
 .exam-duty {
     --duty-series-midterm-exam: #2a78d6;

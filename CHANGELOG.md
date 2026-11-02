@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Sınav Analizleri Sayfası** (`/admin/examanalysis`, Takvim İşlemleri menüsü, yönetici grubu):
+  - Gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırını aşan sınıflar tek sayfada sekmeler halinde gösterilir; yıl, dönem, sınav tipi, birim ve bölüm filtresi vardır (`AdminPageController::getExamAnalysisPageData`).
+  - Kayıtlı sınav programlarını analiz eden `ExamAnalysisService` ve aynı servisi kullanan `bin/exam_class_conflicts.php`, `bin/exam_daily_limit.php` komut satırı betikleri eklendi (text/json çıktı, çıkış kodu ile CI'da kullanılabilir).
+- **Sınıf Düzeyi Çakışması Uyarısı**: Sınav ekleme, taşıma ve düzenlemede aynı programın farklı sınıf düzeylerindeki (1-2, 1-3 ...) sınavları aynı saate denk geliyorsa uyarı gösterilir; kullanıcı onaylarsa işlem devam eder. Sınav birleştirmesiyle bağlı dersler aynı sınav sayılır.
+
+### Changed
+- Yönetici panosundaki "Sınav Gözetmenlik Görevleri" kartı Sınav Analizleri sayfasına taşındı.
+- Esnek sınav kuralları `ExamScheduleService` dışına, `App\Services\Schedule\ExamRules` altında ayrı kural sınıflarına taşındı (`ExamWarningRule`, `DailyExamLimitRule`, `AdjacentClassOverlapRule`, `ExamWarningService`).
+
 ## [0.3.5] - 2026-10-27
 
 > **Veritabanı güncellemesi gerekli:** Mevcut kurulumlarda `update-database.sql` çalıştırılarak kullanılmayan `logs` tablosu kaldırılmalıdır.

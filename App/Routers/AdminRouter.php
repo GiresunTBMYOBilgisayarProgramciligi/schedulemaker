@@ -42,7 +42,7 @@ class AdminRouter extends Router
      */
     public function IndexAction(): void
     {
-        $this->view_data = array_merge($this->view_data, $this->pageController->getIndexPageData($this->currentUser, $this->assetManager, $_GET));
+        $this->view_data = array_merge($this->view_data, $this->pageController->getIndexPageData($this->currentUser, $this->assetManager));
         $this->callView("admin/index/index");
     }
 
@@ -257,6 +257,15 @@ class AdminRouter extends Router
     {
         $this->view_data = array_merge($this->view_data, $this->pageController->getEditExamSchedulePageData($this->assetManager));
         $this->callView("admin/schedules/editexamschedule");
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function examAnalysisAction()
+    {
+        $this->view_data = array_merge($this->view_data, $this->pageController->getExamAnalysisPageData($this->currentUser, $this->assetManager, $_GET));
+        $this->callView("admin/schedules/examanalysis");
     }
 
     /**

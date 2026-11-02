@@ -32,6 +32,7 @@ use App\Enums\OwnerType;
 use App\Enums\UnitType;
 use App\Enums\UserRole;
 use App\Enums\PermissionType;
+use App\Services\Schedule\ExamAnalysisService;
 use App\Services\Schedule\SchedulePublishService;
 use App\Services\MailQueueService;
 use App\Services\ProgramService;
@@ -48,7 +49,7 @@ class AdminPageController extends Controller
      *
      * @throws Exception
      */
-    public function getIndexPageData(User $currentUser, AssetManager $assetManager, array $filters = []): array
+    public function getIndexPageData(User $currentUser, AssetManager $assetManager): array
     {
         $assetManager->addCss("/assets/css/schedule.css");
         $assetManager->addJs("/assets/js/exportSchedule.js");
@@ -85,19 +86,6 @@ class AdminPageController extends Controller
             $view_data["programs"]     = (new ProgramRepository())->getAuthorized('view', ['active' => true], ['lecturers', 'lessons', 'department' => ['with' => ['chairperson', 'unit']]]);
             $view_data["units"]        = (new UnitRepository())->getAuthorized('view', ['active' => true]);
             $view_data["departments"]  = (new DepartmentRepository())->getAuthorized('view', [], ["chairperson", "unit"]);
-
-            // Sınav gözetmenlik görevi istatistikleri (yıl / dönem / birim / bölüm filtreli)
-            // exportschedule asset grubu: birim → bölüm seçimi için formEvents.js + TomSelect
-            $assetManager->loadPageAssets('exportschedule');
-            $assetManager->addCss("/assets/css/dashboard.css");
-            $view_data['examDutyFilters'] = $this->resolveExamDutyFilters($filters, $view_data['units'], $view_data['departments']);
-            $view_data['examDutyStats'] = (new UserRepository())->getExamDutyStats(
-                $view_data['examDutyFilters']['semester'],
-                $view_data['examDutyFilters']['academic_year'],
-                $view_data['examDutyFilters']['unit_id'],
-                $view_data['examDutyFilters']['department_id']
-            );
-            $view_data['examDutySummary'] = $this->summarizeExamDutyStats($view_data['examDutyStats']);
 
         // --- Sekreter ---
         } elseif (Gate::allowsRole('secretary')) {
@@ -196,15 +184,15 @@ class AdminPageController extends Controller
     }
 
     /**
-     * Dashboard sınav görevi istatistik filtrelerini doğrular.
-     * Geçersiz yıl/dönem ayarlardaki aktif değere, yetkisiz birim/bölüm null'a düşer.
+     * Sınav analizleri sayfası filtrelerini doğrular.
+     * Geçersiz yıl/dönem ayarlardaki aktif değere, geçersiz sınav tipi vizeye, yetkisiz birim/bölüm null'a düşer.
      *
-     * @param array $filters ['academic_year', 'semester', 'unit_id', 'department_id']
+     * @param array $filters ['academic_year', 'semester', 'exam_type', 'unit_id', 'department_id']
      * @param Unit[] $authorizedUnits
      * @param Department[] $authorizedDepartments
-     * @return array{academic_year:string, semester:string, unit_id:?int, department_id:?int}
+     * @return array{academic_year:string, semester:string, exam_type:string, unit_id:?int, department_id:?int}
      */
-    private function resolveExamDutyFilters(array $filters, array $authorizedUnits, array $authorizedDepartments): array
+    private function resolveExamAnalysisFilters(array $filters, array $authorizedUnits, array $authorizedDepartments): array
     {
         $academicYear = (string)($filters['academic_year'] ?? '');
         if (!preg_match('/^\d{4} - \d{4}$/', $academicYear)) {
@@ -215,6 +203,8 @@ class AdminPageController extends Controller
         if (!in_array($semester, ['Güz', 'Bahar', 'Yaz'], true)) {
             $semester = (string)getSettingValue('semester');
         }
+
+        $examType = ExamType::fromAlias((string)($filters['exam_type'] ?? '')) ?? ExamType::MIDTERM;
 
         $unitId = (int)($filters['unit_id'] ?? 0);
         if (!in_array($unitId, array_map(fn($u) => (int)$u->id, $authorizedUnits), true)) {
@@ -237,13 +227,14 @@ class AdminPageController extends Controller
         return [
             'academic_year' => $academicYear,
             'semester'      => $semester,
+            'exam_type'     => $examType->value,
             'unit_id'       => $unitId,
             'department_id' => $departmentId,
         ];
     }
 
     /**
-     * Sınav görevi istatistiklerinden dashboard özet değerlerini hesaplar.
+     * Sınav görevi istatistiklerinden özet değerlerini hesaplar.
      *
      * @param array $stats UserRepository::getExamDutyStats() çıktısı
      * @return array{total:int, assigned_count:int, unassigned_count:int, average:float, max:int}
@@ -260,6 +251,65 @@ class AdminPageController extends Controller
             'unassigned_count' => count($totals) - $assignedCount,
             'average'          => $assignedCount ? round($total / $assignedCount, 1) : 0.0,
             'max'              => $totals ? max($totals) : 0,
+        ];
+    }
+
+    /**
+     * Sınav analizleri sayfası: gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırı aşımları.
+     *
+     * @param array $filters ['academic_year', 'semester', 'exam_type', 'unit_id', 'department_id']
+     * @throws AuthorizationException
+     * @throws Exception
+     */
+    public function getExamAnalysisPageData(User $currentUser, AssetManager $assetManager, array $filters = []): array
+    {
+        if (!Gate::allowsRole('submanager')) {
+            throw new AuthorizationException("Sınav analizlerini görme yetkiniz yok", [], 403);
+        }
+
+        // exportschedule asset grubu: birim → bölüm seçimi için formEvents.js + TomSelect
+        $assetManager->loadPageAssets('exportschedule');
+        $assetManager->addCss("/assets/css/examanalysis.css");
+
+        $units = (new UnitRepository())->getAuthorized('view', ['active' => true]);
+        $departments = (new DepartmentRepository())->getAuthorized('view', []);
+        $filters = $this->resolveExamAnalysisFilters($filters, $units, $departments);
+        $examType = ExamType::from($filters['exam_type']);
+
+        // Filtreye uyan, kullanıcının görebildiği programlar
+        $departmentUnits = [];
+        foreach ($departments as $department) {
+            $departmentUnits[(int)$department->id] = (int)$department->unit_id;
+        }
+        $programIds = [];
+        foreach ((new ProgramRepository())->getAuthorized('view', ['active' => true]) as $program) {
+            $departmentId = (int)$program->department_id;
+            if ($filters['department_id'] && $departmentId !== $filters['department_id']) {
+                continue;
+            }
+            if ($filters['unit_id'] && ($departmentUnits[$departmentId] ?? null) !== $filters['unit_id']) {
+                continue;
+            }
+            $programIds[] = (int)$program->id;
+        }
+
+        $analysis = new ExamAnalysisService();
+        $examDutyStats = (new UserRepository())->getExamDutyStats(
+            $filters['semester'],
+            $filters['academic_year'],
+            $filters['unit_id'],
+            $filters['department_id']
+        );
+
+        return [
+            "page_title"       => "Sınav Analizleri",
+            "units"            => $units,
+            "filters"          => $filters,
+            "examTypes"        => ExamType::cases(),
+            "examDutyStats"    => $examDutyStats,
+            "examDutySummary"  => $this->summarizeExamDutyStats($examDutyStats),
+            "classOverlaps"    => $analysis->classOverlaps($examType, $filters['semester'], $filters['academic_year'], $programIds),
+            "dailyLimit"       => $analysis->dailyLimitViolations($examType, $filters['semester'], $filters['academic_year'], $programIds),
         ];
     }
 
