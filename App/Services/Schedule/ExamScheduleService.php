@@ -3,6 +3,8 @@
 namespace App\Services\Schedule;
 
 use App\Core\Database;
+use App\Exceptions\ScheduleConflictException;
+use App\Helpers\TimeHelper;
 use App\DTOs\DeleteScheduleResult;
 use App\Enums\ExamType;
 use App\Enums\OwnerType;
@@ -292,6 +294,59 @@ class ExamScheduleService extends ScheduleService
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
+     * Yeni sınav item'ı eklenmeden önce hedef schedule'daki çakışmaları doğrular.
+     * Zaman çakışmasını ConflictResolver kurallarıyla, birebir aynı slot kaydını ise
+     * (schedule_items unique kısıtı) açıklayıcı bir hata ile bildirir.
+     *
+     * @throws ScheduleConflictException
+     */
+    private function assertNoSlotConflict(
+        Schedule $relSchedule,
+        Schedule $targetSchedule,
+        ScheduleItemDTO $dto,
+        int $dayIndex,
+        int $weekIndex,
+        string $startTime,
+        string $endTime,
+        ?int $actualLessonId
+    ): void {
+        $existingItems = (new ScheduleItem())->get()->where([
+            'schedule_id' => $relSchedule->id,
+            'day_index' => $dayIndex,
+            'week_index' => $weekIndex,
+        ])->all();
+
+        $resolver = new ConflictResolver();
+        $lesson = $actualLessonId ? (new Lesson())->find($actualLessonId) : null;
+        $itemData = $dto->toArray();
+
+        foreach ($existingItems as $existing) {
+            if (substr($existing->start_time, 0, 5) === substr($startTime, 0, 5)
+                && substr($existing->end_time, 0, 5) === substr($endTime, 0, 5)) {
+                $exact = true;
+            } elseif (TimeHelper::isOverlapping($startTime, $endTime, $existing->start_time, $existing->end_time)) {
+                $exact = false;
+            } else {
+                continue;
+            }
+
+            $error = $resolver->resolveConflict($itemData, $existing, $lesson, $relSchedule);
+            if ($error === null && $exact) {
+                // Çakışma sayılmayan (ör. "tercih edilen") ama aynı slotu dolduran kayıt
+                $error = "{$relSchedule->getScheduleScreenName()} ({$existing->start_time} - {$existing->end_time}): "
+                    . "Bu saat aralığında zaten bir kayıt ({$existing->status}) var. Lütfen önce mevcut kaydı silin.";
+            }
+            if ($error !== null) {
+                throw new ScheduleConflictException(
+                    "Sınav programında çakışma tespit edildi: " . $error,
+                    $existing,
+                    $relSchedule
+                );
+            }
+        }
+    }
+
+    /**
      * Sınav item'larını kaydeder ve kardeş programlara (Program, Ders, Gözetmen, Derslik) yansıtır.
      *
      * Sınava özgü mantık:
@@ -410,6 +465,10 @@ class ExamScheduleService extends ScheduleService
                             'classroom_id' => null,
                         ]
                     ];
+
+                    // Sınav birleştirme (exam child) ve grup kardeş dersleri ConflictService
+                    // kontrolünde yer almadığından, kayıttan önce bu schedule'ı ayrıca doğrula.
+                    $this->assertNoSlotConflict($relSchedule, $targetSchedule, $dto, $dayIndex, $weekIndex, $startTime, $endTime, $owner['actual_lesson_id'] ?? null);
 
                     $newItem = new ScheduleItem();
                     $newItem->schedule_id = $relSchedule->id;
