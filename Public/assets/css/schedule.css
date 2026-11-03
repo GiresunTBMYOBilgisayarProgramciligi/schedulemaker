@@ -245,6 +245,15 @@
         margin-bottom: 0;
     }
 
+    /* Firefox: rowspan'li hücrede height:100% hücreyi içeriğe göre büyütmez, içerik kart dışına taşar.
+       Bu yüzden yüksekliği min-height'a çevirip kartın içeriğiyle büyümesine izin verilir. */
+    .schedule-table td > .lesson-card.h-100,
+    .schedule-table td > .lesson-group-container.h-100,
+    .schedule-table td > .exam-cell-multi.h-100 {
+        height: auto !important;
+        min-height: 100%;
+    }
+
     .lesson-card.h-100 {
         display: flex;
         flex-direction: column;
@@ -441,7 +450,7 @@
         flex-direction: column;
         gap: 4px;
         min-height: 54px;
-        height: 100%;
+        height: auto;
         width: 100%;
         justify-content: stretch;
     }
