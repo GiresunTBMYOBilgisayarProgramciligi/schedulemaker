@@ -237,7 +237,7 @@ class AvailabilityService extends BaseService
          * @var Lesson $lesson
          */
         foreach ($lessonsList as $lesson) {
-            $isComplete = $lesson->IsScheduleComplete($schedule->type);
+            $isComplete = $lesson->IsScheduleComplete($schedule->type, $schedule->semester, $schedule->academic_year);
             if (!$isComplete) {
                 // Ders Programı tamamlanmamışsa
                 if ($schedule->type == 'lesson') {

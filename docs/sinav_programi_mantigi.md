@@ -56,15 +56,17 @@ Aynı programda farklı sınıf düzeylerinin (1-2, 1-3, 2-4 ...) sınavları za
 Uyarı niteliğindeki kurallar `App\Services\Schedule\ExamRules` altında toplanır (`ExamScheduleService` dışında):
 - `ExamWarningRule`: her kuralın uyguladığı arayüz (`check(ExamRuleContext): string[]`).
 - `ExamRuleContext`: eklenecek sınavlar, etkilenen programlar ve programlardaki mevcut sınavlar gibi ortak veriyi bir kez hazırlar.
-- `DailyExamLimitRule`, `AdjacentClassOverlapRule`: mevcut kurallar.
+- `DailyExamLimitRule`, `AdjacentClassOverlapRule`: mevcut kurallar. Sınıf düzeyi çakışma ölçütü `ClassOverlap::conflicts()` içindedir; kural ve `ExamAnalysisService` (kayıtlı programların analizi) aynı karşılaştırmayı kullanır.
 - `ExamWarningService`: kuralları çalıştırır ve uyarıları birleştirir. Yeni kural eklemek için sınıfı yazıp `ExamWarningService::defaultRules()` listesine eklemek yeterlidir.
 
 `/ajax/checkExamDailyLimit` endpoint'i (adı geriye dönük uyumluluk için korunmuştur) bu servisi çağırır; istemci tarafında `ExamScheduleCard.confirmDailyExamLimit()` tüm uyarıları tek onay penceresinde gösterir.
 
 ### Kayıtlı Programların Analizi (Sınav Analizleri)
 Esnek kurallar sınav eklenirken uyarı üretir; zaten kaydedilmiş programlardaki ihlaller ise `ExamAnalysisService` ile raporlanır (yalnızca okuma):
-- **Sayfa:** `/admin/examanalysis` (Takvim İşlemleri > Sınav Analizleri, yönetici grubu). Gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırı sekmeleri; yıl, dönem, sınav tipi, birim ve bölüm filtreli.
-- **Komut satırı:** `php bin/exam_class_conflicts.php` ve `php bin/exam_daily_limit.php` (`--type=vize|final|but --semester=Güz --year="2026 - 2027" --program=<id> --format=text|json`, günlük sınır betiğinde ayrıca `--max`). İhlal varsa çıkış kodu 1 olur.
+- **Sayfa:** `/admin/examanalysis` (Takvim İşlemleri > Sınav Analizleri, yönetici grubu). Gözetmenlik dağılımı, sınıf düzeyi çakışmaları, günlük sınav sınırı ve eksik sınav programı sekmeleri; yıl, dönem, sınav tipi, birim ve bölüm filtreli.
+- **Eksik sınav programı:** `ExamAnalysisService::incompleteLessons()` dönemde ataması olan (staj hariç) derslerden `Lesson::IsScheduleComplete` ile tamamlanmamış olanları listeler: sınavı programa eklenmemiş ya da derslik sınav kapasitesi toplam mevcudu karşılamayanlar (aynı kodlu gruplar ve sınav birleştirmesiyle bağlı dersler tek sınav sayılır, "kalan mevcudu yok say" tamamlanmış sayılır). Birleşik sınavın alt dersi ayrı satır olmaz, üst dersin altında gösterilir.
+- **Dönem bilgisi:** `Lesson::IsScheduleComplete`, `getExamRootLessonId`, `getExamLinkedLessonIds`, `getExamAllLinkedLessonIds` ve `getExamTotalSize` dönem ve akademik yılı parametre olarak alır; verilmezse sistem ayarındaki değer kullanılır. Sayfa filtrelerinde varsayılanlar `ExamAnalysisFilterValidator` tarafından atanır (dönem ve yıl için ayar, sınav tipi için vize); gelen dönem ve yıl hesaplamaya kadar taşınır.
+- **Komut satırı:** (ortak iskelet `bin/lib/exam_report.php`; dönem/yıl/tip varsayılanları sayfayla aynı validator'dan gelir) `php bin/exam_class_conflicts.php` ve `php bin/exam_daily_limit.php` (`--type=vize|final|but --semester=Güz --year="2026 - 2027" --program=<id> --format=text|json`, günlük sınır betiğinde ayrıca `--max`). İhlal varsa çıkış kodu 1 olur.
 
 ## 5. Müsait Gözetmen Bulma
 `AvailabilityService::availableObservers` metodu:

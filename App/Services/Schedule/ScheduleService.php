@@ -54,12 +54,14 @@ class ScheduleService extends BaseService
      * 
      * @param array $lessonIds
      * @param string $scheduleType
+     * @param string|null $semester Kontrol edilen programın dönemi; verilmezse sistem ayarındaki dönem
+     * @param string|null $academicYear Kontrol edilen programın akademik yılı; verilmezse sistem ayarındaki yıl
      * @throws Exception
      */
-    protected function checkLessonHourLimits(array $lessonIds, string $scheduleType): void
+    protected function checkLessonHourLimits(array $lessonIds, string $scheduleType, ?string $semester = null, ?string $academicYear = null): void
     {
-        $semester = getSettingValue('semester');
-        $academicYear = getSettingValue('academic_year');
+        $semester = $semester ?? getSettingValue('semester');
+        $academicYear = $academicYear ?? getSettingValue('academic_year');
 
         foreach ($lessonIds as $lessonId) {
             $lesson = (new Lesson())->find($lessonId);

@@ -4,11 +4,12 @@
 
 ### Added
 - **Sınav Analizleri Sayfası** (`/admin/examanalysis`, Takvim İşlemleri menüsü, yönetici grubu):
-  - Gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırını aşan sınıflar tek sayfada sekmeler halinde gösterilir; yıl, dönem, sınav tipi, birim ve bölüm filtresi vardır (`AdminPageController::getExamAnalysisPageData`).
+  - Gözetmenlik dağılımı, sınıf düzeyi çakışmaları, günlük sınav sınırını aşan sınıflar ve sınav programı tamamlanmamış dersler tek sayfada sekmeler halinde gösterilir; yıl, dönem, sınav tipi, birim ve bölüm filtresi vardır (`AdminPageController::getExamAnalysisPageData`).
   - Kayıtlı sınav programlarını analiz eden `ExamAnalysisService` ve aynı servisi kullanan `bin/exam_class_conflicts.php`, `bin/exam_daily_limit.php` komut satırı betikleri eklendi (text/json çıktı, çıkış kodu ile CI'da kullanılabilir).
 - **Sınıf Düzeyi Çakışması Uyarısı**: Sınav ekleme, taşıma ve düzenlemede aynı programın farklı sınıf düzeylerindeki (1-2, 1-3 ...) sınavları aynı saate denk geliyorsa uyarı gösterilir; kullanıcı onaylarsa işlem devam eder. Sınav birleştirmesiyle bağlı dersler aynı sınav sayılır.
 
 ### Changed
+- Sınav birleştirmesiyle bağlı ders bulma ve tamamlanma hesapları (`Lesson::getExamRootLessonId`, `getExamLinkedLessonIds`, `getExamAllLinkedLessonIds`, `getExamTotalSize`, `IsScheduleComplete`) dönem ve akademik yılı parametre olarak alır; ders programı/uygun ders listesi ve sınav kartları artık işlem yapılan takvimin dönemine göre hesaplanır. Sınav analizleri filtreleri `ExamAnalysisFilterValidator` ile doğrulanır ve varsayılanları atanır.
 - Sınav kuralı uyarıları (günlük sınır, sınıf düzeyi çakışması, derslik kapasitesi) tarayıcının `confirm()` penceresi yerine `Modal` ile gösterilir; uyarılar kural bazında gruplanır ve her kuralın başlığı ile açıklaması yer alır (`ExamWarningService::checkGrouped`, `ExamScheduleCard.confirmWarningsModal`).
 - Yönetici panosundaki "Sınav Gözetmenlik Görevleri" kartı Sınav Analizleri sayfasına taşındı.
 - Esnek sınav kuralları `ExamScheduleService` dışına, `App\Services\Schedule\ExamRules` altında ayrı kural sınıflarına taşındı (`ExamWarningRule`, `DailyExamLimitRule`, `AdjacentClassOverlapRule`, `ExamWarningService`).

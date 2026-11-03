@@ -74,6 +74,17 @@ class ExamWarningService
      */
     public function check(array $dtos, array $deletedDtos = []): array
     {
-        return array_merge(...array_column($this->checkGrouped($dtos, $deletedDtos), 'messages') ?: [[]]);
+        return self::flatten($this->checkGrouped($dtos, $deletedDtos));
+    }
+
+    /**
+     * Gruplanmış uyarıları (checkGrouped çıktısı) düz mesaj listesine çevirir.
+     *
+     * @param array<int, array{messages:string[]}> $groups
+     * @return string[]
+     */
+    public static function flatten(array $groups): array
+    {
+        return array_merge([], ...array_column($groups, 'messages'));
     }
 }

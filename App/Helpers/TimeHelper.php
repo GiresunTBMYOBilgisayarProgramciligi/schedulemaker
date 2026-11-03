@@ -11,6 +11,17 @@ use function App\Helpers\getSettingValue;
  */
 class TimeHelper
 {
+    /** Gün adları; day_index değerine göre (0 = Pazartesi) */
+    public const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+    /**
+     * day_index değerine karşılık gelen gün adını döner.
+     */
+    public static function dayName(int $dayIndex, string $default = 'Bu gün'): string
+    {
+        return self::DAYS[$dayIndex] ?? $default;
+    }
+
     /**
      * İki zaman arasındaki süreyi dakika cinsinden hesaplar
      * 

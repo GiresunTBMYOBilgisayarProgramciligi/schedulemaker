@@ -20,6 +20,7 @@ class ExamAnalysisServiceTest extends BaseTestCase
     private int $deptId;
     private int $buildingId;
     private int $progId;
+    private ?int $lecturerId = null;
 
     protected function setUp(): void
     {
@@ -38,7 +39,7 @@ class ExamAnalysisServiceTest extends BaseTestCase
         return $this->insert('programs', ['name' => 'Analysis Prog ' . rand(1000, 9999), 'department_id' => $this->deptId, 'active' => 1]);
     }
 
-    private function insertLesson(string $name, int $semesterNo, ?int $programId = null, ?string $code = null, int $groupNo = 0): int
+    private function insertLesson(string $name, int $semesterNo, ?int $programId = null, ?string $code = null, int $groupNo = 0, int $size = 0, int $type = 1): int
     {
         return $this->insert('lessons', [
             'name' => $name,
@@ -50,8 +51,47 @@ class ExamAnalysisServiceTest extends BaseTestCase
             'building_id' => $this->buildingId,
             'classroom_type' => ClassroomType::CLASSROOM->value,
             'semester_no' => $semesterNo,
-            'type' => 1,
+            'size' => $size,
+            'type' => $type,
         ]);
+    }
+
+    /** Dersi dönemde bir öğretim elemanına atar (eksik sınav programı analizi yalnızca atanmış dersleri kapsar). */
+    private function assign(int $lessonId): void
+    {
+        $this->lecturerId ??= $this->insert('users', [
+            'name' => 'Analiz', 'last_name' => 'Hoca', 'mail' => 'analysis_' . rand(10000, 99999) . '@test.com',
+            'role' => 'lecturer', 'department_id' => $this->deptId,
+        ]);
+        $this->insert('lesson_assignments', ['lesson_id' => $lessonId, 'lecturer_id' => $this->lecturerId, 'semester' => self::SEMESTER, 'academic_year' => self::YEAR]);
+    }
+
+    private function insertClassroom(int $examSize): int
+    {
+        return $this->insert('classrooms', [
+            'name' => 'AN' . rand(100, 999), 'type' => ClassroomType::CLASSROOM->value,
+            'class_size' => $examSize * 2, 'exam_size' => $examSize, 'building_id' => $this->buildingId,
+        ]);
+    }
+
+    /** Sınavı, derslik ataması (ve isteğe bağlı "kalan mevcudu yok say" bayrağı) ile kaydeder. */
+    private function saveExamInClassroom(int $lessonId, int $scheduleId, int $classroomId, int $day = 1, bool $ignoreRemaining = false): void
+    {
+        $this->examService->saveExamScheduleItems([ScheduleItemDTO::fromArray([
+            'schedule_id' => $scheduleId,
+            'day_index' => $day,
+            'week_index' => 0,
+            'start_time' => '09:00:00',
+            'end_time' => '10:00:00',
+            'status' => 'single',
+            'data' => [['lesson_id' => $lessonId]],
+            'detail' => ['assignments' => [['classroom_id' => $classroomId, 'observers' => []]]] + ($ignoreRemaining ? ['ignore_remaining' => true] : []),
+        ])]);
+    }
+
+    private function incomplete(): array
+    {
+        return $this->analysis->incompleteLessons(ExamType::MIDTERM, self::SEMESTER, self::YEAR, [$this->progId]);
     }
 
     private function insertSchedule(int $programId, int $semesterNo): int
@@ -220,5 +260,105 @@ class ExamAnalysisServiceTest extends BaseTestCase
         $this->saveExam($this->insertLesson('D', 3), $secondSchedule, 1, '15:00:00', '16:00:00');
 
         $this->assertSame(0, $this->dailyLimit()['violation_count']);
+    }
+
+    public function testIncompleteLessonsReportsUnplacedAndPartialLessons(): void
+    {
+        $schedule = $this->insertSchedule($this->progId, 1);
+        $unplaced = $this->insertLesson('Eklenmemiş', 1, null, null, 0, 30);
+        $partial = $this->insertLesson('Kapasitesi Yetersiz', 1, null, null, 0, 50);
+        $complete = $this->insertLesson('Tamam', 1, null, null, 0, 30);
+        foreach ([$unplaced, $partial, $complete] as $lessonId) {
+            $this->assign($lessonId);
+        }
+        $this->saveExamInClassroom($partial, $schedule, $this->insertClassroom(30), 1);
+        $this->saveExamInClassroom($complete, $schedule, $this->insertClassroom(30), 2);
+
+        $result = $this->incomplete();
+        $this->assertSame(3, $result['lesson_count']);
+        $this->assertSame(2, $result['incomplete_count']);
+        $this->assertSame(1, $result['unplaced_count']);
+        $this->assertSame(1, $result['partial_count']);
+
+        $lessons = array_column($result['programs'][0]['lessons'], null, 'lesson_id');
+        $this->assertEquals(['status' => 'unplaced', 'size' => 30, 'placed' => 0, 'remaining' => 30],
+            array_intersect_key($lessons[$unplaced], array_flip(['status', 'size', 'placed', 'remaining'])));
+        $this->assertEquals(['status' => 'partial', 'size' => 50, 'placed' => 30, 'remaining' => 20],
+            array_intersect_key($lessons[$partial], array_flip(['status', 'size', 'placed', 'remaining'])));
+        $this->assertArrayNotHasKey($complete, $lessons);
+        $this->assertSame(1, $lessons[$unplaced]['class']);
+        $this->assertCount(1, $lessons[$unplaced]['lecturers']);
+    }
+
+    public function testIncompleteLessonsHonorsIgnoreRemainingFlag(): void
+    {
+        $schedule = $this->insertSchedule($this->progId, 1);
+        $lesson = $this->insertLesson('Küçük Fark', 1, null, null, 0, 36);
+        $this->assign($lesson);
+        $this->saveExamInClassroom($lesson, $schedule, $this->insertClassroom(35), 1, true);
+
+        $this->assertSame(0, $this->incomplete()['incomplete_count']);
+    }
+
+    public function testIncompleteLessonsSkipsLessonsWithoutAssignmentInternshipAndEmptySize(): void
+    {
+        $this->insertLesson('Atanmamış', 1, null, null, 0, 30);
+        $internship = $this->insertLesson('Staj', 1, null, null, 0, 30, 4);
+        $empty = $this->insertLesson('Mevcudu Yok', 1, null, null, 0, 0);
+        $this->assign($internship);
+        $this->assign($empty);
+
+        $result = $this->incomplete();
+        $this->assertSame(0, $result['incomplete_count']);
+        $this->assertSame([], $result['programs']);
+    }
+
+    public function testIncompleteLessonsCountsGroupsAsOneLessonWithSummedSize(): void
+    {
+        $groupA = $this->insertLesson('Fizik A', 1, null, 'FIZ201', 1, 20);
+        $groupB = $this->insertLesson('Fizik B', 1, null, 'FIZ201', 2, 25);
+        $this->assign($groupA);
+        $this->assign($groupB);
+
+        $result = $this->incomplete();
+        $this->assertSame(1, $result['lesson_count']);
+        $this->assertSame(1, $result['incomplete_count']);
+        $lesson = $result['programs'][0]['lessons'][0];
+        $this->assertSame(45, $lesson['size']);
+        $this->assertSame(['A', 'B'], $lesson['groups']);
+    }
+
+    public function testIncompleteLessonsEvaluatesCombinedExamUnderParent(): void
+    {
+        $parent = $this->insertLesson('Ortak Ders', 1, null, null, 0, 20);
+        $child = $this->insertLesson('Ortak Ders (2. sınıf)', 3, null, null, 0, 15);
+        $this->assign($parent);
+        $this->assign($child);
+        $this->insert('lesson_combinations', [
+            'parent_lesson_id' => $parent, 'child_lesson_id' => $child, 'type' => 'exam',
+            'semester' => self::SEMESTER, 'academic_year' => self::YEAR,
+        ]);
+
+        $result = $this->incomplete();
+        // Alt ders ayrı sayılmaz; üst dersin içinde, toplam mevcutla (20 + 15) değerlendirilir
+        $this->assertSame(1, $result['incomplete_count']);
+        $lesson = $result['programs'][0]['lessons'][0];
+        $this->assertSame($parent, $lesson['lesson_id']);
+        $this->assertSame(35, $lesson['size']);
+        $this->assertCount(1, $lesson['combined']);
+
+        // Kapasite birleşik mevcudu karşılayınca tamamlanır
+        $this->saveExamInClassroom($parent, $this->insertSchedule($this->progId, 1), $this->insertClassroom(35));
+        $this->assertSame(0, $this->incomplete()['incomplete_count']);
+    }
+
+    public function testIncompleteLessonsRespectsProgramFilter(): void
+    {
+        $otherProgId = $this->insertProgram();
+        $this->assign($this->insertLesson('Başka Program', 1, $otherProgId, null, 0, 10));
+
+        $this->assertSame(0, $this->incomplete()['incomplete_count']);
+        $this->assertSame(1, $this->analysis->incompleteLessons(ExamType::MIDTERM, self::SEMESTER, self::YEAR, [$otherProgId])['incomplete_count']);
+        $this->assertSame(0, $this->analysis->incompleteLessons(ExamType::MIDTERM, self::SEMESTER, self::YEAR, [])['lesson_count']);
     }
 }

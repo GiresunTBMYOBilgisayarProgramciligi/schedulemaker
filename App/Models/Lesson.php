@@ -518,26 +518,42 @@ class Lesson extends Model
     }
 
     /**
-     * Sınav birleştirme ile bağlı derslerin (exam parent ve tüm exam child'lar) ID listesini döner.
-     * @return array
+     * Sınav birleştirmesinde bu dersin bağlı olduğu kök (üst) dersin ID'sini döner.
+     * Ders başka bir dersin sınavına bağlı değilse kendi ID'si döner.
+     *
+     * @param string|null $semester Dönem; verilmezse sistem ayarındaki dönem
+     * @param string|null $academicYear Akademik yıl; verilmezse sistem ayarındaki yıl
+     * @return int
      */
-    public function getExamLinkedLessonIds(): array
+    public function getExamRootLessonId(?string $semester = null, ?string $academicYear = null): int
     {
-        $semester = getSettingValue('semester');
-        $academicYear = getSettingValue('academic_year');
-
-        // Her sorgu için yeni nesne kullanılır; first() limit(1) ayarladığından aynı nesne
-        // tekrar kullanılırsa sonraki all() sorgusu da tek kayıtla sınırlanır.
         $comb = (new LessonCombination())->get()->where([
             'child_lesson_id' => $this->id,
             'type' => 'exam',
-            'semester' => $semester,
-            'academic_year' => $academicYear
+            'semester' => $semester ?? getSettingValue('semester'),
+            'academic_year' => $academicYear ?? getSettingValue('academic_year')
         ])->first();
 
-        $rootId = $comb ? $comb->parent_lesson_id : $this->id;
+        return (int) ($comb ? $comb->parent_lesson_id : $this->id);
+    }
+
+    /**
+     * Sınav birleştirme ile bağlı derslerin (exam parent ve tüm exam child'lar) ID listesini döner.
+     *
+     * @param string|null $semester Dönem; verilmezse sistem ayarındaki dönem
+     * @param string|null $academicYear Akademik yıl; verilmezse sistem ayarındaki yıl
+     * @return array
+     */
+    public function getExamLinkedLessonIds(?string $semester = null, ?string $academicYear = null): array
+    {
+        $semester = $semester ?? getSettingValue('semester');
+        $academicYear = $academicYear ?? getSettingValue('academic_year');
+
+        $rootId = $this->getExamRootLessonId($semester, $academicYear);
         $ids = [$rootId];
 
+        // Her sorgu için yeni nesne kullanılır; first() limit(1) ayarladığından aynı nesne
+        // tekrar kullanılırsa sonraki all() sorgusu da tek kayıtla sınırlanır.
         $children = (new LessonCombination())->get()->where([
             'parent_lesson_id' => $rootId,
             'type' => 'exam',
@@ -554,11 +570,14 @@ class Lesson extends Model
     /**
      * Sınav birleştirme bağlantılı derslere ek olarak aynı koda sahip diğer grupların
      * (ve onların sınav bağlı derslerinin) ID listesini döner.
+     *
+     * @param string|null $semester Dönem; verilmezse sistem ayarındaki dönem
+     * @param string|null $academicYear Akademik yıl; verilmezse sistem ayarındaki yıl
      * @return array
      */
-    public function getExamAllLinkedLessonIds(): array
+    public function getExamAllLinkedLessonIds(?string $semester = null, ?string $academicYear = null): array
     {
-        $linkedIds = $this->getExamLinkedLessonIds();
+        $linkedIds = $this->getExamLinkedLessonIds($semester, $academicYear);
 
         if ($this->group_no > 0) {
             $siblings = (new Lesson())->get()->where([
@@ -569,7 +588,7 @@ class Lesson extends Model
                 'id' => ['!=' => $this->id]
             ])->all();
             foreach ($siblings as $sibling) {
-                $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds());
+                $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds($semester, $academicYear));
             }
         }
         return array_values(array_unique($linkedIds));
@@ -577,11 +596,14 @@ class Lesson extends Model
 
     /**
      * Sınav programında birleştirilmiş toplam mevcudu (bağlı dersler ve diğer gruplar dahil) döner.
+     *
+     * @param string|null $semester Dönem; verilmezse sistem ayarındaki dönem
+     * @param string|null $academicYear Akademik yıl; verilmezse sistem ayarındaki yıl
      * @return int
      */
-    public function getExamTotalSize(): int
+    public function getExamTotalSize(?string $semester = null, ?string $academicYear = null): int
     {
-        $linkedIds = $this->getExamAllLinkedLessonIds();
+        $linkedIds = $this->getExamAllLinkedLessonIds($semester, $academicYear);
         return (int)(new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');
     }
 
@@ -613,7 +635,7 @@ class Lesson extends Model
         $academicYear = $academicYear ?? getSettingValue('academic_year');
 
         if ($isExam) {
-            $linkedIds = $this->getExamAllLinkedLessonIds();
+            $linkedIds = $this->getExamAllLinkedLessonIds($semester, $academicYear);
 
             // Toplam grup mevcudunu hesapla
             $targetSize = (new Lesson())->get()->where(['id' => ['in' => $linkedIds]])->sum('size');

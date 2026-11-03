@@ -2,7 +2,7 @@
 
 namespace App\Services\Schedule\ExamRules;
 
-use App\Models\Program;
+use App\Helpers\TimeHelper;
 use function App\Helpers\getClassFromSemesterNo;
 
 /**
@@ -13,8 +13,6 @@ use function App\Helpers\getClassFromSemesterNo;
 class DailyExamLimitRule implements ExamWarningRule
 {
     public const MAX_EXAMS_PER_DAY = 2;
-
-    private const DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 
     public function title(): string
     {
@@ -63,9 +61,9 @@ class DailyExamLimitRule implements ExamWarningRule
             if ($count <= self::MAX_EXAMS_PER_DAY) {
                 continue;
             }
-            $programName = (new Program())->find($target['program_id'])?->name ?? '';
+            $programName = $context->programName($target['program_id']);
             $classLabel = $target['semester_no'] ? getClassFromSemesterNo($target['semester_no']) . ". Sınıf" : '';
-            $dayName = self::DAYS[$target['day_index']] ?? 'Bu gün';
+            $dayName = TimeHelper::dayName($target['day_index']);
             $names = implode(', ', array_filter($target['slots']));
             $warnings[] = trim("{$programName} {$classLabel}") . ": {$dayName} günü {$count} sınav olacak"
                 . ($names !== '' ? " ({$names})" : '')

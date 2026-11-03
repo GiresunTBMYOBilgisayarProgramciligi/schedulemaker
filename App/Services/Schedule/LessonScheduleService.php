@@ -104,7 +104,7 @@ class LessonScheduleService extends ScheduleService
 
                 // Ders saati kontrolü
                 if (!empty($affectedLessonIds)) {
-                    $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type);
+                    $this->checkLessonHourLimits(array_unique($affectedLessonIds), $schedule->type, $schedule->semester, $schedule->academic_year);
                 }
 
                 // Etkilenen tüm schedule'ların updated_at zamanını güncelle
@@ -188,7 +188,7 @@ class LessonScheduleService extends ScheduleService
         ]));
 
         if ($lesson && !$dto->isDummy()) {
-            $lesson->IsScheduleComplete($sourceSchedule->type);
+            $lesson->IsScheduleComplete($sourceSchedule->type, $sourceSchedule->semester, $sourceSchedule->academic_year);
 
             $lessonType = ($sourceSchedule->type === 'lesson') ? 'lesson' : 'exam';
             $slotSize = (int) getSettingValue('duration', $lessonType, $lessonType === 'exam' ? 30 : 50) +

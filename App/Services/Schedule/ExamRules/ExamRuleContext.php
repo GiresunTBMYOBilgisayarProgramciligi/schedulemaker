@@ -5,6 +5,7 @@ namespace App\Services\Schedule\ExamRules;
 use App\DTOs\ScheduleItemDTO;
 use App\Enums\OwnerType;
 use App\Models\Lesson;
+use App\Models\Program;
 use App\Models\Schedule;
 use App\Models\ScheduleItem;
 use App\Services\Schedule\ExamScheduleService;
@@ -24,6 +25,9 @@ class ExamRuleContext
 
     /** @var array<string, array> */
     private array $existingCache = [];
+
+    /** @var array<int, string> */
+    private array $programNames = [];
 
     /**
      * @param ScheduleItemDTO[] $dtos Eklenecek item DTO'ları
@@ -130,6 +134,14 @@ class ExamRuleContext
         }
 
         return $this->existingCache[$key] = $result;
+    }
+
+    /**
+     * Program adını döner (aynı uyarı sırasında tekrar sorgulanmaması için önbelleğe alınır).
+     */
+    public function programName(int $programId): string
+    {
+        return $this->programNames[$programId] ??= (string) ((new Program())->find($programId)?->name ?? '');
     }
 
     /**

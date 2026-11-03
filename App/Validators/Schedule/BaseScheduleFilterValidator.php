@@ -39,6 +39,8 @@ abstract class BaseScheduleFilterValidator extends BaseValidator
         'classroom_id'       => ['type' => 'int'],
         'building_id'        => ['type' => 'int'],
         'unit_id'            => ['type' => 'int'],
+        'department_id'      => ['type' => 'int'],
+        'exam_type'          => ['type' => 'string'],
         'classroom_unit_id'  => ['type' => 'int'],
         'lecturer_id'        => ['type' => 'int'],
 

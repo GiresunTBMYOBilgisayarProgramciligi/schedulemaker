@@ -32,7 +32,9 @@ use App\Enums\OwnerType;
 use App\Enums\UnitType;
 use App\Enums\UserRole;
 use App\Enums\PermissionType;
+use App\DTOs\ExamAnalysisFilterDTO;
 use App\Services\Schedule\ExamAnalysisService;
+use App\Validators\Schedule\ExamAnalysisFilterValidator;
 use App\Services\Schedule\SchedulePublishService;
 use App\Services\MailQueueService;
 use App\Services\ProgramService;
@@ -184,34 +186,20 @@ class AdminPageController extends Controller
     }
 
     /**
-     * Sınav analizleri sayfası filtrelerini doğrular.
-     * Geçersiz yıl/dönem ayarlardaki aktif değere, geçersiz sınav tipi vizeye, yetkisiz birim/bölüm null'a düşer.
+     * Sınav analizleri sayfası birim/bölüm filtresini kullanıcının yetkisiyle sınırlar.
+     * Yetkisiz birim/bölüm null'a düşer. Dönem, yıl ve sınav tipi ExamAnalysisFilterValidator tarafından doğrulanır.
      *
-     * @param array $filters ['academic_year', 'semester', 'exam_type', 'unit_id', 'department_id']
      * @param Unit[] $authorizedUnits
      * @param Department[] $authorizedDepartments
-     * @return array{academic_year:string, semester:string, exam_type:string, unit_id:?int, department_id:?int}
      */
-    private function resolveExamAnalysisFilters(array $filters, array $authorizedUnits, array $authorizedDepartments): array
+    private function authorizeExamAnalysisFilters(ExamAnalysisFilterDTO $dto, array $authorizedUnits, array $authorizedDepartments): ExamAnalysisFilterDTO
     {
-        $academicYear = (string)($filters['academic_year'] ?? '');
-        if (!preg_match('/^\d{4} - \d{4}$/', $academicYear)) {
-            $academicYear = (string)getSettingValue('academic_year');
-        }
-
-        $semester = (string)($filters['semester'] ?? '');
-        if (!in_array($semester, ['Güz', 'Bahar', 'Yaz'], true)) {
-            $semester = (string)getSettingValue('semester');
-        }
-
-        $examType = ExamType::fromAlias((string)($filters['exam_type'] ?? '')) ?? ExamType::MIDTERM;
-
-        $unitId = (int)($filters['unit_id'] ?? 0);
+        $unitId = $dto->unit_id;
         if (!in_array($unitId, array_map(fn($u) => (int)$u->id, $authorizedUnits), true)) {
             $unitId = null;
         }
 
-        $departmentId = (int)($filters['department_id'] ?? 0);
+        $departmentId = $dto->department_id;
         $department = null;
         foreach ($authorizedDepartments as $dept) {
             if ((int)$dept->id === $departmentId) {
@@ -224,13 +212,7 @@ class AdminPageController extends Controller
             $departmentId = null;
         }
 
-        return [
-            'academic_year' => $academicYear,
-            'semester'      => $semester,
-            'exam_type'     => $examType->value,
-            'unit_id'       => $unitId,
-            'department_id' => $departmentId,
-        ];
+        return $dto->withScope($unitId, $departmentId);
     }
 
     /**
@@ -255,7 +237,7 @@ class AdminPageController extends Controller
     }
 
     /**
-     * Sınav analizleri sayfası: gözetmenlik dağılımı, sınıf düzeyi çakışmaları ve günlük sınav sınırı aşımları.
+     * Sınav analizleri sayfası: gözetmenlik dağılımı, sınıf düzeyi çakışmaları, günlük sınav sınırı aşımları ve sınav programı tamamlanmamış dersler.
      *
      * @param array $filters ['academic_year', 'semester', 'exam_type', 'unit_id', 'department_id']
      * @throws AuthorizationException
@@ -273,44 +255,52 @@ class AdminPageController extends Controller
 
         $units = (new UnitRepository())->getAuthorized('view', ['active' => true]);
         $departments = (new DepartmentRepository())->getAuthorized('view', []);
-        $filters = $this->resolveExamAnalysisFilters($filters, $units, $departments);
-        $examType = ExamType::from($filters['exam_type']);
+        $filter = $this->authorizeExamAnalysisFilters((new ExamAnalysisFilterValidator())->getDTO($filters), $units, $departments);
 
-        // Filtreye uyan, kullanıcının görebildiği programlar
+        $examType = $filter->examType();
+        $programIds = $this->filterExamAnalysisProgramIds($filter, $departments);
+        $analysis = new ExamAnalysisService();
+        $examDutyStats = (new UserRepository())->getExamDutyStats($filter->semester, $filter->academic_year, $filter->unit_id, $filter->department_id);
+
+        return [
+            "page_title"        => "Sınav Analizleri",
+            "units"             => $units,
+            "filters"           => $filter->toArray(),
+            "examTypes"         => ExamType::cases(),
+            "examDutyStats"     => $examDutyStats,
+            "examDutySummary"   => $this->summarizeExamDutyStats($examDutyStats),
+            "classOverlaps"     => $analysis->classOverlaps($examType, $filter->semester, $filter->academic_year, $programIds),
+            "dailyLimit"        => $analysis->dailyLimitViolations($examType, $filter->semester, $filter->academic_year, $programIds),
+            "incompleteLessons" => $analysis->incompleteLessons($examType, $filter->semester, $filter->academic_year, $programIds),
+        ];
+    }
+
+    /**
+     * Kullanıcının görebildiği aktif programlardan birim/bölüm filtresine uyanların kimliklerini döner.
+     *
+     * @param Department[] $authorizedDepartments
+     * @return int[]
+     */
+    private function filterExamAnalysisProgramIds(ExamAnalysisFilterDTO $filter, array $authorizedDepartments): array
+    {
         $departmentUnits = [];
-        foreach ($departments as $department) {
+        foreach ($authorizedDepartments as $department) {
             $departmentUnits[(int)$department->id] = (int)$department->unit_id;
         }
+
         $programIds = [];
         foreach ((new ProgramRepository())->getAuthorized('view', ['active' => true]) as $program) {
             $departmentId = (int)$program->department_id;
-            if ($filters['department_id'] && $departmentId !== $filters['department_id']) {
+            if ($filter->department_id && $departmentId !== $filter->department_id) {
                 continue;
             }
-            if ($filters['unit_id'] && ($departmentUnits[$departmentId] ?? null) !== $filters['unit_id']) {
+            if ($filter->unit_id && ($departmentUnits[$departmentId] ?? null) !== $filter->unit_id) {
                 continue;
             }
             $programIds[] = (int)$program->id;
         }
 
-        $analysis = new ExamAnalysisService();
-        $examDutyStats = (new UserRepository())->getExamDutyStats(
-            $filters['semester'],
-            $filters['academic_year'],
-            $filters['unit_id'],
-            $filters['department_id']
-        );
-
-        return [
-            "page_title"       => "Sınav Analizleri",
-            "units"            => $units,
-            "filters"          => $filters,
-            "examTypes"        => ExamType::cases(),
-            "examDutyStats"    => $examDutyStats,
-            "examDutySummary"  => $this->summarizeExamDutyStats($examDutyStats),
-            "classOverlaps"    => $analysis->classOverlaps($examType, $filters['semester'], $filters['academic_year'], $programIds),
-            "dailyLimit"       => $analysis->dailyLimitViolations($examType, $filters['semester'], $filters['academic_year'], $programIds),
-        ];
+        return $programIds;
     }
 
     public function getListUsersPageData(User $currentUser, AssetManager $assetManager): array

@@ -10,6 +10,7 @@
  * @var array        $examDutySummary ['total', 'assigned_count', 'unassigned_count', 'average', 'max']
  * @var array        $classOverlaps   ExamAnalysisService::classOverlaps() çıktısı
  * @var array        $dailyLimit      ExamAnalysisService::dailyLimitViolations() çıktısı
+ * @var array        $incompleteLessons ExamAnalysisService::incompleteLessons() çıktısı
  */
 
 use App\Core\View;
@@ -19,6 +20,28 @@ use function App\Helpers\e;
 
 $dutyWithTasks = array_filter($examDutyStats, fn($r) => $r['total'] > 0);
 $selectedExamType = ExamType::from($filters['exam_type']);
+
+// İstatistik kutusu
+$statBox = static function (string|int|float $value, string $label, string $colClass = 'col-6'): void {
+    echo '<div class="' . e($colClass) . '"><div class="border rounded py-2">'
+        . '<div class="fs-4 fw-semibold">' . e((string)$value) . '</div>'
+        . '<div class="text-muted small">' . e($label) . '</div></div></div>';
+};
+
+// Sonuç bulunamadığında gösterilen boş durum
+$emptyState = static function (string $iconClass, string $message): void {
+    echo '<div class="text-center text-muted py-4"><i class="bi ' . e($iconClass) . '"></i>'
+        . '<p class="mt-2 mb-0">' . e($message) . '</p></div>';
+};
+
+// Program başlığı: program adı, birim ve ihlal sayısı rozeti
+$programHeading = static function (array $program, int $count, string $badgeClass): void {
+    echo '<h6 class="mb-2">' . e($program['program']) . ' <span class="text-muted small">' . e($program['unit']) . '</span>'
+        . ' <span class="badge ' . e($badgeClass) . ' ms-1">' . $count . '</span></h6>';
+};
+
+// Sekme başlığındaki sayı rozeti: sorun yoksa yeşil, varsa kırmızı
+$problemBadge = static fn(int $count): string => '<span class="badge ' . ($count ? 'text-bg-danger' : 'text-bg-success') . ' ms-1">' . $count . '</span>';
 
 // Bir sınavı tek satırda gösterir: "BSP-141 Muhasebe I (55 öğrenci) 09:00-10:00"
 $lessonLine = static fn(array $d) => e(
@@ -111,13 +134,19 @@ $lessonLine = static fn(array $d) => e(
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-overlap" data-bs-toggle="tab" data-bs-target="#pane-overlap" type="button" role="tab" aria-controls="pane-overlap" aria-selected="false">
                         <i class="bi bi-layers me-1"></i> Sınıf Çakışmaları
-                        <span class="badge <?= $classOverlaps['conflict_count'] ? 'text-bg-danger' : 'text-bg-success' ?> ms-1"><?= (int)$classOverlaps['conflict_count'] ?></span>
+                        <?= $problemBadge((int)$classOverlaps['conflict_count']) ?>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="tab-daily" data-bs-toggle="tab" data-bs-target="#pane-daily" type="button" role="tab" aria-controls="pane-daily" aria-selected="false">
                         <i class="bi bi-calendar-x me-1"></i> Günlük Sınav Sınırı
-                        <span class="badge <?= $dailyLimit['violation_count'] ? 'text-bg-danger' : 'text-bg-success' ?> ms-1"><?= (int)$dailyLimit['violation_count'] ?></span>
+                        <?= $problemBadge((int)$dailyLimit['violation_count']) ?>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-incomplete" data-bs-toggle="tab" data-bs-target="#pane-incomplete" type="button" role="tab" aria-controls="pane-incomplete" aria-selected="false">
+                        <i class="bi bi-hourglass-split me-1"></i> Eksik Sınav Programı
+                        <?= $problemBadge((int)$incompleteLessons['incomplete_count']) ?>
                     </button>
                 </li>
             </ul>
@@ -136,37 +165,14 @@ $lessonLine = static fn(array $d) => e(
                         <div class="card-body">
                             <!-- Özet -->
                             <div class="row g-2 mb-3 text-center">
-                                <div class="col-6 col-md-3">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= $examDutySummary['total'] ?></div>
-                                        <div class="text-muted small">Toplam Görev</div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= $examDutySummary['assigned_count'] ?></div>
-                                        <div class="text-muted small">Görevli Hoca</div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= $examDutySummary['average'] ?></div>
-                                        <div class="text-muted small">Hoca Başına Ortalama</div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= $examDutySummary['unassigned_count'] ?></div>
-                                        <div class="text-muted small">Görevi Olmayan</div>
-                                    </div>
-                                </div>
+                                <?php $statBox($examDutySummary['total'], 'Toplam Görev', 'col-6 col-md-3') ?>
+                                <?php $statBox($examDutySummary['assigned_count'], 'Görevli Hoca', 'col-6 col-md-3') ?>
+                                <?php $statBox($examDutySummary['average'], 'Hoca Başına Ortalama', 'col-6 col-md-3') ?>
+                                <?php $statBox($examDutySummary['unassigned_count'], 'Görevi Olmayan', 'col-6 col-md-3') ?>
                             </div>
 
                             <?php if (empty($dutyWithTasks)): ?>
-                                <div class="text-center text-muted py-4">
-                                    <i class="bi bi-clipboard-x fs-2"></i>
-                                    <p class="mt-2 mb-0">Bu dönem için atanmış gözetmenlik görevi bulunamadı.</p>
-                                </div>
+                                <?php $emptyState('bi-clipboard-x fs-2', 'Bu dönem için atanmış gözetmenlik görevi bulunamadı.') ?>
                             <?php else: ?>
                             <div class="row g-3">
                                 <!-- Grafik -->
@@ -256,35 +262,16 @@ $lessonLine = static fn(array $d) => e(
                                 Sınav birleştirmesiyle bağlı dersler aynı sınav sayıldığı için çakışma sayılmaz.
                             </p>
                             <div class="row g-2 mb-3 text-center">
-                                <div class="col-6">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= (int)$classOverlaps['conflict_count'] ?></div>
-                                        <div class="text-muted small">Çakışma</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= count($classOverlaps['programs']) ?></div>
-                                        <div class="text-muted small">Etkilenen Program</div>
-                                    </div>
-                                </div>
+                                <?php $statBox((int)$classOverlaps['conflict_count'], 'Çakışma', 'col-6') ?>
+                                <?php $statBox(count($classOverlaps['programs']), 'Etkilenen Program', 'col-6') ?>
                             </div>
 
                             <?php if (empty($classOverlaps['programs'])): ?>
-                                <div class="text-center text-muted py-4">
-                                    <i class="bi bi-check-circle fs-2 text-success"></i>
-                                    <p class="mt-2 mb-0">
-                                        <?= $classOverlaps['item_count'] ? 'Sınıf düzeyi çakışması bulunamadı.' : 'Bu filtre için sınav programı kaydı bulunamadı.' ?>
-                                    </p>
-                                </div>
+                                <?php $emptyState('bi-check-circle fs-2 text-success', $classOverlaps['item_count'] ? 'Sınıf düzeyi çakışması bulunamadı.' : 'Bu filtre için sınav programı kaydı bulunamadı.') ?>
                             <?php else: ?>
                                 <?php foreach ($classOverlaps['programs'] as $program): ?>
                                 <div class="mb-3">
-                                    <h6 class="mb-2">
-                                        <?= e($program['program']) ?>
-                                        <span class="text-muted small"><?= e($program['unit']) ?></span>
-                                        <span class="badge text-bg-danger ms-1"><?= count($program['conflicts']) ?></span>
-                                    </h6>
+                                    <?php $programHeading($program, count($program['conflicts']), 'text-bg-danger') ?>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover align-middle mb-0">
                                             <thead class="table-light">
@@ -327,29 +314,15 @@ $lessonLine = static fn(array $d) => e(
                                 Aynı saat dilimindeki sınavlar (gruplar, sınav birleştirmeleri) tek sınav sayılır.
                             </p>
                             <div class="row g-2 mb-3 text-center">
-                                <div class="col-12 col-md-4 offset-md-4">
-                                    <div class="border rounded py-2">
-                                        <div class="fs-4 fw-semibold"><?= count($dailyLimit['programs']) ?></div>
-                                        <div class="text-muted small">Etkilenen Program</div>
-                                    </div>
-                                </div>
+                                <?php $statBox(count($dailyLimit['programs']), 'Etkilenen Program', 'col-12 col-md-4 offset-md-4') ?>
                             </div>
 
                             <?php if (empty($dailyLimit['programs'])): ?>
-                                <div class="text-center text-muted py-4">
-                                    <i class="bi bi-check-circle fs-2 text-success"></i>
-                                    <p class="mt-2 mb-0">
-                                        <?= $dailyLimit['item_count'] ? 'Günlük sınırı aşan sınıf bulunamadı.' : 'Bu filtre için sınav programı kaydı bulunamadı.' ?>
-                                    </p>
-                                </div>
+                                <?php $emptyState('bi-check-circle fs-2 text-success', $dailyLimit['item_count'] ? 'Günlük sınırı aşan sınıf bulunamadı.' : 'Bu filtre için sınav programı kaydı bulunamadı.') ?>
                             <?php else: ?>
                                 <?php foreach ($dailyLimit['programs'] as $program): ?>
                                 <div class="mb-3">
-                                    <h6 class="mb-2">
-                                        <?= e($program['program']) ?>
-                                        <span class="text-muted small"><?= e($program['unit']) ?></span>
-                                        <span class="badge text-bg-warning ms-1"><?= count($program['violations']) ?></span>
-                                    </h6>
+                                    <?php $programHeading($program, count($program['violations']), 'text-bg-warning') ?>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover align-middle mb-0">
                                             <thead class="table-light">
@@ -386,6 +359,81 @@ $lessonLine = static fn(array $d) => e(
                     </div>
                 </div>
 
+
+                <!-- ===================== Eksik Sınav Programı ===================== -->
+                <div class="tab-pane fade" id="pane-incomplete" role="tabpanel" aria-labelledby="tab-incomplete" tabindex="0">
+                    <div class="card card-outline card-secondary mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="bi bi-hourglass-split me-1"></i> Sınav Programı Tamamlanmamış Dersler
+                                <span class="text-muted small ms-1"><?= e($selectedExamType->label() . ' · ' . $filters['academic_year'] . ' ' . $filters['semester']) ?></span>
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">
+                                Sınavı programa hiç eklenmemiş ya da seçilen dersliklerin sınav kapasitesi ders mevcudunu karşılamayan dersler.
+                                Aynı kodlu gruplar ve sınav birleştirmesiyle bağlı dersler tek sınav olarak değerlendirilir.
+                                "Kalan mevcudu yok say" işaretlenen sınavlar tamamlanmış sayılır.
+                            </p>
+                            <div class="row g-2 mb-3 text-center">
+                                <?php $statBox((int)$incompleteLessons['incomplete_count'], 'Eksik Ders', 'col-6') ?>
+                                <?php $statBox(count($incompleteLessons['programs']), 'Etkilenen Program', 'col-6') ?>
+                            </div>
+
+                            <?php if (empty($incompleteLessons['programs'])): ?>
+                                <?php $emptyState('bi-check-circle fs-2 text-success', $incompleteLessons['lesson_count'] ? 'Sınav programı tamamlanmamış ders bulunamadı.' : 'Bu filtre için dönemde ataması olan ders bulunamadı.') ?>
+                            <?php else: ?>
+                                <?php foreach ($incompleteLessons['programs'] as $program): ?>
+                                <div class="mb-3">
+                                    <?php $programHeading($program, count($program['lessons']), 'text-bg-secondary') ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 6rem;">Sınıf</th>
+                                                    <th>Ders</th>
+                                                    <th>Öğretim Elemanı</th>
+                                                    <th class="text-center" style="width: 6rem;">Mevcut</th>
+                                                    <th class="text-center" style="width: 6rem;">Yerleşen</th>
+                                                    <th class="text-center" style="width: 6rem;">Eksik</th>
+                                                    <th style="width: 11rem;">Durum</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($program['lessons'] as $lesson): ?>
+                                                <tr>
+                                                    <td><?= (int)$lesson['class'] ?>. sınıf</td>
+                                                    <td>
+                                                        <a href="/admin/lesson/<?= (int)$lesson['lesson_id'] ?>" class="fw-semibold"><?= e($lesson['code'] . ' ' . $lesson['name']) ?></a>
+                                                        <?php if (!empty($lesson['groups'])): ?>
+                                                            <span class="text-muted small">(Grup <?= e(implode(', ', $lesson['groups'])) ?>)</span>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($lesson['combined'])): ?>
+                                                            <div class="text-muted small"><i class="bi bi-link-45deg"></i> Birleşik sınav: <?= e(implode(', ', $lesson['combined'])) ?></div>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                    <td class="small"><?= e(implode(', ', $lesson['lecturers'])) ?></td>
+                                                    <td class="text-center"><?= (int)$lesson['size'] ?></td>
+                                                    <td class="text-center"><?= (int)$lesson['placed'] ?></td>
+                                                    <td class="text-center fw-semibold"><?= (int)$lesson['remaining'] ?></td>
+                                                    <td>
+                                                        <?php if ($lesson['status'] === 'unplaced'): ?>
+                                                            <span class="badge text-bg-danger">Programa eklenmemiş</span>
+                                                        <?php else: ?>
+                                                            <span class="badge text-bg-warning">Kapasite yetersiz</span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

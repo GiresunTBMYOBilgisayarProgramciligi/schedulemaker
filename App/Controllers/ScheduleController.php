@@ -531,7 +531,7 @@ class ScheduleController extends Controller
 
         return [
             "status" => "success",
-            "warnings" => array_merge(...array_column($groups, 'messages') ?: [[]]),
+            "warnings" => ExamWarningService::flatten($groups),
             "groups" => $groups,
         ];
     }
