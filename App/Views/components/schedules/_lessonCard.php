@@ -117,7 +117,8 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
             <span class="badge text-bg-warning flex-shrink-0" title="<?= $hideObservers ? 'Bu sınavda gözetmen olarak görevli' : 'Bu sınavda gözetmen olarak görevlisiniz' ?>">Gözetmenlik</span>
         <?php endif; ?>
 
-        <?php if ($groupLetter !== null): ?>
+        <?php // Sınavlarda gruplar birleştirildiği için grup rozeti sadece ders programında gösterilir ?>
+        <?php if ($groupLetter !== null && $type !== 'exam'): ?>
             <span class="badge lesson-group-badge lesson-group-badge-<?= e(strtolower($groupLetter)) ?> flex-shrink-0" title="Grup <?= e($groupLabel) ?>">
                 Grup <?= e($groupLabel) ?>
             </span>
