@@ -91,6 +91,14 @@ $lessonDisplayName = ($type === 'exam')
     ? (($isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName() : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true))
     : (($isUserSchedule || $isClassroomSchedule || $isProgramSchedule) ? $slotData->lesson->getFullName(addGroup: false) : $slotData->lesson->getFullName(addProgram: true, addClassNumber: true, addGroup: false));
 
+// Unvan ("Öğr. Gör.", "Dr. Öğr. Üyesi" ...) soluk, isim belirgin gösterilir; tam ad title özniteliğinde kalır
+$renderPersonName = function (string $fullName): string {
+    if (preg_match('/^((?:Prof\.|Doç\.|Dr\.|Öğr\.|Üyesi|Gör\.|Arş\.|Uzm\.|Okt\.|Okutman)\s*)+/u', $fullName, $m) && trim($m[0]) !== trim($fullName)) {
+        return '<span class="lecturer-title">' . e(rtrim($m[0])) . '</span> <span class="lecturer-name">' . e(substr($fullName, strlen($m[0]))) . '</span>';
+    }
+    return '<span class="lecturer-name">' . e($fullName) . '</span>';
+};
+
 $programInfo = null;
 if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->program)) {
     $progName = $slotData->lesson->program->name;
@@ -135,15 +143,17 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
             <div class="d-flex flex-column w-100 gap-1">
                 <?php if (!empty($lessonLecturerName)): ?>
                     <span class="lesson-lecturer text-truncate" title="Ders hocası: <?= e($lessonLecturerName) ?>">
-                        <i class="bi bi-person me-1 opacity-75"></i><?= e($lessonLecturerName) ?>
+                        <?= $renderPersonName($lessonLecturerName) ?>
                     </span>
                 <?php endif; ?>
                 <?php if (!empty($examClassroomNames)): ?>
-                    <div class="lesson-exam-classrooms w-100 d-flex flex-wrap align-items-center gap-1" title="Sınav Salonları: <?= e(implode(', ', $examClassroomNames)) ?>">
-                        <i class="bi bi-door-open opacity-75"></i>
-                        <?php foreach ($examClassroomNames as $classroomName): ?>
-                            <span class="lesson-classroom lesson-classroom-badge"><?= e($classroomName) ?></span>
-                        <?php endforeach; ?>
+                    <div class="lesson-exam-classrooms w-100 d-flex align-items-start gap-1" title="Sınav Salonları: <?= e(implode(', ', $examClassroomNames)) ?>">
+                        <i class="bi bi-door-open opacity-75 flex-shrink-0 lesson-exam-classrooms-icon"></i>
+                        <div class="d-flex flex-wrap align-items-center gap-1 flex-grow-1 min-w-0">
+                            <?php foreach ($examClassroomNames as $classroomName): ?>
+                                <span class="lesson-classroom lesson-classroom-badge"><?= e($classroomName) ?></span>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -169,7 +179,7 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                         <div class="d-flex flex-column flex-grow-1 min-w-0">
                             <?php foreach ($observerNamesList as $obsName): ?>
                                 <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= e($obsName) ?>">
-                                    <i class="bi bi-person-badge me-1 opacity-75"></i><?= e($obsName) ?>
+                                    <?= $renderPersonName($obsName) ?>
                                 </span>
                             <?php endforeach; ?>
                         </div>
