@@ -161,6 +161,11 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                     }
                 ?>
                     <div class="lesson-observer-item small d-flex align-items-center justify-content-between w-100 gap-1">
+                        <?php if (!empty($assignment['classroom_name'])): ?>
+                            <span class="lesson-classroom lesson-classroom-badge me-1 align-self-center flex-shrink-0" title="Sınav Salonu: <?= e($assignment['classroom_name']) ?>">
+                                <?= e($assignment['classroom_name']) ?>
+                            </span>
+                        <?php endif; ?>
                         <div class="d-flex flex-column flex-grow-1 min-w-0">
                             <?php foreach ($observerNamesList as $obsName): ?>
                                 <span class="lesson-lecturer text-truncate" title="Gözetmen: <?= e($obsName) ?>">
@@ -168,11 +173,6 @@ if (($isUserSchedule || $isClassroomSchedule) && !empty($slotData->lesson->progr
                                 </span>
                             <?php endforeach; ?>
                         </div>
-                        <?php if (!empty($assignment['classroom_name'])): ?>
-                            <span class="lesson-classroom lesson-classroom-badge ms-1 align-self-center flex-shrink-0" title="Sınav Salonu: <?= e($assignment['classroom_name']) ?>">
-                                <?= e($assignment['classroom_name']) ?>
-                            </span>
-                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
