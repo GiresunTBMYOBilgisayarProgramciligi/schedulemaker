@@ -184,10 +184,29 @@ class ExamAnalysisServiceTest extends BaseTestCase
         $firstSchedule = $this->insertSchedule($this->progId, 1);
         $secondSchedule = $this->insertSchedule($this->progId, 3);
 
+        // Üst dersin kaydı, bağlı alt dersin (2. sınıf) kaydını da oluşturur
         $this->saveExam($parent, $firstSchedule, 1, '09:00:00', '10:00:00');
-        $this->saveExam($child, $secondSchedule, 1, '09:00:00', '10:00:00');
 
         $this->assertSame(0, $this->overlaps()['conflict_count']);
+    }
+
+    public function testExamScopeIncludesChildBoundToAnotherGroup(): void
+    {
+        $groupA = $this->insertLesson('Sunucu A', 1, null, 'SNC101', 1);
+        $groupB = $this->insertLesson('Sunucu B', 1, null, 'SNC101', 2);
+        $child = $this->insertLesson('Açık Kaynak', 1);
+        $this->insert('lesson_combinations', [
+            'parent_lesson_id' => $groupB,
+            'child_lesson_id' => $child,
+            'type' => 'exam',
+            'semester' => self::SEMESTER,
+            'academic_year' => self::YEAR,
+        ]);
+
+        $scope = (new \App\Models\Lesson())->find($groupA)->getExamScope(self::SEMESTER, self::YEAR);
+
+        $this->assertEqualsCanonicalizing([$groupA, $groupB, $child], array_keys($scope));
+        $this->assertSame($groupA, (int) reset($scope)->id);
     }
 
     public function testClassOverlapsRespectsProgramFilter(): void

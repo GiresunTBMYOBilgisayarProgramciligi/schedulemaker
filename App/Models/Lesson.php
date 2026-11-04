@@ -568,30 +568,68 @@ class Lesson extends Model
     }
 
     /**
-     * Sınav birleştirme bağlantılı derslere ek olarak aynı koda sahip diğer grupların
-     * (ve onların sınav bağlı derslerinin) ID listesini döner.
+     * Aynı ders kodu, program ve yarıyıldaki grup kardeşlerini (kendisi dahil, grup no sırasıyla) döner.
+     * Gruplu değilse yalnızca kendisini döner.
      *
-     * @param string|null $semester Dönem; verilmezse sistem ayarındaki dönem
-     * @param string|null $academicYear Akademik yıl; verilmezse sistem ayarındaki yıl
-     * @return array
+     * @return Lesson[]
+     */
+    public function getExamGroupLessons(): array
+    {
+        if ($this->group_no < 1) {
+            return [$this];
+        }
+        $members = (new Lesson())->get()->where([
+            'code' => $this->code,
+            'program_id' => $this->program_id,
+            'semester_no' => $this->semester_no,
+            'group_no' => ['>' => 0],
+        ])->all();
+        usort($members, fn($a, $b) => $a->group_no <=> $b->group_no);
+        return $members ?: [$this];
+    }
+
+    /**
+     * Sınavın kapsadığı tüm dersler: kök (üst) ders, grup kardeşleri, sınav birleştirmesiyle bağlı
+     * alt dersler ve onların grup kardeşleri. İlk eleman her zaman kök derstir.
+     * Sınav kaydetme, silme/taşıma ve uyarı kontrolleri kapsamı buradan almalıdır.
+     *
+     * @return Lesson[] ders id => Lesson
+     */
+    public function getExamScope(?string $semester = null, ?string $academicYear = null): array
+    {
+        $rootId = $this->getExamRootLessonId($semester, $academicYear);
+        $root = $rootId === (int)$this->id ? $this : ((new Lesson())->find($rootId) ?: $this);
+
+        $scope = [];
+        $addGroup = function (Lesson $lesson) use (&$scope) {
+            foreach ($lesson->getExamGroupLessons() as $member) {
+                $scope[(int)$member->id] ??= $member;
+            }
+        };
+
+        $addGroup($root);
+        $linkedIds = [];
+        foreach ($scope as $member) {
+            $linkedIds = array_merge($linkedIds, $member->getExamLinkedLessonIds($semester, $academicYear));
+        }
+        $childIds = array_diff(array_unique($linkedIds), array_keys($scope));
+        if ($childIds) {
+            foreach ((new Lesson())->get()->where(['id' => ['in' => array_values($childIds)]])->all() as $child) {
+                $addGroup($child);
+            }
+        }
+
+        return $scope;
+    }
+
+    /**
+     * Sınav kapsamındaki (grup kardeşleri ve sınav birleştirmeleri dahil) tüm ders ID'leri.
+     *
+     * @return int[]
      */
     public function getExamAllLinkedLessonIds(?string $semester = null, ?string $academicYear = null): array
     {
-        $linkedIds = $this->getExamLinkedLessonIds($semester, $academicYear);
-
-        if ($this->group_no > 0) {
-            $siblings = (new Lesson())->get()->where([
-                'code' => $this->code,
-                'program_id' => $this->program_id,
-                'semester_no' => $this->semester_no,
-                'group_no' => ['>' => 0],
-                'id' => ['!=' => $this->id]
-            ])->all();
-            foreach ($siblings as $sibling) {
-                $linkedIds = array_merge($linkedIds, $sibling->getExamLinkedLessonIds($semester, $academicYear));
-            }
-        }
-        return array_values(array_unique($linkedIds));
+        return array_keys($this->getExamScope($semester, $academicYear));
     }
 
     /**

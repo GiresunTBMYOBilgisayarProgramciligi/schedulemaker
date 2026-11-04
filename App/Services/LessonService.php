@@ -510,6 +510,10 @@ class LessonService extends BaseService
 
         $result = [];
         foreach ($lessons as $lesson) {
+            // Alt gruplara (2. grup ve sonrası) bağlama yapılmaz; ilk grup üzerinden bağlanır
+            if ($lesson->group_no > 1) {
+                continue;
+            }
             // Kendisi zaten bir exam child ise atla (zaten birleştirilmiş)
             if (!empty($lesson->examParentLesson) && $lesson->examParentLesson->id !== $currentLesson->id) {
                 continue;
@@ -538,6 +542,23 @@ class LessonService extends BaseService
     }
 
     /**
+     * Dersi, gruplu ise ilk grubuyla (en küçük group_no) değiştirip sınav ilişkileriyle birlikte yükler.
+     */
+    private function loadExamFirstGroupLesson(int $lessonId): ?Lesson
+    {
+        $lesson = (new Lesson())->find($lessonId);
+        if (!$lesson) {
+            return null;
+        }
+        $firstId = $lesson->getExamGroupLessons()[0]->id;
+
+        return (new Lesson())
+            ->where(['id' => $firstId])
+            ->with(['examParentLesson', 'examChildLessons', 'program'])
+            ->first();
+    }
+
+    /**
      * Sınav için dersleri birleştirir (exam_parent_lesson_id).
      * Ders programını etkilemez, sadece sınav programında ortak sınav grubu oluşturur.
      * Hoca kısıtı yoktur — farklı hocaların dersleri birleştirilebilir.
@@ -556,19 +577,13 @@ class LessonService extends BaseService
         ]));
 
         Database::transaction(function () use ($parentLessonId, $childLessonId, $dto) {
-            /** @var Lesson $parentLesson */
-            $parentLesson = (new Lesson())
-                ->where(['id' => $parentLessonId])
-                ->with(['examParentLesson', 'examChildLessons', 'program'])
-                ->first()
+            // Gruplu derslerde bağlama her zaman ilk gruba yapılır (alt gruplara bağlanmaz)
+            $parentLesson = $this->loadExamFirstGroupLesson($parentLessonId)
                 ?: throw new Exception("Birleştirilecek üst ders bulunamadı");
-
-            /** @var Lesson $childLesson */
-            $childLesson = (new Lesson())
-                ->where(['id' => $childLessonId])
-                ->with(['examParentLesson', 'examChildLessons', 'program'])
-                ->first()
+            $childLesson = $this->loadExamFirstGroupLesson($childLessonId)
                 ?: throw new Exception("Birleştirilecek ders bulunamadı");
+            $parentLessonId = $parentLesson->id;
+            $childLessonId = $childLesson->id;
 
             // Kendine bağlama kontrolü
             if ($parentLessonId === $childLessonId) {

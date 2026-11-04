@@ -378,10 +378,7 @@ class ExamScheduleService extends ScheduleService
                 $weekIndex = $dto->weekIndex;
 
                 $lessonId = $dto->data[0]['lesson_id'] ?? $dto->data['lesson_id'] ?? null;
-                $lesson = (new Lesson())
-                    ->where(['id' => $lessonId])
-                    ->with(['childLessons', 'parentLesson', 'examChildLessons', 'examParentLesson'])
-                    ->first();
+                $lesson = $lessonId ? (new Lesson())->find($lessonId) : null;
 
                 if (!$lesson) {
                     throw new Exception("Ders bulunamadı");
@@ -396,44 +393,15 @@ class ExamScheduleService extends ScheduleService
                 $academicYear = $targetSchedule->academic_year;
 
                 // ── 1. Program ve Ders Owner'larını Belirle ──────────────────────
-                // Sınav programında sadece exam_parent_lesson_id dikkate alınır
-                // (parent_lesson_id ders programı içindir, sınav programını etkilemez)
-                $mainLesson = $lesson;
-                if (!empty($lesson->examParentLesson)) {
-                    $mainLesson = $lesson->examParentLesson;
-                }
+                // Kapsam (kök ders, grup kardeşleri, sınav birleştirmeleri) Lesson::getExamScope'tan gelir
+                $examScope = $lesson->getExamScope($semester, $academicYear);
+                $mainLesson = reset($examScope);
 
-                // Gruplu dersleri bul (aynı kod, aynı program, aynı dönem)
-                $allGroupLessons = [$mainLesson];
-                if ($mainLesson->group_no > 0) {
-                    $siblings = (new Lesson())->get()->where([
-                        'code' => $mainLesson->code,
-                        'program_id' => $mainLesson->program_id,
-                        'semester_no' => $mainLesson->semester_no,
-                        'group_no' => ['>' => 0],
-                        'id' => ['!=' => $mainLesson->id]
-                    ])->all();
-                    $allGroupLessons = array_merge($allGroupLessons, $siblings);
-                }
-
-
-                $programOwners = [];
-                foreach ($allGroupLessons as $gl) {
-                    $programOwners[] = ['type' => 'lesson', 'id' => $gl->id, 'actual_lesson_id' => $gl->id];
-                    $programOwners[] = ['type' => 'program', 'id' => $gl->program_id, 'semester_no' => $gl->semester_no, 'actual_lesson_id' => $gl->id];
-
-                    // Sınav birleştirme (exam_parent_lesson_id) ile bağlı dersler
-                    foreach ($gl->examChildLessons ?? [] as $examChild) {
-                        $programOwners[] = ['type' => 'lesson', 'id' => $examChild->id, 'actual_lesson_id' => $examChild->id];
-                        $programOwners[] = ['type' => 'program', 'id' => $examChild->program_id, 'semester_no' => $examChild->semester_no, 'actual_lesson_id' => $examChild->id];
-                    }
-                }
-
-                // Unique owner'lar (aynı program birden fazla çocuk derse sahip olabilir)
+                // Aynı program/yarıyıl tek program owner olur
                 $uniqueProgramOwners = [];
-                foreach ($programOwners as $po) {
-                    $key = $po['type'] . '_' . $po['id'] . '_' . ($po['semester_no'] ?? '');
-                    $uniqueProgramOwners[$key] = $po;
+                foreach ($examScope as $scopeLesson) {
+                    $uniqueProgramOwners["lesson_{$scopeLesson->id}"] = ['type' => 'lesson', 'id' => $scopeLesson->id, 'actual_lesson_id' => $scopeLesson->id];
+                    $uniqueProgramOwners["program_{$scopeLesson->program_id}_{$scopeLesson->semester_no}"] = ['type' => 'program', 'id' => $scopeLesson->program_id, 'semester_no' => $scopeLesson->semester_no, 'actual_lesson_id' => $scopeLesson->id];
                 }
 
                 // ── 2. Çakışma Kontrolü ───────────────────────────────────────────
@@ -744,31 +712,10 @@ class ExamScheduleService extends ScheduleService
 
         $primaryItem = ($programItemId == $baseItem->id) ? $baseItem : (new ScheduleItem())->find($programItemId);
 
-        // İlgili ders ID'lerini bul
+        // İlgili ders ID'lerini bul (kapsam kuralı Lesson::getExamScope'ta)
         $lessonId = $primaryItem?->data[0]['lesson_id'] ?? $baseItem->data[0]['lesson_id'] ?? null;
-        $relatedLessonIds = [];
-        if ($lessonId) {
-            $lesson = (new Lesson())->where(['id' => $lessonId])->with(['examChildLessons', 'examParentLesson'])->first();
-            if ($lesson) {
-                $mainLesson = !empty($lesson->examParentLesson) ? $lesson->examParentLesson : $lesson;
-                $relatedLessonIds[] = (int)$mainLesson->id;
-                foreach ($mainLesson->examChildLessons ?? [] as $child) {
-                    $relatedLessonIds[] = (int)$child->id;
-                }
-                if ($mainLesson->group_no > 0) {
-                    $groupSiblings = (new Lesson())->get()->where([
-                        'code' => $mainLesson->code,
-                        'program_id' => $mainLesson->program_id,
-                        'semester_no' => $mainLesson->semester_no,
-                        'group_no' => ['>' => 0]
-                    ])->all();
-                    foreach ($groupSiblings as $sib) {
-                        $relatedLessonIds[] = (int)$sib->id;
-                    }
-                }
-            }
-        }
-        $relatedLessonIds = array_unique($relatedLessonIds);
+        $lesson = $lessonId ? (new Lesson())->find($lessonId) : null;
+        $relatedLessonIds = $lesson ? $lesson->getExamAllLinkedLessonIds($schedule->semester, $schedule->academic_year) : [];
 
         // 1. Aynı zaman dilimindeki sınav item'larını getir ve filtrele
         $candidates = (new ScheduleItem())

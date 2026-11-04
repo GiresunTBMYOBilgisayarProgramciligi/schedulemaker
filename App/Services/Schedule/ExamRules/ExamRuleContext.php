@@ -175,26 +175,9 @@ class ExamRuleContext
      */
     private function resolveExamPrograms(Lesson $lesson, array $relationOptions): array
     {
-        $mainLesson = !empty($lesson->examParentLesson) ? $lesson->examParentLesson : $lesson;
-
-        $lessons = [$mainLesson];
-        if ($mainLesson->group_no > 0) {
-            $siblings = (new Lesson())->get()->where([
-                'code' => $mainLesson->code,
-                'program_id' => $mainLesson->program_id,
-                'semester_no' => $mainLesson->semester_no,
-                'group_no' => ['>' => 0],
-                'id' => ['!=' => $mainLesson->id]
-            ])->with(['examChildLessons' => $relationOptions])->all();
-            $lessons = array_merge($lessons, $siblings);
-        }
-
         $programs = [];
-        foreach ($lessons as $l) {
+        foreach ($lesson->getExamScope($relationOptions['semester'] ?? null, $relationOptions['academic_year'] ?? null) as $l) {
             $programs["{$l->program_id}|{$l->semester_no}"] = ['program_id' => (int) $l->program_id, 'semester_no' => (int) $l->semester_no];
-            foreach ($l->examChildLessons ?? [] as $child) {
-                $programs["{$child->program_id}|{$child->semester_no}"] = ['program_id' => (int) $child->program_id, 'semester_no' => (int) $child->semester_no];
-            }
         }
 
         return array_values($programs);

@@ -269,14 +269,7 @@ class ExamAnalysisService
         $linkedIds = $lesson->getExamAllLinkedLessonIds($semester, $academicYear);
 
         // Grup üyeleri (kendisi dahil) ve sınav birleştirmesiyle bağlı diğer dersler
-        $memberIds = [(int) $lesson->id];
-        if ($lesson->group_no > 0) {
-            $siblings = (new Lesson())->get()->where([
-                'code' => $lesson->code, 'program_id' => $lesson->program_id,
-                'semester_no' => $lesson->semester_no, 'group_no' => ['>' => 0],
-            ])->all();
-            $memberIds = array_map(fn($sibling) => (int) $sibling->id, $siblings);
-        }
+        $memberIds = array_map(fn($member) => (int) $member->id, $lesson->getExamGroupLessons());
         $combinedIds = array_values(array_diff($linkedIds, $memberIds));
 
         $related = $this->lessonsById(array_merge($memberIds, $combinedIds));
