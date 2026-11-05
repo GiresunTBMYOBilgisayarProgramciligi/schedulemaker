@@ -356,7 +356,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         // Derslik bazlı sınav listesinde derslik başlıkları yerine tek tablo ve "Derslik" sütunu
         if (isExam && isClassroomOwner && format === "list") {
-            fields.push({id: "hide_titles", label: "Derslik başlıklarını gösterme (tüm derslikler tek tabloda, derslik adı ilk sütunda)", checked: false});
+            fields.push({id: "hide_titles", label: "Derslik başlıklarını gösterme (tüm derslikler tek tabloda, tarih, saat ve derslik adı ilk sütunlarda)", checked: false});
         }
         return fields;
     }

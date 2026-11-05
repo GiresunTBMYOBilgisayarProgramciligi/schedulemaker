@@ -410,7 +410,7 @@ class ExcelGridExportTest extends BaseTestCase
 
     /**
      * Derslik bazlı sınav listesinde "başlıkları gösterme" seçiliyse tüm derslikler,
-     * derslik adı ilk sütunda olacak şekilde tek tabloda, tarih ve saate göre sıralı yazılır.
+     * tarih, başlangıç ve bitiş saatinden sonra derslik adı gelecek şekilde tek tabloda, tarih ve saate göre sıralı yazılır.
      */
     public function testClassroomExamListHideTitlesWritesSingleTable(): void
     {
@@ -458,24 +458,26 @@ class ExcelGridExportTest extends BaseTestCase
         $this->assertSame(2, substr_count($text, 'Ders Adı'));
         $this->assertStringContainsString('Salon-A Ara Sınav Programı', $text);
 
-        // Tek tablo: başlık çubuğu yok, sütun başlıkları bir kez, ilk sütun derslik adı
+        // Tek tablo: başlık çubuğu yok, sütun başlıkları bir kez; sıra: Tarih, Başlangıç, Bitiş, Derslik
         $sheet = $exportWith(['hide_titles' => 1]);
         $text  = $this->sheetText($sheet);
         $this->assertSame(1, substr_count($text, 'Ders Adı'));
         $this->assertStringNotContainsString('Ara Sınav Programı |', $text);
         $headers = $this->listHeaders($sheet);
-        $this->assertSame('Derslik', $headers[0]);
+        $this->assertSame(['Tarih', 'Başlangıç Saati', 'Bitiş Saati', 'Derslik'], array_slice($headers, 0, 4));
         $this->assertNotEmpty($sheet->getAutoFilter()->getRange(), 'Tek tabloda filtre okları olmalı');
 
+        $nameCol  = array_search('Ders Adı', $headers, true);
         $rows = array_values(array_filter(
             $sheet->toArray(null, false, false),
-            fn($row) => str_starts_with((string) ($row[2] ?? ''), 'Tek Tablo Sınavı')
+            fn($row) => str_starts_with((string) ($row[$nameCol] ?? ''), 'Tek Tablo Sınavı')
         ));
         $dateCol  = array_search('Tarih', $headers, true);
         $startCol = array_search('Başlangıç Saati', $headers, true);
+        $roomCol  = array_search('Derslik', $headers, true);
 
         // Tarih + saat sırası: Pzt 08:30 Salon-A, Pzt 09:00 Salon-B, Sal 09:00 Salon-A
-        $this->assertSame(['Salon-A', 'Salon-B', 'Salon-A'], array_map(fn($row) => $row[0], $rows));
+        $this->assertSame(['Salon-A', 'Salon-B', 'Salon-A'], array_map(fn($row) => $row[$roomCol], $rows));
         $this->assertSame(['08:30', '09:00', '09:00'], array_map(fn($row) => $row[$startCol], $rows));
 
         // Tarih hücresi metin değil Excel tarih değeridir (sıralanabilir)

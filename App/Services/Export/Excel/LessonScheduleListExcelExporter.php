@@ -60,11 +60,19 @@ class LessonScheduleListExcelExporter extends BaseExcelExporter
         // Sınav başlangıç tarihi tanımlıysa "Gün" yerine sıralanabilir gerçek tarih yazılır
         $this->startDate = $this->resolveStartDate($filters->type ?? 'lesson');
 
-        // Tek tablo: derslik başlık çubukları yazılmaz, derslik adı ilk sütunda yer alır
+        // Tek tablo: derslik başlık çubukları yazılmaz; önce tarih/gün, başlangıç ve bitiş saati,
+        // ardından derslik adı ve diğer sütunlar yer alır
         $singleTable   = $showOptions->hideTitles && $this->isClassroomExport($filters);
         $this->columns = $this->resolveColumns($filters, $showOptions);
         if ($singleTable) {
-            $this->columns = ['owner' => 'Derslik'] + $this->columns;
+            $timeColumns   = [];
+            foreach (['date', 'day', 'start', 'end'] as $key) {
+                if (isset($this->columns[$key])) {
+                    $timeColumns[$key] = $this->columns[$key];
+                }
+            }
+            $otherColumns  = array_diff_key($this->columns, $timeColumns);
+            $this->columns = $timeColumns + ['owner' => 'Derslik'] + $otherColumns;
         }
         $lastCol = Coordinate::stringFromColumnIndex(count($this->columns));
 
