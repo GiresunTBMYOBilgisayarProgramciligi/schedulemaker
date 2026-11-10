@@ -62,6 +62,7 @@ class ExamScheduleIcsExporter extends BaseIcsExporter
             'X-WR-CALNAME:' . $this->escapeIcsText(($filters->academic_year ?? '') . ' ' . ($filters->semester ?? '') . ' ' . $typeLabel . ' Programı'),
             'X-WR-TIMEZONE:Europe/Istanbul',
         ];
+        array_push($lines, ...$this->buildVTimezoneBlock());
 
         foreach ($scheduleFilters as $scheduleFilter) {
             $schedule = (new ExamScheduleService())->findScheduleWithItems($scheduleFilter['filter']);

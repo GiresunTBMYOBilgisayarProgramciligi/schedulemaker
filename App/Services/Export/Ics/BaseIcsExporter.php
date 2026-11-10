@@ -80,6 +80,30 @@ abstract class BaseIcsExporter implements ScheduleExporterInterface
     }
 
     /**
+     * Europe/Istanbul için VTIMEZONE bloğu (sabit +03:00, yaz saati uygulaması yok).
+     *
+     * TZID ile kullanılan her saat diliminin RFC 5545 gereği takvim dosyası
+     * içinde tanımlanması gerekir; aksi halde bazı takvim uygulamaları (Outlook,
+     * veya 2016'dan önceki Türkiye yaz saati kuralını hâlâ önbelleğinde tutan
+     * eski istemciler) "Europe/Istanbul" etiketini kendi kurallarıyla yorumlayıp
+     * etkinlikleri bir saat kaydırabiliyor.
+     */
+    protected function buildVTimezoneBlock(): array
+    {
+        return [
+            'BEGIN:VTIMEZONE',
+            'TZID:Europe/Istanbul',
+            'BEGIN:STANDARD',
+            'DTSTART:19700101T000000',
+            'TZOFFSETFROM:+0300',
+            'TZOFFSETTO:+0300',
+            'TZNAME:+03',
+            'END:STANDARD',
+            'END:VTIMEZONE',
+        ];
+    }
+
+    /**
      * ICS formatı için metin kaçırma (escape) işlemi.
      */
     protected function escapeIcsText(string $text): string

@@ -115,7 +115,7 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
 
     private function buildCalendarHeader(ScheduleExportFilterDTO $filters): array
     {
-        return [
+        $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//schedulemaker//TR MBMYO Ders Programı//TR',
@@ -124,6 +124,9 @@ class LessonScheduleIcsExporter extends BaseIcsExporter
             'X-WR-CALNAME:' . $this->escapeIcsText(($filters->academic_year ?? '') . ' ' . ($filters->semester ?? '') . ' Ders Programı'),
             'X-WR-TIMEZONE:Europe/Istanbul',
         ];
+        array_push($lines, ...$this->buildVTimezoneBlock());
+
+        return $lines;
     }
 
     private function resolveFirstDate(int $dayIndex, \DateTimeZone $tz, \DateTime $now, ?\DateTime $startDate): array
