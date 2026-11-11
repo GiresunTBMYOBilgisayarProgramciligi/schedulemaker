@@ -30,14 +30,16 @@ class PasswordResetService extends BaseService
         }
 
         $token = bin2hex(random_bytes(32));
-        
+
         $resetRepo = new PasswordResetRepository();
 
         // Eski tokenları sil
         $resetRepo->deleteByEmail($dto->email);
 
-        // Yeni tokenı ekle
-        $resetRepo->createToken($dto->email, $token);
+        // Veritabanında token'ın kendisi değil, hash'i saklanır (DB sızıntısında
+        // token'ların doğrudan kullanılabilir olmasını engeller). E-postaya
+        // gönderilen bağlantıda ise düz token kullanılmaya devam eder.
+        $resetRepo->createToken($dto->email, hash('sha256', $token));
 
         // Olayı tetikle (Event Dispatcher aracılığıyla)
         $event = new UserForgotPasswordEvent($user, $token);
@@ -55,9 +57,9 @@ class PasswordResetService extends BaseService
     public function resetPassword(ResetPasswordDTO $dto): void
     {
         $resetRepo = new PasswordResetRepository();
-        
-        // Token'ı ve süresini kontrol et
-        $record = $resetRepo->findValidToken($dto->email, $dto->token);
+
+        // Token'ı ve süresini kontrol et (DB'de hash'i tutulur)
+        $record = $resetRepo->findValidToken($dto->email, hash('sha256', $dto->token));
 
         if (!$record) {
             throw new Exception("Geçersiz veya süresi dolmuş şifre sıfırlama bağlantısı.");

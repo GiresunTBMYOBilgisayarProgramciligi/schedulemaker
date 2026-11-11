@@ -31,7 +31,7 @@
                     <div class="row">
                         <div class="col-8 d-inline-flex align-items-center">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"
+                                <input class="form-check-input" type="checkbox" value="1" id="flexCheckDefault"
                                     name="remember_me" />
                                 <label class="form-check-label" for="flexCheckDefault"> Beni hatırla </label>
                             </div>

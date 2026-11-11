@@ -2,6 +2,7 @@
 
 namespace App\Middlewares;
 
+use App\Core\AppSecret;
 use App\Models\User;
 use Exception;
 
@@ -101,7 +102,7 @@ class AuthMiddleware
                 return null;
             }
 
-            $secret = $_ENV['APP_KEY'] ?? 'schedulemaker_app_secure_salt';
+            $secret = AppSecret::get();
             $expectedHmac = hash_hmac('sha256', $userId . ':' . $user->password, $secret);
 
             if (hash_equals($expectedHmac, $hmac)) {

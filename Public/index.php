@@ -29,6 +29,7 @@ ini_set('session.gc_maxlifetime', '14400');
 session_set_cookie_params([
     'lifetime' => 14400,
     'path'     => '/',
+    'secure'   => \App\Core\ClientRequest::isHttps(),
     'httponly' => true,
     'samesite' => 'Lax',
 ]);

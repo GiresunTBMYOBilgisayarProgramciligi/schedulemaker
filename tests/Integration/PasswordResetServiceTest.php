@@ -48,7 +48,9 @@ class PasswordResetServiceTest extends BaseTestCase
     {
         $token = 'test_token_' . rand(1000, 9999);
         $resetRepo = new PasswordResetRepository();
-        $resetRepo->createToken($this->email, $token);
+        // PasswordResetRepository, kendisine verileni olduğu gibi saklar;
+        // gerçek akışta PasswordResetService token'ın hash'ini verir.
+        $resetRepo->createToken($this->email, hash('sha256', $token));
 
         $resetDto = new ResetPasswordDTO(
             email: $this->email,

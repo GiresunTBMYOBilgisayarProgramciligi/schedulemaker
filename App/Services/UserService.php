@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Core\AppSecret;
+use App\Core\ClientRequest;
 use App\Core\Log;
 use App\Models\User;
+use App\Services\Auth\LoginThrottle;
 use App\Services\Schedule\ScheduleService;
 use App\DTOs\UserDTO;
 use App\DTOs\LoginDTO;
@@ -360,35 +363,59 @@ class UserService extends BaseService
     public function login(LoginDTO|array $loginData): void
     {
         $dto = $loginData instanceof LoginDTO ? $loginData : LoginDTO::fromArray((array)$loginData);
+        $ip  = ClientRequest::ip();
+
+        // Kaba kuvvet (brute-force) koruması: aynı IP + e-posta için çok fazla
+        // başarısız denemede girişi geçici olarak engelle.
+        LoginThrottle::ensureNotBlocked($dto->mail, $ip);
 
         $userRepository = new UserRepository();
         $user = $userRepository->findByEmail($dto->mail);
 
         if (!$user) {
+            LoginThrottle::recordFailure($dto->mail, $ip);
+            Log::channel('auth')->warning("Başarısız giriş denemesi (kayıtlı olmayan e-posta).", Log::context($this, [
+                'mail' => $dto->mail,
+                'ip'   => $ip,
+            ]));
             throw new Exception("Kullanıcı kayıtlı değil");
         }
 
         if (!password_verify($dto->password, $user->password)) {
+            LoginThrottle::recordFailure($dto->mail, $ip);
+            Log::channel('auth')->warning("Başarısız giriş denemesi (yanlış şifre).", Log::context($this, [
+                'user_id' => $user->id,
+                'mail'    => $dto->mail,
+                'ip'      => $ip,
+            ]));
             throw new Exception("Şifre Yanlış");
         }
 
+        LoginThrottle::clear($dto->mail, $ip);
+
         $sessionKey = $_ENV['SESSION_KEY'] ?? 'schedule_session';
         $cookieKey  = $_ENV['COOKIE_KEY'] ?? 'schedule_cookie_';
+
+        // Oturum sabitleme (session fixation) saldırılarına karşı: giriş
+        // başarılı olduğunda session ID yenilenir, mevcut session verisi
+        // (örn. CSRF token) korunur.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
 
         // Session yaz
         $_SESSION[$sessionKey] = $user->id;
 
         // Remember Me istenmişse güvenli imzalı çerez oluştur
         if ($dto->rememberMe) {
-            $secret = $_ENV['APP_KEY'] ?? 'schedulemaker_app_secure_salt';
+            $secret = AppSecret::get();
             $hmac = hash_hmac('sha256', $user->id . ':' . $user->password, $secret);
             $cookieValue = $user->id . ':' . $hmac;
 
-            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
             setcookie($cookieKey, $cookieValue, [
                 'expires'  => time() + (86400 * 30),
                 'path'     => '/',
-                'secure'   => $isHttps,
+                'secure'   => ClientRequest::isHttps(),
                 'httponly' => true,
                 'samesite' => 'Strict',
             ]);
